@@ -2,6 +2,7 @@ import React from 'react';
 import 'primereact/resources/themes/saga-blue/theme.css';  // Choose a theme
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
+import GreenwaveLogo from '../assets/Images/GreenwaveLogo.png';
 
 const SideBar = () => {
     return (
@@ -32,14 +33,14 @@ const SideBar = () => {
                     ></path>
                   </svg>
                 </button>
-                <a href="https://flowbite.com" className="flex ms-2 md:me-24">
+                <a href="" className="flex ms-2 md:me-24" >
                   <img
-                    src="https://flowbite.com/docs/images/logo.svg"
+                    src={GreenwaveLogo}
                     className="h-8 me-3"
-                    alt="FlowBite Logo"
+                    alt="GW Logo"
                   />
-                  <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
-                    Flowbite
+                  <span className="  self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white font-raleway"  >
+                    My Greenwave Portal
                   </span>
                 </a>
               </div>
@@ -79,7 +80,7 @@ const SideBar = () => {
                       <li>
                         <a
                           href="#"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                          className=" font-raleway block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                           role="menuitem"
                         >
                           Dashboard

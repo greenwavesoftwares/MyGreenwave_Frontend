@@ -1,2 +1,21 @@
-/* please donot remove this */
-@import "tailwindcss";  
+/* Please do not remove this */
+@import "tailwindcss";
+
+@theme {
+  --font-primary: "Raleway", sans-serif;
+}
+
+/* Define Custom Font */
+@font-face {
+  font-family: 'Raleway';
+  src: url('/assets/Fonts/Raleway-SemiBold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Custom Utility Class */
+@utilities {
+  .font-raleway {
+    font-family: 'Raleway', sans-serif;
+  }
+}
