@@ -1,0 +1,69 @@
+/* The main container for the component, centers it on the screen */
+.date-picker-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding-left: 1rem; /* Padding for mobile */
+    padding-right: 1rem; /* Padding for mobile */
+}
+
+/* Wrapper around the calendar to control its width at different breakpoints */
+.calendar-wrapper {
+    width: 100%;
+    max-width: 200px; /* Default: Smaller width for mobile */
+}
+
+/* Responsive styles */
+@media (min-width: 640px) {
+    .date-picker-container {
+        padding-left: 1.5rem; /* Padding for small screens */
+        padding-right: 1.5rem; /* Padding for small screens */
+    }
+
+    .calendar-wrapper {
+        max-width: 220px; /* Width for small to medium screens (tablets) */
+    }
+}
+
+@media (min-width: 768px) {
+    .date-picker-container {
+        padding-left: 2rem; /* Padding for medium screens */
+        padding-right: 2rem; /* Padding for medium screens */
+    }
+
+    .calendar-wrapper {
+        max-width: 250px; /* Width for medium to large screens (laptops) */
+    }
+}
+
+@media (min-width: 1024px) {
+    .date-picker-container {
+        padding-left: 2.5rem; /* Padding for large screens */
+        padding-right: 2.5rem; /* Padding for large screens */
+    }
+
+    .calendar-wrapper {
+        max-width: 250px; /* Width for large screens (desktops) */
+    }
+}
+
+@media (min-width: 1280px) {
+    .date-picker-container {
+        padding-left: 3rem; /* Padding for extra-large screens */
+        padding-right: 3rem; /* Padding for extra-large screens */
+    }
+
+    .calendar-wrapper {
+        max-width: 250px; /* Width for extra-large screens (large desktops) */
+    }
+}
+
+.p-calendar .p-datepicker {
+    width: 100px !important; /* Adjust this value to change the width of the calendar popup */
+}
+
+/* Ensuring the calendar itself takes full width */
+.calendar {
+    width: 100%;
+}

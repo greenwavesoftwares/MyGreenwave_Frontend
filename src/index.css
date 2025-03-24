@@ -3,19 +3,25 @@
 
 @theme {
   --font-primary: "Raleway", sans-serif;
+  --font-secondary: "Inter", sans-serif;
 }
 
-/* Define Custom Font */
+/* Define Raleway Font */
 @font-face {
   font-family: 'Raleway';
   src: url('/assets/Fonts/Raleway-SemiBold.ttf') format('truetype');
-  font-weight: 700;
+  font-weight: 100;
   font-style: normal;
 }
 
-/* Custom Utility Class */
-@utilities {
-  .font-raleway {
-    font-family: 'Raleway', sans-serif;
-  }
+/* Define Inter Font */
+@font-face {
+  font-family: 'Inter';
+  src: url('/assets/Fonts/Inter-Regular.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+}
+
+.textfield{
+  font-weight: 500;
 }
