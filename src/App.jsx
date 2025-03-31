@@ -7,17 +7,20 @@ import 'primereact/resources/primereact.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import DialogComponent from './components/Dialog/DialogComponent'
 import DropdownCheckbox from "./components/DropdownCheckbox/DropdownCheckbox";
+import TravelDesk from "./Modules/TravelDesk/TravelDesk";
 
 function App() {
   return (
     <Router>
-      <DropdownCheckbox> </DropdownCheckbox>
+      
+      {/* <DropdownCheckbox> </DropdownCheckbox> */}
       {/* <DialogComponent></DialogComponent> */}
       {/* <DatePicker></DatePicker> */}
       {/* <Carousel> </Carousel> */}
-      <Routes>
-        {/* <Route path="/" element={<LeaveManagement />} /> */}
+      <Routes> 
+        {/* <Route path="/" element={<LeaveManagement />} /> */} 
         <Route path="LeaveManagement" element={<LeaveManagement />} />
+        <Route path="TravelDesk" element={<TravelDesk />} />
       </Routes>
     </Router>
   );
