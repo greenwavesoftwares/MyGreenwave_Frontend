@@ -25,3 +25,16 @@
 .textfield{
   font-weight: 500;
 }
+
+body {
+  background-color: rgb(243, 243, 243);
+  margin: 0;
+  padding: 0;
+}
+
+header, footer {
+  background-color: rgb(224, 224, 224);
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
