@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import { Container } from "@mui/material";
-import { Dialog } from "primereact/dialog";
-import { Calendar } from "primereact/calendar";
 import SpeedDial from "../../components/SpeedDial/SpeedDial";
 import { Button } from "primereact/button";
 import {
@@ -16,15 +14,28 @@ import Chart from "../../components/Chart/Chart";
 import ConfirmDialog from "../../components/ConfirmDialog/ConfirmDialog";
 import { showConfirm } from "../../components/ConfirmDialog/showConfirm";
 import Calender from "../../components/Calender/Calender";
+import DatePicker from "../../components/DatePicker/DatePicker";
+import DialogComponent from "../../components/Dialog/DialogComponent";
+import "../../components/Dialog/DialogComponent.css";
+import { Checkbox } from "primereact/checkbox";
+import { InputTextarea } from "primereact/inputtextarea";
+import { TabView, TabPanel } from "primereact/tabview";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
+import { ProductService } from "../../Services/ProductService";
+import { getCurrentDate } from "./LeaveFunctions";
 
 const LeaveManagement = () => {
   const [chartData, setChartData] = useState({});
   const [chartOptions, setChartOptions] = useState({});
-  const cities = [2023, 2024, 2025];
-  const [selectedCity, setSelectedCity] = useState(2025);
+  const years = [2023, 2024, 2025];
+  const [selectedYear, setSelectedYear] = useState(2025);
   const [applyLeaveDialogVisible, setApplyLeaveDialogVisible] = useState(false);
+  const [editLeaveDialogVisible, setEditLeaveDialogVisible] = useState(false);
   const [dates, setDates] = useState(null);
   const toastRef = useRef(null);
+  const [isCompensatory, setCompensatory] = useState(false);
+  const [tableData, setTableData] = useState([]);
 
   useEffect(() => {
     const documentStyle = getComputedStyle(document.documentElement);
@@ -97,9 +108,9 @@ const LeaveManagement = () => {
         },
       },
     };
-
     setChartData(data);
     setChartOptions(options);
+    ProductService.getProducts().then((data) => setTableData(data));
   }, []);
 
   return (
@@ -114,15 +125,15 @@ const LeaveManagement = () => {
             alignItems: "center",
           }}
         >
-          <Grid size={3}>
+          <Grid size={{ md: 3.3, xs: 12 }}>
             <Card>
               <Grid container rowGap={1.5}>
                 <Grid size={12}>Year :</Grid>
                 <Grid size={12}>
                   <Dropdown
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.value)}
-                    options={cities}
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.value)}
+                    options={years}
                     optionLabel="name"
                     placeholder="Select a Year"
                     className="w-full"
@@ -143,10 +154,10 @@ const LeaveManagement = () => {
               </Grid>
             </Card>
           </Grid>
-          <Grid size={9}>
+          <Grid size={{ md: 8.7, xs: 12 }}>
             <Card>
               <Chart
-                style={{ height: "17.2rem" }}
+                className="h-19rem"
                 type="line"
                 data={chartData}
                 options={chartOptions}
@@ -155,7 +166,44 @@ const LeaveManagement = () => {
           </Grid>
           <Grid size={12}>
             <Card>
-              <Calender initialView="dayGridMonth" height={"30rem"}></Calender>
+              <TabView>
+                <TabPanel header="Calender View">
+                  <Calender
+                    initialView="dayGridMonth"
+                    height={"31rem"}
+                  ></Calender>
+                </TabPanel>
+                <TabPanel header="Tabular View">
+                  <DataTable
+                    value={tableData}
+                    paginator
+                    rows={10}
+                    rowsPerPageOptions={[5, 10, 25, 50]}
+                    tableStyle={{ minWidth: "50rem" }}
+                  >
+                    <Column
+                      field="name"
+                      header="Name"
+                      style={{ width: "25%" }}
+                    ></Column>
+                    <Column
+                      field="description"
+                      header="Description"
+                      style={{ width: "25%" }}
+                    ></Column>
+                    <Column
+                      field="category"
+                      header="Category"
+                      style={{ width: "25%" }}
+                    ></Column>
+                    <Column
+                      field="quantity"
+                      header="Quantity"
+                      style={{ width: "25%" }}
+                    ></Column>
+                  </DataTable>
+                </TabPanel>
+              </TabView>
             </Card>
           </Grid>
         </Grid>
@@ -169,28 +217,43 @@ const LeaveManagement = () => {
           setApplyLeaveDialogVisible(true);
         }}
       />
-      <Dialog
+      <DialogComponent
         header="Apply For Leave"
         visible={applyLeaveDialogVisible}
-        style={{ width: "30vw" }}
+        className="leaveDialog"
         onHide={() => {
           if (!applyLeaveDialogVisible) return;
           setApplyLeaveDialogVisible(false);
         }}
       >
-        <Grid container>
-          <Grid size={4}>Select Date :</Grid>
-          <Grid size={8}>
-            <Calendar
+        <Grid container rowSpacing={1.5}>
+          <Grid size={5}>Compensatory Leave</Grid>
+          <Grid size={7}>
+            <Checkbox
+              checked={isCompensatory}
+              onClick={() => {
+                setCompensatory(!isCompensatory);
+              }}
+            />
+          </Grid>
+          <Grid size={5}>Date</Grid>
+          <Grid size={7}>
+            <DatePicker
               value={dates}
               onChange={(e) => setDates(e.value)}
               selectionMode="range"
               readOnlyInput
               hideOnRangeSelection
+              disabledDays={[0, 6]}
+              minDate={getCurrentDate()}
+              showIcon
             />
           </Grid>
+          <Grid size={5}>Reason</Grid>
+          <Grid size={7}>
+            <InputTextarea autoResize rows={3} cols={24} />
+          </Grid>
           <Grid size={12}>
-            {" "}
             <Button
               label="Click"
               onClick={() =>
@@ -204,7 +267,47 @@ const LeaveManagement = () => {
             />
           </Grid>
         </Grid>
-      </Dialog>
+      </DialogComponent>
+      <DialogComponent
+        header="Edit Leave"
+        visible={editLeaveDialogVisible}
+        style={{ width: "30vw" }}
+        onHide={() => {
+          if (!editLeaveDialogVisible) return;
+          setEditLeaveDialogVisible(false);
+        }}
+      >
+        <Grid container rowSpacing={1.5}>
+          <Grid size={5}>Date</Grid>
+          <Grid size={7}>
+            <DatePicker
+              value={dates}
+              onChange={(e) => setDates(e.value)}
+              selectionMode="range"
+              readOnlyInput
+              hideOnRangeSelection
+              disabledDays={[0, 6]}
+            />
+          </Grid>
+          <Grid size={5}>Reason</Grid>
+          <Grid size={7}>
+            <InputTextarea autoResize rows={3} cols={25} />
+          </Grid>
+          <Grid size={12}>
+            <Button
+              label="Click"
+              onClick={() =>
+                showConfirm(
+                  "Header",
+                  "Message",
+                  () => showSuccessMessage(toastRef, "Success", "Clicked Yes"),
+                  () => showErrorMessage(toastRef, "Error", "Clicked No")
+                )
+              }
+            />
+          </Grid>
+        </Grid>
+      </DialogComponent>
       <Toast ref={toastRef} />
       <ConfirmDialog />
     </>

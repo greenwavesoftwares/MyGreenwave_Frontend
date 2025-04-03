@@ -1,22 +1,33 @@
 import React, { useState } from "react";
-import { Calendar } from 'primereact/calendar';
-import './DatePicker.css'; // Import your custom CSS file
+import { Calendar } from "primereact/calendar";
+import "./DatePicker.css"; // Import your custom CSS file
 
-const DatePicker = () => {
-    const [date, setDate] = useState(null);
-
-    return (
-        <div className="date-picker-container">
-            <div className="calendar-wrapper">
-                <Calendar 
-                    value={date} 
-                    onChange={(e) => setDate(e.value)} 
-                    className="calendar"
-                    placeholder="Select a date" // Hint text here
-                />
-            </div>
-        </div>
-    )
-}
+const DatePicker = ({
+  value,
+  onChange,
+  selectionMode,
+  readOnlyInput,
+  hideOnRangeSelection,
+  disabledDays,
+  minDate,
+  showIcon,
+}) => {
+  return (
+    <div className="calendar-wrapper">
+      <Calendar
+        value={value}
+        onChange={onChange}
+        selectionMode={selectionMode}
+        readOnlyInput={readOnlyInput}
+        hideOnRangeSelection={hideOnRangeSelection}
+        disabledDays={disabledDays}
+        className="calendar"
+        placeholder="Select a date" // Hint text here
+        minDate={minDate}
+        showIcon={showIcon}
+      />
+    </div>
+  );
+};
 
 export default DatePicker;
