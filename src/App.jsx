@@ -9,20 +9,23 @@ import DialogComponent from "./components/Dialog/DialogComponent";
 import DropdownCheckbox from "./components/DropdownCheckbox/DropdownCheckbox";
 import TravelDesk from "./Modules/TravelDesk/TravelDesk";
 import SalarySlip from "./Modules/SalarySlip/Salaryslip";
+import Login from "./Modules/Login/Login";
+import AdminPage from "./Modules/AdminPage/AdminPage";
 
 function App() {
   return (
-    
     <Router>
       {/* <DropdownCheckbox> </DropdownCheckbox> */}
       {/* <DialogComponent></DialogComponent> */}
       {/* <DatePicker></DatePicker> */}
       {/* <Carousel> </Carousel> */}
       <Routes>
-        {/* <Route path="/" element={<LeaveManagement />} /> */}
-        <Route path="LeaveManagement" element={<LeaveManagement />} />
-        <Route path="TravelDesk" element={<TravelDesk />} />
-        <Route path="salaryslip" element={<SalarySlip />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/leave-management" element={<LeaveManagement />} />
+        <Route path="/travel-desk" element={<TravelDesk />} />
+        <Route path="/salary-slip" element={<SalarySlip />} />
       </Routes>
     </Router>
   );
