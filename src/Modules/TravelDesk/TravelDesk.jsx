@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
 
 const TravelDesk = ({ onSubmit, onCancel }) => {
+  // State to track active tab
+  const [active, setActive] = useState('requisition');
+
+  // Form submission handler
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSubmit) {
@@ -12,219 +16,230 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 min-h-screen bg-gray-100">
-      {/* Card container with rounded corners and shadow */}
+    <div className="max-w-[85rem] mx-auto p-6 min-h-screen bg-gray-100">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-12">
-            {/* Personal Information Section */}
-            <div>
-              <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">Travel Requisition Form</h2>
+        {/* Tab navigation buttons */}
+        <div className="inline-flex rounded-md overflow-hidden mb-6">
+          <button
+            type="button"
+            onClick={() => setActive('requisition')}
+            className={`w-40 py-1.5 pl-4 pr-2 text-sm font-medium text-left focus:outline-none
+              ${active === 'requisition'
+                ? 'border-b-2 border-green-500 text-green-700'
+                : 'hover:border-b-2 hover:border-green-500 text-gray-900'}
+            `}
+          >
+            Requisition Form
+          </button>
 
-              <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                {/* First Name */}
-                <div className="sm:col-span-3">
-                  <label htmlFor="first-name" className="block text-sm font-medium leading-6 text-gray-900">
-                    Name
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="first-name"
-                      id="first-name"
-                      autoComplete="given-name"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
+          <div className="border-l border-gray-300" />
 
-                {/* Last Name */}
-                <div className="sm:col-span-3">
-                  <label htmlFor="last-name" className="block text-sm font-medium leading-6 text-gray-900">
-                    Date
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="last-name"
-                      id="last-name"
-                      autoComplete="family-name"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
+          <button
+            type="button"
+            onClick={() => setActive('myforms')}
+            className={`w-30 py-1.5 pl-4 pr-2 text-sm font-medium text-left focus:outline-none
+              ${active === 'myforms'
+                ? 'border-b-2 border-green-500 text-green-700'
+                : 'hover:border-b-2 hover:border-green-500 text-gray-900'}
+            `}
+          >
+            My Forms
+          </button>
+        </div>
 
-                {/* Email */}
-                <div className="sm:col-span-4">
-                  <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                    Department
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
+        {/* Requisition Form Section */}
+        {active === 'requisition' && (
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-12">
+              {/* Personal Information Section */}
+              <div>
+                <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">Travel Requisition Form</h2>
 
-                <div className="sm:col-span-5">
-                  <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                    Employee Code
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-
-
-                <div className="sm:col-span-5">
-                  <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                    Project Name
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-
-
-                <div className="sm:col-span-5">
-                  <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                    City
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-5">
-                  <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                    Locality/Area
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-
-                {/* Country */}
-                <div className="sm:col-span-3">
-                  <label htmlFor="travel-type" className="block text-sm font-medium leading-6 text-gray-900">
-                    Type of Travel
-                  </label>
-                  <div className="mt-2 relative">
-                    <select
-                      id="travel-type"
-                      name="travelType"
-                      className="block w-full rounded-md border-0 py-1.5 pl-2 pr-20 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 appearance-none"
-                    >
-                      <option value="" disabled selected className="text-gray-400">Select one</option>
-                      <option value="Sales Marketing">Sales Marketing</option>
-                      <option value="Project">Project</option>
-                      <option value="Service Paid">Service Paid</option>
-                      <option value="Service Free">Service Free</option>
-                      <option value="Survey">Survey</option>
-                      <option value="Training">Training</option>
-                      <option value="Others">Others</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                      <ChevronDownIcon className="h-7 w-10 text-gray-400" aria-hidden="true" />
+                <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                  {/* Name field (disabled) */}
+                  <div className="sm:col-span-3">
+                    <label htmlFor="Name" className="block text-sm font-medium leading-6 text-gray-900">
+                      Name
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        name="Name"
+                        id="Name"
+                        value="Rudraneel Ghosh"
+                        disabled
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
+                      />
                     </div>
                   </div>
-                </div>
 
-                {/* Street Address */}
-                <div className="col-span-full">
-                  <label htmlFor="street-address" className="block text-sm font-medium leading-6 text-gray-900">
-                  Advanced Amount
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="street-address"
-                      id="street-address"
-                      autoComplete="street-address"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
+                  {/* Date field (disabled) */}
+                  <div className="sm:col-span-3">
+                    <label htmlFor="Date" className="block text-sm font-medium leading-6 text-gray-900">
+                      Date
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        name="Date"
+                        id="Date"
+                        value="2025-04-03"
+                        disabled
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* City */}
-                <div className="sm:col-span-2 sm:col-start-1">
-                  <label htmlFor="city" className="block text-sm font-medium leading-6 text-gray-900">
-                    City
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="city"
-                      id="city"
-                      autoComplete="address-level2"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
+                  {/* Department field (disabled) */}
+                  <div className="sm:col-span-4">
+                    <label htmlFor="department" className="block text-sm font-medium leading-6 text-gray-900">
+                      Department
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="department"
+                        name="department"
+                        type="text"
+                        value="Software"
+                        disabled
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* State */}
-                <div className="sm:col-span-2">
-                  <label htmlFor="region" className="block text-sm font-medium leading-6 text-gray-900">
-                    State / Province
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="region"
-                      id="region"
-                      autoComplete="address-level1"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
+                  {/* Employee Code field (disabled) */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="employee-code" className="block text-sm font-medium leading-6 text-gray-900">
+                      Employee Code
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="employee-code"
+                        name="employeeCode"
+                        type="text"
+                        value="152"
+                        disabled
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* ZIP Code */}
-                <div className="sm:col-span-2">
-                  <label htmlFor="postal-code" className="block text-sm font-medium leading-6 text-gray-900">
-                    ZIP / Postal code
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="postal-code"
-                      id="postal-code"
-                      autoComplete="postal-code"
-                      className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
+                  {/* Purpose field */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="purpose" className="block text-sm font-medium leading-6 text-gray-900">
+                      Purpose
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="purpose"
+                        name="purpose"
+                        type="text"
+                        autoComplete="off"
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Project Name field */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="project-name" className="block text-sm font-medium leading-6 text-gray-900">
+                      Project Name
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="project-name"
+                        name="project-name"
+                        type="text"
+                        autoComplete="off"
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      />
+                    </div>
+                  </div>
+
+                  {/* City field */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="city" className="block text-sm font-medium leading-6 text-gray-900">
+                      City
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="city"
+                        name="city"
+                        type="text"
+                        autoComplete="off"
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Locality/Area field */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="locality" className="block text-sm font-medium leading-6 text-gray-900">
+                      Locality/Area
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="locality"
+                        name="locality"
+                        type="text"
+                        autoComplete="off"
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Type of Travel dropdown */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="travel-type" className="block text-sm font-medium leading-6 text-gray-900">
+                      Type of Travel
+                    </label>
+                    <div className="mt-2 relative">
+                      <select
+                        id="travel-type"
+                        name="travelType"
+                        className="block w-full rounded-md border-0 py-1.5 pl-3 pr-21 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 appearance-none"
+                      >
+                        <option value="" disabled selected className="text-gray-400">Select one</option>
+                        <option value="Sales Marketing">Sales Marketing</option>
+                        <option value="Project">Project</option>
+                        <option value="Service Paid">Service Paid</option>
+                        <option value="Service Free">Service Free</option>
+                        <option value="Survey">Survey</option>
+                        <option value="Training">Training</option>
+                        <option value="Others">Others</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1">
+                        <ChevronDownIcon className="h-8 w-8 text-gray-400" aria-hidden="true" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Advanced Amount field */}
+                  <div className="sm:col-span-5">
+                    <label htmlFor="advanced-amount" className="block text-sm font-medium leading-6 text-gray-900">
+                      Advanced Amount
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="advanced-amount"
+                        name="advanced-amount"
+                        type="number"
+                        autoComplete="off"
+                        className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
+
+        {/* My Forms Section (placeholder) */}
+        {active === 'myforms' && (
+          <div>My Forms table goes here</div>
+        )}
+
       </div>
     </div>
   );

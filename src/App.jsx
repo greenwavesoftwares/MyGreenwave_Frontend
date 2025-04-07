@@ -11,10 +11,12 @@ import TravelDesk from "./Modules/TravelDesk/TravelDesk";
 import SalarySlip from "./Modules/SalarySlip/Salaryslip";
 import Login from "./Modules/Login/Login";
 import AdminPage from "./Modules/AdminPage/AdminPage";
+import TravelDeskDataTable from "./Modules/TravelDesk/TravelDeskDataTable";
 
 function App() {
   return (
     <Router>
+      
       {/* <DropdownCheckbox> </DropdownCheckbox> */}
       {/* <DialogComponent></DialogComponent> */}
       {/* <DatePicker></DatePicker> */}
@@ -26,6 +28,7 @@ function App() {
         <Route path="/leave-management" element={<LeaveManagement />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
+        <Route path="/TravelDeskDataTable" element={<TravelDeskDataTable />} />
       </Routes>
     </Router>
   );
