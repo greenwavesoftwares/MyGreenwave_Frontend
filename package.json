@@ -25,6 +25,7 @@
     "@tailwindcss/vite": "^4.0.14",
     "axios": "^1.8.4",
     "chart.js": "^4.4.8",
+    "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
     "primeflex": "^4.0.0",

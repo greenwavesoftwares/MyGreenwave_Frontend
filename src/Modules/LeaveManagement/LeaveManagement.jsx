@@ -23,11 +23,10 @@ import { TabView, TabPanel } from "primereact/tabview";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { ProductService } from "../../Services/ProductService";
-import { getCurrentDate } from "./LeaveFunctions";
+import { getCurrentDate, onPageLoad } from "./LeaveFunctions";
 
 const LeaveManagement = () => {
-  const [chartData, setChartData] = useState({});
-  const [chartOptions, setChartOptions] = useState({});
+  const [leaveData, setLeaveData] = useState({});
   const years = [2023, 2024, 2025];
   const [selectedYear, setSelectedYear] = useState(2025);
   const [applyLeaveDialogVisible, setApplyLeaveDialogVisible] = useState(false);
@@ -36,80 +35,14 @@ const LeaveManagement = () => {
   const toastRef = useRef(null);
   const [isCompensatory, setCompensatory] = useState(false);
   const [tableData, setTableData] = useState([]);
+  const userId = "abhishek.bhowmick@greenwave.co.in";
 
   useEffect(() => {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue("--text-color");
-    const textColorSecondary = documentStyle.getPropertyValue(
-      "--text-color-secondary"
-    );
-    const data = {
-      labels: ["January", "February", "March", "April", "May", "June", "July"],
-      datasets: [
-        {
-          type: "line",
-          label: "Cumulative Leave",
-          borderColor: documentStyle.getPropertyValue("--green-500"),
-          borderWidth: 2,
-          fill: false,
-          tension: 0.4,
-          data: [50, 25, 12, 48, 56, 76, 42],
-        },
-        {
-          type: "bar",
-          label: "Working Day",
-          backgroundColor: documentStyle.getPropertyValue("--yellow-300"),
-          data: [21, 84, 24, 75, 37, 65, 34],
-          borderColor: "white",
-          borderWidth: 2,
-        },
-        {
-          type: "bar",
-          label: "Attendence",
-          backgroundColor: documentStyle.getPropertyValue("--blue-500"),
-          data: [21, 84, 24, 75, 37, 65, 34],
-          borderColor: "white",
-          borderWidth: 2,
-        },
-        {
-          type: "bar",
-          label: "Leave",
-          backgroundColor: documentStyle.getPropertyValue("--red-500"),
-          data: [41, 52, 24, 74, 23, 21, 32],
-        },
-      ],
+    const init = async () => {
+      let data = await onPageLoad(userId, selectedYear);
+      setLeaveData(data);
     };
-    const options = {
-      maintainAspectRatio: false,
-      aspectRatio: 0.6,
-      plugins: {
-        legend: {
-          labels: {
-            color: textColor,
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            display: false,
-          },
-        },
-        y: {
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            display: false,
-          },
-        },
-      },
-    };
-    setChartData(data);
-    setChartOptions(options);
+    init();
     ProductService.getProducts().then((data) => setTableData(data));
   }, []);
 
@@ -159,8 +92,8 @@ const LeaveManagement = () => {
               <Chart
                 className="h-19rem"
                 type="line"
-                data={chartData}
-                options={chartOptions}
+                data={leaveData.chartData?.data}
+                options={leaveData.chartData?.options}
               />
             </Card>
           </Grid>
