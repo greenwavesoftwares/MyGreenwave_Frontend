@@ -1,0 +1,10 @@
+//
+@use '../../../base.scss';
+
+.dialogHeader.p-dialog .p-dialog-header {
+  padding: base.$dialogHeaderPadding;
+  font-size: base.$baseFontSize;
+}
+.dialogHeader.p-dialog .p-dialog-header .p-dialog-title{
+    font-size: base.$baseFontSize;
+}

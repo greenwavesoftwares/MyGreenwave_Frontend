@@ -12,6 +12,7 @@ import SalarySlip from "./Modules/SalarySlip/Salaryslip";
 import Login from "./Modules/Login/Login";
 import AdminPage from "./Modules/AdminPage/AdminPage";
 import TravelDeskDataTable from "./Modules/TravelDesk/TravelDeskDataTable";
+import Appraisal from "./Modules/Appraisal/Appraisal";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route path="/TravelDeskDataTable" element={<TravelDeskDataTable />} />
+        <Route path="/appraisal" element={<Appraisal />} />
       </Routes>
     </Router>
   );
