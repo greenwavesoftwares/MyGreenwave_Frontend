@@ -88,7 +88,7 @@ function Appraisal() {
 
         {/* Appraisal Form */}
         <Dialog
-        className="dialogHeader"
+        className="dialogHeader dialogContent"
           header="Add Appraiser Details"
           visible={dialogVisible}
           style={{ width: "30vw" }}

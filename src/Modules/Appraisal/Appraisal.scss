@@ -1,10 +1,17 @@
-//
-@use '../../../base.scss';
+//Importing the base styles
+@use "../../../base.scss";
 
+
+
+//Dialog Styles
 .dialogHeader.p-dialog .p-dialog-header {
   padding: base.$dialogHeaderPadding;
-  font-size: base.$baseFontSize;
+  font-size: base.$baseHeaderFontSize;
+  border-bottom: 1px solid base.$borderColor;
 }
-.dialogHeader.p-dialog .p-dialog-header .p-dialog-title{
-    font-size: base.$baseFontSize;
+.dialogHeader.p-dialog .p-dialog-header .p-dialog-title {
+  font-size: base.$baseHeaderFontSize;
+}
+.dialogContent.p-dialog .p-dialog-content{
+    padding: base.$dialogContentPadding;
 }
