@@ -47,7 +47,7 @@ const Login = () => {
                     onChange={(e) =>
                       setCredential({ ...credential, username: e.target.value })
                     }
-                    className="mb-3"
+                    className="mb-3  w-full"
                   />
 
                   <Password
@@ -59,7 +59,7 @@ const Login = () => {
                     placeholder="Password"
                     toggleMask
                     feedback={false}
-                    className="mb-3"
+                    className="mb-3 w-full"
                   ></Password>
 
                   {/* <div className="flex align-items-center justify-content-center mb-3 gap-5">
@@ -80,7 +80,7 @@ const Login = () => {
                       );
                       if (loginCheck) {
                         let userData = getUserData();
-                        navigate("/" + userData.userDetails.HomePage);
+                        navigate("/" + userData.userDetails.espHomepage);
                       }
                     }}
                   ></Button>
