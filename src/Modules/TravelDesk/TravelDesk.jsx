@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
+import TravelDeskDataTable from './TravelDeskDataTable' // update path as needed
+
 
 const TravelDesk = ({ onSubmit, onCancel }) => {
   // State to track active tab
@@ -231,6 +233,9 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="pt-10">
+              <TravelDeskDataTable />
             </div>
           </form>
         )}
