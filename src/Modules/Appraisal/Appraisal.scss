@@ -15,3 +15,21 @@
 .dialogContent.p-dialog .p-dialog-content{
     padding: base.$dialogContentPadding;
 }
+
+//DataTable Styles
+.dataTableHeader.p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
+  font-size: base.$dataTableHeaderFontSize;
+  padding: 0.5rem 1rem;
+  text-align: center !important;
+  border-bottom: 1px solid base.$borderColor;
+}
+.p-datatable .p-column-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+//Accordion Styles
+.accordionNoSpace .MuiAccordionDetails-root{
+  padding: 0 !important;
+}
