@@ -1,5 +1,6 @@
 import { setUserData } from "./Encrypt";
-import { getUserInfo, loginCheck } from "./LoginAPI";
+import { loginCheck } from "./LoginAPI";
+import { jwtDecode } from "jwt-decode";
 
 const checkCredential=async (credential,toastRef)=>{
     let success=false;
@@ -7,7 +8,7 @@ const checkCredential=async (credential,toastRef)=>{
     let data = await loginCheck(credential,toastRef);
     if(data!=null){
         userData.token=data.jwt;
-        userData.userDetails=await getUserInfo(userData.token,credential);
+        userData.userDetails=getUserDetails(data.jwt);
         if(userData.userDetails!=null){
             setUserData(userData);
             success=true;
@@ -21,5 +22,15 @@ const checkCredential=async (credential,toastRef)=>{
     }
     return success;
 }
+
+const getUserDetails = (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      return decoded;
+    } catch (error) {
+      console.error("Invalid JWT token", error);
+      return null;
+    }
+  };
 
 export {checkCredential}

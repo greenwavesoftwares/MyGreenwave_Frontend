@@ -13,9 +13,10 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fullcalendar/core": "^6.1.15",
-    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.17",
+    "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/list": "^6.1.15",
-    "@fullcalendar/react": "^6.1.15",
+    "@fullcalendar/react": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.15",
     "@heroicons/react": "^2.2.0",
     "@mui/icons-material": "^7.0.1",
@@ -28,7 +29,7 @@
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
-    "lucide-react": "^0.487.0",
+    "jwt-decode": "^4.0.0",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.3",
@@ -49,6 +50,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
+    "sass-embedded": "^1.86.3",
     "vite": "^6.2.0"
   }
 }
