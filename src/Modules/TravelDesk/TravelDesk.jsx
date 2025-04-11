@@ -50,6 +50,7 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
         </div>
 
         {/* Requisition Form Section */}
+        <div className="max-w-6xl mx-auto">
         {active === 'requisition' && (
           <form onSubmit={handleSubmit}>
             <div className="space-y-12">
@@ -59,7 +60,7 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
 
                 <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                   {/* Name field (disabled) */}
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-3 pl-3">
                     <label htmlFor="Name" className="block text-sm font-medium leading-6 text-gray-900">
                       Name
                     </label>
@@ -143,7 +144,7 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
                   </div>
 
                   {/* Project Name field */}
-                  <div className="sm:col-span-5">
+                  <div className="sm:col-span-5 pl-3">
                     <label htmlFor="project-name" className="block text-sm font-medium leading-6 text-gray-900">
                       Project Name
                     </label>
@@ -234,11 +235,12 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
                 </div>
               </div>
             </div>
-            <div className="pt-10">
+            <div className="pt-5">
               <TravelDeskDataTable />
             </div>
           </form>
         )}
+        </div>
 
         {/* My Forms Section (placeholder) */}
         {active === 'myforms' && (

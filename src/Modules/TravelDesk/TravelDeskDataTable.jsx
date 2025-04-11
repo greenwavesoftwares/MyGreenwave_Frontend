@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { PencilSquareIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, PlusIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 
 
@@ -82,27 +85,27 @@ const TravelDeskDataTable = () => {
             <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
                 <div className="relative overflow-hidden">
                     {/* Header */}
-                    <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
+                    <div className="flex flex-col px-4 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
                         <div className="flex items-center flex-1 space-x-4">
                             <h5 className="text-gray-500 text-lg font-semibold">
                                 Mode of Transport
                             </h5>
                         </div>
-                        <div className="flex flex-col flex-shrink-0 space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-3">
+                        <div className="flex flex-col flex-shrink-0 space-y-2 md:flex-row md:items-center md:space-y-0 md:space-x-2">
                             <button
                                 type="button"
                                 onClick={handleAdd}
-                                className="bg-white text-black border border-black px-4 py-2 rounded hover:bg-black hover:text-Black transition flex items-center"
+                                className="bg-white text-black border border-black px-3 py-1.5 rounded hover:bg-black hover:text-Black transition flex items-center text-sm"
                             >
-                                <PlusIcon className="w-5 h-5 mr-2" />
+                                <PlusIcon className="w-4 h-4 mr-1" />
                                 Add
                             </button>
                             <button
                                 type="button"
                                 onClick={handleExport}
-                                className="bg-white text-black border border-black px-4 py-2 rounded hover:bg-black hover:text-Black transition flex items-center"
+                                className="bg-white text-black border border-black px-3 py-1.5 rounded hover:bg-black hover:text-Black transition flex items-center text-sm"
                             >
-                                <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
+                                <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
                                 Export
                             </button>
                         </div>
@@ -128,9 +131,7 @@ const TravelDeskDataTable = () => {
                                                     <div className="relative">
                                                         <select
                                                             value={row.mode}
-                                                            onChange={(e) =>
-                                                                handleChange(index, "mode", e.target.value)
-                                                            }
+                                                            onChange={(e) => handleChange(index, "mode", e.target.value)}
                                                             className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10"
                                                         >
                                                             <option value="">Select</option>
@@ -139,12 +140,13 @@ const TravelDeskDataTable = () => {
                                                             <option value="Rental Car">Rental Car</option>
                                                             <option value="Others">Others</option>
                                                         </select>
-                                                        <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none pl-8" />
+                                                        <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
                                                     </div>
                                                 ) : (
                                                     row.mode
                                                 )}
                                             </td>
+
                                             <td className="px-4 py-3 text-center">
                                                 {row.isEditable ? (
                                                     <input
@@ -153,12 +155,13 @@ const TravelDeskDataTable = () => {
                                                         onChange={(e) =>
                                                             handleChange(index, "fromDate", e.target.value)
                                                         }
-                                                        className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"
+                                                        className="bg-white border border-gray-300 text-gray-900 text-sm rounded-md w-full px-3 py-2 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                                                     />
                                                 ) : (
                                                     row.fromDate
                                                 )}
                                             </td>
+
                                             <td className="px-2 py-2 w-[300px] max-w-[300px] align-middle text-center">
                                                 {row.isEditable ? (
                                                     <div className="flex items-center justify-center h-full w-full">
@@ -171,11 +174,14 @@ const TravelDeskDataTable = () => {
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center justify-center h-full w-full break-words text-center px-2 py-2">
-                                                        {row.comment}
+                                                    <div className="flex items-center justify-center h-full w-full px-2 py-2">
+                                                        <p className="break-words whitespace-pre-wrap text-center">
+                                                            {row.comment}
+                                                        </p>
                                                     </div>
                                                 )}
                                             </td>
+
 
                                             <td className="px-4 py-3 align-middle">
                                                 <div className="flex items-center gap-2 justify-start h-full">
