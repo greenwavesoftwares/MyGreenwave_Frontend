@@ -22,29 +22,46 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { TabView, TabPanel } from "primereact/tabview";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { ProductService } from "../../Services/ProductService";
-import { getCurrentDate, onPageLoad } from "./LeaveFunctions";
+import { getCurrentDate, getYearList, onPageLoad } from "./LeaveFunctions";
+import { getUserData } from "../Login/Encrypt";
+import "./LeaveManagement.css";
+import { Tooltip } from "primereact/tooltip";
 
 const LeaveManagement = () => {
   const [leaveData, setLeaveData] = useState({});
-  const years = [2023, 2024, 2025];
-  const [selectedYear, setSelectedYear] = useState(2025);
+  const [years, setYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(0);
   const [applyLeaveDialogVisible, setApplyLeaveDialogVisible] = useState(false);
   const [editLeaveDialogVisible, setEditLeaveDialogVisible] = useState(false);
   const [dates, setDates] = useState(null);
   const toastRef = useRef(null);
   const [isCompensatory, setCompensatory] = useState(false);
-  const [tableData, setTableData] = useState([]);
-  const userId = "abhishek.bhowmick@greenwave.co.in";
+  const userInfo = getUserData();
+
+  useEffect(() => {
+    console.log("userInfo : ", userInfo);
+    let yearList = getYearList();
+    setYears(yearList);
+    setSelectedYear(yearList[yearList.length - 1]);
+  }, []);
 
   useEffect(() => {
     const init = async () => {
-      let data = await onPageLoad(userId, selectedYear);
+      let data = await onPageLoad(userInfo.userDetails.userId, selectedYear);
       setLeaveData(data);
     };
-    init();
-    ProductService.getProducts().then((data) => setTableData(data));
-  }, []);
+
+    if (selectedYear !== 0) {
+      init();
+    }
+  }, [selectedYear]);
+
+  const editBodyTemplate = (row) => {
+    return <Button icon="pi pi-pencil" rounded outlined severity="warning" />;
+  };
+  const deleteBodyTemplate = (row) => {
+    return <Button icon="pi pi-trash" rounded outlined severity="danger" />;
+  };
 
   return (
     <>
@@ -65,25 +82,26 @@ const LeaveManagement = () => {
                 <Grid size={12}>
                   <Dropdown
                     value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.value)}
+                    onChange={async (e) => {
+                      setSelectedYear(e.value);
+                    }}
                     options={years}
-                    optionLabel="name"
                     placeholder="Select a Year"
                     className="w-full"
                   />
                 </Grid>
                 <Grid size={11}>Approved Leaves :</Grid>
-                <Grid size={1}>999</Grid>
+                <Grid size={1}>{leaveData.cardData?.approved}</Grid>
                 <Grid size={11}>Medical Leaves :</Grid>
-                <Grid size={1}>999</Grid>
+                <Grid size={1}>{leaveData.cardData?.medical}</Grid>
                 <Grid size={11}>CL Available :</Grid>
-                <Grid size={1}>999</Grid>
+                <Grid size={1}>{leaveData.cardData?.clBalance}</Grid>
                 <Grid size={11}>PL Available :</Grid>
-                <Grid size={1}>999</Grid>
+                <Grid size={1}>{leaveData.cardData?.plBalance}</Grid>
                 <Grid size={11}>Compensatory Leave Available :</Grid>
-                <Grid size={1}>999</Grid>
+                <Grid size={1}>{leaveData.cardData?.currentCompOff}</Grid>
                 <Grid size={11}>Previous PL Available :</Grid>
-                <Grid size={1}>999</Grid>
+                <Grid size={1}>{leaveData.cardData?.prevPL}</Grid>
               </Grid>
             </Card>
           </Grid>
@@ -101,38 +119,78 @@ const LeaveManagement = () => {
             <Card>
               <TabView>
                 <TabPanel header="Calender View">
+                  <Tooltip target="#selectedEvent" />
                   <Calender
                     initialView="dayGridMonth"
                     height={"31rem"}
+                    events={[
+                      {
+                        start: "2025-04-06",
+                        end: "2025-04-08",
+                        overlap: false,
+                        display: "background",
+                        id: "chuti 1",
+                      },
+                      {
+                        start: "2025-04-10",
+                        end: "2025-04-12",
+                        overlap: false,
+                        display: "background",
+                        id: "chuti 2",
+                      },
+                    ]}
+                    eventMouseEnter={(info) => {
+                      info.el.id = "selectedEvent";
+                      info.el.setAttribute("data-pr-tooltip", info.event.id);
+                    }}
                   ></Calender>
                 </TabPanel>
                 <TabPanel header="Tabular View">
                   <DataTable
-                    value={tableData}
+                    value={leaveData.tableData}
                     paginator
                     rows={10}
                     rowsPerPageOptions={[5, 10, 25, 50]}
-                    tableStyle={{ minWidth: "50rem" }}
                   >
                     <Column
-                      field="name"
-                      header="Name"
-                      style={{ width: "25%" }}
+                      field="fromDate"
+                      header="From Date"
+                      style={{ width: "12vw" }}
                     ></Column>
                     <Column
-                      field="description"
-                      header="Description"
-                      style={{ width: "25%" }}
+                      field="toDate"
+                      header="To Date"
+                      style={{ width: "12vw" }}
                     ></Column>
                     <Column
-                      field="category"
-                      header="Category"
-                      style={{ width: "25%" }}
+                      field="actualLeave"
+                      header="Leave"
+                      style={{ width: "10vw" }}
                     ></Column>
                     <Column
-                      field="quantity"
-                      header="Quantity"
-                      style={{ width: "25%" }}
+                      field="type"
+                      header="Type"
+                      style={{ width: "10vw" }}
+                    ></Column>
+                    <Column
+                      field="reason"
+                      header="Reason"
+                      style={{ width: "15vw" }}
+                    ></Column>
+                    <Column
+                      field="status"
+                      header="Status"
+                      style={{ width: "10vw" }}
+                    ></Column>
+                    <Column
+                      header="Edit"
+                      style={{ width: "10vw" }}
+                      body={editBodyTemplate}
+                    ></Column>
+                    <Column
+                      header="Delete"
+                      style={{ width: "10vw" }}
+                      body={deleteBodyTemplate}
                     ></Column>
                   </DataTable>
                 </TabPanel>

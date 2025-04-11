@@ -1,18 +1,28 @@
 import React from 'react';
 import { ProductService } from '../../Services/ProductService';
 import { getDataOnLoad } from './LeaveManagementAPI';
+import { format } from "date-fns";
 
 const onPageLoad = async(userId,year) => {
-    const leaveData={chartData:{},tableData:[]};
+    const leaveData={chartData:{},tableData:[],cardData:{}};
     let value=await getDataOnLoad(userId,year);
     leaveData.chartData= await setChartData(value.attendanceLeaveCount);
-    leaveData.tableData= await setTableData();
+    leaveData.tableData= value.userLeaves;
+    leaveData.cardData= value.userLeaveCounts;
     return leaveData;
     // downloadZip();
 }
 const getCurrentDate = () => {
     const currentDate=new Date();
     return currentDate;
+}
+const getYearList=()=>{
+  let year=2023;
+  const yearList=[];
+  for(let i=year;i<=format(new Date(),"yyyy");i++){
+    yearList.push(i);
+  }
+  return yearList;
 }
 const setChartData = async (chartData) => {
     let month=[],workingDay=[],attendance=[],leave=[],cumulativeLeave=[];
@@ -41,6 +51,7 @@ const setChartData = async (chartData) => {
           data: workingDay,
           borderColor: "white",
           borderWidth: 2,
+          order: 2
         },
         {
           type: "bar",
@@ -49,12 +60,14 @@ const setChartData = async (chartData) => {
           data: attendance,
           borderColor: "white",
           borderWidth: 2,
+          order: 2
         },
         {
           type: "bar",
           label: "Leave",
           backgroundColor: documentStyle.getPropertyValue("--red-500"),
           data: leave,
+          order: 2
         },
         {
             type: "line",
@@ -64,6 +77,7 @@ const setChartData = async (chartData) => {
             fill: false,
             tension: 0.4,
             data: cumulativeLeave,
+            order: 1
         }
       ],
     };
@@ -102,8 +116,5 @@ const setChartData = async (chartData) => {
 
     return dataOptions;
 }
-const setTableData = async (tableData) =>{
 
-}
-
-export {getCurrentDate,onPageLoad}
+export {getCurrentDate,onPageLoad,getYearList}

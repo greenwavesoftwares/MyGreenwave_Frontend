@@ -1,9 +1,18 @@
 import axios from "axios";
+import { getUserData } from "../Login/Encrypt";
+
+const endPoint = import.meta.env.VITE_END_POINT
+const userData=getUserData();
 
 export const getDataOnLoad = async (userId,year) => {
+    console.log("API token : ",userData.token);
     try{
         const response= await axios.get(
-            `http://localhost:8081/leaves/${year}/${userId}`
+            `${endPoint}leaves/${year}/${userId}`,
+            { headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userData.token}`
+            }}
         );
         return response.data;
     } catch (error) {
@@ -17,7 +26,7 @@ export function downloadZip() {
     const year = "2024";  // Example: Change dynamically as needed
     const userId = "kousik.mondal@greenwave.co.in";  // Example: Change dynamically as needed
  
-    fetch(`http://192.168.68.115:8081/salaryslip/Form16/${year}/${userId}`)
+    fetch(`${endPoint}salaryslip/Form16/${year}/${userId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error("File not found");

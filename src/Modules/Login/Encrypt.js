@@ -16,13 +16,13 @@ function decryptData(ciphertext) {
 
 //set User Deatails 
 const setUserData = (userDetails) => {
-    let key=(prefix,'userData');
-    localStorage.setItem(key, encryptData(userDetails));
+    localStorage.setItem(prefix+'userData', encryptData(userDetails));
 };
 //get User Deatails 
-const getUserData = () => {
-    let key=(prefix,'userData');
-    const user = decryptData(localStorage.getItem(key));
-    return user;
+const  getUserData = () => {
+    let data=localStorage.getItem(prefix+'userData');
+
+    if(data) return decryptData(data);
+    else return null;
 };
 export {setUserData,getUserData}

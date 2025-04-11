@@ -10,7 +10,7 @@ const loginCheck = async (credential,toastRef) => {
         );
         return response.data;
     } catch (error) {
-        // console.error("Error fetching forminfo with versions:", error);
+         console.error("Error fetching forminfo with versions:", error);
         const response=error.response.data;
         if(error.status===500){
             showErrorMessage(toastRef,"Error",response.error);
