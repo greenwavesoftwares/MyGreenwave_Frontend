@@ -4,40 +4,103 @@ import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { TabView, TabPanel } from "primereact/tabview";
-import React, { useState } from "react";
-import ApprisaDialog from "./AppraisalForm";
+import React, { useEffect, useRef, useState } from "react";
+//Toast
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "../../components/Toast/ShowMessage";
+import Toast from "../../components/Toast/Toast";
+//Import AppraisalDialog
+import AppraisalDialog from "./AppraisalForm";
+//SCSS Import
 import "./Appraisal.scss";
+//Auth Token
+import { getUserData } from "../Login/Encrypt";
+//Call Api
+import { appraisalAPI, appraiserFormApi } from "./AppraisalAPI";
+//Format Date
+import { formatDate } from "./formatDate";
 
 function Appraisal() {
+  //For Toast
+  const toastRef = useRef(null);
   //Dialog Visible State
   const [dialogVisible, setDialogVisible] = useState(false);
-//Show Form Dialog Visible State
+  //Show Form Dialog Visible State
   const [showFormDialog, setShowFormDialog] = useState(false);
-
   //Set Appraiser Details
   const [empName, setEmpName] = useState(null);
   const [date, setDate] = useState(null);
   const [reviewerName, setReviewerName] = useState(null);
   const [appraiserName, setAppraiserName] = useState(null);
+  //API Data Set
+  const [appraisalData, setAppraisalData] = useState();
+
+  //token
+  const getAuthToken = getUserData().token;
 
   //Form Submit Handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const appraiserFromData = [
-      {
-        emp_name: empName.name,
-        LastUpdated: date,
-        reviewerName: reviewerName.name,
-        appraiserName: appraiserName.name,
-      },
-    ];
-    console.log("Form submitted", appraiserFromData);
+    const appraiserFromData = {
+      empName: empName?.userName,
+      empId: empName?.userID,
+      appraisalsDate: formatDate(date),
+      reviewerName: reviewerName?.userName,
+      reviewerId: reviewerName?.userID,
+      appraiserName: appraiserName?.userName,
+      appraiserId: appraiserName?.userID,
+    };
+    console.log("New Appraiser Form submitted", appraiserFromData);
 
-    //setDialogVisible(true);
+
+    //reset from
+    // e.target.reset();
+    // // Reset state variables
+    // setEmpName(null);
+    // setDate(null);
+    // setReviewerName(null);
+    // setAppraiserName(null);
+
+
+    //Save Appraiser Form Data (API)
+    const response = await appraiserFormApi(appraiserFromData,getAuthToken);
+    //If Date Successfully Saved
+    if (response?.status == 200) {
+      //Toast For Success Submitted
+      showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
+      //Dialog Close
+      setDialogVisible(false);
+    }
+    else{
+      showErrorMessage(toastRef, "Error", "Internal Server Error");
+    }
+    console.log("Response from API", response);
   };
 
   //temp data
-  const empList = [{ name: "test1" }, { name: "test2" }, { name: "test3" }];
+  //const empList = [{ userName: "test1" }, { userName: "test2" }, { userName: "test3" }];
+  //Call Api
+  useEffect(() => {
+      const getAppraisalData = async () => {
+      try {
+      const localStorageAuth = getUserData();
+      const authToken = localStorageAuth.token;
+      const employeeName = localStorageAuth.userDetails.sub;
+      const response = await appraisalAPI(authToken, employeeName);
+      setAppraisalData(response);
+      console.log("set_Appraisal_data", response);  
+      } catch (error) {
+        console.error("Error fetching appraisal data:", error);
+      }        
+    };
+    getAuthToken
+    getAppraisalData();
+  }, []);
+
+  
+
   return (
     <>
       {/* Appraisal Header */}
@@ -56,7 +119,11 @@ function Appraisal() {
               {/* Appraisal Form Buttons */}
               <div className="flex items-center gap-4">
                 <p className="font-medium">Appraisal Form</p>
-                <Button variant="contained" size="small" onClick={() => setShowFormDialog(true)}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => setShowFormDialog(true)}
+                >
                   Show Form
                 </Button>
                 <Button
@@ -88,7 +155,7 @@ function Appraisal() {
 
         {/* Appraisal Form */}
         <Dialog
-        className="dialogHeader dialogContent"
+          className="dialogHeader dialogContent"
           header="Add Appraiser Details"
           visible={dialogVisible}
           style={{ width: "30vw" }}
@@ -109,10 +176,10 @@ function Appraisal() {
                     id="buttondisplay"
                     required
                     onChange={(e) => setEmpName(e.value)}
-                    options={empList}
-                    optionLabel="name"
+                    options={appraisalData?.employeeidlist}
+                    optionLabel="userName"
                     placeholder="Employee Name"
-                    className="w-full"
+                    className="w-full p-inputtext-sm"
                   />
                 </div>
 
@@ -125,8 +192,9 @@ function Appraisal() {
                     value={date}
                     onChange={(e) => setDate(e.value)}
                     showIcon
-                    className="w-full"
+                    className="w-full p-inputtext-sm"
                     placeholder="Appraisal Date"
+                    dateFormat="yy-mm-dd"
                   />
                 </div>
                 <div className="flex-auto">
@@ -138,10 +206,10 @@ function Appraisal() {
                     required
                     id="buttondisplay"
                     onChange={(e) => setReviewerName(e.value)}
-                    options={empList}
-                    optionLabel="name"
+                    options={appraisalData?.reviewerlist}
+                    optionLabel="userName"
                     placeholder="Reviewer"
-                    className="w-full"
+                    className="w-full p-inputtext-sm"
                     size="small"
                   />
                 </div>
@@ -154,10 +222,10 @@ function Appraisal() {
                     required
                     id="buttondisplay"
                     onChange={(e) => setAppraiserName(e.value)}
-                    options={empList}
-                    optionLabel="name"
+                    options={appraisalData?.appraiserlist}
+                    optionLabel="userName"
                     placeholder="Appraiser (Hr Dept)"
-                    className="w-full"
+                    className="w-full p-inputtext-sm"
                   />
                 </div>
 
@@ -173,9 +241,12 @@ function Appraisal() {
             </div>
           </div>
         </Dialog>
-        <ApprisaDialog visible={showFormDialog} onClose={()=>setShowFormDialog(false)} />
-
+        <AppraisalDialog
+          visible={showFormDialog}
+          onClose={() => setShowFormDialog(false)}
+        />
       </div>
+      <Toast ref={toastRef} />
     </>
   );
 }
