@@ -3,6 +3,7 @@ import { Toast } from 'primereact/toast';
 
 const endPoint = import.meta.env.VITE_END_POINT
 const appraisalForm='http://localhost:8070/appraisalForm'
+const form='http://localhost:8070/appraisalFrom'
 
 const appraisalAPI = async (token,empName) => {
   try {
@@ -19,7 +20,6 @@ const appraisalAPI = async (token,empName) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    // Handle error here, e.g., show a toast notification
     
   }
 };
@@ -27,7 +27,7 @@ const appraisalAPI = async (token,empName) => {
 const appraiserFormApi =async (appraiserFromData,getAuthToken)=>{
   console.log("appraiserFormApiToken",appraiserFromData,getAuthToken);
     try {
-        const response= await axios.post('http://localhost:8081/appraisal',appraiserFromData,{
+        const response= await axios.post(`${endPoint}appraisal`,appraiserFromData,{
         headers: {
           Authorization: `Bearer ${getAuthToken}`,
         },
@@ -52,4 +52,16 @@ const appraisalPutApi=async(appraisalFormData)=>{
 }
 
 
-export { appraisalAPI,appraiserFormApi,appraisalPutApi };
+
+const currentAppraisalFormAPI=async()=>{
+  try {
+    const response = await axios.get(`${form}`)
+    console.log("CurrentAppraisalForm",response);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+export { appraisalAPI,appraiserFormApi,appraisalPutApi,currentAppraisalFormAPI };

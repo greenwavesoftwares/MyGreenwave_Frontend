@@ -18,7 +18,11 @@ import "./Appraisal.scss";
 //Auth Token
 import { getUserData } from "../Login/Encrypt";
 //Call Api
-import { appraisalAPI, appraiserFormApi } from "./AppraisalAPI";
+import {
+  appraisalAPI,
+  appraiserFormApi,
+  currentAppraisalFormAPI,
+} from "./AppraisalAPI";
 //Format Date
 import { formatDate } from "./formatDate";
 
@@ -27,8 +31,7 @@ function Appraisal() {
   const toastRef = useRef(null);
   //Dialog Visible State
   const [dialogVisible, setDialogVisible] = useState(false);
-  //Show Form Dialog Visible State
-  const [showFormDialog, setShowFormDialog] = useState(false);
+
   //Set Appraiser Details
   const [empName, setEmpName] = useState(null);
   const [date, setDate] = useState(null);
@@ -36,9 +39,11 @@ function Appraisal() {
   const [appraiserName, setAppraiserName] = useState(null);
   //API Data Set
   const [appraisalData, setAppraisalData] = useState();
+  const [appraiserForm, setAppraiserForm] = useState();
 
   //token
-  const getAuthToken = getUserData().token;
+  const getAuthToken = getUserData()?.token;
+  let currentUserName = getUserData()?.userDetails.sub;
 
   //Form Submit Handler
   const handleSubmit = async (e) => {
@@ -54,7 +59,6 @@ function Appraisal() {
     };
     console.log("New Appraiser Form submitted", appraiserFromData);
 
-
     //reset from
     // e.target.reset();
     // // Reset state variables
@@ -63,17 +67,15 @@ function Appraisal() {
     // setReviewerName(null);
     // setAppraiserName(null);
 
-
     //Save Appraiser Form Data (API)
-    const response = await appraiserFormApi(appraiserFromData,getAuthToken);
+    const response = await appraiserFormApi(appraiserFromData, getAuthToken);
     //If Date Successfully Saved
     if (response?.status == 200) {
       //Toast For Success Submitted
       showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
       //Dialog Close
       setDialogVisible(false);
-    }
-    else{
+    } else {
       showErrorMessage(toastRef, "Error", "Internal Server Error");
     }
     console.log("Response from API", response);
@@ -83,23 +85,52 @@ function Appraisal() {
   //const empList = [{ userName: "test1" }, { userName: "test2" }, { userName: "test3" }];
   //Call Api
   useEffect(() => {
-      const getAppraisalData = async () => {
+    const getAppraisalData = async () => {
       try {
-      const localStorageAuth = getUserData();
-      const authToken = localStorageAuth.token;
-      const employeeName = localStorageAuth.userDetails.sub;
-      const response = await appraisalAPI(authToken, employeeName);
-      setAppraisalData(response);
-      console.log("set_Appraisal_data", response);  
+        const localStorageAuth = getUserData();
+        const authToken = localStorageAuth?.token;
+        const employeeName = localStorageAuth?.userDetails.sub;
+        const response = await appraisalAPI(authToken, employeeName);
+
+        setAppraisalData(response);
+        console.log("set_Appraisal_data", response);
+        //Current Appraisal Data
+        const currentAppraisalData = await currentAppraisalFormAPI();
+        console.log("currentAppraisalData_API", currentAppraisalData);
+        setAppraiserForm(currentAppraisalData?.data);
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
-      }        
+      }
     };
-    getAuthToken
+    getAuthToken;
+    currentUserName;
     getAppraisalData();
   }, []);
+  console.log("reviewerName", reviewerName);
 
+
+
+  //Tab Visible For Only Reviewer
+  const listOfReviewer = appraisalData?.reviewerlist;
+  console.log("listOfReviewer", listOfReviewer);
   
+  //Check if Reviewer Name And Current USer Name Are Same
+  const isReviewer = listOfReviewer?.some((ele) => {
+    return ele.userID.toLowerCase() === currentUserName.toLowerCase();
+  });
+  console.log("isReviewer_Check", isReviewer);
+
+
+  //Tab Visible For Only Approve Appraisals
+  const listOfApprove = appraisalData?.appraiserlist;
+  //console.log("listOfApprove", listOfApprove);
+  const isApprove=listOfApprove?.some((ele)=>{
+    return ele.userID.toLowerCase()===currentUserName.toLowerCase();
+  })
+  console.log("isApprove",isApprove);
+
+
+
 
   return (
     <>
@@ -118,17 +149,10 @@ function Appraisal() {
 
               {/* Appraisal Form Buttons */}
               <div className="flex items-center gap-4">
-                <p className="font-medium">Appraisal Form</p>
                 <Button
                   variant="contained"
                   size="small"
-                  onClick={() => setShowFormDialog(true)}
-                >
-                  Show Form
-                </Button>
-                <Button
-                  variant="contained"
-                  size="small"
+                  sx={{ boxShadow: "none" }}
                   onClick={() => setDialogVisible(true)}
                 >
                   New Form
@@ -141,14 +165,14 @@ function Appraisal() {
         {/* Appraisal Details */}
         <div className="container mx-auto mt-2">
           <TabView>
-            <TabPanel header="Review Appraisals">
+            <TabPanel header="Review Appraisals" >
               <p className="m-0">Review Appraisals</p>
             </TabPanel>
-            <TabPanel header="Approve Appraisals">
+            <TabPanel header="Approve Appraisals" >
               <p className="m-0">Approve Appraisals</p>
             </TabPanel>
             <TabPanel header="My Previous Forms">
-              <p>My Previous Forms</p>
+              <AppraisalDialog appraiserForm={appraiserForm} />
             </TabPanel>
           </TabView>
         </div>
@@ -174,6 +198,7 @@ function Appraisal() {
                   <Dropdown
                     value={empName}
                     id="buttondisplay"
+                    filter
                     required
                     onChange={(e) => setEmpName(e.value)}
                     options={appraisalData?.employeeidlist}
@@ -204,6 +229,7 @@ function Appraisal() {
                   <Dropdown
                     value={reviewerName}
                     required
+                    filter
                     id="buttondisplay"
                     onChange={(e) => setReviewerName(e.value)}
                     options={appraisalData?.reviewerlist}
@@ -220,6 +246,7 @@ function Appraisal() {
                   <Dropdown
                     value={appraiserName}
                     required
+                    filter
                     id="buttondisplay"
                     onChange={(e) => setAppraiserName(e.value)}
                     options={appraisalData?.appraiserlist}
@@ -241,10 +268,6 @@ function Appraisal() {
             </div>
           </div>
         </Dialog>
-        <AppraisalDialog
-          visible={showFormDialog}
-          onClose={() => setShowFormDialog(false)}
-        />
       </div>
       <Toast ref={toastRef} />
     </>
