@@ -13,6 +13,8 @@ import Login from "./Modules/Login/Login";
 import AdminPage from "./Modules/AdminPage/AdminPage";
 import TravelDeskDataTable from "./Modules/TravelDesk/TravelDeskDataTable";
 import Appraisal from "./Modules/Appraisal/Appraisal";
+import Claim from "./Modules/Claims/Claim";
+
 
 function App() {
   return (
@@ -31,6 +33,7 @@ function App() {
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route path="/TravelDeskDataTable" element={<TravelDeskDataTable />} />
         <Route path="/appraisal" element={<Appraisal />} />
+        <Route path="/claim" element={<Claim/>} />
       </Routes>
     </Router>
   );
