@@ -19,9 +19,18 @@
 //DataTable Styles
 .dataTableHeader.p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
   font-size: base.$dataTableHeaderFontSize;
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 0.7rem;
   text-align: center !important;
   border-bottom: 1px solid base.$borderColor;
+}
+.dataTableBody.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+  font-size: base.$dataTableHeaderFontSize;
+  padding: base.$noPadding !important;
+  text-align: center !important;
+  border-bottom: 1px solid base.$borderColor;
+}
+.dataTableBodyPadding.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td{
+  padding: base.$noPadding !important;
 }
 .p-datatable .p-column-header-content {
   display: flex;
