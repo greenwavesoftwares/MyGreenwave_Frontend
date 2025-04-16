@@ -11,7 +11,7 @@ import TravelDesk from "./Modules/TravelDesk/TravelDesk";
 import SalarySlip from "./Modules/SalarySlip/Salaryslip";
 import Login from "./Modules/Login/Login";
 import AdminPage from "./Modules/AdminPage/AdminPage";
-import TravelDeskDataTable from "./Modules/TravelDesk/TravelDeskDataTable";
+import ModeOfTransportTable from "./Modules/TravelDesk/ModeOfTransportTable";
 import Appraisal from "./Modules/Appraisal/Appraisal";
 import Claim from "./Modules/Claims/Claim";
 
@@ -31,7 +31,7 @@ function App() {
         <Route path="/leave-management" element={<LeaveManagement />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
-        <Route path="/TravelDeskDataTable" element={<TravelDeskDataTable />} />
+        <Route path="/ModeOfTransportTable" element={<ModeOfTransportTable />} />
         <Route path="/appraisal" element={<Appraisal />} />
         <Route path="/claim" element={<Claim/>} />
       </Routes>

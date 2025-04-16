@@ -1,12 +1,42 @@
-import React, { useState } from 'react';
-import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid';
+import React, { useState, useEffect  } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
-import TravelDeskDataTable from './TravelDeskDataTable' // update path as needed
+import ModeOfTransportTable from './ModeOfTransportTable' // update path as needed
+import { getUserData } from '../Login/Encrypt'; // adjust path if needed
 
-
-const TravelDesk = ({ onSubmit, onCancel }) => {
-  // State to track active tab
+const TravelDesk = ({ onSubmit }) => {
   const [active, setActive] = useState('requisition');
+  const [userInfo, setUserInfo] = useState({
+    name: '',
+    department: '',
+    employeeCode: '',
+    date: '',
+  });
+
+  const [formFields, setFormFields] = useState({
+    purpose: '',
+    projectName: '',
+    city: '',
+    locality: '',
+    typeOfTravel: '',
+    advanceAmount: ''
+  });
+  
+
+
+  useEffect(() => {
+    const userData = getUserData();
+    console.log("Fetched userData from localStorage:", userData);
+  
+    if (userData && userData.userDetails) {
+      const today = new Date().toISOString().slice(0, 10);
+      setUserInfo({
+        name: userData.userDetails.userName || '',
+        department: userData.userDetails.department || '',
+        employeeCode: userData.userDetails.employeeId || '',
+        date: today,
+      });
+    }
+  }, []);
 
   // Form submission handler
   const handleSubmit = (e) => {
@@ -56,76 +86,70 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
             <div className="space-y-12">
               {/* Personal Information Section */}
               <div>
-                <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">Travel Requisition Form</h2>
+                <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
+                Travel Requisition Form</h2>
 
                 <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                   {/* Name field (disabled) */}
                   <div className="sm:col-span-3 pl-3">
-                    <label htmlFor="Name" className="block text-sm font-medium leading-6 text-gray-900">
-                      Name
-                    </label>
-                    <div className="mt-2">
-                      <input
-                        type="text"
-                        name="Name"
-                        id="Name"
-                        value="Rudraneel Ghosh"
-                        disabled
-                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
-                      />
+                      <label htmlFor="Name" className="block text-sm font-medium leading-6 text-gray-900">Name</label>
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          name="Name"
+                          id="Name"
+                          value={userInfo.name}
+                          disabled
+                          className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm cursor-not-allowed"
+                        />
+                      </div>
                     </div>
-                  </div>
+
 
                   {/* Date field (disabled) */}
                   <div className="sm:col-span-3">
-                    <label htmlFor="Date" className="block text-sm font-medium leading-6 text-gray-900">
-                      Date
-                    </label>
-                    <div className="mt-2">
-                      <input
-                        type="text"
-                        name="Date"
-                        id="Date"
-                        value="2025-04-03"
-                        disabled
-                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
-                      />
+                      <label htmlFor="Date" className="block text-sm font-medium leading-6 text-gray-900">Date</label>
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          name="Date"
+                          id="Date"
+                          value={userInfo.date}
+                          disabled
+                          className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm cursor-not-allowed"
+                        />
+                      </div>
                     </div>
-                  </div>
 
                   {/* Department field (disabled) */}
                   <div className="sm:col-span-4">
-                    <label htmlFor="department" className="block text-sm font-medium leading-6 text-gray-900">
-                      Department
-                    </label>
-                    <div className="mt-2">
-                      <input
-                        id="department"
-                        name="department"
-                        type="text"
-                        value="Software"
-                        disabled
-                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
-                      />
+                      <label htmlFor="department" className="block text-sm font-medium leading-6 text-gray-900">Department</label>
+                      <div className="mt-2">
+                        <input
+                          id="department"
+                          name="department"
+                          type="text"
+                          value={userInfo.department}
+                          disabled
+                          className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm cursor-not-allowed"
+                        />
+                      </div>
                     </div>
-                  </div>
 
                   {/* Employee Code field (disabled) */}
                   <div className="sm:col-span-5">
-                    <label htmlFor="employee-code" className="block text-sm font-medium leading-6 text-gray-900">
-                      Employee Code
-                    </label>
-                    <div className="mt-2">
-                      <input
-                        id="employee-code"
-                        name="employeeCode"
-                        type="text"
-                        value="152"
-                        disabled
-                        className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm sm:leading-6 cursor-not-allowed"
-                      />
+                      <label htmlFor="employeeCode" className="block text-sm font-medium leading-6 text-gray-900">Employee Code</label>
+                      <div className="mt-2">
+                        <input
+                          id="employeeCode"
+                          name="employeeCode"
+                          type="text"
+                          value={userInfo.employeeCode}
+                          disabled
+                          className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm cursor-not-allowed"
+                        />
+                      </div>
                     </div>
-                  </div>
 
                   {/* Purpose field */}
                   <div className="sm:col-span-5">
@@ -236,7 +260,7 @@ const TravelDesk = ({ onSubmit, onCancel }) => {
               </div>
             </div>
             <div className="pt-5">
-              <TravelDeskDataTable />
+              <ModeOfTransportTable />
             </div>
           </form>
         )}

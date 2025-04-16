@@ -2,24 +2,25 @@ import React, { useState } from "react";
 import { PencilSquareIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, PlusIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 
-
-
-
-const TravelDeskDataTable = () => {
+const ModeOfTransportTable = ({ disableAddRow }) => {
     const [rows, setRows] = useState([]);
 
     const handleAdd = () => {
+        if (disableAddRow) {
+            alert("Please fill all required fields before adding a row.");
+            return;
+        }
+    
         setRows([
             ...rows,
             {
                 mode: "",
                 fromDate: "",
                 comment: "",
-                isEditable: true, // new rows are editable initially
+                isEditable: true,
             },
         ]);
     };
@@ -95,6 +96,7 @@ const TravelDeskDataTable = () => {
                             <button
                                 type="button"
                                 onClick={handleAdd}
+                                disabled={disableAddRow}
                                 className="bg-white text-black border border-black px-3 py-1.5 rounded hover:bg-black hover:text-Black transition flex items-center text-sm"
                             >
                                 <PlusIcon className="w-4 h-4 mr-1" />
@@ -231,4 +233,4 @@ const TravelDeskDataTable = () => {
     );
 };
 
-export default TravelDeskDataTable;
+export default ModeOfTransportTable;
