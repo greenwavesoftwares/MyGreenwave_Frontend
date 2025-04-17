@@ -6,7 +6,7 @@ import { InputText } from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
 import { FileUpload } from 'primereact/fileupload';
 import { Toast } from 'primereact/toast';
-
+import { InputTextarea } from 'primereact/inputtextarea';
 
 const Claim = () => {
   const [selectedClaimType, setSelectedClaimType] = useState(null);
@@ -23,7 +23,7 @@ const Claim = () => {
   };
   return (
     <div>
-      <div className='container mx-auto mt-4'>
+      <div className='max-w-[85rem] mx-auto p-6 min-h-screen bg-gray-100'>
         <TabView >
           <TabPanel header="New Claim">
             <div className="p-4">
@@ -150,7 +150,61 @@ const Claim = () => {
                     <div className="flex justify-center w-full">
                       <Button label="Apply" icon="pi pi-check" />
                     </div>
-                  </div> 
+                  </div>
+                </div>
+              )}
+
+              {selectedClaimType === 'Miscellaneous Claim' && (
+                <div className="mt-6 bg-white p-6 rounded-2xl shadow-md border border-gray-200 mx-4 md:mx-8">
+                  {/* Header */}
+                  <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                    <label className="text-lg font-semibold text-gray-800">Miscellaneous Claim</label>
+                    <div>
+                      <Toast ref={toast} />
+                      <FileUpload
+                        mode="basic"
+                        name="demo[]"
+                        url="/api/upload"
+                        accept="image/*"
+                        maxFileSize={1000000}
+                        onUpload={onUpload}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ml-4 mr-4">
+                    <div>
+                      <label htmlFor="Select-Travel" className="block text-sm font-medium text-gray-700 mb-1">Claim Type</label>
+                      <Dropdown inputId="Select-Travel" className="w-62" />
+                    </div>
+
+                    <div>
+                      <label htmlFor="emp-code" className="block text-sm font-medium text-gray-700 mb-1">Employee Code</label>
+                      <div className="w-62 bg-gray-100 shadow-sm rounded-md px-4 py-2 h-12 flex items-center text-gray-700">
+                        156
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="Project-Name" className="block text-sm font-medium text-gray-700 mb-1">Claim Amount (INR)</label>
+                      <InputText inputId="Project-Name" className="w-62 h-12 rounded-md shadow-sm" />
+                    </div>
+                    <div className='flex gap-6'>
+                      <div>
+                        <label htmlFor="On-Account" className="block text-sm font-medium text-gray-700 mb-1">Details of the Claim</label>
+                        <InputTextarea
+                          inputId="On-Account"
+                          className="w-62 h-24 rounded-md shadow-sm"
+                          // autoResize
+                          // rows={3}
+                          placeholder="Enter details of the claim"
+                        />
+                      </div>
+                      <Button label="Apply" icon="pi pi-check" className='h-14 mt-10' />
+                    </div>
+
+
+                  </div>
                 </div>
               )}
 

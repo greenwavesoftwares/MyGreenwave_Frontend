@@ -14,6 +14,10 @@ import AdminPage from "./Modules/AdminPage/AdminPage";
 import ModeOfTransportTable from "./Modules/TravelDesk/ModeOfTransportTable";
 import Appraisal from "./Modules/Appraisal/Appraisal";
 import Claim from "./Modules/Claims/Claim";
+import TourClaim from './Modules/Claims/TourClaim'
+import MiscellaneousClaim from './Modules/Claims/MiscellaneousClaim'
+import LoanApplication from './Modules/Claims/LoanApplication'
+
 
 
 function App() {
@@ -34,6 +38,12 @@ function App() {
         <Route path="/ModeOfTransportTable" element={<ModeOfTransportTable />} />
         <Route path="/appraisal" element={<Appraisal />} />
         <Route path="/claim" element={<Claim/>} />
+        <Route path="/tour-claim" element={<TourClaim/>} />
+        <Route path="/miscellaneous-claim" element={<MiscellaneousClaim/>} />
+        <Route path="/loan-application" element={<LoanApplication/>} />
+        
+
+        
       </Routes>
     </Router>
   );
