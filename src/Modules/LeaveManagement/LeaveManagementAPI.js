@@ -5,10 +5,9 @@ const endPoint = import.meta.env.VITE_END_POINT
 const userData=getUserData();
 
 export const getDataOnLoad = async (userId,year) => {
-    console.log("API token : ",userData.token);
     try{
         const response= await axios.get(
-            `${endPoint}leaves/${year}/${userId}`,
+            `${endPoint}leaves/${year}`,
             { headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${userData.token}`

@@ -1,4 +1,9 @@
-import { Container } from "@mui/material";
+import {
+  Container,
+  IconButton,
+  InputAdornment,
+  TextField,
+} from "@mui/material";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Image } from "primereact/image";
@@ -11,11 +16,13 @@ import { useNavigate } from "react-router-dom";
 import Grid from "../../components/Grid/Grid";
 import Toast from "../../components/Toast/Toast";
 import { getUserData } from "./Encrypt";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Login = () => {
   const [credential, setCredential] = useState({ username: "", password: "" });
   const navigate = useNavigate();
   const toastRef = useRef(null);
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <>
       <Toast ref={toastRef}></Toast>
@@ -39,28 +46,46 @@ const Login = () => {
                 </div>
 
                 <div className="text-center mb-3">
-                  <InputText
-                    id="email1"
-                    value={credential.username}
-                    type="text"
-                    placeholder="Email address"
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    variant="outlined"
+                    margin="normal"
+                    size="small"
                     onChange={(e) =>
                       setCredential({ ...credential, username: e.target.value })
                     }
-                    className="mb-3  w-full"
+                    InputLabelProps={{ shrink: true }}
                   />
-
-                  <Password
-                    inputId="password1"
-                    value={credential.password}
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type={showPassword ? "text" : "password"}
+                    variant="outlined"
+                    margin="normal"
+                    size="small"
                     onChange={(e) =>
                       setCredential({ ...credential, password: e.target.value })
                     }
-                    placeholder="Password"
-                    toggleMask
-                    feedback={false}
-                    className="mb-3 w-full"
-                  ></Password>
+                    InputLabelProps={{ shrink: true }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            aria-label="toggle password visibility"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                          >
+                            {showPassword ? (
+                              <Visibility fontSize="small" />
+                            ) : (
+                              <VisibilityOff fontSize="small" />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
 
                   {/* <div className="flex align-items-center justify-content-center mb-3 gap-5">
                   <a

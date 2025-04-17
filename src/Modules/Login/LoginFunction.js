@@ -1,6 +1,6 @@
+import { Navigate } from "react-router-dom";
 import { setUserData } from "./Encrypt";
-import { loginCheck } from "./LoginAPI";
-import { jwtDecode } from "jwt-decode";
+import { loginCheck,getUserDetails } from "./LoginAPI";
 
 const checkCredential=async (credential,toastRef)=>{
     let success=false;
@@ -8,7 +8,7 @@ const checkCredential=async (credential,toastRef)=>{
     let data = await loginCheck(credential,toastRef);
     if(data!=null){
         userData.token=data.jwt;
-        userData.userDetails=getUserDetails(data.jwt);
+        userData.userDetails=getUserDetail(data.jwt);
         if(userData.userDetails!=null){
             setUserData(userData);
             success=true;
@@ -23,14 +23,8 @@ const checkCredential=async (credential,toastRef)=>{
     return success;
 }
 
-const getUserDetails = (token) => {
-    try {
-      const decoded = jwtDecode(token);
-      return decoded;
-    } catch (error) {
-      console.error("Invalid JWT token", error);
-      return null;
-    }
-  };
-
+const getUserDetail = (token) => {
+    const userDetails = getUserDetails(token);
+    return userDetails;
+};
 export {checkCredential}
