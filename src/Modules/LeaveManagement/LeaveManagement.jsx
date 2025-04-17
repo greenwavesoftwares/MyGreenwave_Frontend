@@ -26,6 +26,10 @@ import { getCurrentDate, getYearList, onPageLoad } from "./LeaveFunctions";
 import { getUserData } from "../Login/Encrypt";
 import "./LeaveManagement.css";
 import { Tooltip } from "primereact/tooltip";
+import { Badge } from "primereact/badge";
+import { Tag } from "primereact/tag";
+import { MultiSelect } from "primereact/multiselect";
+import { FilterMatchMode } from "primereact/api";
 
 const LeaveManagement = () => {
   const [leaveData, setLeaveData] = useState({});
@@ -35,11 +39,26 @@ const LeaveManagement = () => {
   const [editLeaveDialogVisible, setEditLeaveDialogVisible] = useState(false);
   const [dates, setDates] = useState(null);
   const toastRef = useRef(null);
+  const tooltipRef = useRef(null);
   const [isCompensatory, setCompensatory] = useState(false);
   const userInfo = getUserData();
+  const statusTypes = [
+    "Pending",
+    "Reviewing",
+    "Reviewed",
+    "ManagerApproved",
+    "Approved",
+    "Rejected",
+  ];
+  const leaveTypes = ["PL", "CL", "Medical", "Compensatory"];
+  const [leaveTableFilters, setLeaveTableFilters] = useState({
+    fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    type: { value: null, matchMode: FilterMatchMode.IN },
+    status: { value: null, matchMode: FilterMatchMode.IN },
+  });
 
   useEffect(() => {
-    console.log("userInfo : ", userInfo);
+    console.log(userInfo?.token);
     let yearList = getYearList();
     setYears(yearList);
     setSelectedYear(yearList[yearList.length - 1]);
@@ -57,10 +76,71 @@ const LeaveManagement = () => {
   }, [selectedYear]);
 
   const editBodyTemplate = (row) => {
-    return <Button icon="pi pi-pencil" rounded outlined severity="warning" />;
+    return (
+      <Button
+        icon="pi pi-pencil"
+        rounded
+        outlined
+        severity="warning"
+        disabled={row.status !== "Pending" && row.status !== "Editing"}
+      />
+    );
   };
   const deleteBodyTemplate = (row) => {
-    return <Button icon="pi pi-trash" rounded outlined severity="danger" />;
+    return (
+      <Button
+        icon="pi pi-trash"
+        rounded
+        outlined
+        severity="danger"
+        disabled={row.status !== "Pending" && row.status !== "Editing"}
+      />
+    );
+  };
+  const statusBodyTemplate = (row) => {
+    return (
+      <>
+        <Tooltip
+          target={"#leave_" + row.leaveId}
+          mouseTrack
+          style={{ display: row.status === "Rejected" ? "block" : "none" }}
+        >
+          <b>Rejected By :</b> {row.rejectedBy}
+          <br />
+          <b>Rejected Reason :</b> {row.rejectedReason}
+        </Tooltip>
+        <Tag
+          id={"leave_" + row.leaveId}
+          value={row.status}
+          severity={row.severity}
+          data-pr-position="mouse"
+        />
+      </>
+    );
+  };
+  const typeRowFilterTemplate = (options) => {
+    return (
+      <MultiSelect
+        value={options.value || []}
+        options={leaveTypes}
+        onChange={(e) => options.filterApplyCallback(e.value)}
+        placeholder="Any"
+        className="p-column-filter"
+        maxSelectedLabels={1}
+      />
+    );
+  };
+  const statusRowFilterTemplate = (options) => {
+    return (
+      <MultiSelect
+        value={options.value || []}
+        options={statusTypes}
+        onChange={(e) => options.filterApplyCallback(e.value)}
+        placeholder="Any"
+        className="p-column-filter"
+        maxSelectedLabels={1}
+      />
+    );
   };
 
   return (
@@ -119,29 +199,20 @@ const LeaveManagement = () => {
             <Card>
               <TabView>
                 <TabPanel header="Calender View">
-                  <Tooltip target="#selectedEvent" />
+                  <Tooltip
+                    ref={tooltipRef}
+                    target="#selectedEvent"
+                    mouseTrack
+                  />
                   <Calender
                     initialView="dayGridMonth"
                     height={"31rem"}
-                    events={[
-                      {
-                        start: "2025-04-06",
-                        end: "2025-04-08",
-                        overlap: false,
-                        display: "background",
-                        id: "chuti 1",
-                      },
-                      {
-                        start: "2025-04-10",
-                        end: "2025-04-12",
-                        overlap: false,
-                        display: "background",
-                        id: "chuti 2",
-                      },
-                    ]}
+                    events={leaveData.calenderData}
                     eventMouseEnter={(info) => {
                       info.el.id = "selectedEvent";
                       info.el.setAttribute("data-pr-tooltip", info.event.id);
+                      info.el.setAttribute("data-pr-position", "mouse");
+                      tooltipRef.current.updateTargetEvents("#selectedEvent");
                     }}
                   ></Calender>
                 </TabPanel>
@@ -151,16 +222,22 @@ const LeaveManagement = () => {
                     paginator
                     rows={10}
                     rowsPerPageOptions={[5, 10, 25, 50]}
+                    sortField="fromDate"
+                    sortOrder={-1}
+                    filterDisplay="row"
+                    filters={leaveTableFilters}
                   >
                     <Column
                       field="fromDate"
                       header="From Date"
-                      style={{ width: "12vw" }}
+                      style={{ width: "14vw" }}
+                      sortable
                     ></Column>
                     <Column
                       field="toDate"
                       header="To Date"
-                      style={{ width: "12vw" }}
+                      style={{ width: "14vw" }}
+                      sortable
                     ></Column>
                     <Column
                       field="actualLeave"
@@ -171,6 +248,11 @@ const LeaveManagement = () => {
                       field="type"
                       header="Type"
                       style={{ width: "10vw" }}
+                      filter
+                      filterField="type"
+                      showFilterMenu={false}
+                      filterElement={typeRowFilterTemplate}
+                      filterMenuStyle={{ width: "14rem" }}
                     ></Column>
                     <Column
                       field="reason"
@@ -178,9 +260,14 @@ const LeaveManagement = () => {
                       style={{ width: "15vw" }}
                     ></Column>
                     <Column
-                      field="status"
                       header="Status"
+                      body={statusBodyTemplate}
                       style={{ width: "10vw" }}
+                      filter
+                      filterField="status"
+                      showFilterMenu={false}
+                      filterElement={statusRowFilterTemplate}
+                      filterMenuStyle={{ width: "14rem" }}
                     ></Column>
                     <Column
                       header="Edit"

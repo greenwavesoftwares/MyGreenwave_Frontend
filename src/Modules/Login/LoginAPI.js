@@ -21,5 +21,20 @@ const loginCheck = async (credential,toastRef) => {
         return null;
     }
 }
+const getUserDetails = async (token) => {
+    try{
+        const response= await axios.get(
+            `${endPoint}users`,
+            { headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }}
+        );
+        return response.data;
+    } catch (error) {
+         console.error("Error fetching forminfo with versions:", error);
+        return null;
+    }
+}
 
-export {loginCheck}
+export {loginCheck,getUserDetails}
