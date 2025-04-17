@@ -2,6 +2,7 @@
 import MiscellaneousClaimForm from './MiscellaneousClaimForm'
 import React from 'react';
 import { TabView, TabPanel } from "primereact/tabview";
+import DraftForm from './DraftForm';
 
 
 
@@ -14,7 +15,7 @@ const MiscellaneousClaim = () => {
                         <MiscellaneousClaimForm />
                     </TabPanel>
                     <TabPanel header="My Drafts" >
-                        <p className="m-0">My Drafts</p>
+                    <DraftForm/>
                     </TabPanel>
                     <TabPanel header="My Claims">
                         <p className="m-0">My Claims</p>

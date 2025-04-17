@@ -4,12 +4,12 @@ import { Column } from 'primereact/column';
 
 
 const DraftForm = () => {
-     const actionBodyTemplate = (rowData) => (
-            <div className="flex gap-2">
-                <Button icon="pi pi-pencil" className="p-button-sm p-button-text p-button-info" onClick={() => openEditDialog(rowData)} />
-                <Button icon="pi pi-trash" className="p-button-sm p-button-text p-button-danger" onClick={() => handleDelete(rowData.date)} />
-            </div>
-        );
+    const actionBodyTemplate = (rowData) => (
+        <div className="flex gap-2">
+            <Button icon="pi pi-pencil" className="p-button-sm p-button-text p-button-info" onClick={() => openEditDialog(rowData)} />
+            <Button icon="pi pi-trash" className="p-button-sm p-button-text p-button-danger" onClick={() => handleDelete(rowData.date)} />
+        </div>
+    );
     return (
         <DataTable tableStyle={{ minWidth: '50rem' }}>
             <Column field="To" header="To"></Column>
@@ -22,7 +22,7 @@ const DraftForm = () => {
             <Column field="Expense (INR)" header="Expense (INR)"></Column>
             <Column field="Claim (INR)" header="Claim (INR)"></Column>
             <Column field="Due (INR)" header="Due (INR)"></Column>
-             <Column header="Action" body={actionBodyTemplate} />
+            <Column header="Action" body={actionBodyTemplate} />
         </DataTable>
     )
 }
