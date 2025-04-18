@@ -9,20 +9,29 @@ import { Toast } from 'primereact/toast';
 
 
 
-const TourClaimForm = () => {
+const TourClaimForm = ({ mode = 'full' }) => {
+    const isPopup = mode === 'popup';
     const toast = useRef(null);
 
     const onUpload = () => {
         toast.current.show({ severity: 'success', summary: 'Success', detail: 'File Uploaded' });
     };
+    const inputWidth = isPopup ? 'w-40' : 'w-62';
+    const gridCols = isPopup ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-3';
+    const gridGap = isPopup ? 'gap-x-6 ml-4 mb-4' : 'gap-x-20 ml-8 mb-4';
+    const t = isPopup ? 'text-sm' : 'text-lg';
+    
+
+    
+
     return (
-        <div className="p-4">
+         <div className="p-4">
             {/* Tour Claim Box */}
             <div className="border border-gray-200 shadow-md rounded-lg p-4 bg-white space-y-6 mt-4">
                 {/* Header */}
                 <div className="flex justify-between items-center flex-wrap gap-4">
-                    <label className="text-lg font-semibold text-gray-800">Tour Claim</label>
-                    <div>
+                    <label className={`${t} font-semibold text-gray-800`}>Tour Claim</label>
+                    <div  >
                         <Toast ref={toast} />
                         <FileUpload
                             mode="basic"
@@ -31,53 +40,53 @@ const TourClaimForm = () => {
                             accept="image/*"
                             maxFileSize={1000000}
                             onUpload={onUpload}
+                           
                         />
                     </div>
                 </div>
 
                 {/* Travel Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-3  md:justify-items-center gap-x-20 ml-8">
+                <div className={`grid ${gridCols} justify-items-center  gap-y-4 ${gridGap} `}>
                     <div>
                         <label htmlFor="Select-Travel" className="block text-sm font-medium text-gray-700 mb-1">Select Travel</label>
-                        <Dropdown inputId="Select-Travel" className="w-62 md:w-[15.5rem]" />
+                        <Dropdown inputId="Select-Travel" className={`${inputWidth}`} />
                     </div>
                     <div>
                         <label htmlFor="Type-of-Travel" className="block text-sm font-medium text-gray-700 mb-1">Type of Travel</label>
-                        <Dropdown inputId="Type-of-Travel" className="w-62 md:w-[15.5rem]" />
+                        <Dropdown inputId="Type-of-Travel" className={`${inputWidth}`} />
                     </div>
                     <div>
                         <label htmlFor="Destination" className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                        <InputText inputId="Destination" className="w-62 md:w-[15.5rem]" />
+                        <InputText inputId="Destination" className={`${inputWidth}`} />
                     </div>
-                </div>
-
+             
                 {/* Purpose / Project / Account */}
-                <div className="grid grid-cols-1 md:grid-cols-3  gap-x-20 ml-8">
+               
                     <div>
                         <label htmlFor="Purpose-of-Trip" className="block text-sm font-medium text-gray-700 mb-1">Purpose of Trip</label>
-                        <InputText inputId="Purpose-of-Trip" className="w-62 md:w-[15.5rem]" />
+                        <InputText inputId="Purpose-of-Trip" className={`${inputWidth}`} />
                     </div>
                     <div>
                         <label htmlFor="Project-Name" className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-                        <InputText inputId="Project-Name" className="w-62 md:w-[15.5rem]" />
+                        <InputText inputId="Project-Name" className={`${inputWidth}`} />
                     </div>
                     <div>
                         <label htmlFor="On-Account" className="block text-sm font-medium text-gray-700 mb-1">On Account</label>
-                        <InputText inputId="On-Account" className="w-62 md:w-[15.5rem]" />
+                        <InputText inputId="On-Account" className={`${inputWidth}`} />
                     </div>
-                </div>
+                {/* </div> */}
 
                 {/* Date Range & Advance */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-20 ml-8 items-end">
+                {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-x-20 ml-8 items-end"> */}
                     <div>
                         <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                        <Calendar inputId="fromdate" showIcon className="w-62 md:w-[15.5rem]" />
+                        <Calendar inputId="fromdate" showIcon className={`${inputWidth}`} />
                     </div>
                     <div>
                         <label htmlFor="todate" className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                        <Calendar inputId="todate" showIcon className="w-62 md:w-[15.5rem]" />
+                        <Calendar inputId="todate" showIcon className={`${inputWidth}`} />
                     </div>
-                    <div className="flex justify-between items-center bg-gray-50 shadow-sm rounded-md px-4 py-2 h-12">
+                    <div className={`flex justify-between items-center bg-gray-50 shadow-sm rounded-md px-4 mt-4 h-12 ${inputWidth}`}>
                         <span className="text-gray-700 font-medium">Available Advance:</span>
                         <span className="text-green-600 font-bold">₹5000</span>
                     </div>

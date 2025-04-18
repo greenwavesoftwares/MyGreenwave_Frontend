@@ -4,6 +4,7 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
+const cellStyle = { padding: '8px 12px' }; // 0.25rem 0.5rem
 
 const dummyData = [
     {
@@ -40,7 +41,8 @@ const initialFormState = {
     regFees: '',
 };
 
-const TourClaimTable = () => {
+const TourClaimTable = ({ mode = 'full' }) => {
+    const isPopup = mode === 'popup';
     const [data, setData] = useState(dummyData);
     const [editData, setEditData] = useState(null);
     const [visible, setVisible] = useState(false);
@@ -101,7 +103,7 @@ const TourClaimTable = () => {
     return (
         <>
             <div className="flex justify-end mb-2">
-                <Button label="Add Row" icon="pi pi-plus" className="p-button-sm " onClick={openAddDialog}/>
+                <Button label="Add Row" icon="pi pi-plus" className="p-button-sm " onClick={openAddDialog} />
             </div>
 
             <DataTable
@@ -111,21 +113,21 @@ const TourClaimTable = () => {
                 className="text-xs"
                 tableStyle={{ minWidth: '100%', fontSize: '0.7rem' }}
             >
-                <Column field="date" header="Date" />
-                <Column field="lodging" header="Lodging" />
-                <Column field="breakfast" header="Breakfast" />
-                <Column field="lunch" header="Lunch" />
-                <Column field="snacks" header="Snacks" />
-                <Column field="dinner" header="Dinner" />
-                <Column field="incidentals" header="Incidentals" />
-                <Column field="travel" header="Airfare, Train, Bus etc." />
-                <Column field="transport" header="Taxi, Shuttle, Parking, Car Rental" />
-                <Column field="sumanPaid" header="SUMAN PAID" />
-                <Column field="materialPaid" header="MATERIAL PAID" />
-                <Column field="dataRecharge" header="DATA RECHARGE" />
-                <Column field="regFees" header="Reg. Fees & Other Business Expenses" />
-                <Column field="total" header="Total" />
-                <Column header="Action" body={actionBodyTemplate} />
+                <Column field="date" header="Date" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="lodging" header="Lodging" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="breakfast" header="Breakfast" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="lunch" header="Lunch" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="snacks" header="Snacks" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="dinner" header="Dinner" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="incidentals" header="Incidentals" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="travel" header="Airfare, Train, Bus etc." headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="transport" header="Taxi, Shuttle, Parking, Car Rental" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="sumanPaid" header="SUMAN PAID" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="materialPaid" header="MATERIAL PAID" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="dataRecharge" header="DATA RECHARGE" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="regFees" header="Reg. Fees & Other Business Expenses" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column field="total" header="Total" headerStyle={cellStyle} bodyStyle={cellStyle}/>
+                <Column header="Action" body={actionBodyTemplate} headerStyle={cellStyle} bodyStyle={cellStyle}/>
             </DataTable>
 
             {/* Edit/Add Dialog */}
@@ -155,8 +157,12 @@ const TourClaimTable = () => {
                 )}
             </Dialog>
             {/* Button */}
-            <div className="flex justify-end mt-4">
-                <Button label="Save to Draft" icon="pi pi-save" className="p-button-sm" />
+            <div className="flex justify-center mt-4">
+                {isPopup?(<Button
+                    label="Update"
+                    
+                    className="p-button-sm p-button-success"
+                />): (<Button label="Save to Draft" icon="pi pi-save" className="p-button-sm" />)}
             </div>
         </>
     );
