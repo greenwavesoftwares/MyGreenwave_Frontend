@@ -5,10 +5,6 @@ import { Dropdown } from "primereact/dropdown";
 import { Container } from "@mui/material";
 import SpeedDial from "../../components/SpeedDial/SpeedDial";
 import { Button } from "primereact/button";
-import {
-  showErrorMessage,
-  showSuccessMessage,
-} from "../../components/Toast/ShowMessage";
 import Toast from "../../components/Toast/Toast";
 import Chart from "../../components/Chart/Chart";
 import ConfirmDialog from "../../components/ConfirmDialog/ConfirmDialog";
@@ -16,22 +12,41 @@ import { showConfirm } from "../../components/ConfirmDialog/showConfirm";
 import Calender from "../../components/Calender/Calender";
 import DatePicker from "../../components/DatePicker/DatePicker";
 import DialogComponent from "../../components/Dialog/DialogComponent";
-import "../../components/Dialog/DialogComponent.css";
 import { Checkbox } from "primereact/checkbox";
 import { InputTextarea } from "primereact/inputtextarea";
 import { TabView, TabPanel } from "primereact/tabview";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { getCurrentDate, getYearList, onPageLoad } from "./LeaveFunctions";
+import {
+  applyLeave,
+  deleteLeave,
+  editLeave,
+  getCurrentDate,
+  getYearList,
+  onPageLoad,
+  onSelectRowEdit,
+} from "./LeaveFunctions";
 import { getUserData } from "../Login/Encrypt";
 import "./LeaveManagement.css";
 import { Tooltip } from "primereact/tooltip";
-import { Badge } from "primereact/badge";
 import { Tag } from "primereact/tag";
 import { MultiSelect } from "primereact/multiselect";
 import { FilterMatchMode } from "primereact/api";
+import { Message } from "primereact/message";
+import { validateApplyLeave, validateEditLeave } from "./LeaveValidation";
 
 const LeaveManagement = () => {
+  const leaveFormData = {
+    dates: [],
+    reason: "",
+    isCompensatory: false,
+  };
+  const leaveValidate = {
+    dateValidate: true,
+    dateValidateMessage: "",
+    reasonValidate: true,
+    reasonValidateMessage: "",
+  };
   const [leaveData, setLeaveData] = useState({});
   const [years, setYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState(0);
@@ -40,41 +55,25 @@ const LeaveManagement = () => {
   const [dates, setDates] = useState(null);
   const toastRef = useRef(null);
   const tooltipRef = useRef(null);
-  const [isCompensatory, setCompensatory] = useState(false);
-  const userInfo = getUserData();
-  const statusTypes = [
+  const [userInfo] = useState(getUserData());
+  const statusTypes = useState([
     "Pending",
     "Reviewing",
     "Reviewed",
     "ManagerApproved",
     "Approved",
     "Rejected",
-  ];
-  const leaveTypes = ["PL", "CL", "Medical", "Compensatory"];
-  const [leaveTableFilters, setLeaveTableFilters] = useState({
+  ]);
+  const [leaveTypes] = useState(["PL", "CL", "Medical", "Compensatory"]);
+  const [leaveTableFilters] = useState({
     fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
     type: { value: null, matchMode: FilterMatchMode.IN },
     status: { value: null, matchMode: FilterMatchMode.IN },
   });
-
-  useEffect(() => {
-    console.log(userInfo?.token);
-    let yearList = getYearList();
-    setYears(yearList);
-    setSelectedYear(yearList[yearList.length - 1]);
-  }, []);
-
-  useEffect(() => {
-    const init = async () => {
-      let data = await onPageLoad(userInfo.userDetails.userId, selectedYear);
-      setLeaveData(data);
-    };
-
-    if (selectedYear !== 0) {
-      init();
-    }
-  }, [selectedYear]);
-
+  const [applyLeaveData, setApplyLeaveData] = useState(leaveFormData);
+  const [applyLeaveValidate, setApplyLeaveValidate] = useState(leaveValidate);
+  const [editLeaveData, setEditLeaveData] = useState(leaveFormData);
+  const [editLeaveValidate, setEditLeaveValidate] = useState(leaveValidate);
   const editBodyTemplate = (row) => {
     return (
       <Button
@@ -83,6 +82,9 @@ const LeaveManagement = () => {
         outlined
         severity="warning"
         disabled={row.status !== "Pending" && row.status !== "Editing"}
+        onClick={() => {
+          onSelectRowEdit(row, setEditLeaveData, setEditLeaveDialogVisible);
+        }}
       />
     );
   };
@@ -94,6 +96,22 @@ const LeaveManagement = () => {
         outlined
         severity="danger"
         disabled={row.status !== "Pending" && row.status !== "Editing"}
+        onClick={() => {
+          showConfirm(
+            "Confirmation",
+            "Do you want to delete this leave?",
+            async () => {
+              await deleteLeave(
+                row,
+                toastRef,
+                userInfo.userDetails.userId,
+                selectedYear,
+                setLeaveData
+              );
+            },
+            null
+          );
+        }}
       />
     );
   };
@@ -141,6 +159,35 @@ const LeaveManagement = () => {
         maxSelectedLabels={1}
       />
     );
+  };
+
+  useEffect(() => {
+    console.log(userInfo);
+    let yearList = getYearList();
+    setYears(yearList);
+    setSelectedYear(yearList[yearList.length - 1]);
+  }, [userInfo]);
+
+  useEffect(() => {
+    const init = async () => {
+      let data = await onPageLoad(userInfo.userDetails.userId, selectedYear);
+      setLeaveData(data);
+    };
+
+    if (selectedYear !== 0) {
+      init();
+    }
+  }, [selectedYear, userInfo.userDetails.userId]);
+
+  const clearApplyDialog = () => {
+    setApplyLeaveData(leaveFormData);
+    setApplyLeaveValidate(leaveValidate);
+    setApplyLeaveDialogVisible(false);
+  };
+  const clearEditDialog = () => {
+    setEditLeaveData(leaveFormData);
+    setEditLeaveValidate(leaveValidate);
+    setEditLeaveDialogVisible(false);
   };
 
   return (
@@ -301,47 +348,81 @@ const LeaveManagement = () => {
         className="leaveDialog"
         onHide={() => {
           if (!applyLeaveDialogVisible) return;
-          setApplyLeaveDialogVisible(false);
+          clearApplyDialog();
         }}
       >
         <Grid container rowSpacing={1.5}>
           <Grid size={5}>Compensatory Leave</Grid>
           <Grid size={7}>
             <Checkbox
-              checked={isCompensatory}
+              checked={applyLeaveData.isCompensatory}
               onClick={() => {
-                setCompensatory(!isCompensatory);
+                setApplyLeaveData((prevData) => ({
+                  ...prevData,
+                  isCompensatory: !applyLeaveData.isCompensatory,
+                }));
               }}
             />
           </Grid>
-          <Grid size={5}>Date</Grid>
-          <Grid size={7}>
+          <Grid size={2}>Date</Grid>
+          <Grid size={6}>
             <DatePicker
-              value={dates}
-              onChange={(e) => setDates(e.value)}
+              value={applyLeaveData.dates}
+              onChange={(e) => {
+                setApplyLeaveData((prevData) => ({
+                  ...prevData,
+                  dates: e.value,
+                }));
+              }}
               selectionMode="range"
               readOnlyInput
               hideOnRangeSelection
               disabledDays={[0, 6]}
               minDate={getCurrentDate()}
               showIcon
+              dateFormat="dd/mm/yy"
             />
           </Grid>
-          <Grid size={5}>Reason</Grid>
-          <Grid size={7}>
-            <InputTextarea autoResize rows={3} cols={24} />
+          <Grid size={4}>
+            {!applyLeaveValidate.dateValidate && (
+              <Message severity="error" text="Select Dates" />
+            )}
           </Grid>
-          <Grid size={12}>
+          <Grid size={2}>Reason</Grid>
+          <Grid size={6}>
+            <InputTextarea
+              value={applyLeaveData.reason}
+              autoResize
+              rows={3}
+              cols={24}
+              onChange={(e) => {
+                setApplyLeaveData((prevData) => ({
+                  ...prevData,
+                  reason: e.target.value,
+                }));
+              }}
+            />
+          </Grid>
+          <Grid size={4}>
+            {!applyLeaveValidate.reasonValidate && (
+              <Message severity="error" text="Enter Reason" />
+            )}
+          </Grid>
+          <Grid size={12} style={{ display: "flex", justifyContent: "center" }}>
             <Button
-              label="Click"
-              onClick={() =>
-                showConfirm(
-                  "Header",
-                  "Message",
-                  () => showSuccessMessage(toastRef, "Success", "Clicked Yes"),
-                  () => showErrorMessage(toastRef, "Error", "Clicked No")
-                )
-              }
+              label="Apply"
+              onClick={async () => {
+                if (validateApplyLeave(applyLeaveData, setApplyLeaveValidate)) {
+                  await applyLeave(
+                    userInfo.userDetails.userId,
+                    applyLeaveData,
+                    toastRef,
+                    selectedYear,
+                    setLeaveData,
+                    clearApplyDialog
+                  );
+                }
+              }}
             />
           </Grid>
         </Grid>
@@ -349,39 +430,72 @@ const LeaveManagement = () => {
       <DialogComponent
         header="Edit Leave"
         visible={editLeaveDialogVisible}
-        style={{ width: "30vw" }}
+        className="leaveDialog"
         onHide={() => {
           if (!editLeaveDialogVisible) return;
-          setEditLeaveDialogVisible(false);
+          clearEditDialog();
         }}
       >
         <Grid container rowSpacing={1.5}>
-          <Grid size={5}>Date</Grid>
-          <Grid size={7}>
+          <Grid size={2}>Date</Grid>
+          <Grid size={6}>
             <DatePicker
-              value={dates}
-              onChange={(e) => setDates(e.value)}
+              value={editLeaveData.dates}
+              onChange={(e) => {
+                setEditLeaveData((prevData) => ({
+                  ...prevData,
+                  dates: e.value,
+                }));
+              }}
               selectionMode="range"
               readOnlyInput
               hideOnRangeSelection
               disabledDays={[0, 6]}
+              minDate={getCurrentDate()}
+              showIcon
+              dateFormat="dd/mm/yy"
             />
           </Grid>
-          <Grid size={5}>Reason</Grid>
-          <Grid size={7}>
-            <InputTextarea autoResize rows={3} cols={25} />
+          <Grid size={4}>
+            {!editLeaveValidate.dateValidate && (
+              <Message severity="error" text="Select Dates" />
+            )}
           </Grid>
-          <Grid size={12}>
+          <Grid size={2}>Reason</Grid>
+          <Grid size={6}>
+            <InputTextarea
+              value={editLeaveData.reason}
+              autoResize
+              rows={3}
+              cols={24}
+              onChange={(e) => {
+                setEditLeaveData((prevData) => ({
+                  ...prevData,
+                  reason: e.target.value,
+                }));
+              }}
+            />
+          </Grid>
+          <Grid size={4}>
+            {!editLeaveValidate.reasonValidate && (
+              <Message severity="error" text="Enter Reason" />
+            )}
+          </Grid>
+          <Grid size={12} style={{ display: "flex", justifyContent: "center" }}>
             <Button
-              label="Click"
-              onClick={() =>
-                showConfirm(
-                  "Header",
-                  "Message",
-                  () => showSuccessMessage(toastRef, "Success", "Clicked Yes"),
-                  () => showErrorMessage(toastRef, "Error", "Clicked No")
-                )
-              }
+              label="Edit"
+              onClick={async () => {
+                if (validateEditLeave(editLeaveData, setEditLeaveValidate)) {
+                  await editLeave(
+                    userInfo.userDetails.userId,
+                    editLeaveData,
+                    toastRef,
+                    selectedYear,
+                    setLeaveData,
+                    clearEditDialog
+                  );
+                }
+              }}
             />
           </Grid>
         </Grid>

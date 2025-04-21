@@ -1,3 +1,16 @@
 .p-datatable .p-column-header-content {
     justify-content: flex-start !important;
 }
+.leaveDialog{
+    width: 35vw;
+}
+@media (max-width: 1024px) {
+    .leaveDialog{
+        width: 60vw;
+    }
+}
+@media (max-width: 650px) {
+    .leaveDialog{
+        width: 90vw;
+    }
+}
