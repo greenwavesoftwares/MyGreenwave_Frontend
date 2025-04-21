@@ -8,7 +8,7 @@ const checkCredential=async (credential,toastRef)=>{
     let data = await loginCheck(credential,toastRef);
     if(data!=null){
         userData.token=data.jwt;
-        userData.userDetails=getUserDetail(data.jwt);
+        userData.userDetails= await getUserDetail(data.jwt);
         if(userData.userDetails!=null){
             setUserData(userData);
             success=true;
@@ -23,8 +23,8 @@ const checkCredential=async (credential,toastRef)=>{
     return success;
 }
 
-const getUserDetail = (token) => {
-    const userDetails = getUserDetails(token);
+const getUserDetail = async (token) => {
+    const userDetails = await getUserDetails(token);
     return userDetails;
 };
 export {checkCredential}
