@@ -1,30 +1,28 @@
 import { Navigate } from "react-router-dom";
 import { setUserData } from "./Encrypt";
-import { loginCheck,getUserDetails } from "./LoginAPI";
+import { loginCheck, getUserDetails } from "./LoginAPI";
 
-const checkCredential=async (credential,toastRef)=>{
-    let success=false;
-    const userData={token:"",userDetails:{}};
-    let data = await loginCheck(credential,toastRef);
-    if(data!=null){
-        userData.token=data.jwt;
-        userData.userDetails= await getUserDetail(data.jwt);
-        if(userData.userDetails!=null){
-            setUserData(userData);
-            success=true;
-        }
-        else{
-            success=false;
-        }
+const checkCredential = async (credential, toastRef, showWPDialog) => {
+  let success = false;
+  const userData = { token: "", userDetails: {} };
+  let data = await loginCheck(credential, toastRef, showWPDialog);
+  if (data != null) {
+    userData.token = data.jwt;
+    userData.userDetails = await getUserDetail(data.jwt);
+    if (userData.userDetails != null) {
+      setUserData(userData);
+      success = true;
+    } else {
+      success = false;
     }
-    else{
-        success=false;
-    }
-    return success;
-}
+  } else {
+    success = false;
+  }
+  return success;
+};
 
 const getUserDetail = async (token) => {
-    const userDetails = await getUserDetails(token);
-    return userDetails;
+  const userDetails = await getUserDetails(token);
+  return userDetails;
 };
-export {checkCredential}
+export { checkCredential };

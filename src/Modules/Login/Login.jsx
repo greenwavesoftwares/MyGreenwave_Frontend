@@ -17,12 +17,19 @@ import Grid from "../../components/Grid/Grid";
 import Toast from "../../components/Toast/Toast";
 import { getUserData } from "./Encrypt";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import DialogComponent from "../../components/Dialog/DialogComponent";
 
 const Login = () => {
   const [credential, setCredential] = useState({ username: "", password: "" });
   const navigate = useNavigate();
   const toastRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [wpDialogVisible, setWPDialogVisible] = useState(false);
+  const [wpDialogMessage, setWPDialogMessage] = useState("");
+  const showWPDialog = (message) => {
+    setWPDialogMessage(message);
+    setWPDialogVisible(true);
+  };
   return (
     <>
       <Toast ref={toastRef}></Toast>
@@ -55,7 +62,9 @@ const Login = () => {
                     onChange={(e) =>
                       setCredential({ ...credential, username: e.target.value })
                     }
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                    }}
                   />
                   <TextField
                     fullWidth
@@ -67,23 +76,25 @@ const Login = () => {
                     onChange={(e) =>
                       setCredential({ ...credential, password: e.target.value })
                     }
-                    InputLabelProps={{ shrink: true }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            size="small"
-                            aria-label="toggle password visibility"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                          >
-                            {showPassword ? (
-                              <Visibility fontSize="small" />
-                            ) : (
-                              <VisibilityOff fontSize="small" />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              size="small"
+                              aria-label="toggle password visibility"
+                              onClick={() => setShowPassword((prev) => !prev)}
+                            >
+                              {showPassword ? (
+                                <Visibility fontSize="small" />
+                              ) : (
+                                <VisibilityOff fontSize="small" />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                      inputLabel: { shrink: true },
                     }}
                   />
 
@@ -101,7 +112,8 @@ const Login = () => {
                     onClick={async () => {
                       const loginCheck = await checkCredential(
                         credential,
-                        toastRef
+                        toastRef,
+                        showWPDialog
                       );
                       if (loginCheck) {
                         let userData = getUserData();
@@ -127,6 +139,22 @@ const Login = () => {
           </Grid>
         </Grid>
       </Container>
+      <DialogComponent
+        header="Warning"
+        visible={wpDialogVisible}
+        onHide={() => {
+          if (!wpDialogVisible) return;
+          setWPDialogVisible(false);
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <i
+            className="pi pi-exclamation-triangle"
+            style={{ fontSize: "2rem", marginRight: "1rem" }}
+          ></i>
+          {wpDialogMessage}
+        </div>
+      </DialogComponent>
     </>
   );
 };

@@ -52,11 +52,10 @@ const LeaveManagement = () => {
   const [selectedYear, setSelectedYear] = useState(0);
   const [applyLeaveDialogVisible, setApplyLeaveDialogVisible] = useState(false);
   const [editLeaveDialogVisible, setEditLeaveDialogVisible] = useState(false);
-  const [dates, setDates] = useState(null);
   const toastRef = useRef(null);
   const tooltipRef = useRef(null);
   const [userInfo] = useState(getUserData());
-  const statusTypes = useState([
+  const [statusTypes] = useState([
     "Pending",
     "Reviewing",
     "Reviewed",
