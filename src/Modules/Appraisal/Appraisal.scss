@@ -19,7 +19,7 @@
 //DataTable Styles
 .dataTableHeader.p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
   font-size: base.$dataTableHeaderFontSize;
-  padding: 0.3rem 0.7rem;
+  padding: 0.5rem 0.7rem;
   text-align: center !important;
   border-bottom: 1px solid base.$borderColor;
 }
@@ -30,12 +30,12 @@
   border-bottom: 1px solid base.$borderColor;
 }
 .dataTableBodyPadding.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td{
-  padding: base.$noPadding !important;
+  padding:0.2rem 0.4rem !important;
 }
 .p-datatable .p-column-header-content {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center !important;
 }
 
 //Accordion Styles

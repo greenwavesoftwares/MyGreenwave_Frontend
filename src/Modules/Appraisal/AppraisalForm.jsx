@@ -35,27 +35,64 @@ function AppraisalDialog({ appraiserForm }) {
   const toastRef = useRef(null);
   const [expanded, setExpanded] = useState(false);
   // State for form data
-  const [performanceScorecardData, setPerformanceScorecardData] = useState([]);
-
+  const [expandeButtonText, setExpandeButtonText] = useState("expand all");
 
   // For performanceScorecardData
+  const [performanceScorecardData, setPerformanceScorecardData] = useState([]);
   const PerformanceScorecardData = (ele) => {
-    //console.log("PerformanceScorecardData", ele);
     setPerformanceScorecardData(ele);
   };
 
-  
+  //For Competency Scorecard Data
+  const [CompetencyScorecardData, setCompetencyScorecardData] =useState([]);
+  const CompetencyScorecardData_Update = (ele) => {
+    setCompetencyScorecardData(ele);
+  };
+
+  //For Future Goals Data
+  const [FutureGoalsData, setFutureGoalsData] = useState([]);
+  const FutureGoalsData_Update=(ele)=>{
+    setFutureGoalsData(ele);
+  }
+
+  //For Future Comptency Data
+  const [FutureComptencyData, setFutureComptencyData] = useState([]);
+  const FutureComptencyData_Update=(ele)=>{
+    setFutureComptencyData(ele);
+  }
+
+  //For My KRA Data
+  const [myKRA_Data, setMyKRA_Data] = useState([]);
+  const myKRA_Data_Update=(ele)=>{
+    setMyKRA_Data(ele);
+  }
+
+  //For My Insights Data
+  const [myInsights, setMyInsights] = useState([]);
+  const myInsights_Upadte=(ele)=>{
+    setMyInsights(ele);
+  }
+
 
   //Use React Hooks Form
   const { register, handleSubmit, reset, setValue } = useForm();
+
+  //Make All Update Data 
   const personalDataSubmit = async (data) => {
-    console.log("object", performanceScorecardData);
+    console.log("object", data);
     const generatePersonalData = {
-      form_id: "NA_",
+      form_id: appraiserForm?.form_id,
       PersonalData: data,
       Performance_ScorecardData: performanceScorecardData,
+      Competency_ScorecardData: CompetencyScorecardData,
+      Future_Goals: FutureGoalsData,
+      Future_Comptency: FutureComptencyData,
+      My_KRA: myKRA_Data,
+      My_Insights: myInsights,
     };
     console.log("Appraisal Form Data:", generatePersonalData);
+
+
     try {
       const response = await appraisalPutApi(generatePersonalData);
       console.log("Appraisal Form Data:", response);
@@ -119,312 +156,336 @@ function AppraisalDialog({ appraiserForm }) {
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
 
-
-
-  //
-  const handleClick=()=>{
-    setExpanded((pre)=> !pre);
-  }
+  //For Expand and Collapse
+  const handleClick = () => {
+    setExpanded((pre) => !pre);
+    setExpandeButtonText((pre) =>
+      pre === "expand all" ? "collapse all" : "expand all"
+    );
+  };
 
   return (
     <>
-    <button onClick={()=>handleClick()}>click</button>
-      <div>
-        <form onSubmit={handleSubmit(personalDataSubmit)}>
-          <div>
-            {/* Accordion for Personal Details */}
-            <Accordion expanded={expanded}>
+      <div className="card mt-1 py-2 px-3 bg-white shadow rounded">
+        <div
+          className="flex justify-between items-center pb-1 mb-1.5 "
+          style={{}}
+        >
+          <h1 className="text-center text-sm">Appraisal Form</h1>
+          <MuiButton
+            variant="contained"
+            size="small"
+            sx={{ boxShadow: "none" }}
+            onClick={() => handleClick}
+          >
+            {expandeButtonText}
+          </MuiButton>
+        </div>
+
+        <div>
+          <form onSubmit={handleSubmit(personalDataSubmit)}>
+            <div>
+              {/* Accordion for Personal Details */}
+              <Accordion expanded={expanded} onChange={handleClick}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel1-content"
+                  id="panel1-header"
+                >
+                  <Typography component="span">Personal Details</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <InputText
+                        {...register("emp_Name")}
+                        id="empName"
+                        className="p-inputtext-sm"
+                        placeholder="Employee Name"
+                      />
+
+                      <InputText
+                        id="emp_id"
+                        type="number"
+                        className="p-inputtext-sm"
+                        {...register("emp_id")}
+                        placeholder="Employee ID"
+                      />
+
+                      <InputText
+                        id="position"
+                        {...register("position")}
+                        className="p-inputtext-sm"
+                        placeholder="Position"
+                      />
+
+                      <InputText
+                        id="education"
+                        {...register("education")}
+                        className="p-inputtext-sm"
+                        placeholder="Education"
+                      />
+
+                      <InputText
+                        id="yoe_gw"
+                        type="number"
+                        {...register("yoe_gw")}
+                        className="p-inputtext-sm"
+                        placeholder="Year of Experience(gw)"
+                      />
+
+                      <InputText
+                        id="yoe_ngw"
+                        type="number"
+                        {...register("yoe_ngw")}
+                        className="p-inputtext-sm"
+                        placeholder="Year of Experience(non-gw)"
+                      />
+
+                      <InputText
+                        id="total_experience"
+                        className="p-inputtext-sm"
+                        {...register("total_experience")}
+                        placeholder="Total Experience"
+                      />
+
+                      <InputText
+                        id="why_do_i_come_to_office"
+                        {...register("why_do_i_come_to_office")}
+                        className="p-inputtext-sm"
+                        placeholder="Why do I come to office?"
+                      />
+
+                   
+                        <InputText
+                          id="current_base_salary"
+                          type="number"
+                          {...register("current_base_salary")}
+                          className="p-inputtext-sm"
+                          placeholder="Current Base Salary"
+                        />
+                        
+                     
+                        <InputText
+                          id="current_assued_bonus"
+                          type="number"
+                          {...register("current_assued_bonus")}
+                          className="p-inputtext-sm"
+                          placeholder="Current Assured Bonus"
+                        />
+                        
+                      
+                        <InputText
+                          id="current_performance_bonus"
+                          type="number"
+                          {...register("current_performance_bonus")}
+                          className="p-inputtext-sm"
+                          placeholder="Current Performance Bonus"
+                        />
+                       
+                     
+                        <InputText
+                          id="current_total_ctc"
+                          type="number"
+                          {...register("current_total_ctc")}
+                          className="p-inputtext-sm"
+                          placeholder="Current Total CTC"
+                        />
+                        
+                      
+                        <InputText
+                          id="proposed_base_salary"
+                          type="number"
+                          {...register("proposed_base_salary")}
+                          className="p-inputtext-sm"
+                          placeholder="Proposed Base Salary"
+                        />
+                       
+                        <InputText
+                          id="proposed_assued_bonus"
+                          type="number"
+                          {...register("proposed_assued_bonus")}
+                          className="p-inputtext-sm"
+                          placeholder="Proposed Assured Bonus"
+                        />
+                        
+                        
+                     
+                        <InputText
+                          id="proposed_performance_bonus"
+                          type="number"
+                          {...register("proposed_performance_bonus")}
+                          className="p-inputtext-sm"
+                          placeholder="Proposed Performance Bonus"
+                        />
+                        
+                      
+                        <InputText
+                          id="proposed_total_ctc"
+                          type="number"
+                          {...register("proposed_total_ctc")}
+                          className="p-inputtext-sm"
+                          placeholder="Proposed Total CTC"
+                        />
+                       
+                    </div>
+                  </div>
+                </AccordionDetails>
+              </Accordion>
+            </div>
+
+            {/* Accordion for Performance Scorecard */}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded}
+              onChange={handleClick}
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">Personal Details</Typography>
+                <Typography component="span">Performance Scorecard</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <InputText
-                      {...register("emp_Name")}
-                      id="empName"
-                      className="p-inputtext-sm"
-                    />
-
-                    <InputText
-                      id="emp_id"
-                      type="number"
-                      className="p-inputtext-sm"
-                      {...register("emp_id")}
-                    />
-
-                    <InputText
-                      id="position"
-                      {...register("position")}
-                      className="p-inputtext-sm"
-                    />
-
-                    <InputText
-                      id="education"
-                      {...register("education")}
-                      className="p-inputtext-sm"
-                    />
-
-                    <InputText
-                      id="yoe_gw"
-                      type="number"
-                      {...register("yoe_gw")}
-                      className="p-inputtext-sm"
-                    />
-
-                    <InputText
-                      id="yoe_ngw"
-                      type="number"
-                      {...register("yoe_ngw")}
-                      className="p-inputtext-sm"
-                    />
-
-                    <InputText
-                      id="total_experience"
-                      className="p-inputtext-sm"
-                      {...register("total_experience")}
-                    />
-
-                    <InputText
-                      id="why_do_i_come_to_office"
-                      {...register("why_do_i_come_to_office")}
-                      className="p-inputtext-sm"
-                    />
-
-                    <FloatLabel>
-                      <InputText
-                        id="current_base_salary"
-                        type="number"
-                        {...register("current_base_salary")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="current_base_salary"
-                      >
-                        Current Base Salary
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="current_assued_bonus"
-                        type="number"
-                        {...register("current_assued_bonus")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="current_assued_bonus"
-                      >
-                        Current Assured Bonus
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="current_performance_bonus"
-                        type="number"
-                        {...register("current_performance_bonus")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="current_performance_bonus"
-                      >
-                        Current Performance Bonus
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="current_total_ctc"
-                        type="number"
-                        {...register("current_total_ctc")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="current_total_ctc"
-                      >
-                        Current Total Ctc
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="proposed_base_salary"
-                        type="number"
-                        {...register("proposed_base_salary")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="proposed_base_salary"
-                      >
-                        Proposed Base Salary
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="proposed_assued_bonus"
-                        type="number"
-                        {...register("proposed_assued_bonus")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="proposed_assued_bonus"
-                      >
-                        Proposed Assrued Bonus
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="proposed_performance_bonus"
-                        type="number"
-                        {...register("proposed_performance_bonus")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="proposed_performance_bonus"
-                      >
-                        Proposed Performance Bonus
-                      </label>
-                    </FloatLabel>
-                    <FloatLabel>
-                      <InputText
-                        id="proposed_total_ctc"
-                        type="number"
-                        {...register("proposed_total_ctc")}
-                        className="p-inputtext-sm"
-                      />
-                      <label
-                        style={{ fontSize: "0.72rem" }}
-                        htmlFor="proposed_total_ctc"
-                      >
-                        Proposed Total Ctc
-                      </label>
-                    </FloatLabel>
-                  </div>
-                </div>
+                <PerformanceScorecardDateTable
+                  PerformanceScorecardData={PerformanceScorecardData}
+                  appraiserPreviousSaveFormData={
+                    appraiserForm?.Performance_ScorecardData
+                  }
+                />
               </AccordionDetails>
             </Accordion>
-          </div>
 
-          {/* Accordion for Performance Scorecard */}
-        <  Accordion className="accordionNoSpace" expanded={expanded}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
+            {/* Accordion for Competency Scorecard */}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded}
+              onChange={handleClick}
             >
-              <Typography component="span">Performance Scorecard</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <PerformanceScorecardDateTable
-                PerformanceScorecardData={PerformanceScorecardData}
-                appraiserPreviousSaveFormData={
-                  appraiserForm?.Performance_ScorecardData
-                }
-              />
-            </AccordionDetails>
-          </Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">Competency Scorecard</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <CompetencyScorecard
+                  appraiserPreviousSaveFormDat={
+                    appraiserForm?.Competency_Scorecard
+                  }
+                  CompetencyScorecardData={CompetencyScorecardData_Update}
+                />
+              </AccordionDetails>
+            </Accordion>
 
-          {/* Accordion for Competency Scorecard */}
-          <Accordion className="accordionNoSpace" expanded={expanded}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
+            {/* Accordion for Future Goals */}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded}
+              onChange={handleClick}
             >
-              <Typography component="span">Competency Scorecard</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <CompetencyScorecard appraiserPreviousSaveFormDat={appraiserForm?.Competency_Scorecard}/>
-            </AccordionDetails>
-          </Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">Future Goals</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <FutureGoals
+                  appraiserPreviousSaveFormDat={appraiserForm?.Future_Goals}
+                  FutureGoalsData={FutureGoalsData_Update}
+                />
+              </AccordionDetails>
+            </Accordion>
+            {/* Accordion for Future Goals */}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded}
+              onChange={handleClick}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">Future Comptency</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <FutureComptency
+                  appraiserPreviousSaveFormDat={appraiserForm?.Future_Comptency}
+                  FutureComptencyData={FutureComptencyData_Update}
+                />
+              </AccordionDetails>
+            </Accordion>
 
-          {/* Accordion for Future Goals */}
-          <Accordion className="accordionNoSpace" expanded={expanded}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
+            {/* Accordion for My KRA */}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded}
+              onChange={handleClick}
             >
-              <Typography component="span">Future Goals</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <FutureGoals  appraiserPreviousSaveFormDat={appraiserForm?.Future_Goals}/>
-            </AccordionDetails>
-          </Accordion>
-          {/* Accordion for Future Goals */}
-          <Accordion className="accordionNoSpace" expanded={expanded}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
-            >
-              <Typography component="span">Future Comptency</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-             <FutureComptency appraiserPreviousSaveFormDat={appraiserForm?.Future_Comptency}/>
-            </AccordionDetails>
-          </Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">My KRA</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <MyKRA appraiserPreviousSaveFormDat={appraiserForm?.My_KRA}
+                myKRA_Data={myKRA_Data_Update} />
+              </AccordionDetails>
+            </Accordion>
 
-          {/* Accordion for My KRA */}
-          <Accordion className="accordionNoSpace" expanded={expanded}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
+            {/* My Insights*/}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded}
+              onChange={handleClick}
             >
-              <Typography component="span">My KRA</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <MyKRA appraiserPreviousSaveFormDat={appraiserForm?.My_KRA}/>
-            </AccordionDetails>
-          </Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">My Insights</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <MyInsights
+                  appraiserPreviousSaveFormDat={appraiserForm?.My_Insights}
+                  myInsights_Data={myInsights_Upadte}
+                />
+              </AccordionDetails>
+            </Accordion>
 
-          {/* My Insights*/}
-          <Accordion className="accordionNoSpace" expanded={expanded}>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
+            {/* My Confirmation*/}
+            <Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">Confirmation</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <h1>not ready</h1>
+              </AccordionDetails>
+            </Accordion>
+            <MuiButton
+              variant="contained"
+              size="small"
+              type="submit"
+              className="mt-2"
             >
-              <Typography component="span">My Insights</Typography>
-            </AccordionSummary>
-            <AccordionDetails >
-            <MyInsights appraiserPreviousSaveFormDat={appraiserForm?.My_Insights}/>
-            </AccordionDetails>
-          </Accordion>
+              Submit Form
+            </MuiButton>
+          </form>
 
-          {/* My Confirmation*/}
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1-content"
-              id="panel1-header"
-            >
-              <Typography component="span">Confirmation</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <h1>not ready</h1>
-            </AccordionDetails>
-          </Accordion>
-          <MuiButton
-            variant="contained"
-            size="small"
-            type="submit"
-            className="mt-2"
-          >
-            Submit Form
-          </MuiButton>
-        </form>
-
-        <Toast ref={toastRef} />
+          <Toast ref={toastRef} />
+        </div>
       </div>
     </>
   );

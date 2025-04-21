@@ -1,4 +1,4 @@
-import { Chip, Typography } from "@mui/material";
+import { Chip, LinearProgress, Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
@@ -22,15 +22,24 @@ import {
   appraisalAPI,
   appraiserFormApi,
   currentAppraisalFormAPI,
+  appraisalListApi,
 } from "./AppraisalAPI";
 //Format Date
 import { formatDate } from "./formatDate";
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
 
 function Appraisal() {
   //For Toast
   const toastRef = useRef(null);
   //Dialog Visible State
   const [dialogVisible, setDialogVisible] = useState(false);
+  //Set Appraisal Form Data Visible
+  const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
+  //Loading For Data Table
+  const [loading, setLoading] = useState(true);
+  //Loading For Appraisal Form
+  const [appraisalFormLoading, setAppraisalFormLoading] = useState(null);
 
   //Set Appraiser Details
   const [empName, setEmpName] = useState(null);
@@ -40,10 +49,17 @@ function Appraisal() {
   //API Data Set
   const [appraisalData, setAppraisalData] = useState();
   const [appraiserForm, setAppraiserForm] = useState();
+  const [appraisalList, setAppraisalList] = useState();
+
+  //Set Appraisal Form ID
+  const [appraisalFormId, setAppraisalFormId] = useState(null);
 
   //token
   const getAuthToken = getUserData()?.token;
   let currentUserName = getUserData()?.userDetails.sub;
+
+  //set appraisal form id
+  const [appraisalFormID, setApraisalFormID] = useState("NA")
 
   //Form Submit Handler
   const handleSubmit = async (e) => {
@@ -88,16 +104,20 @@ function Appraisal() {
     const getAppraisalData = async () => {
       try {
         const localStorageAuth = getUserData();
+        console.log("localStorageAuth", localStorageAuth);
         const authToken = localStorageAuth?.token;
-        const employeeName = localStorageAuth?.userDetails.sub;
+        const employeeName = localStorageAuth?.userDetails.userId;
         const response = await appraisalAPI(authToken, employeeName);
 
         setAppraisalData(response);
         console.log("set_Appraisal_data", response);
-        //Current Appraisal Data
-        const currentAppraisalData = await currentAppraisalFormAPI();
-        console.log("currentAppraisalData_API", currentAppraisalData);
-        setAppraiserForm(currentAppraisalData?.data);
+
+        //List Of Appraisal Data
+        const appraisalList = await appraisalListApi(authToken, employeeName);
+        console.log("appraisalList", appraisalList);
+        setAppraisalList(appraisalList?.appraisalsList);
+        //For Loading
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
       }
@@ -108,29 +128,47 @@ function Appraisal() {
   }, []);
   console.log("reviewerName", reviewerName);
 
-
-
   //Tab Visible For Only Reviewer
   const listOfReviewer = appraisalData?.reviewerlist;
   console.log("listOfReviewer", listOfReviewer);
-  
+
   //Check if Reviewer Name And Current USer Name Are Same
   const isReviewer = listOfReviewer?.some((ele) => {
-    return ele.userID.toLowerCase() === currentUserName.toLowerCase();
+    return ele.userID.toLowerCase() === currentUserName?.toLowerCase();
   });
   console.log("isReviewer_Check", isReviewer);
-
 
   //Tab Visible For Only Approve Appraisals
   const listOfApprove = appraisalData?.appraiserlist;
   //console.log("listOfApprove", listOfApprove);
-  const isApprove=listOfApprove?.some((ele)=>{
-    return ele.userID.toLowerCase()===currentUserName.toLowerCase();
-  })
-  console.log("isApprove",isApprove);
+  const isApprove = listOfApprove?.some((ele) => {
+    return ele.userID.toLowerCase() === currentUserName?.toLowerCase();
+  });
+  console.log("isApprove", isApprove);
 
+  //Show Appraisal Form
+  const handleShowForm = async (formId) => {
+    console.log("Form ID", formId);
+    setApraisalFormID(formId);
+    setAppraisalFormLoading(formId);
+    const appraisalFormData = await currentAppraisalFormAPI(formId);
+    console.log("appraisalFormData", appraisalFormData);
+    setAppraisalFormLoading(null);
 
-
+    //For Toast
+    setAppraiserForm(appraisalFormData?.data);
+    if (appraisalFormData?.status == 200) {
+      //For Appraisal Form
+      setAppraisalFormVisible(true);
+      showSuccessMessage(toastRef, "Success", "Form Fetched Successfully");
+    } else {
+      showErrorMessage(
+        toastRef,
+        "Error",
+        "Internal Server Error, Please Try Again Later"
+      );
+    }
+  };
 
   return (
     <>
@@ -141,9 +179,9 @@ function Appraisal() {
             <div className="flex justify-between items-center">
               {/* Appraisal Dates */}
               <div className="flex items-center gap-4">
-                <p className="font-medium">Last Appraisal</p>
+                <p className="text-sm">Last Appraisal</p>
                 <Chip label="NA" color="primary" size="small" />
-                <p className="font-medium">Next Appraisal</p>
+                <p className="text-sm">Next Appraisal</p>
                 <Chip label="NA" color="primary" size="small" />
               </div>
 
@@ -157,25 +195,18 @@ function Appraisal() {
                 >
                   New Form
                 </Button>
+                <p>{appraisalFormID}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Appraisal Details */}
-        <div className="container mx-auto mt-2">
-          <TabView>
-            <TabPanel header="Review Appraisals" >
-              <p className="m-0">Review Appraisals</p>
-            </TabPanel>
-            <TabPanel header="Approve Appraisals" >
-              <p className="m-0">Approve Appraisals</p>
-            </TabPanel>
-            <TabPanel header="My Previous Forms">
-              <AppraisalDialog appraiserForm={appraiserForm} />
-            </TabPanel>
-          </TabView>
-        </div>
+        {appraisalFormVisible && (
+          <div className="container mx-auto mt-2">
+            <AppraisalDialog appraiserForm={appraiserForm} />
+          </div>
+        )}
 
         {/* Appraisal Form */}
         <Dialog
@@ -268,6 +299,71 @@ function Appraisal() {
             </div>
           </div>
         </Dialog>
+
+        {/* Previous Appraisal Data */}
+        <div className="card mt-2 mb-5 py-0 px-0 bg-white shadow rounded">
+          <DataTable
+            size="small"
+            stripedRows
+            header={
+              <Typography className="text-sm">Appraisal Information</Typography>
+            }
+            value={appraisalList}
+            showGridlines
+            className="dataTableHeader dataTableBody dataTableBodyPadding"
+            emptyMessage={
+              loading ? (
+                <>
+                  <LinearProgress color="inherit" />
+                </>
+              ) : (
+                "No Data Found"
+              )
+            }
+          >
+            <Column field="empName" header="Emp Name"></Column>
+            <Column
+              body={(rowData) => {
+                return (
+                  <Typography variant="body2" color="text.secondary">
+                    {formatDate(rowData.appraisalDate)}
+                  </Typography>
+                );
+              }}
+              header="Appraisal Date"
+            ></Column>
+            <Column field="reviewer" header="Reviewer Name"></Column>
+            <Column field="approver" header="Approver Name"></Column>
+            <Column
+              body={(rowData) => {
+                return (
+                  <Chip
+                    label={rowData.active === true ? "Active" : "Inactive"}
+                    color={rowData.active === true ? "success" : "info"}
+                    size="small"
+                  />
+                );
+              }}
+              header="Status"
+            ></Column>
+            <Column
+              body={(rowData) => {
+                return (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    loading={appraisalFormLoading === rowData.formId}
+                    loadingPosition="end"
+                    onClick={() => handleShowForm(rowData.formId)}
+                  >
+                    Show Form
+                  </Button>
+                );
+              }}
+              header="Show Form"
+            ></Column>
+          </DataTable>
+        </div>
       </div>
       <Toast ref={toastRef} />
     </>

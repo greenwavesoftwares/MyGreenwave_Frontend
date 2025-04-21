@@ -15,7 +15,7 @@ const appraisalAPI = async (token,empName) => {
         },
       }
     );
-
+//console.log("appraisalAPI_Header",`${endPoint}appraisal?userId=${empName}`);
     console.log("appraisal_get_api", response);
     return response.data;
   } catch (error) {
@@ -23,7 +23,7 @@ const appraisalAPI = async (token,empName) => {
     
   }
 };
-
+//Save New Appraisal Form API
 const appraiserFormApi =async (appraiserFromData,getAuthToken)=>{
   console.log("appraiserFormApiToken",appraiserFromData,getAuthToken);
     try {
@@ -41,6 +41,7 @@ const appraiserFormApi =async (appraiserFromData,getAuthToken)=>{
 
 }
 
+//Demo Test Api
 const appraisalPutApi=async(appraisalFormData)=>{
   try {
     const response = await axios.post(`${appraisalForm}`,appraisalFormData)
@@ -52,11 +53,11 @@ const appraisalPutApi=async(appraisalFormData)=>{
 }
 
 
-
-const currentAppraisalFormAPI=async()=>{
+//Appraisal Form Call Using Form ID
+const currentAppraisalFormAPI=async(appraisalFormId)=>{
   try {
-    const response = await axios.get(`${form}`)
-    console.log("CurrentAppraisalForm",response);
+    const response = await axios.get(`${form}?FromID=${appraisalFormId}`)
+    console.log("CurrentAppraisalForm",response,appraisalFormId);
     return response;
   } catch (error) {
     console.log(error);
@@ -64,4 +65,21 @@ const currentAppraisalFormAPI=async()=>{
 }
 
 
-export { appraisalAPI,appraiserFormApi,appraisalPutApi,currentAppraisalFormAPI };
+//List Of Appraisal
+const appraisalListApi=async(token,empName)=>{
+  try {
+    const response = await axios.get(`${endPoint}appraisal/allformlist?userId=${empName}`,{
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("appraisalListApi_Header",`${endPoint}appraisal/allformlist?userId=${empName}`);
+    console.log("appraisalListApi",response);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
+export { appraisalAPI,appraiserFormApi,appraisalPutApi,currentAppraisalFormAPI,appraisalListApi };
