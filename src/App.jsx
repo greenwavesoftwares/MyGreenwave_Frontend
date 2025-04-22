@@ -17,6 +17,7 @@ import Claim from "./Modules/Claims/Claim";
 import TourClaim from './Modules/Claims/TourClaim'
 import MiscellaneousClaim from './Modules/Claims/MiscellaneousClaim'
 import LoanApplication from './Modules/Claims/LoanApplication'
+import AppraisalsReview from "./Modules/Appraisal/Appraisals Review/AppraisalsReview";
 
 
 
@@ -41,6 +42,7 @@ function App() {
         <Route path="/tour-claim" element={<TourClaim/>} />
         <Route path="/miscellaneous-claim" element={<MiscellaneousClaim/>} />
         <Route path="/loan-application" element={<LoanApplication/>} />
+        <Route path="/appraisals-review" element={<AppraisalsReview />} />
         
 
         

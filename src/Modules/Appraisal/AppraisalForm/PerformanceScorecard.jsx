@@ -12,7 +12,10 @@ import { useForm } from "react-hook-form";
 const PerformanceScorecardDateTable = ({
   PerformanceScorecardData,
   appraiserPreviousSaveFormData,
+  isReviewer,
+  isApprover,
 }) => {
+  console.log("ReviewerAndApprover_Status", isReviewer, isApprover);
   //Set Level Full Fulfillment Data Dropdown
   //const [fulFillment, setFulFillment] = useState(null);
   //each dialog row data
@@ -89,8 +92,6 @@ const PerformanceScorecardDateTable = ({
     <>
       {/* Popup */}
 
-   
-
       <DataTable
         size="small"
         value={selectedRowData}
@@ -159,6 +160,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -180,6 +182,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,

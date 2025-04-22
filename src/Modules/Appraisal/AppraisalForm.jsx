@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
 import { Button as MuiButton } from "@mui/material";
@@ -29,6 +29,8 @@ import FutureGoals from "./AppraisalForm/FutureGoals";
 import FutureComptency from "./AppraisalForm/FutureComptency";
 import MyKRA from "./AppraisalForm/My_KRA";
 import MyInsights from "./AppraisalForm/My_Insights";
+import { Checkbox } from "primereact/checkbox";
+import { getUserData } from "../Login/Encrypt";
 
 function AppraisalDialog({ appraiserForm }) {
   //For Toast
@@ -44,40 +46,49 @@ function AppraisalDialog({ appraiserForm }) {
   };
 
   //For Competency Scorecard Data
-  const [CompetencyScorecardData, setCompetencyScorecardData] =useState([]);
+  const [CompetencyScorecardData, setCompetencyScorecardData] = useState([]);
   const CompetencyScorecardData_Update = (ele) => {
     setCompetencyScorecardData(ele);
   };
 
   //For Future Goals Data
   const [FutureGoalsData, setFutureGoalsData] = useState([]);
-  const FutureGoalsData_Update=(ele)=>{
+  const FutureGoalsData_Update = (ele) => {
     setFutureGoalsData(ele);
-  }
+  };
 
   //For Future Comptency Data
   const [FutureComptencyData, setFutureComptencyData] = useState([]);
-  const FutureComptencyData_Update=(ele)=>{
+  const FutureComptencyData_Update = (ele) => {
     setFutureComptencyData(ele);
-  }
+  };
 
   //For My KRA Data
   const [myKRA_Data, setMyKRA_Data] = useState([]);
-  const myKRA_Data_Update=(ele)=>{
+  const myKRA_Data_Update = (ele) => {
     setMyKRA_Data(ele);
-  }
+  };
 
   //For My Insights Data
   const [myInsights, setMyInsights] = useState([]);
-  const myInsights_Upadte=(ele)=>{
+  const myInsights_Upadte = (ele) => {
     setMyInsights(ele);
-  }
+  };
 
+  //For Confirmation Reviewer and Approver
+  const [reviewer, setReviewer] = useState(
+    appraiserForm?.PersonalData.reviewed
+  );
+  const [approver, setApprover] = useState(
+    appraiserForm?.PersonalData.approved
+  );
+  console.log("approver", approver);
+  console.log("reviewer_data", approver);
 
   //Use React Hooks Form
   const { register, handleSubmit, reset, setValue } = useForm();
 
-  //Make All Update Data 
+  //Make All Update Data
   const personalDataSubmit = async (data) => {
     console.log("object", data);
     const generatePersonalData = {
@@ -89,19 +100,15 @@ function AppraisalDialog({ appraiserForm }) {
       Future_Comptency: FutureComptencyData,
       My_KRA: myKRA_Data,
       My_Insights: myInsights,
+      Confirmation: [{ reviewer: reviewer }, { approver: approver }],
     };
     console.log("Appraisal Form Data:", generatePersonalData);
-
 
     try {
       const response = await appraisalPutApi(generatePersonalData);
       console.log("Appraisal Form Data:", response);
       if (response.status === 200) {
-        showSuccessMessage(
-          toastRef,
-          "Success",
-          "Form Submitted Successfully_ Personal"
-        );
+        showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
       } else {
         showSuccessMessage(toastRef, "Error", "Form Submission Failed");
       }
@@ -164,6 +171,31 @@ function AppraisalDialog({ appraiserForm }) {
     );
   };
 
+  //Reviewer
+  const isReviewer = () => {
+    const reviewer = appraiserForm?.reviewer;
+    const userName = getUserData()?.userDetails.userId;
+    console.log("form_reviewer", reviewer,userName);
+
+    if (reviewer === userName) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  const isApprover = () => {
+    const approver = appraiserForm?.approver;
+    const userName = getUserData()?.userDetails.userId;
+    if (approver === userName) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+ 
+
   return (
     <>
       <div className="card mt-1 py-2 px-3 bg-white shadow rounded">
@@ -176,7 +208,7 @@ function AppraisalDialog({ appraiserForm }) {
             variant="contained"
             size="small"
             sx={{ boxShadow: "none" }}
-            onClick={() => handleClick}
+            onClick={() => handleClick()}
           >
             {expandeButtonText}
           </MuiButton>
@@ -256,78 +288,69 @@ function AppraisalDialog({ appraiserForm }) {
                         placeholder="Why do I come to office?"
                       />
 
-                   
-                        <InputText
-                          id="current_base_salary"
-                          type="number"
-                          {...register("current_base_salary")}
-                          className="p-inputtext-sm"
-                          placeholder="Current Base Salary"
-                        />
-                        
-                     
-                        <InputText
-                          id="current_assued_bonus"
-                          type="number"
-                          {...register("current_assued_bonus")}
-                          className="p-inputtext-sm"
-                          placeholder="Current Assured Bonus"
-                        />
-                        
-                      
-                        <InputText
-                          id="current_performance_bonus"
-                          type="number"
-                          {...register("current_performance_bonus")}
-                          className="p-inputtext-sm"
-                          placeholder="Current Performance Bonus"
-                        />
-                       
-                     
-                        <InputText
-                          id="current_total_ctc"
-                          type="number"
-                          {...register("current_total_ctc")}
-                          className="p-inputtext-sm"
-                          placeholder="Current Total CTC"
-                        />
-                        
-                      
-                        <InputText
-                          id="proposed_base_salary"
-                          type="number"
-                          {...register("proposed_base_salary")}
-                          className="p-inputtext-sm"
-                          placeholder="Proposed Base Salary"
-                        />
-                       
-                        <InputText
-                          id="proposed_assued_bonus"
-                          type="number"
-                          {...register("proposed_assued_bonus")}
-                          className="p-inputtext-sm"
-                          placeholder="Proposed Assured Bonus"
-                        />
-                        
-                        
-                     
-                        <InputText
-                          id="proposed_performance_bonus"
-                          type="number"
-                          {...register("proposed_performance_bonus")}
-                          className="p-inputtext-sm"
-                          placeholder="Proposed Performance Bonus"
-                        />
-                        
-                      
-                        <InputText
-                          id="proposed_total_ctc"
-                          type="number"
-                          {...register("proposed_total_ctc")}
-                          className="p-inputtext-sm"
-                          placeholder="Proposed Total CTC"
-                        />
-                       
+                      <InputText
+                        id="current_base_salary"
+                        type="number"
+                        {...register("current_base_salary")}
+                        className="p-inputtext-sm"
+                        placeholder="Current Base Salary"
+                      />
+
+                      <InputText
+                        id="current_assued_bonus"
+                        type="number"
+                        {...register("current_assued_bonus")}
+                        className="p-inputtext-sm"
+                        placeholder="Current Assured Bonus"
+                      />
+
+                      <InputText
+                        id="current_performance_bonus"
+                        type="number"
+                        {...register("current_performance_bonus")}
+                        className="p-inputtext-sm"
+                        placeholder="Current Performance Bonus"
+                      />
+
+                      <InputText
+                        id="current_total_ctc"
+                        type="number"
+                        {...register("current_total_ctc")}
+                        className="p-inputtext-sm"
+                        placeholder="Current Total CTC"
+                      />
+
+                      <InputText
+                        id="proposed_base_salary"
+                        type="number"
+                        {...register("proposed_base_salary")}
+                        className="p-inputtext-sm"
+                        placeholder="Proposed Base Salary"
+                      />
+
+                      <InputText
+                        id="proposed_assued_bonus"
+                        type="number"
+                        {...register("proposed_assued_bonus")}
+                        className="p-inputtext-sm"
+                        placeholder="Proposed Assured Bonus"
+                      />
+
+                      <InputText
+                        id="proposed_performance_bonus"
+                        type="number"
+                        {...register("proposed_performance_bonus")}
+                        className="p-inputtext-sm"
+                        placeholder="Proposed Performance Bonus"
+                      />
+
+                      <InputText
+                        id="proposed_total_ctc"
+                        type="number"
+                        {...register("proposed_total_ctc")}
+                        className="p-inputtext-sm"
+                        placeholder="Proposed Total CTC"
+                      />
                     </div>
                   </div>
                 </AccordionDetails>
@@ -353,6 +376,8 @@ function AppraisalDialog({ appraiserForm }) {
                   appraiserPreviousSaveFormData={
                     appraiserForm?.Performance_ScorecardData
                   }
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
               </AccordionDetails>
             </Accordion>
@@ -435,8 +460,10 @@ function AppraisalDialog({ appraiserForm }) {
                 <Typography component="span">My KRA</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <MyKRA appraiserPreviousSaveFormDat={appraiserForm?.My_KRA}
-                myKRA_Data={myKRA_Data_Update} />
+                <MyKRA
+                  appraiserPreviousSaveFormDat={appraiserForm?.My_KRA}
+                  myKRA_Data={myKRA_Data_Update}
+                />
               </AccordionDetails>
             </Accordion>
 
@@ -471,7 +498,25 @@ function AppraisalDialog({ appraiserForm }) {
                 <Typography component="span">Confirmation</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <h1>not ready</h1>
+                <div className="flex justify-center items-center mb-1 column-gap-4">
+                  <h1 className="text-sm">Reviewer</h1>
+                  <Checkbox
+                    checked={reviewer === 1}
+                    onChange={(e) => {
+                      console.log("approver_checkbox", e);
+                      setReviewer(e.checked ? 1 : 0);
+                    }}
+                  />
+                  <h1 className="text-sm">Approver</h1>
+
+                  <Checkbox
+                    checked={approver === 1}
+                    onChange={(e) => {
+                      console.log("approver_checkbox", e);
+                      setApprover(e.checked ? 1 : 0);
+                    }}
+                  />
+                </div>
               </AccordionDetails>
             </Accordion>
             <MuiButton
