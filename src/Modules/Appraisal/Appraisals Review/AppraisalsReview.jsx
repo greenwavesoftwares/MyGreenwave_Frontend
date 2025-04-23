@@ -6,13 +6,14 @@ import { appraisalReviewerApi, appraisalFormAPI } from "./AppraisalsReviewAPI";
 import { getUserData } from "../../Login/Encrypt";
 //Toast
 import {
-    showErrorMessage,
-    showSuccessMessage,
-  } from "../../../components/Toast/ShowMessage";
-  import Toast from "../../../components/Toast/Toast";
+  showErrorMessage,
+  showSuccessMessage,
+} from "../../../components/Toast/ShowMessage";
+import Toast from "../../../components/Toast/Toast";
 
 import "../Appraisal.scss";
 import AppraisalDialog from "../AppraisalForm";
+import { formatDate } from "../formatDate";
 
 const AppraisalsReview = () => {
   //For Toast
@@ -60,13 +61,14 @@ const AppraisalsReview = () => {
         setAppraisalFormData(response?.data);
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
         setAppraisalFormVisible(true);
+      } else {
+        showErrorMessage(toastRef, "Error", "Form Not Found");
       }
-      
+
       setAppraisalFormLoading(null);
       console.log("appraisalForm_api_response", response);
     } catch (error) {
       console.log(error);
-      
     }
   };
   console.log("appraisalFormData", appraisalFormData);
@@ -95,7 +97,10 @@ const AppraisalsReview = () => {
                 )
               }
             >
-              <Column field="empName" header="emp name"></Column>
+              <Column field="empName" header="Employee Name"></Column>
+              <Column  header="Appraisal Date" body={(rowData)=>
+                formatDate(rowData.appraisalDate)
+              }></Column>
               <Column field="reviewer" header="Reviewer Name"></Column>
               <Column field="approver" header="Approver Name"></Column>
               <Column

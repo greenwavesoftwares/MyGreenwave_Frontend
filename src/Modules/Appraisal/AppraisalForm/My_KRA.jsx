@@ -53,6 +53,10 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
         value={selectedRowData}
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
+        rowClassName={(rowData) => {
+          //return rowData.previous_year_KRA.indexOf === 0 ? "bg-red-500" : null;
+          if (rowData.my_next12month_KRA.indexOf("Increase") !== -1) return "bg-red-500";
+        }}
       >
         <Column
           field="my_next12month_KRA"
@@ -155,6 +159,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
             );
           }}
         />
+        <Column field="previous_year_KRA" header="previous_year_KRA"></Column>
       </DataTable>
       <div
         style={{
@@ -171,7 +176,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
           onClick={() => {
             const blankRow = {
               my_next12month_KRA: "",
-              
+
               reviewers_comment: "",
               appraisers_comments: "",
             };

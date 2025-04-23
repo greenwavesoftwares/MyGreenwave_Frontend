@@ -86,7 +86,7 @@ function Appraisal() {
     //Save Appraiser Form Data (API)
     const response = await appraiserFormApi(appraiserFromData, getAuthToken);
     //If Date Successfully Saved
-    if (response?.status == 200) {
+    if (response?.status == 201) {
       //Toast For Success Submitted
       showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
       //Dialog Close
@@ -338,8 +338,8 @@ function Appraisal() {
               body={(rowData) => {
                 return (
                   <Chip
-                    label={rowData.active === true ? "Active" : "Inactive"}
-                    color={rowData.active === true ? "success" : "info"}
+                    label={rowData.approved === false ? "Active" : "Inactive"}
+                    color={rowData.approved === false ? "success" : "error"}
                     size="small"
                   />
                 );
