@@ -14,18 +14,16 @@ import AdminPage from "./Modules/AdminPage/AdminPage";
 import ModeOfTransportTable from "./Modules/TravelDesk/ModeOfTransportTable";
 import Appraisal from "./Modules/Appraisal/Appraisal";
 import Claim from "./Modules/Claims/Claim";
-import TourClaim from './Modules/Claims/TourClaim'
-import MiscellaneousClaim from './Modules/Claims/MiscellaneousClaim'
-import LoanApplication from './Modules/Claims/LoanApplication'
+import TourClaim from "./Modules/Claims/TourClaim";
+import MiscellaneousClaim from "./Modules/Claims/MiscellaneousClaim";
+import LoanApplication from "./Modules/Claims/LoanApplication";
 import AppraisalsReview from "./Modules/Appraisal/Appraisals Review/AppraisalsReview";
 import AppraisalsApprover from "./Modules/Appraisal/Appraisals Approver/AppraisalsApprover";
-
-
+import SalarySlipUpload from "./Modules/SalarySlip/SalarySlipUpload";
 
 function App() {
   return (
     <Router>
-      
       {/* <DropdownCheckbox> </DropdownCheckbox> */}
       {/* <DialogComponent></DialogComponent> */}
       {/* <DatePicker></DatePicker> */}
@@ -37,15 +35,18 @@ function App() {
         <Route path="/leave-management" element={<LeaveManagement />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
-        <Route path="/ModeOfTransportTable" element={<ModeOfTransportTable />} />
+        <Route
+          path="/ModeOfTransportTable"
+          element={<ModeOfTransportTable />}
+        />
         <Route path="/appraisal" element={<Appraisal />} />
-        <Route path="/claim" element={<Claim/>} />
-        <Route path="/tour-claim" element={<TourClaim/>} />
-        <Route path="/miscellaneous-claim" element={<MiscellaneousClaim/>} />
-        <Route path="/loan-application" element={<LoanApplication/>} />
+        <Route path="/claim" element={<Claim />} />
+        <Route path="/tour-claim" element={<TourClaim />} />
+        <Route path="/miscellaneous-claim" element={<MiscellaneousClaim />} />
+        <Route path="/loan-application" element={<LoanApplication />} />
         <Route path="/appraisals-review" element={<AppraisalsReview />} />
         <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
-
+        <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
       </Routes>
     </Router>
   );
