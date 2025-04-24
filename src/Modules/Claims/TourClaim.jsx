@@ -1,50 +1,177 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabView, TabPanel } from "primereact/tabview";
 import TourClaimForm from './TourClaimForm';
 import TourClaimTable from './TourClaimTable';
 import DraftForm from './DraftForm';
 import MyClainTourForm from './MyClainTourForm';
+import { Button } from 'primereact/button';
+import { getDraftData, handleSaveToDraft } from './claimServices';
 
 const TourClaim = () => {
+    const [editableMode, seteditableMode] = useState(false); // true by default
+    const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
+    const [draftData, setDraftData] = useState([]);
+    const [tourClaimTableData,settourClaimTableData]=useState([])
+
+
+
+
+
+    const [tourclaimformData, settourclaimformData] = useState({
+        travelMode: '',
+        travelType: '',
+        destination: '',
+        purpose: '',
+        projectName: '',
+        onAccount: '',
+        fromDate: '',
+        toDate: '',
+    });
+
+
+    // useEffect(() => {
+    //     const fetchDraftData = async () => {
+    //         try {
+    //             const formattedDraftData = await getDraftData();
+    //             setDraftData(formattedDraftData);
+    //             console.log("Fetched draft data:", formattedDraftData);
+    //         } catch (err) {
+    //             console.error("Error loading draft data:", err);
+    //             setDraftData([]); // fallback
+    //         }
+    //     };
+
+    //     fetchDraftData();
+    // }, []); // Only on initial mount
+    // When user clicks Edit, prefill form
+    useEffect(() => {
+
+        const fetchDraftData = async () => {
+            try {
+                const formattedDraftData = await getDraftData();
+                setDraftData(formattedDraftData);
+                if (formattedDraftData.length == 0) {
+                    settoggleNewClaim(true)
+                }
+                console.log("Fetched draft data:", formattedDraftData);
+            } catch (err) {
+                console.error("Error loading draft data:", err);
+                setDraftData([]); // fallback
+            }
+        };
+        fetchDraftData();
+        //console.log("length after fetch the data"+ draftData.length)
+        // if(draftData.length==0)
+        // {
+        //     settoggleNewClaim(true)
+        // }
+        // if (editableMode === false) {
+
+        //     settourclaimformData(prev => ({
+        //         ...prev,
+        //         travelMode: '',
+        //         travelType: '',
+        //         destination: '',
+        //         purpose: '',
+        //         projectName: '',
+        //         onAccount: '',
+        //         fromDate: '',
+        //         toDate: ''
+        //     }));
+        // }
+
+
+
+
+    }, [], [draftData]);
+
+
+
+    const handleSaveToDraft = () => {
+        // After saving to draft, hide form and table again
+        // settoggleNewClaim(false);
+        // seteditableMode(true); // reset to editable mode
+    };
+
     return (
         <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen py-10 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-3xl   transition-all duration-300">
-                {/* <h4 className="text-xl font-bold text-center text-blue-800 mb-6">
-                    Tour Claim Portal
-                </h4> */}
-
+            <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-3xl transition-all duration-300">
                 <TabView className="p-tabview-custom">
                     <TabPanel header="New Claim">
                         <div className="space-y-6">
-                            <TourClaimForm />
-                            <TourClaimTable />
+
+                            {/* ✅ Always show Draft section if draft data exists */}
+                            {draftData.length > 0 && !toggleNewClaim && !editableMode && (
+                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-md font-semibold text-gray-700">📝 My Drafts</h2>
+                                        <Button
+                                            label="Add New Claim"
+                                            icon="pi pi-plus"
+                                            className="p-button-sm"
+                                            onClick={() => {
+                                                settoggleNewClaim(true);
+                                                seteditableMode(false);
+                                                settourclaimformData({
+                                                    travelMode: '',
+                                                    travelType: '',
+                                                    destination: '',
+                                                    purpose: '',
+                                                    projectName: '',
+                                                    onAccount: '',
+                                                    fromDate: '',
+                                                    toDate: '',
+                                                });
+                                                settourClaimTableData([])
+                                            }}
+                                        />
+
+                                    </div>
+
+                                    <DraftForm
+                                        draftData={draftData}
+                                        setDraftData={setDraftData}
+                                        editableMode={editableMode}
+                                        seteditableMode={seteditableMode}
+                                        tourclaimformData={tourclaimformData}
+                                         settourclaimformData={settourclaimformData}
+                                         settourClaimTableData={settourClaimTableData}
+
+                                    />
+                                </div>
+                            )}
+
+                            {/* ✅ Show Form and Table only when editing or creating new */}
+                            {editableMode || toggleNewClaim ? (
+                                <>
+                                    <TourClaimForm
+
+                                        tourclaimformData={tourclaimformData}
+                                        settourclaimformData={settourclaimformData}
+                                        onSaveToDraft={handleSaveToDraft} // 👈 pass handler
+                                    />
+                                    <TourClaimTable
+                                        editableMode={editableMode}
+                                        seteditableMode={seteditableMode}
+                                        toggleNewClaim={toggleNewClaim} 
+                                        settoggleNewClaim={settoggleNewClaim}
+                                        settourClaimTableData={settourClaimTableData}
+                                        tourClaimTableData={tourClaimTableData}
+                                    />
+                                </>
+                            ) : ""}
                         </div>
                     </TabPanel>
 
-                    <TabPanel header="MyDrafts-MyClaims">
+                    {/* My Claims Tab */}
+                    <TabPanel header="My Claims">
                         <div className="space-y-10">
-
-                            {/* My Drafts Section */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-                                <h2 className="text-md font-semibold text-gray-700 mb-4">📝 My Drafts</h2>
-                                <DraftForm />
-                            </div>
-
-                            {/* My Claims Section */}
                             <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
                                 <h2 className="text-md font-semibold text-blue-800 mb-4">📂 My Claims</h2>
                                 <MyClainTourForm />
                             </div>
                         </div>
                     </TabPanel>
-
-                    {/* <TabPanel header="My Claims">
-                        <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
-                            <h2 className="text-lg font-semibold text-blue-800 mb-4">📁 My Claims</h2>
-                            <p className="text-gray-600">No data available.</p>
-
-                        </div>
-                    </TabPanel> */}
                 </TabView>
             </div>
         </div>

@@ -1,56 +1,80 @@
-import React, { useState,useRef } from 'react'
+import React, { useState } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
-import TourClaimForm from './TourClaimForm'; // update path as needed
+import TourClaimForm from './TourClaimForm';
 import TourClaimTable from './TourClaimTable';
-const cellStyle = { padding: '8px 12px' }; // 0.25rem 0.5rem
+
+const cellStyle = { padding: '12px 16px' };
+
+const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode,tourclaimformData,settourclaimformData,settourClaimTableData }) => {
 
 
-
-
-const DraftForm = () => {
-     
-    const [tableData, setTableData] = useState([
-        {
-            id: 1,
-            To: 'John Doe',
-            Type: 'Official',
-            Destination: 'Mumbai',
-            Purpose: 'Client Meeting',
-            Project: 'ITC PCPB',
-            'On Account': 'Business',
-            'Advance (INR)': 5000,
-            'Expense (INR)': 4500,
-            'Claim (INR)': 500,
-            'Due (INR)': 0,
-            date: '2025-04-18'
-        }
-    ]);
 
     const [editDialogVisible, setEditDialogVisible] = useState(false);
     const [selectedRowData, setSelectedRowData] = useState(null);
 
-    const openEditDialog = (rowData) => {
-        setSelectedRowData(rowData);
-        setEditDialogVisible(true);
-    };
+    // const openEditDialog = (rowData) => {
+    //     setSelectedRowData(rowData);
+    //     setEditDialogVisible(true);
+    // };
 
     const handleDelete = (id) => {
-        setTableData(prev => prev.filter(row => row.date !== id));
+        setDraftData(prev => prev.filter(row => row.date !== id));
     };
 
     const handleApplyApproval = (rowData) => {
         console.log('Apply for Approval clicked:', rowData);
     };
 
+    const handleEdit = async (claim_id) => {
+        const myHeaders = new Headers();
+        myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhbmlzaC5rdW1hckBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDU0ODM0NjEsImV4cCI6MTc0NTQ4NzA2MX0.uP0EUHwcZwKmDRkfYziJuvn5JFwGfSyQSF6P1SUnJiA");
+    
+        const requestOptions = {
+            method: "GET",
+            headers: myHeaders,
+            redirect: "follow"
+        };
+    
+        try {
+            const response = await fetch(`http://localhost:8081/claims/tour-claims/${claim_id}`, requestOptions);
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+    
+            const data = await response.json();
+    
+            settourclaimformData({
+                travelMode: '',
+                travelType: '',
+                destination: data.destination,
+                purpose: data.purpose,
+                projectName: data.project,
+                onAccount: data.account,
+                fromDate: new Date(data.from_date),
+                toDate: new Date(data.to_date)
+            });
+            settourClaimTableData(data.tourClaimRecords)
+
+    
+            
+        } catch (error) {
+            console.error("Fetch error:", error);
+        }
+    };
+    
     const actionBodyTemplate = (rowData) => (
         <div className="flex gap-2">
             <Button
                 icon="pi pi-pencil"
                 className="p-button-sm p-button-text p-button-info"
-                onClick={() => openEditDialog(rowData)}
+                onClick={() => {
+                    seteditableMode(true);
+                    handleEdit(rowData.claim_id);
+                }}
                 tooltip="Edit"
             />
             <Button
@@ -69,23 +93,69 @@ const DraftForm = () => {
         </div>
     );
 
+    const claimCalculationBody = (rowData) => (
+        <div className="text-xs space-y-1 flex flex-col justify-center">
+            <div><span className='font-bold'><span className='font-bold '>Expense:</span></span> ₹{rowData['total_expense']}</div>
+            <div><span className='font-bold'><span className='font-bold'>Advance:</span></span> ₹{rowData['advance']}</div>
+            <hr />
+            {rowData['dueAmount'] ? (
+                <div className=''><span className='font-bold'><span className='font-bold'>Due:</span></span> ₹{rowData['dueAmount']}</div>
+            ) : (
+                <div className=''><span className='font-bold'><span className='font-bold'>Claim:</span></span>: ₹{rowData['amountToBeClaimed']}</div>
+            )}
+
+        </div>
+    );
+
+    const tourDetailsBody = (rowData) => (
+        <div className="text-xs space-y-1 flex flex-col justify-center">
+            <div> <span className='font-bold'><span className='font-bold'>Destination:</span></span>{rowData['destination']}</div>
+            <div><span className='font-bold'><span className='font-bold'>Purpose:</span></span> {rowData['purpose']}</div>
+            <div className=''><span className='font-bold'>Project:</span>{rowData['project']}</div>
+            <div className=''><span className='font-bold'>Type:</span> {rowData['type']}</div>
+        </div>
+    );
+
+
+
+
+
     return (
         <div>
-            <DataTable value={tableData} tableStyle={{ fontSize: '0.7rem', minWidth: '60rem'  }}>
-                <Column field="To" header="To" headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column field="Type" header="Type" headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column field="Destination" header="Destination"  headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column field="Purpose" header="Purpose" headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column field="Project" header="Project" headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column field="On Account" header="On Account" headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column field="Advance (INR)" header="Advance (INR)" headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column field="Expense (INR)" header="Expense (INR)" headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column field="Claim (INR)" header="Claim (INR)" headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column field="Due (INR)" header="Due (INR)" headerStyle={cellStyle} bodyStyle={cellStyle}/>
-                <Column header="Action" body={actionBodyTemplate} headerStyle={cellStyle} bodyStyle={cellStyle}/>
-            </DataTable>
+            <div>
+                <DataTable value={draftData} tableStyle={{ fontSize: '0.7rem', minWidth: '71rem' }}>
+                    <Column field="claim_id" header="Claim Id" headerStyle={cellStyle} bodyStyle={cellStyle} />
+                    <Column field="to_date" header="To" headerStyle={cellStyle} bodyStyle={cellStyle} />
+                    <Column field="account" header="On Account" headerStyle={cellStyle} bodyStyle={cellStyle} />
 
-            <Dialog
+
+
+                    {/* ✅ Single column for all tourdetails-related fields */}
+                    <Column
+                        header="Tour Details"
+                        body={tourDetailsBody}
+                        headerStyle={cellStyle}
+                        bodyStyle={{ ...cellStyle, whiteSpace: 'pre-line' }}
+                    />
+
+                    {/* ✅ Single column for all claim-related fields */}
+                    <Column
+                        header="Claim Calculation"
+                        body={claimCalculationBody}
+                        headerStyle={cellStyle}
+                        bodyStyle={{ ...cellStyle, whiteSpace: 'pre-line' }}
+                    />
+
+                    <Column
+                        header="Action"
+                        body={actionBodyTemplate}
+                        headerStyle={{ ...cellStyle, textAlign: 'center' }}
+                        bodyStyle={{ ...cellStyle, textAlign: 'center' }}
+                    />
+                </DataTable>
+            </div>
+
+            {/* <Dialog
                 header="Edit Tour Claim"
                 visible={editDialogVisible}
                 onHide={() => setEditDialogVisible(false)}
@@ -93,18 +163,16 @@ const DraftForm = () => {
                 breakpoints={{ '960px': '75vw', '641px': '90vw' }}
                 modal
             >
-                <TourClaimForm mode="popup" />
-                <div className='flex justify-center gap-2'>
-                    
+                {/* <TourClaimForm mode="popup" />
+                <div className="flex justify-center gap-2 mt-4">
                     <Button
                         label="Download"
                         icon="pi pi-download"
                         className="p-button-sm p-button-success"
                     />
                 </div>
-
-                <TourClaimTable mode="popup"/>
-            </Dialog>
+                <TourClaimTable mode="popup" /> */}
+            {/* </Dialog> */}
         </div>
     );
 };
