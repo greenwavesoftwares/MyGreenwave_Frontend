@@ -3,14 +3,20 @@ import { PencilSquareIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, PlusIcon, Ch
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import "react-datepicker/dist/react-datepicker.css";
+import { Toast } from "primereact/toast";
+import { useRef } from "react";
+import { showWarningMessage } from "../../components/Toast/ShowMessage";
+
 
 
 const AccommodationTable = ({ disableAddRow, accommodations, setAccommodations }) => {
     //const [accommodations, setAccommodations] = useState([]);
 
+    const toastRef = useRef(null);
+
     const handleAdd = () => {
         if (disableAddRow) {
-            alert("Please fill all required fields before adding a row.");
+            showWarningMessage(toastRef,"Please fill all required fields before adding a row.");
             return;
         }
 
@@ -54,13 +60,14 @@ const AccommodationTable = ({ disableAddRow, accommodations, setAccommodations }
     };
 
 
+   
 
     const handleSave = (index) => {
         const row = accommodations[index];
 
         // Validate required fields
         if (!row.type || !row.checkIn || !row.checkOut || !row.numberOfRooms) {
-            alert("Please fill all required fields: Type, No. of Rooms, Check-In Date, and Check-Out Date.");
+            showWarningMessage(toastRef,"Please fill all required fields: Type, No. of Rooms, Check-In Date, and Check-Out Date.");
             return;
         }
 
@@ -84,7 +91,7 @@ const AccommodationTable = ({ disableAddRow, accommodations, setAccommodations }
 
     const handleExport = () => {
         if (accommodations.length === 0) {
-            alert("No data available to export.");
+            showWarningMessage(toastRef,"No data available to export.");
             return;
         }
 
@@ -113,6 +120,8 @@ const AccommodationTable = ({ disableAddRow, accommodations, setAccommodations }
     };
 
     return (
+        <>
+            <Toast ref={toastRef} />
         <section className="bg-gray-50 dark:bg-gray-900 py-3 sm:py-5">
             <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
                 <div className="relative overflow-hidden">
@@ -339,6 +348,7 @@ const AccommodationTable = ({ disableAddRow, accommodations, setAccommodations }
                 </div>
             </div>
         </section>
+        </>
     );
 };
 

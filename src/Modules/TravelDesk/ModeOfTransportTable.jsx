@@ -3,14 +3,20 @@ import { PencilSquareIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, PlusIcon, Ch
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import "react-datepicker/dist/react-datepicker.css";
+import { Toast } from "primereact/toast";
+import { useRef } from "react";
+import { showWarningMessage } from "../../components/Toast/ShowMessage";
 
 
 const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes }) => {
     // const [transportModes, setTransportModes] = useState([]);
 
+    const toastRef = useRef(null);
+
+
     const handleAdd = () => {
         if (disableAddRow) {
-            alert("Please fill all required fields before adding a row.");
+            showWarningMessage(toastRef,"Please fill all required fields before adding a row.");
             return;
         }
 
@@ -34,7 +40,7 @@ const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes
     const handleSave = (index) => {
         const row = transportModes[index];
         if (!row.mode || !row.fromDate) {
-            alert("Please select both Mode and From Date before saving.");
+            showWarningMessage(toastRef,"Please select both Mode and From Date before saving.");
             return;
         }
 
@@ -57,7 +63,7 @@ const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes
 
     const handleExport = () => {
         if (transportModes.length === 0) {
-            alert("No data available to export.");
+            showWarningMessage(toastRef,"No data available to export.");
             return;
         }
 
@@ -82,6 +88,9 @@ const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes
     };
 
     return (
+        <>
+        <Toast ref={toastRef} />
+        
         <section className="bg-gray-50 dark:bg-gray-900 py-3 sm:py-5">
             <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
                 <div className="relative overflow-hidden">
@@ -243,6 +252,7 @@ const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes
                 </div>
             </div>
         </section>
+        </>
     );
 };
 

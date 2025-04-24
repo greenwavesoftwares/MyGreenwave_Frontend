@@ -16,3 +16,4 @@ export function showSecondaryMessage (toast,header,message,life=3000) {
 export function showContrastMessage (toast,header,message,life=3000) {
     toast.current.show({ severity:"contrast", summary: header, detail: message, life: life });
 }
+  
