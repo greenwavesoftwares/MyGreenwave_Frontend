@@ -1,21 +1,21 @@
-import React, { useState } from "react";
+import React from "react";
 import { PencilSquareIcon, TrashIcon, CheckIcon, ArrowDownTrayIcon, PlusIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import "react-datepicker/dist/react-datepicker.css";
 
 
-const ModeOfTransportTable = ({ disableAddRow }) => {
-    const [rows, setRows] = useState([]);
+const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes }) => {
+    // const [transportModes, setTransportModes] = useState([]);
 
     const handleAdd = () => {
         if (disableAddRow) {
             alert("Please fill all required fields before adding a row.");
             return;
         }
-    
-        setRows([
-            ...rows,
+
+        setTransportModes([
+            ...transportModes,
             {
                 mode: "",
                 fromDate: "",
@@ -26,43 +26,43 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
     };
 
     const handleChange = (index, field, value) => {
-        const updatedRows = [...rows];
+        const updatedRows = [...transportModes];
         updatedRows[index][field] = value;
-        setRows(updatedRows);
+        setTransportModes(updatedRows);
     };
 
     const handleSave = (index) => {
-        const row = rows[index];
+        const row = transportModes[index];
         if (!row.mode || !row.fromDate) {
             alert("Please select both Mode and From Date before saving.");
             return;
         }
 
-        const updatedRows = [...rows];
+        const updatedRows = [...transportModes];
         updatedRows[index].isEditable = false;
-        setRows(updatedRows);
+        setTransportModes(updatedRows);
     };
 
     const handleEdit = (index) => {
-        const updatedRows = [...rows];
+        const updatedRows = [...transportModes];
         updatedRows[index].isEditable = true;
-        setRows(updatedRows);
+        setTransportModes(updatedRows);
     };
 
     const handleDelete = (index) => {
-        const updatedRows = [...rows];
+        const updatedRows = [...transportModes];
         updatedRows.splice(index, 1);
-        setRows(updatedRows);
+        setTransportModes(updatedRows);
     };
 
     const handleExport = () => {
-        if (rows.length === 0) {
+        if (transportModes.length === 0) {
             alert("No data available to export.");
             return;
         }
 
         // Prepare data for Excel
-        const exportData = rows.map(({ mode, fromDate, comment }) => ({
+        const exportData = transportModes.map(({ mode, fromDate, comment }) => ({
             Mode: mode,
             "From Date": fromDate,
             Comment: comment,
@@ -126,7 +126,7 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {rows.map((row, index) => (
+                                    {transportModes.map((row, index) => (
                                         <tr key={index} className="border-b dark:border-gray-700 text-center">
                                             <td className="px-4 py-3 text-center">
                                                 {row.isEditable ? (
@@ -189,7 +189,11 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
                                                 <div className="flex items-center gap-2 justify-start h-full">
                                                     {row.isEditable ? (
                                                         <button
-                                                            onClick={() => handleSave(index)}
+                                                            type="button" // ✅ Prevents it from acting like a submit button
+                                                            onClick={(e) => {
+                                                                e.preventDefault(); // ✅ Prevents form submission
+                                                                handleSave(index);
+                                                            }}
                                                             className="text-green-600 hover:text-green-800 p-0 m-0 flex items-center justify-center h-6 w-6"
                                                             title="Save"
                                                         >
@@ -197,7 +201,11 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
                                                         </button>
                                                     ) : (
                                                         <button
-                                                            onClick={() => handleEdit(index)}
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                handleEdit(index);
+                                                            }}
                                                             className="text-blue-600 hover:text-blue-800 p-0 m-0 flex items-center justify-center h-6 w-6"
                                                             title="Edit"
                                                         >
@@ -205,7 +213,11 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
                                                         </button>
                                                     )}
                                                     <button
-                                                        onClick={() => handleDelete(index)}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleDelete(index);
+                                                        }}
                                                         className="text-red-600 hover:text-red-800 p-0 m-0 flex items-center justify-center h-6 w-6"
                                                         title="Delete"
                                                     >
@@ -213,6 +225,7 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
                                                     </button>
                                                 </div>
                                             </td>
+
                                         </tr>
                                     ))}
                                 </tbody>
@@ -220,7 +233,7 @@ const ModeOfTransportTable = ({ disableAddRow }) => {
                             </table>
 
                             {/* Empty state */}
-                            {rows.length === 0 && (
+                            {transportModes.length === 0 && (
                                 <div className="text-center text-gray-400 py-4">
                                     No data added yet.
                                 </div>
