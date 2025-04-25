@@ -1,7 +1,7 @@
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
-import { Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
@@ -9,6 +9,8 @@ import { Dropdown } from "primereact/dropdown";
 const CompetencyScorecard = ({
   appraiserPreviousSaveFormDat,
   CompetencyScorecardData,
+  isReviewer,
+  isApprover,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -52,13 +54,12 @@ const CompetencyScorecard = ({
     setEditingRowIndex(null);
   };
   //Check Previous Year Data
-  const checkedPreviousYearData =(ele)=>{
-    if(ele?.previous_year_Data === true) {
+  const checkedPreviousYearData = (ele) => {
+    if (ele?.previous_year_Data === true) {
       return true;
     }
     return false;
-
-  }
+  };
 
   return (
     <>
@@ -70,10 +71,9 @@ const CompetencyScorecard = ({
         value={selectedRowData}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
-          if (rowData.some(ele => ele.previous_year_Data === true)) {
+          if (rowData.some((ele) => ele.previous_year_Data === true)) {
             return "bg-cyan-100";
           }
-          
         }}
       >
         <Column
@@ -82,7 +82,7 @@ const CompetencyScorecard = ({
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
-              disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData)}
                 value={rowData.personal_goals}
                 onChange={(e) =>
                   handleInputChange(e.target.value, "personal_goals", rowIndex)
@@ -108,7 +108,19 @@ const CompetencyScorecard = ({
                 placeholder="Select Level"
               />
             ) : (
-              rowData.relevance ?? ""
+              <Chip
+                size="small"
+                label={rowData.relevance ?? ""}
+                //variant="outlined"
+                color={
+                  rowData.relevance === "H" || rowData.relevance === "High"
+                    ? "error"
+                    : rowData.relevance === "M" ||
+                      rowData.relevance === "Medium"
+                    ? "warning"
+                    : "primary"
+                }
+              />
             )
           }
         ></Column>
@@ -130,7 +142,7 @@ const CompetencyScorecard = ({
             )
           }
         ></Column>
-        
+
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -138,6 +150,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -158,6 +171,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,

@@ -33,24 +33,41 @@ import { Checkbox } from "primereact/checkbox";
 import { getUserData } from "../Login/Encrypt";
 import LastYearGoal from "./AppraisalForm/LastYearGoal";
 
-function AppraisalDialog({ appraiserForm ,trainingData}) {
+function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Toast
   const toastRef = useRef(null);
   const [expanded, setExpanded] = useState([]);
   //const [expandAll, setExpandAll] = useState(false);
   // State for form data
-  const [expandButtonText, setExpandButtonText] = useState('expand all');
+  const [expandButtonText, setExpandButtonText] = useState("expand all");
 
   // For performanceScorecardData
   const [performanceScorecardData, setPerformanceScorecardData] = useState([]);
   const PerformanceScorecardData = (ele) => {
-    setPerformanceScorecardData(ele);
+    console.log("SavePerformanceScorecardData", ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setPerformanceScorecardData(updatedData);
   };
 
   //For Competency Scorecard Data
   const [CompetencyScorecardData, setCompetencyScorecardData] = useState([]);
   const CompetencyScorecardData_Update = (ele) => {
-    setCompetencyScorecardData(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setCompetencyScorecardData(updatedData);
   };
 
   //For Future Goals Data
@@ -74,7 +91,15 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
   //For My Insights Data
   const [myInsights, setMyInsights] = useState([]);
   const myInsights_Upadte = (ele) => {
-    setMyInsights(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setMyInsights(updatedData);
   };
 
   //For Confirmation Reviewer and Approver
@@ -94,15 +119,14 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
   const personaldetailsSubmit = async (data) => {
     console.log("object", data);
     const generatepersonaldetails = {
-      form_id: appraiserForm?.form_id,
       personaldetails: data,
-      Performance_ScorecardData: performanceScorecardData,
+      performancescorecard: performanceScorecardData,
       Competency_ScorecardData: CompetencyScorecardData,
-      Future_Goals: FutureGoalsData,
-      Future_Comptency: FutureComptencyData,
-      My_KRA: myKRA_Data,
+      // Future_Goals: FutureGoalsData,
+      // Future_Comptency: FutureComptencyData,
+      // My_KRA: myKRA_Data,
       My_Insights: myInsights,
-      Confirmation: [{ reviewer: reviewer }, { approver: approver }],
+      // Confirmation: [{ reviewer: reviewer }, { approver: approver }],
     };
     console.log("Appraisal Form Data:", generatepersonaldetails);
 
@@ -121,14 +145,16 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
     }
   };
 
-  //Set Api Value : Personal Information already save
-  setValue("emp_Name", appraiserForm?.personaldetails.empName);
-  setValue("emp_id", appraiserForm?.personaldetails.empCode);
+  //Set Api Value : Personal Information already
+  setValue("formId", appraiserForm?.personaldetails.formId);
+  setValue("empId", appraiserForm?.personaldetails.empId);
+  setValue("empName", appraiserForm?.personaldetails.empName);
+  setValue("empCode", appraiserForm?.personaldetails.empCode);
   setValue("position", appraiserForm?.personaldetails.position);
   setValue("education", appraiserForm?.personaldetails.education);
   setValue("yoe_gw", appraiserForm?.personaldetails.yoe_gw);
   setValue("yoe_ngw", appraiserForm?.personaldetails.yoe_ngw);
-  setValue("total_experience", appraiserForm?.personaldetails.yoe_total);
+  setValue("yoe_total", appraiserForm?.personaldetails.yoe_total);
   setValue(
     "why_do_i_come_to_office",
     appraiserForm?.personaldetails.why_do_i_come_to_office
@@ -145,7 +171,10 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
     "current_performance_bonus",
     appraiserForm?.personaldetails.current_performance_bonus
   );
-  setValue("current_total_ctc", appraiserForm?.personaldetails.current_total_ctc);
+  setValue(
+    "current_total_ctc",
+    appraiserForm?.personaldetails.current_total_ctc
+  );
   setValue(
     "proposed_base_salary",
     appraiserForm?.personaldetails.proposed_base_salary
@@ -162,9 +191,25 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
     "proposed_total_ctc",
     appraiserForm?.personaldetails.proposed_total_ctc
   );
+  //Apt Call Value set
+  setValue("my_signature", appraiserForm?.personaldetails.my_signature);
+  setValue(
+    "appraiser_signature",
+    appraiserForm?.personaldetails.appraiser_signature
+  );
+  setValue(
+    "reviewer_signature",
+    appraiserForm?.personaldetails.reviewer_signature
+  );
+  setValue("lastUpdateBy", appraiserForm?.personaldetails.lastUpdateBy);
+  setValue("updateDate", appraiserForm?.personaldetails.updateDate);
+  setValue("reviewer", appraiserForm?.personaldetails.reviewer);
+  setValue("approver", appraiserForm?.personaldetails.approver);
+  setValue("reviewed", appraiserForm?.personaldetails.reviewed);
+  setValue("approved", appraiserForm?.personaldetails.approved);
+  setValue("doj", appraiserForm?.personaldetails.doj);
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
-
 
   //For Expand and Collapse
   const handleAccordionChange = (panel) => (event, isExpanded) => {
@@ -179,15 +224,15 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
     });
   };
 
-//For Expand and Collapse All Button
+  //For Expand and Collapse All Button
   const handleButtonClick = () => {
     setExpandButtonText((prevText) =>
-      prevText === 'expand all' ? 'collapse all' : 'expand all'
+      prevText === "expand all" ? "collapse all" : "expand all"
     );
     setExpanded((prevExpanded) => {
       if (prevExpanded.length === 0) {
         // Expand all panels (assuming you know the IDs)
-        return ['panel1', 'panel2', 'panel3', 'panel4', 'panel5', 'panel6']; // Add all your panel IDs
+        return ["panel1", "panel2", "panel3", "panel4", "panel5", "panel6"]; // Add all your panel IDs
       } else {
         // Collapse all panels
         return [];
@@ -195,11 +240,10 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
     });
   };
 
-
   //Reviewer
   const isReviewer = () => {
-    const reviewer = appraiserForm?.reviewer;
-    const userName = getUserData()?.userDetails.userId;
+    const reviewer = (appraiserForm?.personaldetails.reviewer).toLowerCase();
+    const userName = getUserData()?.userDetails.userId.toLowerCase();
     console.log("form_reviewer", reviewer, userName);
 
     if (reviewer === userName) {
@@ -209,10 +253,11 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
     }
   };
 
-//Is Approver
+  //Is Approver
   const isApprover = () => {
-    const approver = appraiserForm?.approver;
-    const userName = getUserData()?.userDetails.userId;
+    const approver = (appraiserForm?.personaldetails.approver).toLowerCase();
+    const userName = getUserData()?.userDetails.userId.toLowerCase();
+    console.log("form_approver", approver, userName);
     if (approver === userName) {
       return false;
     } else {
@@ -242,8 +287,10 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
           <form onSubmit={handleSubmit(personaldetailsSubmit)}>
             <div>
               {/* Accordion for Personal Details */}
-              <Accordion 
-              expanded={expanded.includes('panel1')} onChange={handleAccordionChange('panel1')}>
+              <Accordion
+                expanded={expanded.includes("panel1")}
+                onChange={handleAccordionChange("panel1")}
+              >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls="panel1-content"
@@ -254,128 +301,292 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                 <AccordionDetails>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <InputText
-                        {...register("emp_Name")}
-                        id="empName"
-                        className="p-inputtext-sm"
-                        placeholder="Employee Name"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="empName"
+                          >
+                            Employee Name
+                          </label>
+                          <InputText
+                            {...register("empName")}
+                            id="empName"
+                            disabled
+                            variant="filled"
+                            className="p-inputtext-sm"
+                            placeholder="Employee Name"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="emp_id"
-                        type="number"
-                        className="p-inputtext-sm"
-                        {...register("emp_id")}
-                        placeholder="Employee ID"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="empCode"
+                          >
+                            Employee Code
+                          </label>
+                          <InputText
+                            id="empCode"
+                            type="number"
+                            variant="filled"
+                            disabled
+                            className="p-inputtext-sm"
+                            {...register("empCode")}
+                            placeholder="Employee ID"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="position"
-                        {...register("position")}
-                        className="p-inputtext-sm"
-                        placeholder="Position"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="position"
+                          >
+                            Position
+                          </label>
+                          <InputText
+                            id="position"
+                            {...register("position")}
+                            className="p-inputtext-sm"
+                            //placeholder="Position"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="education"
-                        {...register("education")}
-                        className="p-inputtext-sm"
-                        placeholder="Education"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="education"
+                          >
+                            Education
+                          </label>
+                          <InputText
+                            id="education"
+                            {...register("education")}
+                            className="p-inputtext-sm"
+                            //placeholder="Education"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="yoe_gw"
-                        type="number"
-                        {...register("yoe_gw")}
-                        className="p-inputtext-sm"
-                        placeholder="Year of Experience(gw)"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="yoe_gw"
+                          >
+                            Year of Experience (GW)
+                          </label>
+                          <InputText
+                            id="yoe_gw"
+                            type="number"
+                            {...register("yoe_gw")}
+                            className="p-inputtext-sm"
+                            placeholder="Year of Experience(gw)"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="yoe_ngw"
-                        type="number"
-                        {...register("yoe_ngw")}
-                        className="p-inputtext-sm"
-                        placeholder="Year of Experience(non-gw)"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="yoe_ngw"
+                          >
+                            Year of Experience (Non-GW)
+                          </label>
+                          <InputText
+                            id="yoe_ngw"
+                            type="number"
+                            {...register("yoe_ngw")}
+                            className="p-inputtext-sm"
+                            placeholder="Year of Experience(non-gw)"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="total_experience"
-                        className="p-inputtext-sm"
-                        {...register("total_experience")}
-                        placeholder="Total Experience"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="yoe_total"
+                          >
+                            Total Experience
+                          </label>
+                          <InputText
+                            id="yoe_total"
+                            className="p-inputtext-sm"
+                            {...register("yoe_total")}
+                            placeholder="yoe_total"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="why_do_i_come_to_office"
-                        {...register("why_do_i_come_to_office")}
-                        className="p-inputtext-sm"
-                        placeholder="Why do I come to office?"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="why_do_i_come_to_office"
+                          >
+                            Why do I come to office?
+                          </label>
+                          <InputText
+                            id="why_do_i_come_to_office"
+                            {...register("why_do_i_come_to_office")}
+                            className="p-inputtext-sm"
+                            //placeholder="Why do I come to office?"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="current_base_salary"
-                        type="number"
-                        {...register("current_base_salary")}
-                        className="p-inputtext-sm"
-                        placeholder="Current Base Salary"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="current_base_salary"
+                          >
+                            Current Base Salary
+                          </label>
+                          <InputText
+                            id="current_base_salary"
+                            type="number"
+                            {...register("current_base_salary")}
+                            className="p-inputtext-sm"
+                            placeholder="Current Base Salary"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="current_assued_bonus"
-                        type="number"
-                        {...register("current_assued_bonus")}
-                        className="p-inputtext-sm"
-                        placeholder="Current Assured Bonus"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="current_assued_bonus"
+                          >
+                            Current Assured Bonus
+                          </label>
+                          <InputText
+                            id="current_assued_bonus"
+                            type="number"
+                            {...register("current_assued_bonus")}
+                            className="p-inputtext-sm"
+                            placeholder="Current Assured Bonus"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="current_performance_bonus"
-                        type="number"
-                        {...register("current_performance_bonus")}
-                        className="p-inputtext-sm"
-                        placeholder="Current Performance Bonus"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="current_performance_bonus"
+                          >
+                            Current Performance Bonus
+                          </label>
+                          <InputText
+                            id="current_performance_bonus"
+                            type="number"
+                            {...register("current_performance_bonus")}
+                            className="p-inputtext-sm"
+                            placeholder="Current Performance Bonus"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="current_total_ctc"
-                        type="number"
-                        {...register("current_total_ctc")}
-                        className="p-inputtext-sm"
-                        placeholder="Current Total CTC"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="current_total_ctc"
+                          >
+                            Current Total Ctc
+                          </label>
+                          <InputText
+                            id="current_total_ctc"
+                            type="number"
+                            {...register("current_total_ctc")}
+                            className="p-inputtext-sm"
+                            placeholder="Current Total CTC"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="proposed_base_salary"
-                        type="number"
-                        {...register("proposed_base_salary")}
-                        className="p-inputtext-sm"
-                        placeholder="Proposed Base Salary"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="proposed_base_salary"
+                          >
+                            Proposed Base Salary
+                          </label>
+                          <InputText
+                            id="proposed_base_salary"
+                            type="number"
+                            {...register("proposed_base_salary")}
+                            className="p-inputtext-sm"
+                            placeholder="Proposed Base Salary"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="proposed_assued_bonus"
-                        type="number"
-                        {...register("proposed_assued_bonus")}
-                        className="p-inputtext-sm"
-                        placeholder="Proposed Assured Bonus"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="proposed_assued_bonus"
+                          >
+                            Proposed Assured Bonus
+                          </label>
+                          <InputText
+                            id="proposed_assued_bonus"
+                            type="number"
+                            {...register("proposed_assued_bonus")}
+                            className="p-inputtext-sm"
+                            placeholder="Proposed Assured Bonus"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="proposed_performance_bonus"
-                        type="number"
-                        {...register("proposed_performance_bonus")}
-                        className="p-inputtext-sm"
-                        placeholder="Proposed Performance Bonus"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="proposed_performance_bonus"
+                          >
+                            Proposed Performance Bonus
+                          </label>
+                          <InputText
+                            id="proposed_performance_bonus"
+                            type="number"
+                            {...register("proposed_performance_bonus")}
+                            className="p-inputtext-sm"
+                            placeholder="Proposed Performance Bonus"
+                          />
+                        </div>
+                      </div>
 
-                      <InputText
-                        id="proposed_total_ctc"
-                        type="number"
-                        {...register("proposed_total_ctc")}
-                        className="p-inputtext-sm"
-                        placeholder="Proposed Total CTC"
-                      />
+                      <div className="card flex justify-content-center">
+                        <div className="flex flex-column">
+                          <label
+                            style={{ fontSize: "12px", marginLeft: "5px" }}
+                            htmlFor="proposed_total_ctc"
+                          >
+                            Proposed Total CTC
+                          </label>
+                          <InputText
+                            id="proposed_total_ctc"
+                            type="number"
+                            {...register("proposed_total_ctc")}
+                            className="p-inputtext-sm"
+                            placeholder="Proposed Total CTC"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </AccordionDetails>
@@ -385,7 +596,8 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
             {/* Accordion for My Goals */}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded.includes('panel2')} onChange={handleAccordionChange('panel2')}
+              expanded={expanded.includes("panel2")}
+              onChange={handleAccordionChange("panel2")}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -395,20 +607,24 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                 <Typography component="span">My Goals</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <LastYearGoal appraiserPreviousSaveFormData={appraiserForm?.lastyeargoals}/>
+                <LastYearGoal
+                  appraiserPreviousSaveFormData={appraiserForm?.lastyeargoals}
+                />
                 <FutureGoals
                   appraiserPreviousSaveFormDat={appraiserForm?.futuregoals}
                   FutureGoalsData={FutureGoalsData_Update}
                   trainingData={trainingData}
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
-                
               </AccordionDetails>
             </Accordion>
 
             {/* Accordion for My KRA */}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded.includes('panel3')} onChange={handleAccordionChange('panel3')}
+              expanded={expanded.includes("panel3")}
+              onChange={handleAccordionChange("panel3")}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -418,7 +634,7 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                 <Typography component="span">My KRA</Typography>
               </AccordionSummary>
               <AccordionDetails>
-              <PerformanceScorecardDateTable
+                <PerformanceScorecardDateTable
                   PerformanceScorecardData={PerformanceScorecardData}
                   appraiserPreviousSaveFormData={
                     appraiserForm?.performancescorecard
@@ -426,19 +642,21 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
                 />
-                 <MyKRA
+                <MyKRA
                   appraiserPreviousSaveFormDat={appraiserForm?.mykra}
                   myKRA_Data={myKRA_Data_Update}
                   trainingData={trainingData}
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
-                
               </AccordionDetails>
             </Accordion>
 
             {/* Accordion for Training */}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded.includes('panel4')} onChange={handleAccordionChange('panel4')}
+              expanded={expanded.includes("panel4")}
+              onChange={handleAccordionChange("panel4")}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -448,28 +666,29 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                 <Typography component="span">My Training</Typography>
               </AccordionSummary>
               <AccordionDetails>
-              <CompetencyScorecard
+                <CompetencyScorecard
                   appraiserPreviousSaveFormDat={
                     appraiserForm?.competencyscorecard
                   }
                   CompetencyScorecardData={CompetencyScorecardData_Update}
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
                 <FutureComptency
                   appraiserPreviousSaveFormDat={appraiserForm?.futurecomptenct}
                   FutureComptencyData={FutureComptencyData_Update}
                   trainingData={trainingData}
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
-                
               </AccordionDetails>
             </Accordion>
-            
-
-            
 
             {/* My Insights*/}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded.includes('panel5')} onChange={handleAccordionChange('panel5')}
+              expanded={expanded.includes("panel5")}
+              onChange={handleAccordionChange("panel5")}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -482,14 +701,18 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                 <MyInsights
                   appraiserPreviousSaveFormDat={appraiserForm?.myinsights}
                   myInsights_Data={myInsights_Upadte}
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
               </AccordionDetails>
             </Accordion>
 
             {/* My Confirmation*/}
             <Accordion
-            className="accordionNoSpace"
-            expanded={expanded.includes('panel6')} onChange={handleAccordionChange('panel6')}>
+              className="accordionNoSpace"
+              expanded={expanded.includes("panel6")}
+              onChange={handleAccordionChange("panel6")}
+            >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="panel1-content"
@@ -502,6 +725,7 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
                   <h1 className="text-sm">Reviewer</h1>
                   <Checkbox
                     checked={reviewer === 1}
+                    disabled={isReviewer()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
                       setReviewer(e.checked ? 1 : 0);
@@ -511,6 +735,7 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
 
                   <Checkbox
                     checked={approver === 1}
+                    disabled={isApprover()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
                       setApprover(e.checked ? 1 : 0);
@@ -522,6 +747,7 @@ function AppraisalDialog({ appraiserForm ,trainingData}) {
             <MuiButton
               variant="contained"
               size="small"
+              disabled={appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved}
               type="submit"
               className="mt-2"
             >

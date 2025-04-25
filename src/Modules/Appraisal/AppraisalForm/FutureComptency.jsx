@@ -12,6 +12,8 @@ const FutureComptency = ({
   appraiserPreviousSaveFormDat,
   FutureComptencyData,
   trainingData,
+  isReviewer,
+  isApprover,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -102,7 +104,19 @@ const FutureComptency = ({
                 placeholder="Select Level"
               />
             ) : (
-              rowData.relevance ?? ""
+              <Chip
+                size="small"
+                label={rowData.relevance ?? ""}
+                //variant="outlined"
+                color={
+                  rowData.relevance === "H" || rowData.relevance === "High"
+                    ? "error"
+                    : rowData.relevance === "M" ||
+                      rowData.relevance === "Medium"
+                    ? "warning"
+                    : "primary"
+                }
+              />
             )
           }
         ></Column>
@@ -155,6 +169,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -175,6 +190,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,

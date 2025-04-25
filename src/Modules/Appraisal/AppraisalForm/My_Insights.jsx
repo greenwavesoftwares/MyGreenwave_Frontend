@@ -5,10 +5,13 @@ import { Button as MuiButton } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 
-const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data }) => {
+const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
+  isApprover, }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+
+  //console.log("myInsight_reviewer", isReviewer,isApprover);
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -98,6 +101,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data }) => {
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -118,6 +122,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data }) => {
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,

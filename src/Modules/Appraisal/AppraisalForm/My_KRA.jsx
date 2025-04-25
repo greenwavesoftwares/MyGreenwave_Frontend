@@ -6,7 +6,8 @@ import { Chip, Button as MuiButton } from "@mui/material";
 import { InputText } from "primereact/inputtext";
 import { MultiSelect } from "primereact/multiselect";
 
-const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData}) => {
+const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReviewer,
+  isApprover,}) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
@@ -124,6 +125,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData}) => {
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -144,6 +146,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData}) => {
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,

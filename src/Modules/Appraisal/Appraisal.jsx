@@ -164,7 +164,7 @@ function Appraisal() {
   console.log("isApprove", isApprove);
 
   //Show Appraisal Form
-  const handleShowForm = async (formId) => {
+  const handleShowForm = async (formId, previousYearFormId) => {
     console.log("Form ID", formId);
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
@@ -172,7 +172,11 @@ function Appraisal() {
     console.log("localStorageAuth", localStorageAuth);
     const authToken = localStorageAuth?.token;
     //const employeeName = localStorageAuth?.userDetails.userId;
-    const appraisalFormData = await currentAppraisalFormAPI(formId, authToken);
+    const appraisalFormData = await currentAppraisalFormAPI(
+      formId,
+      previousYearFormId,
+      authToken
+    );
     console.log("appraisalFormData", appraisalFormData);
     setAppraisalFormLoading(null);
 
@@ -362,8 +366,24 @@ function Appraisal() {
               body={(rowData) => {
                 return (
                   <Chip
-                    label={rowData.approved === false ? "Active" : "Inactive"}
-                    color={rowData.approved === false ? "success" : "error"}
+                    label={
+                      rowData.approved === true
+                        ? "Approved"
+                        : rowData.reviewed === true
+                        ? "Reviewed"
+                        : rowData.active === true
+                        ? "Active"
+                        : "Inactive"
+                    }
+                    color={
+                      rowData.approved === true
+                        ? "warning"
+                        : rowData.reviewed === true
+                        ? "warning"
+                        : rowData.active === true
+                        ? "success"
+                        : "error"
+                    }
                     size="small"
                   />
                 );
@@ -378,7 +398,9 @@ function Appraisal() {
                     variant="contained"
                     loading={appraisalFormLoading === rowData.formId}
                     loadingPosition="end"
-                    onClick={() => handleShowForm(rowData.formId)}
+                    onClick={() =>
+                      handleShowForm(rowData.formId, rowData.previousYearFormId)
+                    }
                   >
                     Show Form
                   </Button>

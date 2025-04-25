@@ -53,10 +53,10 @@ const appraisalPutApi = async (appraisalFormData) => {
 };
 
 //Appraisal Form Call Using Form ID
-const currentAppraisalFormAPI = async (appraisalFormId, getAuthToken) => {
+const currentAppraisalFormAPI = async (appraisalFormId,previousYearFormId,getAuthToken) => {
   try {
     const response = await axios.get(
-      `${endPoint}appraisal/forms?formId=${appraisalFormId}`,
+      `${endPoint}appraisal/forms?formId=${appraisalFormId}&previousyearformid=${previousYearFormId}`,
       {
         headers: {
           Authorization: `Bearer ${getAuthToken}`,

@@ -245,11 +245,13 @@ const PerformanceScorecardDateTable = ({
               <Button
                 severity="danger"
                 size="small"
+                type="button"
                 disabled={checkedPreviousYearData(rowData)}
                 icon="pi pi-trash"
                 rounded
                 text
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   handleDeleteRow(rowData);
                 }}
               />

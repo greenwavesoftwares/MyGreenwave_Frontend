@@ -2,7 +2,7 @@ import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
-import { Chip, Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton, Typography } from "@mui/material";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { MultiSelect } from "primereact/multiselect";
@@ -10,6 +10,8 @@ const FutureGoals = ({
   appraiserPreviousSaveFormDat,
   FutureGoalsData,
   trainingData,
+  isReviewer,
+  isApprover,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -105,7 +107,7 @@ const FutureGoals = ({
                 placeholder="Select Level"
               />
             ) : (
-              rowData.goalType ?? ""
+             <Chip style={{textTransform:'capitalize'}} size="small" label={rowData.goalType ?? ""}/> 
             )
           }
         ></Column>
@@ -145,6 +147,7 @@ const FutureGoals = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -165,6 +168,7 @@ const FutureGoals = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
