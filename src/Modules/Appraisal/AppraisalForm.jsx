@@ -31,7 +31,16 @@ import MyKRA from "./AppraisalForm/My_KRA";
 import MyInsights from "./AppraisalForm/My_Insights";
 import { Checkbox } from "primereact/checkbox";
 import { getUserData } from "../Login/Encrypt";
-import LastYearGoal from "./AppraisalForm/LastYearGoal";
+import LastYearGoal from "./AppraisalForm/LastYearGoal"
+//For Icon
+import PersonIcon from '@mui/icons-material/Person';
+import DoneIcon from '@mui/icons-material/Done';
+import InsightsIcon from '@mui/icons-material/Insights';
+import SchoolIcon from '@mui/icons-material/School';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import AdsClickIcon from '@mui/icons-material/AdsClick';
+
+
 
 function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Toast
@@ -296,7 +305,13 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   aria-controls="panel1-content"
                   id="panel1-header"
                 >
-                  <Typography component="span">Personal Details</Typography>
+                  <Typography
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <PersonIcon fontSize="small" className="accordionIconBGStyle"/>
+                    Personal Details
+                  </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <div className="space-y-4">
@@ -604,7 +619,14 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">My Goals</Typography>
+                <Typography
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <AdsClickIcon fontSize="small" className="accordionIconBGStyle"/>
+                    My Goals
+                  </Typography>
+                
               </AccordionSummary>
               <AccordionDetails>
                 <LastYearGoal
@@ -631,7 +653,14 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">My KRA</Typography>
+                <Typography
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <BarChartIcon fontSize="small" className="accordionIconBGStyle"/>
+                    My KRA
+                  </Typography>
+               
               </AccordionSummary>
               <AccordionDetails>
                 <PerformanceScorecardDateTable
@@ -663,7 +692,14 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">My Training</Typography>
+                <Typography
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <SchoolIcon fontSize="small" className="accordionIconBGStyle"/>
+                    My Training
+                  </Typography>
+                
               </AccordionSummary>
               <AccordionDetails>
                 <CompetencyScorecard
@@ -695,7 +731,14 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">My Insights</Typography>
+                <Typography
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <InsightsIcon fontSize="small" className="accordionIconBGStyle"/>
+                    My Insights
+                  </Typography>
+                
               </AccordionSummary>
               <AccordionDetails>
                 <MyInsights
@@ -718,7 +761,14 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">Confirmation</Typography>
+                <Typography
+                    component="span"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <DoneIcon fontSize="small" className="accordionIconBGStyle"/>
+                    Confirmation
+                  </Typography>
+               
               </AccordionSummary>
               <AccordionDetails>
                 <div className="flex justify-center items-center mb-1 column-gap-4">
@@ -747,7 +797,10 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
             <MuiButton
               variant="contained"
               size="small"
-              disabled={appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved}
+              disabled={
+                appraiserForm?.personaldetails.reviewed ||
+                appraiserForm?.personaldetails.approved
+              }
               type="submit"
               className="mt-2"
             >

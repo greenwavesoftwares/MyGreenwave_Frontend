@@ -23,6 +23,9 @@
   text-align: center !important;
   border-bottom: 1px solid base.$borderColor;
 }
+.dataTableHeader.p-datatable.p-datatable-sm .p-datatable-header{
+  font-size: base.$dataTableHeaderFontSize;
+}
 .dataTableBody.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
   font-size: base.$dataTableHeaderFontSize;
   padding: base.$noPadding !important;
@@ -41,4 +44,12 @@
 //Accordion Styles
 .accordionNoSpace .MuiAccordionDetails-root{
   padding: 0 !important;
+}
+
+//Icon Style 
+.accordionIconBGStyle{
+  background-color: #ececec;
+  color:#36373c;
+  padding: 1px;
+  border-radius: 50%;
 }
