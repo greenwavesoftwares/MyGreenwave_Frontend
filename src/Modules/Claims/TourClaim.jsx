@@ -3,7 +3,7 @@ import { TabView, TabPanel } from "primereact/tabview";
 import TourClaimForm from './TourClaimForm';
 import TourClaimTable from './TourClaimTable';
 import DraftForm from './DraftForm';
-import MyClainTourForm from './MyClainTourForm';
+import MyTourClaims from './MyTourClaims';
 import { Button } from 'primereact/button';
 import { getDraftData, handleSaveToDraft } from './claimServices';
 
@@ -12,6 +12,9 @@ const TourClaim = () => {
     const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
     const [draftData, setDraftData] = useState([]);
     const [tourClaimTableData,settourClaimTableData]=useState([])
+    const [tourclaimFormLabeData,settourclaimFormLabeData]=useState([])
+   
+
 
 
 
@@ -149,6 +152,7 @@ const TourClaim = () => {
                                         tourclaimformData={tourclaimformData}
                                         settourclaimformData={settourclaimformData}
                                         onSaveToDraft={handleSaveToDraft} // 👈 pass handler
+                                        tourclaimFormLabeData={tourclaimFormLabeData}
                                     />
                                     <TourClaimTable
                                         editableMode={editableMode}
@@ -157,6 +161,7 @@ const TourClaim = () => {
                                         settoggleNewClaim={settoggleNewClaim}
                                         settourClaimTableData={settourClaimTableData}
                                         tourClaimTableData={tourClaimTableData}
+                                        settourclaimFormLabeData={settourclaimFormLabeData}
                                     />
                                 </>
                             ) : ""}
@@ -168,7 +173,7 @@ const TourClaim = () => {
                         <div className="space-y-10">
                             <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
                                 <h2 className="text-md font-semibold text-blue-800 mb-4">📂 My Claims</h2>
-                                <MyClainTourForm />
+                               <MyTourClaims/>
                             </div>
                         </div>
                     </TabPanel>

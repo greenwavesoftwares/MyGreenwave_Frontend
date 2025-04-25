@@ -30,7 +30,7 @@ const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode,tour
 
     const handleEdit = async (claim_id) => {
         const myHeaders = new Headers();
-        myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhbmlzaC5rdW1hckBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDU0ODM0NjEsImV4cCI6MTc0NTQ4NzA2MX0.uP0EUHwcZwKmDRkfYziJuvn5JFwGfSyQSF6P1SUnJiA");
+        myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraXNvbG95LnJveUBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDU1Nzk3MDYsImV4cCI6MTc0NTU4MzMwNn0.QrcYXI4MMBVKdu6PJpjJqiokrRtuT45faRHc3JGaY4E");
     
         const requestOptions = {
             method: "GET",

@@ -1,16 +1,13 @@
-import React, { useRef } from 'react';
+import React, { useRef,useEffect,useState } from 'react';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
+import { FiCopy } from 'react-icons/fi';
+import {getTravelDropDown} from './claimServices'
 //import { FileUpload } from 'primereact/fileupload';
 //import { Toast } from 'primereact/toast';
 
-const travelModeOptions = [
-    { label: 'Bus', value: 'Bus' },
-    { label: 'Train', value: 'Train' },
-    { label: 'Flight', value: 'Flight' },
-    { label: 'Other', value: 'Other' }
-];
+
 
 const travelTypeOptions = [
     { label: 'Official', value: 'Official' },
@@ -18,8 +15,9 @@ const travelTypeOptions = [
     { label: 'Other', value: 'Other' }
 ];
 
-const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
+const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormLabeData }) => {
     // const toast = useRef(null);
+    const [travelModeOptions, setTravelModeOptions] = useState([]);
 
     // const onUpload = () => {
     //     toast.current.show({ severity: 'success', summary: 'Success', detail: 'File Uploaded' });
@@ -29,6 +27,35 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
         settourclaimformData(prev => ({ ...prev, [field]: value }));
     };
 
+
+    
+    useEffect(() => {
+        const fetchDropdownList = async () => {
+            try {
+                const data = await getTravelDropDown(); // data is an object of key-value pairs
+                console.log('Fetched travel dropdown:', data);
+                data["In-Station Local Conveyance"] = "Long-Term-Local-Conveyance";
+
+                // Convert to array of { label, value }
+                const formattedOptions = Object.entries(data).map(([label, value]) => ({
+                    label,
+                    value
+                }));
+
+                // Append or replace (your choice):
+                // If appending to existing:
+                // setTravelModeOptions(prev => [...prev, ...formattedOptions]);
+
+                // If replacing:
+                setTravelModeOptions(formattedOptions);
+
+            } catch (error) {
+                console.error("Error fetching tour claim list:", error);
+            }
+        };
+
+        fetchDropdownList();
+    }, []);
     return (
         <div className="p-4">
             <div className="border border-gray-200 shadow-md rounded-lg p-4 bg-white space-y-6 mt-4">
@@ -71,7 +98,19 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="Destination" className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                        <label htmlFor="Destination" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex  items-center">
+                                <span>Destination:- {tourclaimFormLabeData.destination}</span>
+                                {tourclaimFormLabeData.destination && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() => settourclaimformData({destination:tourclaimFormLabeData.destination})}
+                                    />
+                                )}
+                            </div>
+                        </label>
+
                         <InputText
                             inputId="Destination"
                             className="w-62"
@@ -81,7 +120,19 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
                     </div>
 
                     <div>
-                        <label htmlFor="Purpose-of-Trip" className="block text-sm font-medium text-gray-700 mb-1">Purpose of Trip</label>
+                        <label htmlFor="Purpose-of-Trip" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex  items-center">
+                                <span>Purpose of Trip:- {tourclaimFormLabeData.purposeOfTrip}</span>
+                                {tourclaimFormLabeData.purposeOfTrip && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() => settourclaimformData({purpose:tourclaimFormLabeData.purposeOfTrip})}
+                                    />
+                                )}
+                            </div>
+                        </label>
+
                         <InputText
                             inputId="Purpose-of-Trip"
                             className="w-62"
@@ -90,7 +141,19 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="Project-Name" className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                        <label htmlFor="Project-Name" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex  items-center">
+                                <span>Project Name: {tourclaimFormLabeData.projectName}</span>
+                                {tourclaimFormLabeData.projectName && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() => settourclaimformData({projectName:tourclaimFormLabeData.projectName })}
+                                    />
+                                )}
+                            </div>
+                        </label>
+
                         <InputText
                             inputId="Project-Name"
                             className="w-62"
@@ -99,7 +162,18 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="On-Account" className="block text-sm font-medium text-gray-700 mb-1">On Account</label>
+                        <label htmlFor="On-Account" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex  items-center">
+                                <span>On Account:- {tourclaimFormLabeData.onAccount}</span>
+                                {tourclaimFormLabeData.onAccount && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() =>  settourclaimformData({onAccount:tourclaimFormLabeData.onAccount })}
+                                    />
+                                )}
+                            </div>
+                        </label>
                         <InputText
                             inputId="On-Account"
                             className="w-62"
@@ -109,7 +183,26 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
                     </div>
 
                     <div>
-                        <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                        <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex  items-center">
+                                <span>
+                                    From Date:- {tourclaimFormLabeData.fromDate ? new Date(tourclaimFormLabeData.fromDate).toLocaleDateString() : ""}
+                                </span>
+                                {tourclaimFormLabeData.fromDate && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() =>
+                                            settourclaimformData(prev => ({
+                                                ...prev,
+                                                fromDate: new Date(tourclaimFormLabeData.fromDate)
+                                            }))
+                                        }
+                                    />
+                                )}
+                            </div>
+                        </label>
+
                         <Calendar
                             inputId="fromdate"
                             showIcon
@@ -119,7 +212,26 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData }) => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="todate" className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                        <label htmlFor="todate" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex  items-center">
+                                <span>
+                                    To Date:- {tourclaimFormLabeData.toDate ? new Date(tourclaimFormLabeData.toDate).toLocaleDateString() : ""}
+                                </span>
+                                {tourclaimFormLabeData.toDate && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() =>
+                                            settourclaimformData(prev => ({
+                                                ...prev,
+                                                toDate: new Date(tourclaimFormLabeData.toDate)
+                                            }))
+                                        }
+                                    />
+                                )}
+                            </div>
+                        </label>
+
                         <Calendar
                             inputId="todate"
                             showIcon
