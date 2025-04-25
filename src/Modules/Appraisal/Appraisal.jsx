@@ -23,13 +23,17 @@ import {
   appraiserFormApi,
   currentAppraisalFormAPI,
   appraisalListApi,
+  trainingApi,
 } from "./AppraisalAPI";
 //Format Date
 import { formatDate } from "./formatDate";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { useNavigate } from "react-router-dom";
 
 function Appraisal() {
+  //For Navigation
+  const navigate = useNavigate();
   //For Toast
   const toastRef = useRef(null);
   //Dialog Visible State
@@ -40,6 +44,8 @@ function Appraisal() {
   const [loading, setLoading] = useState(true);
   //Loading For Appraisal Form
   const [appraisalFormLoading, setAppraisalFormLoading] = useState(null);
+  //Set Training Data
+  const [trainingData, setTrainingData] = useState(null);
 
   //Set Appraiser Details
   const [empName, setEmpName] = useState(null);
@@ -59,7 +65,7 @@ function Appraisal() {
   let currentUserName = getUserData()?.userDetails.sub;
 
   //set appraisal form id
-  const [appraisalFormID, setApraisalFormID] = useState("NA")
+  const [appraisalFormID, setApraisalFormID] = useState("NA");
 
   //Form Submit Handler
   const handleSubmit = async (e) => {
@@ -108,6 +114,7 @@ function Appraisal() {
         const authToken = localStorageAuth?.token;
         const employeeName = localStorageAuth?.userDetails.userId;
         const response = await appraisalAPI(authToken, employeeName);
+        console.log("employeeName", employeeName, authToken);
 
         setAppraisalData(response);
         console.log("set_Appraisal_data", response);
@@ -118,8 +125,18 @@ function Appraisal() {
         setAppraisalList(appraisalList?.appraisalsList);
         //For Loading
         setLoading(false);
+
+        //Training Data
+        const trainingData = await trainingApi();
+        console.log("trainingData_Api", trainingData);
+        setTrainingData(trainingData?.data);
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
+        if (error.message === "unauthorized") {
+          navigate("/login"); // 👈 Redirect to login on 401
+        } else {
+          console.error("Unexpected error:", error);
+        }
       }
     };
     getAuthToken;
@@ -151,7 +168,11 @@ function Appraisal() {
     console.log("Form ID", formId);
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
-    const appraisalFormData = await currentAppraisalFormAPI(formId);
+    const localStorageAuth = getUserData();
+    console.log("localStorageAuth", localStorageAuth);
+    const authToken = localStorageAuth?.token;
+    //const employeeName = localStorageAuth?.userDetails.userId;
+    const appraisalFormData = await currentAppraisalFormAPI(formId, authToken);
     console.log("appraisalFormData", appraisalFormData);
     setAppraisalFormLoading(null);
 
@@ -204,7 +225,10 @@ function Appraisal() {
         {/* Appraisal Details */}
         {appraisalFormVisible && (
           <div className="container mx-auto mt-2">
-            <AppraisalDialog appraiserForm={appraiserForm} />
+            <AppraisalDialog
+              appraiserForm={appraiserForm}
+              trainingData={trainingData}
+            />
           </div>
         )}
 

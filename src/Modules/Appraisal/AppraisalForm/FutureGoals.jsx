@@ -2,13 +2,20 @@ import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
-import { Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton } from "@mui/material";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
-const FutureGoals = ({ appraiserPreviousSaveFormDat, FutureGoalsData }) => {
+import { MultiSelect } from "primereact/multiselect";
+const FutureGoals = ({
+  appraiserPreviousSaveFormDat,
+  FutureGoalsData,
+  trainingData,
+}) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+  //Training Data
+  const [training, setTraining] = useState([]);
 
   //Set Dropdown Data
   const goalTypeData = ["Personal", "Professional"];
@@ -17,6 +24,11 @@ const FutureGoals = ({ appraiserPreviousSaveFormDat, FutureGoalsData }) => {
   useEffect(() => {
     FutureGoalsData(selectedRowData);
   }, [selectedRowData]);
+
+  //Set Training Data
+  useEffect(() => {
+    setTraining(trainingData);
+  },[trainingData])
 
   //set Api Data : Future Goals already saved data
   useEffect(() => {
@@ -47,6 +59,7 @@ const FutureGoals = ({ appraiserPreviousSaveFormDat, FutureGoalsData }) => {
   const handleSaveRow = () => {
     setEditingRowIndex(null);
   };
+  console.log("trainingData_InnerSection", trainingData);
 
   return (
     <>
@@ -54,12 +67,13 @@ const FutureGoals = ({ appraiserPreviousSaveFormDat, FutureGoalsData }) => {
         size="small"
         stripedRows
         value={selectedRowData}
+        header="Future Goals"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
       >
         <Column
           field="future_personal_KRA_goals"
-          header="My Aspirations (2 Professional and 2 Personal Goal identification for 12-36 Months)"
+          header="My Aspirations (2 Professional and 2 Personal Goals)"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
@@ -95,6 +109,35 @@ const FutureGoals = ({ appraiserPreviousSaveFormDat, FutureGoalsData }) => {
             )
           }
         ></Column>
+        <Column
+          header="Training"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <MultiSelect
+                options={training}
+                value={rowData.training}
+                onChange={(e) =>
+                  handleInputChange(e.value, "training", rowIndex)
+                }
+                placeholder="Select Training"
+                display="chip"
+              />
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
+                {rowData.training?.map((item, index) => (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    key={index}
+                    label={item}
+                    style={{ marginRight: "0.2rem", marginBottom: "0.2rem" }}
+                  />
+                ))}
+              </div>
+            )
+          }
+        />
+
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -193,6 +236,7 @@ const FutureGoals = ({ appraiserPreviousSaveFormDat, FutureGoalsData }) => {
             const blankRow = {
               future_personal_KRA_goals: "",
               goalType: null,
+              trainingData: [],
               reviewers_comment: "",
               appraisers_comments: "",
             };

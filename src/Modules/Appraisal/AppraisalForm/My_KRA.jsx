@@ -2,18 +2,28 @@ import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
-import { Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton } from "@mui/material";
 import { InputText } from "primereact/inputtext";
+import { MultiSelect } from "primereact/multiselect";
 
-const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
+const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData}) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+  //Set Training Data
+  const [training, setTraining] = useState([]);
+  //Set only training data
+  const [trainingDataOnly, setTrainingDataOnly] = useState([]);
 
   //selectedRowData send to parent component
   useEffect(() => {
     myKRA_Data(selectedRowData);
   }, [selectedRowData]);
+
+  //set Training Data
+  useEffect(() => {
+    setTraining(trainingData);
+  }, [trainingData]);
 
   //set Api Data : My KRA already saved data
   useEffect(() => {
@@ -45,22 +55,23 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
     setEditingRowIndex(null);
   };
 
+  //training data set
+  console.log("trainingDataOnly", trainingDataOnly);
+
   return (
     <>
       <DataTable
         size="small"
         stripedRows
         value={selectedRowData}
+        header="My KRA"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
-        rowClassName={(rowData) => {
-          //return rowData.previous_year_KRA.indexOf === 0 ? "bg-red-500" : null;
-          if (rowData.my_next12month_KRA.indexOf("Increase") !== -1) return "bg-red-500";
-        }}
+        
       >
         <Column
           field="my_next12month_KRA"
-          header="My KRA - Next 12 Months (To be aligend to professional and Personal Goals)"
+          header="Next Year KRA"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
@@ -78,6 +89,34 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
             )
           }
         ></Column>
+        <Column
+          header="Training"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <MultiSelect
+                options={training}
+                value={rowData.training}
+                onChange={(e) =>
+                  handleInputChange(e.value, "training", rowIndex)
+                }
+                placeholder="Select Training"
+                display="chip"
+              />
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
+                {rowData.training?.map((item, index) => (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    key={index}
+                    label={item}
+                    style={{ marginRight: "0.2rem", marginBottom: "0.2rem" }}
+                  />
+                ))}
+              </div>
+            )
+          }
+        />
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -159,7 +198,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
             );
           }}
         />
-        <Column field="previous_year_KRA" header="previous_year_KRA"></Column>
+       
       </DataTable>
       <div
         style={{
@@ -176,7 +215,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data }) => {
           onClick={() => {
             const blankRow = {
               my_next12month_KRA: "",
-
+              training: [],
               reviewers_comment: "",
               appraisers_comments: "",
             };

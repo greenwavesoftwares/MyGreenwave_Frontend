@@ -88,6 +88,15 @@ const PerformanceScorecardDateTable = ({
     setEditingRowIndex(null);
   };
 
+  //Check Previous Year Data
+  const checkedPreviousYearData =(ele)=>{
+    if(ele?.previous_year_Data === true) {
+      return true;
+    }
+    return false;
+
+  }
+
   return (
     <>
       {/* Popup */}
@@ -96,16 +105,24 @@ const PerformanceScorecardDateTable = ({
         size="small"
         value={selectedRowData}
         stripedRows
+        header="Performance Scorecard"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
+        rowClassName={(rowData) => {
+          if (rowData.some(ele => ele.previous_year_Data === true)) {
+            return "bg-cyan-100";
+          }
+          
+        }}
       >
         <Column
           field="my_last_year_KRA"
-          header="Through the Rear View Mirror - My Last Year's KRA"
+          header="Last Year's KRA"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.my_last_year_KRA}
+                disabled={checkedPreviousYearData(rowData)}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -121,7 +138,7 @@ const PerformanceScorecardDateTable = ({
         ></Column>
         <Column
           field="level_of_fullfillment"
-          header="Level of fullfillment (Rate yourself on scale of 1 to 5. 1 being the lowest and 5 highest)"
+          header="Level of Fulfillment"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <Dropdown
@@ -228,6 +245,7 @@ const PerformanceScorecardDateTable = ({
               <Button
                 severity="danger"
                 size="small"
+                disabled={checkedPreviousYearData(rowData)}
                 icon="pi pi-trash"
                 rounded
                 text

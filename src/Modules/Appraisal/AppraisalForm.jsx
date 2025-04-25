@@ -31,13 +31,15 @@ import MyKRA from "./AppraisalForm/My_KRA";
 import MyInsights from "./AppraisalForm/My_Insights";
 import { Checkbox } from "primereact/checkbox";
 import { getUserData } from "../Login/Encrypt";
+import LastYearGoal from "./AppraisalForm/LastYearGoal";
 
-function AppraisalDialog({ appraiserForm }) {
+function AppraisalDialog({ appraiserForm ,trainingData}) {
   //For Toast
   const toastRef = useRef(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState([]);
+  //const [expandAll, setExpandAll] = useState(false);
   // State for form data
-  const [expandeButtonText, setExpandeButtonText] = useState("expand all");
+  const [expandButtonText, setExpandButtonText] = useState('expand all');
 
   // For performanceScorecardData
   const [performanceScorecardData, setPerformanceScorecardData] = useState([]);
@@ -77,10 +79,10 @@ function AppraisalDialog({ appraiserForm }) {
 
   //For Confirmation Reviewer and Approver
   const [reviewer, setReviewer] = useState(
-    appraiserForm?.PersonalData.reviewed
+    appraiserForm?.personaldetails.reviewed
   );
   const [approver, setApprover] = useState(
-    appraiserForm?.PersonalData.approved
+    appraiserForm?.personaldetails.approved
   );
   console.log("approver", approver);
   console.log("reviewer_data", approver);
@@ -89,11 +91,11 @@ function AppraisalDialog({ appraiserForm }) {
   const { register, handleSubmit, reset, setValue } = useForm();
 
   //Make All Update Data
-  const personalDataSubmit = async (data) => {
+  const personaldetailsSubmit = async (data) => {
     console.log("object", data);
-    const generatePersonalData = {
+    const generatepersonaldetails = {
       form_id: appraiserForm?.form_id,
-      PersonalData: data,
+      personaldetails: data,
       Performance_ScorecardData: performanceScorecardData,
       Competency_ScorecardData: CompetencyScorecardData,
       Future_Goals: FutureGoalsData,
@@ -102,10 +104,10 @@ function AppraisalDialog({ appraiserForm }) {
       My_Insights: myInsights,
       Confirmation: [{ reviewer: reviewer }, { approver: approver }],
     };
-    console.log("Appraisal Form Data:", generatePersonalData);
+    console.log("Appraisal Form Data:", generatepersonaldetails);
 
     try {
-      const response = await appraisalPutApi(generatePersonalData);
+      const response = await appraisalPutApi(generatepersonaldetails);
       console.log("Appraisal Form Data:", response);
       if (response.status === 200) {
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
@@ -115,67 +117,90 @@ function AppraisalDialog({ appraiserForm }) {
       //From Reset
       // reset();
     } catch (error) {
-      console.error("PersonalData_api_Error:", error);
+      console.error("personaldetails_api_Error:", error);
     }
   };
 
   //Set Api Value : Personal Information already save
-  setValue("emp_Name", appraiserForm?.PersonalData.emp_Name);
-  setValue("emp_id", appraiserForm?.PersonalData.emp_id);
-  setValue("position", appraiserForm?.PersonalData.position);
-  setValue("education", appraiserForm?.PersonalData.education);
-  setValue("yoe_gw", appraiserForm?.PersonalData.yoe_gw);
-  setValue("yoe_ngw", appraiserForm?.PersonalData.yoe_ngw);
-  setValue("total_experience", appraiserForm?.PersonalData.total_experience);
+  setValue("emp_Name", appraiserForm?.personaldetails.empName);
+  setValue("emp_id", appraiserForm?.personaldetails.empCode);
+  setValue("position", appraiserForm?.personaldetails.position);
+  setValue("education", appraiserForm?.personaldetails.education);
+  setValue("yoe_gw", appraiserForm?.personaldetails.yoe_gw);
+  setValue("yoe_ngw", appraiserForm?.personaldetails.yoe_ngw);
+  setValue("total_experience", appraiserForm?.personaldetails.yoe_total);
   setValue(
     "why_do_i_come_to_office",
-    appraiserForm?.PersonalData.why_do_i_come_to_office
+    appraiserForm?.personaldetails.why_do_i_come_to_office
   );
   setValue(
     "current_base_salary",
-    appraiserForm?.PersonalData.current_base_salary
+    appraiserForm?.personaldetails.current_base_salary
   );
   setValue(
     "current_assued_bonus",
-    appraiserForm?.PersonalData.current_assued_bonus
+    appraiserForm?.personaldetails.current_assued_bonus
   );
   setValue(
     "current_performance_bonus",
-    appraiserForm?.PersonalData.current_performance_bonus
+    appraiserForm?.personaldetails.current_performance_bonus
   );
-  setValue("current_total_ctc", appraiserForm?.PersonalData.current_total_ctc);
+  setValue("current_total_ctc", appraiserForm?.personaldetails.current_total_ctc);
   setValue(
     "proposed_base_salary",
-    appraiserForm?.PersonalData.proposed_base_salary
+    appraiserForm?.personaldetails.proposed_base_salary
   );
   setValue(
     "proposed_assued_bonus",
-    appraiserForm?.PersonalData.proposed_assued_bonus
+    appraiserForm?.personaldetails.proposed_assued_bonus
   );
   setValue(
     "proposed_performance_bonus",
-    appraiserForm?.PersonalData.proposed_performance_bonus
+    appraiserForm?.personaldetails.proposed_performance_bonus
   );
   setValue(
     "proposed_total_ctc",
-    appraiserForm?.PersonalData.proposed_total_ctc
+    appraiserForm?.personaldetails.proposed_total_ctc
   );
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
 
+
   //For Expand and Collapse
-  const handleClick = () => {
-    setExpanded((pre) => !pre);
-    setExpandeButtonText((pre) =>
-      pre === "expand all" ? "collapse all" : "expand all"
-    );
+  const handleAccordionChange = (panel) => (event, isExpanded) => {
+    setExpanded((prevExpanded) => {
+      if (isExpanded) {
+        // Add the panel ID to the array if it's not already there
+        return [...prevExpanded, panel];
+      } else {
+        // Remove the panel ID from the array if it exists
+        return prevExpanded.filter((p) => p !== panel);
+      }
+    });
   };
+
+//For Expand and Collapse All Button
+  const handleButtonClick = () => {
+    setExpandButtonText((prevText) =>
+      prevText === 'expand all' ? 'collapse all' : 'expand all'
+    );
+    setExpanded((prevExpanded) => {
+      if (prevExpanded.length === 0) {
+        // Expand all panels (assuming you know the IDs)
+        return ['panel1', 'panel2', 'panel3', 'panel4', 'panel5', 'panel6']; // Add all your panel IDs
+      } else {
+        // Collapse all panels
+        return [];
+      }
+    });
+  };
+
 
   //Reviewer
   const isReviewer = () => {
     const reviewer = appraiserForm?.reviewer;
     const userName = getUserData()?.userDetails.userId;
-    console.log("form_reviewer", reviewer,userName);
+    console.log("form_reviewer", reviewer, userName);
 
     if (reviewer === userName) {
       return false;
@@ -184,6 +209,7 @@ function AppraisalDialog({ appraiserForm }) {
     }
   };
 
+//Is Approver
   const isApprover = () => {
     const approver = appraiserForm?.approver;
     const userName = getUserData()?.userDetails.userId;
@@ -193,8 +219,6 @@ function AppraisalDialog({ appraiserForm }) {
       return true;
     }
   };
-
- 
 
   return (
     <>
@@ -208,17 +232,18 @@ function AppraisalDialog({ appraiserForm }) {
             variant="contained"
             size="small"
             sx={{ boxShadow: "none" }}
-            onClick={() => handleClick()}
+            onClick={handleButtonClick}
           >
-            {expandeButtonText}
+            {expandButtonText}
           </MuiButton>
         </div>
 
         <div>
-          <form onSubmit={handleSubmit(personalDataSubmit)}>
+          <form onSubmit={handleSubmit(personaldetailsSubmit)}>
             <div>
               {/* Accordion for Personal Details */}
-              <Accordion expanded={expanded} onChange={handleClick}>
+              <Accordion 
+              expanded={expanded.includes('panel1')} onChange={handleAccordionChange('panel1')}>
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls="panel1-content"
@@ -357,100 +382,33 @@ function AppraisalDialog({ appraiserForm }) {
               </Accordion>
             </div>
 
-            {/* Accordion for Performance Scorecard */}
+            {/* Accordion for My Goals */}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded}
-              onChange={handleClick}
+              expanded={expanded.includes('panel2')} onChange={handleAccordionChange('panel2')}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
-                <Typography component="span">Performance Scorecard</Typography>
+                <Typography component="span">My Goals</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <PerformanceScorecardDateTable
-                  PerformanceScorecardData={PerformanceScorecardData}
-                  appraiserPreviousSaveFormData={
-                    appraiserForm?.Performance_ScorecardData
-                  }
-                  isReviewer={isReviewer()}
-                  isApprover={isApprover()}
-                />
-              </AccordionDetails>
-            </Accordion>
-
-            {/* Accordion for Competency Scorecard */}
-            <Accordion
-              className="accordionNoSpace"
-              expanded={expanded}
-              onChange={handleClick}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content"
-                id="panel1-header"
-              >
-                <Typography component="span">Competency Scorecard</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <CompetencyScorecard
-                  appraiserPreviousSaveFormDat={
-                    appraiserForm?.Competency_Scorecard
-                  }
-                  CompetencyScorecardData={CompetencyScorecardData_Update}
-                />
-              </AccordionDetails>
-            </Accordion>
-
-            {/* Accordion for Future Goals */}
-            <Accordion
-              className="accordionNoSpace"
-              expanded={expanded}
-              onChange={handleClick}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content"
-                id="panel1-header"
-              >
-                <Typography component="span">Future Goals</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
+                <LastYearGoal appraiserPreviousSaveFormData={appraiserForm?.lastyeargoals}/>
                 <FutureGoals
-                  appraiserPreviousSaveFormDat={appraiserForm?.Future_Goals}
+                  appraiserPreviousSaveFormDat={appraiserForm?.futuregoals}
                   FutureGoalsData={FutureGoalsData_Update}
+                  trainingData={trainingData}
                 />
-              </AccordionDetails>
-            </Accordion>
-            {/* Accordion for Future Goals */}
-            <Accordion
-              className="accordionNoSpace"
-              expanded={expanded}
-              onChange={handleClick}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1-content"
-                id="panel1-header"
-              >
-                <Typography component="span">Future Comptency</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <FutureComptency
-                  appraiserPreviousSaveFormDat={appraiserForm?.Future_Comptency}
-                  FutureComptencyData={FutureComptencyData_Update}
-                />
+                
               </AccordionDetails>
             </Accordion>
 
             {/* Accordion for My KRA */}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded}
-              onChange={handleClick}
+              expanded={expanded.includes('panel3')} onChange={handleAccordionChange('panel3')}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -460,18 +418,58 @@ function AppraisalDialog({ appraiserForm }) {
                 <Typography component="span">My KRA</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <MyKRA
-                  appraiserPreviousSaveFormDat={appraiserForm?.My_KRA}
-                  myKRA_Data={myKRA_Data_Update}
+              <PerformanceScorecardDateTable
+                  PerformanceScorecardData={PerformanceScorecardData}
+                  appraiserPreviousSaveFormData={
+                    appraiserForm?.performancescorecard
+                  }
+                  isReviewer={isReviewer()}
+                  isApprover={isApprover()}
                 />
+                 <MyKRA
+                  appraiserPreviousSaveFormDat={appraiserForm?.mykra}
+                  myKRA_Data={myKRA_Data_Update}
+                  trainingData={trainingData}
+                />
+                
               </AccordionDetails>
             </Accordion>
+
+            {/* Accordion for Training */}
+            <Accordion
+              className="accordionNoSpace"
+              expanded={expanded.includes('panel4')} onChange={handleAccordionChange('panel4')}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography component="span">My Training</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+              <CompetencyScorecard
+                  appraiserPreviousSaveFormDat={
+                    appraiserForm?.competencyscorecard
+                  }
+                  CompetencyScorecardData={CompetencyScorecardData_Update}
+                />
+                <FutureComptency
+                  appraiserPreviousSaveFormDat={appraiserForm?.futurecomptenct}
+                  FutureComptencyData={FutureComptencyData_Update}
+                  trainingData={trainingData}
+                />
+                
+              </AccordionDetails>
+            </Accordion>
+            
+
+            
 
             {/* My Insights*/}
             <Accordion
               className="accordionNoSpace"
-              expanded={expanded}
-              onChange={handleClick}
+              expanded={expanded.includes('panel5')} onChange={handleAccordionChange('panel5')}
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -482,14 +480,16 @@ function AppraisalDialog({ appraiserForm }) {
               </AccordionSummary>
               <AccordionDetails>
                 <MyInsights
-                  appraiserPreviousSaveFormDat={appraiserForm?.My_Insights}
+                  appraiserPreviousSaveFormDat={appraiserForm?.myinsights}
                   myInsights_Data={myInsights_Upadte}
                 />
               </AccordionDetails>
             </Accordion>
 
             {/* My Confirmation*/}
-            <Accordion>
+            <Accordion
+            className="accordionNoSpace"
+            expanded={expanded.includes('panel6')} onChange={handleAccordionChange('panel6')}>
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="panel1-content"

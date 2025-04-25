@@ -3,7 +3,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
 import React, { useEffect, useState } from "react";
-import { Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton } from "@mui/material";
 import { Dropdown } from "primereact/dropdown";
 import { Calendar } from "primereact/calendar";
 import { formatDate } from "../formatDate";
@@ -11,10 +11,13 @@ import { formatDate } from "../formatDate";
 const FutureComptency = ({
   appraiserPreviousSaveFormDat,
   FutureComptencyData,
+  trainingData,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+  //Set Training Data
+  const [training, setTraining] = useState([]);
 
   //Set Dropdown Data
   const relevanceData = ["High", "Medium", "Low"];
@@ -23,6 +26,11 @@ const FutureComptency = ({
   useEffect(() => {
     FutureComptencyData(selectedRowData);
   }, [selectedRowData]);
+
+  //set Training Data
+  useEffect(() => {
+    setTraining(trainingData);
+  }, [trainingData]);
 
   //set Api Data : Future Comptency already saved data
   useEffect(() => {
@@ -60,12 +68,13 @@ const FutureComptency = ({
         size="small"
         stripedRows
         value={selectedRowData}
+        header="Future Competency"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
       >
         <Column
           field="goals"
-          header="My Competency Goals (To be aligend to professional and Personal Goals)"
+          header="Competency Goals"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
@@ -99,7 +108,7 @@ const FutureComptency = ({
         ></Column>
         <Column
           field="target_date"
-          header="Target Date (yyyy-mm-dd)"
+          header="Target Date"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <Calendar
@@ -108,15 +117,37 @@ const FutureComptency = ({
                   rowData.target_date ? new Date(rowData.target_date) : null
                 }
                 onChange={(e) =>
-                  handleInputChange(formatDate(e.value), "target_date", rowIndex)
+                  handleInputChange(
+                    formatDate(e.value),
+                    "target_date",
+                    rowIndex
+                  )
                 }
                 placeholder="Select Date"
                 showIcon
               />
-            ) : (formatDate(rowData.target_date) ?? "") 
+            ) : (
+              formatDate(rowData.target_date) ?? ""
+            )
           }
         />
-
+        <Column
+          header="Training"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <Dropdown
+                options={training}
+                value={rowData.training}
+                onChange={(e) =>
+                  handleInputChange(e.value, "training", rowIndex)
+                }
+                placeholder="Select Training"
+              />
+            ) : (
+              <Chip size="small" color="primary" label={rowData?.training} />
+            )
+          }
+        />
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -216,6 +247,7 @@ const FutureComptency = ({
               goals: "",
               relevance: null,
               target_date: null,
+              training: "",
               reviewers_comment: "",
               appraisers_comments: "",
             };

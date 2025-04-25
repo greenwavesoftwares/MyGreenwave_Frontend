@@ -50,6 +50,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data }) => {
       <DataTable
         size="small"
         stripedRows
+        header="My Insights"
         value={selectedRowData}
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"

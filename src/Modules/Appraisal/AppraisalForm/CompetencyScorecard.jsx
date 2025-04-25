@@ -29,7 +29,7 @@ const CompetencyScorecard = ({
 
   //Set Level Full Fulfillment Data Dropdown
   const LevelFullfillmentData = [1, 2, 3, 4, 5];
-  const relevanceData = ["H", "M", "L"];
+  const relevanceData = ["High", "Medium", "Low"];
 
   //Delete Row
   const handleDeleteRow = (ele) => {
@@ -51,22 +51,38 @@ const CompetencyScorecard = ({
   const handleSaveRow = () => {
     setEditingRowIndex(null);
   };
+  //Check Previous Year Data
+  const checkedPreviousYearData =(ele)=>{
+    if(ele?.previous_year_Data === true) {
+      return true;
+    }
+    return false;
+
+  }
 
   return (
     <>
       <DataTable
         size="small"
         stripedRows
+        header="Competency Scorecard"
         showGridlines
         value={selectedRowData}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
+        rowClassName={(rowData) => {
+          if (rowData.some(ele => ele.previous_year_Data === true)) {
+            return "bg-cyan-100";
+          }
+          
+        }}
       >
         <Column
           field="personal_goals"
-          header="Through the Rear View Mirror - My Last Year's Traning Goals"
+          header="Last Year's Training Goals"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
+              disabled={checkedPreviousYearData(rowData)}
                 value={rowData.personal_goals}
                 onChange={(e) =>
                   handleInputChange(e.target.value, "personal_goals", rowIndex)
@@ -78,8 +94,27 @@ const CompetencyScorecard = ({
           }
         ></Column>
         <Column
+          field="relevance"
+          header="Relevance"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <Dropdown
+                options={relevanceData}
+                disabled={checkedPreviousYearData(rowData)}
+                value={rowData.relevance}
+                onChange={(e) =>
+                  handleInputChange(e.value, "relevance", rowIndex)
+                }
+                placeholder="Select Level"
+              />
+            ) : (
+              rowData.relevance ?? ""
+            )
+          }
+        ></Column>
+        <Column
           field="level_of_fullfillment"
-          header="Level of fullfillment (1/5)"
+          header="Level of Fulfillment"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <Dropdown
@@ -95,24 +130,7 @@ const CompetencyScorecard = ({
             )
           }
         ></Column>
-        <Column
-          field="relevance"
-          header="Relevance"
-          body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <Dropdown
-                options={relevanceData}
-                value={rowData.relevance}
-                onChange={(e) =>
-                  handleInputChange(e.value, "relevance", rowIndex)
-                }
-                placeholder="Select Level"
-              />
-            ) : (
-              rowData.relevance ?? ""
-            )
-          }
-        ></Column>
+        
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -184,6 +202,7 @@ const CompetencyScorecard = ({
               <Button
                 severity="danger"
                 size="small"
+                disabled={checkedPreviousYearData(rowData)}
                 icon="pi pi-trash"
                 rounded
                 text

@@ -3,6 +3,7 @@ import axios from "axios";
 
 const endPoint = import.meta.env.VITE_END_POINT;
 const form='http://localhost:8070/appraisalFrom'
+const trainingApiUrl = 'http://localhost:8070/training';
 
 //List Of Approver API
 const appraisalApproverApi = async (token, empName) => {
@@ -34,4 +35,15 @@ const appraisalFormAPI=async(appraisalFormId)=>{
     }
   }
 
-export { appraisalApproverApi,appraisalFormAPI };
+  //List of training API
+const trainingApi = async () => {
+    try {
+        const response = await axios.get(`${trainingApiUrl}`);
+        console.log("training_api", response);
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export { appraisalApproverApi,appraisalFormAPI,trainingApi };
