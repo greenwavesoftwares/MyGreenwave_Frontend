@@ -59,6 +59,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        previous:item.previous??false,
         ...item,
       };
     });
@@ -73,6 +74,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        previous:item.previous??false,
         ...item,
       };
     });
@@ -82,19 +84,45 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Future Goals Data
   const [FutureGoalsData, setFutureGoalsData] = useState([]);
   const FutureGoalsData_Update = (ele) => {
-    setFutureGoalsData(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setFutureGoalsData(updatedData);
   };
 
   //For Future Comptency Data
   const [FutureComptencyData, setFutureComptencyData] = useState([]);
   const FutureComptencyData_Update = (ele) => {
-    setFutureComptencyData(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        level_of_fullfillment:item.level_of_fullfillment??"",
+        goalType:item.goalType??"",
+        ...item,
+      };
+    });
+    setFutureComptencyData(updatedData);
   };
 
   //For My KRA Data
   const [myKRA_Data, setMyKRA_Data] = useState([]);
   const myKRA_Data_Update = (ele) => {
-    setMyKRA_Data(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setMyKRA_Data(updatedData);
   };
 
   //For My Insights Data
@@ -130,11 +158,11 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     const generatepersonaldetails = {
       personaldetails: data,
       performancescorecard: performanceScorecardData,
-      Competency_ScorecardData: CompetencyScorecardData,
-      // Future_Goals: FutureGoalsData,
-      // Future_Comptency: FutureComptencyData,
-      // My_KRA: myKRA_Data,
-      My_Insights: myInsights,
+      competencyscorecard: CompetencyScorecardData,
+      futuregoals: FutureGoalsData,
+      futurecomptency: FutureComptencyData,
+      mykra: myKRA_Data,
+      myInsights: myInsights,
       // Confirmation: [{ reviewer: reviewer }, { approver: approver }],
     };
     console.log("Appraisal Form Data:", generatepersonaldetails);
@@ -668,6 +696,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   appraiserPreviousSaveFormData={
                     appraiserForm?.performancescorecard
                   }
+                  trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
                 />
@@ -707,11 +736,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     appraiserForm?.competencyscorecard
                   }
                   CompetencyScorecardData={CompetencyScorecardData_Update}
+                  trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
                 />
                 <FutureComptency
-                  appraiserPreviousSaveFormDat={appraiserForm?.futurecomptenct}
+                  appraiserPreviousSaveFormDat={appraiserForm?.futurecomptency}
                   FutureComptencyData={FutureComptencyData_Update}
                   trainingData={trainingData}
                   isReviewer={isReviewer()}

@@ -17,7 +17,7 @@ const FutureGoals = ({
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Training Data
-  const [training, setTraining] = useState([]);
+  const [appraisalTraining, setAppraisalTraining] = useState([]);
 
   //Set Dropdown Data
   const goalTypeData = ["Personal", "Professional"];
@@ -29,7 +29,7 @@ const FutureGoals = ({
 
   //Set Training Data
   useEffect(() => {
-    setTraining(trainingData);
+    setAppraisalTraining(trainingData);
   },[trainingData])
 
   //set Api Data : Future Goals already saved data
@@ -116,17 +116,17 @@ const FutureGoals = ({
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <MultiSelect
-                options={training}
-                value={rowData.training}
+                options={appraisalTraining}
+                value={rowData.appraisalTraining}
                 onChange={(e) =>
-                  handleInputChange(e.value, "training", rowIndex)
+                  handleInputChange(e.value, "appraisalTraining", rowIndex)
                 }
                 placeholder="Select Training"
                 display="chip"
               />
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
-                {rowData.training?.map((item, index) => (
+                {rowData.appraisalTraining?.map((item, index) => (
                   <Chip
                     size="small"
                     color="primary"
@@ -240,7 +240,7 @@ const FutureGoals = ({
             const blankRow = {
               future_personal_KRA_goals: "",
               goalType: null,
-              trainingData: [],
+              appraisalTraining: [],
               reviewers_comment: "",
               appraisers_comments: "",
             };

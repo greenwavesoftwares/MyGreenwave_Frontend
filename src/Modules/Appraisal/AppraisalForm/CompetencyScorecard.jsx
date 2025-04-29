@@ -5,21 +5,31 @@ import { Chip, Button as MuiButton } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
+import { formatDate } from "../formatDate";
+import { Calendar } from "primereact/calendar";
 
 const CompetencyScorecard = ({
   appraiserPreviousSaveFormDat,
   CompetencyScorecardData,
   isReviewer,
   isApprover,
+  trainingData,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+  //Set Training Data
+  const [training, setTraining] = useState([]);
 
   //selectedRowData send to parent component
   useEffect(() => {
     CompetencyScorecardData(selectedRowData);
   }, [selectedRowData]);
+
+  //set Training Data
+  useEffect(() => {
+    setTraining(trainingData);
+  }, [trainingData]);
 
   //Set Api Data : Competency Scorecard already saved data
   useEffect(() => {
@@ -55,7 +65,7 @@ const CompetencyScorecard = ({
   };
   //Check Previous Year Data
   const checkedPreviousYearData = (ele) => {
-    if (ele?.previous_year_Data === true) {
+    if (ele?.previous === true) {
       return true;
     }
     return false;
@@ -71,7 +81,7 @@ const CompetencyScorecard = ({
         value={selectedRowData}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
-          if (rowData.some((ele) => ele.previous_year_Data === true)) {
+          if (rowData.some((ele) => ele.previous === true)) {
             return "bg-cyan-100";
           }
         }}
@@ -81,12 +91,14 @@ const CompetencyScorecard = ({
           header="Last Year's Training Goals"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
-              <InputText
+              <Dropdown
+                options={training}
                 disabled={checkedPreviousYearData(rowData)}
                 value={rowData.personal_goals}
                 onChange={(e) =>
-                  handleInputChange(e.target.value, "personal_goals", rowIndex)
+                  handleInputChange(e.value, "personal_goals", rowIndex)
                 }
+                placeholder="Select Training"
               />
             ) : (
               rowData.personal_goals
@@ -142,6 +154,32 @@ const CompetencyScorecard = ({
             )
           }
         ></Column>
+        <Column
+          field="target_date"
+          header="Target Date"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <Calendar
+                dateFormat="yy-mm-dd"
+                disabled={checkedPreviousYearData(rowData)}
+                value={
+                  rowData.target_date ? new Date(rowData.target_date) : null
+                }
+                onChange={(e) =>
+                  handleInputChange(
+                    formatDate(e.value),
+                    "target_date",
+                    rowIndex
+                  )
+                }
+                placeholder="Select Date"
+                showIcon
+              />
+            ) : (
+              formatDate(rowData.target_date) ?? ""
+            )
+          }
+        />
 
         <Column
           field="reviewers_comment"
@@ -246,6 +284,7 @@ const CompetencyScorecard = ({
               personal_goals: "",
               relevance: null,
               level_of_fullfillment: "",
+              target_date:"",
               reviewers_comment: "",
               appraisers_comments: "",
             };

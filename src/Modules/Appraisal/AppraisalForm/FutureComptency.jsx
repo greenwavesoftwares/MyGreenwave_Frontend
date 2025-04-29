@@ -74,7 +74,7 @@ const FutureComptency = ({
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
       >
-        <Column
+        {/* <Column
           field="goals"
           header="Competency Goals"
           body={(rowData, { rowIndex }) =>
@@ -89,7 +89,24 @@ const FutureComptency = ({
               rowData.goals
             )
           }
-        ></Column>
+        ></Column> */}
+        <Column
+          header="Competency Goals"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <Dropdown
+                options={training}
+                value={rowData.goals}
+                onChange={(e) =>
+                  handleInputChange(e.value, "goals", rowIndex)
+                }
+                placeholder="Select Training"
+              />
+            ) : (
+              <Chip size="small" color="primary" label={rowData?.goals} />
+            )
+          }
+        />
         <Column
           field="relevance"
           header="Relevance(H/M/L)"
@@ -145,23 +162,7 @@ const FutureComptency = ({
             )
           }
         />
-        <Column
-          header="Training"
-          body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <Dropdown
-                options={training}
-                value={rowData.training}
-                onChange={(e) =>
-                  handleInputChange(e.value, "training", rowIndex)
-                }
-                placeholder="Select Training"
-              />
-            ) : (
-              <Chip size="small" color="primary" label={rowData?.training} />
-            )
-          }
-        />
+        
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -263,7 +264,7 @@ const FutureComptency = ({
               goals: "",
               relevance: null,
               target_date: null,
-              training: "",
+              //training: "",
               reviewers_comment: "",
               appraisers_comments: "",
             };
