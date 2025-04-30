@@ -1,3 +1,48 @@
-.userCountBadge{
+.p-overlay-badge .p-badge{
     position: relative;
+}
+.p-datatable .p-column-header-content{
+    justify-content: center !important;
+}
+.p-datatable .p-datatable-tbody > tr > td{
+    text-align: center !important;
+}
+.userEditDialog{
+    width: 50vw;
+}
+.resetPasswordDialog{
+    width: 35vw;
+}
+@media (max-width: 1024px) {
+    .userEditDialog{
+        width: 60vw;
+    }
+    .resetPasswordDialog{
+        width: 65vw;
+    }
+}
+@media (max-width: 650px) {
+    .userEditDialog{
+        width: 90vw;
+    }
+    .resetPasswordDialog{
+        width: 95vw;
+    }
+}
+.editUserCell{
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}
+.userNameCell{
+    display: flex;
+    text-align: left;
+}
+.p-input-icon{
+    display: flex;
+}
+.bg-gray-50{
+    background-color: #f9fafb !important;
 }
