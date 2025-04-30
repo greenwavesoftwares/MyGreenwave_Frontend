@@ -15,7 +15,7 @@ const MyTourClaims = () => {
     const [tourClaims, setTourClaims] = useState([]);
 
     const tourDetailsBody = (rowData) => (
-        <div className="text-xs space-y-1 flex flex-col justify-center">
+        <div className="text-xs space-y-1 flex flex-col justify-center">  
             <div><span className='font-bold'>Destination:</span> {rowData['destination']}</div>
             <div><span className='font-bold'>Purpose:</span> {rowData['purpose']}</div>
             <div><span className='font-bold'>Project:</span> {rowData['project']}</div>
@@ -76,20 +76,43 @@ const MyTourClaims = () => {
         );
     };
 
+    const datebody=(rowData)=>{
+        return(
+            <div className='flex flex-col justify-center items-center'>   
+            <span className='text-sm text-center'> {rowData.from_date}</span>
+            <span className='text-sm text-center'> to  </span>
+            <span className='text-sm text-center'> {rowData.from_date} </span>
+            </div>
+        )
+    }
+
     const rowExpansionTemplate = (rowData) => (
         <div className="p-4 bg-gray-50 rounded-lg shadow-md">
-            <DataTable
-                value={rowData.expandabledata}
-                className="text-sm text-center"
-                tableStyle={{ minWidth: '60rem' }}
-            >
-                <Column field="to_date" header="To" headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column header="Claim Details" body={tourDetailsBody} headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column header="Claim Calculation" body={claimCalculationBody} headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column header="Approver - Remarks" body={approverBody} headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column header="Reviewer - Remarks" body={reviewerBody} headerStyle={cellStyle} bodyStyle={cellStyle} />
-                <Column field="status" header="Status" body={statusBody} headerStyle={cellStyle} bodyStyle={cellStyle} />
-            </DataTable>
+           <DataTable
+  value={rowData.expandabledata}
+  className="text-sm text-center"
+  tableStyle={{ minWidth: '60rem' }}
+>
+    <Column header="Date" body={datebody} headerStyle={{ ...cellStyle, width: '120px', whiteSpace: 'normal' }} />
+    <Column header="Claim Details" body={tourDetailsBody}   headerStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal' }}
+      bodyStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }} />
+    <Column header="Claim Calculation" body={claimCalculationBody}   headerStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal' }}
+      bodyStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }} />
+    <Column 
+      header="Approver - Remarks" 
+      body={approverBody}
+      headerStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal' }}
+      bodyStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}
+    />
+    <Column 
+      header="Reviewer - Remarks" 
+      body={reviewerBody}
+      headerStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal' }}
+      bodyStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}
+    />
+    <Column field="status" header="Status" body={statusBody} headerStyle={cellStyle} bodyStyle={cellStyle} />
+</DataTable>
+
         </div>
     );
 
@@ -98,6 +121,7 @@ const MyTourClaims = () => {
             try {
                 const data = await getTourClaimList();
                 setTourClaims(data);
+                console.log(data)
             } catch (error) {
                 console.error("Error fetching tour claim list:", error);
             }
@@ -118,6 +142,9 @@ const MyTourClaims = () => {
                 tableStyle={{ fontSize: '0.875rem', minWidth: '60rem' }}
             >
                 <Column expander style={{ width: '3rem' }} />
+                <Column field="fromDate" header="From Date" headerStyle={cellStyle} bodyStyle={cellStyle} />
+                <Column field="tentativeToDate" header="Tentative Date" headerStyle={cellStyle} bodyStyle={cellStyle} />
+                <Column field="actualToDate" header="Actual To Date" headerStyle={cellStyle} bodyStyle={cellStyle} />
                 <Column field="project" header="Project" headerStyle={cellStyle} bodyStyle={cellStyle} />
                 <Column field="purpose" header="Purpose" headerStyle={cellStyle} bodyStyle={cellStyle} />
                 <Column field="destination" header="Destination" headerStyle={cellStyle} bodyStyle={cellStyle} />

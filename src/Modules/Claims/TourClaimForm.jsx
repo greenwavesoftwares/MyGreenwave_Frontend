@@ -1,77 +1,136 @@
-import React, { useRef,useEffect,useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
 import { FiCopy } from 'react-icons/fi';
-import {getTravelDropDown} from './claimServices'
+import { getTravelDropDown, getTourClaimFormDetails, getTourClaimList,getAdvance } from './claimServices'
+
 //import { FileUpload } from 'primereact/fileupload';
 //import { Toast } from 'primereact/toast';
 
 
 
-const travelTypeOptions = [
-    { label: 'Official', value: 'Official' },
-    { label: 'Personal', value: 'Personal' },
-    { label: 'Other', value: 'Other' }
-];
+
 
 const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormLabeData }) => {
+
     // const toast = useRef(null);
-    const [travelModeOptions, setTravelModeOptions] = useState([]);
+   const [advance,setadvance]=useState(null)
+   const [lastestClaimToDate,setlastestClaimToDate]=useState(null)
+  const [travelModeOptions, setTravelModeOptions] = useState([]);
+const [travelTypeOptions, settravelTypeOptions] = useState([
+        "Others",
+        "Sales Marketing",
+        "Project",
+        "Service Paid",
+        "Service Fees",
+        "Survey",
+        "Training"
+    ])
+
+
 
     // const onUpload = () => {
     //     toast.current.show({ severity: 'success', summary: 'Success', detail: 'File Uploaded' });
     // };
 
+
+
+
     const handleChange = (field, value) => {
         settourclaimformData(prev => ({ ...prev, [field]: value }));
+        if (field === 'travelMode' && value != 'Long-Term-Local-Conveyance') {
+            fetchTourClaimFormDetails(value);
+        }
+    };
+    const fetchTourClaimFormDetails = async (id) => {
+        try {
+            const data = await getTourClaimFormDetails(id);
+            settourclaimformData(prev => ({
+                ...prev,
+                projectName: data.projectName, purpose: data.purpose, travelMode: id, travelType: data.typeOfTravel
+            }))
+            //  setTravelModeOptions({label:id,value:id});
+
+            //settravelTypeOptions([{ label: data.typeOfTravel, value: data.typeOfTravel }]);
+
+           
+            // You can update your form data or label data here if needed
+        } catch (error) {
+            console.error('Error fetching tour claim details:', error);
+        }
     };
 
 
-    
     useEffect(() => {
+        const fetchAdvanceBalence=async()=>{
+            try{
+                const advanceblance=await getAdvance();
+                setadvance(advanceblance)
+            }catch(error){
+                console.error("Error in get advancebalace:", error);
+            }
+        }
         const fetchDropdownList = async () => {
             try {
-                const data = await getTravelDropDown(); // data is an object of key-value pairs
-                console.log('Fetched travel dropdown:', data);
-                data["In-Station Local Conveyance"] = "Long-Term-Local-Conveyance";
+                const tourClaimList = await getTourClaimList();
+    
+                // Filter by specific requisition_id
+                const filteredClaims = tourClaimList.filter(
+                    (row) => row.requisition_id === '9f152da3-72de-4ae9-82c5-75273761665e'
+                );
+    
+                // Find the latest to_date
+                // console.log(filteredClaims)
+                let latestToDate = null;
+                filteredClaims[0].expandabledata.forEach((claim) => {
+                    const claimToDate = claim.to_date
+                    if(claim.status!='Rejected')
+                    {
+                    if (!latestToDate || claimToDate > latestToDate) {
+                        latestToDate = claimToDate;
+                    }}
+                });
+                // settourclaimformData((prev) => ({
+                //     ...prev,
+                //     claimFromDate: latestToDate
+                // }));
+                setlastestClaimToDate(latestToDate)
 
-                // Convert to array of { label, value }
-                const formattedOptions = Object.entries(data).map(([label, value]) => ({
+               // console.log(tourclaimformData)
+                
+               console.log("testing",tourclaimFormLabeData.claimFromDate,latestToDate)
+    
+                const travelDropDownData = await getTravelDropDown();
+                travelDropDownData["In-Station Local Conveyance"] = "Long-Term-Local-Conveyance";
+    
+                const formattedOptions = Object.entries(travelDropDownData).map(([label, value]) => ({
                     label,
                     value
                 }));
-
-                // Append or replace (your choice):
-                // If appending to existing:
-                // setTravelModeOptions(prev => [...prev, ...formattedOptions]);
-
-                // If replacing:
                 setTravelModeOptions(formattedOptions);
-
+    
             } catch (error) {
                 console.error("Error fetching tour claim list:", error);
             }
         };
-
+        fetchAdvanceBalence();
         fetchDropdownList();
     }, []);
+
+    console.log("tesing",tourclaimformData.travelMode)
+
+    
     return (
         <div className="p-4">
             <div className="border border-gray-200 shadow-md rounded-lg p-4 bg-white space-y-6 mt-4">
                 <div className="flex justify-between items-center flex-wrap gap-4">
                     <label className="text-lg font-semibold text-gray-800">Tour Claim</label>
-                    {/* <div>
-                        <Toast ref={toast} />
-                        <FileUpload
-                            mode="basic"
-                            name="demo[]"
-                            url="/api/upload"
-                            accept=".xls,.xlsx"
-                            maxFileSize={1000000}
-                            onUpload={onUpload}
-                        />
-                    </div> */}
+
+                    <div className="flex justify-between items-center   px-4 mt-4 h-12 w-62">
+                        <span className="text-gray-700 font-medium">Available Advance:</span>
+                        <span className="text-green-600 font-bold">{advance}</span>
+                    </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-20 ml-8 gap-y-4 mb-4 justify-items-center">
@@ -105,7 +164,7 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
                                     <i
                                         className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
                                         title="Copy"
-                                        onClick={() => settourclaimformData({destination:tourclaimFormLabeData.destination})}
+                                        onClick={() => settourclaimformData({ destination: tourclaimFormLabeData.destination })}
                                     />
                                 )}
                             </div>
@@ -127,7 +186,7 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
                                     <i
                                         className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
                                         title="Copy"
-                                        onClick={() => settourclaimformData({purpose:tourclaimFormLabeData.purposeOfTrip})}
+                                        onClick={() => settourclaimformData({ purpose: tourclaimFormLabeData.purposeOfTrip })}
                                     />
                                 )}
                             </div>
@@ -148,7 +207,7 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
                                     <i
                                         className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
                                         title="Copy"
-                                        onClick={() => settourclaimformData({projectName:tourclaimFormLabeData.projectName })}
+                                        onClick={() => settourclaimformData({ projectName: tourclaimFormLabeData.projectName })}
                                     />
                                 )}
                             </div>
@@ -169,7 +228,7 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
                                     <i
                                         className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
                                         title="Copy"
-                                        onClick={() =>  settourclaimformData({onAccount:tourclaimFormLabeData.onAccount })}
+                                        onClick={() => settourclaimformData({ onAccount: tourclaimFormLabeData.onAccount })}
                                     />
                                 )}
                             </div>
@@ -184,9 +243,9 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
 
                     <div>
                         <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">
-                            <div className="flex  items-center">
+                            <div className="flex items-center">
                                 <span>
-                                    From Date:- {tourclaimFormLabeData.fromDate ? new Date(tourclaimFormLabeData.fromDate).toLocaleDateString() : ""}
+                                    Travel From Date: {tourclaimFormLabeData.fromDate ? new Date(tourclaimFormLabeData.fromDate).toLocaleDateString() : ""}
                                 </span>
                                 {tourclaimFormLabeData.fromDate && (
                                     <i
@@ -203,19 +262,44 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
                             </div>
                         </label>
 
-                        <Calendar
-                            inputId="fromdate"
-                            showIcon
-                            className="w-62"
-                            value={tourclaimformData.fromDate}
-                            onChange={(e) => handleChange('fromDate', e.value)}
-                        />
+                        {/* FromDate as simple Label */}
+                        <div className="w-62 px-3 py-2   shadow-sm  h-12 rounded-md bg-gray-100 text-gray-700 items-center">
+                            {tourclaimformData.fromDate ? new Date(tourclaimformData.fromDate).toLocaleDateString() : "No Date Selected"}
+                        </div>
                     </div>
+
+                    <div>
+                        <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">
+                            <div className="flex items-center">
+                                <span>
+                                    Claim From Date: {tourclaimFormLabeData.fromDate ? new Date(tourclaimFormLabeData.fromDate).toLocaleDateString() : ""}
+                                </span>
+                                {tourclaimFormLabeData.fromDate && (
+                                    <i
+                                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
+                                        title="Copy"
+                                        onClick={() =>
+                                            settourclaimformData(prev => ({
+                                                ...prev,
+                                                fromDate: new Date(tourclaimFormLabeData.fromDate)
+                                            }))
+                                        }
+                                    />
+                                )}
+                            </div>
+                        </label>
+
+                        {/* FromDate as simple Label */}
+                        <div className="w-62  py-2  shadow-sm rounded-md px-4 h-12 text-gray-700 items-center">
+                            {lastestClaimToDate}
+                        </div>
+                    </div>
+
                     <div>
                         <label htmlFor="todate" className="block text-sm font-medium text-gray-700 mb-1">
                             <div className="flex  items-center">
                                 <span>
-                                    To Date:- {tourclaimFormLabeData.toDate ? new Date(tourclaimFormLabeData.toDate).toLocaleDateString() : ""}
+                                    Claim To Date:- {tourclaimFormLabeData.toDate ? new Date(tourclaimFormLabeData.toDate).toLocaleDateString() : ""}
                                 </span>
                                 {tourclaimFormLabeData.toDate && (
                                     <i
@@ -230,20 +314,22 @@ const TourClaimForm = ({ tourclaimformData, settourclaimformData, tourclaimFormL
                                     />
                                 )}
                             </div>
+
                         </label>
+
+                        {/* <span className="text-gray-700 font-medium">{tourclaimformData.toDate}</span>
+                        <label></label> */}
 
                         <Calendar
                             inputId="todate"
                             showIcon
                             className="w-62"
-                            value={tourclaimformData.toDate}
+                            value={tourclaimformData.toDate>new Date()?tourclaimformData.toDate:new Date()}
                             onChange={(e) => handleChange('toDate', e.value)}
+
                         />
                     </div>
-                    <div className="flex justify-between items-center bg-gray-50 shadow-sm rounded-md px-4 mt-4 h-12 w-62">
-                        <span className="text-gray-700 font-medium">Available Advance:</span>
-                        <span className="text-green-600 font-bold">₹5000</span>
-                    </div>
+
                 </div>
             </div>
         </div>

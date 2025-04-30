@@ -7,19 +7,13 @@ import MyTourClaims from './MyTourClaims';
 import { Button } from 'primereact/button';
 import { getDraftData, handleSaveToDraft } from './claimServices';
 
+
 const TourClaim = () => {
     const [editableMode, seteditableMode] = useState(false); // true by default
     const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
     const [draftData, setDraftData] = useState([]);
-    const [tourClaimTableData,settourClaimTableData]=useState([])
-    const [tourclaimFormLabeData,settourclaimFormLabeData]=useState([])
-   
-
-
-
-
-
-
+    const [tourClaimTableData, settourClaimTableData] = useState([])
+    const [tourclaimFormLabeData, settourclaimFormLabeData] = useState([])
     const [tourclaimformData, settourclaimformData] = useState({
         travelMode: '',
         travelType: '',
@@ -29,34 +23,22 @@ const TourClaim = () => {
         onAccount: '',
         fromDate: '',
         toDate: '',
+        claimFromDate: ''
     });
 
 
-    // useEffect(() => {
-    //     const fetchDraftData = async () => {
-    //         try {
-    //             const formattedDraftData = await getDraftData();
-    //             setDraftData(formattedDraftData);
-    //             console.log("Fetched draft data:", formattedDraftData);
-    //         } catch (err) {
-    //             console.error("Error loading draft data:", err);
-    //             setDraftData([]); // fallback
-    //         }
-    //     };
 
-    //     fetchDraftData();
-    // }, []); // Only on initial mount
-    // When user clicks Edit, prefill form
     useEffect(() => {
 
         const fetchDraftData = async () => {
             try {
-                const formattedDraftData = await getDraftData();
+                const formattedDraftData = await getDraftData();  
                 setDraftData(formattedDraftData);
+              
                 if (formattedDraftData.length == 0) {
                     settoggleNewClaim(true)
                 }
-                console.log("Fetched draft data:", formattedDraftData);
+                
             } catch (err) {
                 console.error("Error loading draft data:", err);
                 setDraftData([]); // fallback
@@ -137,8 +119,8 @@ const TourClaim = () => {
                                         editableMode={editableMode}
                                         seteditableMode={seteditableMode}
                                         tourclaimformData={tourclaimformData}
-                                         settourclaimformData={settourclaimformData}
-                                         settourClaimTableData={settourClaimTableData}
+                                        settourclaimformData={settourclaimformData}
+                                        settourClaimTableData={settourClaimTableData}
 
                                     />
                                 </div>
@@ -157,7 +139,7 @@ const TourClaim = () => {
                                     <TourClaimTable
                                         editableMode={editableMode}
                                         seteditableMode={seteditableMode}
-                                        toggleNewClaim={toggleNewClaim} 
+                                        toggleNewClaim={toggleNewClaim}
                                         settoggleNewClaim={settoggleNewClaim}
                                         settourClaimTableData={settourClaimTableData}
                                         tourClaimTableData={tourClaimTableData}
@@ -173,7 +155,7 @@ const TourClaim = () => {
                         <div className="space-y-10">
                             <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
                                 <h2 className="text-md font-semibold text-blue-800 mb-4">📂 My Claims</h2>
-                               <MyTourClaims/>
+                                <MyTourClaims />
                             </div>
                         </div>
                     </TabPanel>

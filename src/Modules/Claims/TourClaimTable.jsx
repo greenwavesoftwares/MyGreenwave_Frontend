@@ -50,24 +50,24 @@ const TourClaimTable = ({ editableMode, seteditableMode, toggleNewClaim, settogg
     
         return { hasIssue: false };
     };
-    // useEffect(() => {
-    //     const transformed = tourClaimTableData.map(row => ({
-    //         'Date': row.date,
-    //         'Lodging': row.lodging,
-    //         'Breakfast': row.breakfast,
-    //         'Lunch': row.lunch,
-    //         'Snacks': row.snacks,
-    //         'Dinner': row.dinner,
-    //         'Tea & Water': row.teaWater,
-    //         'Airfare, Bus, Train, Taxi Rental': row.longTravel,
-    //         'Auto, Cab': row.shortTravel,
-    //         'Parking, Toll, Fuel': row.tollTax,
-    //         'Incidentals': row.incidentals,
-    //         'Other Business Expenses': row.other,
-    //         'Total': row.total,
-    //     }));
-    //     setrowData(transformed);
-    // }, [tourClaimTableData]);
+    useEffect(() => {
+        const transformed = tourClaimTableData.map(row => ({
+            'Date': row.date,
+            'Lodging': row.lodging,
+            'Breakfast': row.breakfast,
+            'Lunch': row.lunch,
+            'Snacks': row.snacks,
+            'Dinner': row.dinner,
+            'Tea & Water': row.teaWater,
+            'Airfare, Bus, Train, Taxi Rental': row.longTravel,
+            'Auto, Cab': row.shortTravel,
+            'Parking, Toll, Fuel': row.tollTax,
+            'Incidentals': row.incidentals,
+            'Other Business Expenses': row.other,
+            'Total': row.total,
+        }));
+        setrowData(transformed);
+    }, [tourClaimTableData]);
 
     const calculateTotal = (entry) => {
         const keys = Object.keys(initialFormState).filter(k => k !== 'Date');
@@ -256,6 +256,7 @@ const TourClaimTable = ({ editableMode, seteditableMode, toggleNewClaim, settogg
         { field: 'Lunch', header: 'Lunch' },
         { field: 'Snacks', header: 'Snacks' },
         { field: 'Dinner', header: 'Dinner' },
+        
         { field: 'Tea & Water', header: 'Tea & Water' },
         { field: 'Airfare, Bus, Train, Taxi Rental', header: 'Airfare, Bus, Train, Taxi Rental' },
         { field: 'Auto, Cab', header: 'Auto, Cab' },
