@@ -194,7 +194,8 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
                 icon="pi pi-trash"
                 rounded
                 text
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   handleDeleteRow(rowData);
                 }}
               />

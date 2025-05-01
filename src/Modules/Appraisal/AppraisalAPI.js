@@ -42,9 +42,17 @@ const appraiserFormApi = async (appraiserFromData, getAuthToken) => {
 };
 
 //Demo Test Api
-const appraisalPutApi = async (appraisalFormData) => {
+const appraisalPutApi = async (appraisalFormData,getAuthToken) => {
+  console.log("putAPIURl",`${endPoint}appraisal/submitappraisalform`,getAuthToken,appraisalFormData);
   try {
-    const response = await axios.post(`${appraisalForm}`, appraisalFormData);
+    const response = await axios.put(`${endPoint}appraisal/submitappraisalform`, appraisalFormData,
+      {
+        headers: {
+          Authorization: `Bearer ${getAuthToken}`,
+        },
+      }
+    );
+    console.log("putAPIURl",`${endPoint}appraisal/submitAppraisalform`);
     console.log("appraisalFrom_put_api", response);
     return response;
   } catch (error) {
@@ -96,11 +104,17 @@ const appraisalListApi = async (token, empName) => {
   }
 };
 
-//Demo training API
-const trainingApi = async () => {
+//Training API
+const trainingApi = async (token) => {
   try {
-    const response = await axios.get(`${training}`);
-    //.log("trainingApi", response);
+    const response = await axios.get(`${endPoint}trainings/training-list`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
     return response;
   } catch (error) {
     console.log(error);

@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { use } from "react";
 //Import Form Table
 import PerformanceScorecardDateTable from "./AppraisalForm/PerformanceScorecard";
-import { showSuccessMessage } from "../../components/Toast/ShowMessage";
+import { showErrorMessage, showSuccessMessage } from "../../components/Toast/ShowMessage";
 import { Toast } from "primereact/toast";
 import CompetencyScorecard from "./AppraisalForm/CompetencyScorecard";
 import FutureGoals from "./AppraisalForm/FutureGoals";
@@ -31,16 +31,14 @@ import MyKRA from "./AppraisalForm/My_KRA";
 import MyInsights from "./AppraisalForm/My_Insights";
 import { Checkbox } from "primereact/checkbox";
 import { getUserData } from "../Login/Encrypt";
-import LastYearGoal from "./AppraisalForm/LastYearGoal"
+import LastYearGoal from "./AppraisalForm/LastYearGoal";
 //For Icon
-import PersonIcon from '@mui/icons-material/Person';
-import DoneIcon from '@mui/icons-material/Done';
-import InsightsIcon from '@mui/icons-material/Insights';
-import SchoolIcon from '@mui/icons-material/School';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import AdsClickIcon from '@mui/icons-material/AdsClick';
-
-
+import PersonIcon from "@mui/icons-material/Person";
+import DoneIcon from "@mui/icons-material/Done";
+import InsightsIcon from "@mui/icons-material/Insights";
+import SchoolIcon from "@mui/icons-material/School";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import AdsClickIcon from "@mui/icons-material/AdsClick";
 
 function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Toast
@@ -59,7 +57,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
-        previous:item.previous??false,
+        previous: item.previous ?? false,
         ...item,
       };
     });
@@ -74,7 +72,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
-        previous:item.previous??false,
+        previous: item.previous ?? false,
         ...item,
       };
     });
@@ -103,8 +101,8 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
-        level_of_fullfillment:item.level_of_fullfillment??"",
-        goalType:item.goalType??"",
+        level_of_fullfillment: item.level_of_fullfillment ?? "",
+        goalType: item.goalType ?? "",
         ...item,
       };
     });
@@ -140,14 +138,22 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   };
 
   //For Confirmation Reviewer and Approver
-  const [reviewer, setReviewer] = useState(
-    appraiserForm?.personaldetails.reviewed
-  );
-  const [approver, setApprover] = useState(
-    appraiserForm?.personaldetails.approved
-  );
-  console.log("approver", approver);
-  console.log("reviewer_data", approver);
+  const [reviewer, setReviewer] = useState();
+  useEffect(() => {
+    setReviewer(appraiserForm?.personaldetails.reviewed);
+  }, [appraiserForm]);
+
+  const [approver, setApprover] = useState();
+  useEffect(() => {
+    setApprover(appraiserForm?.personaldetails.approved);
+  }, [appraiserForm]);
+
+  // console.log("approver", approver);
+  // console.log(
+  //   "reviewer_data",
+  //   appraiserForm?.personaldetails.reviewed,
+  //   reviewer
+  // );
 
   //Use React Hooks Form
   const { register, handleSubmit, reset, setValue } = useForm();
@@ -162,18 +168,25 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
       futuregoals: FutureGoalsData,
       futurecomptency: FutureComptencyData,
       mykra: myKRA_Data,
-      myInsights: myInsights,
-      // Confirmation: [{ reviewer: reviewer }, { approver: approver }],
+      myinsights: myInsights,
+      lastyeargoals: appraiserForm?.lastyeargoals,
+      confirmation: { reviewed: reviewer, approved: approver },
     };
     console.log("Appraisal Form Data:", generatepersonaldetails);
 
     try {
-      const response = await appraisalPutApi(generatepersonaldetails);
+      const localStorageAuth = getUserData();
+
+      const authToken = localStorageAuth?.token;
+      const response = await appraisalPutApi(
+        generatepersonaldetails,
+        authToken
+      );
       console.log("Appraisal Form Data:", response);
-      if (response.status === 200) {
+      if (response.status === 201) {
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
       } else {
-        showSuccessMessage(toastRef, "Error", "Form Submission Failed");
+        showErrorMessage(toastRef, "Error", "Form Submission Failed");
       }
       //From Reset
       // reset();
@@ -337,7 +350,10 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     component="span"
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    <PersonIcon fontSize="small" className="accordionIconBGStyle"/>
+                    <PersonIcon
+                      fontSize="small"
+                      className="accordionIconBGStyle"
+                    />
                     Personal Details
                   </Typography>
                 </AccordionSummary>
@@ -648,13 +664,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <AdsClickIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My Goals
-                  </Typography>
-                
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <AdsClickIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My Goals
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <LastYearGoal
@@ -682,13 +700,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <BarChartIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My KRA
-                  </Typography>
-               
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <BarChartIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My KRA
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <PerformanceScorecardDateTable
@@ -722,13 +742,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <SchoolIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My Training
-                  </Typography>
-                
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <SchoolIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My Training
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <CompetencyScorecard
@@ -762,13 +784,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <InsightsIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My Insights
-                  </Typography>
-                
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <InsightsIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My Insights
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <MyInsights
@@ -792,33 +816,32 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <DoneIcon fontSize="small" className="accordionIconBGStyle"/>
-                    Confirmation
-                  </Typography>
-               
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <DoneIcon fontSize="small" className="accordionIconBGStyle" />
+                  Confirmation
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <div className="flex justify-center items-center mb-1 column-gap-4">
                   <h1 className="text-sm">Reviewer</h1>
                   <Checkbox
-                    checked={reviewer === 1}
+                    checked={reviewer}
                     disabled={isReviewer()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
-                      setReviewer(e.checked ? 1 : 0);
+                      setReviewer(e.checked ? true : false);
                     }}
                   />
                   <h1 className="text-sm">Approver</h1>
 
                   <Checkbox
-                    checked={approver === 1}
+                    checked={approver}
                     disabled={isApprover()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
-                      setApprover(e.checked ? 1 : 0);
+                      setApprover(e.checked ? true : false);
                     }}
                   />
                 </div>

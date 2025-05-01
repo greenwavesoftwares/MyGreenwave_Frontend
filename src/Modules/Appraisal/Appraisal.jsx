@@ -127,7 +127,7 @@ function Appraisal() {
         setLoading(false);
 
         //Training Data
-        const trainingData = await trainingApi();
+        const trainingData = await trainingApi(authToken);
         console.log("trainingData_Api", trainingData);
         setTrainingData(trainingData?.data);
       } catch (error) {
@@ -169,7 +169,7 @@ function Appraisal() {
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
     const localStorageAuth = getUserData();
-    console.log("localStorageAuth", localStorageAuth);
+    //cnosole.log("localStorageAuth", localStorageAuth);
     const authToken = localStorageAuth?.token;
     //const employeeName = localStorageAuth?.userDetails.userId;
     const appraisalFormData = await currentAppraisalFormAPI(

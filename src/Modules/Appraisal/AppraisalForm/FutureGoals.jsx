@@ -216,7 +216,8 @@ const FutureGoals = ({
                 icon="pi pi-trash"
                 rounded
                 text
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   handleDeleteRow(rowData);
                 }}
               />
