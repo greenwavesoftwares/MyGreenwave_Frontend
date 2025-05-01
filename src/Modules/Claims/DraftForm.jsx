@@ -4,12 +4,12 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
-import { FileUpload } from 'primereact/fileupload'; // ✅ import added
+import { FileUpload } from 'primereact/fileupload'; 
 
 import TourClaimForm from './TourClaimForm';
 import TourClaimTable from './TourClaimTable';
 import { FiUpload } from 'react-icons/fi';
-import { getTravelDropDown,uploadSupportingDocuments,deleteDraftList,applyClaim,downloadTourClaimSupportingDocument,getTourClaimTableDraftData } from './claimServices'
+import { getTravelDropDown,uploadSupportingDocuments,deleteDraftList,applyClaim,downloadTourClaimSupportingDocument,getTourClaimTableDraftData,getlatestclaimtodate,formateDate } from './claimServices'
 
 const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode, tourclaimformData, settourclaimformData, settourClaimTableData }) => {
 
@@ -24,7 +24,6 @@ const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode, tou
     const handleDelete = async(claim_id,status) => {
         let data= await deleteDraftList(claim_id,status)
         setDraftData(data);
-        // setDraftData(prev => prev.filter(row => row.date !== id));
     };
 
     const handleApplyApproval = async (claim_id, status) => {
@@ -45,42 +44,56 @@ const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode, tou
         }
     };
     
-    const handleEdit = async (claim_id) => {
-        // const myHeaders = new Headers();
-        // myHeaders.append("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraXNvbG95LnJveUBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDU5MDM4NzIsImV4cCI6MTc0NTkzOTg3Mn0.xjbxnT5NGaCgZ96j4IjqSJM4Gg12DvuH-TXKVYMMhYA");
-
-        // const requestOptions = {
-        //     method: "GET",
-        //     headers: myHeaders,
-        //     redirect: "follow"
-        // };
+    const handleEdit = async (claim_id,requisition_id) => {
 
          try {
-        //     const response = await fetch(`http://localhost:8081/claims/tour-claims/${claim_id}`, requestOptions);
-
-        //     if (!response.ok) {
-        //         throw new Error(`HTTP error! status: ${response.status}`);
-        //     }
-
-        //     const data = await response.json();
-        //     const travelDropDownData = await getTravelDropDown();
-        //     const key = Object.keys(travelDropDownData).find(key => travelDropDownData[key] === data.requisition_id);
 
            const data=await getTourClaimTableDraftData(claim_id)
-        //    const data=response.tourClaimRecords
+           const obj = await getTravelDropDown();
 
+          let dates= await getlatestclaimtodate(requisition_id)
+
+         
+          
+           const travelmodefilter = Object.keys(obj).find(key => obj[key] === data.requisition_id);
             settourclaimformData({
-                travelMode: '',
-                travelType: '',
+                advance:0,
+                claim_id:data.claim_id,
+                requisition_id:requisition_id,
+                travelMode:travelmodefilter,
+                travelType: data.type,
                 destination: data.destination,
                 purpose: data.purpose,
                 projectName: data.project,
                 onAccount: data.account,
-                fromDate: new Date(data.from_date),
-                toDate: new Date(data.to_date)
+                travelfromDate:formateDate(dates[0].travelfromdate) ,
+                claimFromDate:formateDate(dates[0].claimformdate),
+                claimToDate: formateDate(dates[0].claimtodate),
+                filename:data.filename,
+                file_type:data.file_type
+                
             });
-            settourClaimTableData(data.tourClaimRecords);
-            console.log("tabledata :",data.tourClaimRecords)
+            // settourClaimTableData(data.tourClaimRecords)
+
+            const formattedRows = data.tourClaimRecords.map((row) => ({
+                'Date': row.date,
+                'Lodging': row.lodging,  // typo fixed from "loading"
+                'Breakfast': row.breakfast,
+                'Lunch': row.lunch,
+                'Snacks': row.snacks,
+                'Dinner': row.dinner,
+                'Tea & Water': row.teaWater,
+                'Airfare, Bus, Train, Taxi Rental': row.longTravel,
+                'Auto, Cab': row.shortTravel,
+                'Parking, Toll, Fuel': row.tollTax,
+                'Incidentals': row.incidentals,
+                'Other Business Expenses': row.other,
+                'Total': row.total,
+                'Remarks':row.remarks
+              }));
+              
+              settourClaimTableData(formattedRows);
+            
 
         } catch (error) {
             console.error("Fetch error:", error);
@@ -94,7 +107,7 @@ const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode, tou
                 className="p-button-sm p-button-text p-button-info"
                 onClick={() => {
                     seteditableMode(true);
-                    handleEdit(rowData.claim_id);
+                    handleEdit(rowData.claim_id,rowData.requisition_id);
                 }}
                 tooltip="Edit"
             />
