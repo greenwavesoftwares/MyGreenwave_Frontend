@@ -8,6 +8,7 @@ import { getUserData } from "../../Login/Encrypt";
 import {
   showErrorMessage,
   showSuccessMessage,
+  showInfoMessage
 } from "../../../components/Toast/ShowMessage";
 import Toast from "../../../components/Toast/Toast";
 
@@ -51,17 +52,22 @@ const AppraisalsReview = () => {
   }, []);
 
   //Handle Show Form
-  const handleShowForm = async (formId,previousYearFormId,empId) => {
+  const handleShowForm = async (formId, previousYearFormId, empId) => {
     console.log("Click_formId", formId);
     const localStorageAuth = getUserData();
     const authToken = localStorageAuth?.token;
     setAppraisalFormVisible(false);
     setAppraisalFormLoading(formId);
     try {
-      const response = await appraisalFormAPI(authToken,formId,previousYearFormId,empId);
+      const response = await appraisalFormAPI(
+        authToken,
+        formId,
+        previousYearFormId,
+        empId
+      );
       if (response?.status === 200) {
         setAppraisalFormData(response?.data);
-        showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
+        showInfoMessage(toastRef, "", "Form Fetched Successfully");
         setAppraisalFormVisible(true);
       } else {
         showErrorMessage(toastRef, "Error", "Form Not Found");
@@ -78,8 +84,11 @@ const AppraisalsReview = () => {
   return (
     <>
       <div className="container mx-auto px-4">
-        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-4  bg-white shadow rounded">
+        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto mt-4">
+          {appraisalFormVisible && (
+            <AppraisalDialog appraiserForm={appraisalFormData} />
+          )}
+          <div className="card mt-2 bg-white shadow rounded">
             <DataTable
               size="small"
               stripedRows
@@ -100,40 +109,41 @@ const AppraisalsReview = () => {
               }
             >
               <Column field="empName" header="Employee Name"></Column>
-              <Column  header="Appraisal Date" body={(rowData)=>
-                formatDate(rowData.appraisalDate)
-              }></Column>
-              
+              <Column
+                header="Appraisal Date"
+                body={(rowData) => formatDate(rowData.appraisalDate)}
+              ></Column>
+
               <Column field="reviewer" header="Reviewer Name"></Column>
               <Column field="approver" header="Approver Name"></Column>
               <Column
-              body={(rowData) => {
-                return (
-                  <Chip
-                    label={
-                      rowData.approved === true
-                        ? "Approved"
-                        : rowData.reviewed === true
-                        ? "Reviewed"
-                        : rowData.active === true
-                        ? "Active"
-                        : "Inactive"
-                    }
-                    color={
-                      rowData.approved === true
-                        ? "warning"
-                        : rowData.reviewed === true
-                        ? "warning"
-                        : rowData.active === true
-                        ? "success"
-                        : "error"
-                    }
-                    size="small"
-                  />
-                );
-              }}
-              header="Status"
-            ></Column>
+                body={(rowData) => {
+                  return (
+                    <Chip
+                      label={
+                        rowData.approved === true
+                          ? "Approved"
+                          : rowData.reviewed === true
+                          ? "Reviewed"
+                          : rowData.active === true
+                          ? "Active"
+                          : "Inactive"
+                      }
+                      color={
+                        rowData.approved === true
+                          ? "warning"
+                          : rowData.reviewed === true
+                          ? "warning"
+                          : rowData.active === true
+                          ? "success"
+                          : "error"
+                      }
+                      size="small"
+                    />
+                  );
+                }}
+                header="Status"
+              ></Column>
               <Column
                 body={(rowData) => {
                   return (
@@ -142,7 +152,16 @@ const AppraisalsReview = () => {
                       variant="contained"
                       loading={appraisalFormLoading === rowData.formId}
                       loadingPosition="start"
-                      onClick={() => handleShowForm(rowData.formId,rowData.previousYearFormId,rowData.empId)}
+                      onClick={(e) =>{
+                        e.preventDefault()
+                        handleShowForm(
+                          rowData.formId,
+                          rowData.previousYearFormId,
+                          rowData.empId
+                        )
+
+                      }
+                      }
                     >
                       Show Form
                     </Button>
@@ -152,9 +171,6 @@ const AppraisalsReview = () => {
               ></Column>
             </DataTable>
           </div>
-          {appraisalFormVisible && (
-            <AppraisalDialog appraiserForm={appraisalFormData} />
-          )}
         </div>
       </div>
       <Toast ref={toastRef} />

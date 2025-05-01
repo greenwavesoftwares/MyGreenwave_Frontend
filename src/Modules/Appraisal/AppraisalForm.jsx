@@ -255,8 +255,8 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   setValue("updateDate", appraiserForm?.personaldetails.updateDate);
   setValue("reviewer", appraiserForm?.personaldetails.reviewer);
   setValue("approver", appraiserForm?.personaldetails.approver);
-  setValue("reviewed", appraiserForm?.personaldetails.reviewed);
-  setValue("approved", appraiserForm?.personaldetails.approved);
+  setValue("reviewed", reviewer);
+  setValue("approved", approver);
   setValue("doj", appraiserForm?.personaldetails.doj);
 
   console.log("appraiserFormFromInnerSection", appraiserForm);

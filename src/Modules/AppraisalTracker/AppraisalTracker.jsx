@@ -17,8 +17,8 @@ import DownloadIcon from "@mui/icons-material/Download";
 import "../Appraisal/Appraisal.scss";
 //Import Appraisal Tracker API
 import {
-  allAppraisalData,
-  appraisalFormData,
+  getAllAppraisalData,
+  appraisalFormAPI,
   trainingApi,
 } from "./AppraisalTrackerAPI";
 
@@ -48,15 +48,17 @@ const AppraisalTracker = () => {
         const localStorageAuth = getUserData();
         const authToken = localStorageAuth?.token;
         //setLoader(true);
-        const allAppraisalListData = await allAppraisalData();
-        //console.log("allAppraisalListData", allAppraisalListData);
+        const response = await getAllAppraisalData(authToken);
+        console.log("allAppraisalListData", response);
         //Training Data
         const trainingData = await trainingApi(authToken);
         console.log("trainingData_Api", trainingData);
         setTrainingData(trainingData?.data);
-        if (allAppraisalListData.status === 200) {
+
+        //Set DataTable Data
+        if (response.status === 200) {
           setLoader(false);
-          setAllAppraisalList(allAppraisalListData.data);
+          setAllAppraisalList(response?.data.appraisalsList);
         }
       } catch (error) {
         console.log(error);
@@ -66,10 +68,17 @@ const AppraisalTracker = () => {
   }, []);
 
   //Handel Click employee from data
-  const handleShowForm = async (formId, previousYearFormId) => {
+  const handleShowForm = async (formId, previousYearFormId, empId) => {
     console.log("formId", formId);
+    const localStorageAuth = getUserData();
+    const authToken = localStorageAuth?.token;
     setShowFormLoader(true);
-    const getAppraisalFormData = await appraisalFormData(formId);
+    const getAppraisalFormData = await appraisalFormAPI(
+      authToken,
+      formId,
+      previousYearFormId,
+      empId
+    );
     //console.log("getAppraisalFormData",getAppraisalFormData);
     if (getAppraisalFormData?.status == 200) {
       //For Appraisal Form
@@ -135,7 +144,8 @@ const AppraisalTracker = () => {
                       onClick={() =>
                         handleShowForm(
                           rowData.formId,
-                          rowData.previousYearFormId
+                          rowData.previousYearFormId,
+                          rowData.empId
                         )
                       }
                       aria-label="VisibilityIcon"
@@ -147,13 +157,13 @@ const AppraisalTracker = () => {
                 }}
                 //header="Form"
               ></Column>
-              <Column field="emp_name" header="Employee Name"></Column>
-              <Column field="emp_id" header="Employee Id"></Column>
+              <Column field="empName" header="Employee Name"></Column>
+              <Column field="empId" header="Employee Id"></Column>
 
               <Column
                 header="Appraisal Date"
                 body={(rowData) => {
-                  return formatDate(rowData.LastUpdated);
+                  return formatDate(rowData.appraisalDate);
                 }}
               ></Column>
               <Column
