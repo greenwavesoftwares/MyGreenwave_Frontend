@@ -39,6 +39,7 @@ import InsightsIcon from "@mui/icons-material/Insights";
 import SchoolIcon from "@mui/icons-material/School";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AdsClickIcon from "@mui/icons-material/AdsClick";
+import { useNavigate } from "react-router-dom";
 
 function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Toast
@@ -314,6 +315,28 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
       return true;
     }
   };
+
+  //IS Form Disable or Enable Function
+  const navigate = useNavigate();
+  const isFormDisabled=()=>{
+    if(appraiserForm?.personaldetails.reviewed && (appraiserForm?.personaldetails.empId.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase())){
+      return true
+    }
+     else if(appraiserForm?.personaldetails.reviewed && (appraiserForm?.personaldetails.reviewer.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
+      return true
+     }
+     else if(appraiserForm?.personaldetails.approved && (appraiserForm?.personaldetails.approver.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
+      return true
+     }
+     else if(navigate('/appraisal-tracker')){
+      return true
+     }
+    else{
+      return false
+    }
+    
+
+  }
 
   return (
     <>
@@ -851,8 +874,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               variant="contained"
               size="small"
               disabled={
-                appraiserForm?.personaldetails.reviewed ||
-                appraiserForm?.personaldetails.approved
+                isFormDisabled() 
               }
               type="submit"
               className="mt-2"

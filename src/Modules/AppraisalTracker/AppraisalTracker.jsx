@@ -19,6 +19,7 @@ import "../Appraisal/Appraisal.scss";
 import {
   getAllAppraisalData,
   appraisalFormAPI,
+  appraisalFormExcelDownload,
   trainingApi,
 } from "./AppraisalTrackerAPI";
 
@@ -89,6 +90,15 @@ const AppraisalTracker = () => {
       setAppraisalFormVisible(false);
     }
   };
+
+  //Handel Click Excel Download
+  const handelExcelDownload=async(formId,previousYearFormId,empId)=>{
+    const localStorageAuth = getUserData();
+    const authToken = localStorageAuth?.token;
+    const excelDownload=await appraisalFormExcelDownload (authToken,formId,previousYearFormId,empId)
+    console.log("excelDownload",excelDownload);
+
+  }
   return (
     <>
       <div className="container mx-auto px-4">
@@ -188,6 +198,14 @@ const AppraisalTracker = () => {
                       color="success"
                       variant="contained"
                       startIcon={<DownloadIcon />}
+                      onClick={() =>
+                        handelExcelDownload(
+                          rowData.formId,
+                          rowData.previousYearFormId,
+                          rowData.empId
+                        )
+                      }
+                      //onClick={handelExcelDownload}
                     >
                       Download
                     </Button>
