@@ -1,21 +1,22 @@
 import axios from "axios";
 import { getUserData } from "../Login/Encrypt";
 
-const endPoint = import.meta.env.VITE_END_POINT
-const userData=getUserData();
+const endPoint = import.meta.env.VITE_END_POINT;
+const userData = getUserData();
 
-export const getHolidays = async () => {
-    try{
-        const response= await axios.get(
-            `${endPoint}holidays`,
-            { headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userData.token}`
-            }}
-        );
-        return response.data;
-    } catch (error) {
-         console.error("Error fetching forminfo with versions:", error);
-        return error.response.data;
-    }
-}
+const getHolidaysAPI = async () => {
+  try {
+    const response = await axios.get(`${endPoint}holidays`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return error.response.data;
+  }
+};
+
+export { getHolidaysAPI };

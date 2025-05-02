@@ -5,7 +5,7 @@ import {
   getDataOnLoad,
 } from "./LeaveManagementAPI";
 import { format, parse } from "date-fns";
-import { getHolidays } from "../HolidayMaster/HolidayAPI";
+import { getHolidays } from "../HolidayMaster/HolidayFunction";
 import { showSuccessMessage } from "../../components/Toast/ShowMessage";
 
 const dateformat = "yyyy-MM-dd";
