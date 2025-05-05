@@ -15,7 +15,7 @@ import {
   postTrainingDetailsData,
   deleteTrainingDetailsData,
   putTrainingDetailsData, // NEW: PUT API
-} from "./TrainingScheduleMasterAPI";
+} from "./TrainingMasterAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Toast } from "primereact/toast";
 import { showErrorMessage, showSuccessMessage, showWarningMessage } from "../../components/Toast/ShowMessage";

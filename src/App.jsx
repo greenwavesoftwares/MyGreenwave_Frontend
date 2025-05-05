@@ -21,9 +21,9 @@ import AppraisalsReview from "./Modules/Appraisal/Appraisals Review/AppraisalsRe
 import AppraisalsApprover from "./Modules/Appraisal/Appraisals Approver/AppraisalsApprover";
 import SalarySlipUpload from "./Modules/SalarySlip/SalarySlipUpload";
 import AppraisalTracker from "./Modules/AppraisalTracker/AppraisalTracker";
-import TrainingScheduleMaster from "./Modules/TrainingSchedule_Master/TrainingScheduleMaster";
+import TrainingMaster from "./Modules/Training_Master/TrainingMaster";
 import HolidayMaster from "./Modules/HolidayMaster/HolidayMaster";
-
+import Nalanda from "./Modules/Nalanda/Nalanda"
 function App() {
   return (
     <Router>
@@ -51,8 +51,9 @@ function App() {
         <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
         <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
         <Route path="/appraisal-tracker" element={<AppraisalTracker />} />
-        <Route path="/training-schedule" element={<TrainingScheduleMaster />} />
+        <Route path="/training-master"element={<TrainingMaster/>}/>
         <Route path="/holiday-master" element={<HolidayMaster />} />
+        <Route path="/nalanda"element={<Nalanda/>}/>
       </Routes>
     </Router>
   );
