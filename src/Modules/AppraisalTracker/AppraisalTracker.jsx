@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Checkbox } from "primereact/checkbox";
 //Icon
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -27,8 +27,12 @@ import {
 import { formatDate } from "../Appraisal/formatDate";
 import AppraisalDialog from "../Appraisal/AppraisalForm";
 import { getUserData } from "../Login/Encrypt";
+import { Toast } from "primereact/toast";
+import { showInfoMessage } from "../../components/Toast/ShowMessage";
 
 const AppraisalTracker = () => {
+  //For Toast
+    const toastRef = useRef(null);
   //Set all appraisal list data
   const [allAppraisalList, setAllAppraisalList] = useState([]);
   //Set Appraisal Form Data Visible
@@ -84,9 +88,11 @@ const AppraisalTracker = () => {
     if (getAppraisalFormData?.status == 200) {
       //For Appraisal Form
       setShowFormLoader(false);
+      showInfoMessage(toastRef, "", "Form Fetched Successfully");
       setAppraiserForm(getAppraisalFormData?.data);
       setAppraisalFormVisible(true);
     } else {
+      showErrorMessage(toastRef, "Error", "Form Not Found");
       setAppraisalFormVisible(false);
     }
   };
@@ -217,6 +223,7 @@ const AppraisalTracker = () => {
           </div>
         </div>
       </div>
+      <Toast ref={toastRef} />
     </>
   );
 };

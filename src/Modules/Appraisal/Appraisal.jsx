@@ -120,9 +120,9 @@ function Appraisal() {
         console.log("set_Appraisal_data", response);
 
         //List Of Appraisal Data
-        const appraisalList = await appraisalListApi(authToken, employeeName);
+        const appraisalList_response = await appraisalListApi(authToken, employeeName);
         console.log("appraisalList", appraisalList);
-        setAppraisalList(appraisalList?.appraisalsList);
+        setAppraisalList(appraisalList_response?.appraisalsList);
         //For Loading
         setLoading(false);
 
@@ -144,6 +144,7 @@ function Appraisal() {
     getAppraisalData();
   }, []);
   console.log("reviewerName", reviewerName);
+  
 
   //Tab Visible For Only Reviewer
   const listOfReviewer = appraisalData?.reviewerlist;

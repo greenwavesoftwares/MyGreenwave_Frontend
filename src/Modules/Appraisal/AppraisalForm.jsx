@@ -39,7 +39,7 @@ import InsightsIcon from "@mui/icons-material/Insights";
 import SchoolIcon from "@mui/icons-material/School";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AdsClickIcon from "@mui/icons-material/AdsClick";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Toast
@@ -319,24 +319,29 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   //IS Form Disable or Enable Function
   const navigate = useNavigate();
   const isFormDisabled=()=>{
-    if(appraiserForm?.personaldetails.reviewed && (appraiserForm?.personaldetails.empId.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase())){
+    //For User 
+    if((appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved) && (appraiserForm?.personaldetails.empId.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase())){
       return true
     }
-     else if(appraiserForm?.personaldetails.reviewed && (appraiserForm?.personaldetails.reviewer.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
+    //For Reviewer Section
+     else if((appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved ) && (appraiserForm?.personaldetails.reviewer.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
       return true
      }
      else if(appraiserForm?.personaldetails.approved && (appraiserForm?.personaldetails.approver.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
       return true
      }
-     else if(navigate('/appraisal-tracker')){
-      return true
-     }
+ 
     else{
       return false
     }
     
 
   }
+
+  //Find appraisal-tracker end point 
+  const location = useLocation();
+  // Check if current path is `/appraisal-tracker`
+  const isTrackerPage = location.pathname === '/appraisal-tracker';
 
   return (
     <>
@@ -870,6 +875,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 </div>
               </AccordionDetails>
             </Accordion>
+            {!isTrackerPage &&
             <MuiButton
               variant="contained"
               size="small"
@@ -880,7 +886,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               className="mt-2"
             >
               Submit Form
-            </MuiButton>
+            </MuiButton>}
           </form>
 
           <Toast ref={toastRef} />

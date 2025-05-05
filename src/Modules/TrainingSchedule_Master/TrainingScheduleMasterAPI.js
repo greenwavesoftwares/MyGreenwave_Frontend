@@ -33,6 +33,25 @@ const postTrainingDetailsData = async (formData, token) => {
   }
 };
 
+const putTrainingDetailsData = async (formData, token,id) => {
+  console.log("put",JSON.stringify(formData),token,id,`${endPoint}trainings/training-details/${id}`);
+  try {
+    const response = await axios.put(
+      `${endPoint}trainings/training-details/${id}`,
+      JSON.stringify(formData),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const deleteTrainingDetailsData = async (formData, token) => {
   console.log("deleteTrainingDetailsData", formData);
 
@@ -52,4 +71,4 @@ const deleteTrainingDetailsData = async (formData, token) => {
 };
 
 
-export { getTrainingDetails, postTrainingDetailsData,deleteTrainingDetailsData };
+export { getTrainingDetails, postTrainingDetailsData,putTrainingDetailsData,deleteTrainingDetailsData };

@@ -1,140 +1,151 @@
+import React, { useEffect, useRef, useState } from "react";
 import { DataTable } from "primereact/datatable";
-import React, { useEffect, useState } from "react";
-//SCSS Import
-import "../Appraisal/Appraisal.scss";
 import { Column } from "primereact/column";
-import { Chip, Fab, Typography } from "@mui/material";
-import { getUserData } from "../Login/Encrypt";
+import { Chip, Typography } from "@mui/material";
 import { Button as MuiButton } from "@mui/material";
-import { getTrainingDetails,postTrainingDetailsData,deleteTrainingDetailsData } from "./TrainingScheduleMasterAPI";
-//Icon
-import AddIcon from "@mui/icons-material/Add";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
+import LinearProgress from "@mui/material/LinearProgress";
+
+import "../Appraisal/Appraisal.scss";
+
+import {
+  getTrainingDetails,
+  postTrainingDetailsData,
+  deleteTrainingDetailsData,
+  putTrainingDetailsData, // NEW: PUT API
+} from "./TrainingScheduleMasterAPI";
+import { getUserData } from "../Login/Encrypt";
+import { Toast } from "primereact/toast";
+import { showErrorMessage, showSuccessMessage, showWarningMessage } from "../../components/Toast/ShowMessage";
 
 const TrainingScheduleMaster = () => {
-  //Set Training List Data
+  //For Toast
+      const toastRef = useRef(null);
   const [trainingList, setTrainingList] = useState([]);
-  //Set loader for data table
-  const [loader, setLoader] = useState();
-  //Dialog Visible State
-  const [dialogVisible, setDialogVisible] = useState(false);
-  //For Edit Section
+  const [loader, setLoader] = useState(true);
   const [editingRowIndex, setEditingRowIndex] = useState(null);
 
-  //Update rowIndex
+  const departmentData = ["Software", "Automation"];
+
+  useEffect(() => {
+    const getTrainingData = async () => {
+      try {
+        const { token } = getUserData();
+        const response = await getTrainingDetails(token);
+        setTrainingList(response?.data || []);
+        setLoader(false);
+      } catch (error) {
+        console.error(error);
+        setLoader(false);
+      }
+    };
+
+    getTrainingData();
+  }, []);
+
   const handleEditRow = (rowData, rowIndex) => {
     setEditingRowIndex(rowIndex);
   };
-  //Update
+
   const handleInputChange = (value, field, index) => {
     const updatedRows = [...trainingList];
-    //.log("updatedRows",updatedRows);
     updatedRows[index][field] = value;
     setTrainingList(updatedRows);
   };
 
-  //Set Dropdown Data
-  const departmentData = ["Software", "Automation"];
+  const handleSaveRow = async (rowData, rowIndex) => {
+    const { token } = getUserData();
 
-  //Call All Appraisal List API
-  useEffect(() => {
-    const getTrainingData = async () => {
-      try {
-        const localStorageAuth = getUserData();
-        const authToken = localStorageAuth?.token;
-        const trainingData = await getTrainingDetails(authToken);
-        console.log("trainingData_Api", trainingData);
-        setTrainingList(trainingData?.data);
-        if (allAppraisalListData.status === 200) {
-          setLoader(false);
-          setAllAppraisalList(allAppraisalListData.data);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    getTrainingData();
-  }, []);
-
-
-  //Handel Save Data
-  const handleSaveRow=async()=>{
-    const localStorageAuth = getUserData();
-    const authToken = localStorageAuth?.token;
-    const findWithoutTrainingID=trainingList.find((e)=> !e.hasOwnProperty("trainingId"))
-    
-    const trainingDataSave = await postTrainingDetailsData(findWithoutTrainingID,authToken); 
-    console.log('trainingDataSave',trainingDataSave);
-    if(trainingDataSave.status===200){
-      setEditingRowIndex(null)
+    if (!rowData.trainingName || !rowData.department || !rowData.category) {
+      alert("Please fill all fields before saving.");
+      return;
     }
-  }
 
-  //Handel Delete Data
-  const handleDeleteRow=async(rowData)=>{
-    console.log("deleteBtn_Click",rowData);
-    const localStorageAuth = getUserData();
-    const authToken = localStorageAuth?.token;
-    
-    
-    const trainingDataSave = await deleteTrainingDetailsData(rowData,authToken); 
-    const findWithoutTrainingID=trainingList.filter((e)=> e !== rowData)
-    setTrainingList(findWithoutTrainingID)
-    console.log('trainingDataSave',trainingDataSave);
-  }
+    try {
+      let response;
+      if (rowData.trainingId) {
+        // PUT: update
+        response = await putTrainingDetailsData(rowData, token,rowData.trainingId);
+      } else {
+        // POST: create
+        response = await postTrainingDetailsData(rowData, token);
+      }
+
+      if (response?.status === 200) {
+        showSuccessMessage(toastRef,"","Training Add Successfully")
+        const updatedList = [...trainingList];
+        updatedList[rowIndex] = response.data;
+        setTrainingList(updatedList);
+        setEditingRowIndex(null);
+      }
+      else{
+        
+        showWarningMessage(toastRef,"","Training Already Present")
+        setEditingRowIndex(null)
+      }
+    } catch (error) {
+      console.error("Save failed:", error);
+    }
+  };
+
+  const handleDeleteRow = async (rowData) => {
+    const { token } = getUserData();
+
+    try {
+      showErrorMessage(toastRef,`${rowData.trainingName}`,"Now Delete")
+      await deleteTrainingDetailsData(rowData, token);
+      const updatedList = trainingList.filter((e) => e !== rowData);
+      
+      setTrainingList(updatedList);
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4">
       <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-        <div className="card mt-4  bg-white shadow rounded">
+        <div className="card mt-4 bg-white shadow rounded">
           <DataTable
             size="small"
             emptyMessage={
-              loader ? (
-                <>
-                  <LinearProgress color="inherit" />
-                </>
-              ) : (
-                "No Data Found"
-              )
+              loader ? <LinearProgress color="inherit" /> : "No Data Found"
             }
-            header={
-              <Typography className="text-sm">Training Details</Typography>
-            }
+            header={<Typography className="text-sm">Training Details</Typography>}
             value={trainingList}
             showGridlines
             className="dataTableHeader dataTableBody dataTableBodyPadding"
           >
             <Column
-              body={(rowData, { rowIndex }) => {
-                return editingRowIndex === rowIndex ? (
+              header="Training Name"
+              body={(rowData, { rowIndex }) =>
+                editingRowIndex === rowIndex ? (
                   <InputText
                     value={rowData.trainingName}
+                    required
                     onChange={(e) =>
-                      handleInputChange(
-                        e.target.value,
-                        "trainingName",
-                        rowIndex
-                      )
+                      handleInputChange(e.target.value, "trainingName", rowIndex)
                     }
                   />
                 ) : (
                   rowData.trainingName
-                );
-              }}
-              header="Training Name"
-            ></Column>
+                )
+              }
+            />
             <Column
-              body={(rowData, { rowIndex }) => {
-                return editingRowIndex === rowIndex ? (
+              header="Department"
+              body={(rowData, { rowIndex }) =>
+                editingRowIndex === rowIndex ? (
                   <Dropdown
                     options={departmentData}
+                    required
                     value={rowData.department}
                     onChange={(e) =>
                       handleInputChange(e.value, "department", rowIndex)
                     }
-                    placeholder="Select Level"
+                    placeholder="Select Department"
                   />
                 ) : (
                   <Chip
@@ -146,34 +157,34 @@ const TrainingScheduleMaster = () => {
                         : "secondary"
                     }
                   />
-                );
-              }}
-              header="Department"
-            ></Column>
+                )
+              }
+            />
             <Column
-              body={(rowData, { rowIndex }) => {
-                return editingRowIndex === rowIndex ? (
+              header="Category"
+              body={(rowData, { rowIndex }) =>
+                editingRowIndex === rowIndex ? (
                   <InputText
                     value={rowData.category}
+                    required
                     onChange={(e) =>
                       handleInputChange(e.target.value, "category", rowIndex)
                     }
                   />
                 ) : (
                   rowData.category
-                );
-              }}
-              header="Category"
-            ></Column>
+                )
+              }
+            />
             <Column
               header="Edit"
-              body={(rowData, { rowIndex }) => {
-                return editingRowIndex === rowIndex ? (
+              body={(rowData, { rowIndex }) =>
+                editingRowIndex === rowIndex ? (
                   <Button
                     icon="pi pi-check"
                     size="small"
                     text
-                    onClick={handleSaveRow}
+                    onClick={() => handleSaveRow(rowData, rowIndex)}
                   />
                 ) : (
                   <Button
@@ -181,32 +192,24 @@ const TrainingScheduleMaster = () => {
                     size="small"
                     type="button"
                     text
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleEditRow(rowData, rowIndex);
-                    }}
+                    onClick={() => handleEditRow(rowData, rowIndex)}
                   />
-                );
-              }}
+                )
+              }
             />
             <Column
-                      header="Delete"
-                      body={(rowData) => {
-                        return (
-                          <Button
-                            severity="danger"
-                            size="small"
-                            icon="pi pi-trash"
-                            rounded
-                            text
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleDeleteRow(rowData);
-                            }}
-                          />
-                        );
-                      }}
-                    />
+              header="Delete"
+              body={(rowData) => (
+                <Button
+                  severity="danger"
+                  size="small"
+                  icon="pi pi-trash"
+                  rounded
+                  text
+                  onClick={() => handleDeleteRow(rowData)}
+                />
+              )}
+            />
           </DataTable>
         </div>
 
@@ -229,13 +232,16 @@ const TrainingScheduleMaster = () => {
                 category: "",
               };
               setTrainingList([...trainingList, blankRow]);
+              setEditingRowIndex(trainingList.length);
             }}
           >
             Add New Row
           </MuiButton>
         </div>
       </div>
+       <Toast ref={toastRef} />
     </div>
+    
   );
 };
 

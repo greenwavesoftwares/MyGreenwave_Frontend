@@ -28,6 +28,9 @@ const AppraisalsReview = () => {
   const [appraisalFormData, setAppraisalFormData] = useState({});
   //Set Appraisal Form Data Visible
   const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
+// State to trigger data fetching
+  const [fetchDataToggle, setFetchDataToggle] = useState(false);
+
 
   //Call Reviewer API
   useEffect(() => {
@@ -51,6 +54,9 @@ const AppraisalsReview = () => {
     fetchReviewerData();
   }, []);
 
+
+  
+
   //Handle Show Form
   const handleShowForm = async (formId, previousYearFormId, empId) => {
     console.log("Click_formId", formId);
@@ -65,7 +71,7 @@ const AppraisalsReview = () => {
         previousYearFormId,
         empId
       );
-      if (response?.status === 200) {
+      if (response?.status === 200) { 
         setAppraisalFormData(response?.data);
         showInfoMessage(toastRef, "", "Form Fetched Successfully");
         setAppraisalFormVisible(true);
@@ -91,6 +97,9 @@ const AppraisalsReview = () => {
           <div className="card mt-2 bg-white shadow rounded">
             <DataTable
               size="small"
+              paginator
+              rows={10}
+              owsPerPageOptions={[10, 15, 20, 25]}
               stripedRows
               header={
                 <Typography className="text-sm">Appraisal Reviewer</Typography>
