@@ -7,12 +7,12 @@ import { Calendar } from "primereact/calendar";
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
 import * as XLSX from "xlsx";
-import { formateDate, savetodraft, updateDraftdata } from "./claimServices";
+import { formateDate, savetodraft, updateDraftdata,downloadTourClaimExpanseDocument} from "./claimServices";
 
 const cellStyle = { padding: "8px 12px" };
 
 const initialFormState = {
-  Date: "",
+  "Date": "",
   Lodging: "",
   Breakfast: "",
   Lunch: "",
@@ -50,7 +50,7 @@ const TourClaimTable = ({
     );
     return keys.reduce((sum, key) => sum + (parseFloat(entry[key]) || 0), 0);
   };
-  
+
   const hasDuplicateDatesOrZeroTotal = (data) => {
     const seen = new Set();
     for (let row of data) {
@@ -79,7 +79,7 @@ const TourClaimTable = ({
 
   const handleDateChange = (e, rowIndex) => {
     const updatedData = [...tourClaimTableData];
-    updatedData[rowIndex]["Date"] = formateDate(e.value)//e.value?.toISOString().split("T")[0] || "";
+    updatedData[rowIndex]["Date"] = formateDate(e.value); //e.value?.toISOString().split("T")[0] || "";
     settourClaimTableData(updatedData);
   };
 
@@ -182,15 +182,22 @@ const TourClaimTable = ({
   const handleSaveToDraft = async () => {
     try {
       const response = await savetodraft(tourclaimformData, tourClaimTableData);
-      console.log(tourclaimformData);
-      setDraftData(response);
-      seteditableMode(false);
-      settoggleNewClaim(false);
-      toast.current.show({
-        severity: "info",
-        summary: "Draft Saved",
-        detail: "Saved locally.",
-      });
+   //   if (response?.success) {
+        setDraftData(response);
+        seteditableMode(false);
+        settoggleNewClaim(false);
+        toast.current.show({
+          severity: "info",
+          summary: "Draft Saved",
+          detail: "Saved locally.",
+        });
+     // } else {
+        toast.current.show({
+          severity: "error",
+          summary: "Failed",
+          detail: "Unable to save draft.",
+        });
+    //  }
     } catch (error) {
       toast.current.show({ severity: "error", summary: "", detail: error });
       console.log(error);
@@ -230,17 +237,16 @@ const TourClaimTable = ({
             value={rowData[field] || ""}
             onChange={(e) => handleChange(e, rowIndex)}
             className="p-inputtext-sm w-full"
-           
           />
         );
-      }else if (field == "Total") {
+      } else if (field == "Total") {
         return (
           <InputText
             name={field}
             value={rowData[field] || ""}
             onChange={(e) => handleChange(e, rowIndex)}
             className="p-inputtext-sm w-full"
-           disabled
+            disabled
           />
         );
       }
@@ -319,6 +325,15 @@ const TourClaimTable = ({
   );
 
   const fields = Object.keys(initialFormState);
+  const handleDownloadFile =async()=>{
+    try{
+      let d= await downloadTourClaimExpanseDocument(tourclaimformData.claim_id)
+    }catch(error)
+    {
+      console.log(error)
+    }
+     
+  }
 
   return (
     <>
@@ -334,10 +349,19 @@ const TourClaimTable = ({
           chooseLabel="Upload"
         />
         <Button
-          label="Add Row"
+          // label="Add Row"
           icon="pi pi-plus"
-          className="p-button-sm"
+          className="p-button-sm "
           onClick={handleAddRow}
+          tooltip='Add Row'
+        />
+        <Button
+          icon="pi pi-file-export"
+          className="p-button-sm"
+          onClick={() => {
+            handleDownloadFile()
+          }}
+        tooltip='Export Excel'
         />
       </div>
 
@@ -369,46 +393,70 @@ const TourClaimTable = ({
 
       <div className="flex justify-center mt-4">
         {editableMode ? (
-          <Button
-            label="Update"
-            icon="pi pi-save"
-            className="p-button-sm"
-            onClick={() => {
-              const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
-              if (result.hasIssue) {
-                toast.current?.show({
-                  severity: "warn",
-                  summary: "Validation Warning",
-                  detail: result.reason,
-                });
-              } else {
-                handleUpdate();
-                toast.current.show({
-                  severity: "success",
-                  summary: "Updated",
-                  detail: "Tour claim updated!",
-                });
-              }
-            }}
-          />
+          <div className="flex gap-2">
+            <Button
+              label="Update"
+              icon="pi pi-save"
+              className="p-button-sm"
+              onClick={() => {
+                const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
+                if (result.hasIssue) {
+                  toast.current?.show({
+                    severity: "warn",
+                    summary: "Validation Warning",
+                    detail: result.reason,
+                  });
+                } else {
+                  handleUpdate();
+                  toast.current.show({
+                    severity: "success",
+                    summary: "Updated",
+                    detail: "Tour claim updated!",
+                  });
+                }
+              }}
+            />
+            {draftData.length>0?(
+            <Button
+              label="Home"
+              icon="pi pi-home"
+              onClick={() => {
+                seteditableMode(false);
+              }}
+              className="p-button-sm"
+            />
+            ):''}
+          </div>
         ) : (
-          <Button
-            label="Save to Draft"
-            icon="pi pi-save"
-            className="p-button-sm"
-            onClick={() => {
-              const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
-              if (result.hasIssue) {
-                toast.current?.show({
-                  severity: "warn",
-                  summary: "Validation Warning",
-                  detail: result.reason,
-                });
-                return;
-              }
-              handleSaveToDraft();
-            }}
-          />
+          <div className="flex gap-2">
+            <Button
+              label="Save to Draft"
+              icon="pi pi-save"
+              className="p-button-sm"
+              onClick={() => {
+                const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
+                if (result.hasIssue) {
+                  toast.current?.show({
+                    severity: "warn",
+                    summary: "Validation Warning",
+                    detail: result.reason,
+                  });
+                  return;
+                }
+                handleSaveToDraft();
+              }}
+            />
+           
+            <Button
+              label="Home"
+              icon="pi pi-home"
+              onClick={() => {
+                seteditableMode(false);
+                settoggleNewClaim(false);
+              }}
+              className="p-button-sm"
+            />
+          </div>
         )}
       </div>
     </>

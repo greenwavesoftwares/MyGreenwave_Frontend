@@ -24,12 +24,23 @@ const DraftForm = ({ draftData, setDraftData, seteditableMode, editableMode, tou
     const handleDelete = async(claim_id,status) => {
         let data= await deleteDraftList(claim_id,status)
         setDraftData(data);
+        if(data.length===0)
+            {
+              settoggleNewClaim(true);
+            }
     };
 
     const handleApplyApproval = async (claim_id, status) => {
         try {
             let data = await applyClaim(claim_id, status);
             setDraftData(data);
+            if(data.length===0)
+            {
+                console.log("draft length is zero",data)
+                settoggleNewClaim(true);
+                seteditableMode(false);
+                settourClaimTableData([]);
+            }
             toast.current.show({ 
                 severity: 'success', 
                 summary: 'Success', 

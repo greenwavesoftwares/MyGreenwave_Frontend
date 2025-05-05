@@ -1,6 +1,9 @@
 // tourClaimService.js
 const token =
-  "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraXNvbG95LnJveUBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDYwNzY2NTYsImV4cCI6MTc0NjExMjY1Nn0.fQzMZDdw7blF4-Y3NJWp6RVu8blxX4Fq4uSQx_jnHFo";
+  "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraXNvbG95LnJveUBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDY0MjE5NTMsImV4cCI6MTc0NjQ1Nzk1M30.fnrtqVkATWHkDUv2D3OceBfrO6iG94T6WfPhZKhXyiA";
+
+import { parse } from "date-fns";
+import * as XLSX from "xlsx";
 import { getUserData } from "../Login/Encrypt";
 export const getDraftData = async () => {
   const myHeaders = new Headers();
@@ -48,8 +51,7 @@ export const handleSaveToDraft = (payload) => {
     });
 };
 
-import { parse } from "date-fns";
-import * as XLSX from "xlsx";
+
 
 export const formateDate = (value) => {
   if (!value) return "";
@@ -309,55 +311,6 @@ export const applyClaim = async (claim_id, status) => {
   }
 };
 
-//   export const downloadTourClaimSupportingDocument = async (claim_id) => {
-//     try {
-//       const myHeaders = new Headers();
-//       myHeaders.append("Authorization", token);
-
-//       const requestOptions = {
-//         method: "GET",
-//         headers: myHeaders,
-//         redirect: "follow"
-//       };
-
-//       const response = await fetch(`http://localhost:8081/claims/tour-claims/doc/${claim_id}`, requestOptions);
-
-//       if (!response.ok) {
-//         const errorText = await response.text();
-//         throw new Error(`Internal Server Error ${response.status}: ${errorText}`);
-//       }
-
-//       const blob = await response.blob();
-
-//       // Optional: Extract filename from headers
-//       const contentDisposition = response.headers.get("Content-Disposition");
-//       let filename = "document.pdf"; // Default fallback
-
-//       if (contentDisposition && contentDisposition.includes("filename=")) {
-//         filename = contentDisposition
-//           .split("filename=")[1]
-//           .replace(/['"]/g, "")
-//           .trim();
-//       }
-
-//       // Create a temporary download link
-//       const url = window.URL.createObjectURL(blob);
-//       const link = document.createElement("a");
-//       link.href = url;
-//       link.download = filename;
-//       document.body.appendChild(link);
-//       link.click();
-
-//       // Clean up
-//       window.URL.revokeObjectURL(url);
-//       document.body.removeChild(link);
-
-//     } catch (error) {
-//       console.error("Error in downloadTourClaimSupportingDocument:", error);
-//       throw error;
-//     }
-//   };
-
 export const downloadTourClaimSupportingDocument = async (claim_id) => {
   try {
     const myHeaders = new Headers();
@@ -383,13 +336,16 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     const result = await response.json();
     const { fileName, fileType, data: base64Data } = result;
 
-    // Convert base64 to a Blob
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length)
-      .fill()
-      .map((_, i) => byteCharacters.charCodeAt(i));
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: fileType });
+    // Correct and reliable base64 to Blob conversion
+    const binary = atob(base64Data);
+    const buffer = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      buffer[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([buffer], {
+      type: fileType || 'application/octet-stream',
+    });
 
     // Trigger download
     const url = window.URL.createObjectURL(blob);
@@ -398,14 +354,123 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     link.download = fileName || "document";
     document.body.appendChild(link);
     link.click();
-
-    window.URL.revokeObjectURL(url);
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Error in downloadTourClaimSupportingDocument:", error);
     throw error;
   }
 };
+
+
+// export const downloadTourClaimSupportingDocument = async (claim_id) => {
+//   try {
+//     const myHeaders = new Headers();
+//     myHeaders.append("Authorization", token);
+
+//     const requestOptions = {
+//       method: "GET",
+//       headers: myHeaders,
+//       redirect: "follow",
+//     };
+
+//     const response = await fetch(
+//       `http://localhost:8081/claims/tour-claims/doc/${claim_id}`,
+//       requestOptions
+//     );
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       throw new Error(`Internal Server Error ${response.status}: ${errorText}`);
+//     }
+
+//     // Parse JSON containing base64 data
+//     const result = await response.json();
+//     const { fileName, fileType, data: base64Data } = result;
+
+//     // Convert base64 to a Blob
+//     const byteCharacters = atob(base64Data);
+//     const byteNumbers = new Array(byteCharacters.length)
+//       .fill()
+//       .map((_, i) => byteCharacters.charCodeAt(i));
+//     const byteArray = new Uint8Array(byteNumbers);
+//     const blob = new Blob([byteArray], { type: fileType });
+
+//     // Trigger download
+//     const url = window.URL.createObjectURL(blob);
+//     const link = document.createElement("a");
+//     link.href = url;
+//     link.download = fileName || "document";
+//     document.body.appendChild(link);
+//     link.click();
+
+//     window.URL.revokeObjectURL(url);
+//     document.body.removeChild(link);
+//   } catch (error) {
+//     console.error("Error in downloadTourClaimSupportingDocument:", error);
+//     throw error;
+//   }
+// };
+
+export const downloadTourClaimExpanseDocument = async (claim_id) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    if(!claim_id)
+    {
+      var response= await fetch(
+        `http://localhost:8081/claims/tour-claims/excel`,
+        {
+          method: "GET",
+          headers: myHeaders,
+          redirect: "follow",
+        }
+      );
+    }else
+    {
+      var response = await fetch(
+        `http://localhost:8081/claims/tour-claims/excel/${claim_id}`,
+        {
+          method: "GET",
+          headers: myHeaders,
+          redirect: "follow",
+        }
+      );
+    }
+    
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Internal Server Error ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    const { fileName, fileType, data: base64Data } = result;
+
+    // Base64 to Blob (correct way)
+    const binary = atob(base64Data);
+    const buffer = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      buffer[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([buffer], { type: fileType });
+
+    // Trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName || "document.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error in downloadTourClaimSupportingDocument:", error);
+    throw error;
+  }
+};
+
 
 export const getTourClaimTableDraftData = async (claim_id) => {
   try {
@@ -602,4 +667,90 @@ export const updateDraftdata=async(tourclaimformData, tourClaimTableData,claim_i
     throw error;
   }
 }
+
+
+
+export const AddRowINExcel = async (file) => {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: 'array', cellStyles: true,
+    cellHTML: true,
+    dense: false });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+
+  const targetRow = 17; // Insert before Excel row 17 (1-based)
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+  // Shift all rows after targetRow down by 1
+  for (let row = range.e.r; row >= targetRow - 1; row--) {
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+      const nextCellAddress = XLSX.utils.encode_cell({ r: row + 1, c: col });
+      worksheet[nextCellAddress] = worksheet[cellAddress];
+    }
+  }
+
+  // Insert a blank row (clear values, but could add initial styles if needed)
+  for (let col = range.s.c; col <= range.e.c; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: targetRow - 1, c: col });
+    worksheet[cellAddress] = { t: 's', v: '' }; // Empty cell
+  }
+
+  // Update sheet range
+  range.e.r++;
+  worksheet['!ref'] = XLSX.utils.encode_range(range);
+
+  const updatedExcel = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([updatedExcel], { type: 'application/octet-stream' });
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = file.name.replace(/\.xlsx$/, '') + '_modified.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+
+
+// import * as d from 'xlsx.mjs';
+// // Enable Pro features
+// d.set_fs(require('fs'));
+// d.set_cptable(require('dist/cpexcel.full.mjs')); // For encodings
+
+// export const AddRowINExcel = async (file) => {
+//   const arrayBuffer = await file.arrayBuffer();
+//   const workbook = d.read(arrayBuffer, {
+//     type: 'array',
+//     cellStyles: true,
+//     cellHTML: true,
+//     dense: false
+//   });
+
+//   const sheetName = workbook.SheetNames[0];
+//   const worksheet = workbook.Sheets[sheetName];
+
+//   // Pro method: insert row at row 17 (1-based index)
+//   d.utils.sheet_add_aoa(worksheet, [[]], { origin: -1, sheetRows: 1, targetRow: 16 });
+
+//   // Adjust the range (optional depending on your SheetJS Pro version)
+//   const range = d.utils.decode_range(worksheet['!ref']);
+//   range.e.r++;
+//   worksheet['!ref'] = d.utils.encode_range(range);
+
+//   const updatedExcel = d.write(workbook, {
+//     bookType: 'xlsx',
+//     type: 'array',
+//     compression: true
+//   });
+
+//   const blob = new Blob([updatedExcel], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+//   const link = document.createElement('a');
+//   link.href = URL.createObjectURL(blob);
+//   link.download = file.name.replace(/\.xlsx$/, '') + '_styled.xlsx';
+//   document.body.appendChild(link);
+//   link.click();
+//   document.body.removeChild(link);
+// };
 

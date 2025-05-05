@@ -8,6 +8,7 @@ import { Button } from "primereact/button";
 import { getDraftData, handleSaveToDraft } from "./claimServices";
 
 const TourClaim = () => {
+ 
   const [editableMode, seteditableMode] = useState(false); // true by default
   const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
   const [draftData, setDraftData] = useState([]);
@@ -46,6 +47,7 @@ const TourClaim = () => {
     filename: "",
     file_type: "",
   });
+  // const [viewtable,setviewtable]=useState([]);
 
   useEffect(
     () => {
@@ -55,7 +57,7 @@ const TourClaim = () => {
           setDraftData(formattedDraftData);
 
           if (formattedDraftData.length == 0) {
-            settoggleNewClaim(true);
+               settoggleNewClaim(true);
           }
         } catch (err) {
           console.error("Error loading draft data:", err);
@@ -63,28 +65,8 @@ const TourClaim = () => {
         }
       };
       fetchDraftData();
-      //console.log("length after fetch the data"+ draftData.length)
-      // if(draftData.length==0)
-      // {
-      //     settoggleNewClaim(true)
-      // }
-      // if (editableMode === false) {
-
-      //     settourclaimformData(prev => ({
-      //         ...prev,
-      //         travelMode: '',
-      //         travelType: '',
-      //         destination: '',
-      //         purpose: '',
-      //         projectName: '',
-      //         onAccount: '',
-      //         fromDate: '',
-      //         toDate: ''
-      //     }));
-      // }
     },
-    [],
-    [draftData]
+    [],[draftData]
   );
 
   const handleSaveToDraft = () => {
@@ -154,7 +136,7 @@ const TourClaim = () => {
                     editableMode={editableMode}
                     toggleNewClaim={toggleNewClaim}
                   />
-
+                 
                   <TourClaimTable
                     editableMode={editableMode}
                     seteditableMode={seteditableMode}
@@ -181,7 +163,7 @@ const TourClaim = () => {
                 <h2 className="text-md font-semibold text-blue-800 mb-4">
                   📂 My Claims
                 </h2>
-                <MyTourClaims />
+                <MyTourClaims/>
               </div>
             </div>
           </TabPanel>
