@@ -40,5 +40,14 @@ const getInitial = (userName) => {
     initialColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
   };
 };
+const getUserIdAndEmpCodes = async () => {
+  const data = await getDataOnLoad();
+  return data
+    ? data.userdata.map((p) => ({
+        userName: `${p.userName} (${p.employeeId})`,
+        empCode: p.employeeId,
+      }))
+    : [];
+};
 
-export { onPageLoad, getInitial };
+export { onPageLoad, getInitial, getUserIdAndEmpCodes };

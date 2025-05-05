@@ -21,15 +21,11 @@ const addNewUserAPI = async (newUser, toastRef) => {
 };
 const editUserAPI = async (user, toastRef) => {
   try {
-    const response = await axios.put(
-      `${endPoint}admin/updateuser/${user.userId}`,
-      user,
-      {
-        headers: {
-          Authorization: `Bearer ${userData.token}`,
-        },
-      }
-    );
+    const response = await axios.put(`${endPoint}admin/updateuser`, user, {
+      headers: {
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching forminfo with versions:", error);

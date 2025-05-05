@@ -193,10 +193,6 @@ const AdminPage = () => {
           showIcon="pi pi-user-plus"
           hideIcon="pi pi-user-plus"
           onClick={() => {
-            setAdminInfo((prev) => ({
-              ...prev,
-              userData: prev.userData?.filter((p) => p.employeeId == 106),
-            }));
             setUserInfoVisible(true);
             setEditMode(false);
             setUserInfo(userDataStructure);

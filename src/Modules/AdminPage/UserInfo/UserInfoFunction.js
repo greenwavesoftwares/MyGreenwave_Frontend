@@ -9,7 +9,7 @@ import { addLogForChanges } from "../UserLog/UserLogFunction";
 import { getUserData } from "../../Login/Encrypt";
 
 const yyyyMMdd = "yyyy-MM-dd";
-const userDetails = getUserData().userDetails;
+const userDetails = getUserData()?.userDetails;
 
 const validateFormValues = (
   editMode,
