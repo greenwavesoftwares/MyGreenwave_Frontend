@@ -123,7 +123,7 @@ const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes
                     </div>
 
                     {/* Table */}
-                    <div className="mt-4 border border-red-200 rounded-md overflow-hidden">
+                    <div className="mt-4 border border-gray-200 rounded-md overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                                 <thead className="text-xs text-gray-700 dark:bg-gray-200 dark:text-gray-400 text-center">
@@ -203,7 +203,7 @@ const ModeOfTransportTable = ({ disableAddRow, transportModes, setTransportModes
                                                                 e.preventDefault(); // ✅ Prevents form submission
                                                                 handleSave(index);
                                                             }}
-                                                            className="text-green-600 hover:text-green-800 p-0 m-0 flex items-center justify-center h-6 w-6"
+                                                            className="text-primary-500 hover:text-primary-500 p-0 m-0 flex items-center justify-center h-6 w-6"
                                                             title="Save"
                                                         >
                                                             <CheckIcon className="h-5 w-5" />

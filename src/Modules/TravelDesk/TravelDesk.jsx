@@ -137,8 +137,6 @@ const TravelDesk = () => {
   };
 
 
-
-
   return (
     <>
       <Toast ref={toastRef} />
@@ -152,22 +150,22 @@ const TravelDesk = () => {
               onClick={() => setActive('requisition')}
               className={`w-40 py-1.5 pl-4 pr-2 text-sm font-medium text-left focus:outline-none
               ${active === 'requisition'
-                  ? 'border-b-2 border-green-500 text-green-700'
-                  : 'hover:border-b-2 hover:border-green-500 text-gray-900'}
+                  ? 'border-b-2 border-primary-500 text-primary-500'
+                  : 'hover:border-b-2 hover:border-primary-500 text-gray-900'}
             `}
             >
               Requisition Form
             </button>
 
-            <div className="border-l border-gray-300" />
+            <div className="border-l-2 border-primary-500" />
 
             <button
               type="button"
               onClick={() => setActive('myforms')}
               className={`w-30 py-1.5 pl-4 pr-2 text-sm font-medium text-left focus:outline-none
               ${active === 'myforms'
-                  ? 'border-b-2 border-green-500 text-green-700'
-                  : 'hover:border-b-2 hover:border-green-500 text-gray-900'}
+                  ? 'border-b-2 border-primary-500 text-primary-500'
+                  : 'hover:border-b-2 hover:border-primary-500 text-gray-900'}
             `}
             >
               My Forms
@@ -200,21 +198,6 @@ const TravelDesk = () => {
                       </div>
                     </div> */}
 
-
-                      {/* Date field (disabled) */}
-                      {/* <div className="sm:col-span-3">
-                      <label htmlFor="Date" className="block text-sm font-medium leading-6 text-gray-900">Date</label>
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          name="Date"
-                          id="Date"
-                          value={userInfo.date}
-                          disabled
-                          className="block w-full rounded-md border-0 py-1.5 pl-2 bg-gray-200 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm cursor-not-allowed"
-                        />
-                      </div>
-                    </div> */}
 
                       {/* Department field (disabled) */}
                       {/* <div className="sm:col-span-4">
@@ -267,7 +250,7 @@ const TravelDesk = () => {
 
                       {/* Project Name field */}
                       {/* Project Name field */}
-                      <div className="sm:col-span-5 pl-3">
+                      <div className="sm:col-span-5 ">
                         <label htmlFor="projectName" className="block text-sm font-medium leading-6 text-gray-900">
                           Project Name
                         </label>
@@ -376,6 +359,28 @@ const TravelDesk = () => {
                           />
                         </div>
                       </div>
+
+
+                      <div className="sm:col-span-5">
+                        <label htmlFor="fromDate" className="block text-sm font-medium leading-6 text-gray-900">
+                          From Date
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="date"
+                            name="fromDate"
+                            id="fromDate"
+                            value={userInfo.fromDate || ''}
+                            onChange={(e) => setUserInfo(prev => ({ ...prev, fromDate: e.target.value }))}
+                            autoComplete="off"
+                            className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          />
+                        </div>
+                      </div>
+
+
+
+
                     </div>
                   </div>
                 </div>

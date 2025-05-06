@@ -142,7 +142,17 @@
   --p-primary-600: #326fd1;
   --p-primary-700: #295bac;
   --p-primary-800: #204887;
-  --p-primary-900: #183462;
+  --p-primary-900: #183462; 
+  --P-gray-50: #FAFAFA;
+  --P-gray-100: #F5F5F5;
+  --P-gray-200: #EEEEEE;
+  --P-gray-300: #E0E0E0;
+  --P-gray-400: #BDBDBD;
+  --P-gray-500: #9E9E9E;
+  --P-gray-600: #757575;
+  --P-gray-700: #616161;
+  --P-gray-800: #424242;
+  --P-gray-900: #212121;
 }
 
 
