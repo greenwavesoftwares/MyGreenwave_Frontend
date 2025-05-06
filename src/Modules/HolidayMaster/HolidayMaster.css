@@ -1,0 +1,20 @@
+.holidayDialog{
+    width: 35vw;
+}
+@media (max-width: 1024px) {
+    .holidayDialog{
+        width: 60vw;
+    }
+}
+@media (max-width: 650px) {
+    .holidayDialog{
+        width: 90vw;
+    }
+}
+.holidayCell{
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}

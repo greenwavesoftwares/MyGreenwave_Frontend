@@ -6,10 +6,10 @@ const form='http://localhost:8070/appraisalFrom'
 const trainingApiUrl = 'http://localhost:8070/training';
 
 //List Of Approver API
-const appraisalApproverApi = async (token, empName) => {
+const appraisalApproverApi = async (token) => {
   try {
     const response = await axios.get(
-      `${endPoint}appraisal/allformlist?userId=${empName}`,
+      `${endPoint}appraisal/appraiserformlist`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -25,14 +25,22 @@ const appraisalApproverApi = async (token, empName) => {
 };
 
 //Appraisal Form API
-const appraisalFormAPI=async(appraisalFormId)=>{
-    try {
-      const response = await axios.get(`${form}?FromID=${appraisalFormId}`)
-      console.log("CurrentAppraisalForm",response,appraisalFormId);
-      return response;
-    } catch (error) {
-      console.log(error);
-    }
+const appraisalFormAPI=async(authToken,formId,previousYearFormId,empId)=>{
+  console.log("appraisalFormAPI_Header",formId,previousYearFormId,empId);
+  try {
+    const response = await axios.get(
+      `${endPoint}appraisal/reviewerapprovelforms?formId=${formId}&previousyearformid=${previousYearFormId}&userId=${empId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      }
+    );
+    console.log("response",response);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
   }
 
   //List of training API

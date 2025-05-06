@@ -120,14 +120,14 @@ function Appraisal() {
         console.log("set_Appraisal_data", response);
 
         //List Of Appraisal Data
-        const appraisalList = await appraisalListApi(authToken, employeeName);
+        const appraisalList_response = await appraisalListApi(authToken, employeeName);
         console.log("appraisalList", appraisalList);
-        setAppraisalList(appraisalList?.appraisalsList);
+        setAppraisalList(appraisalList_response?.appraisalsList);
         //For Loading
         setLoading(false);
 
         //Training Data
-        const trainingData = await trainingApi();
+        const trainingData = await trainingApi(authToken);
         console.log("trainingData_Api", trainingData);
         setTrainingData(trainingData?.data);
       } catch (error) {
@@ -144,6 +144,7 @@ function Appraisal() {
     getAppraisalData();
   }, []);
   console.log("reviewerName", reviewerName);
+  
 
   //Tab Visible For Only Reviewer
   const listOfReviewer = appraisalData?.reviewerlist;
@@ -169,7 +170,7 @@ function Appraisal() {
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
     const localStorageAuth = getUserData();
-    console.log("localStorageAuth", localStorageAuth);
+    //cnosole.log("localStorageAuth", localStorageAuth);
     const authToken = localStorageAuth?.token;
     //const employeeName = localStorageAuth?.userDetails.userId;
     const appraisalFormData = await currentAppraisalFormAPI(

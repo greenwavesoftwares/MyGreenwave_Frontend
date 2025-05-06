@@ -19,7 +19,13 @@ const LastYearGoal = ({ appraiserPreviousSaveFormData }) => {
           field="future_personal_KRA_goals"
           header="My Aspirations (2 Professional and 2 Personal Goals)"
         ></Column>
-        <Column field="goalType" header="Personal/Professional"></Column>
+        <Column  header="Personal/Professional"
+        body={(rowData)=>{
+          return(
+             <Chip style={{textTransform:'capitalize'}} size="small" label={rowData.goalType ?? ""}/> 
+          )
+        }}
+        ></Column>
         <Column
           header="Training"
           body={(rowData) => {

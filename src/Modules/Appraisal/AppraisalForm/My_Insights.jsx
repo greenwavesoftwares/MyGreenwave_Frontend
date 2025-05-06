@@ -170,7 +170,8 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
                 icon="pi pi-trash"
                 rounded
                 text
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   handleDeleteRow(rowData);
                 }}
               />

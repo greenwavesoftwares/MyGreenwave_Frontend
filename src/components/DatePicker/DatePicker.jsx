@@ -12,6 +12,8 @@ const DatePicker = ({
   minDate,
   showIcon,
   dateFormat,
+  invalid,
+  disabled,
 }) => {
   return (
     <div className="calendar-wrapper">
@@ -27,6 +29,8 @@ const DatePicker = ({
         minDate={minDate}
         showIcon={showIcon}
         dateFormat={dateFormat}
+        invalid={invalid}
+        disabled={disabled}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "../Appraisal.scss";
 import { DataTable } from "primereact/datatable";
-import { Button, LinearProgress, Typography } from "@mui/material";
+import { Button, Chip, LinearProgress, Typography } from "@mui/material";
 import { Column } from "primereact/column";
 import { getUserData } from "../../Login/Encrypt";
 import {
@@ -21,8 +21,8 @@ const AppraisalsApprover = () => {
   //For Toast
   const toastRef = useRef(null);
   const [approverList, setApproverList] = useState([]);
-   const [loading, setLoading] = useState(false);
-   const [appraisalFormLoading, setAppraisalFormLoading] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [appraisalFormLoading, setAppraisalFormLoading] = useState(null);
   //State for Appraisal Form Data
   const [appraisalFormData, setAppraisalFormData] = useState({});
   //Set Appraisal Form Data Visible
@@ -49,11 +49,18 @@ const AppraisalsApprover = () => {
   }, []);
 
   //Handle Show Form
-  const handleShowForm = async (formId) => {
+  const handleShowForm = async (formId, previousYearFormId, empId) => {
     console.log("click_formId", formId);
     try {
-        setAppraisalFormLoading(formId);
-      const response = await appraisalFormAPI(formId);
+      setAppraisalFormLoading(formId);
+      const localStorageAuth = getUserData();
+      const authToken = localStorageAuth?.token;
+      const response = await appraisalFormAPI(
+        authToken,
+        formId,
+        previousYearFormId,
+        empId
+      );
       if (response?.status === 200) {
         setAppraisalFormData(response?.data);
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
@@ -102,6 +109,34 @@ const AppraisalsApprover = () => {
                 body={(rowData) => formatDate(rowData.appraisalDate)}
               ></Column>
               <Column field="reviewer" header="Reviewer Name"></Column>
+              <Column
+                body={(rowData) => {
+                  return (
+                    <Chip
+                      label={
+                        rowData.approved === true
+                          ? "Approved"
+                          : rowData.reviewed === true
+                          ? "Reviewed"
+                          : rowData.active === true
+                          ? "Active"
+                          : "Inactive"
+                      }
+                      color={
+                        rowData.approved === true
+                          ? "warning"
+                          : rowData.reviewed === true
+                          ? "warning"
+                          : rowData.active === true
+                          ? "success"
+                          : "error"
+                      }
+                      size="small"
+                    />
+                  );
+                }}
+                header="Status"
+              ></Column>
 
               <Column
                 body={(rowData) => {
@@ -111,7 +146,13 @@ const AppraisalsApprover = () => {
                       variant="contained"
                       loading={appraisalFormLoading === rowData.formId}
                       loadingPosition="start"
-                      onClick={() => handleShowForm(rowData.formId)}
+                      onClick={() =>
+                        handleShowForm(
+                          rowData.formId,
+                          rowData.previousYearFormId,
+                          rowData.empId
+                        )
+                      }
                     >
                       Show Form
                     </Button>

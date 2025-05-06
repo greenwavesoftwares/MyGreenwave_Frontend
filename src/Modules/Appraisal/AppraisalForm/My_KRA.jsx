@@ -12,7 +12,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReview
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Set Training Data
-  const [training, setTraining] = useState([]);
+const [appraisalTraining, setAppraisalTraining] = useState([]);
   //Set only training data
   const [trainingDataOnly, setTrainingDataOnly] = useState([]);
 
@@ -23,7 +23,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReview
 
   //set Training Data
   useEffect(() => {
-    setTraining(trainingData);
+    setAppraisalTraining(trainingData);
   }, [trainingData]);
 
   //set Api Data : My KRA already saved data
@@ -95,17 +95,17 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReview
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <MultiSelect
-                options={training}
-                value={rowData.training}
+                options={appraisalTraining}
+                value={rowData.appraisalTraining}
                 onChange={(e) =>
-                  handleInputChange(e.value, "training", rowIndex)
+                  handleInputChange(e.value, "appraisalTraining", rowIndex)
                 }
                 placeholder="Select Training"
                 display="chip"
               />
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
-                {rowData.training?.map((item, index) => (
+                {rowData.appraisalTraining?.map((item, index) => (
                   <Chip
                     size="small"
                     color="primary"
@@ -194,7 +194,8 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReview
                 icon="pi pi-trash"
                 rounded
                 text
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   handleDeleteRow(rowData);
                 }}
               />
@@ -218,7 +219,7 @@ const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReview
           onClick={() => {
             const blankRow = {
               my_next12month_KRA: "",
-              training: [],
+              appraisalTraining: [],
               reviewers_comment: "",
               appraisers_comments: "",
             };

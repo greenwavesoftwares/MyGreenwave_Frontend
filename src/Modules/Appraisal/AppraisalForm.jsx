@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { use } from "react";
 //Import Form Table
 import PerformanceScorecardDateTable from "./AppraisalForm/PerformanceScorecard";
-import { showSuccessMessage } from "../../components/Toast/ShowMessage";
+import { showErrorMessage, showSuccessMessage } from "../../components/Toast/ShowMessage";
 import { Toast } from "primereact/toast";
 import CompetencyScorecard from "./AppraisalForm/CompetencyScorecard";
 import FutureGoals from "./AppraisalForm/FutureGoals";
@@ -31,16 +31,15 @@ import MyKRA from "./AppraisalForm/My_KRA";
 import MyInsights from "./AppraisalForm/My_Insights";
 import { Checkbox } from "primereact/checkbox";
 import { getUserData } from "../Login/Encrypt";
-import LastYearGoal from "./AppraisalForm/LastYearGoal"
+import LastYearGoal from "./AppraisalForm/LastYearGoal";
 //For Icon
-import PersonIcon from '@mui/icons-material/Person';
-import DoneIcon from '@mui/icons-material/Done';
-import InsightsIcon from '@mui/icons-material/Insights';
-import SchoolIcon from '@mui/icons-material/School';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import AdsClickIcon from '@mui/icons-material/AdsClick';
-
-
+import PersonIcon from "@mui/icons-material/Person";
+import DoneIcon from "@mui/icons-material/Done";
+import InsightsIcon from "@mui/icons-material/Insights";
+import SchoolIcon from "@mui/icons-material/School";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import AdsClickIcon from "@mui/icons-material/AdsClick";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Toast
@@ -59,6 +58,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        previous: item.previous ?? false,
         ...item,
       };
     });
@@ -73,6 +73,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
         // Add any additional properties you want to include in the updated data
         record_id: item.record_id ?? "",
         form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        previous: item.previous ?? false,
         ...item,
       };
     });
@@ -82,19 +83,45 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   //For Future Goals Data
   const [FutureGoalsData, setFutureGoalsData] = useState([]);
   const FutureGoalsData_Update = (ele) => {
-    setFutureGoalsData(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setFutureGoalsData(updatedData);
   };
 
   //For Future Comptency Data
   const [FutureComptencyData, setFutureComptencyData] = useState([]);
   const FutureComptencyData_Update = (ele) => {
-    setFutureComptencyData(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        level_of_fullfillment: item.level_of_fullfillment ?? "",
+        goalType: item.goalType ?? "",
+        ...item,
+      };
+    });
+    setFutureComptencyData(updatedData);
   };
 
   //For My KRA Data
   const [myKRA_Data, setMyKRA_Data] = useState([]);
   const myKRA_Data_Update = (ele) => {
-    setMyKRA_Data(ele);
+    const updatedData = ele.map((item) => {
+      return {
+        // Add any additional properties you want to include in the updated data
+        record_id: item.record_id ?? "",
+        form_id: item.form_id ?? appraiserForm?.personaldetails.formId,
+        ...item,
+      };
+    });
+    setMyKRA_Data(updatedData);
   };
 
   //For My Insights Data
@@ -112,14 +139,22 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   };
 
   //For Confirmation Reviewer and Approver
-  const [reviewer, setReviewer] = useState(
-    appraiserForm?.personaldetails.reviewed
-  );
-  const [approver, setApprover] = useState(
-    appraiserForm?.personaldetails.approved
-  );
-  console.log("approver", approver);
-  console.log("reviewer_data", approver);
+  const [reviewer, setReviewer] = useState();
+  useEffect(() => {
+    setReviewer(appraiserForm?.personaldetails.reviewed);
+  }, [appraiserForm]);
+
+  const [approver, setApprover] = useState();
+  useEffect(() => {
+    setApprover(appraiserForm?.personaldetails.approved);
+  }, [appraiserForm]);
+
+  // console.log("approver", approver);
+  // console.log(
+  //   "reviewer_data",
+  //   appraiserForm?.personaldetails.reviewed,
+  //   reviewer
+  // );
 
   //Use React Hooks Form
   const { register, handleSubmit, reset, setValue } = useForm();
@@ -130,22 +165,29 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     const generatepersonaldetails = {
       personaldetails: data,
       performancescorecard: performanceScorecardData,
-      Competency_ScorecardData: CompetencyScorecardData,
-      // Future_Goals: FutureGoalsData,
-      // Future_Comptency: FutureComptencyData,
-      // My_KRA: myKRA_Data,
-      My_Insights: myInsights,
-      // Confirmation: [{ reviewer: reviewer }, { approver: approver }],
+      competencyscorecard: CompetencyScorecardData,
+      futuregoals: FutureGoalsData,
+      futurecomptency: FutureComptencyData,
+      mykra: myKRA_Data,
+      myinsights: myInsights,
+      lastyeargoals: appraiserForm?.lastyeargoals,
+      confirmation: { reviewed: reviewer, approved: approver },
     };
     console.log("Appraisal Form Data:", generatepersonaldetails);
 
     try {
-      const response = await appraisalPutApi(generatepersonaldetails);
+      const localStorageAuth = getUserData();
+
+      const authToken = localStorageAuth?.token;
+      const response = await appraisalPutApi(
+        generatepersonaldetails,
+        authToken
+      );
       console.log("Appraisal Form Data:", response);
-      if (response.status === 200) {
+      if (response.status === 201) {
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
       } else {
-        showSuccessMessage(toastRef, "Error", "Form Submission Failed");
+        showErrorMessage(toastRef, "Error", "Form Submission Failed");
       }
       //From Reset
       // reset();
@@ -214,8 +256,8 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   setValue("updateDate", appraiserForm?.personaldetails.updateDate);
   setValue("reviewer", appraiserForm?.personaldetails.reviewer);
   setValue("approver", appraiserForm?.personaldetails.approver);
-  setValue("reviewed", appraiserForm?.personaldetails.reviewed);
-  setValue("approved", appraiserForm?.personaldetails.approved);
+  setValue("reviewed", reviewer);
+  setValue("approved", approver);
   setValue("doj", appraiserForm?.personaldetails.doj);
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
@@ -274,6 +316,33 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     }
   };
 
+  //IS Form Disable or Enable Function
+  const navigate = useNavigate();
+  const isFormDisabled=()=>{
+    //For User 
+    if((appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved) && (appraiserForm?.personaldetails.empId.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase())){
+      return true
+    }
+    //For Reviewer Section
+     else if((appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved ) && (appraiserForm?.personaldetails.reviewer.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
+      return true
+     }
+     else if(appraiserForm?.personaldetails.approved && (appraiserForm?.personaldetails.approver.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
+      return true
+     }
+ 
+    else{
+      return false
+    }
+    
+
+  }
+
+  //Find appraisal-tracker end point 
+  const location = useLocation();
+  // Check if current path is `/appraisal-tracker`
+  const isTrackerPage = location.pathname === '/appraisal-tracker';
+
   return (
     <>
       <div className="card mt-1 py-2 px-3 bg-white shadow rounded">
@@ -309,7 +378,10 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     component="span"
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    <PersonIcon fontSize="small" className="accordionIconBGStyle"/>
+                    <PersonIcon
+                      fontSize="small"
+                      className="accordionIconBGStyle"
+                    />
                     Personal Details
                   </Typography>
                 </AccordionSummary>
@@ -620,13 +692,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <AdsClickIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My Goals
-                  </Typography>
-                
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <AdsClickIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My Goals
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <LastYearGoal
@@ -654,13 +728,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <BarChartIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My KRA
-                  </Typography>
-               
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <BarChartIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My KRA
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <PerformanceScorecardDateTable
@@ -668,6 +744,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   appraiserPreviousSaveFormData={
                     appraiserForm?.performancescorecard
                   }
+                  trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
                 />
@@ -693,13 +770,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <SchoolIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My Training
-                  </Typography>
-                
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <SchoolIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My Training
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <CompetencyScorecard
@@ -707,11 +786,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     appraiserForm?.competencyscorecard
                   }
                   CompetencyScorecardData={CompetencyScorecardData_Update}
+                  trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
                 />
                 <FutureComptency
-                  appraiserPreviousSaveFormDat={appraiserForm?.futurecomptenct}
+                  appraiserPreviousSaveFormDat={appraiserForm?.futurecomptency}
                   FutureComptencyData={FutureComptencyData_Update}
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
@@ -732,13 +812,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <InsightsIcon fontSize="small" className="accordionIconBGStyle"/>
-                    My Insights
-                  </Typography>
-                
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <InsightsIcon
+                    fontSize="small"
+                    className="accordionIconBGStyle"
+                  />
+                  My Insights
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <MyInsights
@@ -762,50 +844,49 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 id="panel1-header"
               >
                 <Typography
-                    component="span"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                  >
-                    <DoneIcon fontSize="small" className="accordionIconBGStyle"/>
-                    Confirmation
-                  </Typography>
-               
+                  component="span"
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <DoneIcon fontSize="small" className="accordionIconBGStyle" />
+                  Confirmation
+                </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <div className="flex justify-center items-center mb-1 column-gap-4">
                   <h1 className="text-sm">Reviewer</h1>
                   <Checkbox
-                    checked={reviewer === 1}
+                    checked={reviewer}
                     disabled={isReviewer()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
-                      setReviewer(e.checked ? 1 : 0);
+                      setReviewer(e.checked ? true : false);
                     }}
                   />
                   <h1 className="text-sm">Approver</h1>
 
                   <Checkbox
-                    checked={approver === 1}
+                    checked={approver}
                     disabled={isApprover()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
-                      setApprover(e.checked ? 1 : 0);
+                      setApprover(e.checked ? true : false);
                     }}
                   />
                 </div>
               </AccordionDetails>
             </Accordion>
+            {!isTrackerPage &&
             <MuiButton
               variant="contained"
               size="small"
               disabled={
-                appraiserForm?.personaldetails.reviewed ||
-                appraiserForm?.personaldetails.approved
+                isFormDisabled() 
               }
               type="submit"
               className="mt-2"
             >
               Submit Form
-            </MuiButton>
+            </MuiButton>}
           </form>
 
           <Toast ref={toastRef} />

@@ -1,5 +1,5 @@
 import { Button } from "primereact/button";
-import { Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton } from "@mui/material";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
@@ -8,12 +8,14 @@ import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { MultiSelect } from "primereact/multiselect";
 
 const PerformanceScorecardDateTable = ({
   PerformanceScorecardData,
   appraiserPreviousSaveFormData,
   isReviewer,
   isApprover,
+  trainingData,
 }) => {
   console.log("ReviewerAndApprover_Status", isReviewer, isApprover);
   //Set Level Full Fulfillment Data Dropdown
@@ -22,6 +24,15 @@ const PerformanceScorecardDateTable = ({
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+  //Set Training Data
+  const [appraisalTraining, setAppraisalTraining] = useState([]);
+  //Set only training data
+ // const [trainingDataOnly, setTrainingDataOnly] = useState([]);
+
+  //set Training Data
+  useEffect(() => {
+    setAppraisalTraining(trainingData);
+  }, [trainingData]);
 
   //React Hooks Form
   // const { register, handleSubmit, reset, setValue } = useForm();
@@ -89,13 +100,12 @@ const PerformanceScorecardDateTable = ({
   };
 
   //Check Previous Year Data
-  const checkedPreviousYearData =(ele)=>{
-    if(ele?.previous_year_Data === true) {
+  const checkedPreviousYearData = (ele) => {
+    if (ele?.previous === true) {
       return true;
     }
     return false;
-
-  }
+  };
 
   return (
     <>
@@ -109,10 +119,9 @@ const PerformanceScorecardDateTable = ({
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
-          if (rowData.some(ele => ele.previous_year_Data === true)) {
+          if (rowData.some((ele) => ele.previous === true)) {
             return "bg-cyan-100";
           }
-          
         }}
       >
         <Column
@@ -151,6 +160,41 @@ const PerformanceScorecardDateTable = ({
               />
             ) : (
               rowData.level_of_fullfillment ?? ""
+            )
+          }
+        />
+        <Column
+          header="Training"
+          body={(rowData, { rowIndex }) =>
+            editingRowIndex === rowIndex ? (
+              <MultiSelect
+                options={appraisalTraining}
+                value={rowData.appraisalTraining}
+                disabled={checkedPreviousYearData(rowData)}
+                onChange={(e) =>
+                  handleInputChange(e.value, "appraisalTraining", rowIndex)
+                }
+                placeholder="Select Training"
+                display="chip"
+              />
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                {rowData.appraisalTraining?.map((item, index) => (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    key={index}
+                    label={item}
+                    style={{ marginRight: "0.2rem", marginBottom: "0.2rem" }}
+                  />
+                ))}
+              </div>
             )
           }
         />

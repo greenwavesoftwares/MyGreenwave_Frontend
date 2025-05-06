@@ -1,4 +1,4 @@
-import { Button, LinearProgress, Typography } from "@mui/material";
+import { Button, Chip, LinearProgress, Typography } from "@mui/material";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { getUserData } from "../../Login/Encrypt";
 import {
   showErrorMessage,
   showSuccessMessage,
+  showInfoMessage
 } from "../../../components/Toast/ShowMessage";
 import Toast from "../../../components/Toast/Toast";
 
@@ -27,6 +28,9 @@ const AppraisalsReview = () => {
   const [appraisalFormData, setAppraisalFormData] = useState({});
   //Set Appraisal Form Data Visible
   const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
+// State to trigger data fetching
+  const [fetchDataToggle, setFetchDataToggle] = useState(false);
+
 
   //Call Reviewer API
   useEffect(() => {
@@ -50,16 +54,26 @@ const AppraisalsReview = () => {
     fetchReviewerData();
   }, []);
 
+
+  
+
   //Handle Show Form
-  const handleShowForm = async (formId) => {
+  const handleShowForm = async (formId, previousYearFormId, empId) => {
     console.log("Click_formId", formId);
+    const localStorageAuth = getUserData();
+    const authToken = localStorageAuth?.token;
     setAppraisalFormVisible(false);
     setAppraisalFormLoading(formId);
     try {
-      const response = await appraisalFormAPI(formId);
-      if (response?.status === 200) {
+      const response = await appraisalFormAPI(
+        authToken,
+        formId,
+        previousYearFormId,
+        empId
+      );
+      if (response?.status === 200) { 
         setAppraisalFormData(response?.data);
-        showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
+        showInfoMessage(toastRef, "", "Form Fetched Successfully");
         setAppraisalFormVisible(true);
       } else {
         showErrorMessage(toastRef, "Error", "Form Not Found");
@@ -76,10 +90,16 @@ const AppraisalsReview = () => {
   return (
     <>
       <div className="container mx-auto px-4">
-        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-4  bg-white shadow rounded">
+        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto mt-4">
+          {appraisalFormVisible && (
+            <AppraisalDialog appraiserForm={appraisalFormData} />
+          )}
+          <div className="card mt-2 bg-white shadow rounded">
             <DataTable
               size="small"
+              paginator
+              rows={10}
+              owsPerPageOptions={[10, 15, 20, 25]}
               stripedRows
               header={
                 <Typography className="text-sm">Appraisal Reviewer</Typography>
@@ -98,11 +118,41 @@ const AppraisalsReview = () => {
               }
             >
               <Column field="empName" header="Employee Name"></Column>
-              <Column  header="Appraisal Date" body={(rowData)=>
-                formatDate(rowData.appraisalDate)
-              }></Column>
+              <Column
+                header="Appraisal Date"
+                body={(rowData) => formatDate(rowData.appraisalDate)}
+              ></Column>
+
               <Column field="reviewer" header="Reviewer Name"></Column>
               <Column field="approver" header="Approver Name"></Column>
+              <Column
+                body={(rowData) => {
+                  return (
+                    <Chip
+                      label={
+                        rowData.approved === true
+                          ? "Approved"
+                          : rowData.reviewed === true
+                          ? "Reviewed"
+                          : rowData.active === true
+                          ? "Active"
+                          : "Inactive"
+                      }
+                      color={
+                        rowData.approved === true
+                          ? "warning"
+                          : rowData.reviewed === true
+                          ? "warning"
+                          : rowData.active === true
+                          ? "success"
+                          : "error"
+                      }
+                      size="small"
+                    />
+                  );
+                }}
+                header="Status"
+              ></Column>
               <Column
                 body={(rowData) => {
                   return (
@@ -111,7 +161,16 @@ const AppraisalsReview = () => {
                       variant="contained"
                       loading={appraisalFormLoading === rowData.formId}
                       loadingPosition="start"
-                      onClick={() => handleShowForm(rowData.formId)}
+                      onClick={(e) =>{
+                        e.preventDefault()
+                        handleShowForm(
+                          rowData.formId,
+                          rowData.previousYearFormId,
+                          rowData.empId
+                        )
+
+                      }
+                      }
                     >
                       Show Form
                     </Button>
@@ -121,9 +180,6 @@ const AppraisalsReview = () => {
               ></Column>
             </DataTable>
           </div>
-          {appraisalFormVisible && (
-            <AppraisalDialog appraiserForm={appraisalFormData} />
-          )}
         </div>
       </div>
       <Toast ref={toastRef} />

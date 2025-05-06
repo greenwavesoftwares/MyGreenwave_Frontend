@@ -1,0 +1,20 @@
+.departmentDialog{
+    width: 50vw;
+}
+@media (max-width: 1024px) {
+    .departmentDialog{
+        width: 60vw;
+    }
+}
+@media (max-width: 650px) {
+    .departmentDialog{
+        width: 90vw;
+    }
+}
+.departmentCell{
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+}
