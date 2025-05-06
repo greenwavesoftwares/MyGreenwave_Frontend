@@ -3,18 +3,20 @@ import { getNalandaData,certificateDownload} from "./NalandaAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import { Button, Chip, Tooltip, Typography } from "@mui/material";
+import { Button, Chip, LinearProgress, Tooltip, Typography } from "@mui/material";
 import { formatDate } from "../Appraisal/formatDate";
 
 const Nalanda = () => {
     //
   const [nalanda, setNalanda] = useState([]);
-  //
+  const [loader,setLoader]=useState(false)
   useEffect(() => {
     const { token } = getUserData();
     const getData = async () => {
+      setLoader(true)
       const response = await getNalandaData(token);
       console.log("response", response);
+      setLoader(false)
 
       setNalanda(response?.data.trainingEventTablelist);
     };
@@ -37,9 +39,9 @@ const Nalanda = () => {
           <div className="card mt-4 bg-white shadow rounded">
             <DataTable
               size="small"
-              // emptyMessage={
-              //   loader ? <LinearProgress color="inherit" /> : "No Data Found"
-              // }
+              emptyMessage={
+                loader ? <LinearProgress color="inherit" /> : "No Data Found"
+              }
               header={<Typography className="text-sm">Nalanda</Typography>}
               value={nalanda}
               showGridlines

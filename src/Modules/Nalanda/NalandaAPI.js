@@ -2,6 +2,7 @@ import axios from "axios";
 const endPoint = import.meta.env.VITE_END_POINT;
 
 
+//Get All Training Data
 const getNalandaData=async(token)=>{
     try {
     const response=await axios.get(`${endPoint}trainings/schedules`,{
@@ -18,6 +19,8 @@ const getNalandaData=async(token)=>{
     }
 }
 
+
+//Certificate Download Api
 const certificateDownload=async(token,eventId)=>{
     try {
         const response=await axios.get(`${endPoint}trainings/schedules/getcertificatefile/${eventId}`,{

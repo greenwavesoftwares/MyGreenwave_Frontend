@@ -24,6 +24,7 @@ import AppraisalTracker from "./Modules/AppraisalTracker/AppraisalTracker";
 import TrainingMaster from "./Modules/Training_Master/TrainingMaster";
 import HolidayMaster from "./Modules/HolidayMaster/HolidayMaster";
 import Nalanda from "./Modules/Nalanda/Nalanda"
+import TrainingScheduleMaster from "./Modules/TrainingScheduleMaster/TrainingScheduleMaster"
 function App() {
   return (
     <Router>
@@ -54,6 +55,7 @@ function App() {
         <Route path="/training-master"element={<TrainingMaster/>}/>
         <Route path="/holiday-master" element={<HolidayMaster />} />
         <Route path="/nalanda"element={<Nalanda/>}/>
+        <Route path="/training-schedule-master" element={<TrainingScheduleMaster/>}/>
       </Routes>
     </Router>
   );

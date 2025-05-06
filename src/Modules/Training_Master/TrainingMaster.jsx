@@ -22,7 +22,7 @@ import { showErrorMessage, showSuccessMessage, showWarningMessage } from "../../
 
 const TrainingScheduleMaster = () => {
   //For Toast
-      const toastRef = useRef(null);
+  const toastRef = useRef(null);
   const [trainingList, setTrainingList] = useState([]);
   const [loader, setLoader] = useState(true);
   const [editingRowIndex, setEditingRowIndex] = useState(null);
