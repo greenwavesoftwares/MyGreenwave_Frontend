@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { addUserLogAPI, getUserLogsAPI } from "./UserLogAPI";
 
 const logStructure = {
   transactionId: "",
@@ -12,7 +13,24 @@ const logStructure = {
 };
 const yyyyMMddHHmmssSSS = "yyyyMMddHHmmssSSS";
 
-const addLogForChanges = async (editMode, prevData, newData, doneBy) => {
+const getUserLogs = async (userId) => {
+  let data = await getUserLogsAPI(userId);
+  if (data) {
+    data.forEach((d) => {
+      d.oldData = convertJSONToUserData(JSON.parse(d.oldData));
+      d.newData = convertJSONToUserData(JSON.parse(d.newData));
+    });
+    return data;
+  }
+  return null;
+};
+const addLogForChanges = async (
+  editMode,
+  prevData,
+  newData,
+  doneBy,
+  toastRef
+) => {
   let logData = logStructure;
   logData.transactionId = "T" + format(new Date(), yyyyMMddHHmmssSSS);
   logData.userId = newData.userId;
@@ -22,7 +40,7 @@ const addLogForChanges = async (editMode, prevData, newData, doneBy) => {
     : "New user created having id: " + newData.userId;
   logData.oldData = convertUserDataToJSON(prevData);
   logData.newData = convertUserDataToJSON(newData);
-  console.log(logData);
+  addUserLogAPI(logData, toastRef);
 };
 
 const getChangeLogAsString = async (prevData, newData) => {
@@ -128,7 +146,7 @@ const getChangeLogAsString = async (prevData, newData) => {
   return tempChangeString;
 };
 const convertUserDataToJSON = (data) => {
-  return {
+  return JSON.stringify({
     userID: data.userId || "",
     userName: data.userName || "",
     password: data.password || "",
@@ -162,7 +180,7 @@ const convertUserDataToJSON = (data) => {
     workflowAllottedPageList: data.workflowAllottedPageList || [],
     allEspPageList: data.allEspPageList || [],
     allWorkflowPageList: data.allWorkflowPageList || [],
-  };
+  });
 };
 const convertJSONToUserData = (data) => {
   return {
@@ -203,4 +221,4 @@ const convertJSONToUserData = (data) => {
   };
 };
 
-export { addLogForChanges, convertJSONToUserData };
+export { addLogForChanges, convertJSONToUserData, getUserLogs };

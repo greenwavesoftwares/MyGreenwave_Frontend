@@ -19,6 +19,7 @@ import UserGroup from "./UserGroup/UserGroup";
 import Department from "./Department/Department";
 import UserInfo from "./UserInfo/UserInfo";
 import ResetPassword from "./ResetPassword/ResetPassword";
+import UserLog from "./UserLog/UserLog";
 
 const AdminPage = () => {
   //Table structure and Validations for admin page
@@ -88,6 +89,7 @@ const AdminPage = () => {
   const [editMode, setEditMode] = useState(false);
   const [userInfo, setUserInfo] = useState(userDataStructure);
   const [userInfoVisible, setUserInfoVisible] = useState(false);
+  const [userLogVisible, setUserLogVisible] = useState(false);
   const [designationVisible, setDesignationVisible] = useState(false);
   const [userGroupVisible, setUserGroupVisible] = useState(false);
   const [departmentVisible, setDepartmentVisible] = useState(false);
@@ -274,12 +276,16 @@ const AdminPage = () => {
           <Column
             header="Logs"
             style={{ width: "15%" }}
-            body={(rowData) => (
+            body={(row) => (
               <Button
                 icon="pi pi-file"
                 rounded
                 severity="info"
                 aria-label="Bookmark"
+                onClick={() => {
+                  setUserLogVisible(true);
+                  setUserInfo(row);
+                }}
               />
             )}
           ></Column>
@@ -303,6 +309,13 @@ const AdminPage = () => {
         userDataStructure={userDataStructure}
         userDataValidationStructure={userDataValidationStructure}
         showActiveData={activeIndex === 0 ? true : false}
+      />
+      <UserLog
+        userId={userInfo.userId}
+        onHide={() => {
+          setUserLogVisible(false);
+        }}
+        dialogVisible={userLogVisible}
       />
 
       <Designation

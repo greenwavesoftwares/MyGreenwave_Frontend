@@ -141,7 +141,13 @@ const addOrEditUser = async (
       ...prev,
       table: userList.filter((p) => p.active === showActiveData),
     }));
-    addLogForChanges(editMode, prevUserData, userData, userDetails.userId);
+    addLogForChanges(
+      editMode,
+      prevUserData,
+      userData,
+      userDetails.userId,
+      toastRef
+    );
     showSuccessMessage(
       toastRef,
       "Success",

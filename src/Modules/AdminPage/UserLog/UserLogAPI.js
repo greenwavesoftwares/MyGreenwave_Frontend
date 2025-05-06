@@ -5,9 +5,9 @@ import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();
 
-const addNewUserAPI = async (newUser, toastRef) => {
+const addUserLogAPI = async (userLog, toastRef) => {
   try {
-    const response = await axios.post(`${endPoint}admin/createuser`, newUser, {
+    const response = await axios.post(`${endPoint}admin/savelogs`, userLog, {
       headers: {
         Authorization: `Bearer ${userData.token}`,
       },
@@ -19,17 +19,13 @@ const addNewUserAPI = async (newUser, toastRef) => {
     return null;
   }
 };
-const editUserAPI = async (user, toastRef) => {
+const getUserLogsAPI = async (userId, toastRef) => {
   try {
-    const response = await axios.put(
-      `${endPoint}admin/updateuser/${user.userId}`,
-      user,
-      {
-        headers: {
-          Authorization: `Bearer ${userData.token}`,
-        },
-      }
-    );
+    const response = await axios.get(`${endPoint}admin/getlogs/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching forminfo with versions:", error);
@@ -37,4 +33,5 @@ const editUserAPI = async (user, toastRef) => {
     return null;
   }
 };
-export { addNewUserAPI, editUserAPI };
+
+export { getUserLogsAPI, addUserLogAPI };

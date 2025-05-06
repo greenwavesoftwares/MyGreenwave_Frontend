@@ -23,7 +23,9 @@ import Toast from "../../components/Toast/Toast";
 
 const HolidayMaster = () => {
   const holidayStructure = {
+    holidayId: "",
     dates: [],
+    totalNoOfDays: 0,
     holidays: "",
     isRestricted: "",
     restrictedUsers: [],
@@ -130,9 +132,9 @@ const HolidayMaster = () => {
                     rounded
                     text
                     severity="warning"
-                    onClick={() => {
+                    onClick={async () => {
                       showHolidayDialog(true);
-                      getRowDataForEdit(setHolidayData, row);
+                      await getRowDataForEdit(setHolidayData, row);
                     }}
                   />
                 )}
@@ -142,7 +144,7 @@ const HolidayMaster = () => {
         </Grid>
       </Container>
       <DialogComponent
-        header={editMode ? "Edit" : "Add" + " Holiday"}
+        header={(editMode ? "Edit" : "Add") + " Holiday"}
         visible={holidayVisible}
         className="holidayDialog"
         onHide={hideHolidayDialog}
@@ -242,11 +244,14 @@ const HolidayMaster = () => {
             <Button
               label="Save"
               onClick={async () => {
-                addOrEditHoliday(
+                await addOrEditHoliday(
                   editMode,
                   holidayData,
                   setHolidayValidation,
-                  toastRef
+                  toastRef,
+                  holidayTable.table,
+                  setHolidayTable,
+                  setHolidayVisible
                 );
               }}
             />

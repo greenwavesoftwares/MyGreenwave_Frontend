@@ -43,10 +43,12 @@ const getInitial = (userName) => {
 const getUserIdAndEmpCodes = async () => {
   const data = await getDataOnLoad();
   return data
-    ? data.userdata.map((p) => ({
-        userName: `${p.userName} (${p.employeeId})`,
-        empCode: p.employeeId,
-      }))
+    ? data.userdata
+        .filter((p) => p.active)
+        .map((p) => ({
+          userName: `${p.userName} (${p.employeeId})`,
+          empCode: p.employeeId,
+        }))
     : [];
 };
 

@@ -1,17 +1,17 @@
-.userDialog{
-    width: 50vw;
+.userLogDialog{
+    width: 70vw;
 }
 @media (max-width: 1024px) {
-    .userDialog{
+    .userLogDialog{
         width: 60vw;
     }
 }
 @media (max-width: 650px) {
-    .userDialog{
+    .userLogDialog{
         width: 90vw;
     }
 }
-.userCell{
+.userLogCell{
     padding-top: 0.7rem;
     padding-bottom: 0.7rem;
     display: flex;
