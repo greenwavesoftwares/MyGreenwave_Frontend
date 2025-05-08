@@ -165,7 +165,7 @@ function Appraisal() {
   console.log("isApprove", isApprove);
 
   //Show Appraisal Form
-  const handleShowForm = async (formId, previousYearFormId) => {
+  const handleShowForm = async (formId, previousYearFormId,appraisalDate) => {
     console.log("Form ID", formId);
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
@@ -176,7 +176,7 @@ function Appraisal() {
     const appraisalFormData = await currentAppraisalFormAPI(
       formId,
       previousYearFormId,
-      authToken
+      authToken,appraisalDate
     );
     console.log("appraisalFormData", appraisalFormData);
     setAppraisalFormLoading(null);
@@ -400,7 +400,7 @@ function Appraisal() {
                     loading={appraisalFormLoading === rowData.formId}
                     loadingPosition="end"
                     onClick={() =>
-                      handleShowForm(rowData.formId, rowData.previousYearFormId)
+                      handleShowForm(rowData.formId, rowData.previousYearFormId,rowData.appraisalDate)
                     }
                   >
                     Show Form

@@ -25,11 +25,11 @@ const appraisalApproverApi = async (token) => {
 };
 
 //Appraisal Form API
-const appraisalFormAPI=async(authToken,formId,previousYearFormId,empId)=>{
-  console.log("appraisalFormAPI_Header",formId,previousYearFormId,empId);
+const appraisalFormAPI=async(authToken,formId,previousYearFormId,empId,appraisalDate)=>{
+  console.log("appraisalFormAPI_Header",formId,previousYearFormId,empId,appraisalDate);
   try {
     const response = await axios.get(
-      `${endPoint}appraisal/reviewerapprovelforms?formId=${formId}&previousyearformid=${previousYearFormId}&userId=${empId}`,
+      `${endPoint}appraisal/reviewerapprovelforms?formId=${formId}&previousyearformid=${previousYearFormId}&userId=${empId}&appraisalDate=${appraisalDate}`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`,

@@ -49,7 +49,7 @@ const AppraisalsApprover = () => {
   }, []);
 
   //Handle Show Form
-  const handleShowForm = async (formId, previousYearFormId, empId) => {
+  const handleShowForm = async (formId, previousYearFormId, empId,appraisalDate) => {
     console.log("click_formId", formId);
     try {
       setAppraisalFormLoading(formId);
@@ -59,7 +59,8 @@ const AppraisalsApprover = () => {
         authToken,
         formId,
         previousYearFormId,
-        empId
+        empId,
+        appraisalDate
       );
       if (response?.status === 200) {
         setAppraisalFormData(response?.data);
@@ -150,7 +151,8 @@ const AppraisalsApprover = () => {
                         handleShowForm(
                           rowData.formId,
                           rowData.previousYearFormId,
-                          rowData.empId
+                          rowData.empId,
+                          rowData.appraisalDate
                         )
                       }
                     >

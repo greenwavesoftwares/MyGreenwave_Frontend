@@ -58,7 +58,7 @@ const AppraisalsReview = () => {
   
 
   //Handle Show Form
-  const handleShowForm = async (formId, previousYearFormId, empId) => {
+  const handleShowForm = async (formId, previousYearFormId, empId,appraisalDate) => {
     console.log("Click_formId", formId);
     const localStorageAuth = getUserData();
     const authToken = localStorageAuth?.token;
@@ -69,7 +69,8 @@ const AppraisalsReview = () => {
         authToken,
         formId,
         previousYearFormId,
-        empId
+        empId,
+        appraisalDate
       );
       if (response?.status === 200) { 
         setAppraisalFormData(response?.data);
@@ -166,7 +167,8 @@ const AppraisalsReview = () => {
                         handleShowForm(
                           rowData.formId,
                           rowData.previousYearFormId,
-                          rowData.empId
+                          rowData.empId,
+                          rowData.appraisalDate
                         )
 
                       }

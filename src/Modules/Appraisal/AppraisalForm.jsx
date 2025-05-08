@@ -172,8 +172,9 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
       myinsights: myInsights,
       lastyeargoals: appraiserForm?.lastyeargoals,
       confirmation: { reviewed: reviewer, approved: approver },
+      appraisalDate:appraiserForm?.appraisalDate
     };
-    console.log("Appraisal Form Data:", generatepersonaldetails);
+    console.log("AppraisalForm_Save_Data:", generatepersonaldetails);
 
     try {
       const localStorageAuth = getUserData();
