@@ -19,6 +19,20 @@ const getHolidaysAPI = async () => {
     return error.response.data;
   }
 };
+const getHolidayDatesAPI = async () => {
+  try {
+    const response = await axios.get(`${endPoint}holidays/dates`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return error.response.data;
+  }
+};
 const addHolidaysAPI = async (addholidayData, toastRef) => {
   try {
     const response = await axios.post(`${endPoint}holidays`, addholidayData, {
@@ -52,4 +66,4 @@ const editHolidaysAPI = async (editholidayData, toastRef) => {
   }
 };
 
-export { getHolidaysAPI, addHolidaysAPI, editHolidaysAPI };
+export { getHolidaysAPI, addHolidaysAPI, editHolidaysAPI, getHolidayDatesAPI };

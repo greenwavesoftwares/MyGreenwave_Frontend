@@ -14,6 +14,8 @@ const DatePicker = ({
   dateFormat,
   invalid,
   disabled,
+  inputClassName,
+  disabledDates,
 }) => {
   return (
     <div className="calendar-wrapper">
@@ -31,6 +33,8 @@ const DatePicker = ({
         dateFormat={dateFormat}
         invalid={invalid}
         disabled={disabled}
+        inputClassName={inputClassName}
+        disabledDates={disabledDates}
       />
     </div>
   );

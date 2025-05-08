@@ -3,15 +3,15 @@ import Grid from "@mui/material/Grid";
 import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import { Container } from "@mui/material";
-import SpeedDial from "../../components/SpeedDial/SpeedDial";
+import SpeedDial from "../../../components/SpeedDial/SpeedDial";
 import { Button } from "primereact/button";
-import Toast from "../../components/Toast/Toast";
-import Chart from "../../components/Chart/Chart";
-import ConfirmDialog from "../../components/ConfirmDialog/ConfirmDialog";
-import { showConfirm } from "../../components/ConfirmDialog/showConfirm";
-import Calender from "../../components/Calender/Calender";
-import DatePicker from "../../components/DatePicker/DatePicker";
-import DialogComponent from "../../components/Dialog/DialogComponent";
+import Toast from "../../../components/Toast/Toast";
+import Chart from "../../../components/Chart/Chart";
+import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
+import { showConfirm } from "../../../components/ConfirmDialog/showConfirm";
+import Calender from "../../../components/Calender/Calender";
+import DatePicker from "../../../components/DatePicker/DatePicker";
+import DialogComponent from "../../../components/Dialog/DialogComponent";
 import { Checkbox } from "primereact/checkbox";
 import { InputTextarea } from "primereact/inputtextarea";
 import { TabView, TabPanel } from "primereact/tabview";
@@ -26,7 +26,7 @@ import {
   onPageLoad,
   onSelectRowEdit,
 } from "./LeaveFunctions";
-import { getUserData } from "../Login/Encrypt";
+import { getUserData } from "../../Login/Encrypt";
 import "./LeaveManagement.css";
 import { Tooltip } from "primereact/tooltip";
 import { Tag } from "primereact/tag";

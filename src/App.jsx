@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import LeaveManagement from "./Modules/LeaveManagement/LeaveManagement";
 import Carousel from "./components/Carousel/Carousel";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
@@ -23,8 +22,9 @@ import SalarySlipUpload from "./Modules/SalarySlip/SalarySlipUpload";
 import AppraisalTracker from "./Modules/AppraisalTracker/AppraisalTracker";
 import TrainingMaster from "./Modules/Training_Master/TrainingMaster";
 import HolidayMaster from "./Modules/HolidayMaster/HolidayMaster";
-import Nalanda from "./Modules/Nalanda/Nalanda"
-import TrainingScheduleMaster from "./Modules/TrainingScheduleMaster/TrainingScheduleMaster"
+import Nalanda from "./Modules/Nalanda/Nalanda";
+import TrainingScheduleMaster from "./Modules/TrainingScheduleMaster/TrainingScheduleMaster";
+import LeaveApplication from "./Modules/LeaveManagement/LeaveApplication/LeaveApplication";
 function App() {
   return (
     <Router>
@@ -36,7 +36,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/leave-management" element={<LeaveManagement />} />
+        <Route path="/leave-management" element={<LeaveApplication />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route
@@ -52,10 +52,13 @@ function App() {
         <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
         <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
         <Route path="/appraisal-tracker" element={<AppraisalTracker />} />
-        <Route path="/training-master"element={<TrainingMaster/>}/>
+        <Route path="/training-master" element={<TrainingMaster />} />
         <Route path="/holiday-master" element={<HolidayMaster />} />
-        <Route path="/nalanda"element={<Nalanda/>}/>
-        <Route path="/training-schedule-master" element={<TrainingScheduleMaster/>}/>
+        <Route path="/nalanda" element={<Nalanda />} />
+        <Route
+          path="/training-schedule-master"
+          element={<TrainingScheduleMaster />}
+        />
       </Routes>
     </Router>
   );

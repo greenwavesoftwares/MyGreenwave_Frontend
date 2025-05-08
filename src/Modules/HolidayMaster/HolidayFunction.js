@@ -3,7 +3,12 @@ import {
   showErrorMessage,
   showSuccessMessage,
 } from "../../components/Toast/ShowMessage";
-import { addHolidaysAPI, editHolidaysAPI, getHolidaysAPI } from "./HolidayAPI";
+import {
+  addHolidaysAPI,
+  editHolidaysAPI,
+  getHolidayDatesAPI,
+  getHolidaysAPI,
+} from "./HolidayAPI";
 import { getUserIdAndEmpCodes } from "../AdminPage/AdminFunction";
 
 const dateFormat = "yyyy-MM-dd";
@@ -11,6 +16,14 @@ const dateFormat = "yyyy-MM-dd";
 const getHolidays = async () => {
   const data = await getHolidaysAPI();
   return data ? data : null;
+};
+const getHolidayDates = async () => {
+  let data = await getHolidayDatesAPI();
+  if (data) {
+    data = data.map((p) => parse(p, dateFormat, new Date()));
+    return data;
+  }
+  return null;
 };
 const getRowDataForEdit = async (setHolidayData, row) => {
   setHolidayData((prev) => ({
@@ -104,4 +117,4 @@ const addOrEditHoliday = async (
     }
   }
 };
-export { getHolidays, addOrEditHoliday, getRowDataForEdit };
+export { getHolidays, addOrEditHoliday, getRowDataForEdit, getHolidayDates };

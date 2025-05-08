@@ -1,11 +1,11 @@
 import axios from "axios";
-import { getUserData } from "../Login/Encrypt";
-import { showErrorMessage } from "../../components/Toast/ShowMessage";
+import { getUserData } from "../../Login/Encrypt";
+import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();
 
-const getDataOnLoad = async (userId, year) => {
+const onPageLoadAPI = async (year) => {
   try {
     const response = await axios.get(`${endPoint}leaves/${year}`, {
       headers: {
@@ -111,7 +111,7 @@ const downloadZip = async () => {
 };
 
 export {
-  getDataOnLoad,
+  onPageLoadAPI,
   applyLeaveAPI,
   deleteLeaveAPI,
   editLeaveAPI,
