@@ -69,27 +69,49 @@ const getTrainingAllList = async (token) => {
   }
 };
 
-//Post Update Confirm Data 
+//Post Update Confirm Data
+//const testEndpoint = "http://localhost:8070/appraisalForm";
 const postUpdateConfirm = async (token, updateData) => {
   try {
-    const response =
-      (`${endPoint}trainings/addscheduledata`,
-      updateData,
+    const response =await axios.put
+      (`${endPoint}trainings/reschedule-training`, updateData,
       {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      });
-      return response
+      })
+      console.log("response",response);
+    return response;
   } catch (error) {
     console.log(error);
   }
 };
+
+//http://localhost:8081/trainings/uploadtraing-certificate
+const fileUpload = async (token, file,eventId,userId) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("eventId", eventId);
+  formData.append("userId", userId);
+  try {
+    const response=await axios.put(`${endPoint}trainings/uploadtraing-certificate`,formData,{
+      headers: {
+        Authorization: `Bearer ${token}`,
+        //"Content-Type": "application/json",
+      },
+    })
+    return response
+  }
+  catch{
+
+  }
+}
 export {
   getAllUserList,
   getUseridWiseTrainingList,
   postAddScheduleData,
   getTrainingAllList,
   postUpdateConfirm,
+  fileUpload
 };

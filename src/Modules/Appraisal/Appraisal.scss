@@ -15,6 +15,22 @@
 .dialogContent.p-dialog .p-dialog-content{
     padding: base.$dialogContentPadding;
 }
+.dialogFooter.p-dialog .p-dialog-footer{
+  padding: base.$dialogFooterPadding;
+}
+//Dialog Accept Button
+.acceptButton.p-confirm-dialog-accept {
+  padding: base.$primeReactButton;
+}
+//Dialog Reject Button
+.rejectButton.p-confirm-dialog-reject{
+  padding: base.$primeReactButton;
+  background: none;
+  color: #36373c;
+  border: none;
+}
+
+
 
 //DataTable Styles
 .dataTableHeader.p-datatable.p-datatable-sm .p-datatable-thead > tr > th {

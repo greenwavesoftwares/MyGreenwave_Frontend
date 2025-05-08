@@ -16,7 +16,8 @@ import {
   getUseridWiseTrainingList,
   postAddScheduleData,
   getTrainingAllList,
-  postUpdateConfirm
+  postUpdateConfirm,
+  fileUpload,
 } from "./TrainingScheduleMasterAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Calendar } from "primereact/calendar";
@@ -34,13 +35,17 @@ import { useRef } from "react";
 import { Toast } from "primereact/toast";
 //Mui Icon
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
+import CheckIcon from "@mui/icons-material/Check";
 import { ConfirmDialog } from "primereact/confirmdialog";
+import { InputText } from "primereact/inputtext";
+import { FileUpload } from "primereact/fileupload";
 
 const TrainingScheduleMaster = () => {
   //For Toast
   const toastRef = useRef(null);
   //Dialog Visible
   const [visible, setVisible] = useState(false);
+  const [fileUploadDialog, setFileUploadDialog] = useState(false);
   //Set User List From Api
   const [allUser, setAllUser] = useState([]);
   //Set All User For Dropdown
@@ -62,6 +67,19 @@ const TrainingScheduleMaster = () => {
   const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
   //Set Select Row Data
   const [confirmDialogRowData, setConfirmDialogRowData] = useState(null);
+  //For Edit Section
+  const [editingRowIndex, setEditingRowIndex] = useState(null);
+  //For Edit Button Row Data State
+  const [getRowData, setGetRowData] = useState(null);
+
+  //Form Date and To Date update state
+  const [fromDateUpdate, setFromDateUpdate] = useState(null);
+  const [toDateUpdate, setToDateUpdate] = useState(null);
+
+  //File Upload
+  const [file, setFile] = useState(null);
+  const [fileUploadRow, setFileUploadRow] = useState(null);
+  const [fileUploadName, setFileUploadName] = useState(null);
 
   //Call User List
   useEffect(() => {
@@ -124,6 +142,7 @@ const TrainingScheduleMaster = () => {
       showSuccessMessage(toastRef, "", "Training Add Successfully");
       ////Dialog Visibility OFf
       setVisible(false);
+      setAllTrainingData([...allTrainingData, newScheduleFormData]);
       setTrainingDropdown(true);
     } else {
       showErrorMessage(toastRef, "", "Internal Error");
@@ -138,7 +157,7 @@ const TrainingScheduleMaster = () => {
   };
 
   //Update Data
-  const handelUpdateSwitch = async() => {
+  const handelUpdateSwitch = async () => {
     try {
       const updateData = {
         ...confirmDialogRowData,
@@ -149,9 +168,89 @@ const TrainingScheduleMaster = () => {
       //Update Api
       const { token } = getUserData();
       const response = await postUpdateConfirm(token, updateData);
-      console.log("postUpdateConfirmData",response);
+      if (response.status === 201) {
+        showSuccessMessage(toastRef, "", "Training Successfully Completed");
+        //Update in Table
+        const updatedList = allTrainingData.map((item) =>
+          item.eventId === updateData.eventId ? updateData : item
+        );
+        setAllTrainingData(updatedList);
+      }
+      console.log("postUpdateConfirmData", response);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  //Edit Row
+  const handleEditRow = (rowData, rowIndex) => {
+    //console.log("editRowData", rowData, rowIndex);
+    setEditingRowIndex(rowIndex);
+    setGetRowData(rowData);
+  };
+
+  //Save Form and To Date
+  const handelSaveForm = async () => {
+    const upDateData = {
+      ...getRowData,
+      fromDate: formatDate(fromDateUpdate),
+      toDate: formatDate(toDateUpdate),
+    };
+    console.log("UpdateSaveDate", upDateData);
+    const { token } = getUserData();
+    const response = await postUpdateConfirm(token, upDateData);
+    if (response.status === 201) {
+      showSuccessMessage(toastRef, "", "Training Date Change");
+      //Update in Table
+      const updatedList = allTrainingData.map((item) => {
+        if (item.eventId === upDateData.eventId) {
+          return upDateData;
+        }
+        return item;
+      });
+      console.log("updatedList", updatedList);
+      setAllTrainingData(updatedList);
+    }
+    setEditingRowIndex(null);
+  };
+
+  //Upload File
+  const onUploadFile = async (event) => {
+    console.log(event);
+    const file = event.files[0];
+    setFile(file);
+    console.log("file?.name", event.files[0]?.name);
+    //Set Upload File Name
+    setFileUploadName(event.files[0]?.name);
+  };
+ 
+
+  //Submit File Upload
+  const submitFileUpload = async () => {
+    // setFile(null)
+
+    const makeFileUploadData = {
+      file: file,
+      eventId: fileUploadRow.eventId,
+      userId: fileUploadRow.assignedUserId,
+    };
+
+    const { token } = getUserData();
+    console.log("fileUploadRow", makeFileUploadData);
+    //const {eventId,assignedUserId}=fileUploadRow;
+    const response = await fileUpload(
+      token,
+      file,
+      fileUploadRow.eventId,
+      fileUploadRow.assignedUserId
+    );
+    console.log("fileUpload_api", response);
+    if (response.status === 201) {
+      showSuccessMessage(toastRef, "", "File Uploaded Successfully");
+      setFile(null);
+      setFileUploadDialog(false);
+    } else {
+      showErrorMessage(toastRef, "", "Error in File Upload");
     }
   };
 
@@ -161,10 +260,10 @@ const TrainingScheduleMaster = () => {
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
           <div className="card mt-4 bg-white shadow rounded">
             <DataTable
-            paginator
-            rows={15}
-            rowsPerPageOptions={[10, 15, 20, 25]}
-            size="small"
+              paginator
+              rows={15}
+              rowsPerPageOptions={[10, 15, 20, 25]}
+              size="small"
               emptyMessage={
                 loader ? <LinearProgress color="inherit" /> : "No Data Found"
               }
@@ -200,8 +299,21 @@ const TrainingScheduleMaster = () => {
 
               <Column
                 header="Form Date"
-                body={(rowData) => {
-                  return (
+               // style={{ width: "20rem" }}
+                body={(rowData, { rowIndex }) => {
+                  return editingRowIndex === rowIndex ? (
+                    <Calendar
+                      id="formDateBtn"
+                      required
+                      //showIcon
+                      value={
+                        rowData.fromDate
+                      }
+                      //value= {fromDateUpdate}
+                      onChange={(e) => setFromDateUpdate(e.value)}
+                      dateFormat="dd/mm/yy"
+                    />
+                  ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
                       {formatDate(rowData.fromDate)}
                     </Typography>
@@ -210,8 +322,19 @@ const TrainingScheduleMaster = () => {
               ></Column>
               <Column
                 header="To Date"
-                body={(rowData) => {
-                  return (
+                body={(rowData, { rowIndex }) => {
+                  return editingRowIndex === rowIndex ? (
+                    <Calendar
+                      id="toDateBtn"
+                      required
+                     // showIcon
+                      value={
+                        rowData.fromDate
+                      }
+                      onChange={(e) => setToDateUpdate(e.value)}
+                     dateFormat="dd/mm/yy"
+                    />
+                  ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
                       {formatDate(rowData.toDate)}
                     </Typography>
@@ -241,16 +364,32 @@ const TrainingScheduleMaster = () => {
               ></Column>
               <Column
                 header="Re-Schedule"
-                body={(rowData) => {
+                body={(rowData, { rowIndex }) => {
                   return (
                     <>
                       {rowData.status.toLowerCase() === "completed" ? (
                         ""
+                      ) : editingRowIndex === rowIndex ? (
+                        <IconButton
+                          size="small"
+                          aria-label="ModeEditIcon"
+                          color="default"
+                          onClick={
+                            // e.preventDefault();
+                            handelSaveForm
+                          }
+                        >
+                          <CheckIcon />
+                        </IconButton>
                       ) : (
                         <IconButton
                           size="small"
                           aria-label="ModeEditIcon"
                           color="default"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleEditRow(rowData, rowIndex);
+                          }}
                         >
                           <ModeEditIcon />
                         </IconButton>
@@ -290,7 +429,10 @@ const TrainingScheduleMaster = () => {
                           sx={{ boxShadow: "none" }}
                           size="small"
                           variant="contained"
-                          //onClick={()}
+                          onClick={() => {
+                            setFileUploadDialog(true);
+                            setFileUploadRow(rowData);
+                          }}
                         >
                           Upload Certificate
                         </Button>
@@ -305,6 +447,8 @@ const TrainingScheduleMaster = () => {
           </div>
         </div>
       </div>
+
+      {/* Add New Schedule Dialog */}
       <Dialog
         header="Add Schedule"
         className="dialogHeader dialogContent"
@@ -383,9 +527,58 @@ const TrainingScheduleMaster = () => {
         </form>
       </Dialog>
 
+      {/* Add File Upload Dialog */}
+
+      <Dialog
+        header="Upload Certificate"
+        className="dialogHeader dialogContent"
+        visible={fileUploadDialog}
+        style={{ width: "32rem" }}
+        onHide={() => {
+          if (!fileUploadDialog) return;
+          setFileUploadDialog(false);
+        }}
+      >
+        <div
+          style={{ display: "grid", rowGap: "0.7rem", justifyItems: "center" }}
+        >
+          {fileUploadName === null ? (
+            ""
+          ) : (
+            <Chip
+              size="small"
+              color="info"
+              variant="outlined"
+              label={fileUploadName}
+            />
+          )}
+          <FileUpload
+            //name="demo[]"
+            mode="basic"
+            //url="/api/upload"
+            // multiple
+            auto
+            accept="*"
+            customUpload
+            //maxFileSize={1000000}
+            // onUploadHa={onUploadFile}
+            //  onUpload={onUploadFile}
+            uploadHandler={onUploadFile}
+            // emptyTemplate={
+            //   <p className="m-0">Drag and drop files to here to upload.</p>
+            // }
+          />
+          <Button variant="contained" size="small" onClick={submitFileUpload}>
+            Submit
+          </Button>
+        </div>
+      </Dialog>
+
       <ConfirmDialog
         group="declarative"
-        className="dialogHeader dialogContent"
+        className="dialogHeader dialogContent dialogFooter acceptButton"
+        acceptClassName="acceptButton"
+        rejectClassName="rejectButton"
         visible={confirmDialogVisible}
         onHide={() => setConfirmDialogVisible(false)}
         style={{ width: "20rem" }}
