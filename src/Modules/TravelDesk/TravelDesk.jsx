@@ -30,7 +30,9 @@ const TravelDesk = () => {
     city: '',
     localityArea: '',
     typeOfTravel: '',
-    advancedAmount: ''
+    advanceRequested: '',
+    fromDate: '',
+    tentativeToDate: ''
   });
 
   const [transportModes, setTransportModes] = useState([]);
@@ -78,9 +80,9 @@ const TravelDesk = () => {
     const finalizedAccommodations = accommodations.filter(row => !row.isEditable);
 
     const payload = {
-      ...userInfo,
-      ...formFields,
-      advancedAmount: parseFloat(formFields.advancedAmount || 0),
+      ...userInfo,           // includes name, department, employeeCode, etc.
+      ...formFields,         // includes purpose, fromDate, tentativeToDate, etc.
+      advancedAmount: parseFloat(formFields.advanceRequested || 0), // maps to "advance"
       manager_id: userInfo.manager_id,
       transportModes: finalizedTransportModes,
       accommodations: finalizedAccommodations
@@ -89,7 +91,7 @@ const TravelDesk = () => {
     try {
       console.log('Payload:', payload);
       const response = await axios.post(
-        'http://localhost:8081/traveldesk',
+        'http://localhost:8081/traveldesk/travels',
         payload,
         {
           headers: {
@@ -111,7 +113,7 @@ const TravelDesk = () => {
           city: '',
           localityArea: '',
           typeOfTravel: '',
-          advancedAmount: ''
+          advanceRequested: ''
         });
 
         const today = new Date().toISOString().slice(0, 10);
@@ -348,11 +350,11 @@ const TravelDesk = () => {
                         <div className="mt-2">
                           <input
                             id="advanced-amount"
-                            name="advancedAmount"
+                            name="advanceRequested"
                             type="number"
-                            value={formFields.advancedAmount}
+                            value={formFields.advanceRequested}
                             onChange={(e) =>
-                              setFormFields({ ...formFields, advancedAmount: e.target.value })
+                              setFormFields({ ...formFields, advanceRequested: e.target.value })
                             }
                             autoComplete="off"
                             className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -361,6 +363,7 @@ const TravelDesk = () => {
                       </div>
 
 
+                      {/* From Date field */}
                       <div className="sm:col-span-5">
                         <label htmlFor="fromDate" className="block text-sm font-medium leading-6 text-gray-900">
                           From Date
@@ -370,13 +373,36 @@ const TravelDesk = () => {
                             type="date"
                             name="fromDate"
                             id="fromDate"
-                            value={userInfo.fromDate || ''}
-                            onChange={(e) => setUserInfo(prev => ({ ...prev, fromDate: e.target.value }))}
+                            value={formFields.fromDate}
+                            onChange={(e) =>
+                              setFormFields({ ...formFields, fromDate: e.target.value })
+                            }
                             autoComplete="off"
                             className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                           />
                         </div>
                       </div>
+
+                      {/* Tentative To Date field */}
+                      <div className="sm:col-span-5">
+                        <label htmlFor="tentativeToDate" className="block text-sm font-medium leading-6 text-gray-900">
+                          Tentative To Date
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="date"
+                            name="tentativeToDate"
+                            id="tentativeToDate"
+                            value={formFields.tentativeToDate}
+                            onChange={(e) =>
+                              setFormFields({ ...formFields, tentativeToDate: e.target.value })
+                            }
+                            autoComplete="off"
+                            className="block w-full rounded-md border-0 py-1.5 pl-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          />
+                        </div>
+                      </div>
+
 
 
 
