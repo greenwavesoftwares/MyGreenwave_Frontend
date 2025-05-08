@@ -193,8 +193,8 @@ const TrainingScheduleMaster = () => {
   const handelSaveForm = async () => {
     const upDateData = {
       ...getRowData,
-      fromDate: formatDate(fromDateUpdate),
-      toDate: formatDate(toDateUpdate),
+      fromDate: formatDate(fromDateUpdate || getRowData.fromDate),
+      toDate: formatDate(toDateUpdate || getRowData.toDate),
     };
     console.log("UpdateSaveDate", upDateData);
     const { token } = getUserData();
@@ -306,12 +306,12 @@ const TrainingScheduleMaster = () => {
                       id="formDateBtn"
                       required
                       //showIcon
-                      value={
-                        rowData.fromDate
-                      }
-                      //value= {fromDateUpdate}
+                      // value={
+                      //   rowData.fromDate
+                      // }
+                      value={fromDateUpdate || new Date(rowData.fromDate)}
                       onChange={(e) => setFromDateUpdate(e.value)}
-                      dateFormat="dd/mm/yy"
+                      dateFormat="yy-mm-dd"
                     />
                   ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
@@ -328,11 +328,12 @@ const TrainingScheduleMaster = () => {
                       id="toDateBtn"
                       required
                      // showIcon
-                      value={
-                        rowData.fromDate
-                      }
+                      // value={
+                      //   rowData.toDate
+                      // }
+                      value={toDateUpdate || new Date(rowData.toDate)}
                       onChange={(e) => setToDateUpdate(e.value)}
-                     dateFormat="dd/mm/yy"
+                     dateFormat="yy-mm-dd"
                     />
                   ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
