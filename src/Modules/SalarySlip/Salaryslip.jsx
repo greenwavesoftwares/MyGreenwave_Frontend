@@ -6,12 +6,13 @@ import { Container } from "@mui/material";
 import SalarySlipPdf from "./SalarySlipPdf";
 import SalarySlipPanelGrid from "./SalarySlipPanelGrid";
 import { Toast } from "primereact/toast";
+import { fetchSalarySlip } from "./SalarySlipAPI";
 
 export default function SalarySlip() {
   const [selection, setSelection] = useState({
     year: "",
     month: "",
-    data: null,
+    salaryData: null,
   });
   const toast = useRef(null);
   const Item = styled(Paper)(({ theme }) => ({
@@ -51,117 +52,176 @@ export default function SalarySlip() {
   function handleYearChange(e) {
     setSelection({ ...selection, year: e.value, month: (e.month = "") });
   }
-  function handleMonthChange(e) {
+
+  const handleMonthChange = async (e) => {
     const newMonth = e.value;
+
+    // Update the month first
     setSelection((prev) => ({ ...prev, month: newMonth }));
 
-    const mockData = {
-      company: "Greenwave Solutions Pvt. Ltd.",
-      employee: {
-        name: "SOHOME SARKAR",
-        employeeCode: 1234,
-        designation: "Softwaqre Engineer",
-        pan: "PTJ11234",
-        uan: "134555",
-        accountNumber: "123456789",
-        bank: {
-          name: "AXIS BANK LTD.",
-          branch: "PRINCE ANWARSHAH ROAD",
-        },
-        disbursementDate: "13/03/2025",
-        daysPaid: 30,
-      },
-      earnings: {
-        basic: 50000,
-        houseRentAllowance: 10000,
-        conveyanceAllowance: 5000,
-        managementAllowance: 7000,
-        specialAllowance: 8000,
-        telephoneAllowance: 2000,
-        retentionBonus: 5000,
-        performanceBonus: 10000,
-        grossTotalEarnings: 95000,
-      },
-      deductions: {
-        esi: 2000,
-        epf: 5000,
-        professionalTax: 2500,
-        arrear: 0,
-        grossTotalDeductions: 9500,
-      },
-      netPay: 85500,
-      accountsManager: "Accounts Manager",
-    };
+    if (selection.year && newMonth) {
+      try {
+        const responce = await fetchSalarySlip(selection.year, newMonth.name);
+        console.log("data", responce.data.salarySlipData);
 
-    if (Object.keys(mockData).length === 0) {
-      // If the JSON is empty, show a toast message
-      Toast.current.show({
-        severity: "warn",
-        summary: "Warning",
-        detail: "No data available for the selected month!",
-        life: 3000,
-      });
+        setSelection((prev) => ({
+          ...prev,
+          salaryData: responce.data.salarySlipData,
+        }));
 
-      setSelection({ ...selection, year: "", month: "" });
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "Salary data fetched successfully!",
+          life: 3000,
+        });
+      } catch (error) {
+        console.log(error.response);
+
+        const status = error.response?.status;
+        setSelection((prev) => ({
+          ...prev,
+          year: "",
+          month: "",
+          data: {},
+        }));
+        if (status === 500) {
+          toast.current.show({
+            severity: "warn",
+            summary: "Warning",
+            detail: "No data available for the selected month!",
+            life: 3000,
+          });
+        } else {
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to fetch salary data.",
+            life: 3000,
+          });
+        }
+      }
     }
-
-    // Updating state with mock data
-    setSelection((prev) => ({ ...prev, data: mockData }));
-  }
+  };
 
   return (
     <>
-      <Container maxWidth="lg">
-        <div className="card flex justify-content-between align-items-center px-9">
-          {/* Left Section: Year & Month Dropdowns */}
-          <div className="flex gap-4">
-            {/* Year Selection */}
-            <div className="flex align-items-center gap-2">
-              <label htmlFor="year" className="font-medium">
-                Year:
-              </label>
-              <Dropdown
-                value={selection.year}
-                onChange={handleYearChange}
-                options={years}
-                optionLabel="name"
-                placeholder="Select year"
-                filter
-                showClear
+      <Container
+        className="card p-4"
+        style={{ maxWidth: "85%", margin: "0 auto" }}
+      >
+        <Toast ref={toast} />
+        <div
+          className="p-3 mb-3"
+          style={{
+            background: "#e3f2fd",
+            borderLeft: "5px solidrgb(169, 243, 227)",
+            borderRadius: "10px",
+            color: "#0d47a1",
+            fontWeight: "600",
+            fontSize: "1rem",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+            transition: "box-shadow 0.3s ease-in-out",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = "0 6px 14px rgba(0, 0, 0, 0.15)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.1)";
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
+              <img
+                src=".\src\assets\Images\GreenwaveLogo.png"
+                alt="Upload Icon"
+                style={{ width: "40px", height: "40px" }}
               />
-            </div>
+              <div
+                style={{
+                  fontSize: "1.5 rem",
+                  fontWeight: "bold",
+                }}
+              >
+                Download Salary Slip & Form 16 Here
+              </div>
 
-            {/* Month Selection */}
-            <div className="flex align-items-center gap-2">
-              <label htmlFor="month" className="font-medium">
-                Month:
-              </label>
-              <Dropdown
-                value={selection.month}
-                onChange={handleMonthChange}
-                options={months}
-                disabled={!selection.year}
-                optionLabel="name"
-                placeholder="Select month"
-                filter
-                showClear
-              />
+              <div
+                style={{
+                  fontSize: "1.5 rem",
+                  fontWeight: "bold",
+                  color: "red",
+                }}
+              >
+                <Dropdown
+                  id="year"
+                  value={selection.year}
+                  onChange={handleYearChange}
+                  options={years}
+                  optionLabel="name"
+                  placeholder="Select year"
+                  filter
+                  showClear
+                />
+              </div>
+              <div
+                style={{
+                  fontSize: "1.5 rem",
+                  fontWeight: "bold",
+                  color: "red",
+                }}
+              >
+                <Dropdown
+                  id="month"
+                  value={selection.month}
+                  onChange={handleMonthChange}
+                  options={months}
+                  disabled={!selection.year}
+                  optionLabel="name"
+                  placeholder="Select month"
+                  filter
+                  showClear
+                />
+              </div>
+
+              <div className="flex justify-between items-center flex-wrap gap-4">
+                {selection.month && (
+                  <div className="flex gap-4 items-center">
+                    <SalarySlipPdf
+                      salaryData={selection.salaryData}
+                    ></SalarySlipPdf>
+                  </div>
+                )}
+              </div>
+              {selection.year && (
+                <div>
+                  <button
+                    className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl shadow hover:bg-blue-800 transition duration-300"
+                    title="Download Form 16"
+                  >
+                    Form 16
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-          {selection.month && (
-            <div className="flex gap-2">
-              <SalarySlipPdf></SalarySlipPdf>
-            </div>
-          )}
         </div>
 
-        {selection.month && Object.keys(selection.data || {}).length > 0 ? (
-          <div className="w-full mt-4">
-            <SalarySlipPanelGrid salaryData={selection.data} />
-          </div>
-        ) : (
-          <Toast ref={toast} />
-        )}
+        <div className="mt-6">
+          {selection.month &&
+          Object.keys(selection.salaryData || {}).length > 0 ? (
+            <SalarySlipPanelGrid salaryData={selection.salaryData} />
+          ) : null}
+        </div>
       </Container>
     </>
   );

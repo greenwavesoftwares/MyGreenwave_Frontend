@@ -32,6 +32,8 @@ const OuterItem = styled(Paper)(({ theme }) => ({
 }));
 
 export default function SalarySlipPanelGrid({ salaryData }) {
+  console.log(salaryData);
+
   return (
     <Box sx={{ display: "flex", margin: "auto" }}>
       <Grid>
@@ -67,51 +69,51 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>NAME</Item>
               </Grid>
               <Grid size={3}>
-                <Item>{salaryData.employee.name}</Item>
+                <Item>{salaryData.employeeName}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>EMPLOYEE CODE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>{salaryData.employee.employeeCode}</Item>
+                <Item>{salaryData.employeeCode}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}> DAYS PAID</Item>
               </Grid>
               <Grid size={3}>
-                <Item>30</Item>
+                <Item>{30 - salaryData.ncpDays}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>DESIGNATION</Item>
               </Grid>
               <Grid size={3}>
-                <Item>{salaryData.employee.designation}</Item>
+                <Item>{salaryData.designation}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>PAN</Item>
               </Grid>
               <Grid size={3}>
-                <Item>{salaryData.employee.pan}</Item>
+                <Item>{salaryData.pan}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>UAN</Item>
               </Grid>
               <Grid size={3}>
-                <Item>134555</Item>
+                <Item>{salaryData.uan}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>ACCOUNT NUMBER</Item>
               </Grid>
               <Grid size={3}>
-                <Item>PTJ11234</Item>
+                <Item>{salaryData.bankAccount}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>DISBURSEMENT DATE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>13/45/2055</Item>
+                <Item>{salaryData.dbDate}</Item>
               </Grid>
 
               <Grid size={3}>
@@ -148,59 +150,72 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>BASIC</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>{salaryData.earnedBasic}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>ESI</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.esi}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>HOUSE RENT ALLOWANCE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>{salaryData.earnedHouseRent}</Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>EPF</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.deductionAgainstPf}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>CONVEYANCE ALLOWANCE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>{salaryData.earnedConveyance}</Item>
               </Grid>
               <Grid size={3}>
-                <Item sx={{ fontWeight: "bold" }}>EPF</Item>
+                <Item sx={{ fontWeight: "bold" }}>PROFESSIONAL TAX</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.professionalTax}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>MANAGEMENT ALLOWANCE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>{salaryData.earnedManagementAllowance}</Item>
               </Grid>
               <Grid size={3}>
-                <Item sx={{ fontWeight: "bold" }}>PROFESSIONAL TAX</Item>
+                <Item sx={{ fontWeight: "bold" }}>TDS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.tds}</Item>
+              </Grid>
+
+              <Grid size={3}>
+                <Item sx={{ fontWeight: "bold" }}>MEDICAL ALLOWANCE</Item>
+              </Grid>
+              <Grid size={3}>
+                <Item>{salaryData.medicalAllowance}</Item>
+              </Grid>
+              <Grid size={3}>
+                <Item sx={{ fontWeight: "bold" }}>AGAINST LOAN</Item>
+              </Grid>
+              <Grid size={3}>
+                <Item>{salaryData.deductionAgainstLone}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>SPECIAL ALLOWANCE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>{salaryData.earnedSpecialAllowance}</Item>
               </Grid>
               <Grid size={6}>
                 <Item>--</Item>
@@ -209,7 +224,7 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>TELEPHONE ALLOWANCE</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.earnedPhoneAllowane}</Item>
               </Grid>
 
               <Grid size={6}>
@@ -219,7 +234,7 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>ARREAR</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.arrear}</Item>
               </Grid>
               <Grid size={6}>
                 <Item>--</Item>
@@ -229,7 +244,7 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>RETENTION BONUS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>{salaryData.earnedAssuredBonus}</Item>
               </Grid>
               <Grid size={6}>
                 <Item>--</Item>
@@ -239,7 +254,7 @@ export default function SalarySlipPanelGrid({ salaryData }) {
               </Grid>
 
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.earnedPerformanceBonus}</Item>
               </Grid>
               <Grid size={6}>
                 <Item>--</Item>
@@ -252,20 +267,33 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>GROSS TOTAL EARNINGS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>
+                  {salaryData.earnedGross +
+                    salaryData.earnedPhoneAllowane +
+                    salaryData.earnedAssuredBonus +
+                    salaryData.earnedPerformanceBonus +
+                    salaryData.medicalAllowance +
+                    salaryData.arrear}
+                </Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>GROSS TOTAL DEDUCTIONS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.0</Item>
+                <Item>
+                  {salaryData.deductionAgainstLone +
+                    salaryData.deductionAgainstPf +
+                    salaryData.esi +
+                    salaryData.tds +
+                    salaryData.professionalTax}
+                </Item>
               </Grid>
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>NET PAYS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>0.00</Item>
+                <Item>{salaryData.netpayable}</Item>
               </Grid>
 
               <Grid size={6}>
@@ -278,7 +306,12 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item>
                   <div>
                     {/* <div className="card flex justify-content-center"> */}
-                    <Image src="/softSign.jpg" alt="Image" width="40" />
+                    <Image
+                      className="inline-flex"
+                      src="src\assets\Images\softSign.jpg"
+                      alt="Image"
+                      width="50"
+                    />
                     {/* </div> */}
                   </div>
                 </Item>

@@ -44,7 +44,7 @@ export default function SalarySlipUpload() {
 
   const onSave = async () => {
     try {
-      await saveSalarySlipData(rowDataList, department);
+    await saveSalarySlipData(rowDataList, department);
 
       toast.current.show({
         severity: "success",
