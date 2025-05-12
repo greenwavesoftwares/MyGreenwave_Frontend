@@ -1,12 +1,12 @@
 import { parse } from "date-fns";
-import { getDataOnLoad } from "./AdminAPI";
+import { getAllUsersAPI } from "./AdminAPI";
 import { getAllDesignations } from "./Designation/DesignationFunction";
 
 const avatarColors = JSON.parse(import.meta.env.VITE_AVATAR_COLORS);
 
 const onPageLoad = async () => {
   let adminInfo = {};
-  const data = await getDataOnLoad();
+  const data = await getAllUsersAPI();
   if (data) {
     data.userdata.forEach((user) => {
       user.initial = getInitial(user.userName);

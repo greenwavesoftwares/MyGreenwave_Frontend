@@ -4,7 +4,7 @@ import { getUserData } from "../Login/Encrypt";
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();
 
-const getDataOnLoad = async () => {
+const getAllUsersAPI = async () => {
   try {
     const response = await axios.get(`${endPoint}admin/allusers`, {
       headers: {
@@ -18,4 +18,4 @@ const getDataOnLoad = async () => {
     return null;
   }
 };
-export { getDataOnLoad };
+export { getAllUsersAPI };
