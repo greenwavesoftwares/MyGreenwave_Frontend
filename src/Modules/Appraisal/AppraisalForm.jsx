@@ -198,6 +198,8 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   };
 
   //Set Api Value : Personal Information already
+  useEffect(() => {
+    if (appraiserForm) {
   setValue("formId", appraiserForm?.personaldetails.formId);
   setValue("empId", appraiserForm?.personaldetails.empId);
   setValue("empName", appraiserForm?.personaldetails.empName);
@@ -260,6 +262,8 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   setValue("reviewed", reviewer);
   setValue("approved", approver);
   setValue("doj", appraiserForm?.personaldetails.doj);
+    }
+}, [appraiserForm, setValue]);
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
 

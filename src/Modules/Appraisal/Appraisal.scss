@@ -41,6 +41,7 @@
 }
 .dataTableHeader.p-datatable.p-datatable-sm .p-datatable-header{
   font-size: base.$dataTableHeaderFontSize;
+  background: white;
 }
 .dataTableBody.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
   font-size: base.$dataTableHeaderFontSize;
@@ -57,6 +58,12 @@
   justify-content: center !important;
 }
 
+//Date Table Pagination
+.dataTablePaginator.p-paginator {
+  padding: 0.2rem !important;
+}
+
+
 //Accordion Styles
 .accordionNoSpace .MuiAccordionDetails-root{
   padding: 0 !important;
@@ -68,4 +75,9 @@
   color:#36373c;
   padding: 1px;
   border-radius: 50%;
+}
+
+
+.primeReactButtonPadding.p-button{
+  padding: 0.2rem 0.4rem !important;
 }

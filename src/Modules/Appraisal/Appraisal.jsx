@@ -67,41 +67,7 @@ function Appraisal() {
   //set appraisal form id
   const [appraisalFormID, setApraisalFormID] = useState("NA");
 
-  //Form Submit Handler
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const appraiserFromData = {
-      empName: empName?.userName,
-      empId: empName?.userID,
-      appraisalsDate: formatDate(date),
-      reviewerName: reviewerName?.userName,
-      reviewerId: reviewerName?.userID,
-      appraiserName: appraiserName?.userName,
-      appraiserId: appraiserName?.userID,
-    };
-    console.log("New Appraiser Form submitted", appraiserFromData);
-
-    //reset from
-    // e.target.reset();
-    // // Reset state variables
-    // setEmpName(null);
-    // setDate(null);
-    // setReviewerName(null);
-    // setAppraiserName(null);
-
-    //Save Appraiser Form Data (API)
-    const response = await appraiserFormApi(appraiserFromData, getAuthToken);
-    //If Date Successfully Saved
-    if (response?.status == 201) {
-      //Toast For Success Submitted
-      showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
-      //Dialog Close
-      setDialogVisible(false);
-    } else {
-      showErrorMessage(toastRef, "Error", "Internal Server Error");
-    }
-    console.log("Response from API", response);
-  };
+ 
 
   //temp data
   //const empList = [{ userName: "test1" }, { userName: "test2" }, { userName: "test3" }];
@@ -212,7 +178,7 @@ function Appraisal() {
               </div>
 
               {/* Appraisal Form Buttons */}
-              <div className="flex items-center gap-4">
+              {/* <div className="flex items-center gap-4">
                 <Button
                   variant="contained"
                   size="small"
@@ -222,7 +188,7 @@ function Appraisal() {
                   New Form
                 </Button>
                 <p>{appraisalFormID}</p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -237,97 +203,7 @@ function Appraisal() {
           </div>
         )}
 
-        {/* Appraisal Form */}
-        <Dialog
-          className="dialogHeader dialogContent"
-          header="Add Appraiser Details"
-          visible={dialogVisible}
-          style={{ width: "30vw" }}
-          onHide={() => {
-            if (!dialogVisible) return;
-            setDialogVisible(false);
-          }}
-        >
-          <div>
-            <div className="bg-white rounded">
-              <form onSubmit={handleSubmit}>
-                <div className="flex-auto">
-                  <label htmlFor="buttondisplay" className="font-bold text-sm ">
-                    Employee Name
-                  </label>
-                  <Dropdown
-                    value={empName}
-                    id="buttondisplay"
-                    filter
-                    required
-                    onChange={(e) => setEmpName(e.value)}
-                    options={appraisalData?.employeeidlist}
-                    optionLabel="userName"
-                    placeholder="Employee Name"
-                    className="w-full p-inputtext-sm"
-                  />
-                </div>
-
-                <div className="flex-auto">
-                  <label htmlFor="buttondisplay" className="font-bold text-sm ">
-                    Appraisals Date
-                  </label>
-                  <Calendar
-                    id="buttondisplay"
-                    value={date}
-                    onChange={(e) => setDate(e.value)}
-                    showIcon
-                    className="w-full p-inputtext-sm"
-                    placeholder="Appraisal Date"
-                    dateFormat="yy-mm-dd"
-                  />
-                </div>
-                <div className="flex-auto">
-                  <label htmlFor="buttondisplay" className="font-bold text-sm ">
-                    Reviewer Name
-                  </label>
-                  <Dropdown
-                    value={reviewerName}
-                    required
-                    filter
-                    id="buttondisplay"
-                    onChange={(e) => setReviewerName(e.value)}
-                    options={appraisalData?.reviewerlist}
-                    optionLabel="userName"
-                    placeholder="Reviewer"
-                    className="w-full p-inputtext-sm"
-                    size="small"
-                  />
-                </div>
-                <div className="flex-auto">
-                  <label htmlFor="buttondisplay" className="font-bold text-sm ">
-                    Appraiser (Hr Dept)
-                  </label>
-                  <Dropdown
-                    value={appraiserName}
-                    required
-                    filter
-                    id="buttondisplay"
-                    onChange={(e) => setAppraiserName(e.value)}
-                    options={appraisalData?.appraiserlist}
-                    optionLabel="userName"
-                    placeholder="Appraiser (Hr Dept)"
-                    className="w-full p-inputtext-sm"
-                  />
-                </div>
-
-                <Button
-                  variant="contained"
-                  size="small"
-                  type="submit"
-                  className="mt-2"
-                >
-                  Submit
-                </Button>
-              </form>
-            </div>
-          </div>
-        </Dialog>
+      
 
         {/* Previous Appraisal Data */}
         <div className="card mt-2 mb-5 py-0 px-0 bg-white shadow rounded">

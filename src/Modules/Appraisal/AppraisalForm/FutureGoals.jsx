@@ -23,9 +23,9 @@ const FutureGoals = ({
   const goalTypeData = ["Personal", "Professional"];
 
   //selectedRowData send to parent component
-  useEffect(() => {
-    FutureGoalsData(selectedRowData);
-  }, [selectedRowData]);
+  // useEffect(() => {
+  //   FutureGoalsData(selectedRowData);
+  // }, [selectedRowData]);
 
   //Set Training Data
   useEffect(() => {
@@ -60,6 +60,7 @@ const FutureGoals = ({
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
+    FutureGoalsData(selectedRowData);
   };
   console.log("trainingData_InnerSection", trainingData);
 
@@ -190,7 +191,14 @@ const FutureGoals = ({
                 icon="pi pi-check"
                 size="small"
                 text
-                onClick={handleSaveRow}
+                type="button"
+                onClick={(e) =>{
+                  //e.preventDefault();
+                  handleSaveRow()
+
+                }}
+               // onClick={handleSaveRow}
+               
               />
             ) : (
               <Button
@@ -235,9 +243,11 @@ const FutureGoals = ({
         <MuiButton
           size="small"
           variant="contained"
+          type="button"
           color="success"
           sx={{ boxShadow: "none" }}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
             const blankRow = {
               future_personal_KRA_goals: "",
               goalType: null,
@@ -245,7 +255,7 @@ const FutureGoals = ({
               reviewers_comment: "",
               appraisers_comments: "",
             };
-            setSelectedRowData([...selectedRowData, blankRow]);
+           setSelectedRowData([...selectedRowData, blankRow]);
           }}
         >
           Add New Row

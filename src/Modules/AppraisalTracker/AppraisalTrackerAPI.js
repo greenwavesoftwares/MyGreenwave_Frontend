@@ -2,6 +2,42 @@ import axios from "axios";
 const endPoint = import.meta.env.VITE_END_POINT;
 const allAppraisalURL = "http://localhost:8070/appraisal-tracker";
 
+//get reviewers and approver list according to the user id
+const appraisalAPI = async (token, empName) => {
+  try {
+    const response = await axios.get(`${endPoint}appraisal?userId=${empName}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    //console.log("appraisalAPI_Header",`${endPoint}appraisal?userId=${empName}`);
+    console.log("appraisal_get_api", response);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+//Save New Appraisal Form API
+const appraiserFormApi = async (appraiserFromData, getAuthToken) => {
+  console.log("appraiserFormApiToken", appraiserFromData, getAuthToken);
+  try {
+    const response = await axios.post(
+      `${endPoint}appraisal`,
+      appraiserFromData,
+      {
+        headers: {
+          Authorization: `Bearer ${getAuthToken}`,
+        },
+      }
+    );
+    console.log("appraisal_post_api", response);
+    return response;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 const getAllAppraisalData = async (token) => {
   try {
     const response = await axios.get(
@@ -23,12 +59,19 @@ const appraisalFormAPI = async (
   authToken,
   formId,
   previousYearFormId,
-  empId
+  empId,
+  appraisalDate
 ) => {
-  console.log("appraisalFormAPI_Header", formId, previousYearFormId, empId);
+  console.log(
+    "appraisalFormAPI_Header",
+    formId,
+    previousYearFormId,
+    empId,
+    appraisalDate
+  );
   try {
     const response = await axios.get(
-      `${endPoint}appraisal/reviewerapprovelforms?formId=${formId}&previousyearformid=${previousYearFormId}&userId=${empId}`,
+      `${endPoint}appraisal/reviewerapprovelforms?formId=${formId}&previousyearformid=${previousYearFormId}&userId=${empId}&appraisalDate=${appraisalDate}`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -91,9 +134,30 @@ const appraisalFormExcelDownload = async (
   }
 };
 
+//Force Approved Post Data
+const appraisalForceApproved = async (token, forceApprovePayload) => {
+  try {
+    const response = await axios.post(
+      `${endPoint}appraisal/forceapproved`,
+      forceApprovePayload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   getAllAppraisalData,
   appraisalFormAPI,
   trainingApi,
   appraisalFormExcelDownload,
+  appraisalAPI,
+  appraiserFormApi,
+  appraisalForceApproved
 };

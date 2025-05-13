@@ -39,6 +39,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import { ConfirmDialog } from "primereact/confirmdialog";
 import { InputText } from "primereact/inputtext";
 import { FileUpload } from "primereact/fileupload";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const TrainingScheduleMaster = () => {
   //For Toast
@@ -80,29 +81,31 @@ const TrainingScheduleMaster = () => {
   const [file, setFile] = useState(null);
   const [fileUploadRow, setFileUploadRow] = useState(null);
   const [fileUploadName, setFileUploadName] = useState(null);
+  const fileUploadRef = useRef(null);
 
   //Call User List
   useEffect(() => {
-    const { token } = getUserData();
-    const listOfUser = async () => {
-      try {
-        //Get All User List
-        const response = await getAllUserList(token);
-        console.log("response", response);
-        setAllUser(response?.data.userList);
-
-        //Get All Training User Data
-        setLoader(true);
-        const allTrainingData = await getTrainingAllList(token);
-        setLoader(false);
-        setAllTrainingData(allTrainingData?.data.trainingEventTableList);
-        console.log("allTrainingData", allTrainingData);
-      } catch (error) {
-        console.log(error);
-      }
-    };
     listOfUser();
   }, []);
+
+  const listOfUser = async () => {
+    try {
+      const { token } = getUserData();
+      //Get All User List
+      const response = await getAllUserList(token);
+      console.log("response", response);
+      setAllUser(response?.data.userList);
+
+      //Get All Training User Data
+      setLoader(true);
+      const allTrainingData = await getTrainingAllList(token);
+      setLoader(false);
+      setAllTrainingData(allTrainingData?.data.trainingEventTableList);
+      console.log("allTrainingData", allTrainingData);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   //On Change Training Api Call
   const changeUserID = async (e) => {
@@ -142,8 +145,10 @@ const TrainingScheduleMaster = () => {
       showSuccessMessage(toastRef, "", "Training Add Successfully");
       ////Dialog Visibility OFf
       setVisible(false);
-      setAllTrainingData([...allTrainingData, newScheduleFormData]);
+      //setAllTrainingData([...allTrainingData, newScheduleFormData]);
       setTrainingDropdown(true);
+      setSelectedUser(null);
+      await listOfUser();
     } else {
       showErrorMessage(toastRef, "", "Internal Error");
     }
@@ -164,7 +169,7 @@ const TrainingScheduleMaster = () => {
         status: "Completed",
         isCompleted: true,
       };
-      //console.log("updateData",updateData);
+      console.log("updateData", updateData);
       //Update Api
       const { token } = getUserData();
       const response = await postUpdateConfirm(token, updateData);
@@ -223,7 +228,6 @@ const TrainingScheduleMaster = () => {
     //Set Upload File Name
     setFileUploadName(event.files[0]?.name);
   };
- 
 
   //Submit File Upload
   const submitFileUpload = async () => {
@@ -248,9 +252,25 @@ const TrainingScheduleMaster = () => {
     if (response.status === 201) {
       showSuccessMessage(toastRef, "", "File Uploaded Successfully");
       setFile(null);
+      setFileUploadName(null);
       setFileUploadDialog(false);
     } else {
       showErrorMessage(toastRef, "", "Error in File Upload");
+    }
+  };
+
+  //REmove Button
+  const handleRemoveAndReupload = () => {
+    setFile(null);
+    setFileUploadName(null);
+
+    // Clear file input and trigger click to reopen dialog
+    if (fileUploadRef.current) {
+      fileUploadRef.current.clear(); // Reset the UI
+      const fileInput = fileUploadRef.current.fileInput?.current;
+      if (fileInput) {
+        fileInput.click(); // Reopen file dialog
+      }
     }
   };
 
@@ -299,7 +319,7 @@ const TrainingScheduleMaster = () => {
 
               <Column
                 header="Form Date"
-               // style={{ width: "20rem" }}
+                // style={{ width: "20rem" }}
                 body={(rowData, { rowIndex }) => {
                   return editingRowIndex === rowIndex ? (
                     <Calendar
@@ -327,13 +347,13 @@ const TrainingScheduleMaster = () => {
                     <Calendar
                       id="toDateBtn"
                       required
-                     // showIcon
+                      // showIcon
                       // value={
                       //   rowData.toDate
                       // }
                       value={toDateUpdate || new Date(rowData.toDate)}
                       onChange={(e) => setToDateUpdate(e.value)}
-                     dateFormat="yy-mm-dd"
+                      dateFormat="yy-mm-dd"
                     />
                   ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
@@ -546,14 +566,24 @@ const TrainingScheduleMaster = () => {
           {fileUploadName === null ? (
             ""
           ) : (
-            <Chip
-              size="small"
-              color="info"
-              variant="outlined"
-              label={fileUploadName}
-            />
+            <>
+            <div style={{display:"flex",alignItems:"center"}}>
+              <Chip
+                size="medium"
+                color="info"
+                variant="outlined"
+                label={fileUploadName}
+              />
+              <IconButton variant="contained" color="error" onClick={handleRemoveAndReupload}>
+                <DeleteIcon />
+              </IconButton>
+              </div>
+            </>
           )}
+
           <FileUpload
+            ref={fileUploadRef}
+            className="primeReactButtonPadding"
             //name="demo[]"
             mode="basic"
             //url="/api/upload"
@@ -569,6 +599,7 @@ const TrainingScheduleMaster = () => {
             //   <p className="m-0">Drag and drop files to here to upload.</p>
             // }
           />
+
           <Button variant="contained" size="small" onClick={submitFileUpload}>
             Submit
           </Button>
