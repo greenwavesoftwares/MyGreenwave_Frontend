@@ -524,7 +524,6 @@ const getActualLeave = (leaveData, holidays) => {
   let count = 0;
   let tempDate = new Date(leaveData.dates[0]);
   tempDate.setHours(0, 0, 0, 0);
-  console.log("toDate : ", leaveData.dates[1]);
   while (tempDate <= leaveData.dates[1]) {
     if (
       tempDate.getDay() !== 0 &&
