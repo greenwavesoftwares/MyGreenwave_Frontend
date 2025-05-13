@@ -5,9 +5,14 @@ import App from "./App.jsx";
 import "primereact/resources/themes/lara-light-blue/theme.css"; /* Theme */
 import "primereact/resources/primereact.min.css"; /* Core CSS */
 import "primeicons/primeicons.css"; /* Icons */
+import { LoadingProvider } from "./components/LoadingScreen/LoadingContext.jsx";
+import LoadingScreen from "./components/LoadingScreen/LoadingScreen.jsx";
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
-  <App />
+  <LoadingProvider>
+    <App />
+    <LoadingScreen />
+  </LoadingProvider>
   // </StrictMode>,
 );

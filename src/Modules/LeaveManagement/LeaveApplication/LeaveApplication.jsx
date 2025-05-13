@@ -33,6 +33,10 @@ import { FilterMatchMode } from "primereact/api";
 import { InputIcon } from "primereact/inputicon";
 import { IconField } from "primereact/iconfield";
 import { InputText } from "primereact/inputtext";
+import { MeterGroup } from "primereact/metergroup";
+import { Badge } from "primereact/badge";
+import { Avatar } from "primereact/avatar";
+import LeaveBalanceCard from "./LeaveBalanceCard";
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -62,7 +66,10 @@ const LeaveApplication = () => {
     leaveValidationStructure
   );
   const [leaveTable, setLeaveTable] = useState(tableStructure);
+  const [cardData, setCardData] = useState({});
+  const [chartData, setChartData] = useState({});
   const [editMode, setEditMode] = useState(false);
+  const [appVersion, setAppVersion] = useState("1.0");
   const editBodyTemplate = (row) => {
     return (
       <Button
@@ -144,19 +151,29 @@ const LeaveApplication = () => {
   );
   const appliedLeaveTypes = [
     {
-      label: "CL/PL",
+      label: "CL",
       icon: "pi pi-calendar",
-      command: () => showleaveDialog("normal", false),
+      command: () => showleaveDialog("CL", false),
+    },
+    {
+      label: "PL",
+      icon: "pi pi-calendar",
+      command: () => showleaveDialog("PL", false),
     },
     {
       label: "Compensatory",
       icon: "pi pi-briefcase",
-      command: () => showleaveDialog("compensatory", false),
+      command: () => showleaveDialog("Compensatory", false),
+    },
+    {
+      label: "Medical",
+      icon: "pi pi-plus",
+      command: () => showleaveDialog("Medical", false),
     },
     {
       label: "Previous PL",
       icon: "pi pi-history",
-      command: () => showleaveDialog("prevPL", false),
+      command: () => showleaveDialog("PrevPL", false),
     },
   ];
 
@@ -171,12 +188,20 @@ const LeaveApplication = () => {
       let data = await onPageLoad(selectedYear);
       setLeaveInfo(data);
       setLeaveTable((prev) => ({ ...prev, table: data.tableData }));
+      setCardData(data.cardData);
+      setChartData(data.chartData);
     };
 
     if (selectedYear !== 0) {
       init();
     }
   }, [selectedYear]);
+
+  useEffect(() => {
+    setLeaveTable((prev) => ({ ...prev, table: leaveInfo.tableData }));
+    setCardData(leaveInfo.cardData);
+    setChartData(leaveInfo.chartData);
+  }, [leaveInfo]);
 
   const showleaveDialog = (type, isEdit) => {
     setLeaveVisible(true);
@@ -192,7 +217,48 @@ const LeaveApplication = () => {
     setLeaveValidation(leaveValidationStructure);
     setEditMode(false);
   };
+  const baseValues = [
+    { label: "Attendance", color: "#60a5fa" },
+    { label: "Leave", color: "#lal" },
+  ];
+  const rawMonthlyData = [
+    { name: "January", value: 30 },
+    { name: "February", value: 18 },
+    { name: "March", value: 22 },
+    { name: "April", value: 10 },
+    { name: "May", value: 35 },
+    { name: "June", value: 28 },
+    { name: "July", value: 15 },
+    { name: "August", value: 40 },
+    { name: "September", value: 25 },
+    { name: "October", value: 30 },
+    { name: "November", value: 20 },
+    { name: "December", value: 50 },
+  ];
 
+  // Split value and calculate percentage for Attendance
+  const splitValue = (total) => {
+    const leave = Math.floor(Math.random() * (total + 1));
+    const attendance = total - leave;
+    const percentage = parseFloat(((attendance / total) * 100).toFixed(1)); // Percentage of Attendance
+
+    return {
+      percentage,
+      values: [
+        { ...baseValues[0], value: attendance },
+        { ...baseValues[1], value: leave },
+      ],
+    };
+  };
+
+  const monthlyData = rawMonthlyData.map((month) => {
+    const { percentage, values } = splitValue(month.value);
+    return {
+      name: month.name,
+      percentage,
+      value: values,
+    };
+  });
   return (
     <>
       <Container maxWidth="lg">
@@ -205,54 +271,270 @@ const LeaveApplication = () => {
             alignItems: "center",
           }}
         >
-          <Grid size={{ md: 3.3, xs: 12 }}>
-            <Card>
-              <Grid container rowGap={1.5}>
-                <Grid size={12}>Year :</Grid>
-                <Grid size={12}>
-                  <Dropdown
-                    value={selectedYear}
-                    onChange={async (e) => {
-                      setSelectedYear(e.value);
-                    }}
-                    options={years}
-                    placeholder="Select a Year"
-                    className="w-full"
-                  />
-                </Grid>
-                <Grid size={11}>Approved Leaves :</Grid>
-                <Grid size={1}>{leaveInfo.cardData?.approved}</Grid>
-                <Grid size={11}>Medical Leaves :</Grid>
-                <Grid size={1}>{leaveInfo.cardData?.medical}</Grid>
-                <Grid size={11}>CL Available :</Grid>
-                <Grid size={1}>{leaveInfo.cardData?.clBalance}</Grid>
-                <Grid size={11}>PL Available :</Grid>
-                <Grid size={1}>{leaveInfo.cardData?.plBalance}</Grid>
-                <Grid size={11}>Compensatory Leave Available :</Grid>
-                <Grid size={1}>{leaveInfo.cardData?.currentCompOff}</Grid>
-                {selectedYear == getCurrentYear() && (
-                  <Grid size={11}>Previous PL Available :</Grid>
-                )}
-                {selectedYear == getCurrentYear() && (
-                  <Grid size={1}>{leaveInfo.cardData?.prevPL}</Grid>
+          {/* <Grid size={12}>
+            Version
+            <Dropdown
+              value={appVersion}
+              onChange={async (e) => {
+                setAppVersion(e.value);
+              }}
+              options={["1.0", "1.1", "1.2"]}
+              placeholder="Select a Version"
+            />
+          </Grid> */}
+          {appVersion === "1.2" && (
+            <>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <Card style={{ borderRadius: "25px" }}>
+                  <Grid container rowGap={1}>
+                    <Grid size={12}>Year :</Grid>
+                    <Grid size={12}>
+                      <Dropdown
+                        value={selectedYear}
+                        onChange={async (e) => {
+                          setSelectedYear(e.value);
+                        }}
+                        options={years}
+                        placeholder="Select a Year"
+                        className="w-full"
+                      />
+                    </Grid>
+                  </Grid>
+                </Card>
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <LeaveBalanceCard
+                  type="CL"
+                  limit={cardData.clLimit}
+                  taken={cardData.cl}
+                  balance={cardData.clBalance}
+                  icon="pi pi-calendar"
+                />
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <LeaveBalanceCard
+                  type="PL"
+                  limit={cardData.plLimit}
+                  taken={cardData.pl}
+                  balance={cardData.plBalance}
+                  icon="pi pi-calendar"
+                />
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <LeaveBalanceCard
+                  type="Medical"
+                  limit={cardData.medicalLimit}
+                  taken={cardData.medical}
+                  balance={cardData.medicalBalance}
+                  icon="pi pi-plus"
+                />
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <Card style={{ borderRadius: "25px" }}>
+                  <div className="flex justify-between">
+                    <div className="wrap align-content-around">
+                      <div className="font-normal text-md">Attendance</div>
+                      <div className="font-bold text-3xl">{"45%"}</div>
+                    </div>
+                    <div className="w-24 h-20">
+                      <Chart
+                        className={"h-full"}
+                        type="line"
+                        data={chartData.attendanceChart?.data}
+                        options={chartData.attendanceChart?.options}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <Card style={{ borderRadius: "25px" }}>
+                  <div className="flex justify-between">
+                    <div className="wrap align-content-around">
+                      <div className="font-normal text-md">
+                        Total Leave Taken
+                      </div>
+                      <div className="font-bold text-3xl">
+                        {cardData.approved}
+                      </div>
+                    </div>
+                    <div className="w-24 h-20">
+                      <Chart
+                        className={"h-full"}
+                        type="line"
+                        data={chartData.cumulativeLeaveChart?.data}
+                        options={chartData.cumulativeLeaveChart?.options}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <Card style={{ borderRadius: "25px" }}>
+                  <div className="flex justify-between">
+                    <div className="justify-content-between">
+                      <div className="font-normal text-md">
+                        Compensatory <br /> Available
+                      </div>
+                      <div className="font-bold text-3xl">
+                        {cardData.currentCompOff}
+                      </div>
+                    </div>
+                    <Avatar
+                      icon="pi pi-briefcase"
+                      size="xlarge"
+                      className="bg-red-500 text-white"
+                      shape="circle"
+                    />
+                  </div>
+                </Card>
+              </Grid>
+              <Grid size={{ md: 3, sm: 6, xs: 12 }}>
+                <Card style={{ borderRadius: "25px" }}>
+                  <div className="flex justify-between">
+                    <div className="justify-content-between">
+                      <div className="font-normal text-md">
+                        Previous PL
+                        <br /> Available
+                      </div>
+                      <div className="font-bold text-3xl">
+                        {cardData.prevPL}
+                      </div>
+                    </div>
+                    <Avatar
+                      icon="pi pi-history"
+                      size="xlarge"
+                      className="bg-red-500 text-white"
+                      shape="circle"
+                    />
+                  </div>
+                </Card>
+              </Grid>
+            </>
+          )}
+          {(appVersion === "1.0" || appVersion === "1.1") && (
+            <>
+              <Grid size={{ md: 3.3, xs: 12 }}>
+                <Card>
+                  <Grid container rowGap={1.5}>
+                    <Grid size={12}>Year :</Grid>
+                    <Grid size={12}>
+                      <Dropdown
+                        value={selectedYear}
+                        onChange={async (e) => {
+                          setSelectedYear(e.value);
+                        }}
+                        options={years}
+                        placeholder="Select a Year"
+                        className="w-full"
+                      />
+                    </Grid>
+                    <Grid size={11}>Approved Leaves :</Grid>
+                    <Grid size={1}>{leaveInfo.cardData?.approved}</Grid>
+                    <Grid size={11}>Medical Available :</Grid>
+                    <Grid size={1}>{leaveInfo.cardData?.medicalBalance}</Grid>
+                    <Grid size={11}>CL Available :</Grid>
+                    <Grid size={1}>{leaveInfo.cardData?.clBalance}</Grid>
+                    <Grid size={11}>PL Available :</Grid>
+                    <Grid size={1}>{leaveInfo.cardData?.plBalance}</Grid>
+                    <Grid size={11}>Compensatory Leave Available :</Grid>
+                    <Grid size={1}>{leaveInfo.cardData?.currentCompOff}</Grid>
+                    {selectedYear == getCurrentYear() && (
+                      <Grid size={11}>Previous PL Available :</Grid>
+                    )}
+                    {selectedYear == getCurrentYear() && (
+                      <Grid size={1}>{leaveInfo.cardData?.prevPL}</Grid>
+                    )}
+                  </Grid>
+                </Card>
+              </Grid>
+              <Grid size={{ md: 8.7, xs: 12 }}>
+                {appVersion === "1.1" ? (
+                  <Grid container spacing={1}>
+                    {monthlyData.map((month) => (
+                      <Grid key={month.name} size={3}>
+                        <Card>
+                          <div className="flex justify-between">
+                            <div className="font-medium">{month.name}</div>
+                            <div
+                              className={`font-bold flex items-center ${
+                                month.percentage > 25
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {/* {31 total
+                            red Leave
+                            blue attendance} */}
+                              {month.percentage}%
+                              <i
+                                style={{ fontSize: "0.8rem", marginLeft: 4 }}
+                                className={`pi ${
+                                  month.percentage > 25
+                                    ? "pi-arrow-up"
+                                    : "pi-arrow-down"
+                                }`}
+                              />
+                            </div>
+                          </div>
+                          <div className="w-full max-w-md">
+                            <div className="flex h-12 rounded overflow-hidden">
+                              {month.value.map((item) => (
+                                <div
+                                  key={item.label}
+                                  className="relative flex items-center justify-center text-xs text-white gap-x-2"
+                                  style={{
+                                    width: `${
+                                      (item.value /
+                                        month.value.reduce(
+                                          (sum, item) => sum + item.value,
+                                          0
+                                        )) *
+                                      100
+                                    }%`,
+                                    backgroundColor: item.color,
+                                  }}
+                                  title={`${item.label}: ${item.value}`}
+                                >
+                                  {item.value}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex justify-between text-xs mt-2">
+                              {month.value.map((item) => (
+                                <div
+                                  key={item.label}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Badge
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span>{item.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Card>
+                    <Chart
+                      className={
+                        selectedYear == getCurrentYear()
+                          ? "h-[18.9rem]"
+                          : "h-[16.55rem]"
+                      }
+                      type="line"
+                      data={chartData?.yearlyChart?.data}
+                      options={chartData?.yearlyChart?.options}
+                    />
+                  </Card>
                 )}
               </Grid>
-            </Card>
-          </Grid>
-          <Grid size={{ md: 8.7, xs: 12 }}>
-            <Card>
-              <Chart
-                className={
-                  selectedYear == getCurrentYear()
-                    ? "h-[18.9rem]"
-                    : "h-[16.55rem]"
-                }
-                type="line"
-                data={leaveInfo.chartData?.data}
-                options={leaveInfo.chartData?.options}
-              />
-            </Card>
-          </Grid>
+            </>
+          )}
           <Grid size={12}>
             <Card>
               <TabView>
@@ -399,6 +681,7 @@ const LeaveApplication = () => {
               label={editMode ? "Edit" : "Apply"}
               onClick={async () => {
                 await applyOrEditLeave(
+                  editMode,
                   leaveData,
                   leaveInfo,
                   setLeaveValidation,

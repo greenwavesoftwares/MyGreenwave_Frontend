@@ -14,11 +14,16 @@ import {
   showSuccessMessage,
 } from "../../../components/Toast/ShowMessage";
 import { getUserData } from "../../Login/Encrypt";
+import {
+  hideLoading,
+  showLoading,
+} from "../../../components/LoadingScreen/LoadingContext";
 
 const dateformat = "yyyy-MM-dd";
 const userDetails = getUserData()?.userDetails;
 
 const onPageLoad = async (year) => {
+  showLoading();
   const leaveData = {};
   let value = await onPageLoadAPI(year);
   let holidays = await getHolidays();
@@ -31,15 +36,16 @@ const onPageLoad = async (year) => {
   );
   leaveData.holidays = holidays.holiday;
   leaveData.holidayDates = await getHolidayDates();
+  hideLoading();
   return leaveData;
 };
-const setChartData = async (chartData) => {
+const setChartData = async (leaveData) => {
   let month = [],
     workingDay = [],
     attendance = [],
     leave = [],
     cumulativeLeave = [];
-  chartData.map((p) => {
+  leaveData.map((p) => {
     month.push(p.monthName);
     workingDay.push(p.workingDay);
     attendance.push(p.attendance);
@@ -47,14 +53,17 @@ const setChartData = async (chartData) => {
     cumulativeLeave.push(p.cumulative_Leave);
   });
 
-  const dataOptions = { data: {}, options: {} };
+  let chartData = {};
 
+  //Yearly Chart Data
+
+  let yearlyChart = {};
   const documentStyle = getComputedStyle(document.documentElement);
   const textColor = documentStyle.getPropertyValue("--text-color");
   const textColorSecondary = documentStyle.getPropertyValue(
     "--text-color-secondary"
   );
-  const data = {
+  const yearlyChartData = {
     labels: month,
     datasets: [
       {
@@ -95,7 +104,7 @@ const setChartData = async (chartData) => {
     ],
   };
 
-  const options = {
+  const yearlyChartOptions = {
     maintainAspectRatio: false,
     aspectRatio: 0.6,
     plugins: {
@@ -124,10 +133,112 @@ const setChartData = async (chartData) => {
       },
     },
   };
-  dataOptions.data = data;
-  dataOptions.options = options;
+  yearlyChart.data = yearlyChartData;
+  yearlyChart.options = yearlyChartOptions;
+  chartData.yearlyChart = yearlyChart;
 
-  return dataOptions;
+  //Attendance Card Data
+
+  let attendanceChart = {};
+  const attendanceData = attendance.map((val, index, arr) => {
+    if (index > 0 && val === arr[index - 1]) {
+      return val + Math.random() * 0.1;
+    }
+    return val;
+  });
+  const attendanceChartData = {
+    labels: month,
+    datasets: [
+      {
+        type: "line",
+        label: "Attendance",
+        borderColor: documentStyle.getPropertyValue("--blue-500"),
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4,
+        data: attendanceData,
+        order: 1,
+      },
+    ],
+  };
+
+  const attendanceChartOptions = {
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false, // ❌ hide legend
+      },
+    },
+    elements: {
+      point: {
+        radius: 0, // ❌ remove dots from line
+      },
+    },
+    scales: {
+      x: {
+        display: false, // ❌ hide x-axis
+      },
+      y: {
+        display: false, // ❌ hide y-axis
+      },
+    },
+  };
+  attendanceChart.data = attendanceChartData;
+  attendanceChart.options = attendanceChartOptions;
+  chartData.attendanceChart = attendanceChart;
+
+  //Cumulative Leave Card Data
+
+  let cumulativeLeaveChart = {};
+  const cumulativeLeaveData = cumulativeLeave.map((val, index, arr) => {
+    if (index > 0 && val === arr[index - 1]) {
+      return val + Math.random() * 0.1;
+    }
+    return val;
+  });
+  const cumulativeLeaveChartData = {
+    labels: month,
+    datasets: [
+      {
+        type: "line",
+        label: "Cumulative Leave",
+        borderColor: documentStyle.getPropertyValue("--red-500"),
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4,
+        data: cumulativeLeaveData,
+        order: 1,
+      },
+    ],
+  };
+
+  const cumulativeLeaveChartOptions = {
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false, // ❌ hide legend
+      },
+    },
+    elements: {
+      point: {
+        radius: 0, // ❌ remove dots from line
+      },
+    },
+    scales: {
+      x: {
+        display: false, // ❌ hide x-axis
+      },
+      y: {
+        display: false, // ❌ hide y-axis
+      },
+    },
+  };
+  cumulativeLeaveChart.data = cumulativeLeaveChartData;
+  cumulativeLeaveChart.options = cumulativeLeaveChartOptions;
+  chartData.cumulativeLeaveChart = cumulativeLeaveChart;
+  return chartData;
 };
 const setCalenderData = async (userLeaves, holidays) => {
   let calenderDataList = [];
@@ -159,7 +270,13 @@ const setCalenderData = async (userLeaves, holidays) => {
 
   return calenderDataList;
 };
-const validateLeave = (leaveData, leaveInfo, setLeaveValidation, toastRef) => {
+const validateLeave = (
+  editMode,
+  leaveData,
+  leaveInfo,
+  setLeaveValidation,
+  toastRef
+) => {
   if (!leaveData.dates[0] || !leaveData.dates[1] || !leaveData.reason) {
     setLeaveValidation((prevData) => ({
       ...prevData,
@@ -174,14 +291,114 @@ const validateLeave = (leaveData, leaveInfo, setLeaveValidation, toastRef) => {
       dates: true,
       reason: true,
     }));
+
+  if (
+    isLeaveWithinLeaves(
+      editMode,
+      editMode ? leaveData.leaveId : "",
+      leaveData.dates,
+      leaveInfo.tableData
+    )
+  ) {
+    setLeaveValidation((prevData) => ({
+      ...prevData,
+      dates: false,
+    }));
+    showErrorMessage(
+      toastRef,
+      "Validation Error!",
+      "Leave already exists for selected dates"
+    );
+    return false;
+  } else
+    setLeaveValidation((prevData) => ({
+      ...prevData,
+      dates: true,
+    }));
+
   let actualLeave = getActualLeave(leaveData, leaveInfo.holidayDates);
-  console.log(actualLeave);
+  let cardData = leaveInfo.cardData;
+  let rowtotalNoOfDays = editMode
+    ? leaveInfo.tableData
+        .filter((l) => l.leaveId === leaveData.leaveId)
+        .map((l) => l.actualLeave)
+    : 0;
   switch (leaveData.type) {
-    case "normal":
+    case "CL":
+      if (
+        actualLeave > 2 ||
+        actualLeave > cardData.clBalance + rowtotalNoOfDays
+      ) {
+        showErrorMessage(
+          toastRef,
+          "Validation Error!",
+          actualLeave > 2
+            ? "CL can be taken for only 1 or 2 days"
+            : actualLeave > cardData.clBalance
+            ? "Not enough CL"
+            : "Something went wrong!"
+        );
+        setLeaveValidation((prev) => ({ ...prev, dates: false }));
+        return false;
+      }
+      break;
+    case "PL":
+      if (actualLeave > cardData.plBalance + rowtotalNoOfDays) {
+        showErrorMessage(
+          toastRef,
+          "Validation Error!",
+          actualLeave > cardData.plBalance
+            ? "Not enough PL"
+            : "Something went wrong!"
+        );
+        setLeaveValidation((prev) => ({ ...prev, dates: false }));
+        return false;
+      }
+      break;
+    case "Compensatory":
+      if (actualLeave > cardData.currentCompOff + rowtotalNoOfDays) {
+        showErrorMessage(
+          toastRef,
+          "Validation Error!",
+          actualLeave > cardData.currentCompOff
+            ? "Not enough Compensatory Leave"
+            : "Something went wrong!"
+        );
+        setLeaveValidation((prev) => ({ ...prev, dates: false }));
+        return false;
+      }
+      break;
+    case "Medical":
+      if (actualLeave > cardData.medicalBalance + rowtotalNoOfDays) {
+        showErrorMessage(
+          toastRef,
+          "Validation Error!",
+          actualLeave > cardData.medicalBalance
+            ? "Not enough medical leave"
+            : "Something went wrong!"
+        );
+        setLeaveValidation((prev) => ({ ...prev, dates: false }));
+        return false;
+      }
+      break;
+    case "PrevPL":
+      if (actualLeave > cardData.prevPL + rowtotalNoOfDays) {
+        showErrorMessage(
+          toastRef,
+          "Validation Error!",
+          actualLeave > cardData.prevPL
+            ? "Not enough Previous PL"
+            : "Something went wrong!"
+        );
+        setLeaveValidation((prev) => ({ ...prev, dates: false }));
+        return false;
+      }
       break;
   }
+  return true;
 };
 const applyOrEditLeave = async (
+  editMode,
   leaveData,
   leaveInfo,
   setLeaveValidation,
@@ -189,32 +406,45 @@ const applyOrEditLeave = async (
   hideleaveDialog,
   toastRef
 ) => {
-  if (validateLeave(leaveData, leaveInfo, setLeaveValidation, toastRef)) {
+  showLoading();
+  if (
+    validateLeave(editMode, leaveData, leaveInfo, setLeaveValidation, toastRef)
+  ) {
     let applyData = {};
     applyData.userId = userDetails.userId;
     applyData.fromDate = format(leaveData.dates[0], dateformat);
     applyData.toDate = format(leaveData.dates[1], dateformat);
     applyData.leaveReason = leaveData.reason;
-    applyData.compensatory = leaveData.type === "compensatory";
-    showSuccessMessage(toastRef, "Success", "Applied Successfully");
-    // const response = await applyLeaveAPI(applyData, toastRef);
-    // if (response) {
-    //   setLeaveInfo(await onPageLoad(getCurrentYear()));
-    //   let message =
-    //     response.leaveDetails.type +
-    //     " applied successfully! Being Reviewed by " +
-    //     response.appliedTo;
-    //   showSuccessMessage(toastRef, "Success", message);
-    //   hideleaveDialog();
-    // }
+    applyData.leaveType = leaveData.type;
+    editMode ? (applyData.leaveId = leaveData.leaveId) : null;
+    applyData.actualLeaveCount = getActualLeave(
+      leaveData,
+      leaveInfo.holidayDates
+    );
+    const response = editMode
+      ? await editLeaveAPI(applyData, toastRef)
+      : await applyLeaveAPI(applyData, toastRef);
+    if (response) {
+      let message = editMode
+        ? "Leave Edited Successfully"
+        : response.leaveDetails.type +
+          " applied successfully! Being Reviewed by " +
+          response.appliedTo;
+      showSuccessMessage(toastRef, "Success", message);
+      hideleaveDialog();
+      setLeaveInfo(await onPageLoad(getCurrentYear()));
+    }
   }
+  hideLoading();
 };
 const deleteLeave = async (leaveData, setLeaveInfo, toastRef) => {
+  showLoading();
   const response = await deleteLeaveAPI(leaveData, toastRef);
   if (response) {
     showSuccessMessage(toastRef, "Success", "Leave deleted Successfully");
     setLeaveInfo(await onPageLoad(getCurrentYear()));
   }
+  hideLoading();
 };
 const onSelectRowEdit = (row) => {
   return {
@@ -223,31 +453,9 @@ const onSelectRowEdit = (row) => {
       parse(row.toDate, dateformat, new Date()),
     ],
     reason: row.reason,
-    type: row.type === "PL" || row.type === "CL" ? "normal" : row.type,
+    type: row.type,
     leaveId: row.leaveId,
   };
-};
-const editLeave = async (
-  userId,
-  editLeaveData,
-  toastRef,
-  selectedYear,
-  setLeaveData,
-  clearEditDialog
-) => {
-  let leaveData = {};
-  leaveData.userId = userId;
-  leaveData.fromDate = format(editLeaveData.dates[0], dateformat);
-  leaveData.toDate = format(editLeaveData.dates[1], dateformat);
-  leaveData.leaveReason = editLeaveData.reason;
-  leaveData.compensatory = editLeaveData.isCompensatory;
-  leaveData.leaveId = editLeaveData.leaveId;
-  const response = await editLeaveAPI(leaveData, toastRef);
-  if (response) {
-    setLeaveData(await onPageLoad(userId, selectedYear));
-    showSuccessMessage(toastRef, "Success", "Leave Edited Successfully");
-    clearEditDialog();
-  }
 };
 
 const getNextDate = (date) => {
@@ -294,13 +502,19 @@ const getColorBySeverity = (severity) => {
 const getTypeName = (type) => {
   let typeName = "";
   switch (type) {
-    case "normal":
-      typeName = "CL/PL";
+    case "CL":
+      typeName = "CL";
       break;
-    case "compensatory":
+    case "PL":
+      typeName = "PL";
+      break;
+    case "Compensatory":
       typeName = "Compensatory";
       break;
-    case "prevPL":
+    case "Medical":
+      typeName = "Medical";
+      break;
+    case "PrevPL":
       typeName = "Previous PL";
       break;
   }
@@ -308,18 +522,36 @@ const getTypeName = (type) => {
 };
 const getActualLeave = (leaveData, holidays) => {
   let count = 0;
-  let tempDate = leaveData.dates[0];
+  let tempDate = new Date(leaveData.dates[0]);
+  tempDate.setHours(0, 0, 0, 0);
+  console.log("toDate : ", leaveData.dates[1]);
   while (tempDate <= leaveData.dates[1]) {
     if (
       tempDate.getDay() !== 0 &&
       tempDate.getDay() !== 6 &&
-      holidays.includes(tempDate)
+      !holidays.includes(tempDate)
     )
-      console.log(tempDate);
-    count++;
+      count++;
     tempDate.setDate(tempDate.getDate() + 1);
   }
   return count;
+};
+const isLeaveWithinLeaves = (editmode, leaveId, dates, leaveList) => {
+  return leaveList
+    .filter(
+      (l) =>
+        l.status !== "Rejected" &&
+        (!editmode || (editmode && l.leaveId !== leaveId))
+    )
+    .map((l) => ({
+      fromDate: parse(l.fromDate, dateformat, new Date()),
+      toDate: parse(l.toDate, dateformat, new Date()),
+    }))
+    .some(
+      (d) =>
+        (dates[0] >= d.fromDate && dates[0] <= d.toDate) ||
+        (dates[1] >= d.fromDate && dates[1] <= d.toDate)
+    );
 };
 
 export {
@@ -328,7 +560,6 @@ export {
   getYearList,
   applyOrEditLeave,
   deleteLeave,
-  editLeave,
   onSelectRowEdit,
   getTypeName,
   getCurrentYear,
