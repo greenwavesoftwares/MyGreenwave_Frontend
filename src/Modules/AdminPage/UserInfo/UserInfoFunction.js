@@ -125,6 +125,13 @@ const addOrEditUser = async (
     return;
   userData.dob = format(userData.dobDate, yyyyMMdd);
   userData.doj = format(userData.dojDate, yyyyMMdd);
+  let passwordExpiryDate = new Date();
+  userData.passwordExpiryDate = format(
+    passwordExpiryDate.setDate(
+      passwordExpiryDate.getDate() + userData.passwordExpiryDuraton
+    ),
+    yyyyMMdd
+  );
   userData.initial = getInitial(userData.userName);
   userData.groupNames = userData.group.map(
     (g) => userGroupList.filter((p) => p.groupId === g)[0].groupName
