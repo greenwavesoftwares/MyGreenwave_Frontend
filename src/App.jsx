@@ -25,6 +25,8 @@ import HolidayMaster from "./Modules/HolidayMaster/HolidayMaster";
 import Nalanda from "./Modules/Nalanda/Nalanda";
 import TrainingScheduleMaster from "./Modules/TrainingScheduleMaster/TrainingScheduleMaster";
 import LeaveApplication from "./Modules/LeaveManagement/LeaveApplication/LeaveApplication";
+import LeaveManagerApproval from "./Modules/LeaveManagement/LeaveManagerApproval/LeaveManagerApproval";
+import LeaveAdmin from "./Modules/LeaveManagement/LeaveAdmin/LeaveAdmin";
 function App() {
   return (
     <Router>
@@ -36,7 +38,12 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/leave-management" element={<LeaveApplication />} />
+        <Route path="/leave-application" element={<LeaveApplication />} />
+        <Route
+          path="/leave-manager-approval"
+          element={<LeaveManagerApproval />}
+        />
+        <Route path="/leave-admin" element={<LeaveAdmin />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route

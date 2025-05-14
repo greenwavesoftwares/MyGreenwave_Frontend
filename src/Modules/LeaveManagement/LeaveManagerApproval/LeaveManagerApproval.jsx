@@ -25,9 +25,9 @@ import {
   getYearList,
   onPageLoad,
   onSelectRowEdit,
-} from "./LeaveFunctions";
+} from "./LeaveManagerApprovalFunctions";
 import { getUserData } from "../../Login/Encrypt";
-import "./LeaveManagement.css";
+import "./LeaveManagerApproval.css";
 import { Tooltip } from "primereact/tooltip";
 import { Tag } from "primereact/tag";
 import { MultiSelect } from "primereact/multiselect";
@@ -35,7 +35,7 @@ import { FilterMatchMode } from "primereact/api";
 import { Message } from "primereact/message";
 import { validateApplyLeave, validateEditLeave } from "./LeaveValidation";
 
-const LeaveManagement = () => {
+const LeaveManagerApproval = () => {
   const leaveFormData = {
     dates: [],
     reason: "",
@@ -505,4 +505,4 @@ const LeaveManagement = () => {
   );
 };
 
-export default LeaveManagement;
+export default LeaveManagerApproval;
