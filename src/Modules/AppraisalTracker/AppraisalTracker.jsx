@@ -193,16 +193,19 @@ const AppraisalTracker = () => {
     // console.log("Response from API", response);
   };
 
+
   //Force Approve Appraisal Form
-  const handelForceApprove = (rowData) => {
-    const { token } = getUserData()?.token;
+  const handelForceApprove = async (rowData) => {
+    const { token } = getUserData();
     const forceApprovePayload = {
       ...forceApproveSelectRow,
       approved: true,
     };
-    console.log("forceApprovePayload", forceApprovePayload);
-    const response = appraisalForceApproved(token,forceApprovePayload);
-    if (response.status == 200) {
+    //console.log("force_approve",token);
+    //console.log("forceApprovePayload", forceApprovePayload);
+    const response = await appraisalForceApproved(token,forceApprovePayload);
+    console.log("force_approve_api_res",response);
+    if (response.status == 201) {
       showSuccessMessage(toastRef, "Success", "Appraisal Form Approved Successfully");
       getAllAppraisal();
     }

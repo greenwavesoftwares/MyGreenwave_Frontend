@@ -137,8 +137,8 @@ const appraisalFormExcelDownload = async (
 //Force Approved Post Data
 const appraisalForceApproved = async (token, forceApprovePayload) => {
   try {
-    const response = await axios.post(
-      `${endPoint}appraisal/forceapproved`,
+    const response = await axios.put(
+      `${endPoint}appraisal/approve-by-hr`,
       forceApprovePayload,
       {
         headers: {
