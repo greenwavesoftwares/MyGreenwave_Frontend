@@ -25,7 +25,7 @@ import {
   getYearList,
   onPageLoad,
   onSelectRowEdit,
-} from "./LeaveFunctions";
+} from "./LeaveAdminFunctions";
 import { getUserData } from "../../Login/Encrypt";
 import "./LeaveAdmin.css";
 import { Tooltip } from "primereact/tooltip";

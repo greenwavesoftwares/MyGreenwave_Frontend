@@ -25,7 +25,7 @@ import {
   getYearList,
   onPageLoad,
   onSelectRowEdit,
-} from "./LeaveFunctions";
+} from "./LeaveApplicationFunctions";
 import "./LeaveApplication.css";
 import { Tooltip } from "primereact/tooltip";
 import { Tag } from "primereact/tag";

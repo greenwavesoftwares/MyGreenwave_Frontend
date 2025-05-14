@@ -44,6 +44,7 @@ const applyLeaveAPI = async (leaveData, toastRef) => {
   }
 };
 const deleteLeaveAPI = async (leaveRowData, toastRef) => {
+  console.log(leaveRowData);
   try {
     const response = await axios.delete(`${endPoint}leaves`, {
       params: { leaveId: leaveRowData.leaveId },

@@ -3,10 +3,10 @@ import {
   deleteLeaveAPI,
   editLeaveAPI,
   getDataOnLoad,
-} from "./LeaveManagementAPI";
+} from "./LeaveAdminAPI";
 import { format, parse } from "date-fns";
-import { getHolidays } from "../HolidayMaster/HolidayFunction";
-import { showSuccessMessage } from "../../components/Toast/ShowMessage";
+import { getHolidays } from "../../HolidayMaster/HolidayFunction";
+import { showSuccessMessage } from "../../../components/Toast/ShowMessage";
 
 const dateformat = "yyyy-MM-dd";
 
