@@ -1,57 +1,154 @@
-import React from 'react';
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { Calendar } from 'primereact/calendar';
-
-
+import React, { useRef, useState } from "react";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { Calendar } from "primereact/calendar";
+import { Toast } from "primereact/toast";
+import { applyLoan } from "./claimServices";
 
 const LoanApplicationForm = () => {
-    return (
+  const toast = useRef(null);
 
-        <div className="mt-6 bg-white p-6 rounded-2xl shadow-md border border-gray-200 mx-4 md:mx-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">Loan Application Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  const [formData, setFormData] = useState({
+    loanAmount: "",
+    loanTenure: "",
+    purpose: "",
+    requirementDate: null,
+  });
 
-                <div>
-                    <label htmlFor="emp-code" className="block text-sm font-medium text-gray-700 mb-1">Employee Code</label>
-                    <div className="w-62 bg-gray-100 shadow-sm rounded-md px-4 py-2 h-12 flex items-center text-gray-700">
-                        156
-                    </div>
-                </div>
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-                <div>
-                    <label htmlFor="Project-Name" className="block text-sm font-medium text-gray-700 mb-1">Loan Amount (INR)</label>
-                    <InputText inputId="Project-Name" className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
+  const handleDateChange = (e) => {
+    setFormData({ ...formData, requirementDate: e.value });
+  };
 
-                <div>
-                    <label htmlFor="On-Account" className="block text-sm font-medium text-gray-700 mb-1">Loan Tenure (in Months)</label>
-                    <InputText inputId="On-Account" className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
+  const handleClickApply = async () => {
+    const response = await applyLoan(formData);
+    if (response.status) {
+      toast.current.show({
+        severity: "success",
+        summary: "Success",
+        detail: response.message,
+      });
+      setFormData({
+        loanAmount: "",
+        emiAmount: "",
+        purpose: "",
+        loanTenure: "",
+        requirementDate: null,
+      });
+    } else {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: response.message,
+      });
+    }
+  };
 
-                <div>
-                    <label htmlFor="emi-amount" className="block text-sm font-medium text-gray-700 mb-1">EMI Amount (INR)</label>
-                    <div className="w-62 bg-gray-100 shadow-sm rounded-md px-4 py-2 h-12 flex items-center text-gray-700">
-                        0.00
-                    </div>
-                </div>
+  return (
+    <div className="flex items-center justify-center ">
+      <Toast ref={toast} />
+      <div className="bg-white p-6 max-w-3xl w-1/2 mx-4">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+          Loan Application Form
+        </h2>
 
-                <div>
-                    <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">Requirement Date</label>
-                    <Calendar inputId="fromdate" showIcon className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
+        <div className="space-y-6">
+          <div className="flex items-center">
+            <label
+              htmlFor="loanAmount"
+              className="w-1/3 text-sm font-medium text-gray-700"
+            >
+              Loan Amount (₹)
+            </label>
+            <InputText
+              id="loanAmount"
+              name="loanAmount"
+              value={formData.loanAmount}
+              onChange={handleInputChange}
+              className="w-2/3 h-10 rounded-md shadow-sm"
+            />
+          </div>
 
-                <div>
-                    <label htmlFor="purpose-loan" className="block text-sm font-medium text-gray-700 mb-1">Purpose of Loan</label>
-                    <InputText inputId="purpose-loan" className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
-                <div className="flex justify-center w-full">
-                    <Button label="Apply" icon="pi pi-check" />
-                </div>
+          <div className="flex items-center">
+            <label
+              htmlFor="loanTenure"
+              className="w-1/3 text-sm font-medium text-gray-700"
+            >
+              Loan Tenure (In Month)
+            </label>
+            <InputText
+              id="loanTenure"
+              name="loanTenure"
+              value={formData.loanTenure}
+              onChange={handleInputChange}
+              className="w-2/3 h-10 rounded-md shadow-sm"
+            />
+          </div>
+          <div className="flex items-center">
+            <label
+              htmlFor="emiAmount"
+              className="w-1/3 text-sm font-medium text-gray-700"
+            >
+              EMI Amount (INR)
+            </label>
+            <div className="w-2/3 h-10 rounded-md shadow-sm px-4 flex items-center bg-gray-100 text-gray-700">
+              {formData.loanAmount && formData.loanTenure
+                ? (
+                    Number(formData.loanAmount) / Number(formData.loanTenure)
+                  ).toFixed(2)
+                : "0.00"}
             </div>
+          </div>
+
+          <div className="flex items-center">
+            <label
+              htmlFor="purpose"
+              className="w-1/3 text-sm font-medium text-gray-700"
+            >
+              Purpose of Loan
+            </label>
+            <InputText
+              id="purpose"
+              name="purpose"
+              value={formData.purpose}
+              onChange={handleInputChange}
+              className="w-2/3 h-10 rounded-md shadow-sm"
+            />
+          </div>
+
+          <div className="flex items-center">
+            <label
+              htmlFor="requirementDate"
+              className="w-1/3 text-sm font-medium text-gray-700"
+            >
+              Requirement Date
+            </label>
+            <Calendar
+              id="requirementDate"
+              name="requirementDate"
+              value={formData.requirementDate}
+              onChange={handleDateChange}
+              showIcon
+              dateFormat="yy-mm-dd"
+              className="w-2/3 h-10 rounded-md shadow-sm"
+            />
+          </div>
         </div>
 
-    )
-}
+        <div className="flex justify-center mt-6">
+          <Button
+            label="Apply"
+            icon="pi pi-check"
+            className="px-6 py-2"
+            onClick={handleClickApply}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
-export default LoanApplicationForm
+export default LoanApplicationForm;

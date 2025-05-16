@@ -1,10 +1,13 @@
 // tourClaimService.js
-const token =
-  "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraXNvbG95LnJveUBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDY0MjE5NTMsImV4cCI6MTc0NjQ1Nzk1M30.fnrtqVkATWHkDUv2D3OceBfrO6iG94T6WfPhZKhXyiA";
+// const token =
+//   "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJraXNvbG95LnJveUBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3NDcwMzcxMjUsImV4cCI6MTc0NzA3MzEyNX0.v9U6VF-sh-Hqw3nLdYMVHLpvmtAiaAa_bFLrvpbTuO4";
 
 import { parse } from "date-fns";
 import * as XLSX from "xlsx";
 import { getUserData } from "../Login/Encrypt";
+
+const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
 export const getDraftData = async () => {
   const myHeaders = new Headers();
   myHeaders.append("Authorization", token);
@@ -50,8 +53,6 @@ export const handleSaveToDraft = (payload) => {
       throw error;
     });
 };
-
-
 
 export const formateDate = (value) => {
   if (!value) return "";
@@ -302,7 +303,7 @@ export const applyClaim = async (claim_id, status) => {
 
     // Assuming you're using mocked or local draft data instead of actual response
     const data = getDraftData();
-    console.log(claim_id, status);
+    
     return data;
   } catch (error) {
     // Re-throw the error so the caller function can catch it
@@ -344,7 +345,7 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     }
 
     const blob = new Blob([buffer], {
-      type: fileType || 'application/octet-stream',
+      type: fileType || "application/octet-stream",
     });
 
     // Trigger download
@@ -361,7 +362,6 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     throw error;
   }
 };
-
 
 // export const downloadTourClaimSupportingDocument = async (claim_id) => {
 //   try {
@@ -417,9 +417,8 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
 
-    if(!claim_id)
-    {
-      var response= await fetch(
+    if (!claim_id) {
+      var response = await fetch(
         `http://localhost:8081/claims/tour-claims/excel`,
         {
           method: "GET",
@@ -427,8 +426,7 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
           redirect: "follow",
         }
       );
-    }else
-    {
+    } else {
       var response = await fetch(
         `http://localhost:8081/claims/tour-claims/excel/${claim_id}`,
         {
@@ -438,7 +436,6 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
         }
       );
     }
-    
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -470,7 +467,6 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
     throw error;
   }
 };
-
 
 export const getTourClaimTableDraftData = async (claim_id) => {
   try {
@@ -553,7 +549,7 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
         snacks: Number(row["Snacks"]) || 0,
         other: Number(row["Other Business Expenses"]) || 0,
         total: rowTotal,
-        remarks:row["Remarks"]
+        remarks: row["Remarks"],
       });
     });
 
@@ -574,11 +570,11 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
       total_expense: total_expense,
       filename: tourclaimformData.filename,
       file_type: tourclaimformData.file_type,
-      tourClaimRecords: tabledata
+      tourClaimRecords: tabledata,
     };
 
     const raw = JSON.stringify(payload);
-    console.log("Payload to be sent in update:", raw);
+    
 
     const requestOptions = {
       method: "POST",
@@ -589,17 +585,20 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
 
     await fetch("http://localhost:8081/claims/tour-claims", requestOptions);
     // const data = await response.json();
-      const data=  getDraftData()
-    
-    return data;
+    const data = getDraftData();
 
+    return data;
   } catch (error) {
     console.error("Error in savetodraft:", error);
     throw error;
   }
 };
 
-export const updateDraftdata=async(tourclaimformData, tourClaimTableData,claim_id)=>{
+export const updateDraftdata = async (
+  tourclaimformData,
+  tourClaimTableData,
+  claim_id
+) => {
   try {
     let total_expense = 0;
     let tabledata = [];
@@ -622,7 +621,7 @@ export const updateDraftdata=async(tourclaimformData, tourClaimTableData,claim_i
         snacks: Number(row["Snacks"]) || 0,
         other: Number(row["Other Business Expenses"]) || 0,
         total: rowTotal,
-        remarks:row["Remarks"]
+        remarks: row["Remarks"],
       });
     });
 
@@ -643,11 +642,11 @@ export const updateDraftdata=async(tourclaimformData, tourClaimTableData,claim_i
       total_expense: total_expense,
       filename: tourclaimformData.filename,
       file_type: tourclaimformData.file_type,
-      tourClaimRecords: tabledata
+      tourClaimRecords: tabledata,
     };
 
     const raw = JSON.stringify(payload);
-    console.log("Payload to be sent:", raw);
+    
 
     const requestOptions = {
       method: "PUT",
@@ -656,30 +655,33 @@ export const updateDraftdata=async(tourclaimformData, tourClaimTableData,claim_i
       redirect: "follow",
     };
 
-    await fetch(`http://localhost:8081/claims/tour-claims/${claim_id}`, requestOptions);
+    await fetch(
+      `http://localhost:8081/claims/tour-claims/${claim_id}`,
+      requestOptions
+    );
     // const data = await response.json();
-    const data=  getDraftData()
-    
-    return data;
+    const data = getDraftData();
 
+    return data;
   } catch (error) {
     console.error("Error in savetodraft:", error);
     throw error;
   }
-}
-
-
+};
 
 export const AddRowINExcel = async (file) => {
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: 'array', cellStyles: true,
+  const workbook = XLSX.read(arrayBuffer, {
+    type: "array",
+    cellStyles: true,
     cellHTML: true,
-    dense: false });
+    dense: false,
+  });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
   const targetRow = 17; // Insert before Excel row 17 (1-based)
-  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  const range = XLSX.utils.decode_range(worksheet["!ref"]);
 
   // Shift all rows after targetRow down by 1
   for (let row = range.e.r; row >= targetRow - 1; row--) {
@@ -693,25 +695,26 @@ export const AddRowINExcel = async (file) => {
   // Insert a blank row (clear values, but could add initial styles if needed)
   for (let col = range.s.c; col <= range.e.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: targetRow - 1, c: col });
-    worksheet[cellAddress] = { t: 's', v: '' }; // Empty cell
+    worksheet[cellAddress] = { t: "s", v: "" }; // Empty cell
   }
 
   // Update sheet range
   range.e.r++;
-  worksheet['!ref'] = XLSX.utils.encode_range(range);
+  worksheet["!ref"] = XLSX.utils.encode_range(range);
 
-  const updatedExcel = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([updatedExcel], { type: 'application/octet-stream' });
+  const updatedExcel = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+  const blob = new Blob([updatedExcel], { type: "application/octet-stream" });
 
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = file.name.replace(/\.xlsx$/, '') + '_modified.xlsx';
+  link.download = file.name.replace(/\.xlsx$/, "") + "_modified.xlsx";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 };
-
-
 
 // import * as d from 'xlsx.mjs';
 // // Enable Pro features
@@ -754,3 +757,373 @@ export const AddRowINExcel = async (file) => {
 //   document.body.removeChild(link);
 // };
 
+export const ApplyOtherClaim = async (
+  file,
+  claimType,
+  claimAmount,
+  claimDetails
+) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token); // ensure token is defined
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", claimType);
+    formData.append("amount", claimAmount);
+    formData.append("reason", claimDetails);
+
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders, // DO NOT set Content-Type manually with FormData
+      body: formData,
+      redirect: "follow",
+    };
+
+    const response = await fetch(
+      "http://localhost:8081/claims/other-claims",
+      requestOptions
+    );
+
+    const message = await response.text();
+
+    if (!response.ok) {
+      throw new Error(message || "Failed to submit claim");
+    }
+
+    return {
+      status: true,
+      message: message,
+      data: {},
+    };
+  } catch (error) {
+    console.error("Error applying other claim:", error);
+    throw error;
+  }
+};
+
+export const getOtherClaims = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+    let response = await fetch(
+      "http://localhost:8081/claims/other-claims",
+      requestOptions
+    );
+    const data = response.json();
+    return data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const getLoanDetails = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    const response = await fetch(
+      "http://localhost:8081/claims/loan-claims",
+      requestOptions
+    );
+    const data = await response.json();
+    return {
+      status: true,
+      message: [],
+      data: data,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const applyLoan = async (formData) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", token);
+    const raw = JSON.stringify({
+      amount: formData.loanAmount,
+      reason: formData.purpose,
+      emi: formData.loanTenure,
+      requirementDate: formateDate(formData.requirementDate),
+    });
+
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      "http://localhost:8081/claims/loan-claims",
+      requestOptions
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      return {
+        status: false,
+        message: message || "NOt able to apply!",
+        data: [],
+      };
+    }
+    let data = await response.json();
+    return {
+      status: true,
+      message: "Applied successfully.",
+      data: data,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//Admin part
+
+export const getApprovedTourClaims = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let ApprovedResponse = await fetch(
+      "http://localhost:8081/claims/tour-claims-by-status/approved",
+      requestOptions
+    );
+    if (!ApprovedResponse.ok) {
+      const message = await ApprovedResponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+
+       let ApprovedData = await ApprovedResponse.json();
+
+     let ReviewedResponse = await fetch(
+      "http://localhost:8081/claims/tour-claims-by-status/Reviewed",
+      requestOptions
+    );
+    if (!ReviewedResponse.ok) {
+      const message = await ReviewedResponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+     let ReviewedData = await ReviewedResponse.json();
+
+     let CancelledResponse = await fetch(
+      "http://localhost:8081/claims/tour-claims-by-status/Cancelled",
+      requestOptions
+    );
+    if (!CancelledResponse.ok) {
+      const message = await ReviewedResponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let CancelledData = await CancelledResponse.json();
+    let finaldata=[...ReviewedData,...CancelledData,...ApprovedData];
+   
+    return {
+      status: true,
+      message: "Approved TourClaim Details.",
+      data: finaldata,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getAppliedTourClaims = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let appliedresponse = await fetch(
+      "http://localhost:8081/claims/tour-claims-by-status/applied",
+      requestOptions
+    );
+    if (!appliedresponse.ok) {
+      const message = await appliedresponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+
+    let reviewingresponse = await fetch(
+      "http://localhost:8081/claims/tour-claims-by-status/reviewing",
+      requestOptions
+    );
+
+    if (!reviewingresponse.ok) {
+      const message = await reviewingresponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let applieddata = await appliedresponse.json();
+    let reviewingdata = await reviewingresponse.json();
+
+    let finaldata = [...reviewingdata, ...applieddata];
+
+    return {
+      status: true,
+      message: "applied TourClaim Details.",
+      data: finaldata,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const CheckForAnyTourClaimsInStatusReviewing = async (
+  userId,
+  claim_id
+) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    // Step 1: Check if any claim is under review
+    const getResponse = await fetch(
+      `http://localhost:8081/claims/tour-claims-user-and-status/reviewing/${userId}`,
+      requestOptions
+    );
+
+    if (!getResponse.ok) {
+      const message = await getResponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+
+    const reviewClaims = await getResponse.json();
+
+    if (reviewClaims.length > 0) {
+      return {
+        status: false,
+        message: "Previous claim is under review",
+        data: reviewClaims,
+      };
+    }
+
+    // Step 2: Update status to Reviewing
+    const putResponse = await fetch(
+      `http://localhost:8081/claims/tour-claims/${claim_id}/Reviewing`,
+      {
+        method: "PUT",
+        redirect: "follow",
+        headers: myHeaders,
+      }
+    );
+
+    if (!putResponse.ok) {
+      const message = await putResponse.text();
+      return {
+        status: false,
+        message: message || "Failed to update claim status",
+        data: [],
+      };
+    }
+
+    let allData = await getAppliedTourClaims();
+
+    return {
+      status: true,
+      message: "Now claim is ready to be sent for approval",
+      data: allData.data,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message || "Server error",
+      data: [],
+    };
+  }
+};
+
+export const tourClaimSendForApproval = async (
+  claim_id,
+  reason,
+  settlement_amount
+) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `http://localhost:8081/claims/tour-claims/approval/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
+      requestOptions
+    );
+    if (!response.ok) {
+      const message = await response.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let getAappliedAndReviewData=await getAppliedTourClaims()
+    //let data = response.json();
+    return {
+      status: true,
+      message: "sent for approval",
+      data: getAappliedAndReviewData.data,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message || "Server error",
+      data: [],
+    };
+  }
+};

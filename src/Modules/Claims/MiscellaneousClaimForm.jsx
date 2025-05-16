@@ -1,65 +1,164 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from "react";
+import { InputText } from "primereact/inputtext";
+import { FileUpload } from "primereact/fileupload";
+import { Button } from "primereact/button";
+import { Toast } from "primereact/toast";
+import Dropdown from "../../components/Claim/Dropdown";
+import { ApplyOtherClaim } from "./claimServices";
+import { getUserData } from "../Login/Encrypt";
 
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { Calendar } from 'primereact/calendar';
-
-
-
+const userDetails = getUserData()?.userDetails;
 
 const MiscellaneousClaimForm = () => {
-     const toast = useRef(null);
-        
-          const onUpload = () => {
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'File Uploaded' });
-          };
-    return (
+  const toast = useRef(null);
+  const fileUploadRef = useRef(null);
+  const [file, setFile] = useState(null);
+  const [claimType, setClaimType] = useState(null);
+  const [claimAmount, setClaimAmount] = useState("");
+  const [claimDetails, setClaimDetails] = useState("");
 
-        <div className="mt-6 bg-white p-6 rounded-2xl shadow-md border border-gray-200 mx-4 md:mx-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">Loan Application Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  const claimOptions = [
+    { label: "Client Entertainment Claim", value: "Client Entertainment Claim" },
+    { label: "Medical Insurance Claim", value: "Medical Insurance Claim" },
+    { label: "Local Conveyance Claim", value: "Local Conveyance Claim" },
+    { label: "Staff Welfare Claim", value: "Staff Welfare Claim" },
+    { label: "Food Claim", value: "Food Claim" },
+  ];
 
-                <div>
-                    <label htmlFor="emp-code" className="block text-sm font-medium text-gray-700 mb-1">Employee Code</label>
-                    <div className="w-62 bg-gray-100 shadow-sm rounded-md px-4 py-2 h-12 flex items-center text-gray-700">
-                        156
-                    </div>
-                </div>
+  const placeholder = "Select Claim Type";
 
-                <div>
-                    <label htmlFor="Project-Name" className="block text-sm font-medium text-gray-700 mb-1">Loan Amount (INR)</label>
-                    <InputText inputId="Project-Name" className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
+  const onUpload = async (event) => {
+    if (event.files && event.files.length > 0) {
+      setFile(event.files[0]);
+      toast.current.show({
+        severity: "success",
+        summary: "Success",
+        detail: "File Uploaded",
+      });
+    }
+  };
 
-                <div>
-                    <label htmlFor="On-Account" className="block text-sm font-medium text-gray-700 mb-1">Loan Tenure (in Months)</label>
-                    <InputText inputId="On-Account" className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
+  const handleOnClick = async () => {
+    if (!claimType || !claimAmount || !claimDetails || !file) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Missing Fields",
+        detail: "Please fill all fields and upload a file.",
+      });
+      return;
+    }
 
-                <div>
-                    <label htmlFor="emi-amount" className="block text-sm font-medium text-gray-700 mb-1">EMI Amount (INR)</label>
-                    <div className="w-62 bg-gray-100 shadow-sm rounded-md px-4 py-2 h-12 flex items-center text-gray-700">
-                        0.00
-                    </div>
-                </div>
+    try {
+      const data = await ApplyOtherClaim(file, claimType, claimAmount, claimDetails);
 
-                <div>
-                    <label htmlFor="fromdate" className="block text-sm font-medium text-gray-700 mb-1">Requirement Date</label>
-                    <Calendar inputId="fromdate" showIcon className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
+      if (data.status === true) {
+        toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: data.message,
+        });
 
-                <div>
-                    <label htmlFor="purpose-loan" className="block text-sm font-medium text-gray-700 mb-1">Purpose of Loan</label>
-                    <InputText inputId="purpose-loan" className="w-62 h-12 rounded-md shadow-sm" />
-                </div>
-                <div className="flex justify-center w-full">
-                    <Button label="Apply" icon="pi pi-check" />
-                </div>
+        setFile(null);
+        setClaimAmount("");
+        setClaimDetails("");
+        fileUploadRef.current?.clear();
+      }
+    } catch (error) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: error?.message || "Upload failed",
+      });
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center px-4 overflow-x-hidden">
+      <Toast ref={toast} />
+      <div className="bg-white p-6 max-w-3xl w-full mx-4">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+          Miscellaneous Claim
+        </h2>
+
+        <div className="space-y-6">
+          {/* Claim Type */}
+          <div className="flex items-center">
+            <label className="w-1/3 text-sm font-medium text-gray-700">Claim Type</label>
+            <div className="w-2/3">
+              <Dropdown
+                claimOptions={claimOptions}
+                claimType={claimType}
+                setClaimType={setClaimType}
+                placehonder={placeholder}
+              />
             </div>
+          </div>
+
+          {/* Employee Code */}
+          <div className="flex items-center">
+            <label className="w-1/3 text-sm font-medium text-gray-700">Employee Code</label>
+            <div className="w-2/3">
+              <div className="bg-gray-100 shadow-sm rounded-md px-4 py-2  flex items-center text-gray-700">
+                {userDetails?.employeeId || "N/A"}
+              </div>
+            </div>
+          </div>
+
+          {/* Claim Amount */}
+          <div className="flex items-center">
+            <label className="w-1/3 text-sm font-medium text-gray-700">Claim Amount (INR)</label>
+            <div className="w-2/3">
+              <InputText
+                className="w-full  rounded-md shadow-sm"
+                value={claimAmount}
+                onChange={(e) => setClaimAmount(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Claim Details */}
+          <div className="flex items-center">
+            <label className="w-1/3 text-sm font-medium text-gray-700">Details of the Claim</label>
+            <div className="w-2/3">
+              <InputText
+                className="w-full  rounded-md shadow-sm"
+                value={claimDetails}
+                onChange={(e) => setClaimDetails(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div className="flex items-center">
+            <label className="w-1/3 text-sm font-medium text-gray-700">Upload File</label>
+            <div className="w-2/3">
+              <FileUpload
+                ref={fileUploadRef}
+                name="file"
+                customUpload
+                uploadHandler={onUpload}
+                mode="basic"
+                chooseLabel="Choose File"
+                accept="*/*"
+                maxFileSize={1000000}
+                className="p-button-success"
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-center mt-6">
+            <Button
+              label="Send for Approval"
+              icon="pi pi-send"
+              className="px-6 py-2 p-button-success"
+              onClick={handleOnClick}
+            />
+          </div>
         </div>
+      </div>
+    </div>
+  );
+};
 
-
-    )
-}
-
-export default MiscellaneousClaimForm
+export default MiscellaneousClaimForm;

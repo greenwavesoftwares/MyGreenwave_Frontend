@@ -27,6 +27,7 @@ import TrainingScheduleMaster from "./Modules/TrainingScheduleMaster/TrainingSch
 import LeaveApplication from "./Modules/LeaveManagement/LeaveApplication/LeaveApplication";
 import LeaveManagerApproval from "./Modules/LeaveManagement/LeaveManagerApproval/LeaveManagerApproval";
 import LeaveAdmin from "./Modules/LeaveManagement/LeaveAdmin/LeaveAdmin";
+import AdminTourClaims from "./Modules/Claims/Admin/AdminTourClaims";
 function App() {
   return (
     <Router>
@@ -53,6 +54,7 @@ function App() {
         <Route path="/appraisal" element={<Appraisal />} />
         <Route path="/claim" element={<Claim />} />
         <Route path="/tour-claim" element={<TourClaim />} />
+                <Route path="/admin-tour-claim" element={<AdminTourClaims/> } />
         <Route path="/miscellaneous-claim" element={<MiscellaneousClaim />} />
         <Route path="/loan-application" element={<LoanApplication />} />
         <Route path="/appraisals-review" element={<AppraisalsReview />} />

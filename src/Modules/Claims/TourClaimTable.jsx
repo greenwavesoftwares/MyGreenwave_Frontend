@@ -7,12 +7,17 @@ import { Calendar } from "primereact/calendar";
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
 import * as XLSX from "xlsx";
-import { formateDate, savetodraft, updateDraftdata,downloadTourClaimExpanseDocument} from "./claimServices";
+import {
+  formateDate,
+  savetodraft,
+  updateDraftdata,
+  downloadTourClaimExpanseDocument,
+} from "./claimServices";
 
 const cellStyle = { padding: "8px 12px" };
 
 const initialFormState = {
-  "Date": "",
+  Date: "",
   Lodging: "",
   Breakfast: "",
   Lunch: "",
@@ -182,22 +187,22 @@ const TourClaimTable = ({
   const handleSaveToDraft = async () => {
     try {
       const response = await savetodraft(tourclaimformData, tourClaimTableData);
-   //   if (response?.success) {
-        setDraftData(response);
-        seteditableMode(false);
-        settoggleNewClaim(false);
-        toast.current.show({
-          severity: "info",
-          summary: "Draft Saved",
-          detail: "Saved locally.",
-        });
-     // } else {
-        toast.current.show({
-          severity: "error",
-          summary: "Failed",
-          detail: "Unable to save draft.",
-        });
-    //  }
+      //   if (response?.success) {
+      setDraftData(response);
+      seteditableMode(false);
+      settoggleNewClaim(false);
+      toast.current.show({
+        severity: "info",
+        summary: "Draft Saved",
+        detail: "Saved locally.",
+      });
+      // } else {
+      toast.current.show({
+        severity: "error",
+        summary: "Failed",
+        detail: "Unable to save draft.",
+      });
+      //  }
     } catch (error) {
       toast.current.show({ severity: "error", summary: "", detail: error });
       console.log(error);
@@ -325,15 +330,15 @@ const TourClaimTable = ({
   );
 
   const fields = Object.keys(initialFormState);
-  const handleDownloadFile =async()=>{
-    try{
-      let d= await downloadTourClaimExpanseDocument(tourclaimformData.claim_id)
-    }catch(error)
-    {
-      console.log(error)
+  const handleDownloadFile = async () => {
+    try {
+      let d = await downloadTourClaimExpanseDocument(
+        tourclaimformData.claim_id
+      );
+    } catch (error) {
+      console.log(error);
     }
-     
-  }
+  };
 
   return (
     <>
@@ -353,15 +358,15 @@ const TourClaimTable = ({
           icon="pi pi-plus"
           className="p-button-sm "
           onClick={handleAddRow}
-          tooltip='Add Row'
+          tooltip="Add Row"
         />
         <Button
           icon="pi pi-file-export"
           className="p-button-sm"
           onClick={() => {
-            handleDownloadFile()
+            handleDownloadFile();
           }}
-        tooltip='Export Excel'
+          tooltip="Export Excel"
         />
       </div>
 
@@ -416,7 +421,6 @@ const TourClaimTable = ({
                 }
               }}
             />
-            {draftData.length>0?(
             <Button
               label="Home"
               icon="pi pi-home"
@@ -425,7 +429,6 @@ const TourClaimTable = ({
               }}
               className="p-button-sm"
             />
-            ):''}
           </div>
         ) : (
           <div className="flex gap-2">
@@ -446,7 +449,7 @@ const TourClaimTable = ({
                 handleSaveToDraft();
               }}
             />
-           
+
             <Button
               label="Home"
               icon="pi pi-home"
