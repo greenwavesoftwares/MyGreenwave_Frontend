@@ -28,6 +28,8 @@ import LeaveApplication from "./Modules/LeaveManagement/LeaveApplication/LeaveAp
 import LeaveManagerApproval from "./Modules/LeaveManagement/LeaveManagerApproval/LeaveManagerApproval";
 import LeaveAdmin from "./Modules/LeaveManagement/LeaveAdmin/LeaveAdmin";
 import AdminTourClaims from "./Modules/Claims/Admin/AdminTourClaims";
+import HRTourClaims from "./Modules/Claims/HR/HRTourClaims";
+import HRLoanApplication from "./Modules/Claims/HR/HRLoanApplication"
 function App() {
   return (
     <Router>
@@ -54,9 +56,12 @@ function App() {
         <Route path="/appraisal" element={<Appraisal />} />
         <Route path="/claim" element={<Claim />} />
         <Route path="/tour-claim" element={<TourClaim />} />
-                <Route path="/admin-tour-claim" element={<AdminTourClaims/> } />
+        <Route path="/admin-tour-claim" element={<AdminTourClaims/> } />
+        <Route path="/hr-tour-claim" element={<HRTourClaims/> } />
         <Route path="/miscellaneous-claim" element={<MiscellaneousClaim />} />
         <Route path="/loan-application" element={<LoanApplication />} />
+        <Route path="/hr-loan-application" element={<HRLoanApplication />} />
+
         <Route path="/appraisals-review" element={<AppraisalsReview />} />
         <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
         <Route path="/salaryslipupload" element={<SalarySlipUpload />} />

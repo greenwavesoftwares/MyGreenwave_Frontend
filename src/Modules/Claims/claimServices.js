@@ -5,6 +5,8 @@
 import { parse } from "date-fns";
 import * as XLSX from "xlsx";
 import { getUserData } from "../Login/Encrypt";
+const host='http://localhost'
+const port='8081'
 
 const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
@@ -291,7 +293,7 @@ export const applyClaim = async (claim_id, status) => {
     };
 
     const response = await fetch(
-      `http://localhost:8081/claims/tour-claims/${claim_id}/${status}`,
+      `${host}:${port}/claims/tour-claims/${claim_id}/${status}`,
       requestOptions
     );
 
@@ -970,7 +972,7 @@ export const getAppliedTourClaims = async () => {
     };
 
     let appliedresponse = await fetch(
-      "http://localhost:8081/claims/tour-claims-by-status/applied",
+      `${host}:${port}/claims/tour-claims-by-status/applied`,
       requestOptions
     );
     if (!appliedresponse.ok) {
@@ -983,7 +985,7 @@ export const getAppliedTourClaims = async () => {
     }
 
     let reviewingresponse = await fetch(
-      "http://localhost:8081/claims/tour-claims-by-status/reviewing",
+      `${host}:${port}/claims/tour-claims-by-status/reviewing`,
       requestOptions
     );
 
@@ -1026,7 +1028,7 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
 
     // Step 1: Check if any claim is under review
     const getResponse = await fetch(
-      `http://localhost:8081/claims/tour-claims-user-and-status/reviewing/${userId}`,
+      `${host}:${port}/claims/tour-claims-user-and-status/reviewing/${userId}`,
       requestOptions
     );
 
@@ -1051,7 +1053,7 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
 
     // Step 2: Update status to Reviewing
     const putResponse = await fetch(
-      `http://localhost:8081/claims/tour-claims/${claim_id}/Reviewing`,
+      `${host}:${port}/claims/tour-claims/${claim_id}/Reviewing`,
       {
         method: "PUT",
         redirect: "follow",
@@ -1101,7 +1103,7 @@ export const tourClaimSendForApproval = async (
     };
 
     let response = await fetch(
-      `http://localhost:8081/claims/tour-claims/approval/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
+      `${host}:${port}/claims/tour-claims/review/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
       requestOptions
     );
     if (!response.ok) {
@@ -1127,3 +1129,180 @@ export const tourClaimSendForApproval = async (
     };
   }
 };
+
+
+export const getReviewedTourClaims = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let reviewedresponse = await fetch(
+      `${host}:${port}/claims/tour-claims-by-status/Reviewed`,
+      requestOptions
+    );
+    if (!reviewedresponse.ok) {
+      const message = await reviewedresponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let revieweddata = await reviewedresponse.json();
+    return {
+      status: true,
+      message: "applied TourClaim Details.",
+      data: revieweddata,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+export const getApprovedHRTourClaims = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let approvedresponse = await fetch(
+      `${host}:${port}/claims/tour-claims-by-status/Approved`,
+      requestOptions
+    );
+    if (!approvedresponse.ok) {
+      const message = await approvedresponse.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let approveddata = await approvedresponse.json();
+    return {
+      status: true,
+      message: "approved TourClaim Details.",
+      data: approveddata,
+    };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+export const ApprovedTourClaim = async (
+  claim_id,
+  reason
+) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/tour-claims/approval/${claim_id}/approved?reason=${reason}`,
+      requestOptions
+    );
+    if (!response.ok) {
+      const message = await response.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let getReviewedTourClaimsData=await getReviewedTourClaims()
+    //let data = response.json();
+    if(getReviewedTourClaimsData.status)
+    {
+       return {
+      status: true,
+      message: "sent for approval",
+      data: getReviewedTourClaimsData.data,
+    };
+    }else{
+      return {
+      status: false,
+      message: getReviewedTourClaimsData.message,
+      data: [],
+    }
+  }
+   
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message || "Server error",
+      data: [],
+    };
+  }
+};
+
+
+export const RejectTourClaim = async (
+  claim_id,
+  reason
+) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/tour-claims/approval/${claim_id}/rejected?reason=${reason}`,
+      requestOptions
+    );
+    if (!response.ok) {
+      const message = await response.text();
+      return {
+        status: false,
+        message: message || "Internal server error!",
+        data: [],
+      };
+    }
+    let getReviewedTourClaimsData=await getReviewedTourClaims()
+    //let data = response.json();
+    if(getReviewedTourClaimsData.status)
+    {
+       return {
+      status: true,
+      message: "Tour claim rejected",
+      data: getReviewedTourClaimsData.data,
+    };
+    }else{
+      return {
+      status: false,
+      message: getReviewedTourClaimsData.message,
+      data: [],
+    }
+  }
+   
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message || "Server error",
+      data: [],
+    };
+  }
+};
+
