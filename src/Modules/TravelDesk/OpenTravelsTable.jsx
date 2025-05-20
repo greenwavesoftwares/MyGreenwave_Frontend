@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Button, Chip, Grid } from "@mui/material";
 //Call Api
 import {
   getMyFormParticularRequisitionId,
@@ -11,12 +10,21 @@ import { getUserData } from "../Login/Encrypt";
 import { Dialog } from "primereact/dialog";
 import { useState } from "react";
 import RequisitionFormView from "./RequisitionFormView";
+import { InputText } from "primereact/inputtext";
+import { Button, Chip, IconButton } from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckIcon from "@mui/icons-material/Check";
+import PreviewIcon from "@mui/icons-material/Preview";
 
 const OpenTravelsTable = () => {
   const [travelData, setTravelData] = useState([]);
   //Dialog visible
   const [visible, setVisible] = useState(false);
   const [rowData, setRowData] = useState({});
+  const [editRowId, setEditRowId] = useState(null);
+  const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +44,7 @@ const OpenTravelsTable = () => {
     fetchData();
   }, []);
 
-  const handelShowPreviousData = async (requisionId) => {
+  const handelShowRequisitionForm = async (requisionId) => {
     console.log("clickrequisionId", requisionId);
     //Dialog visible set
     setVisible(true);
@@ -50,13 +58,78 @@ const OpenTravelsTable = () => {
   // If there's no data yet
   if (!travelData || travelData.length === 0) {
     return (
-      <div
-      // className="px-4 mx-auto max-w-[85rem] lg:px-12"
-      >
+      <div>
         <text>No approved travels found.</text>
       </div>
     );
   }
+
+  const handleSaveAdvance = (row) => {
+    const updated = travelData.map((item) =>
+      item.requisionId === row.requisionId
+        ? { ...item, advance: newAdvanceAmount }
+        : item
+    );
+    setTravelData(updated);
+    setEditRowId(null);
+    setNewAdvanceAmount(row.advance);
+    // Add API call to update backend here if needed
+  };
+
+  const handleCancelAdvance = (row) => {
+    setEditRowId(null);
+    setNewAdvanceAmount(row.advance);
+  };
+
+  const advanceColumnBody = (row) => {
+    if (editRowId === row.requisionId) {
+      return (
+        <InputText
+          size="small"
+          value={newAdvanceAmount}
+          onChange={(e) => setNewAdvanceAmount(e.target.value)}
+        />
+      );
+    }
+    return row.advance;
+  };
+
+  const setAdvanceActions = (row) => {
+    if (editRowId === row.requisionId) {
+      return (
+        <>
+          <IconButton
+            aria-label="Save"
+            size="small"
+            color="success"
+            onClick={() => handleSaveAdvance(row)}
+          >
+            <SaveIcon />
+          </IconButton>
+          <IconButton
+            aria-label="Cancel"
+            size="small"
+            color="error"
+            onClick={() => handleCancelAdvance(row)}
+          >
+            <CancelIcon />
+          </IconButton>
+        </>
+      );
+    }
+    return (
+      <IconButton
+        aria-label="Edit"
+        label="View"
+        onClick={() => {
+          setEditRowId(row.requisionId);
+          setNewAdvanceAmount(row.advance);
+        }}
+      >
+        <EditIcon />
+      </IconButton>
+    );
+  };
 
   return (
     <>
@@ -74,7 +147,7 @@ const OpenTravelsTable = () => {
         ></Column>
         <Column field="unsettledAmount" header="Unsettled Amount"></Column>
         <Column field="advanceRequested" header="Advance Requested"></Column>
-        <Column field="advance" header="Advance Given"></Column>
+        <Column body={advanceColumnBody} header="Advance Given"></Column>
         <Column
           body={(rowData) => {
             return (
@@ -95,44 +168,30 @@ const OpenTravelsTable = () => {
         <Column
           body={(rowData) => {
             return (
-              <Button
-                variant="contained"
+              <IconButton
+                aria-label="View"
                 onClick={() => {
-                  handelShowPreviousData(rowData.requisionId);
+                  handelShowRequisitionForm(rowData.requisionId);
                 }}
               >
-                <i className="pi pi-eye" style={{ color: "black" }}></i>
-              </Button>
+                <PreviewIcon />
+              </IconButton>
             );
           }}
           header="View"
         ></Column>
+        <Column body={setAdvanceActions} header="Set Advance" />
         <Column
           body={(rowData) => {
             return (
-              <Button
-                variant="contained"
+              <IconButton
+                aria-label="Complete"
                 onClick={() => {
-                  handelShowPreviousData(rowData.requisionId);
+                  handelShowRequisitionForm(rowData.requisionId);
                 }}
               >
-                <i className="pi pi-pencil" style={{ color: "black" }}></i>
-              </Button>
-            );
-          }}
-          header="Set Advance"
-        ></Column>
-        <Column
-          body={(rowData) => {
-            return (
-              <Button
-                variant="contained"
-                onClick={() => {
-                  handelShowPreviousData(rowData.requisionId);
-                }}
-              >
-                <i className="pi pi-check" style={{ color: "black" }}></i>
-              </Button>
+                <CheckIcon />
+              </IconButton>
             );
           }}
           header="Travel Complete"
@@ -150,51 +209,7 @@ const OpenTravelsTable = () => {
       >
         {console.log("visible", visible)}
         <text variant="h6">Requisition Form View</text>
-        {/* <RequisitionFormView rowData={rowData} /> */}
-        <div style={{ padding: 20 }}>
-          <Grid container spacing={2}>
-            <Grid size={6}>Purpose : {rowData.purpose}</Grid>
-            <Grid size={6}>Project Name : {rowData.projectName}</Grid>
-            <Grid size={6}>City : {rowData.city}</Grid>
-            <Grid size={6}>Locality/Area : {rowData.localityArea}</Grid>
-            <Grid size={4}>Type of Travel : {rowData.typeOfTravel}</Grid>
-            <Grid size={4}>Advance Requested : {rowData.advanceRequested}</Grid>
-            <Grid size={4}>Advance Given : {rowData.advance}</Grid>
-            <Grid size={12}>
-              <DataTable
-                header="Mode of Transport"
-                value={rowData.transportModes}
-              >
-                <Column field="mode" header="Mode"></Column>
-                <Column field="fromDate" header="From Date"></Column>
-                <Column field="comment" header="Comment"></Column>
-                <Column field="manager_remark" header="Manager Remark"></Column>
-              </DataTable>
-            </Grid>
-
-            <Grid size={12}>
-              <DataTable
-                header="Reservation of Accommodation"
-                value={rowData.accommodations}
-              >
-                <Column field="type" header="Type"></Column>
-                <Column field="numberOfRooms" header="Number Of Rooms"></Column>
-                <Column
-                  field="numberOfNights"
-                  header="Number Of Nights"
-                ></Column>
-                <Column field="checkIn" header="Check In"></Column>
-                <Column field="checkOut" header="Check Out"></Column>
-                <Column field="comment" header="Comment"></Column>
-              </DataTable>
-            </Grid>
-
-            <Grid size={12}>Manager Name : {rowData.manager_id}</Grid>
-            <Grid size={12}>
-              Manager Comment : {rowData.manager_suggestion}
-            </Grid>
-          </Grid>
-        </div>
+        <RequisitionFormView rowData={rowData} />
       </Dialog>
     </>
   );
