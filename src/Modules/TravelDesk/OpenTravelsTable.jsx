@@ -11,7 +11,7 @@ import { Dialog } from "primereact/dialog";
 import { useState } from "react";
 import RequisitionFormView from "./RequisitionFormView";
 import { InputText } from "primereact/inputtext";
-import { Button, Chip, IconButton } from "@mui/material";
+import { Chip, IconButton } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
@@ -59,7 +59,7 @@ const OpenTravelsTable = () => {
   if (!travelData || travelData.length === 0) {
     return (
       <div>
-        <text>No approved travels found.</text>
+        <h3>No approved travels found.</h3>
       </div>
     );
   }
@@ -134,20 +134,52 @@ const OpenTravelsTable = () => {
   return (
     <>
       {/* <div className="px-4 mx-auto max-w-[85rem] lg:px-12"> */}
-      <text>Open Travels Table</text>
+      <h3>Open Travels Table</h3>
 
       <DataTable value={travelData}>
-        <Column field="date" header="Date"></Column>
-        <Column field="userName" header="Name"></Column>
-        <Column field="empCode" header="Employee Code"></Column>
+        <Column
+          field="date"
+          header="Date"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          field="userName"
+          header="Name"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          field="empCode"
+          header="Employee Code"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
         <Column
           field="projectName"
           header="Project Name"
-          style={{ alignItems: "center", justifyContent: "center" }}
-        ></Column>
-        <Column field="unsettledAmount" header="Unsettled Amount"></Column>
-        <Column field="advanceRequested" header="Advance Requested"></Column>
-        <Column body={advanceColumnBody} header="Advance Given"></Column>
+          headerStyle={{ textAlign: "center" }}
+          // headerClassName="center-header"
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          field="unsettledAmount"
+          header="Unsettled Amount"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          field="advanceRequested"
+          header="Advance Requested"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          body={advanceColumnBody}
+          header="Advance Given"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
         <Column
           body={(rowData) => {
             return (
@@ -164,7 +196,9 @@ const OpenTravelsTable = () => {
             );
           }}
           header="Status"
-        ></Column>
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
         <Column
           body={(rowData) => {
             return (
@@ -179,8 +213,15 @@ const OpenTravelsTable = () => {
             );
           }}
           header="View"
-        ></Column>
-        <Column body={setAdvanceActions} header="Set Advance" />
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          body={setAdvanceActions}
+          header="Set Advance"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
         <Column
           body={(rowData) => {
             return (
@@ -195,7 +236,9 @@ const OpenTravelsTable = () => {
             );
           }}
           header="Travel Complete"
-        ></Column>
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
       </DataTable>
 
       <Dialog
@@ -208,7 +251,7 @@ const OpenTravelsTable = () => {
         }}
       >
         {console.log("visible", visible)}
-        <text variant="h6">Requisition Form View</text>
+        <h2>Requisition Form View</h2>
         <RequisitionFormView rowData={rowData} />
       </Dialog>
     </>

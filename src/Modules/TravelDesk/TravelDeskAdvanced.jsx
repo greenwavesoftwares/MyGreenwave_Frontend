@@ -9,10 +9,7 @@ import OpenTravelsTable from "./OpenTravelsTable";
 const TravelDeskAdvanced = () => {
   return (
     <>
-      <div>hi</div>
-      <div>
-        <OpenTravelsTable></OpenTravelsTable>
-      </div>
+      <OpenTravelsTable />
     </>
   );
 };
