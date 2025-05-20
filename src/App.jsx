@@ -29,7 +29,9 @@ import LeaveManagerApproval from "./Modules/LeaveManagement/LeaveManagerApproval
 import LeaveAdmin from "./Modules/LeaveManagement/LeaveAdmin/LeaveAdmin";
 import AdminTourClaims from "./Modules/Claims/Admin/AdminTourClaims";
 import HRTourClaims from "./Modules/Claims/HR/HRTourClaims";
-import HRLoanApplication from "./Modules/Claims/HR/HRLoanApplication"
+import HRLoanApplication from "./Modules/Claims/HR/HRLoanApplication";
+import TravelDeskAdvanced from "./Modules/TravelDesk/TravelDeskAdvanced";
+import UserProfile from "./Modules/UserProfile/UserProfile";
 function App() {
   return (
     <Router>
@@ -48,6 +50,7 @@ function App() {
         />
         <Route path="/leave-admin" element={<LeaveAdmin />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
+        <Route path="/travel-desk-advanced" element={<TravelDeskAdvanced />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route
           path="/ModeOfTransportTable"
@@ -56,8 +59,8 @@ function App() {
         <Route path="/appraisal" element={<Appraisal />} />
         <Route path="/claim" element={<Claim />} />
         <Route path="/tour-claim" element={<TourClaim />} />
-        <Route path="/admin-tour-claim" element={<AdminTourClaims/> } />
-        <Route path="/hr-tour-claim" element={<HRTourClaims/> } />
+        <Route path="/admin-tour-claim" element={<AdminTourClaims />} />
+        <Route path="/hr-tour-claim" element={<HRTourClaims />} />
         <Route path="/miscellaneous-claim" element={<MiscellaneousClaim />} />
         <Route path="/loan-application" element={<LoanApplication />} />
         <Route path="/hr-loan-application" element={<HRLoanApplication />} />
@@ -73,6 +76,7 @@ function App() {
           path="/training-schedule-master"
           element={<TrainingScheduleMaster />}
         />
+        <Route path="/userprofile" element={<UserProfile />} />
       </Routes>
     </Router>
   );

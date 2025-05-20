@@ -14,17 +14,36 @@ const getMyFormTravelData = async (token) => {
     console.log(error);
   }
 };
-const getMyFormParticularRequisitionId = async (token,requisionId) => {
-    try {
-      const response = await axios.get(`${endPoint}traveldesk/travels/${requisionId}`, {
+const getMyFormParticularRequisitionId = async (token, requisionId) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}traveldesk/travels/${requisionId}`,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
-      return response;
-    } catch (error) {
-      console.log(error);
-    }
-  };
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-export { getMyFormTravelData,getMyFormParticularRequisitionId };
+export const getTravelsByStatus = async (token, statusName) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}traveldesk/travels-by-status/${statusName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export { getMyFormTravelData, getMyFormParticularRequisitionId };
