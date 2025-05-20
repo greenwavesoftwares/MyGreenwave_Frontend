@@ -1,0 +1,124 @@
+/* ========== DESKTOP STYLES (default) ========== *
+*  ==== FOR MOBILE OR TABLET VIEW LOOK BELOW ==== *
+*/
+
+.main-div {
+    display: flex;
+    flex-direction: row;
+    gap: 3rem;
+    margin-top: 2rem;
+    margin-left: 2rem;
+}
+
+.paper-div {
+    width: 50vw;
+    padding: 2;
+}
+
+.table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    background-color: rgb(36, 33, 33);
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bolder;
+}
+
+.table-cell-allottedpages {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.table-cell {
+    border: 1px solid rgba(224, 224, 224, 1);
+    padding: 8px 16px;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.table-cell-header {
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.card-div {
+    display: flex;
+    flex-direction: column;
+    width: 20rem;
+    height: 30rem;
+    gap: 1rem;
+}
+
+.card-style {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+}
+
+.inner-card-style {
+    height: 25vh;
+    width: 25vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+}
+
+.card-icon {
+    height: 25vh;
+}
+
+
+/* ========== RESPONSIVE STYLES FOR TABLET & MOBILE ========== */
+@media (max-width: 768px) {
+    .main-div {
+        flex-direction: column;
+        margin-left: 1rem;
+        margin-right: 1rem;
+        gap: 2rem;
+    }
+
+    .paper-div {
+        width: 90vw;
+    }
+
+    .card-div {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        height: auto;
+    }
+
+    .card-style {
+        width: 90vw;
+        flex-direction: row;
+    }
+
+    .inner-card-style {
+        width: 60vw;
+        height: auto;
+    }
+
+    .card-icon {
+        height: auto;
+    }
+
+    .table-cell {
+        padding: 12px 8px;
+    }
+
+    .table-cell-allottedpages {
+        justify-content: flex-start;
+    }
+}
