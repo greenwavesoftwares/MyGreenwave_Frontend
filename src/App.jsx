@@ -32,6 +32,7 @@ import HRTourClaims from "./Modules/Claims/HR/HRTourClaims";
 import HRLoanApplication from "./Modules/Claims/HR/HRLoanApplication";
 import TravelDeskAdvanced from "./Modules/TravelDesk/TravelDeskAdvanced";
 import TravelDeskManager from "./Modules/TravelDeskManager/TravelDeskManager";
+import UserProfile from "./Modules/UserProfile/UserProfile";
 function App() {
   return (
     <Router>
@@ -77,6 +78,7 @@ function App() {
           path="/training-schedule-master"
           element={<TrainingScheduleMaster />}
         />
+        <Route path="/userprofile" element={<UserProfile/>}/>
       </Routes>
     </Router>
   );
