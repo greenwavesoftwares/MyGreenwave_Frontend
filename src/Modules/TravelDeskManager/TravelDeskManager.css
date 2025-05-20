@@ -1,0 +1,22 @@
+ .UserInfoTableStyle-sm.p-datatable .p-datatable-thead > tr > th{
+    font-size: 0.7rem;  
+  }
+  .UserInfoTableStyle-sm.p-datatable .p-datatable-tbody > tr > td{
+    font-size: 0.72rem; 
+  }
+
+  .UserInfoTableStyle.p-datatable .p-datatable-thead > tr > th {
+  font-size: 0.87rem;
+  text-align: center;
+  padding: 0.5rem 0.5rem;
+}
+/* .UserInfoTableStyle.p-datatable .p-column-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 3rem;
+} */
+.UserInfoTableStyle.p-datatable .p-datatable-tbody > tr > td{
+  padding: 0.35rem 0.35rem;
+  text-align: center;
+}

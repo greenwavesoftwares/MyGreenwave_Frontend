@@ -31,6 +31,7 @@ import AdminTourClaims from "./Modules/Claims/Admin/AdminTourClaims";
 import HRTourClaims from "./Modules/Claims/HR/HRTourClaims";
 import HRLoanApplication from "./Modules/Claims/HR/HRLoanApplication";
 import TravelDeskAdvanced from "./Modules/TravelDesk/TravelDeskAdvanced";
+import TravelDeskManager from "./Modules/TravelDeskManager/TravelDeskManager";
 function App() {
   return (
     <Router>
@@ -49,6 +50,7 @@ function App() {
         />
         <Route path="/leave-admin" element={<LeaveAdmin />} />
         <Route path="/travel-desk" element={<TravelDesk />} />
+        <Route path="/travel-deskmanager" element={<TravelDeskManager />} />
         <Route path="/travel-desk-advanced" element={<TravelDeskAdvanced />} />
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route
