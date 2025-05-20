@@ -9,12 +9,12 @@ import HRTourClaimTable from './HRTourClaimTable';
  const HRTourClaims  = () => {
   return (
    
-    <div className='max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100'>
+    <div className='max-w-[85rem] p-0  min-h-screen bg-gray-100'>
         <TabView >
              <TabPanel header="Reviewed">
              <HRTourClaimTable/>    
             </TabPanel> 
-             <TabPanel header="Approved">
+             <TabPanel header="History">
               <ApprovedTourClaimTable/>
             </TabPanel>   
         </TabView>

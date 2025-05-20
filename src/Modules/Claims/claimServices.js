@@ -5,8 +5,8 @@
 import { parse } from "date-fns";
 import * as XLSX from "xlsx";
 import { getUserData } from "../Login/Encrypt";
-const host='http://localhost'
-const port='8081'
+const host = "http://localhost";
+const port = "8081";
 
 const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
@@ -305,7 +305,7 @@ export const applyClaim = async (claim_id, status) => {
 
     // Assuming you're using mocked or local draft data instead of actual response
     const data = getDraftData();
-    
+
     return data;
   } catch (error) {
     // Re-throw the error so the caller function can catch it
@@ -576,7 +576,6 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
     };
 
     const raw = JSON.stringify(payload);
-    
 
     const requestOptions = {
       method: "POST",
@@ -648,7 +647,6 @@ export const updateDraftdata = async (
     };
 
     const raw = JSON.stringify(payload);
-    
 
     const requestOptions = {
       method: "PUT",
@@ -920,9 +918,9 @@ export const getApprovedTourClaims = async () => {
       };
     }
 
-       let ApprovedData = await ApprovedResponse.json();
+    let ApprovedData = await ApprovedResponse.json();
 
-     let ReviewedResponse = await fetch(
+    let ReviewedResponse = await fetch(
       "http://localhost:8081/claims/tour-claims-by-status/Reviewed",
       requestOptions
     );
@@ -934,9 +932,9 @@ export const getApprovedTourClaims = async () => {
         data: [],
       };
     }
-     let ReviewedData = await ReviewedResponse.json();
+    let ReviewedData = await ReviewedResponse.json();
 
-     let CancelledResponse = await fetch(
+    let CancelledResponse = await fetch(
       "http://localhost:8081/claims/tour-claims-by-status/Cancelled",
       requestOptions
     );
@@ -949,8 +947,8 @@ export const getApprovedTourClaims = async () => {
       };
     }
     let CancelledData = await CancelledResponse.json();
-    let finaldata=[...ReviewedData,...CancelledData,...ApprovedData];
-   
+    let finaldata = [...ReviewedData, ...CancelledData, ...ApprovedData];
+
     return {
       status: true,
       message: "Approved TourClaim Details.",
@@ -1114,7 +1112,7 @@ export const tourClaimSendForApproval = async (
         data: [],
       };
     }
-    let getAappliedAndReviewData=await getAppliedTourClaims()
+    let getAappliedAndReviewData = await getAppliedTourClaims();
     //let data = response.json();
     return {
       status: true,
@@ -1129,7 +1127,6 @@ export const tourClaimSendForApproval = async (
     };
   }
 };
-
 
 export const getReviewedTourClaims = async () => {
   try {
@@ -1164,7 +1161,6 @@ export const getReviewedTourClaims = async () => {
   }
 };
 
-
 export const getApprovedHRTourClaims = async () => {
   try {
     const myHeaders = new Headers();
@@ -1198,11 +1194,7 @@ export const getApprovedHRTourClaims = async () => {
   }
 };
 
-
-export const ApprovedTourClaim = async (
-  claim_id,
-  reason
-) => {
+export const ApprovedTourClaim = async (claim_id, reason) => {
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -1226,23 +1218,21 @@ export const ApprovedTourClaim = async (
         data: [],
       };
     }
-    let getReviewedTourClaimsData=await getReviewedTourClaims()
+    let getReviewedTourClaimsData = await getReviewedTourClaims();
     //let data = response.json();
-    if(getReviewedTourClaimsData.status)
-    {
-       return {
-      status: true,
-      message: "sent for approval",
-      data: getReviewedTourClaimsData.data,
-    };
-    }else{
+    if (getReviewedTourClaimsData.status) {
       return {
-      status: false,
-      message: getReviewedTourClaimsData.message,
-      data: [],
+        status: true,
+        message: "sent for approval",
+        data: getReviewedTourClaimsData.data,
+      };
+    } else {
+      return {
+        status: false,
+        message: getReviewedTourClaimsData.message,
+        data: [],
+      };
     }
-  }
-   
   } catch (error) {
     return {
       status: false,
@@ -1252,11 +1242,7 @@ export const ApprovedTourClaim = async (
   }
 };
 
-
-export const RejectTourClaim = async (
-  claim_id,
-  reason
-) => {
+export const RejectTourClaim = async (claim_id, reason) => {
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -1280,23 +1266,21 @@ export const RejectTourClaim = async (
         data: [],
       };
     }
-    let getReviewedTourClaimsData=await getReviewedTourClaims()
+    let getReviewedTourClaimsData = await getReviewedTourClaims();
     //let data = response.json();
-    if(getReviewedTourClaimsData.status)
-    {
-       return {
-      status: true,
-      message: "Tour claim rejected",
-      data: getReviewedTourClaimsData.data,
-    };
-    }else{
+    if (getReviewedTourClaimsData.status) {
       return {
-      status: false,
-      message: getReviewedTourClaimsData.message,
-      data: [],
+        status: true,
+        message: "Tour claim rejected",
+        data: getReviewedTourClaimsData.data,
+      };
+    } else {
+      return {
+        status: false,
+        message: getReviewedTourClaimsData.message,
+        data: [],
+      };
     }
-  }
-   
   } catch (error) {
     return {
       status: false,
@@ -1306,3 +1290,187 @@ export const RejectTourClaim = async (
   }
 };
 
+export const getloanclaimsapplied = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/loan-claims-by-status/applied`,
+      requestOptions
+    );
+
+    if (!response.ok) {
+      let message = await response.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    }
+    let data = await response.json();
+    return {
+      status: true,
+      message: "loan details",
+      data: data,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
+export const getloanclaimsapproveandreject = async () => {
+  try {
+    let message;
+    let approveddata = [];
+    let rejecteddata = [];
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let rejectedresponse = await fetch(
+      `${host}:${port}/claims/loan-claims-by-status/rejected`,
+      requestOptions
+    );
+
+    if (!rejectedresponse.ok) {
+      message = await rejectedresponse.text();
+      if (message != "User Claim Not Found")
+        return {
+          status: false,
+          message: message,
+          data: [],
+        };
+    } else {
+      rejecteddata = await rejectedresponse.json();
+    }
+
+    let approvedresponse = await fetch(
+      `${host}:${port}/claims/loan-claims-by-status/approved`,
+      requestOptions
+    );
+
+    if (!approvedresponse.ok) {
+      message = await approvedresponse.text();
+      if (message != "User Claim Not Found")
+        return {
+          status: false,
+          message: message,
+          data: [],
+        };
+    } else {
+      approveddata = await approvedresponse.json();
+    }
+
+    let finaldata = [...approveddata, ...rejecteddata];
+
+    return {
+      status: true,
+      message: "approved and rejected loan claims data",
+      data: finaldata,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
+export const rejectLoanClaim = async (claim_id, remarks) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/loan-claims/${claim_id}/rejected?reason=${remarks}`,
+      requestOptions
+    );
+
+    if (!response.ok) {
+      let message = response.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    } else {
+      let response = getloanclaimsapplied();
+      return {
+        status: true,
+        message: "Loan Claim Rejected",
+        data:response.data,
+      };
+    }
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
+
+
+export const approveLoanClaim = async (claim_id, remarks) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/loan-claims/${claim_id}/approved?reason=${remarks}`,
+      requestOptions
+    );
+
+    if (!response.ok) {
+      let message = response.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    } else {
+      let response = getloanclaimsapplied();
+      return {
+        status: true,
+        message: "Loan Claim Approved",
+        data:response.data,
+      };
+    }
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
