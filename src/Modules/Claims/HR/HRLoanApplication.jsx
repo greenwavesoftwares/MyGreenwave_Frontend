@@ -11,7 +11,7 @@ import HRLoanApplicationTable from './HRLoanApplicationTable';
              <TabPanel header="Applied">
              <HRLoanApplicationTable/>    
             </TabPanel> 
-             <TabPanel header="Approved">
+             <TabPanel header="History">
               <ApprovedLoanApplicationTable/>
             </TabPanel>   
         </TabView>
