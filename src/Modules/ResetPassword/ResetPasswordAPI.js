@@ -7,7 +7,7 @@ const userData = getUserData();
 
 const resetPasswordAPI = async (body, toastRef) => {
   try {
-    const response = await axios.post(`${endPoint}admin/resetpassword`, body, {
+    const response = await axios.put(`${endPoint}admin/resetpassword`, body, {
       headers: {
         Authorization: `Bearer ${userData.token}`,
       },
