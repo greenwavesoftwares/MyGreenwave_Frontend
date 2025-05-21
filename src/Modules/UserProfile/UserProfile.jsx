@@ -152,7 +152,7 @@ export default function UserProfile() {
             </Paper>
           )}
           {!showAccountInfo&&
-          <ResetPassword currentPasswordCheck={true}/>
+          <ResetPassword userDetails={userDetails} currentPasswordCheck={true}/>
           }
         </div>
       )}

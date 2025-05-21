@@ -8,7 +8,7 @@ import Toast from "../../components/Toast/Toast";
 import { getUserData } from "../Login/Encrypt";
 import { loginCheck } from "../Login/LoginAPI";
 
-export default function ResetPassword({ currentPasswordCheck }) {
+export default function ResetPassword({userDetails ,currentPasswordCheck }) {
   const toastRef = useRef(null);
   const resetPasswordStructure = {
     userId: "",
@@ -28,13 +28,12 @@ export default function ResetPassword({ currentPasswordCheck }) {
     currentPassword: "",
     isCurrentPasswordValid: false,
   });
-  const userDetails = getUserData()?.userDetails;
   const showWrongPasswordDialog = (message) => {
     console.log("Incorrect Password");
     toastRef.current.show({
       severity: "error",
       summary: "Error",
-      detail: "Incorrect Password",
+      detail: message,
     });
   };
 
