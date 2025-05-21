@@ -1,7 +1,7 @@
 import {
   showErrorMessage,
   showSuccessMessage,
-} from "../../../components/Toast/ShowMessage";
+} from "../../components/Toast/ShowMessage";
 import { resetPasswordAPI } from "./ResetPasswordAPI";
 
 const setNewPassword = async (

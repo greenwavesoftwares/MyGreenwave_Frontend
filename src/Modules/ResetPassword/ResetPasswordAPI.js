@@ -1,6 +1,6 @@
 import axios from "axios";
-import { getUserData } from "../../Login/Encrypt";
-import { showErrorMessage } from "../../../components/Toast/ShowMessage";
+import { getUserData } from "../Login/Encrypt";
+import { showErrorMessage } from "../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();

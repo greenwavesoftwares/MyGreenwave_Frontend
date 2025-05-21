@@ -4,7 +4,7 @@ import "./ResetPassword.css";
 import { Grid } from "@mui/material";
 import { Button } from "primereact/button";
 import { Password } from "primereact/password";
-import Toast from "../../../components/Toast/Toast";
+import Toast from "../../components/Toast/Toast";
 import { getUserData } from "../Login/Encrypt";
 import { Container } from "postcss";
 
