@@ -4,7 +4,6 @@ import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
 import { Container } from "@mui/material";
 import SpeedDial from "../../../components/SpeedDial/SpeedDial";
-import { Button } from "primereact/button";
 import Toast from "../../../components/Toast/Toast";
 import Chart from "../../../components/Chart/Chart";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
@@ -32,11 +31,11 @@ import { Tag } from "primereact/tag";
 import { FilterMatchMode } from "primereact/api";
 import { InputIcon } from "primereact/inputicon";
 import { IconField } from "primereact/iconfield";
-import { InputText } from "primereact/inputtext";
-import { MeterGroup } from "primereact/metergroup";
 import { Badge } from "primereact/badge";
 import { Avatar } from "primereact/avatar";
 import LeaveBalanceCard from "./LeaveBalanceCard";
+import CustomInputText from "../../../components/InputText/InputText";
+import CustomButton from "../../../components/Button/Button";
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -72,7 +71,7 @@ const LeaveApplication = () => {
   const [appVersion, setAppVersion] = useState("1.0");
   const editBodyTemplate = (row) => {
     return (
-      <Button
+      <CustomButton
         icon="pi pi-pencil"
         rounded
         outlined
@@ -87,7 +86,7 @@ const LeaveApplication = () => {
   };
   const deleteBodyTemplate = (row) => {
     return (
-      <Button
+      <CustomButton
         icon="pi pi-trash"
         rounded
         outlined
@@ -132,7 +131,7 @@ const LeaveApplication = () => {
       <span>Leaves</span>
       <IconField iconPosition="left">
         <InputIcon className="pi pi-search" />
-        <InputText
+        <CustomInputText
           value={leaveTable.filterText}
           onChange={(e) => {
             const value = e.target.value;
@@ -572,6 +571,7 @@ const LeaveApplication = () => {
                     rowsPerPageOptions={[10, 25, 50]}
                     sortField="fromDate"
                     sortOrder={-1}
+                    size="small"
                   >
                     <Column
                       field="fromDate"
@@ -677,7 +677,7 @@ const LeaveApplication = () => {
             />
           </Grid>
           <Grid size={12} style={{ display: "flex", justifyContent: "center" }}>
-            <Button
+            <CustomButton
               label={editMode ? "Edit" : "Apply"}
               onClick={async () => {
                 await applyOrEditLeave(

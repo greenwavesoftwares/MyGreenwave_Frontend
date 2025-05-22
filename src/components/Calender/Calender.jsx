@@ -3,7 +3,17 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid"; // a plugin!
 import interactionPlugin from "@fullcalendar/interaction";
 
-const Calender = ({ initialView, height, events, eventMouseEnter }) => {
+const Calender = ({
+  initialView,
+  height,
+  events,
+  eventMouseEnter,
+  eventMouseLeave,
+  eventContent,
+  eventBackgroundColor,
+  eventBorderColor,
+  eventTextColor,
+}) => {
   return (
     <>
       <FullCalendar
@@ -12,6 +22,11 @@ const Calender = ({ initialView, height, events, eventMouseEnter }) => {
         height={height}
         events={events}
         eventMouseEnter={eventMouseEnter}
+        eventMouseLeave={eventMouseLeave}
+        eventContent={eventContent}
+        eventBackgroundColor={eventBackgroundColor}
+        eventBorderColor={eventBorderColor}
+        eventTextColor={eventTextColor}
       />
     </>
   );

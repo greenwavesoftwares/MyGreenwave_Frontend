@@ -1,6 +1,6 @@
-import React, { useState } from "react";
 import { Calendar } from "primereact/calendar";
 import "./DatePicker.css"; // Import your custom CSS file
+import React, { useEffect, useState } from "react";
 
 const DatePicker = ({
   value,
@@ -16,7 +16,22 @@ const DatePicker = ({
   disabled,
   inputClassName,
   disabledDates,
+  size = "small",
 }) => {
+  const [sizeClassName, setSizeClassName] = useState("");
+  useEffect(() => {
+    switch (size.toLowerCase()) {
+      case "small":
+        setSizeClassName("p-inputtext-sm");
+        break;
+      case "large":
+        setSizeClassName("p-inputtext-lg");
+        break;
+      default:
+        setSizeClassName("");
+        break;
+    }
+  }, [size]);
   return (
     <div className="calendar-wrapper">
       <Calendar
@@ -33,7 +48,7 @@ const DatePicker = ({
         dateFormat={dateFormat}
         invalid={invalid}
         disabled={disabled}
-        inputClassName={inputClassName}
+        inputClassName={`${sizeClassName} ${inputClassName}`}
         disabledDates={disabledDates}
       />
     </div>

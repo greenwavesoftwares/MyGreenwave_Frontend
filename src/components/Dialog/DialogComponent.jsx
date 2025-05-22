@@ -1,7 +1,14 @@
 import { Dialog } from "primereact/dialog";
 import "./DialogComponent.css";
 
-const BasicDemo = ({ header, visible, style, onHide, children, className }) => {
+const CustomDialog = ({
+  header,
+  visible,
+  style,
+  onHide,
+  children,
+  className,
+}) => {
   return (
     <>
       <Dialog
@@ -17,4 +24,4 @@ const BasicDemo = ({ header, visible, style, onHide, children, className }) => {
   );
 };
 
-export default BasicDemo;
+export default CustomDialog;

@@ -5,9 +5,9 @@ import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();
 
-const getDataOnLoad = async (userId, year) => {
+const getLeaveRequestsForManagerApprovalAPI = async () => {
   try {
-    const response = await axios.get(`${endPoint}leaves/${year}`, {
+    const response = await axios.get(`${endPoint}leaves/review`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userData.token}`,
@@ -16,15 +16,44 @@ const getDataOnLoad = async (userId, year) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching forminfo with versions:", error);
-    return error.response.data;
+    return null;
   }
 };
-const applyLeaveAPI = async (leaveData, toastRef) => {
+const getTeamLeavesTableForManagerAPI = async () => {
   try {
-    const response = await axios.post(
-      `${endPoint}leaves/applications`,
+    const response = await axios.get(`${endPoint}leaves/review/all`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return null;
+  }
+};
+const getTeamLeavesCalenderForManagerAPI = async () => {
+  try {
+    const response = await axios.get(`${endPoint}leaves/review/calendar`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return null;
+  }
+};
+const approveLeaveAPI = async (leaveData, toastRef) => {
+  try {
+    const response = await axios.put(
+      `${endPoint}leaves/accept-action`,
       leaveData,
       {
+        params: { leaveId: leaveData.leaveId },
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userData.token}`,
@@ -43,10 +72,10 @@ const applyLeaveAPI = async (leaveData, toastRef) => {
     return null;
   }
 };
-const deleteLeaveAPI = async (leaveRowData, toastRef) => {
+const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
   try {
-    const response = await axios.delete(`${endPoint}leaves`, {
-      params: { leaveId: leaveRowData.leaveId },
+    const response = await axios.put(`${endPoint}leaves/rejection`, leaveData, {
+      params: { leaveId: leaveData.leaveId, reason: reason },
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userData.token}`,
@@ -64,10 +93,10 @@ const deleteLeaveAPI = async (leaveRowData, toastRef) => {
     return null;
   }
 };
-const editLeaveAPI = async (leaveData, toastRef) => {
+const reviewingLeaveAPI = async (leaveData, isReviewing, toastRef) => {
   try {
-    const response = await axios.put(`${endPoint}leaves`, leaveData, {
-      params: { leaveId: leaveData.leaveId },
+    const response = await axios.put(`${endPoint}leaves/reviewing`, {
+      params: { leaveId: leaveData.leaveId, isReviewing: isReviewing },
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userData.token}`,
@@ -84,36 +113,13 @@ const editLeaveAPI = async (leaveData, toastRef) => {
     }
     return null;
   }
-};
-
-const downloadZip = async () => {
-  console.log("Zip Download called");
-  const year = "2024"; // Example: Change dynamically as needed
-  const userId = "kousik.mondal@greenwave.co.in"; // Example: Change dynamically as needed
-
-  fetch(`${endPoint}salaryslip/Form16/${year}/${userId}`)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("File not found");
-      }
-      return response.blob();
-    })
-    .then((blob) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "salary_slip.zip";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    })
-    .catch((error) => console.error("Error downloading file:", error));
 };
 
 export {
-  getDataOnLoad,
-  applyLeaveAPI,
-  deleteLeaveAPI,
-  editLeaveAPI,
-  downloadZip,
+  getLeaveRequestsForManagerApprovalAPI,
+  getTeamLeavesTableForManagerAPI,
+  getTeamLeavesCalenderForManagerAPI,
+  approveLeaveAPI,
+  rejectLeaveAPI,
+  reviewingLeaveAPI,
 };

@@ -1,115 +1,129 @@
 import React, { useEffect, useRef, useState } from "react";
 import Grid from "@mui/material/Grid";
 import { Card } from "primereact/card";
-import { Dropdown } from "primereact/dropdown";
 import { Container } from "@mui/material";
-import SpeedDial from "../../../components/SpeedDial/SpeedDial";
-import { Button } from "primereact/button";
 import Toast from "../../../components/Toast/Toast";
-import Chart from "../../../components/Chart/Chart";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
 import { showConfirm } from "../../../components/ConfirmDialog/showConfirm";
 import Calender from "../../../components/Calender/Calender";
-import DatePicker from "../../../components/DatePicker/DatePicker";
-import DialogComponent from "../../../components/Dialog/DialogComponent";
-import { Checkbox } from "primereact/checkbox";
-import { InputTextarea } from "primereact/inputtextarea";
 import { TabView, TabPanel } from "primereact/tabview";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import {
-  applyLeave,
-  deleteLeave,
-  editLeave,
+  approveLeave,
   getCurrentDate,
-  getYearList,
   onPageLoad,
   onSelectRowEdit,
+  rejectLeave,
+  reviewingLeave,
 } from "./LeaveManagerApprovalFunctions";
 import { getUserData } from "../../Login/Encrypt";
 import "./LeaveManagerApproval.css";
 import { Tooltip } from "primereact/tooltip";
 import { Tag } from "primereact/tag";
-import { MultiSelect } from "primereact/multiselect";
 import { FilterMatchMode } from "primereact/api";
-import { Message } from "primereact/message";
-import { validateApplyLeave, validateEditLeave } from "./LeaveValidation";
+import { InputIcon } from "primereact/inputicon";
+import { IconField } from "primereact/iconfield";
+import { Avatar } from "primereact/avatar";
+import { OverlayPanel } from "primereact/overlaypanel";
+import { AvatarGroup } from "primereact/avatargroup";
+import { Chip } from "primereact/chip";
+import CustomButton from "../../../components/Button/Button";
+import CustomInputText from "../../../components/InputText/InputText";
+import { InputSwitch } from "primereact/inputswitch";
+import { showConfirmPopup } from "../../../components/ConfirmPopup/ShowConfirmPopup";
+import { InputTextarea } from "primereact/inputtextarea";
+import CustomConfirmPopup from "../../../components/ConfirmPopup/ConfirmPopup";
+import CustomDialog from "../../../components/Dialog/DialogComponent";
+import Poll from "../../../components/Poll/Poll";
 
 const LeaveManagerApproval = () => {
-  const leaveFormData = {
-    dates: [],
-    reason: "",
-    isCompensatory: false,
-  };
-  const leaveValidate = {
-    dateValidate: true,
-    dateValidateMessage: "",
-    reasonValidate: true,
-    reasonValidateMessage: "",
-  };
-  const [leaveData, setLeaveData] = useState({});
-  const [years, setYears] = useState([]);
-  const [selectedYear, setSelectedYear] = useState(0);
-  const [applyLeaveDialogVisible, setApplyLeaveDialogVisible] = useState(false);
-  const [editLeaveDialogVisible, setEditLeaveDialogVisible] = useState(false);
+  const tableStructure = () => ({
+    table: [],
+    filterText: "",
+    filterStructure: {
+      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    },
+  });
+  const [leaveRequestTable, setLeaveRequestTable] = useState(tableStructure);
+  const [teamLeaveTable, setTeamLeaveTable] = useState(tableStructure);
+  const [teamLeaveCalender, setTeamLeaveCalender] = useState([]);
+  const [selectedTeamLeave, setSelectedTeamLeave] = useState([]);
   const toastRef = useRef(null);
   const tooltipRef = useRef(null);
-  const [userInfo] = useState(getUserData());
-  const [statusTypes] = useState([
-    "Pending",
-    "Reviewing",
-    "Reviewed",
-    "ManagerApproved",
-    "Approved",
-    "Rejected",
-  ]);
-  const [leaveTypes] = useState(["PL", "CL", "Medical", "Compensatory"]);
-  const [leaveTableFilters] = useState({
-    fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    type: { value: null, matchMode: FilterMatchMode.IN },
-    status: { value: null, matchMode: FilterMatchMode.IN },
-  });
-  const [applyLeaveData, setApplyLeaveData] = useState(leaveFormData);
-  const [applyLeaveValidate, setApplyLeaveValidate] = useState(leaveValidate);
-  const [editLeaveData, setEditLeaveData] = useState(leaveFormData);
-  const [editLeaveValidate, setEditLeaveValidate] = useState(leaveValidate);
-  const editBodyTemplate = (row) => {
+  const overlayRef = useRef(null);
+  const [userInfo] = useState(getUserData()?.userDetails);
+  const [rejectedReason, setRejectedReason] = useState("");
+  const [rejectedValidation, setRejectedValidation] = useState(true);
+  const [selectedLeave, setSelectedLeave] = useState({});
+  const [rejectVisible, setRejectVisible] = useState(false);
+  const [pollStop, setPollStop] = useState(false);
+
+  const actionBodyTemplate = (row) => {
     return (
-      <Button
-        icon="pi pi-pencil"
-        rounded
-        outlined
-        severity="warning"
-        disabled={row.status !== "Pending" && row.status !== "Editing"}
-        onClick={() => {
-          onSelectRowEdit(row, setEditLeaveData, setEditLeaveDialogVisible);
-        }}
-      />
+      <>
+        <CustomButton
+          icon="pi pi-check"
+          className="mr-2"
+          rounded
+          severity="success"
+          disabled={
+            (row.isReviewing === true && row.reviewingBy !== userInfo.userId) ||
+            row.isReviewing === false
+          }
+          onClick={async () => {
+            showConfirm(
+              "Confirmation",
+              "Do you want to approve this leave?",
+              async () => {
+                await approveLeave(row, toastRef);
+              },
+              null
+            );
+          }}
+        />
+        <CustomButton
+          icon="pi pi-times"
+          rounded
+          severity="danger"
+          disabled={
+            (row.isReviewing === true && row.reviewingBy !== userInfo.userId) ||
+            row.isReviewing === false
+          }
+          onClick={() => {
+            showRejectDialog(row);
+          }}
+        />
+      </>
     );
   };
-  const deleteBodyTemplate = (row) => {
+  const reviewingBodyTemplate = (row) => {
     return (
-      <Button
-        icon="pi pi-trash"
-        rounded
-        outlined
-        severity="danger"
-        disabled={row.status !== "Pending" && row.status !== "Editing"}
-        onClick={() => {
-          showConfirm(
-            "Confirmation",
-            "Do you want to delete this leave?",
-            async () => {
-              await deleteLeave(
-                row,
-                toastRef,
-                userInfo.userDetails.userId,
-                selectedYear,
-                setLeaveData
-              );
-            },
-            null
-          );
+      <InputSwitch
+        disabled={
+          row.isReviewing === true && row.reviewingBy !== userInfo.userId
+        }
+        style={{
+          display:
+            row.type != "CL" &&
+            (row.status == "Pending" ||
+              row.status == "Reviewing" ||
+              row.status == "Reviewed")
+              ? "block"
+              : "none",
+        }}
+        checked={row.isReviewing}
+        onChange={async (e) => {
+          setLeaveRequestTable((prev) => ({
+            ...prev,
+            table: prev.table.map((p) => ({
+              ...p,
+              isReviewing: p.leaveId === row.leaveId ? e.value : p.isReviewing,
+              reviewingBy:
+                p.leaveId === row.leaveId ? userInfo.userId : p.reviewingBy,
+            })),
+          }));
+          await reviewingLeave(row, e.value, toastRef);
         }}
       />
     );
@@ -120,7 +134,7 @@ const LeaveManagerApproval = () => {
         <Tooltip
           target={"#leave_" + row.leaveId}
           mouseTrack
-          style={{ display: row.status === "Rejected" ? "block" : "none" }}
+          className={row.status === "Rejected" ? "block" : "hidden"}
         >
           <b>Rejected By :</b> {row.rejectedBy}
           <br />
@@ -135,62 +149,124 @@ const LeaveManagerApproval = () => {
       </>
     );
   };
-  const typeRowFilterTemplate = (options) => {
-    return (
-      <MultiSelect
-        value={options.value || []}
-        options={leaveTypes}
-        onChange={(e) => options.filterApplyCallback(e.value)}
-        placeholder="Any"
-        className="p-column-filter"
-        maxSelectedLabels={1}
-      />
+  const leaveHeader = (
+    <div className="flex justify-content-between align-items-center">
+      <span>Leaves</span>
+      <IconField iconPosition="left">
+        <InputIcon className="pi pi-search" />
+        <CustomInputText
+          value={leaveRequestTable.filterText}
+          onChange={(e) => {
+            const value = e.target.value;
+            let _filters = leaveRequestTable.filterStructure;
+            _filters["global"].value = value;
+            setLeaveRequestTable((p) => ({
+              ...p,
+              filterStructure: _filters,
+              filterText: value,
+            }));
+          }}
+          placeholder="Search"
+        />
+      </IconField>
+    </div>
+  );
+  function getInitials(name) {
+    return name
+      ? name
+          .split(" ")
+          .map((part) => part[0])
+          .join("")
+          .toUpperCase()
+      : "";
+  }
+  const leaveCalenderContent = (date) => {
+    const leaves = date.event.extendedProps.leaves || [];
+    const visibleLeaves = leaves.slice(0, 5); // Show first 5 users
+    const hiddenCount = leaves.length - visibleLeaves.length;
+    const avatarContent = (
+      <AvatarGroup>
+        {visibleLeaves.map((user, index) => (
+          <Avatar
+            label={user.initialName}
+            style={{
+              backgroundColor: user.initialColor,
+            }}
+            className="text-white"
+            shape="circle"
+            size="large"
+            key={index}
+            onMouseEnter={(e) => overlayRef.current?.show(e)}
+          />
+        ))}
+        {hiddenCount > 0 && (
+          <Avatar
+            shape="circle"
+            size="large"
+            label={`+${hiddenCount}`}
+            onMouseEnter={(e) => overlayRef.current?.show(e)}
+          />
+        )}
+      </AvatarGroup>
     );
-  };
-  const statusRowFilterTemplate = (options) => {
-    return (
-      <MultiSelect
-        value={options.value || []}
-        options={statusTypes}
-        onChange={(e) => options.filterApplyCallback(e.value)}
-        placeholder="Any"
-        className="p-column-filter"
-        maxSelectedLabels={1}
-      />
+    const chipContent = (
+      <div className="flex flex-column">
+        {visibleLeaves.map((user, index) => (
+          <Chip
+            className={`pl-2 mb-1`}
+            style={{ backgroundColor: user.statusColor }}
+            key={index}
+            template={() => {
+              return (
+                <div className={`py-1 text-50 text-xs truncate`}>
+                  {user.userName}
+                </div>
+              );
+            }}
+            onMouseEnter={(e) => overlayRef.current?.show(e)}
+          />
+        ))}
+        {hiddenCount > 0 && (
+          <Chip
+            className={`pl-2 mb-1`}
+            template={() => {
+              return (
+                <div className={`py-1 text-50 text-xs truncate`}>
+                  {`+${hiddenCount} others`}
+                </div>
+              );
+            }}
+            onMouseEnter={(e) => overlayRef.current?.show(e)}
+          />
+        )}
+      </div>
     );
+
+    return chipContent;
   };
 
   useEffect(() => {
-    console.log(userInfo);
-    let yearList = getYearList();
-    setYears(yearList);
-    setSelectedYear(yearList[yearList.length - 1]);
-  }, [userInfo]);
-
-  useEffect(() => {
-    const init = async () => {
-      let data = await onPageLoad(userInfo.userDetails.userId, selectedYear);
-      setLeaveData(data);
-    };
-
-    if (selectedYear !== 0) {
-      init();
-    }
-  }, [selectedYear, userInfo.userDetails.userId]);
-
-  const clearApplyDialog = () => {
-    setApplyLeaveData(leaveFormData);
-    setApplyLeaveValidate(leaveValidate);
-    setApplyLeaveDialogVisible(false);
+    const init = async () => await getLeaveData();
+    init();
+  }, []);
+  const getLeaveData = async () => {
+    let data = await onPageLoad();
+    setLeaveRequestTable((prev) => ({ ...prev, table: data.requestData }));
+    setTeamLeaveTable((prev) => ({ ...prev, table: data.tableData }));
+    setTeamLeaveCalender(data.calenderData);
   };
-  const clearEditDialog = () => {
-    setEditLeaveData(leaveFormData);
-    setEditLeaveValidate(leaveValidate);
-    setEditLeaveDialogVisible(false);
+  const showRejectDialog = (row) => {
+    setSelectedLeave(row);
+    setRejectVisible(true);
   };
-
+  const hideRejectDialog = () => {
+    setSelectedLeave({});
+    setRejectedReason("");
+    setRejectVisible(false);
+  };
   return (
     <>
+      <Poll func={getLeaveData} stop={pollStop} interval={5} />
       <Container maxWidth="lg">
         <Grid
           container
@@ -201,50 +277,74 @@ const LeaveManagerApproval = () => {
             alignItems: "center",
           }}
         >
-          <Grid size={{ md: 3.3, xs: 12 }}>
-            <Card>
-              <Grid container rowGap={1.5}>
-                <Grid size={12}>Year :</Grid>
-                <Grid size={12}>
-                  <Dropdown
-                    value={selectedYear}
-                    onChange={async (e) => {
-                      setSelectedYear(e.value);
-                    }}
-                    options={years}
-                    placeholder="Select a Year"
-                    className="w-full"
-                  />
-                </Grid>
-                <Grid size={11}>Approved Leaves :</Grid>
-                <Grid size={1}>{leaveData.cardData?.approved}</Grid>
-                <Grid size={11}>Medical Leaves :</Grid>
-                <Grid size={1}>{leaveData.cardData?.medical}</Grid>
-                <Grid size={11}>CL Available :</Grid>
-                <Grid size={1}>{leaveData.cardData?.clBalance}</Grid>
-                <Grid size={11}>PL Available :</Grid>
-                <Grid size={1}>{leaveData.cardData?.plBalance}</Grid>
-                <Grid size={11}>Compensatory Leave Available :</Grid>
-                <Grid size={1}>{leaveData.cardData?.currentCompOff}</Grid>
-                <Grid size={11}>Previous PL Available :</Grid>
-                <Grid size={1}>{leaveData.cardData?.prevPL}</Grid>
-              </Grid>
-            </Card>
-          </Grid>
-          <Grid size={{ md: 8.7, xs: 12 }}>
-            <Card>
-              <Chart
-                className="h-19rem"
-                type="line"
-                data={leaveData.chartData?.data}
-                options={leaveData.chartData?.options}
-              />
-            </Card>
-          </Grid>
           <Grid size={12}>
             <Card>
               <TabView>
-                <TabPanel header="Calender View">
+                <TabPanel header="Leave Requests">
+                  <DataTable
+                    value={leaveRequestTable.table}
+                    filters={leaveRequestTable.filterStructure}
+                    globalFilterFields={[
+                      "userName",
+                      "fromDate",
+                      "toDate",
+                      "actualLeave",
+                      "type",
+                      "reason",
+                    ]}
+                    header={leaveHeader}
+                    paginator
+                    rows={10}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    sortField="fromDate"
+                    sortOrder={-1}
+                    size="small"
+                  >
+                    <Column
+                      field="userName"
+                      header="User Name"
+                      className="w-[14vw]"
+                    ></Column>
+                    <Column
+                      field="fromDate"
+                      header="From Date"
+                      className="w-[14vw]"
+                      sortable
+                    ></Column>
+                    <Column
+                      field="toDate"
+                      header="To Date"
+                      className="w-[14vw]"
+                      sortable
+                    ></Column>
+                    <Column
+                      field="actualLeave"
+                      header="Leave"
+                      className="w-[10vw]"
+                    ></Column>
+                    <Column
+                      field="type"
+                      header="Type"
+                      className="w-[10vw]"
+                    ></Column>
+                    <Column
+                      field="reason"
+                      header="Reason"
+                      className="w-[15vw]"
+                    ></Column>
+                    <Column
+                      header="Action"
+                      className="w-[20vw]"
+                      body={actionBodyTemplate}
+                    ></Column>
+                    <Column
+                      header="Reviewing"
+                      className="w-[10vw]"
+                      body={reviewingBodyTemplate}
+                    ></Column>
+                  </DataTable>
+                </TabPanel>
+                <TabPanel header="Team Leaves">
                   <Tooltip
                     ref={tooltipRef}
                     target="#selectedEvent"
@@ -252,253 +352,101 @@ const LeaveManagerApproval = () => {
                   />
                   <Calender
                     initialView="dayGridMonth"
-                    height={"31rem"}
-                    events={leaveData.calenderData}
-                    eventMouseEnter={(info) => {
-                      info.el.id = "selectedEvent";
-                      info.el.setAttribute("data-pr-tooltip", info.event.id);
-                      info.el.setAttribute("data-pr-position", "mouse");
-                      tooltipRef.current.updateTargetEvents("#selectedEvent");
-                    }}
+                    events={teamLeaveCalender}
+                    eventContent={leaveCalenderContent}
+                    eventBackgroundColor="transparent"
+                    eventBorderColor="transparent"
+                    eventTextColor="inherit"
+                    eventMouseEnter={(e) =>
+                      setSelectedTeamLeave(e.event.extendedProps.leaves)
+                    }
                   ></Calender>
-                </TabPanel>
-                <TabPanel header="Tabular View">
-                  <DataTable
-                    value={leaveData.tableData}
-                    paginator
-                    rows={10}
-                    rowsPerPageOptions={[5, 10, 25, 50]}
-                    sortField="fromDate"
-                    sortOrder={-1}
-                    filterDisplay="row"
-                    filters={leaveTableFilters}
-                  >
-                    <Column
-                      field="fromDate"
-                      header="From Date"
-                      style={{ width: "14vw" }}
-                      sortable
-                    ></Column>
-                    <Column
-                      field="toDate"
-                      header="To Date"
-                      style={{ width: "14vw" }}
-                      sortable
-                    ></Column>
-                    <Column
-                      field="actualLeave"
-                      header="Leave"
-                      style={{ width: "10vw" }}
-                    ></Column>
-                    <Column
-                      field="type"
-                      header="Type"
-                      style={{ width: "10vw" }}
-                      filter
-                      filterField="type"
-                      showFilterMenu={false}
-                      filterElement={typeRowFilterTemplate}
-                      filterMenuStyle={{ width: "14rem" }}
-                    ></Column>
-                    <Column
-                      field="reason"
-                      header="Reason"
-                      style={{ width: "15vw" }}
-                    ></Column>
-                    <Column
-                      header="Status"
-                      body={statusBodyTemplate}
-                      style={{ width: "10vw" }}
-                      filter
-                      filterField="status"
-                      showFilterMenu={false}
-                      filterElement={statusRowFilterTemplate}
-                      filterMenuStyle={{ width: "14rem" }}
-                    ></Column>
-                    <Column
-                      header="Edit"
-                      style={{ width: "10vw" }}
-                      body={editBodyTemplate}
-                    ></Column>
-                    <Column
-                      header="Delete"
-                      style={{ width: "10vw" }}
-                      body={deleteBodyTemplate}
-                    ></Column>
-                  </DataTable>
                 </TabPanel>
               </TabView>
             </Card>
           </Grid>
         </Grid>
       </Container>
-      <SpeedDial
-        radius={80}
-        style={{ right: "2rem", bottom: "2rem", position: "fixed" }}
-        showIcon="pi pi-plus"
-        hideIcon="pi pi-plus"
-        onClick={() => {
-          setApplyLeaveDialogVisible(true);
-        }}
-      />
-      <DialogComponent
-        header="Apply For Leave"
-        visible={applyLeaveDialogVisible}
+      {/* <OverlayPanel ref={overlayRef}>
+        <DataTable value={selectedTeamLeave} size="small">
+          <Column field="userName" header="Name" />
+          <Column field="fromDate" header="Date" />
+          <Column field="type" header="Type" />
+          <Column field="reason" header="Reason" />
+          <Column field="status" header="Status" />
+        </DataTable>
+      </OverlayPanel> */}
+      <OverlayPanel
+        ref={overlayRef}
+        showCloseIcon
+        onHide={() => overlayRef.current?.hide()}
+      >
+        <div className="p-2 min-w-[250px] max-h-[300px] overflow-y-auto">
+          {selectedTeamLeave.map((user, index) => (
+            <div
+              key={index}
+              className="p-2 border-b border-[#e0e0e0] flex flex-col gap-1"
+            >
+              <div className="font-bold text-[#333]">{user.userName}</div>
+              <div className="flex flex-wrap text-[0.85rem] gap-2">
+                <span>
+                  <strong>Date:</strong> {user.fromDate}
+                </span>
+                <span>
+                  <strong>Type:</strong> {user.type}
+                </span>
+              </div>
+              <div className="text-[0.85rem] text-[#555]">
+                <strong>Reason:</strong> {user.reason}
+              </div>
+              <div>
+                <span
+                  className={`px-[6px] py-[2px] text-50 rounded text-xs `}
+                  style={{ backgroundColor: user.statusColor, color: "white" }}
+                >
+                  {user.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </OverlayPanel>
+      <CustomDialog
+        header="Reject Reason"
+        visible={rejectVisible}
         className="leaveDialog"
-        onHide={() => {
-          if (!applyLeaveDialogVisible) return;
-          clearApplyDialog();
-        }}
+        onHide={hideRejectDialog}
       >
         <Grid container rowSpacing={1.5}>
-          <Grid size={5}>Compensatory Leave</Grid>
-          <Grid size={7}>
-            <Checkbox
-              checked={applyLeaveData.isCompensatory}
-              onClick={() => {
-                setApplyLeaveData((prevData) => ({
-                  ...prevData,
-                  isCompensatory: !applyLeaveData.isCompensatory,
-                }));
-              }}
-            />
-          </Grid>
-          <Grid size={2}>Date</Grid>
-          <Grid size={6}>
-            <DatePicker
-              value={applyLeaveData.dates}
-              onChange={(e) => {
-                setApplyLeaveData((prevData) => ({
-                  ...prevData,
-                  dates: e.value,
-                }));
-              }}
-              selectionMode="range"
-              readOnlyInput
-              hideOnRangeSelection
-              disabledDays={[0, 6]}
-              minDate={getCurrentDate()}
-              showIcon
-              dateFormat="dd/mm/yy"
-            />
-          </Grid>
-          <Grid size={4}>
-            {!applyLeaveValidate.dateValidate && (
-              <Message severity="error" text="Select Dates" />
-            )}
-          </Grid>
-          <Grid size={2}>Reason</Grid>
-          <Grid size={6}>
+          <Grid size={4}>Reason</Grid>
+          <Grid size={8}>
             <InputTextarea
-              value={applyLeaveData.reason}
+              value={rejectedReason}
               autoResize
               rows={3}
               cols={24}
               onChange={(e) => {
-                setApplyLeaveData((prevData) => ({
-                  ...prevData,
-                  reason: e.target.value,
-                }));
+                setRejectedReason(e.target.value);
               }}
+              className="w-full"
+              invalid={!rejectedValidation}
             />
           </Grid>
-          <Grid size={4}>
-            {!applyLeaveValidate.reasonValidate && (
-              <Message severity="error" text="Enter Reason" />
-            )}
-          </Grid>
-          <Grid size={12} style={{ display: "flex", justifyContent: "center" }}>
-            <Button
-              label="Apply"
+          <Grid size={12} className="flex justify-center">
+            <CustomButton
+              label="Reject"
               onClick={async () => {
-                if (validateApplyLeave(applyLeaveData, setApplyLeaveValidate)) {
-                  await applyLeave(
-                    userInfo.userDetails.userId,
-                    applyLeaveData,
-                    toastRef,
-                    selectedYear,
-                    setLeaveData,
-                    clearApplyDialog
-                  );
-                }
+                await rejectLeave(
+                  selectedLeave,
+                  rejectedReason,
+                  setRejectedValidation,
+                  toastRef
+                );
               }}
             />
           </Grid>
         </Grid>
-      </DialogComponent>
-      <DialogComponent
-        header="Edit Leave"
-        visible={editLeaveDialogVisible}
-        className="leaveDialog"
-        onHide={() => {
-          if (!editLeaveDialogVisible) return;
-          clearEditDialog();
-        }}
-      >
-        <Grid container rowSpacing={1.5}>
-          <Grid size={2}>Date</Grid>
-          <Grid size={6}>
-            <DatePicker
-              value={editLeaveData.dates}
-              onChange={(e) => {
-                setEditLeaveData((prevData) => ({
-                  ...prevData,
-                  dates: e.value,
-                }));
-              }}
-              selectionMode="range"
-              readOnlyInput
-              hideOnRangeSelection
-              disabledDays={[0, 6]}
-              minDate={getCurrentDate()}
-              showIcon
-              dateFormat="dd/mm/yy"
-            />
-          </Grid>
-          <Grid size={4}>
-            {!editLeaveValidate.dateValidate && (
-              <Message severity="error" text="Select Dates" />
-            )}
-          </Grid>
-          <Grid size={2}>Reason</Grid>
-          <Grid size={6}>
-            <InputTextarea
-              value={editLeaveData.reason}
-              autoResize
-              rows={3}
-              cols={24}
-              onChange={(e) => {
-                setEditLeaveData((prevData) => ({
-                  ...prevData,
-                  reason: e.target.value,
-                }));
-              }}
-            />
-          </Grid>
-          <Grid size={4}>
-            {!editLeaveValidate.reasonValidate && (
-              <Message severity="error" text="Enter Reason" />
-            )}
-          </Grid>
-          <Grid size={12} style={{ display: "flex", justifyContent: "center" }}>
-            <Button
-              label="Edit"
-              onClick={async () => {
-                if (validateEditLeave(editLeaveData, setEditLeaveValidate)) {
-                  await editLeave(
-                    userInfo.userDetails.userId,
-                    editLeaveData,
-                    toastRef,
-                    selectedYear,
-                    setLeaveData,
-                    clearEditDialog
-                  );
-                }
-              }}
-            />
-          </Grid>
-        </Grid>
-      </DialogComponent>
+      </CustomDialog>
       <Toast ref={toastRef} />
       <ConfirmDialog />
     </>
