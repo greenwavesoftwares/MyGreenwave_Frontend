@@ -976,7 +976,7 @@ export const getApprovedTourClaims = async () => {
     };
 
     let ApprovedResponse = await fetch(
-      "http://localhost:8081/claims/tour-claims-by-status/approved",
+      "http://localhost:8081/claims/tour-claims-by-status/Approved",
       requestOptions
     );
     if (!ApprovedResponse.ok) {
@@ -1431,7 +1431,7 @@ export const getloanclaimsapproveandreject = async () => {
     }
 
     let approvedresponse = await fetch(
-      `${host}:${port}/claims/loan-claims-by-status/approved`,
+      `${host}:${port}/claims/loan-claims-by-status/Approved`,
       requestOptions
     );
 
@@ -1517,7 +1517,7 @@ export const approveLoanClaim = async (claim_id, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/loan-claims/${claim_id}/approved?reason=${remarks}`,
+      `${host}:${port}/claims/loan-claims/${claim_id}/Approved?reason=${remarks}`,
       requestOptions
     );
 
@@ -1544,3 +1544,204 @@ export const approveLoanClaim = async (claim_id, remarks) => {
     };
   }
 };
+
+export const approveMiscellanousClaim = async (claim_id, remarks) => {
+  try {
+    
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/other-claims/${claim_id}/Approved?reason=${remarks}`,
+      requestOptions
+    );
+
+    if (!response.ok) {
+      let message = response.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    } else {
+      let response =await getAppliedMiscellanousClaimAccount();
+      if(!response.status)
+      {
+         return {
+        status: false,
+        message: response.message,
+        data:[],
+      };
+      }
+      return {
+        status: true,
+        message: "Miscellanous Claim Approved",
+        data:response.data,
+      };
+    }
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
+export const rejectMiscellanousClaim = async (claim_id, remarks) => {
+  try {
+    console.log(claim_id,remarks)
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "PUT",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}:${port}/claims/other-claims/${claim_id}/Rejected?reason=${remarks}`,
+      requestOptions
+    );
+
+    if (!response.ok) {
+      let message = response.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    } else {
+      let response = await getAppliedMiscellanousClaimAccount();
+      if(!response.status)
+      {
+         return {
+        status: false,
+        message:response.message,
+        data:[],
+      };
+      }
+      return {
+        status: true,
+        message: "Miscellanous Claim Rejected",
+        data:response.data,
+      };
+    }
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
+
+export const getAppliedMiscellanousClaimAccount=async()=>{
+  try{
+     const myHeaders = new Headers();
+myHeaders.append("Authorization", token);
+
+const requestOptions = {
+  method: "GET",
+  headers: myHeaders,
+  redirect: "follow"
+};
+
+let response=await fetch(`${host}:${port}/claims/other-claims-by-status/Applied`, requestOptions)
+if(!response.ok)
+{
+  let message=await response.text();
+  return{
+    status:false,
+    message:message,
+    data:[]
+  }
+}else{
+  let data=await response.json();
+   return{
+    status:true,
+    message:'applied miscellanous claim loaded',
+    data:data
+  }
+}
+  }catch(error)
+  {
+    return{
+    status:false,
+    message:error?.message,
+    data:[]
+  }
+  }
+}
+
+export const getApprovedAndRejectMiscellanousClaim=async()=>{
+      try {
+    let message;
+    let approveddata = [];
+    let rejecteddata = [];
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let rejectedresponse = await fetch(
+      `${host}:${port}/claims/other-claims-by-status/rejected`,
+      requestOptions
+    );
+
+    if (!rejectedresponse.ok) {
+      message = await rejectedresponse.text();
+      if (message != "User Claim Not Found")
+        return {
+          status: false,
+          message: message,
+          data: [],
+        };
+    } else {
+      rejecteddata = await rejectedresponse.json();
+    }
+
+    let approvedresponse = await fetch(
+      `${host}:${port}/claims/other-claims-by-status/Approved`,
+      requestOptions
+    );
+
+    if (!approvedresponse.ok) {
+      message = await approvedresponse.text();
+      if (message != "User Claim Not Found")
+        return {
+          status: false,
+          message: message,
+          data: [],
+        };
+    } else {
+      approveddata = await approvedresponse.json();
+    }
+
+    let finaldata = [...approveddata, ...rejecteddata];
+
+    return {
+      status: true,
+      message: "approved and rejected miscellanous claims data",
+      data: finaldata,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+}

@@ -54,7 +54,7 @@ const MyTourClaims = () => {
   );
 
   const claimCalculationBody = (rowData) => (
-    <div className="flex flex-col items-end justify-center text-sm space-y-1">
+    <div className="flex flex-col items-end justify-center space-y-1">
       <div>
         <span className="font-semibold text-gray-700">Expense:</span> ₹
         {rowData["total_expensevance"]}
@@ -79,7 +79,7 @@ const MyTourClaims = () => {
   );
 
   const approverBody = (rowData) => (
-    <div className="flex flex-col items-end justify-center text-sm text-gray-800 space-y-1">
+    <div className="flex flex-col items-end justify-center text-gray-800 space-y-1">
       <div>{rowData["approverName"] || "NA"}</div>
       <div className="italic text-gray-600">
         {rowData["approver_remarks"] || "No remarks"}
@@ -88,7 +88,7 @@ const MyTourClaims = () => {
   );
 
   const reviewerBody = (rowData) => (
-    <div className="flex flex-col items-end justify-center text-sm text-gray-800 space-y-1">
+    <div className="flex flex-col items-end justify-center  text-gray-800 space-y-1">
       <div>{rowData["reviewerName"] || "NA"}</div>
       <div className="italic text-gray-600">
         {rowData["reviewer_remarks"] || "No remarks"}
@@ -118,9 +118,9 @@ const MyTourClaims = () => {
   const datebody = (rowData) => {
     return (
       <div className="flex flex-col justify-center items-center">
-        <span className="text-sm text-center"> {rowData.from_date}</span>
-        <span className="text-sm text-center"> to </span>
-        <span className="text-sm text-center"> {rowData.from_date} </span>
+        <span > {rowData.from_date}</span>
+        <span > to </span>
+        <span > {rowData.from_date} </span>
       </div>
     );
   };
@@ -142,7 +142,6 @@ const MyTourClaims = () => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
         setviewtabledata(data.tourClaimRecords);
-        // console.log("kdjjjjjjjjjj", viewtable);
          setShowViewDialog(true);
       } catch (error) {
         toast.current.show({
@@ -201,19 +200,20 @@ const MyTourClaims = () => {
   };
 
   const rowExpansionTemplate = (rowData) => (
-    <div className="p-4 bg-gray-50 rounded-lg shadow-md">
+   
       <DataTable
         value={rowData.expandabledata}
-        className="text-sm text-center"
-        tableStyle={{ minWidth: "60rem" }}
+        showGridlines
+        
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
         <Column
           header="Claim Duration"
           body={datebody}
           headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
         />
-        {/* <Column header="Claim Details" body={tourDetailsBody}   headerStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal' }}
-      bodyStyle={{ ...cellStyle, width: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }} /> */}
+       
         <Column
           header="Claim Calculation"
           body={claimCalculationBody}
@@ -269,7 +269,7 @@ const MyTourClaims = () => {
           bodyStyle={cellStyle}
         />
       </DataTable>
-    </div>
+  
   );
 
   useEffect(() => {
@@ -293,50 +293,67 @@ const MyTourClaims = () => {
         expandedRows={expandedRows}
         onRowToggle={(e) => setExpandedRows(e.data)}
         rowExpansionTemplate={rowExpansionTemplate}
+          showGridlines
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         dataKey="requisition_id"
-        className="rounded-lg shadow-lg text-center"
-        tableStyle={{ fontSize: "0.875rem", minWidth: "60rem" }}
+         paginator
+        rows={10}
       >
         <Column expander style={{ width: "3rem" }} />
         <Column
           field="fromDate"
           header="From Date"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <Column
           field="tentativeToDate"
           header="Tentative Date"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <Column
           field="actualToDate"
           header="Actual To Date"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <Column
           field="project"
           header="Project"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <Column
           field="purpose"
           header="Purpose"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <Column
           field="destination"
           header="Destination"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <Column
           field="type"
           header="Type"
+          sortable
+          filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />

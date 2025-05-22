@@ -76,13 +76,12 @@ const TourClaim = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto bg-white shadow-2xl rounded-3xl transition-all duration-300">
-        <TabView className="p-tabview-custom">
+   <div className='max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100'>
+        <TabView >
           <TabPanel header="New Claim">
-            <div className="space-y-6">
+            <div >
               {draftData.length > 0 && !toggleNewClaim && !editableMode && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div>
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-md font-semibold text-gray-700">
                       📝 My Drafts
@@ -155,21 +154,12 @@ const TourClaim = () => {
               )}
             </div>
           </TabPanel>
-
-          {/* My Claims Tab */}
-          <TabPanel header="My Claims">
-            <div className="space-y-10">
-              <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm">
-                <h2 className="text-md font-semibold text-blue-800 mb-4">
-                  📂 My Claims
-                </h2>
+          <TabPanel header="History">           
                 <MyTourClaims/>
-              </div>
-            </div>
           </TabPanel>
         </TabView>
       </div>
-    </div>
+  
   );
 };
 
