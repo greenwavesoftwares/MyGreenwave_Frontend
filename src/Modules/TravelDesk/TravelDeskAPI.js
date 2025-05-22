@@ -46,4 +46,24 @@ export const getTravelsByStatus = async (token, statusName) => {
   }
 };
 
+export const updateTravelRequisition = async (token, requisition,reqId,status) => {
+  try {
+    console.log('updateTravelRequisition() called', requisition);
+    const response = await axios.put(
+      `${endPoint}traveldesk/travels/${reqId}/${status}`,
+      requisition,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+
 export { getMyFormTravelData, getMyFormParticularRequisitionId };
