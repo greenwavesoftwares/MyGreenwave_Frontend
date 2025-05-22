@@ -1,13 +1,13 @@
 import axios from "axios";
-import { getUserData } from "../../Login/Encrypt";
-import { showErrorMessage } from "../../../components/Toast/ShowMessage";
+import { getUserData } from "../Login/Encrypt";
+import { showErrorMessage } from "../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();
 
 const resetPasswordAPI = async (body, toastRef) => {
   try {
-    const response = await axios.post(`${endPoint}admin/resetpassword`, body, {
+    const response = await axios.put(`${endPoint}admin/resetpassword`, body, {
       headers: {
         Authorization: `Bearer ${userData.token}`,
       },
