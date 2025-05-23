@@ -7,20 +7,25 @@ import { useEffect, useState } from "react";
 import { getUserData } from "../Login/Encrypt";
 import { getUserDetails } from "../Login/LoginAPI";
 import ResetPassword from "../ResetPassword/ResetPassword";
+import UserLog from "../AdminPage/UserLog/UserLog";
 
 export default function UserProfile() {
   const [showAccountInfo, setShowAccountInfo] = useState(true);
   const [userDetails, setUserDetails] = useState(null);
+  const [showLogsDialog,setShowLogsdialog]=useState(false)
   const token = getUserData().token;
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const fetchData = async () => {
     const details = await getUserDetails(token);
     setUserDetails(details);
   };
+  const onHideLogs=()=>{
+    setShowLogsdialog(false)
+  }
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <>
       {userDetails && (
@@ -143,9 +148,7 @@ export default function UserProfile() {
                 <div className="table-row">
                   <div className="table-cell table-cell-header">Logs</div>
                   <div className="table-cell">
-                    <Badge color="info" variant="standard">
-                      <FileCopyOutlinedIcon color="info" />
-                    </Badge>
+                      <FileCopyOutlinedIcon color="info" className="logs-icon" onClick={()=>{setShowLogsdialog(true)}} />
                   </div>
                 </div>
               </div>
@@ -154,6 +157,7 @@ export default function UserProfile() {
           {!showAccountInfo&&
           <ResetPassword userDetails={userDetails} currentPasswordCheck={true}/>
           }
+          <UserLog dialogVisible={showLogsDialog} onHide={onHideLogs} userId={userDetails?.userId}/>
         </div>
       )}
     </>

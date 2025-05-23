@@ -15,11 +15,13 @@ const yyyyMMddHHmmssSSS = "yyyyMMddHHmmssSSS";
 
 const getUserLogs = async (userId) => {
   let data = await getUserLogsAPI(userId);
+  
   if (data) {
     data.forEach((d) => {
-      d.oldData = convertJSONToUserData(JSON.parse(d.oldData));
-      d.newData = convertJSONToUserData(JSON.parse(d.newData));
+      d.oldData = d.oldData.length>0&&convertJSONToUserData(JSON.parse(d.oldData));
+      d.newData = d.newData.length>0&&convertJSONToUserData(JSON.parse(d.newData));
     });
+    
     return data;
   }
   return null;

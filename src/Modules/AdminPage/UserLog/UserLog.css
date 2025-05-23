@@ -1,20 +1,129 @@
-.userLogDialog{
-    width: 70vw;
+.userLogDialog {
+    width: 90vw;
+    max-width: 1200px;
 }
+
+
 @media (max-width: 1024px) {
-    .userLogDialog{
+    .userLogDialog {
         width: 60vw;
     }
 }
+
 @media (max-width: 650px) {
-    .userLogDialog{
+    .userLogDialog {
         width: 90vw;
     }
 }
-.userLogCell{
+
+.userLogCell {
     padding-top: 0.7rem;
     padding-bottom: 0.7rem;
     display: flex;
     align-items: center;
     border-bottom: 1px solid #e0e0e0;
+}
+.info-modified-wrap {
+  white-space: normal;
+  overflow-wrap: break-word;  /* Allow breaking long words if needed */
+  word-break: normal;         /* Prevent breaking in the middle of words */
+  max-width: 100%;
+}
+
+.paper-div-info {
+    width: 100%;
+    padding: 2rem;
+}
+
+.table-info {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-row-info {
+    display: table-row;
+}
+
+.table-cell-info-badge {
+    margin-left: 5px
+}
+
+.table-cell-info {
+    display: table-cell;
+    border: 1px solid rgb(1, 1, 1);
+    padding: 8px 16px;
+    vertical-align: middle;
+    font-weight: 400;
+    font-size: small;
+}
+
+.table-header-info {
+    text-align: center;
+    margin-bottom: 1rem;
+    background-color: white;
+    color: black;
+    font-weight: 600 !important;
+}
+
+.ellipsis-text .MuiChip-label {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    /* Or whatever width you need */
+    display: block;
+}
+
+.table-cell-header-info {
+    background-color: white;
+}
+
+.table-cell-body-info {
+    min-width: 25vw;
+}
+.user-logs-datatable-columns-transactionid{
+     width: 20%
+}
+.user-logs-datatable-columns-timestamp{
+     width: 15%
+}
+.user-logs-datatable-columns-modifiedby{
+     width: 25%
+}
+.user-logs-datatable-columns-information{
+     width: 40%;
+     font-size: smaller;
+}
+.table-cell-allottedpages-info {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .paper-div-info {
+        width: 90vw;
+    }
+
+    .table-cell-info {
+        padding: 12px 8px;
+    }
+
+    .table-cell-allottedpages-info {
+        justify-content: flex-start;
+    }
+    .user-logs-datatable-columns{
+    font-size: xx-small;
+    font-weight: bolder;
+    
+}
+   .logs-header{
+    font-size: x-small;
+}
+ 
+.ellipsis-text .MuiChip-label {
+    max-width: 100px;
+}
+
 }

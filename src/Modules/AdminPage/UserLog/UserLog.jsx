@@ -5,16 +5,45 @@ import { getUserLogs } from "./UserLogFunction";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { Grid } from "@mui/material";
+import UserInformation from "./UserInformation";
 
 const UserLog = ({ userId, onHide, dialogVisible = false }) => {
   const [logList, setLogList] = useState([]);
   const [expandedRows, setExpandedRows] = useState([]);
+  const compareChanges = (newData, oldData) => {
+    const changes = Object.keys(oldData).filter((key) => {
+      const oldVal = oldData[key];
+      const newVal = newData[key];
+
+      // Convert both to strings safely for comparison
+      const oldStr =
+        oldVal !== undefined && oldVal !== null
+          ? String(oldVal).trim().toLowerCase()
+          : "";
+      const newStr =
+        newVal !== undefined && newVal !== null
+          ? String(newVal).trim().toLowerCase()
+          : "";
+
+      return oldStr !== newStr;
+    });
+
+    return changes;
+  };
+
   const rowExpansionTemplate = (data) => {
+    const changes = compareChanges(data.newData, data.oldData);
+    console.log("Changes logged:", changes);
     return (
-      <Grid container>
-        <Grid size={2}>User ID</Grid>
-        <Grid size={5}>{data.oldData.userId}</Grid>
-        <Grid size={5}>{data.newData.userId}</Grid>
+      <Grid container spacing={2}>
+        <Grid item xs={12} gap={4}>
+          <UserInformation
+            header={"Old Data"}
+            changes={changes}
+            oldUserDetails={data.oldData}
+            newUserDetails={data.newData}
+          />
+        </Grid>
       </Grid>
     );
   };
@@ -46,34 +75,38 @@ const UserLog = ({ userId, onHide, dialogVisible = false }) => {
               expandedRows={expandedRows}
               rowExpansionTemplate={rowExpansionTemplate}
               onRowToggle={(e) => setExpandedRows(e.data)}
+              scrollable scrollHeight="400px"
               dataKey="timestamp"
             >
               <Column
                 expander={(row) => {
                   return row[0].data;
                 }}
-                style={{ width: "5rem" }}
+                className="max-w-[10px]"
               />
               <Column
-                style={{ width: "20%" }}
                 field="transactionId"
                 header="Transaction Id"
+                className="whitespace-nowrap overflow-hidden text-ellipsis user-logs-datatable-columns user-logs-datatable-columns-transactionid"
+                headerClassName="logs-header"
               ></Column>
               <Column
-                style={{ width: "15%" }}
                 field="timestamp"
                 header="Time"
+                className="whitespace-nowrap overflow-hidden text-ellipsis user-logs-datatable-columns user-logs-datatable-columns-timestamp"
+                headerClassName="logs-header"
               ></Column>
               <Column
-                style={{ width: "25%" }}
                 field="doneBy"
                 header="Modified By"
-                className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]"
+                className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] user-logs-datatable-columns user-logs-datatable-columns-modifiedby"
+                headerClassName="logs-header"
               ></Column>
               <Column
-                style={{ width: "40%" }}
                 field="data"
                 header="Information Modified"
+                className="whitespace-nowrap overflow-hidden info-modified-wrap user-logs-datatable-columns user-logs-datatable-columns-information"
+                headerClassName="logs-header"
               ></Column>
             </DataTable>
           </Grid>
