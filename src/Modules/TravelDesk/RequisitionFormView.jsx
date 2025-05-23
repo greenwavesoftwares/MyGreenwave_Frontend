@@ -1,10 +1,15 @@
 import React from "react";
 import { Dialog } from "primereact/dialog";
-import { Grid } from "@mui/material";
+import { Box, Grid } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { getUserData } from "../Login/Encrypt";
+import { InputTextarea } from "primereact/inputtextarea";
+import { FloatLabel } from "primereact/floatlabel";
+import { Button as PrimeReactButton } from "primereact/button";
 
-const RequisitionFormView = ({ rowData }) => {
+const RequisitionFormView = ({ rowData ,handleApproveTravel,handleRejectTravel,formData,setFormData}) => {
+  const { userDetails } = getUserData();
   return (
     <>
       <Grid container spacing={2}>
@@ -39,7 +44,58 @@ const RequisitionFormView = ({ rowData }) => {
         </Grid>
 
         <Grid size={12}>Manager Name : {rowData.manager_id}</Grid>
-        <Grid size={12}>Manager Comment : {rowData.manager_suggestion}</Grid>
+        <Grid size={12}> {
+          formData?.manager_id === userDetails?.userId ?
+          <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
+            <Grid item xs={6}>
+              Manager Name:{" "}
+              <div style={{ fontWeight: "bold", color: "blue" }}>
+                {formData?.manager_id}
+              </div>
+            </Grid>
+            <Grid item xs={6}>
+              <FloatLabel>
+                <InputTextarea
+                  value={formData?.manager_suggestion}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      manager_suggestion: e.target.value,
+                    })
+                  }
+                />
+                <label htmlFor="managercomment">Manager Comment</label>
+              </FloatLabel>
+            </Grid>
+             {/* Button */}
+          <PrimeReactButton
+            raised
+            icon="pi pi-check"
+            rounded
+            
+            aria-label="Verify"
+            severity="success"
+            disabled={!formData?.manager_suggestion?.trim()}
+            onClick={handleApproveTravel}
+          />
+          <PrimeReactButton
+            raised
+            icon="pi pi-times"
+            rounded
+            
+            severity="danger"
+            aria-label="Cancel"
+             disabled={!formData?.manager_suggestion?.trim()}
+              onClick={handleRejectTravel}
+          />
+          </Box>
+          :
+          (
+            <div>
+          Manager Comment : {rowData.manager_suggestion}
+          </div>)
+        }
+</Grid>
       </Grid>
     </>
   );

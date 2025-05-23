@@ -19,6 +19,7 @@ import { ProgressBar } from "primereact/progressbar";
 import { InputText } from "primereact/inputtext";
 import CustomToast from "../../components/Toast/Toast";
 import {  showInfoMessage, showSuccessMessage } from "../../components/Toast/ShowMessage";
+import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 
 
 export default function TravelDeskManager() {
@@ -196,7 +197,14 @@ export default function TravelDeskManager() {
       >
         {/* Dialog content */}
         <Grid container spacing={2}>
-          <Grid size={6}>Purpose : {formData?.purpose}</Grid>
+          <RequisitionFormView 
+          rowData={formData} 
+          handleApproveTravel={handleApproveTravel} 
+          handleRejectTravel={handleRejectTravel}
+          formData={formData}
+          setFormData={setFormData}
+           />
+          {/* <Grid size={6}>Purpose : {formData?.purpose}</Grid>
           <Grid size={6}>Project Name : {formData?.projectName}</Grid>
           <Grid size={6}>City : {formData?.city}</Grid>
           <Grid size={6}>Locality/Area : {formData?.localityArea}</Grid>
@@ -227,53 +235,53 @@ export default function TravelDeskManager() {
               <Column field="checkOut" header="Check Out"></Column>
               <Column field="comment" header="Comment"></Column>
             </DataTable>
-          </Grid>
+          </Grid> */}
         {/* Maneger's I/P */}
         {
-          formData?.manager_id === userDetails?.userId &&
-          <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
-            <Grid item xs={6}>
-              Manager Name:{" "}
-              <div style={{ fontWeight: "bold", color: "blue" }}>
-                {formData?.manager_id}
-              </div>
-            </Grid>
-            <Grid item xs={6}>
-              <FloatLabel>
-                <InputTextarea
-                  value={formData?.manager_suggestion}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      manager_suggestion: e.target.value,
-                    })
-                  }
-                />
-                <label htmlFor="managercomment">Manager Comment</label>
-              </FloatLabel>
-            </Grid>
-             {/* Button */}
-          <PrimeReactButton
-            raised
-            icon="pi pi-check"
-            rounded
+          // formData?.manager_id === userDetails?.userId &&
+          // <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
+          //   <Grid item xs={6}>
+          //     Manager Name:{" "}
+          //     <div style={{ fontWeight: "bold", color: "blue" }}>
+          //       {formData?.manager_id}
+          //     </div>
+          //   </Grid>
+          //   <Grid item xs={6}>
+          //     <FloatLabel>
+          //       <InputTextarea
+          //         value={formData?.manager_suggestion}
+          //         onChange={(e) =>
+          //           setFormData({
+          //             ...formData,
+          //             manager_suggestion: e.target.value,
+          //           })
+          //         }
+          //       />
+          //       <label htmlFor="managercomment">Manager Comment</label>
+          //     </FloatLabel>
+          //   </Grid>
+          //    {/* Button */}
+          // <PrimeReactButton
+          //   raised
+          //   icon="pi pi-check"
+          //   rounded
             
-            aria-label="Verify"
-            severity="success"
-            disabled={!formData?.manager_suggestion?.trim()}
-            onClick={handleApproveTravel}
-          />
-          <PrimeReactButton
-            raised
-            icon="pi pi-times"
-            rounded
+          //   aria-label="Verify"
+          //   severity="success"
+          //   disabled={!formData?.manager_suggestion?.trim()}
+          //   onClick={handleApproveTravel}
+          // />
+          // <PrimeReactButton
+          //   raised
+          //   icon="pi pi-times"
+          //   rounded
             
-            severity="danger"
-            aria-label="Cancel"
-             disabled={!formData?.manager_suggestion?.trim()}
-              onClick={handleRejectTravel}
-          />
-          </Box>
+          //   severity="danger"
+          //   aria-label="Cancel"
+          //    disabled={!formData?.manager_suggestion?.trim()}
+          //     onClick={handleRejectTravel}
+          // />
+          // </Box>
         }
 
          
