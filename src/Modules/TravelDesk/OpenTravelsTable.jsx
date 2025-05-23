@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 //Call Api
@@ -13,17 +13,18 @@ import { useState } from "react";
 import RequisitionFormView from "./RequisitionFormView";
 import { InputText } from "primereact/inputtext";
 import { FilterMatchMode } from "primereact/api";
-import { IconField } from "primereact/iconfield";
 import { Chip, IconButton } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
-import PreviewIcon from "@mui/icons-material/Preview";
-import { InputSwitch } from "primereact/inputswitch";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import dummyData from "./DummyDataForOpenTravelsTable";
+import { Toast } from "primereact/toast";
+import { TabMenu } from "primereact/tabmenu";
 
 const OpenTravelsTable = () => {
+  const toast = useRef(null);
   const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
     useState([]);
   const [completedTravelData, setCompletedTravelData] = useState([]);
@@ -60,6 +61,13 @@ const OpenTravelsTable = () => {
   const [isApprovedAndSettledLoading, setIsApprovedAndSettledLoading] =
     useState(false);
   const [isCompletedLoading, setIsCompletedLoading] = useState(false);
+
+  const [
+    approvedAndSettledActiveTabIndex,
+    setApprovedAndSettledActiveTabIndex,
+  ] = useState(0); // 0: Settled, 1: Approved
+
+  const [completedActiveTabIndex, setCompletedActiveTabIndex] = useState(0); // 0: Settled, 1: Approved
 
   const dummyDataJson = dummyData;
   console.log("dummyDataJson ==>> ", dummyDataJson);
@@ -115,14 +123,25 @@ const OpenTravelsTable = () => {
       setIsApprovedAndSettledLoading(true); // Start loading
       try {
         const { token } = getUserData();
-        const responseApproved = await getTravelsByStatus(token, "Approved");
-        const responseSettled = await getTravelsByStatus(token, "Settled");
+        let approvedAndSettledMergedData = null;
 
-        const mergedData = approvedAndSettledChecked
-          ? responseSettled.data
-          : responseApproved.data;
+        if (approvedAndSettledChecked) {
+          approvedAndSettledMergedData = await getTravelsByStatus(
+            token,
+            "Settled"
+          );
+        } else {
+          approvedAndSettledMergedData = await getTravelsByStatus(
+            token,
+            "Approved"
+          );
+        }
 
-        const cleanedData = mergedData.map((item) => {
+        // const mergedData = approvedAndSettledChecked
+        //   ? responseSettled.data
+        //   : responseApproved.data;
+
+        const cleanedData = approvedAndSettledMergedData.data.map((item) => {
           const { unsettledAmount, ...rest } = item;
           console.log("unsettledAmount ::: ", unsettledAmount);
           return rest;
@@ -145,15 +164,21 @@ const OpenTravelsTable = () => {
       setIsCompletedLoading(true);
       try {
         const { token } = getUserData();
-        const responseCompleted = await getTravelsByStatus(token, "Completed");
-        const responseCompleteRequested = await getTravelsByStatus(
-          token,
-          "CompleteRequested"
-        );
-        const mergedData = completedChecked
-          ? responseCompleteRequested.data
-          : responseCompleted.data;
-        setCompletedTravelData(mergedData); // Save data to state
+        let completedMergedData = null;
+        if (completedChecked) {
+          completedMergedData = await getTravelsByStatus(
+            token,
+            "CompleteRequested"
+          );
+        } else {
+          completedMergedData = await getTravelsByStatus(token, "Completed");
+        }
+
+        // const mergedData = completedChecked
+        //   ? responseCompleteRequested.data
+        //   : responseCompleted.data;
+
+        setCompletedTravelData(completedMergedData.data); // Save data to state
       } catch (error) {
         console.error("Error fetching travel data:", error);
       } finally {
@@ -172,6 +197,11 @@ const OpenTravelsTable = () => {
       rowData.requisionId,
       statusName
     );
+    toast.current.show({
+      severity: "success",
+      summary: "Success",
+      detail: "You have successfully applied for approval.",
+    });
     console.log(
       "updateTravelRequisitionStatusResponse :=:=>> ",
       updateTravelRequisitionStatusResponse
@@ -277,23 +307,58 @@ const OpenTravelsTable = () => {
     setCompletedGlobalFilterValue(value);
   };
 
+  // const renderHeaderForApprovedAndSettledTravelData = () => {
+  //   return (
+  //     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+  //       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+  //         <h3 className="text-lg font-semibold">
+  //           {approvedAndSettledChecked
+  //             ? "Settled Travels Table"
+  //             : "Approved Travels Table"}
+  //         </h3>
+  //         <div className="card">
+  //           <TabMenu
+  //             model={[
+  //               { label: "Settled Travels Table" },
+  //               { label: "Approved Travels Table" },
+  //             ]}
+  //           />
+  //         </div>
+  //         <InputSwitch
+  //           checked={approvedAndSettledChecked}
+  //           onChange={(e) => setApprovedAndSettledChecked(e.value)}
+  //           tooltip={
+  //             approvedAndSettledChecked
+  //               ? "Show Approved Travels Table"
+  //               : "Show Settled Travels Table"
+  //           }
+  //         />
+  //       </div>
+  //       <InputText
+  //         value={approvedAndSettledGlobalFilterValue}
+  //         onChange={approvedAndSettledOnGlobalFilterChange}
+  //         placeholder="Keyword Search"
+  //         className="w-full sm:w-auto"
+  //       />
+  //     </div>
+  //   );
+  // };
+
   const renderHeaderForApprovedAndSettledTravelData = () => {
+    const tabItems = [
+      { label: "Approved Travels Table" },
+      { label: "Settled Travels Table" },
+    ];
     return (
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <h3 className="text-lg font-semibold">
-            {approvedAndSettledChecked
-              ? "Settled Travels Table"
-              : "Approved Travels Table"}
-          </h3>
-          <InputSwitch
-            checked={approvedAndSettledChecked}
-            onChange={(e) => setApprovedAndSettledChecked(e.value)}
-            tooltip={
-              approvedAndSettledChecked
-                ? "Show Approved Travels Table"
-                : "Show Settled Travels Table"
-            }
+          <TabMenu
+            model={tabItems}
+            activeIndex={approvedAndSettledActiveTabIndex}
+            onTabChange={(e) => {
+              setApprovedAndSettledActiveTabIndex(e.index),
+                setApprovedAndSettledChecked(!approvedAndSettledChecked);
+            }}
           />
         </div>
         <InputText
@@ -307,22 +372,20 @@ const OpenTravelsTable = () => {
   };
 
   const renderHeaderForCompletedTravelData = () => {
+    const tabItems = [
+      { label: "Completed Travels Table" },
+      { label: "CompletRequested Travels Table" },
+    ];
     return (
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <h3 className="text-lg font-semibold">
-            {completedChecked
-              ? "CompletRequested Travels Table"
-              : "Completed Travels Table"}
-          </h3>
-          <InputSwitch
-            checked={completedChecked}
-            onChange={(e) => setCompletedChecked(e.value)}
-            tooltip={
-              completedChecked
-                ? "Show Completed Travels Table"
-                : "Show CompletRequested Travels Table"
-            }
+          <TabMenu
+            model={tabItems}
+            activeIndex={completedActiveTabIndex}
+            onTabChange={(e) => {
+              setCompletedActiveTabIndex(e.index),
+                setCompletedChecked(!completedChecked);
+            }}
           />
         </div>
         <InputText
@@ -340,313 +403,308 @@ const OpenTravelsTable = () => {
 
   const completedTravelDataHeader = renderHeaderForCompletedTravelData();
 
-  const rowClass = (row) => {
-    return {
-      "bg-teal-100 text-teal-900": row[0].status === "Approved",
-      "bg-blue-100 text-blue-900": row[0].status === "Completed",
-    };
-  };
-
   return (
     <>
-      {/* <div className="px-4 mx-auto max-w-[85rem] lg:px-12"> */}
-
-      {/* <DataTable
+      <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
+        <Toast ref={toast} />
+        {/* <DataTable
         value={approvedAndSettledTravelData}
         paginator
         rows={5}
         rowsPerPageOptions={[5, 10, 25, 50]}
         tableStyle={{ minWidth: "50rem" }}
       > */}
-      <DataTable
-        value={approvedAndSettledTravelData}
-        rowClassName={rowClass}
-        paginator
-        loading={isApprovedAndSettledLoading}
-        size="small"
-        showGridlines
-        rows={5}
-        rowsPerPageOptions={
-          approvedAndSettledTravelData.length > 50
-            ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
-            : approvedAndSettledTravelData.length > 25 &&
-              approvedAndSettledTravelData.length < 50
-            ? [5, 10, 25, approvedAndSettledTravelData.length]
-            : approvedAndSettledTravelData.length > 10 &&
-              approvedAndSettledTravelData.length < 25
-            ? [5, 10, approvedAndSettledTravelData.length]
-            : approvedAndSettledTravelData.length > 5 &&
-              approvedAndSettledTravelData.length < 10
-            ? [5, approvedAndSettledTravelData.length]
-            : [5]
-        }
-        paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-        currentPageReportTemplate="{first} to {last} of {totalRecords}"
-        dataKey="id"
-        filters={approvedAndSettledFilters}
-        filterDisplay="row"
-        globalFilterFields={[
-          "date",
-          "userName",
-          "empCode",
-          "projectName",
-          "unsettledAmount",
-          "advanceRequested",
-        ]}
-        header={approvedAndSettledTravelDataHeader}
-        emptyMessage="No data found."
-        removableSort
-        sortMode="multiple"
-      >
-        <Column
-          field="date"
-          header="Date"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="userName"
-          header="Name"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="empCode"
-          header="Employee Code"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="projectName"
-          header="Project Name"
-          headerStyle={{ textAlign: "center" }}
-          // headerClassName="center-header"
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="unsettledAmount"
-          header="Total Unsettled Amount"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="advanceRequested"
-          header="Advance Requested"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          body={advanceColumnBody}
-          header="Advance Given"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        <Column
-          body={(rowData) => {
-            return (
-              <Chip
-                label={rowData.status}
-                size="medium"
-                color={
-                  rowData.status.toLowerCase() === "approved" ||
-                  rowData.status.toLowerCase() === "completed"
-                    ? "success"
-                    : "warning"
-                }
-              />
-            );
-          }}
-          header="Status"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        <Column
-          body={(rowData) => {
-            return (
-              <IconButton
-                aria-label="View"
-                onClick={() => {
-                  handelShowRequisitionForm(rowData.requisionId);
-                }}
-              >
-                <PreviewIcon />
-              </IconButton>
-            );
-          }}
-          header="View"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        {!approvedAndSettledChecked && (
+        <DataTable
+          value={approvedAndSettledTravelData}
+          paginator
+          loading={isApprovedAndSettledLoading}
+          size="small"
+          showGridlines
+          rows={5}
+          rowsPerPageOptions={
+            approvedAndSettledTravelData.length > 50
+              ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 25 &&
+                approvedAndSettledTravelData.length < 50
+              ? [5, 10, 25, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 10 &&
+                approvedAndSettledTravelData.length < 25
+              ? [5, 10, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 5 &&
+                approvedAndSettledTravelData.length < 10
+              ? [5, approvedAndSettledTravelData.length]
+              : [5]
+          }
+          paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+          currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          dataKey="id"
+          filters={approvedAndSettledFilters}
+          filterDisplay="row"
+          globalFilterFields={[
+            "date",
+            "userName",
+            "empCode",
+            "projectName",
+            "unsettledAmount",
+            "advanceRequested",
+          ]}
+          header={approvedAndSettledTravelDataHeader}
+          emptyMessage="No data found."
+          removableSort
+          sortMode="multiple"
+        >
           <Column
-            body={setAdvanceActions}
-            header="Set Advance"
+            field="date"
+            header="Date"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="userName"
+            header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="empCode"
+            header="Employee Code"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="projectName"
+            header="Project Name"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="advanceRequested"
+            header="Advance Requested"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            body={advanceColumnBody}
+            header="Advance Given"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
           />
-        )}
-        <Column
-          body={(rowData) => {
-            return (
-              <IconButton
-                aria-label="Complete"
-                onClick={() => {
-                  updateTravelRequisitionStatus(rowData, "CompleteRequested");
-                }}
-              >
-                <CheckIcon />
-              </IconButton>
-            );
-          }}
-          header="Travel Complete"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-      </DataTable>
+          <Column
+            body={(rowData) => {
+              return (
+                <Chip
+                  label={rowData.status}
+                  size="medium"
+                  color={
+                    rowData.status.toLowerCase() === "approved" ||
+                    rowData.status.toLowerCase() === "completed"
+                      ? "success"
+                      : "warning"
+                  }
+                />
+              );
+            }}
+            header="Status"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          />
+          <Column
+            body={(rowData) => {
+              return (
+                <IconButton
+                  aria-label="View"
+                  onClick={() => {
+                    handelShowRequisitionForm(rowData.requisionId);
+                  }}
+                >
+                  <VisibilityIcon />
+                </IconButton>
+              );
+            }}
+            header="View"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          />
+          {!approvedAndSettledChecked && (
+            <Column
+              body={setAdvanceActions}
+              header="Set Advance"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+          )}
+          <Column
+            body={(rowData) => {
+              return (
+                <IconButton
+                  aria-label="Complete"
+                  onClick={() => {
+                    updateTravelRequisitionStatus(rowData, "CompleteRequested");
+                  }}
+                >
+                  <CheckIcon />
+                </IconButton>
+              );
+            }}
+            header="Travel Complete"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          />
+        </DataTable>
 
-      {/* <DataTable
+        {/* <DataTable
         value={completedTravelData}
         paginator
         rows={5}
         rowsPerPageOptions={[5, 10, 25, 50]}
         tableStyle={{ minWidth: "50rem" }}
       > */}
-      <DataTable
-        value={completedTravelData}
-        rowClassName={rowClass}
-        paginator
-        loading={isCompletedLoading}
-        size="small"
-        showGridlines
-        rows={5}
-        rowsPerPageOptions={
-          completedTravelData.length > 50
-            ? [5, 10, 25, 50, completedTravelData.length]
-            : completedTravelData.length > 25 && completedTravelData.length < 50
-            ? [5, 10, 25, completedTravelData.length]
-            : completedTravelData.length > 10 && completedTravelData.length < 25
-            ? [5, 10, completedTravelData.length]
-            : completedTravelData.length > 5 && completedTravelData.length < 10
-            ? [5, completedTravelData.length]
-            : [5]
-        }
-        paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-        currentPageReportTemplate="{first} to {last} of {totalRecords}"
-        dataKey="id"
-        filters={completedFilters}
-        filterDisplay="row"
-        globalFilterFields={["date", "userName", "empCode", "projectName"]}
-        header={completedTravelDataHeader}
-        emptyMessage="No data found."
-        removableSort
-        sortMode="multiple"
-      >
-        <Column
-          field="date"
-          header="Date"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="userName"
-          header="Name"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="empCode"
-          header="Employee Code"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="projectName"
-          header="Project Name"
-          headerStyle={{ textAlign: "center" }}
-          // headerClassName="center-header"
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="unsettledAmount"
-          header="Total Unsettled Amount"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="advanceRequested"
-          header="Advance Requested"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="advance"
-          header="Advance Given"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          body={(rowData) => {
-            return (
-              <Chip
-                label={rowData.status}
-                size="medium"
-                color={
-                  rowData.status.toLowerCase() === "approved" ||
-                  rowData.status.toLowerCase() === "completed"
-                    ? "success"
-                    : "warning"
-                }
-              />
-            );
-          }}
-          header="Status"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        <Column
-          body={(rowData) => {
-            return (
-              <IconButton
-                aria-label="View"
-                onClick={() => {
-                  handelShowRequisitionForm(rowData.requisionId);
-                }}
-              >
-                <PreviewIcon />
-              </IconButton>
-            );
-          }}
-          header="View"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-      </DataTable>
+        <DataTable
+          value={completedTravelData}
+          paginator
+          loading={isCompletedLoading}
+          size="small"
+          showGridlines
+          rows={5}
+          rowsPerPageOptions={
+            completedTravelData.length > 50
+              ? [5, 10, 25, 50, completedTravelData.length]
+              : completedTravelData.length > 25 &&
+                completedTravelData.length < 50
+              ? [5, 10, 25, completedTravelData.length]
+              : completedTravelData.length > 10 &&
+                completedTravelData.length < 25
+              ? [5, 10, completedTravelData.length]
+              : completedTravelData.length > 5 &&
+                completedTravelData.length < 10
+              ? [5, completedTravelData.length]
+              : [5]
+          }
+          paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+          currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          dataKey="id"
+          filters={completedFilters}
+          filterDisplay="row"
+          globalFilterFields={["date", "userName", "empCode", "projectName"]}
+          header={completedTravelDataHeader}
+          emptyMessage="No data found."
+          removableSort
+          sortMode="multiple"
+        >
+          <Column
+            field="date"
+            header="Date"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="userName"
+            header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="empCode"
+            header="Employee Code"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="projectName"
+            header="Project Name"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="advanceRequested"
+            header="Advance Requested"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            field="advance"
+            header="Advance Given"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+          />
+          <Column
+            body={(rowData) => {
+              return (
+                <Chip
+                  label={rowData.status}
+                  size="medium"
+                  color={
+                    rowData.status.toLowerCase() === "approved" ||
+                    rowData.status.toLowerCase() === "completed"
+                      ? "success"
+                      : "warning"
+                  }
+                />
+              );
+            }}
+            header="Status"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          />
+          <Column
+            body={(rowData) => {
+              return (
+                <IconButton
+                  aria-label="View"
+                  onClick={() => {
+                    handelShowRequisitionForm(rowData.requisionId);
+                  }}
+                >
+                  <VisibilityIcon />
+                </IconButton>
+              );
+            }}
+            header="View"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          />
+        </DataTable>
 
-      <Dialog
-        header="Requisition Form View"
-        visible={visible}
-        style={{ width: "70rem" }}
-        onHide={() => {
-          if (!visible) return;
-          setVisible(false);
-        }}
-      >
-        <h2>Requisition Form View</h2>
-        <RequisitionFormView rowData={rowData} />
-      </Dialog>
+        <Dialog
+          header="Requisition Form View"
+          visible={visible}
+          style={{ width: "70rem" }}
+          onHide={() => {
+            if (!visible) return;
+            setVisible(false);
+          }}
+        >
+          <h2>Requisition Form View</h2>
+          <RequisitionFormView rowData={rowData} />
+        </Dialog>
+      </div>
     </>
   );
 };
