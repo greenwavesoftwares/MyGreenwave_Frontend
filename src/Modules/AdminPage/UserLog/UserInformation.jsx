@@ -1,4 +1,3 @@
-import React from "react";
 import { Paper, Chip, Badge, Tooltip } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -84,9 +83,15 @@ const UserDetailsTable = ({
      , trueText //text to display when the boolean value is true
      , falseText //text to display when the boolean value is false
     }) => {
+      /**
+       * 
+       * @param {*} val 
+       * @returns the value in updated format
+       */
       const formatValue = (val) => {
         if (isBoolean) return val ? trueText || "Yes" : falseText || "No";
-        if (isChips && Array.isArray(val)) {
+        //checks whether the value is boolean or not, if so return trueText or falseText if available else return Yes or No
+        if (isChips && Array.isArray(val)) {//checks whether the value is an array or not, and whether the values are to be displayed in chips or not
           return (
             <div className="table-cell-allottedpages-info">
               {val.map((page, i) => (
@@ -105,12 +110,13 @@ const UserDetailsTable = ({
             className="ellipsis-text"
             color={isHighLighted(key) ? "warning" : "default"}
             size="small"
-          />
+          />//checks whether the field is highlighted or not, if so display it in warning color else display it in default color
         ),
         oldData: (
           <div className="info-modified-wrap">
             {formatValue(oldUserDetails[key])}
           </div>
+          // display the old value in the table
         ),
         newData: (
           <div className="info-modified-wrap">
@@ -134,6 +140,7 @@ const UserDetailsTable = ({
               </Tooltip>
             )}
           </div>
+          // display the updated value in the table, show the tooltip on hovering a badge if the value has been changed
         ),
       };
     }
@@ -144,9 +151,9 @@ const UserDetailsTable = ({
       <DataTable
         value={tableData}
         className="p-datatable-sm"
-        scrollable
-        scrollHeight="400px"
-        showGridlines
+        scrollable //the datatable is scrollable
+        scrollHeight="400px" //the maximum height of the datatable
+        showGridlines //show gridlines between cells
       >
         <Column header="Field" field="field" />
         <Column header="Old Data" field="oldData" />
