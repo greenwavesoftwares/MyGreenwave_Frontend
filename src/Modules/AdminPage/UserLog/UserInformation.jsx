@@ -2,14 +2,14 @@ import React from "react";
 import { Paper, Chip, Badge, Tooltip } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import "./UserLog.css"; 
+import "./UserLog.css";
 
-const UserDetailsTable = ({ 
-    newUserDetails //updated information of the user 
-  , oldUserDetails, //old information of user
-    changes //the keys where changes are made
-  }) => {
-
+const UserDetailsTable = ({
+  newUserDetails, //updated information of the user
+  oldUserDetails, //old information of user
+  changes, //the keys where changes are made
+}) => {
+  //constant to record all possible keys to be displayed in the table
   const fields = [
     { label: "Email ID", key: "userId" },
     { label: "User Name", key: "userName" },
@@ -43,25 +43,47 @@ const UserDetailsTable = ({
     {
       label: "Required Password Change on First Login",
       key: "firstLoginRequired",
+      isBoolean: true,
     },
     { label: "Password Expiry Duration (days)", key: "passwordExpiryDuraton" },
     { label: "Password Expiry Date", key: "passwordExpiryDate" },
     { label: "Allotted Pages", key: "allotedPages", isChips: true },
   ];
-  
-  const isHighLighted = (key) => changes.includes(key);//checks whether the value of a particular key is updated or not
+
+  const isHighLighted = (key) => changes.includes(key); //checks whether the value of a particular key is updated or not
+  /**
+   *
+   * @param {*} key
+   * @param {*} oldVal
+   * @param {*} newVal
+   * @returns the changes that are made in a particular transaction for a particular key
+   * The returned value is displayed on a tooltip on hover displayed in the tooltip
+   */
   const valueChangeTooltip = (key, oldVal, newVal) => {
     if (Array.isArray(oldVal) && Array.isArray(newVal)) {
-      const removed = oldVal.filter((val) => !newVal.includes(val));
-      const added = newVal.filter((val) => !oldVal.includes(val));
+      //checks whether old and updated values are keys or not
+      const removed = oldVal.filter((val) => !newVal.includes(val)); //checks which values are removed from the array
+      const added = newVal.filter((val) => !oldVal.includes(val)); //check which values are added to the array
       return `${removed.length ? `${removed.join(", ")} removed` : ""}${
         removed.length && added.length ? ", " : ""
       }${added.length ? `${added.join(", ")} added` : ""} in Field ${key}`;
-    } else return `Field ${key} updated from ${oldVal} to ${newVal}`;
+    } else
+      return `Field ${
+        fields.find((field) => field.key === key).label
+      } updated from ${oldVal} to ${newVal}`;
   };
-
+  /**
+   * returns the inner table of the transaction table,
+   * which will be displayed on value update
+   */
   const tableData = fields.map(
-    ({ label, key, isChips, isBoolean, trueText, falseText }) => {
+    ({ label //label to be displayed as table header
+     , key //key of the field
+     , isChips //checks whether the values are displayed in a chips
+     , isBoolean //checks whether the field is boolean or not
+     , trueText //text to display when the boolean value is true
+     , falseText //text to display when the boolean value is false
+    }) => {
       const formatValue = (val) => {
         if (isBoolean) return val ? trueText || "Yes" : falseText || "No";
         if (isChips && Array.isArray(val)) {
@@ -100,6 +122,7 @@ const UserDetailsTable = ({
                   oldUserDetails[key],
                   newUserDetails[key]
                 )}
+                // style={{zIndex:'1000'}}
               >
                 <Badge
                   color="error"

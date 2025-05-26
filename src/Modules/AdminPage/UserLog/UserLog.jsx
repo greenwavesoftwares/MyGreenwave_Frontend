@@ -14,18 +14,14 @@ const UserLog = ({ userId, onHide, dialogVisible = false }) => {
     const changes = Object.keys(oldData).filter((key) => {
       const oldVal = oldData[key];
       const newVal = newData[key];
+      if(Array.isArray(oldVal) && Array.isArray(newVal)){
+        const checkRemovedItems=oldVal.every(val=>newVal.includes(val))
+        const checkAddedItems=newVal.every(val=>oldVal.includes(val))
+        return !checkRemovedItems||!checkAddedItems
 
-      // Convert both to strings safely for comparison
-      const oldStr =
-        oldVal !== undefined && oldVal !== null
-          ? String(oldVal).trim().toLowerCase()
-          : "";
-      const newStr =
-        newVal !== undefined && newVal !== null
-          ? String(newVal).trim().toLowerCase()
-          : "";
-
-      return oldStr !== newStr;
+      }
+      else
+        return oldVal!==newVal
     });
 
     return changes;
