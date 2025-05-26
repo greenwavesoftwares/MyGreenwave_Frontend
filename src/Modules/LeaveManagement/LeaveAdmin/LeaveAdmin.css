@@ -1,4 +1,4 @@
-.p-datatable .p-column-header-content {
+.tableHeader.p-datatable .p-column-header-content {
     justify-content: flex-start !important;
 }
 .leaveDialog{

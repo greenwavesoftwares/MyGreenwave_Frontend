@@ -33,10 +33,16 @@ import HRLoanApplication from "./Modules/Claims/HR/HRLoanApplication";
 import TravelDeskAdvanced from "./Modules/TravelDesk/TravelDeskAdvanced";
 import TravelDeskManager from "./Modules/TravelDeskManager/TravelDeskManager";
 import UserProfile from "./Modules/UserProfile/UserProfile";
-import AccountMiscellanousClaim from "./Modules/Claims/Account/AccountMiscellanousClaim"
+import AccountMiscellanousClaim from "./Modules/Claims/Account/AccountMiscellanousClaim";
+import HomePage from "./Modules/Home/HomePage";
+//Menu Bar
+import MenuBar from "./components/MenuBar/MenuBar";
+
 function App() {
   return (
+    
     <Router>
+      <MenuBar >
       {/* <DropdownCheckbox> </DropdownCheckbox> */}
       {/* <DialogComponent></DialogComponent> */}
       {/* <DatePicker></DatePicker> */}
@@ -75,14 +81,19 @@ function App() {
         <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
         <Route path="/appraisal-tracker" element={<AppraisalTracker />} />
         <Route path="/training-master" element={<TrainingMaster />} />
-        <Route path="/holiday-master" element={<HolidayMaster />} />
+        <Route path="/holidaymaster" element={<HolidayMaster />} />
         <Route path="/nalanda" element={<Nalanda />} />
         <Route
           path="/training-schedule-master"
           element={<TrainingScheduleMaster />}
         />
         <Route path="/userprofile" element={<UserProfile/>}/>
+         <Route
+          path="/HomePage"
+          element={<HomePage/>}
+        />
       </Routes>
+      </MenuBar>
     </Router>
   );
 }

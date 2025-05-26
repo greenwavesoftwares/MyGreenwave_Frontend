@@ -129,6 +129,8 @@ const appraisalFormExcelDownload = async (
     // Cleanup
     link.remove();
     window.URL.revokeObjectURL(url);
+
+    return response.status;
   } catch (error) {
     console.error("Excel download failed:", error);
   }

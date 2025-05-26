@@ -42,6 +42,8 @@ import { Dropdown } from "primereact/dropdown";
 import { Calendar } from "primereact/calendar";
 import { InputText } from "primereact/inputtext";
 import { ConfirmDialog } from "primereact/confirmdialog";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
 
 const AppraisalTracker = () => {
   //For Toast
@@ -73,6 +75,11 @@ const AppraisalTracker = () => {
   const [confirmDialog, setConfirmDialog] = useState(false);
   //Set Force Approve Select Row
   const [forceApproveSelectRow, setForceApproveSelectRow] = useState(null);
+  //Set Form id for Show Icon
+  const [currentFormId, setCurrentFormId] = useState(null);
+  //Set Form id for Excel Download Icon
+  const [excelDownloadFormId, setExcelDownloadFormId] = useState(null);
+  
 
   //Call All Appraisal List API
   useEffect(() => {
@@ -138,6 +145,8 @@ const AppraisalTracker = () => {
       showInfoMessage(toastRef, `${empId}`, "Form Fetched Successfully");
       setAppraiserForm(getAppraisalFormData?.data);
       setAppraisalFormVisible(true);
+      //Click Form Id
+      setCurrentFormId(formId);
     } else {
       showErrorMessage(toastRef, "Error", "Form Not Found");
       setAppraisalFormVisible(false);
@@ -148,6 +157,8 @@ const AppraisalTracker = () => {
   const handelExcelDownload = async (formId, previousYearFormId, empId) => {
     const localStorageAuth = getUserData();
     const authToken = localStorageAuth?.token;
+    //Set Form Id for Loader
+    setExcelDownloadFormId(formId);
     const excelDownload = await appraisalFormExcelDownload(
       authToken,
       formId,
@@ -155,6 +166,14 @@ const AppraisalTracker = () => {
       empId
     );
     console.log("excelDownload", excelDownload);
+    if (excelDownload == 200) {
+      showSuccessMessage(toastRef, `${empId}`, "Excel Downloaded Successfully");
+      //Set Form Id for Loader
+      setExcelDownloadFormId(null); 
+      await getAllAppraisal();
+    } else {
+      showErrorMessage(toastRef, "Error", "Internal Server Error");
+    }
   };
 
   //Form Submit Handle For New Appraisal Form
@@ -195,7 +214,7 @@ const AppraisalTracker = () => {
 
 
   //Force Approve Appraisal Form
-  const handelForceApprove = async (rowData) => {
+  const handelForceApprove = async () => {
     const { token } = getUserData();
     const forceApprovePayload = {
       ...forceApproveSelectRow,
@@ -261,7 +280,7 @@ const AppraisalTracker = () => {
         </div>
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
           {appraisalFormVisible && (
-            <div className="container mx-auto mt-4">
+            <div className="container mx-auto mt-2">
               <AppraisalDialog
                 appraiserForm={appraiserForm}
                 trainingData={trainingData}
@@ -322,7 +341,7 @@ const AppraisalTracker = () => {
                       color="info"
                       sx={{ padding: "4px" }}
                     >
-                      <VisibilityIcon />
+                      {rowData.formId === currentFormId ? <CheckCircleIcon color="success"/> :<VisibilityIcon />}
                     </IconButton>
                   );
                 }}
@@ -366,7 +385,7 @@ const AppraisalTracker = () => {
                         )
                       }
                     >
-                      <DownloadIcon />
+                     {rowData.formId === excelDownloadFormId ? <CircularProgress />: <DownloadIcon />}
                     </IconButton>
                   );
                 }}

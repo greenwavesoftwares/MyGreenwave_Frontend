@@ -8,20 +8,20 @@
 }
 
 /* Define Raleway Font */
-@font-face {
+/* @font-face {
   font-family: 'Raleway';
   src: url('/assets/Fonts/Raleway-SemiBold.ttf') format('truetype');
   font-weight: 100;
   font-style: normal;
-}
+} */
 
 /* Define Inter Font */
-@font-face {
+/* @font-face {
   font-family: 'Inter';
   src: url('/assets/Fonts/Inter-Regular.otf') format('opentype');
   font-weight: 100;
   font-style: normal;
-}
+} */
 :root {
   --p-blue-50: #f5f9ff;
   --p-blue-100: #d0e1fd;
@@ -171,5 +171,8 @@ header, footer {
   padding: 10px;
   text-align: center;
   color: white;
+}
+.css-1lwhjos-MuiPaper-root-MuiDrawer-paper{
+  scrollbar-width: none;
 }
 
