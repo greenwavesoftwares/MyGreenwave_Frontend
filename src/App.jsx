@@ -79,7 +79,7 @@ function App() {
         <Route path="/appraisals-review" element={<AppraisalsReview />} />
         <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
         <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
-        <Route path="/appraisal-tracker" element={<AppraisalTracker />} />
+        <Route path="/appraisaltracker" element={<AppraisalTracker />} />
         <Route path="/training-master" element={<TrainingMaster />} />
         <Route path="/holidaymaster" element={<HolidayMaster />} />
         <Route path="/nalanda" element={<Nalanda />} />
@@ -89,7 +89,7 @@ function App() {
         />
         <Route path="/userprofile" element={<UserProfile/>}/>
          <Route
-          path="/HomePage"
+          path="/homePage"
           element={<HomePage/>}
         />
       </Routes>

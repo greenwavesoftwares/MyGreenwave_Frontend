@@ -18,6 +18,9 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
+import menuItems from "./MenuIcon";
+import { FaCar } from "react-icons/fa";
+
 //Page Info Api
 import { getUserPageInfo } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
@@ -169,7 +172,12 @@ export default function MiniDrawer({ children }) {
       <Drawer
         variant="permanent"
         open={open}
-        sx={window.location.pathname === "/login" || window.location.pathname === "/" ? { display: "none" } : {}}
+        sx={
+          window.location.pathname === "/login" ||
+          window.location.pathname === "/"
+            ? { display: "none" }
+            : {}
+        }
       >
         <DrawerHeader>
           <IconButton
@@ -196,59 +204,72 @@ export default function MiniDrawer({ children }) {
         <Divider />
         <List>
           {userPageInfo.map((text, index) => {
-            const currentPage = window.location.pathname.split("/")[1] === text.toLowerCase();
-            return(
-            <ListItem key={text} disablePadding sx={{ display: "block" }}>
-              <ListItemButton
-                onClick={() => handelMenuClick(text)}
-                sx={[
-                  {
-                    minHeight: 48,
-                    px: 2.5,
-                    backgroundColor: currentPage ? "#D0F1FF" : "transparent",
-                  },
-                  open
-                    ? {
-                        justifyContent: "initial",
-                      }
-                    : {
-                        justifyContent: "center",
-                      },
-                ]}
-              >
-                <ListItemIcon
+            const currentPage =
+              window.location.pathname.split("/")[1] === text.toLowerCase();
+            return (
+              <ListItem key={text} disablePadding sx={{ display: "block" }}>
+                <ListItemButton
+                  onClick={() => handelMenuClick(text)}
                   sx={[
                     {
-                      minWidth: 0,
-                      justifyContent: "center",
-                      color: currentPage ? "#54A8C9" : "",
+                      minHeight: 48,
+                      px: 2.5,
+                      backgroundColor: currentPage ? "#EAEFEF" : "transparent",
                     },
                     open
                       ? {
-                          mr: 3,
+                          justifyContent: "initial",
                         }
                       : {
-                          mr: "auto",
+                          justifyContent: "center",
                         },
                   ]}
                 >
-                  <MailIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={text}
-                  sx={[
-                    open
-                      ? {
-                          opacity: 1,
-                        }
-                      : {
-                          opacity: 0,
-                        },
-                  ]}
-                />
-              </ListItemButton>
-            </ListItem>
-          )})}
+                  <ListItemIcon
+                    sx={[
+                      {
+                        minWidth: 0,
+                        justifyContent: "center",
+                        color: currentPage ? "#54A8C9" : "",
+                      },
+                      open
+                        ? {
+                            mr: 3,
+                          }
+                        : {
+                            mr: "auto",
+                          },
+                    ]}
+                  >
+                    {menuItems.map((item, id) => {
+                      if (item.label.toLowerCase() === text.toLowerCase()) {
+                        console.log(
+                          "iconName",
+                          item.label.toLowerCase(),
+                          text.toLowerCase()
+                        );
+                        return <i style={{marginLeft:"3px"}} className={item.icon} />
+                      } else {
+                        <p>NA</p>;
+                      }
+                    })}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={text}
+                    sx={[
+                      open
+                        ? {
+                            opacity: 1,
+                          }
+                        : {
+                            opacity: 0,
+                          },
+                    ]}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
         <Divider />
       </Drawer>
