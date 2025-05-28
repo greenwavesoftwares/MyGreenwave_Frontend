@@ -25,9 +25,13 @@ const DraftForm = ({
   setDraftData,
   seteditableMode,
   editableMode,
-  tourclaimformData,
+  settoggleNewClaim,
+  tourclaimforsettoggleNewClaimmData,
   settourclaimformData,
   settourClaimTableData,
+  travelOptions,
+  setTravelModeOptions
+  
 }) => {
   const cellStyle = { padding: "12px 16px" };
   const toast = useRef(null);
@@ -36,28 +40,55 @@ const DraftForm = ({
   const [selectedRowData, setSelectedRowData] = useState(null);
 
   const handleDelete = async (claim_id, status) => {
-    let data = await deleteDraftList(claim_id, status);
-    setDraftData(data);
-    if (data.length === 0) {
+    let response = await deleteDraftList(claim_id, status);
+    if (!response.status) {
+      toast.current.show({
+        severity: "error",
+        summary: "error",
+        detail: response.message,
+      });
+    } else {
+     
+      toast.current.show({
+        severity: "success",
+        summary: "Success",
+        detail: response.message,
+      });
+       setDraftData(response.data);
+      if (response.data.length == 0) {
       settoggleNewClaim(true);
+      seteditableMode(false);
+      settourClaimTableData([]);
+      settourclaimformData([])
     }
+    }
+
+    
   };
 
   const handleApplyApproval = async (claim_id, status) => {
     try {
-      let data = await applyClaim(claim_id, status);
-      setDraftData(data);
-      if (data.length === 0) {
-        console.log("draft length is zero", data);
-        settoggleNewClaim(true);
-        seteditableMode(false);
-        settourClaimTableData([]);
+      let response = await applyClaim(claim_id, status);
+      if (!response.status) {
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: error?.message,
+        });
+      } else {
+         toast.current.show({
+          severity: "success",
+          summary: "Success",
+          detail: "You have successfully applied for approval.",
+        });
+        setDraftData(response.data);
+        if (response.data.length == 0) {
+          settoggleNewClaim(true);
+          seteditableMode(false);
+          settourClaimTableData([]);
+        }
+       
       }
-      toast.current.show({
-        severity: "success",
-        summary: "Success",
-        detail: "You have successfully applied for approval.",
-      });
     } catch (error) {
       toast.current.show({
         severity: "error",
@@ -70,18 +101,28 @@ const DraftForm = ({
   const handleEdit = async (claim_id, requisition_id) => {
     try {
       const data = await getTourClaimTableDraftData(claim_id);
-      const obj = await getTravelDropDown();
+      const travelDropDown = await getTravelDropDown();
+     
+     let obj = travelDropDown.data;
+    //  setTravelModeOptions(obj)
 
+      const matchedItem = obj.find(item => item.value === data.requisition_id);
+
+// const travelmodeLabel = matchedItem ? matchedItem.label : null;
+  
       let dates = await getlatestclaimtodate(requisition_id);
 
-      const travelmodefilter = Object.keys(obj).find(
-        (key) => obj[key] === data.requisition_id
-      );
+     
+      // console.log('all data',obj)      
+      // console.log('this should be selected',matchedItem)
+      // console.log('req id',data.requisition_id)
+              
+           
       settourclaimformData({
         advance: 0,
         claim_id: data.claim_id,
         requisition_id: requisition_id,
-        travelMode: travelmodefilter,
+        travelMode: matchedItem,
         travelType: data.type,
         destination: data.destination,
         purpose: data.purpose,
@@ -289,13 +330,14 @@ const DraftForm = ({
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
           <Column
-            field="claim_id"
+            field="requisition_id"
             header="Claim Id"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
             sortable
             filter
           />
+          
           <Column
             field="to_date"
             header="To"

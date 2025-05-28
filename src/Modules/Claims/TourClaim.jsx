@@ -1,17 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import { TabView, TabPanel } from "primereact/tabview";
 import TourClaimForm from "./TourClaimForm";
 import TourClaimTable from "./TourClaimTable";
 import DraftForm from "./DraftForm";
 import MyTourClaims from "./MyTourClaims";
 import { Button } from "primereact/button";
-import { getDraftData, handleSaveToDraft } from "./claimServices";
+import { getDraftData, handleSaveToDraft,getTravelDropDown } from "./claimServices";
+import { Toast } from "primereact/toast";
 
 const TourClaim = () => {
+  const toast=useRef()
  
   const [editableMode, seteditableMode] = useState(false); // true by default
   const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
   const [draftData, setDraftData] = useState([]);
+  const [travelModeOptions, setTravelModeOptions] = useState([]);
+   const [selectedtravelMode,setselectedtravelMode]=useState(null)
+  const [travelTypeOptions, settravelTypeOptions] = useState([
+      "Others",
+      "Sales Marketing",
+      "Project",
+      "Service Paid",
+      "Service Fees",
+      "Survey",
+      "Training",
+  ]);
   const [tourClaimTableData, settourClaimTableData] = useState(
     []
     //     {
@@ -31,6 +44,7 @@ const TourClaim = () => {
     // }
   );
   const [tourclaimFormLabeData, settourclaimFormLabeData] = useState([]);
+
   const [tourclaimformData, settourclaimformData] = useState({
     claim_id: "",
     advance: "",
@@ -53,20 +67,42 @@ const TourClaim = () => {
     () => {
       const fetchDraftData = async () => {
         try {
-          const formattedDraftData = await getDraftData();
-          setDraftData(formattedDraftData);
-
-          if (formattedDraftData.length == 0) {
+          const response = await getDraftData();
+          if(response.status)
+          {
+             setDraftData(response.data);
+              if (response.data.length == 0) {
                settoggleNewClaim(true);
           }
+          }else
+          {
+             toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: response.message,
+      });
+          } 
         } catch (err) {
           console.error("Error loading draft data:", err);
           setDraftData([]); // fallback
         }
       };
+
+        const fetchDropdownList = async () => {
+            try {
+              const travelModeData = await getTravelDropDown();
+            if(travelModeData.status)    
+              setTravelModeOptions(travelModeData.data);
+            } catch (error) {
+              console.error("Error fetching tour claim list:", error);
+            }
+          };
+          fetchDropdownList();
+
+      fetchDropdownList()
       fetchDraftData();
     },
-    [],[draftData]
+    []
   );
 
   const handleSaveToDraft = () => {
@@ -77,6 +113,7 @@ const TourClaim = () => {
 
   return (
    <div className='max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100'>
+     <Toast ref={toast} />
         <TabView >
           <TabPanel header="New Claim">
             <div >
@@ -122,6 +159,9 @@ const TourClaim = () => {
                     tourclaimformData={tourclaimformData}
                     settourclaimformData={settourclaimformData}
                     settourClaimTableData={settourClaimTableData}
+                    settoggleNewClaim={settoggleNewClaim}
+                    setTravelModeOptions={setTravelModeOptions}
+                  
                   />
                 </div>
               )}
@@ -134,6 +174,8 @@ const TourClaim = () => {
                     tourclaimFormLabeData={tourclaimFormLabeData}
                     editableMode={editableMode}
                     toggleNewClaim={toggleNewClaim}
+                    travelTypeOptions={travelTypeOptions}
+                    travelModeOptions={travelModeOptions}
                   />
                  
                   <TourClaimTable

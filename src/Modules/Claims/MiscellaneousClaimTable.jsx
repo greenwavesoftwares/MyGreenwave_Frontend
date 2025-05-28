@@ -17,7 +17,7 @@ const MiscellaneousClaimTable = () => {
           let response = await downloadOtherClaimSupportingDocument(claim_id);
           if(!response.status)
           {
-            toast.current.show({
+          toast.current.show({
             severity: "error",
             summary: "error",
             detail: response.message,

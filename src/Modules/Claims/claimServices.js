@@ -25,12 +25,30 @@ export const getDraftData = async () => {
       "http://localhost:8081/claims/tour-claims/drafts",
       requestOptions
     );
-    const data = await response.json(); // ✅ directly parse
-    return data;
+    if(!response.ok)
+    {
+      let message=await response.text()
+      return{
+        status:false,
+        message:message,
+        data:[]
+      }
+    }else{
+    let data=await response.json()
+      return{
+        status:true,
+        message:'Draft data loaded',
+        data:data
+      }
+    }
+    
+   
   } catch (error) {
-    console.error("Error fetching draft data:", error);
-    throw error;
-    // return []; // ✅ always return an array
+   return{
+        status:false,
+        message:error?.message,
+        data:[]
+      }
   }
 };
 
@@ -55,7 +73,6 @@ export const handleSaveToDraft = (payload) => {
       throw error;
     });
 };
-
 export const formateDate = (value) => {
   if (!value) return "";
 
@@ -69,14 +86,18 @@ export const formateDate = (value) => {
     }
   }
 
-  // If it's a string (like "12/04/2024" or "2024-04-12")
+  // If it's a string
   const date = new Date(value);
   if (!isNaN(date.getTime())) {
-    return date.toISOString().split("T")[0];
+    // Format using local time
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate()
+    ).padStart(2, "0")}`;
   }
 
   return "";
 };
+
 
 export const getTravelsDetails = async () => {
   const myHeaders = new Headers();
@@ -169,6 +190,7 @@ export const getTourClaimList = async () => {
 };
 
 export const getTravelDropDown = async () => {
+  try{
   const myHeaders = new Headers();
   myHeaders.append("Authorization", token);
 
@@ -179,15 +201,47 @@ export const getTravelDropDown = async () => {
   };
 
   let response = await fetch(
-    "http://localhost:8081/traveldesk/ongoing-travels",
-    requestOptions
-  );
+  "http://localhost:8081/traveldesk/ongoing-travels",
+  requestOptions
+);
 
-  let data = response.json();
 
-  // data.push({ "In-Station Local Conveyance": "Long-Term-Local-Conveyance" });
 
-  return data;
+if(!response.ok)
+{
+  let message=await response.text();
+  return {
+    status:false,
+    message:message,
+    data:[]
+  }
+}
+let travelDropDownData=await response.json()
+travelDropDownData["In-Station Local Conveyance"] =
+        "Long-Term-Local-Conveyance";
+
+        const formattedOptions = Object.entries(travelDropDownData).map(
+          ([label, value]) => ({
+            label,
+            value,
+          })
+        );
+
+
+return{
+  status:true,
+  message:"travels mode",
+  data:formattedOptions
+}
+  }catch(error)
+  {
+    return{
+      status:false,
+      message:error?.message,
+      data:[]
+    }
+  }
+
 };
 
 export const getTourClaimFormDetails = async (id) => {
@@ -272,12 +326,28 @@ export const deleteDraftList = async (claim_id, status) => {
       `http://localhost:8081/claims/tour-claims/${claim_id}/${status}`,
       requestOptions
     );
-    // let data=response.json();
-    let data = getDraftData();
-    console.log(claim_id, status);
-    return data;
+   if(!response.ok)
+   {
+    let message=response.text();
+    return{
+      status:false,
+      message:message,
+      data:[]
+    }
+   } 
+    let draftData = await getDraftData();
+      return{
+      status:draftData.status,
+      message:'One Draft claim deleted',
+      data:draftData.data
+   
+      } 
   } catch (error) {
-    console.log(error);
+     return{
+      status:false,
+      message:error?.message,
+      data:[]
+    }
   }
 };
 
@@ -298,19 +368,24 @@ export const applyClaim = async (claim_id, status) => {
     );
 
     if (!response.ok) {
-      // This handles HTTP errors like 4xx or 5xx
-      const errorText = await response.text(); // Or use response.json() if your API returns JSON errors
-      throw new Error(`Internal Server Error ${response.status}`);
+    
+      const message = await response.text(); 
+      return{
+        status:false,
+        message:message,
+        data:[]
+      }
+     
     }
+    const draftData = await getDraftData();
 
-    // Assuming you're using mocked or local draft data instead of actual response
-    const data = getDraftData();
-
-    return data;
+    return draftData;
   } catch (error) {
-    // Re-throw the error so the caller function can catch it
-    console.error("Error in applyClaim:", error);
-    throw error;
+  return{
+    status:false,
+    message:error?.message,
+    data:[]
+  }
   }
 };
 
@@ -592,7 +667,7 @@ export const getlatestclaimtodate = async (requisition_id) => {
   result.push({
     travelfromdate: data.fromDate,
     claimformdate: latestToDate,
-    claimtodate: data.tentativeToDate,
+    claimtodate: data.tentativeToDate>new Date()?data.tentativeToDate:new Date(),
   });
 
   return result;
@@ -654,14 +729,30 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
       redirect: "follow",
     };
 
-    await fetch("http://localhost:8081/claims/tour-claims", requestOptions);
-    // const data = await response.json();
-    const data = getDraftData();
+   let response= await fetch("http://localhost:8081/claims/tour-claims", requestOptions);
+   if(!response.ok)
+   {
+    let message=await response.text()
+    return{
+      status:false,
+      message:message,
+      data:[]
+    }
+   }
+    
+    const draftData = await getDraftData();
 
-    return data;
+   return {
+    status:true,
+    message:'Saved to draft',
+    data:draftData.data
+   }
   } catch (error) {
-    console.error("Error in savetodraft:", error);
-    throw error;
+   return{
+    status:false,
+    message:error?.message,
+    data:[]
+   }
   }
 };
 
@@ -725,17 +816,31 @@ export const updateDraftdata = async (
       redirect: "follow",
     };
 
-    await fetch(
+   let response= await fetch(
       `http://localhost:8081/claims/tour-claims/${claim_id}`,
       requestOptions
     );
     // const data = await response.json();
-    const data = getDraftData();
+    if(!response.ok)
+    {
+      let message=response.text();
+      return{
+        status:false,
+        message:message,
+        data:[]
+      }
+    }
 
-    return data;
+  
+    const draftData = await getDraftData();
+
+    return draftData;
   } catch (error) {
-    console.error("Error in savetodraft:", error);
-    throw error;
+    return {
+      status:false,
+      message:error?.message,
+      data:[]
+    }
   }
 };
 
@@ -1487,7 +1592,7 @@ export const rejectLoanClaim = async (claim_id, remarks) => {
         data: [],
       };
     } else {
-      let response = getloanclaimsapplied();
+      let response = await getloanclaimsapplied();
       return {
         status: true,
         message: "Loan Claim Rejected",
@@ -1529,7 +1634,7 @@ export const approveLoanClaim = async (claim_id, remarks) => {
         data: [],
       };
     } else {
-      let response = getloanclaimsapplied();
+      let response = await getloanclaimsapplied();
       return {
         status: true,
         message: "Loan Claim Approved",

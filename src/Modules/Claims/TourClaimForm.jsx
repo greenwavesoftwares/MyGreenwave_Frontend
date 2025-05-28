@@ -2,18 +2,12 @@ import React, { useRef, useEffect, useState } from "react";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
-import { FiCopy } from "react-icons/fi";
 import { Button } from "primereact/button";
 import {
-  getTravelDropDown,
   getTourClaimFormDetails,
-  getTourClaimList,
   getAdvance,
   getlatestclaimtodate,
 } from "./claimServices";
-
-//import { FileUpload } from 'primereact/fileupload';
-//import { Toast } from 'primereact/toast';
 
 const TourClaimForm = ({
   tourclaimformData,
@@ -21,31 +15,20 @@ const TourClaimForm = ({
   tourclaimFormLabeData,
   editableMode,
   toggleNewClaim,
+  travelModeOptions,
+  travelTypeOptions,
 }) => {
-  // const toast = useRef(null);
   const [advance, setadvance] = useState(null);
-  const [lastestClaimToDate, setlastestClaimToDate] = useState(null);
-  const [travelModeOptions, setTravelModeOptions] = useState([]);
-  const [travelTypeOptions, settravelTypeOptions] = useState([
-    "Others",
-    "Sales Marketing",
-    "Project",
-    "Service Paid",
-    "Service Fees",
-    "Survey",
-    "Training",
-  ]);
+
   const [isFormExpanded, setIsFormExpanded] = useState(true);
 
-  const handleChange = (field, value) => {
-    settourclaimformData((prev) => ({ ...prev, [field]: value }));
-    if (field === "travelMode") {
-      fetchTourClaimFormDetails(value);
-    }
+  const handleChange = (value) => {
+    settourclaimformData((prev) => ({ ...prev, value }));
   };
+
   const fetchTourClaimFormDetails = async (id) => {
     try {
-      if (id == "Long-Term-Local-Conveyance") {
+      if (id === "Long-Term-Local-Conveyance") {
         settourclaimformData((prev) => ({
           ...prev,
           advance: advance,
@@ -63,7 +46,8 @@ const TourClaimForm = ({
       } else {
         const data = await getTourClaimFormDetails(id);
         const dates = await getlatestclaimtodate(id);
-        console.log(dates);
+        console.log("testing anish");
+
         settourclaimformData((prev) => ({
           ...prev,
           advance: advance,
@@ -93,52 +77,34 @@ const TourClaimForm = ({
         console.error("Error in get advancebalace:", error);
       }
     };
-    const fetchDropdownList = async () => {
-      try {
-        // const tourClaimList = await getTourClaimList();
-        // const filteredClaims = tourClaimList.filter(
-        //   (row) => row.requisition_id === "9f152da3-72de-4ae9-82c5-75273761665e"
-        // );
+    // const fetchDropdownList = async () => {
+    //   try {
+    //     const travelDropDownData = await getTravelDropDown();
+    //     travelDropDownData["In-Station Local Conveyance"] =
+    //       "Long-Term-Local-Conveyance";
 
-        // let latestToDate = null;
-        // filteredClaims[0].expandabledata.forEach((claim) => {
-        //   const claimToDate = claim.to_date;
-        //   if (claim.status != "Rejected") {
-        //     if (!latestToDate || claimToDate > latestToDate) {
-        //       latestToDate = claimToDate;
-        //     }
-        //   }
-        // });
-        // settourclaimformData((prev) => ({
-        //   ...prev,
-        //   claimFromDate:latestToDate ,
-        // }))
-        const travelDropDownData = await getTravelDropDown();
-        travelDropDownData["In-Station Local Conveyance"] =
-          "Long-Term-Local-Conveyance";
+    //     const formattedOptions = Object.entries(travelDropDownData).map(
+    //       ([label, value]) => ({
+    //         label,
+    //         value,
+    //       })
+    //     );
 
-        const formattedOptions = Object.entries(travelDropDownData).map(
-          ([label, value]) => ({
-            label,
-            value,
-          })
-        );
-        setTravelModeOptions(formattedOptions);
-      } catch (error) {
-        console.error("Error fetching tour claim list:", error);
-      }
-    };
+    //     setTravelModeOptions(formattedOptions);
+    //   } catch (error) {
+    //     console.error("Error fetching tour claim list:", error);
+    //   }
+    // };
     fetchAdvanceBalence();
-    fetchDropdownList();
+    //   fetchDropdownList();
   }, []);
+
+  // console.log("tourclaimformData",tourclaimformData.travelMode?.label)
 
   return (
     <div className="p-4">
-      <div className=" shadow-md rounded-lg p-4 bg-white space-y-6 mt-4">
-        <div className="flex  items-center  ">
-          {/* <label className="text-lg font-semibold text-gray-800">
-                Tour Claim
-              </label> */}
+      <div className="p-4 bg-white space-y-6 mt-4">
+        <div className="flex  items-center ">
           <Button
             label="Tour Claim"
             icon={isFormExpanded ? "pi pi-chevron-up" : "pi pi-chevron-down"}
@@ -168,18 +134,31 @@ const TourClaimForm = ({
                 >
                   Select Travel
                 </label>
-                <Dropdown
+                {editableMode === true ? (
+                    <InputText
                   inputId="Select-Travel"
                   className="w-62"
-                  value={tourclaimformData.travelMode}
-                  options={travelModeOptions}
-                  onChange={(e) => {
-                    handleChange("travelMode", e.value);
-                    console.log("tourclaimformData :: ", e.value);
-                  }}
-                  placeholder="Select a Mode"
-                  disabled={editableMode == true}
+                  value={
+                    tourclaimformData.travelMode?.label
+                  }
+              
+                  disabled
                 />
+                ) : (
+                  <Dropdown
+                    inputId="Select-Travel"
+                    className="w-62 "
+                    //value={selectedtravelMode}
+                    value={tourclaimformData.travelMode?.label}
+                    options={travelModeOptions}
+                    //optionLabel="lable"
+                    onChange={(e) => {
+                      handleChange(e.value);
+                      fetchTourClaimFormDetails(e.value);
+                    }}
+                    placeholder="Select a Mode"
+                  />
+                )}
               </div>
               <div>
                 <label
@@ -190,10 +169,10 @@ const TourClaimForm = ({
                 </label>
                 <Dropdown
                   inputId="Type-of-Travel"
-                  className="w-62"
+                  className="w-62 text-sm"
                   value={tourclaimformData.travelType}
                   options={travelTypeOptions}
-                  onChange={(e) => handleChange("travelType", e.value)}
+                  onChange={(e) => handleChange(e.value)}
                   placeholder="Select a Type"
                   disabled={
                     tourclaimformData.travelMode !==
@@ -206,29 +185,14 @@ const TourClaimForm = ({
                   htmlFor="Destination"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  <div className="flex  items-center">
-                    <span>
-                      Destination:- {tourclaimFormLabeData.destination}
-                    </span>
-                    {tourclaimFormLabeData.destination && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData({
-                            destination: tourclaimFormLabeData.destination,
-                          })
-                        }
-                      />
-                    )}
-                  </div>
+                  Destination
                 </label>
 
                 <InputText
                   inputId="Destination"
-                  className="w-62"
+                  className="w-62 text-sm"
                   value={tourclaimformData.destination}
-                  onChange={(e) => handleChange("destination", e.target.value)}
+                  onChange={(e) => handleChange(e.target.value)}
                   disabled={
                     tourclaimformData.travelMode !==
                     "Long-Term-Local-Conveyance"
@@ -241,29 +205,14 @@ const TourClaimForm = ({
                   htmlFor="Purpose-of-Trip"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  <div className="flex  items-center">
-                    <span>
-                      Purpose of Trip:- {tourclaimFormLabeData.purposeOfTrip}
-                    </span>
-                    {tourclaimFormLabeData.purposeOfTrip && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData({
-                            purpose: tourclaimFormLabeData.purposeOfTrip,
-                          })
-                        }
-                      />
-                    )}
-                  </div>
+                  Purpose of Trip
                 </label>
 
                 <InputText
                   inputId="Purpose-of-Trip"
-                  className="w-62"
+                  className="w-62 text-sm"
                   value={tourclaimformData.purpose}
-                  onChange={(e) => handleChange("purpose", e.target.value)}
+                  onChange={(e) => handleChange(e.target.value)}
                   disabled={
                     tourclaimformData.travelMode !==
                     "Long-Term-Local-Conveyance"
@@ -275,29 +224,14 @@ const TourClaimForm = ({
                   htmlFor="Project-Name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  <div className="flex  items-center">
-                    <span>
-                      Project Name: {tourclaimFormLabeData.projectName}
-                    </span>
-                    {tourclaimFormLabeData.projectName && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData({
-                            projectName: tourclaimFormLabeData.projectName,
-                          })
-                        }
-                      />
-                    )}
-                  </div>
+                  Project Name
                 </label>
 
                 <InputText
                   inputId="Project-Name"
                   className="w-62"
                   value={tourclaimformData.projectName}
-                  onChange={(e) => handleChange("projectName", e.target.value)}
+                  onChange={(e) => handleChange(e.target.value)}
                   disabled={
                     tourclaimformData.travelMode !==
                     "Long-Term-Local-Conveyance"
@@ -309,27 +243,13 @@ const TourClaimForm = ({
                   htmlFor="On-Account"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  <div className="flex  items-center">
-                    <span>On Account:- {tourclaimFormLabeData.onAccount}</span>
-                    {tourclaimFormLabeData.onAccount && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData({
-                            onAccount: tourclaimFormLabeData.onAccount,
-                          })
-                        }
-                      />
-                    )}
-                  </div>
+                  On Account:
                 </label>
                 <InputText
                   inputId="On-Account"
                   className="w-62"
                   value={tourclaimformData.onAccount}
-                  onChange={(e) => handleChange("onAccount", e.target.value)}
-                  // disabled={tourclaimformData.travelMode !== "Long-Term-Local-Conveyance"}
+                  onChange={(e) => handleChange(e.target.value)}
                 />
               </div>
 
@@ -338,39 +258,8 @@ const TourClaimForm = ({
                   htmlFor="fromdate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  <div className="flex items-center">
-                    <span>
-                      Travel From Date:{" "}
-                      {tourclaimFormLabeData.fromDate
-                        ? new Date(
-                            tourclaimFormLabeData.fromDate
-                          ).toLocaleDateString()
-                        : ""}
-                    </span>
-                    {tourclaimFormLabeData.fromDate && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData((prev) => ({
-                            ...prev,
-                            fromDate: new Date(tourclaimFormLabeData.fromDate),
-                          }))
-                        }
-                      />
-                    )}
-                  </div>
+                  Travel From Date:
                 </label>
-
-                {/* {toggleNewClaim?(
-            <Calendar
-              inputId="travelfromDate"
-              showIcon
-              className="w-62"
-              value={
-                tourclaimformData.travelfromDate}
-              onChange={(e) => handleChange("travelfromDate", e.value)}
-            />):( */}
                 <InputText
                   inputId="travelfromDate"
                   className="w-62"
@@ -381,70 +270,35 @@ const TourClaimForm = ({
                         ).toLocaleDateString()
                       : "No Date Selected"
                   }
-                  onChange={(e) =>
-                    handleChange("travelfromDate", e.target.value)
-                  }
+                  onChange={(e) => handleChange(e.target.value)}
                   disabled
                 />
-                {/* )} */}
               </div>
 
-              <div>
-                <label
-                  htmlFor="claimfromdate"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  <div className="flex items-center">
-                    <span>
-                      Claim From Date:{" "}
-                      {tourclaimFormLabeData.fromDate
-                        ? new Date(
-                            tourclaimFormLabeData.fromDate
-                          ).toLocaleDateString()
-                        : ""}
-                    </span>
-                    {tourclaimFormLabeData.fromDate && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData((prev) => ({
-                            ...prev,
-                            fromDate: new Date(tourclaimFormLabeData.fromDate),
-                          }))
-                        }
-                      />
-                    )}
-                  </div>
-                </label>
+              <div className="flex flex-col">
+                <label htmlFor="claimFromDate">Claim From Date:-</label>
 
-                {/* FromDate as simple Label */}
                 {toggleNewClaim ? (
                   <Calendar
                     inputId="claimFromDate"
                     showIcon
                     className="w-62"
-                    value={new Date(tourclaimformData.claimFromDate)}
-                    onChange={(e) => handleChange("claimFromDate", e.value)}
+                    value={tourclaimformData.claimFromDate}
+                    onChange={(e) => handleChange(e.value)}
                     disabled={
                       tourclaimformData.travelMode !==
                       "Long-Term-Local-Conveyance"
                     }
                   />
                 ) : (
-                  <InputText
+                  <Calendar
                     inputId="claimFromDate"
+                    showIcon
                     className="w-62"
-                    value={tourclaimformData.claimFromDate}
-                    onChange={(e) =>
-                      handleChange("claimFromDate", e.target.value)
-                    }
+                    value={new Date(tourclaimformData.claimFromDate)}
                     disabled
                   />
                 )}
-                {/* <div className="w-62  py-2  shadow-sm rounded-md px-4 h-12 text-gray-700 items-center">
-              {lastestClaimToDate}
-            </div> */}
               </div>
 
               <div>
@@ -461,30 +315,14 @@ const TourClaimForm = ({
                           ).toLocaleDateString()
                         : ""}
                     </span>
-                    {tourclaimFormLabeData.toDate && (
-                      <i
-                        className="pi pi-clone cursor-pointer text-blue-600 hover:text-blue-800 ml-2"
-                        title="Copy"
-                        onClick={() =>
-                          settourclaimformData((prev) => ({
-                            ...prev,
-                            toDate: tourclaimFormLabeData.claimToDate,
-                          }))
-                        }
-                      />
-                    )}
                   </div>
                 </label>
-
-                {/* <span className="text-gray-700 font-medium">{tourclaimformData.toDate}</span>
-                        <label></label> */}
-
                 <Calendar
                   inputId="claimToDate"
                   showIcon
                   className="w-62"
                   value={new Date(tourclaimformData.claimToDate)}
-                  onChange={(e) => handleChange("claimToDate", e.value)}
+                  onChange={(e) => handleChange(e.value)}
                 />
               </div>
             </div>

@@ -367,10 +367,11 @@ const MyTourClaims = () => {
       >
         <DataTable
           value={viewtabledata}
-          showGridlines
-          tableStyle={{ minWidth: "50rem" }}
+          showGridlines 
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
-          <Column field="date" header="Date"  headerStyle={cellStyle}
+          <Column field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
           bodyStyle={cellStyle} />
           <Column field="lodging" header="Lodging"   headerStyle={cellStyle}
           bodyStyle={cellStyle}/>

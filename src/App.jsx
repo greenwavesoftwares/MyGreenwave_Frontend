@@ -34,6 +34,8 @@ import TravelDeskAdvanced from "./Modules/TravelDesk/TravelDeskAdvanced";
 import TravelDeskManager from "./Modules/TravelDeskManager/TravelDeskManager";
 import UserProfile from "./Modules/UserProfile/UserProfile";
 import AccountMiscellanousClaim from "./Modules/Claims/Account/AccountMiscellanousClaim";
+import Referral from "./Modules/Referrals/Referral";
+import HRReferralPage from "./Modules/Referrals/HRReferralPage"
 import HomePage from "./Modules/Home/HomePage";
 //Menu Bar
 import MenuBar from "./components/MenuBar/MenuBar";
@@ -74,6 +76,8 @@ function App() {
         <Route path="/account-miscellaneous-claim" element={<AccountMiscellanousClaim />} />
         <Route path="/loan-application" element={<LoanApplication />} />
         <Route path="/hr-loan-application" element={<HRLoanApplication />} />
+        <Route path="/referral" element={<Referral/>} />
+        <Route path="/hr-referral" element={<HRReferralPage/>} />
       
 
         <Route path="/appraisals-review" element={<AppraisalsReview />} />

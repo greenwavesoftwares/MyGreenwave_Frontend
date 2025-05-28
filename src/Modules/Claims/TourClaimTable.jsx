@@ -188,23 +188,28 @@ const TourClaimTable = ({
     try {
       const response = await savetodraft(tourclaimformData, tourClaimTableData);
       //   if (response?.success) {
-      setDraftData(response);
+      if(!response.status)
+      {
+         toast.current.show({
+            severity: "error",
+            summary: "error",
+            detail: response.message,
+          });
+      }else{
+         toast.current.show({
+            severity: "success",
+            summary: "success",
+            detail: response.message,
+          });
+      setDraftData(response.data);
       seteditableMode(false);
       settoggleNewClaim(false);
-      toast.current.show({
-        severity: "info",
-        summary: "Draft Saved",
-        detail: "Saved locally.",
-      });
-      // } else {
-      toast.current.show({
-        severity: "error",
-        summary: "Failed",
-        detail: "Unable to save draft.",
-      });
-      //  }
+     
+    }
+     
+     
     } catch (error) {
-      toast.current.show({ severity: "error", summary: "", detail: error });
+      toast.current.show({ severity: "error", summary: "error", detail: error?.message });
       console.log(error);
     }
   };
@@ -216,8 +221,24 @@ const TourClaimTable = ({
         tourClaimTableData,
         tourclaimformData.claim_id
       );
-      setDraftData(response);
+      if(!response.status)
+      {
+         toast.current.show({
+            severity: "error",
+            summary: "error",
+            detail: response.message,
+          });
+      }else
+      {
+        toast.current.show({
+            severity: "success",
+            summary: "Success",
+            detail: response.message,
+          });
+      setDraftData(response.data);
       seteditableMode(false);
+       
+      }
     } catch (error) {
       toast.current.show({ severity: "error", summary: "", detail: error });
       console.log(error);
@@ -372,6 +393,7 @@ const TourClaimTable = ({
 
       <DataTable
         value={tourClaimTableData}
+          showGridlines
         scrollable
         scrollHeight="250px"
         className="text-xs"
@@ -384,8 +406,14 @@ const TourClaimTable = ({
             body={(rowData, options) =>
               renderCell(rowData, field, options.rowIndex)
             }
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
+            headerStyle={{
+              ...cellStyle,
+              width: field === "Date" ? "100px" : undefined, // wider width for Date
+            }}
+            bodyStyle={{
+              ...cellStyle,
+              width: field === "Date" ? "100px" : undefined,
+            }}
           />
         ))}
         <Column
