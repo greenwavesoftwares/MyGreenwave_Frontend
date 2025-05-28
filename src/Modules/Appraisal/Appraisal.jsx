@@ -30,6 +30,12 @@ import { formatDate } from "./formatDate";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { useNavigate } from "react-router-dom";
+//Icons
+import VerifiedIcon from "@mui/icons-material/Verified";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 function Appraisal() {
   //For Navigation
@@ -67,8 +73,6 @@ function Appraisal() {
   //set appraisal form id
   const [appraisalFormID, setApraisalFormID] = useState("NA");
 
- 
-
   //temp data
   //const empList = [{ userName: "test1" }, { userName: "test2" }, { userName: "test3" }];
   //Call Api
@@ -86,7 +90,10 @@ function Appraisal() {
         console.log("set_Appraisal_data", response);
 
         //List Of Appraisal Data
-        const appraisalList_response = await appraisalListApi(authToken, employeeName);
+        const appraisalList_response = await appraisalListApi(
+          authToken,
+          employeeName
+        );
         console.log("appraisalList", appraisalList);
         setAppraisalList(appraisalList_response?.appraisalsList);
         //For Loading
@@ -110,7 +117,6 @@ function Appraisal() {
     getAppraisalData();
   }, []);
   console.log("reviewerName", reviewerName);
-  
 
   //Tab Visible For Only Reviewer
   const listOfReviewer = appraisalData?.reviewerlist;
@@ -131,7 +137,7 @@ function Appraisal() {
   console.log("isApprove", isApprove);
 
   //Show Appraisal Form
-  const handleShowForm = async (formId, previousYearFormId,appraisalDate) => {
+  const handleShowForm = async (formId, previousYearFormId, appraisalDate) => {
     console.log("Form ID", formId);
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
@@ -142,7 +148,8 @@ function Appraisal() {
     const appraisalFormData = await currentAppraisalFormAPI(
       formId,
       previousYearFormId,
-      authToken,appraisalDate
+      authToken,
+      appraisalDate
     );
     console.log("appraisalFormData", appraisalFormData);
     setAppraisalFormLoading(null);
@@ -203,8 +210,6 @@ function Appraisal() {
           </div>
         )}
 
-      
-
         {/* Previous Appraisal Data */}
         <div className="card mt-2 mb-5 py-0 px-0 bg-white shadow rounded">
           <DataTable
@@ -244,22 +249,33 @@ function Appraisal() {
                 return (
                   <Chip
                     label={
-                      rowData.approved === true
+                      rowData.approved
                         ? "Approved"
-                        : rowData.reviewed === true
+                        : rowData.reviewed
                         ? "Reviewed"
-                        : rowData.active === true
+                        : rowData.active
                         ? "Active"
                         : "Inactive"
                     }
                     color={
-                      rowData.approved === true
+                      rowData.approved
+                        ? "default"
+                        : rowData.reviewed
                         ? "warning"
-                        : rowData.reviewed === true
-                        ? "warning"
-                        : rowData.active === true
+                        : rowData.active
                         ? "success"
                         : "error"
+                    }
+                    icon={
+                      rowData.approved ? (
+                        <VerifiedIcon />
+                      ) : rowData.reviewed ? (
+                        <VisibilityIcon />
+                      ) : rowData.active ? (
+                        <CheckCircleIcon />
+                      ) : (
+                        <CancelIcon />
+                      )
                     }
                     size="small"
                   />
@@ -273,10 +289,15 @@ function Appraisal() {
                   <Button
                     size="small"
                     variant="contained"
+                    sx={{ boxShadow: "none" }}
                     loading={appraisalFormLoading === rowData.formId}
                     loadingPosition="end"
                     onClick={() =>
-                      handleShowForm(rowData.formId, rowData.previousYearFormId,rowData.appraisalDate)
+                      handleShowForm(
+                        rowData.formId,
+                        rowData.previousYearFormId,
+                        rowData.appraisalDate
+                      )
                     }
                   >
                     Show Form

@@ -138,23 +138,25 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     setMyInsights(updatedData);
   };
 
-  //For Confirmation Reviewer and Approver
-  const [reviewer, setReviewer] = useState();
-  useEffect(() => {
-    setReviewer(appraiserForm?.personaldetails.reviewed);
-  }, [appraiserForm]);
+  
+//For Confirmation Reviewer and Approver
+   //const [reviewer, setReviewer] = useState(false);
+  // useEffect(() => {
+  //   setReviewer(appraiserForm?.personaldetails.reviewed);
+  // }, [appraiserForm,setValue]);
 
-  const [approver, setApprover] = useState();
-  useEffect(() => {
-    setApprover(appraiserForm?.personaldetails.approved);
-  }, [appraiserForm]);
+  // const [approver, setApprover] = useState();
+  // useEffect(() => {
+  //   setApprover(appraiserForm?.personaldetails.approved);
+  // }, [appraiserForm]); ///[appraiserForm] last change
 
-  // console.log("approver", approver);
+   //console.log("reviewer_Click", reviewer);
   // console.log(
   //   "reviewer_data",
   //   appraiserForm?.personaldetails.reviewed,
   //   reviewer
   // );
+  
 
   //Use React Hooks Form
   const { register, handleSubmit, reset, setValue } = useForm();
@@ -171,7 +173,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
       mykra: myKRA_Data,
       myinsights: myInsights,
       lastyeargoals: appraiserForm?.lastyeargoals,
-      confirmation: { reviewed: reviewer, approved: approver },
+      confirmation: { reviewed: data.reviewed, approved: data.approved },
       appraisalDate:appraiserForm?.appraisalDate
     };
     console.log("AppraisalForm_Save_Data:", generatepersonaldetails);
@@ -259,11 +261,13 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   setValue("updateDate", appraiserForm?.personaldetails.updateDate);
   setValue("reviewer", appraiserForm?.personaldetails.reviewer);
   setValue("approver", appraiserForm?.personaldetails.approver);
-  setValue("reviewed", reviewer);
-  setValue("approved", approver);
+  setValue("reviewed", appraiserForm?.personaldetails.reviewed);
+  setValue("approved", appraiserForm?.personaldetails.approved);
   setValue("doj", appraiserForm?.personaldetails.doj);
     }
 }, [appraiserForm, setValue]);
+
+
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
 
@@ -296,12 +300,11 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     });
   };
 
-  //Reviewer
+  //Is Reviewer
   const isReviewer = () => {
     const reviewer = (appraiserForm?.personaldetails.reviewer).toLowerCase();
     const userName = getUserData()?.userDetails.userId.toLowerCase();
-    console.log("form_reviewer", reviewer, userName);
-
+    //console.log("form_reviewer", reviewer, userName);
     if (reviewer === userName) {
       return false;
     } else {
@@ -313,7 +316,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   const isApprover = () => {
     const approver = (appraiserForm?.personaldetails.approver).toLowerCase();
     const userName = getUserData()?.userDetails.userId.toLowerCase();
-    console.log("form_approver", approver, userName);
+    //console.log("form_approver", approver, userName);
     if (approver === userName) {
       return false;
     } else {
@@ -859,24 +862,40 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               <AccordionDetails>
                 <div className="flex justify-center items-center mb-1 column-gap-4">
                   <h1 className="text-sm">Reviewer</h1>
-                  <Checkbox
-                    checked={reviewer}
-                    disabled={isReviewer()}
+                  <input type="checkbox" disabled={isReviewer()} {...register("reviewed")}/>
+                  {/* <Checkbox
+                    //checked={reviewer}
+                    checked={appraiserForm?.personaldetails.reviewed}
                     onChange={(e) => {
-                      console.log("approver_checkbox", e);
+                     // console.log("reviewer_checkbox", e);
                       setReviewer(e.checked ? true : false);
-                    }}
-                  />
+                      // setAppraiserForm((prev) =>
+                      //   ({
+                      //     ...prev,
+                      //     personaldetails: {
+                      //       ...prev.personaldetails,
+                      //       reviewed: e.checked ? true : false,
+                      //       },
+                      //   })
+                      // );
+                      }}
+                    disabled={isReviewer()}
+                    // onChange={(e) => {
+                    //   console.log("approver_checkbox", e);
+                    //   setReviewer(e.checked ? true : false);
+                    // }}
+                  /> */}
                   <h1 className="text-sm">Approver</h1>
-
-                  <Checkbox
+                  
+                   <input type="checkbox" disabled={isApprover()} {...register("approved")}/>
+                  {/* <Checkbox
                     checked={approver}
                     disabled={isApprover()}
                     onChange={(e) => {
                       console.log("approver_checkbox", e);
                       setApprover(e.checked ? true : false);
                     }}
-                  />
+                  /> */}
                 </div>
               </AccordionDetails>
             </Accordion>

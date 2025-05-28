@@ -243,12 +243,12 @@ export default function MiniDrawer({ children }) {
                   >
                     {menuItems.map((item, id) => {
                       if (item.label.toLowerCase() === text.toLowerCase()) {
-                        console.log(
-                          "iconName",
-                          item.label.toLowerCase(),
-                          text.toLowerCase()
-                        );
-                        return <i style={{marginLeft:"3px"}} className={item.icon} />
+                        // console.log(
+                        //   "iconName",
+                        //   item.label.toLowerCase(),
+                        //   text.toLowerCase()
+                        // );
+                        return <i key={id} style={{marginLeft:"3px"}} className={item.icon} />
                       } else {
                         <p>NA</p>;
                       }

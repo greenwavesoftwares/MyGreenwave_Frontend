@@ -260,7 +260,7 @@ const AppraisalTracker = () => {
     <>
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-4 py-2 px-3 bg-white shadow rounded">
+          <div className="card mt-3 py-2 px-3 bg-white shadow rounded">
             <div className="flex justify-between items-center">
               <p>Appraisal Tracker</p>
 
