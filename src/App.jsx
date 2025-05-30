@@ -37,6 +37,8 @@ import AccountMiscellanousClaim from "./Modules/Claims/Account/AccountMiscellano
 import Referral from "./Modules/Referrals/Referral";
 import HRReferralPage from "./Modules/Referrals/HRReferralPage"
 import HomePage from "./Modules/Home/HomePage";
+import HomepageMaster from "./Modules/HomePageMaster/HomepageMaster";
+
 //Menu Bar
 import MenuBar from "./components/MenuBar/MenuBar";
 
@@ -95,6 +97,10 @@ function App() {
          <Route
           path="/homePage"
           element={<HomePage/>}
+        />
+        <Route
+          path="/homepageMaster"
+          element={<HomepageMaster/>}
         />
       </Routes>
       </MenuBar>

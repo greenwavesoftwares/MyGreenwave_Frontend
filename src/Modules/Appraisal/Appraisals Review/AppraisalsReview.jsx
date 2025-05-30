@@ -15,6 +15,12 @@ import Toast from "../../../components/Toast/Toast";
 import "../Appraisal.scss";
 import AppraisalDialog from "../AppraisalForm";
 import { formatDate } from "../formatDate";
+//Icons
+import VerifiedIcon from "@mui/icons-material/Verified";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const AppraisalsReview = () => {
   //For Toast
@@ -29,7 +35,7 @@ const AppraisalsReview = () => {
   //Set Appraisal Form Data Visible
   const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
 // State to trigger data fetching
-  const [fetchDataToggle, setFetchDataToggle] = useState(false);
+  const [clickFormId, setClickFormId] = useState("");
 
 
   //Call Reviewer API
@@ -74,8 +80,9 @@ const AppraisalsReview = () => {
       );
       if (response?.status === 200) { 
         setAppraisalFormData(response?.data);
-        showInfoMessage(toastRef, "", "Form Fetched Successfully");
+        showInfoMessage(toastRef, `${empId}`, "Form Fetched Successfully");
         setAppraisalFormVisible(true);
+        setClickFormId(formId);
       } else {
         showErrorMessage(toastRef, "Error", "Form Not Found");
       }
@@ -86,7 +93,8 @@ const AppraisalsReview = () => {
       console.log(error);
     }
   };
-  console.log("appraisalFormData", appraisalFormData);
+  //console.log("appraisalFormData", appraisalFormData);
+  //console.log("clickFormId", clickFormId);
 
   return (
     <>
@@ -100,6 +108,11 @@ const AppraisalsReview = () => {
               size="small"
               paginator
               rows={10}
+              rowClassName={(rowData) => {
+                if (rowData.some((ele) => ele.formId === clickFormId)) {
+                  return "bg-cyan-100";
+                }
+              }}
               owsPerPageOptions={[10, 15, 20, 25]}
               stripedRows
               header={
@@ -129,27 +142,38 @@ const AppraisalsReview = () => {
               <Column
                 body={(rowData) => {
                   return (
-                    <Chip
-                      label={
-                        rowData.approved === true
-                          ? "Approved"
-                          : rowData.reviewed === true
-                          ? "Reviewed"
-                          : rowData.active === true
-                          ? "Active"
-                          : "Inactive"
-                      }
-                      color={
-                        rowData.approved === true
-                          ? "warning"
-                          : rowData.reviewed === true
-                          ? "warning"
-                          : rowData.active === true
-                          ? "success"
-                          : "error"
-                      }
-                      size="small"
-                    />
+                     <Chip
+                    label={
+                      rowData.approved
+                        ? "Approved"
+                        : rowData.reviewed
+                        ? "Reviewed"
+                        : rowData.active
+                        ? "Active"
+                        : "Inactive"
+                    }
+                    color={
+                      rowData.approved
+                        ? "info"
+                        : rowData.reviewed
+                        ? "warning"
+                        : rowData.active
+                        ? "success"
+                        : "error"
+                    }
+                    icon={
+                      rowData.approved ? (
+                        <VerifiedIcon />
+                      ) : rowData.reviewed ? (
+                        <VisibilityIcon />
+                      ) : rowData.active ? (
+                        <CheckCircleIcon />
+                      ) : (
+                        <CancelIcon />
+                      )
+                    }
+                    size="small"
+                  />
                   );
                 }}
                 header="Status"
@@ -160,6 +184,7 @@ const AppraisalsReview = () => {
                     <Button
                       size="small"
                       variant="contained"
+                      //sx={{borderRadius: "1rem",boxShadow: "none"}}
                       loading={appraisalFormLoading === rowData.formId}
                       loadingPosition="start"
                       onClick={(e) =>{

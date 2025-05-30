@@ -1,5 +1,6 @@
 import axios from "axios";
 const endPoint = import.meta.env.VITE_END_POINT;
+const imageURL = import.meta.env.VITE_IMAGE_API;
 
 
 //Get user data
@@ -29,5 +30,8 @@ const homePageApi = async () => {
     console.log(error);
   }
 };
+
+
+
 
 export  {homePageApi,getUserDataAPI};

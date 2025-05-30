@@ -16,6 +16,12 @@ import {
   showSuccessMessage,
 } from "../../../components/Toast/ShowMessage";
 import Toast from "../../../components/Toast/Toast";
+//Icons
+import VerifiedIcon from "@mui/icons-material/Verified";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const AppraisalsApprover = () => {
   //For Toast
@@ -27,6 +33,8 @@ const AppraisalsApprover = () => {
   const [appraisalFormData, setAppraisalFormData] = useState({});
   //Set Appraisal Form Data Visible
   const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
+    const [clickFormId, setClickFormId] = useState("");
+  
 
   //Call Approver API Data
   useEffect(() => {
@@ -66,6 +74,7 @@ const AppraisalsApprover = () => {
         setAppraisalFormData(response?.data);
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
         setAppraisalFormVisible(true);
+        setClickFormId(formId);
       } else {
         showErrorMessage(toastRef, "Error", "Form Not Found");
       }
@@ -88,6 +97,11 @@ const AppraisalsApprover = () => {
             <DataTable
               size="small"
               stripedRows
+              rowClassName={(rowData) => {
+                if (rowData.some((ele) => ele.formId === clickFormId)) {
+                  return "bg-cyan-100";
+                }
+              }}
               header={
                 <Typography className="text-sm">Appraisal Approver</Typography>
               }
@@ -113,27 +127,38 @@ const AppraisalsApprover = () => {
               <Column
                 body={(rowData) => {
                   return (
-                    <Chip
-                      label={
-                        rowData.approved === true
-                          ? "Approved"
-                          : rowData.reviewed === true
-                          ? "Reviewed"
-                          : rowData.active === true
-                          ? "Active"
-                          : "Inactive"
-                      }
-                      color={
-                        rowData.approved === true
-                          ? "warning"
-                          : rowData.reviewed === true
-                          ? "warning"
-                          : rowData.active === true
-                          ? "success"
-                          : "error"
-                      }
-                      size="small"
-                    />
+                     <Chip
+                    label={
+                      rowData.approved
+                        ? "Approved"
+                        : rowData.reviewed
+                        ? "Reviewed"
+                        : rowData.active
+                        ? "Active"
+                        : "Inactive"
+                    }
+                    color={
+                      rowData.approved
+                        ? "info"
+                        : rowData.reviewed
+                        ? "warning"
+                        : rowData.active
+                        ? "success"
+                        : "error"
+                    }
+                    icon={
+                      rowData.approved ? (
+                        <VerifiedIcon />
+                      ) : rowData.reviewed ? (
+                        <VisibilityIcon />
+                      ) : rowData.active ? (
+                        <CheckCircleIcon />
+                      ) : (
+                        <CancelIcon />
+                      )
+                    }
+                    size="small"
+                  />
                   );
                 }}
                 header="Status"

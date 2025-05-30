@@ -349,7 +349,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   //Find appraisal-tracker end point 
   const location = useLocation();
   // Check if current path is `/appraisal-tracker`
-  const isTrackerPage = location.pathname === '/appraisal-tracker';
+  const isTrackerPage = location.pathname === '/AppraisalTracker';
 
   return (
     <>

@@ -57,6 +57,9 @@
   align-items: center;
   justify-content: center !important;
 }
+.tableBorder.p-datatable > .p-datatable-wrapper {
+  border: 1px solid base.$borderColor;
+}
 
 //Date Table Pagination
 .dataTablePaginator.p-paginator {
@@ -75,6 +78,11 @@
   color:#36373c;
   padding: 1px;
   border-radius: 50%;
+}
+
+//Prime React Tab Styles
+.tabStyle.p-tabview .p-tabview-panels{
+  padding: 0.5rem !important;
 }
 
 

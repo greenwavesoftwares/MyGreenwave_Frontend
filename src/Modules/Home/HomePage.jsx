@@ -21,7 +21,7 @@ import TouchAppIcon from "@mui/icons-material/TouchApp";
 import CircularProgress from "@mui/material/CircularProgress";
 
 //Api
-import { homePageApi, getUserDataAPI } from "./HomePageAPI";
+import { homePageApi, getUserDataAPI} from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
 const imageApiUrl = import.meta.env.VITE_IMAGE_API;
 //SCSS Import
@@ -34,7 +34,7 @@ const HomePage = () => {
   const [visible, setVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({});
   const [loader, setLoader] = useState(false);
-
+  
   //Call Home PAhe All
   const getHomePageData = async () => {
     try {
@@ -68,6 +68,9 @@ const HomePage = () => {
       }
     }
   };
+
+ 
+
 
   //Call Home Page API
   useEffect(() => {
