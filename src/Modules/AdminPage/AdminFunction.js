@@ -41,7 +41,7 @@ const getInitial = (userName) => {
   };
 };
 const getUserIdAndEmpCodes = async () => {
-  const data = await getDataOnLoad();
+  const data = await getAllUsersAPI();
   return data
     ? data.userdata
         .filter((p) => p.active)

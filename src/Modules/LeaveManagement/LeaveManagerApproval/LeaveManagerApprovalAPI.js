@@ -15,7 +15,7 @@ const getLeaveRequestsForManagerApprovalAPI = async () => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching forminfo with versions:", error);
+    // console.error("Error fetching forminfo with versions:", error);
     return null;
   }
 };
@@ -93,10 +93,10 @@ const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
     return null;
   }
 };
-const reviewingLeaveAPI = async (leaveData, isReviewing, toastRef) => {
+const reviewingLeaveAPI = async (leaveData, toastRef) => {
   try {
-    const response = await axios.put(`${endPoint}leaves/reviewing`, {
-      params: { leaveId: leaveData.leaveId, isReviewing: isReviewing },
+    const response = await axios.put(`${endPoint}leaves/reviewing`, leaveData, {
+      params: { leaveId: leaveData.leaveId },
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userData.token}`,

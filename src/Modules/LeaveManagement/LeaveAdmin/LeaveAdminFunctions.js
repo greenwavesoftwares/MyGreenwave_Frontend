@@ -1,199 +1,61 @@
 import {
-  applyLeaveAPI,
-  deleteLeaveAPI,
-  editLeaveAPI,
-  getDataOnLoad,
+  showErrorMessage,
+  showSuccessMessage,
+} from "../../../components/Toast/ShowMessage";
+import { getInitial } from "../../AdminPage/AdminFunction";
+import {
+  approveLeaveAPI,
+  getLeaveRequestsForManagerApprovalAPI,
+  getTeamLeavesCalenderForManagerAPI,
+  getTeamLeavesTableForManagerAPI,
+  getUserLeaveInfoAPI,
+  rejectLeaveAPI,
+  reviewingLeaveAPI,
 } from "./LeaveAdminAPI";
 import { format, parse } from "date-fns";
-import { getHolidays } from "../../HolidayMaster/HolidayFunction";
-import { showSuccessMessage } from "../../../components/Toast/ShowMessage";
 
 const dateformat = "yyyy-MM-dd";
 
-const onPageLoad = async (userId, year) => {
-  const leaveData = {
-    chartData: {},
-    tableData: [],
-    cardData: {},
-    calenderData: {},
-    holidays: {},
-  };
-  let value = await getDataOnLoad(userId, year);
-  let holidays = await getHolidays();
-  leaveData.chartData = await setChartData(value.attendanceLeaveCount);
-  leaveData.tableData = value.userLeaves;
-  leaveData.cardData = value.userLeaveCounts;
-  leaveData.calenderData = await setCalenderData(
-    value.userLeaves,
-    holidays.holiday
-  );
-  leaveData.holidays = holidays.holiday;
-  return leaveData;
-  // downloadZip();
+const onPageLoad = async () => {
+  let hrLeaveData = {};
+
+  // let requestValue = await getLeaveRequestsForManagerApprovalAPI();
+  // hrLeaveData.requestData = requestValue
+  //   ? requestValue.managerHRRemarkTable
+  //   : [];
+
+  // let calenderValue = await getTeamLeavesCalenderForManagerAPI();
+  // hrLeaveData.calenderData = calenderValue
+  //   ? await setCalenderData(calenderValue.managerHRRemarkTable)
+  //   : [];
+
+  return hrLeaveData;
 };
-const setChartData = async (chartData) => {
-  let month = [],
-    workingDay = [],
-    attendance = [],
-    leave = [],
-    cumulativeLeave = [];
-  chartData.map((p) => {
-    month.push(p.monthName);
-    workingDay.push(p.workingDay);
-    attendance.push(p.attendance);
-    leave.push(p.leave);
-    cumulativeLeave.push(p.cumulative_Leave);
-  });
-
-  const dataOptions = { data: {}, options: {} };
-
-  const documentStyle = getComputedStyle(document.documentElement);
-  const textColor = documentStyle.getPropertyValue("--text-color");
-  const textColorSecondary = documentStyle.getPropertyValue(
-    "--text-color-secondary"
-  );
-  const data = {
-    labels: month,
-    datasets: [
-      {
-        type: "bar",
-        label: "Working Day",
-        backgroundColor: documentStyle.getPropertyValue("--yellow-300"),
-        data: workingDay,
-        borderColor: "white",
-        borderWidth: 2,
-        order: 2,
-      },
-      {
-        type: "bar",
-        label: "Attendence",
-        backgroundColor: documentStyle.getPropertyValue("--blue-500"),
-        data: attendance,
-        borderColor: "white",
-        borderWidth: 2,
-        order: 2,
-      },
-      {
-        type: "bar",
-        label: "Leave",
-        backgroundColor: documentStyle.getPropertyValue("--red-500"),
-        data: leave,
-        order: 2,
-      },
-      {
-        type: "line",
-        label: "Cumulative Leave",
-        borderColor: documentStyle.getPropertyValue("--green-500"),
-        borderWidth: 2,
-        fill: false,
-        tension: 0.4,
-        data: cumulativeLeave,
-        order: 1,
-      },
-    ],
-  };
-
-  const options = {
-    maintainAspectRatio: false,
-    aspectRatio: 0.6,
-    plugins: {
-      legend: {
-        labels: {
-          color: textColor,
-        },
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: textColorSecondary,
-        },
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        ticks: {
-          color: textColorSecondary,
-        },
-        grid: {
-          display: false,
-        },
-      },
-    },
-  };
-  dataOptions.data = data;
-  dataOptions.options = options;
-
-  return dataOptions;
+const getUserLeaveInfo = async (year) => {
+  let userLeaveInfo = await getUserLeaveInfoAPI(year);
+  return userLeaveInfo ? userLeaveInfo : [];
 };
-const setCalenderData = async (userLeaves, holidays) => {
+const setCalenderData = async (calenderValue) => {
   let calenderDataList = [];
-  userLeaves.map((row) => {
+  const uniqueDates = [...new Set(calenderValue.map((p) => p.fromDate))];
+  uniqueDates.map((date) => {
     let calenderData = {};
-    calenderData.start = row.fromDate;
-    calenderData.end =
-      row.actualLeave > 1 ? getNextDate(row.toDate) : row.toDate;
-    calenderData.color = getColorBySeverity(row.severity);
+    calenderData.start = date;
+    calenderData.end = date;
     calenderData.overlap = false;
-    calenderData.display = "background";
-    calenderData.id = row.reason;
+    calenderData.leaves = calenderValue
+      .filter((p) => p.fromDate === date)
+      .map((p) => {
+        let initial = getInitial(p.userName);
+        p.initialName = initial.initialName;
+        p.initialColor = stringToVibrantPastelColor(p.userName);
+        p.statusColor = getCalenderStatusColor(p.status);
+        return p;
+      });
 
     calenderDataList.push(calenderData);
   });
-
-  holidays.map((row) => {
-    let calenderData = {};
-    calenderData.start = row.fromDate;
-    calenderData.end =
-      row.totalNoOfDays > 1 ? getNextDate(row.toDate) : row.toDate;
-    calenderData.color = getColorBySeverity("info");
-    calenderData.overlap = false;
-    calenderData.display = "background";
-    calenderData.id = row.holidays;
-
-    calenderDataList.push(calenderData);
-  });
-
   return calenderDataList;
-};
-const applyLeave = async (
-  userId,
-  applyLeaveData,
-  toastRef,
-  selectedYear,
-  setLeaveData,
-  clearApplyDialog
-) => {
-  let leaveData = {};
-  leaveData.userId = userId;
-  leaveData.fromDate = format(applyLeaveData.dates[0], dateformat);
-  leaveData.toDate = format(applyLeaveData.dates[1], dateformat);
-  leaveData.leaveReason = applyLeaveData.reason;
-  leaveData.compensatory = applyLeaveData.isCompensatory;
-  const response = await applyLeaveAPI(leaveData, toastRef);
-  if (response) {
-    setLeaveData(await onPageLoad(userId, selectedYear));
-    let message =
-      response.leaveDetails.type +
-      " applied successfully! Being Reviewed by " +
-      response.appliedTo;
-    showSuccessMessage(toastRef, "Success", message);
-    clearApplyDialog();
-  }
-};
-const deleteLeave = async (
-  leaveRowData,
-  toastRef,
-  userId,
-  selectedYear,
-  setLeaveData
-) => {
-  const response = await deleteLeaveAPI(leaveRowData, toastRef);
-  if (response) {
-    showSuccessMessage(toastRef, "Success", "Leave deleted Successfully");
-    setLeaveData(await onPageLoad(userId, selectedYear));
-  }
 };
 const onSelectRowEdit = async (
   row,
@@ -212,34 +74,42 @@ const onSelectRowEdit = async (
   }));
   setEditLeaveDialogVisible(true);
 };
-const editLeave = async (
-  userId,
-  editLeaveData,
-  toastRef,
-  selectedYear,
-  setLeaveData,
-  clearEditDialog
-) => {
-  let leaveData = {};
-  leaveData.userId = userId;
-  leaveData.fromDate = format(editLeaveData.dates[0], dateformat);
-  leaveData.toDate = format(editLeaveData.dates[1], dateformat);
-  leaveData.leaveReason = editLeaveData.reason;
-  leaveData.compensatory = editLeaveData.isCompensatory;
-  leaveData.leaveId = editLeaveData.leaveId;
-  const response = await editLeaveAPI(leaveData, toastRef);
-  if (response) {
-    setLeaveData(await onPageLoad(userId, selectedYear));
-    showSuccessMessage(toastRef, "Success", "Leave Edited Successfully");
-    clearEditDialog();
+const approveLeave = async (leaveData, toastRef) => {
+  const data = await approveLeaveAPI(leaveData, toastRef);
+  if (data) {
+    showSuccessMessage(toastRef, "Success", "Leave Approved");
   }
 };
-
-const getNextDate = (date) => {
-  let parsedDate = parse(date, dateformat, new Date());
-  parsedDate.setDate(parsedDate.getDate() + 1);
-  return format(parsedDate, dateformat);
+const rejectLeave = async (
+  leaveData,
+  reason,
+  setRejectedValidation,
+  toastRef
+) => {
+  if (reason.trim().length === 0) {
+    showErrorMessage(
+      toastRef,
+      "Validation Error!",
+      "Please Enter Reject Reason"
+    );
+    setRejectedValidation(false);
+    return;
+  }
+  setRejectedValidation(true);
+  const data = await rejectLeaveAPI(leaveData, reason, toastRef);
+  if (data) {
+    showSuccessMessage(toastRef, "Success", "Leave Rejected");
+  }
 };
+const reviewingLeave = async (leaveData, isReviewing, toastRef) => {
+  await reviewingLeaveAPI(leaveData, isReviewing, toastRef);
+};
+
+// const getNextDate = (date) => {
+//   let parsedDate = parse(date, dateformat, new Date());
+//   parsedDate.setDate(parsedDate.getDate() + 1);
+//   return format(parsedDate, dateformat);
+// };
 const getCurrentDate = () => {
   const currentDate = new Date();
   return currentDate;
@@ -252,6 +122,59 @@ const getYearList = () => {
   }
   return yearList;
 };
+// const getCalenderStatusColor = (status) => {
+//   switch (status) {
+//     case "Approved":
+//       return "bg-green-400";
+//     case "Rejected":
+//       return "bg-red-400";
+//     case "Pending":
+//       return "bg-yellow-300";
+//     default:
+//       return null;
+//   }
+// };
+const getCalenderStatusColor = (status) => {
+  switch (status) {
+    case "Approved":
+      return "#4ade80"; // Tailwind green-400
+    case "Rejected":
+      return "#f87171"; // Tailwind red-400
+    case "Pending":
+      return "#fde047"; // Tailwind yellow-300
+    default:
+      return "#9ae600"; // Custom lime green
+  }
+};
+
+function stringToVibrantPastelColor(input) {
+  // Normalize and validate input
+  input = input
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 6);
+
+  // Convert base-26 string to a number
+  let base26 = 0;
+  for (let i = 0; i < input.length; i++) {
+    base26 = base26 * 26 + (input.charCodeAt(i) - 65);
+  }
+
+  // Use sine wave for smooth, controlled color distribution across the RGB spectrum
+  function vibrantComponent(seedOffset) {
+    const value = (Math.sin(base26 + seedOffset) + 1) / 2; // 0 to 1 range
+    const min = 180; // Light pastel starts at 180
+    const max = 255; // Upper limit for pastel (bright, but not too saturated)
+    return Math.floor(min + value * (max - min)); // Value between min and max
+  }
+
+  const r = vibrantComponent(1); // Red component
+  const g = vibrantComponent(2); // Green component
+  const b = vibrantComponent(3); // Blue component
+
+  const toHex = (c) => c.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 const getColorBySeverity = (severity) => {
   const documentStyle = getComputedStyle(document.documentElement);
   let color = "";
@@ -279,8 +202,9 @@ export {
   getCurrentDate,
   onPageLoad,
   getYearList,
-  applyLeave,
-  deleteLeave,
-  editLeave,
   onSelectRowEdit,
+  approveLeave,
+  rejectLeave,
+  reviewingLeave,
+  getUserLeaveInfo,
 };

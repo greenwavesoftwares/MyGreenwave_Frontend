@@ -7,8 +7,6 @@ import {
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Image } from "primereact/image";
-import { InputText } from "primereact/inputtext";
-import { Password } from "primereact/password";
 import React, { useRef, useState } from "react";
 import "./Login.css";
 import { checkCredential } from "./LoginFunction";
@@ -18,6 +16,8 @@ import Toast from "../../components/Toast/Toast";
 import { getUserData } from "./Encrypt";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import DialogComponent from "../../components/Dialog/DialogComponent";
+import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
+import RightSideImage from "../../assets/Images/RightSideImage.png";
 
 const Login = () => {
   const [credential, setCredential] = useState({ username: "", password: "" });
@@ -33,21 +33,21 @@ const Login = () => {
   return (
     <>
       <Toast ref={toastRef}></Toast>
-      <Container maxWidth="md" className="LoginContainer">
+      <Container maxWidth="md" className="h-screen grid items-center">
         <Grid container>
           <Grid size={{ md: 5, sm: 12 }}>
             <Card>
-              <div className="w-full surface-card">
+              <div className="w-full bg-white rounded-lg">
                 <div className="text-center mb-5">
                   <Image
-                    src="src\assets\Images\GreenwaveLogo.png"
+                    src={GreenwaveLogo}
                     alt="Image"
                     height="150"
                     width="150"
                     className="mb-3"
                     style={{ display: "inline-flex" }}
                   />
-                  <div className="text-900 text-3xl font-medium mb-3">
+                  <div className="text-gray-600 text-3xl font-medium mb-3">
                     Welcome
                   </div>
                 </div>
@@ -98,7 +98,7 @@ const Login = () => {
                     }}
                   />
 
-                  {/* <div className="flex align-items-center justify-content-center mb-3 gap-5">
+                  {/* <div className="flex align-items-center justify-center mb-3 gap-5">
                   <a
                     className="font-medium no-underline ml-2 text-right cursor-pointer"
                     style={{ color: "var(--primary-color)" }}
@@ -127,14 +127,14 @@ const Login = () => {
           </Grid>
           <Grid
             size={{ md: 7, sm: 0 }}
-            className="grid justify-content-center align-content-center"
+            className="grid justify-center items-center"
           >
             <Image
-              src="src\assets\Images\RightSideImage.png"
+              src={RightSideImage}
               alt="Image"
               height="500"
               width="450"
-              className="mb-3 DisplayNone"
+              className="mb-3 hidden md:block"
             />
           </Grid>
         </Grid>

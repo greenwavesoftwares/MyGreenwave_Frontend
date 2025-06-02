@@ -1,4 +1,3 @@
-import { data } from "autoprefixer";
 import {
   showErrorMessage,
   showSuccessMessage,
@@ -16,25 +15,19 @@ import { format, parse } from "date-fns";
 
 const dateformat = "yyyy-MM-dd";
 
-const onPageLoad = async () => {
-  let managerLeaveData = {};
-
-  let requestValue = await getLeaveRequestsForManagerApprovalAPI();
-  managerLeaveData.requestData = requestValue
-    ? requestValue.managerHRRemarkTable
-    : [];
-
-  let tableValue = await getTeamLeavesTableForManagerAPI();
-  managerLeaveData.tableData = tableValue
-    ? tableValue.managerHRRemarkTable
-    : [];
-
-  let calenderValue = await getTeamLeavesCalenderForManagerAPI();
-  managerLeaveData.calenderData = calenderValue
+const getLeaveRequestsForManagerApproval = async () => {
+  const requestValue = await getLeaveRequestsForManagerApprovalAPI();
+  return requestValue ? requestValue.managerHRRemarkTable : [];
+};
+const getTeamLeavesCalenderForManager = async () => {
+  const calenderValue = await getTeamLeavesCalenderForManagerAPI();
+  return calenderValue
     ? await setCalenderData(calenderValue.managerHRRemarkTable)
     : [];
-
-  return managerLeaveData;
+};
+const getTeamLeavesTableForManager = async () => {
+  const tableValue = await getTeamLeavesTableForManagerAPI();
+  return tableValue ? tableValue.managerHRRemarkTable : [];
 };
 const setCalenderData = async (calenderValue) => {
   let calenderDataList = [];
@@ -85,6 +78,7 @@ const rejectLeave = async (
   leaveData,
   reason,
   setRejectedValidation,
+  hideRejectDialog,
   toastRef
 ) => {
   if (reason.trim().length === 0) {
@@ -99,6 +93,7 @@ const rejectLeave = async (
   setRejectedValidation(true);
   const data = await rejectLeaveAPI(leaveData, reason, toastRef);
   if (data) {
+    hideRejectDialog();
     showSuccessMessage(toastRef, "Success", "Leave Rejected");
   }
 };
@@ -123,28 +118,16 @@ const getYearList = () => {
   }
   return yearList;
 };
-// const getCalenderStatusColor = (status) => {
-//   switch (status) {
-//     case "Approved":
-//       return "bg-green-400";
-//     case "Rejected":
-//       return "bg-red-400";
-//     case "Pending":
-//       return "bg-yellow-300";
-//     default:
-//       return "bg-[#9ae600]";
-//   }
-// };
 const getCalenderStatusColor = (status) => {
   switch (status) {
     case "Approved":
-      return "#4ade80"; // Tailwind green-400
+      return "bg-green-400";
     case "Rejected":
-      return "#f87171"; // Tailwind red-400
+      return "bg-red-400";
     case "Pending":
-      return "#fde047"; // Tailwind yellow-300
+      return "bg-yellow-300";
     default:
-      return "#9ae600"; // Custom lime green
+      return "bg-lime-400";
   }
 };
 
@@ -201,10 +184,12 @@ function stringToVibrantPastelColor(input) {
 
 export {
   getCurrentDate,
-  onPageLoad,
   getYearList,
   onSelectRowEdit,
   approveLeave,
   rejectLeave,
   reviewingLeave,
+  getTeamLeavesTableForManager,
+  getTeamLeavesCalenderForManager,
+  getLeaveRequestsForManagerApproval,
 };

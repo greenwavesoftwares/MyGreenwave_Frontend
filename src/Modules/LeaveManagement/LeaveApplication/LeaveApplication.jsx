@@ -36,6 +36,7 @@ import { Avatar } from "primereact/avatar";
 import LeaveBalanceCard from "./LeaveBalanceCard";
 import CustomInputText from "../../../components/InputText/InputText";
 import CustomButton from "../../../components/Button/Button";
+import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -127,26 +128,11 @@ const LeaveApplication = () => {
     );
   };
   const leaveHeader = (
-    <div className="flex justify-content-between align-items-center">
-      <span>Leaves</span>
-      <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
-        <CustomInputText
-          value={leaveTable.filterText}
-          onChange={(e) => {
-            const value = e.target.value;
-            let _filters = leaveTable.filterStructure;
-            _filters["global"].value = value;
-            setLeaveTable((p) => ({
-              ...p,
-              filterStructure: _filters,
-              filterText: value,
-            }));
-          }}
-          placeholder="Search"
-        />
-      </IconField>
-    </div>
+    <GlobalFilterHeader
+      start={<span>Leaves</span>}
+      table={leaveTable}
+      setTable={setLeaveTable}
+    />
   );
   const appliedLeaveTypes = [
     {

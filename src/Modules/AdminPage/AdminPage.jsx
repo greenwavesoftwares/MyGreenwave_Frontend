@@ -20,6 +20,7 @@ import Department from "./Department/Department";
 import UserInfo from "./UserInfo/UserInfo";
 import ResetPassword from "./ResetPassword/ResetPassword";
 import UserLog from "./UserLog/UserLog";
+import GlobalFilterHeader from "../../components/Table/GlobalFilterHeader";
 
 const AdminPage = () => {
   //Table structure and Validations for admin page
@@ -134,30 +135,17 @@ const AdminPage = () => {
     },
   ];
   const adminHeader = (
-    <div className="flex justify-content-between align-items-center">
-      <TabMenu
-        model={adminHeaderMenuItems}
-        activeIndex={activeIndex}
-        onTabChange={(e) => setActiveIndex(e.index)}
-      />
-      <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
-        <InputText
-          value={adminTable.filterText}
-          onChange={(e) => {
-            const value = e.target.value;
-            let _filters = adminTable.filterStructure;
-            _filters["global"].value = value;
-            setAdminTable((p) => ({
-              ...p,
-              filterStructure: _filters,
-              filterText: value,
-            }));
-          }}
-          placeholder="Search"
+    <GlobalFilterHeader
+      start={
+        <TabMenu
+          model={adminHeaderMenuItems}
+          activeIndex={activeIndex}
+          onTabChange={(e) => setActiveIndex(e.index)}
         />
-      </IconField>
-    </div>
+      }
+      table={adminTable}
+      setTable={setAdminTable}
+    />
   );
   useEffect(() => {
     const init = async () => {
@@ -214,7 +202,7 @@ const AdminPage = () => {
           }}
           dataKey="userId"
           filters={adminTable.filterStructure}
-          globalFilterFields={["userName", "userId"]}
+          globalFilterFields={["userName", "userId", "phoneNumber"]}
         >
           <Column
             header="User Name"
