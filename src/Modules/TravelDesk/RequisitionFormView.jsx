@@ -8,7 +8,16 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { FloatLabel } from "primereact/floatlabel";
 import { Button as PrimeReactButton } from "primereact/button";
 
-const RequisitionFormView = ({ rowData ,handleApproveTravel,handleRejectTravel,formData,setFormData}) => {
+const RequisitionFormView = ({
+  rowData,
+  handleApproveTravel,
+  handleRejectTravel,
+  formData,
+  setFormData,
+}) => {
+  console.log("rowData : ", rowData);
+  console.log("formData : ", formData);
+
   const { userDetails } = getUserData();
   return (
     <>
@@ -44,58 +53,54 @@ const RequisitionFormView = ({ rowData ,handleApproveTravel,handleRejectTravel,f
         </Grid>
 
         <Grid size={12}>Manager Name : {rowData.manager_id}</Grid>
-        <Grid size={12}> {
-          formData?.manager_id === userDetails?.userId ?
-          <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
-            <Grid item xs={6}>
-              Manager Name:{" "}
-              <div style={{ fontWeight: "bold", color: "blue" }}>
-                {formData?.manager_id}
-              </div>
-            </Grid>
-            <Grid item xs={6}>
-              <FloatLabel>
-                <InputTextarea
-                  value={formData?.manager_suggestion}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      manager_suggestion: e.target.value,
-                    })
-                  }
-                />
-                <label htmlFor="managercomment">Manager Comment</label>
-              </FloatLabel>
-            </Grid>
-             {/* Button */}
-          <PrimeReactButton
-            raised
-            icon="pi pi-check"
-            rounded
-            
-            aria-label="Verify"
-            severity="success"
-            disabled={!formData?.manager_suggestion?.trim()}
-            onClick={handleApproveTravel}
-          />
-          <PrimeReactButton
-            raised
-            icon="pi pi-times"
-            rounded
-            
-            severity="danger"
-            aria-label="Cancel"
-             disabled={!formData?.manager_suggestion?.trim()}
-              onClick={handleRejectTravel}
-          />
-          </Box>
-          :
-          (
-            <div>
-          Manager Comment : {rowData.manager_suggestion}
-          </div>)
-        }
-</Grid>
+        <Grid size={12}>
+          {" "}
+          {formData?.manager_id === userDetails?.userId ? (
+            <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
+              {/* <Grid item xs={6}>
+                Manager Name:{" "}
+                <div style={{ fontWeight: "bold", color: "blue" }}>
+                  {formData?.manager_id}
+                </div>
+              </Grid> */}
+              <Grid item xs={6}>
+                <FloatLabel>
+                  <InputTextarea
+                    value={formData?.manager_suggestion}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        manager_suggestion: e.target.value,
+                      })
+                    }
+                  />
+                  <label htmlFor="managercomment">Manager Comment</label>
+                </FloatLabel>
+              </Grid>
+              {/* Button */}
+              <PrimeReactButton
+                raised
+                icon="pi pi-check"
+                rounded
+                aria-label="Verify"
+                severity="success"
+                disabled={!formData?.manager_suggestion?.trim()}
+                onClick={handleApproveTravel}
+              />
+              <PrimeReactButton
+                raised
+                icon="pi pi-times"
+                rounded
+                severity="danger"
+                aria-label="Cancel"
+                disabled={!formData?.manager_suggestion?.trim()}
+                onClick={handleRejectTravel}
+              />
+            </Box>
+          ) : (
+            <div>Manager Comment : {rowData.manager_suggestion}</div>
+          )}
+        </Grid>
       </Grid>
     </>
   );
