@@ -1,7 +1,7 @@
 import axios from "axios";
+import { getUserData } from "../Login/Encrypt";
 const endPoint = import.meta.env.VITE_END_POINT;
 const imageURL = import.meta.env.VITE_IMAGE_API;
-
 
 //Get user data
 const getUserDataAPI = async (token) => {
@@ -18,6 +18,86 @@ const getUserDataAPI = async (token) => {
   }
 };
 
+//Get Appraisal data
+const getAppraisalData = async (token, doj) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}homepagemaster/homepage-appraisal?doj=${doj}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//Get Training data
+const getTrainingData = async (token) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}homepagemaster/homepage-training`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//Next Holiday API
+const getNextHoliday = async (token) => {
+  try {
+    const response = await axios.get(`${endPoint}homepagemaster/homepage-next-holiday`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//Get Event data
+const getEventData = async (token) =>
+{
+  try {
+    const response = await axios.get(`${endPoint}homepagemaster/homepage-eventlist`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+//Get Home Page Event 
+const getHomePageEvent = async (filename) => {
+  const {token}=getUserData()
+  try {
+    const response = await axios.get(`${endPoint}homepagemaster/event-image?iamgename=${filename}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      responseType: 'blob',
+    });
+   return response;
+   
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 //Dummy API for home page
 const homePageApi = async () => {
@@ -31,7 +111,4 @@ const homePageApi = async () => {
   }
 };
 
-
-
-
-export  {homePageApi,getUserDataAPI};
+export { homePageApi, getUserDataAPI, getAppraisalData, getTrainingData,getNextHoliday,getEventData,getHomePageEvent };

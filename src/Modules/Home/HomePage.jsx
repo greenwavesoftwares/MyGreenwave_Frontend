@@ -11,7 +11,7 @@ import {
 import React, { useEffect, useState } from "react";
 import "./HomePage.css";
 import { Galleria } from "primereact/galleria";
-import { formatDate } from "../Appraisal/formatDate";
+import { formatDate, formatDateTime } from "../Appraisal/formatDate";
 import { Image } from "primereact/image";
 import { Dialog } from "primereact/dialog";
 import InfoIcon from "@mui/icons-material/Info";
@@ -21,8 +21,16 @@ import TouchAppIcon from "@mui/icons-material/TouchApp";
 import CircularProgress from "@mui/material/CircularProgress";
 
 //Api
-import { homePageApi, getUserDataAPI} from "./HomePageAPI";
+import {
+  getUserDataAPI,
+  getAppraisalData,
+  getTrainingData,
+  getNextHoliday,
+  getEventData,
+  getHomePageEvent
+} from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
+const endPoint = import.meta.env.VITE_END_POINT;
 const imageApiUrl = import.meta.env.VITE_IMAGE_API;
 //SCSS Import
 import "../Appraisal/Appraisal.scss";
@@ -34,26 +42,52 @@ const HomePage = () => {
   const [visible, setVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({});
   const [loader, setLoader] = useState(false);
-  
+  //Set Appraisal Data
+  const [appraisalData, setAppraisalData] = useState({});
+  //Set Training Data
+  const [trainingData, setTrainingData] = useState({});
+  //Set Next Holiday Data
+  const [nextHolidayData, setNextHolidayData] = useState({});
+  //Set Event Image
+  const [eventImage,setEventImage] = useState(null);
+  const [eventImageFileName, setEventImageFileName] = useState(null)
+
   //Call Home PAhe All
   const getHomePageData = async () => {
     try {
       const { token } = getUserData();
+      const user_doj = formatDate(getUserData().userDetails.doj);
+
       //Get User Data
       const userDetails = await getUserDataAPI(token);
       setUserProfile(userDetails.data);
-
       //Home Page Loader
       setLoader(true);
+      //Appraisal API Call
+      const appraisalResponse = await getAppraisalData(token, user_doj);
+      //Training Api Call
+      const trainingResponse = await getTrainingData(token);
+      //Next Holiday API Call 
+      const nextHolidayResponse = await getNextHoliday(token);
+      //Event API Call
+      const eventResponse = await getEventData(token);
 
-      const response = await homePageApi();
-      if (response.status === 200) {
-        //Get Notification Data
-        setNotificationData(response.data.notification);
-        //Get Event Data
-        setEventData(response.data.event);
-        //Get Basic User Info
-        setBasicUserInfo(response.data.personalData);
+      //Get Event Image
+      // console.log("fileName", eventImageFileName);
+      // const eventImageResponse = await getHomePageEvent('5bac25e0-94f5-4691-8d58-13b22a812b25MicrosoftTeams-image.png');
+      // const imageUrl = URL.createObjectURL(eventImageResponse.data);
+      // setEventImage(imageUrl);
+
+      if (appraisalResponse.status === 200) {
+        //Appraisal Data
+        setAppraisalData(appraisalResponse.data.appraisalTable);
+        // Training Data
+        setTrainingData(trainingResponse.data);
+        // Next Holiday Data
+        setNextHolidayData(nextHolidayResponse.data);
+        //Event Data
+        setEventData(eventResponse.data.eventList);
+
         //Set Loader to false
         setLoader(false);
       }
@@ -61,21 +95,35 @@ const HomePage = () => {
       if (error) {
         setLoader(false);
         console.error("Error fetching home page data:", error);
-      }
-      else{
+      } else {
         setLoader(false);
         console.error("Error fetching home page data: Unknown error");
       }
     }
   };
 
- 
-
-
   //Call Home Page API
   useEffect(() => {
     getHomePageData();
   }, []);
+
+
+  //Fetch Event Image
+  useEffect(() => {
+  const fetchEventImage = async () => {
+    try {
+      if (eventImageFileName) {
+        const response = await getHomePageEvent(eventImageFileName);
+        const imageUrl = URL.createObjectURL(response.data);
+        setEventImage(imageUrl);
+      }
+    } catch (err) {
+      console.error("Failed to fetch event image:", err);
+    }
+  };
+
+  fetchEventImage();
+}, [eventImageFileName]);
 
   //Notification Template
   const itemNotificationTemplate = (item) => {
@@ -95,7 +143,7 @@ const HomePage = () => {
           className="fontSize-sm"
           sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
         >
-          {formatDate(item.Fromdate)} - {formatDate(item.Todate)}
+          {(item.fromdate) - (item.Todate)}
         </Typography>
         <Typography className="fontSize-sm" sx={{ marginBottom: "0.2rem" }}>
           {item.notification}
@@ -112,15 +160,21 @@ const HomePage = () => {
     );
   };
 
+  
   //Event Template
-  const itemEventTemplate = (item) => {
+  const itemEventTemplate =  (item) => {
+  setEventImageFileName(item.filename);
+  
+
     return (
       <>
-        <Image
-          src={`${imageApiUrl}/events/image/${item.filename}`}
+      {eventImage &&
+         <Image
+          src={eventImage}
           alt="Image"
           style={{ height: "100%" }}
-        />
+        /> 
+      }
 
         <InfoIcon
           onClick={() => setVisible(true)}
@@ -139,7 +193,7 @@ const HomePage = () => {
         >
           <div style={{ padding: "0.5rem 0" }}>
             <Typography style={{ fontWeight: 600, marginBottom: "0.4rem" }}>
-              {formatDate(item.Fromdate)} - {formatDate(item.Todate)}
+              {item.fromdate} - {item.toDate}
             </Typography>
             <Typography>{item.notification}</Typography>
           </div>
@@ -159,7 +213,8 @@ const HomePage = () => {
     const name = email?.split("@")[0];
     const nameParts = name.split(".");
     const formattedName = nameParts.map((ele) => {
-      return ele;
+      //console.log("email",ele[0].toUpperCase().concat(ele.slice(1)));
+      return ele[0].toUpperCase().concat(ele.slice(1));
     });
 
     return formattedName.join(" ");
@@ -208,7 +263,7 @@ const HomePage = () => {
                     </Avatar>
                   </Grid>
                   <Grid>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Card
                         className="cardNew BorderRadius"
                         sx={{
@@ -323,7 +378,7 @@ const HomePage = () => {
                     </Grid>
                   </Grid>
                   <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Card
                         className="cardNew BorderRadius"
                         sx={{
@@ -345,14 +400,14 @@ const HomePage = () => {
                               <Tag
                                 severity="success"
                                 className="TagStyle"
-                                value={basicUserInfo.lastAppraisalDate ?? "NA"}
+                                value={appraisalData.lastAppraisalDate ?? "NA"}
                                 rounded
                               ></Tag>
                             </div>
                           </Grid>
 
                           {/* Next Appraisal Date */}
-                          <Grid item>
+                          <Grid>
                             <div className="NewCard">
                               <Typography
                                 className="fontSize-sm"
@@ -363,7 +418,7 @@ const HomePage = () => {
                               <Tag
                                 severity="success"
                                 className="TagStyle"
-                                value={basicUserInfo.nextAppraisalDate ?? "NA"}
+                                value={appraisalData.nextAppraisalDate ?? "NA"}
                                 rounded
                               ></Tag>
                             </div>
@@ -374,7 +429,7 @@ const HomePage = () => {
                   </Grid>
 
                   <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Card
                         className="cardNew BorderRadius"
                         sx={{
@@ -393,14 +448,14 @@ const HomePage = () => {
                               <Tag
                                 severity="Info"
                                 className="TagStyle"
-                                value={basicUserInfo.currentTraining ?? "NA"}
+                                value={trainingData.currentTraining ?? "sdfgh"}
                                 rounded
                               ></Tag>
                             </div>
                           </Grid>
 
                           {/* Next Training */}
-                          <Grid item>
+                          <Grid>
                             <div className="NewCard">
                               <Typography
                                 className="fontSize-sm"
@@ -412,7 +467,7 @@ const HomePage = () => {
                               <Tag
                                 severity="Info"
                                 className="TagStyle"
-                                value={basicUserInfo.nextTraining ?? "NA"}
+                                value={trainingData.nextTraining ?? "dsfgnhm"}
                                 rounded
                               ></Tag>
                             </div>
@@ -423,7 +478,7 @@ const HomePage = () => {
                   </Grid>
 
                   <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Card
                         className="cardNew BorderRadius"
                         sx={{
@@ -452,7 +507,7 @@ const HomePage = () => {
                           </Grid>
 
                           {/* Reviewing / Reviewed Claims */}
-                          <Grid item>
+                          <Grid>
                             <div className="NewCard">
                               <Typography className="fontSize-sm">
                                 Reviewing / Reviewed Claims
@@ -473,7 +528,7 @@ const HomePage = () => {
                 </Grid>
                 <Grid size={9}>
                   <Grid>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Card
                         className="cardNew BorderRadius"
                         sx={
@@ -485,13 +540,13 @@ const HomePage = () => {
                       >
                         <Grid container direction="column" spacing={1}>
                           {/*Carousel */}
-                          <Grid item>
+                          <Grid>
                             <div
                               className="NewCard"
                               style={{ height: "18.5rem", display: "grid" }}
                             >
-                              <Typography sx={{ m: "0.2rem", fontWeight: 500 }}>
-                                Next Public Holiday :
+                              <Typography sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}>
+                                {nextHolidayData?.nextHoliday}
                               </Typography>
 
                               <Galleria
@@ -499,12 +554,14 @@ const HomePage = () => {
                                 className="NotificationThumbnail"
                                 item={itemEventTemplate}
                                 //thumbnail={notificationThumbnailTemplate}
-                                showThumbnailNavigators={false}
+                               // showThumbnailNavigators={false}
                                 circular
                                 autoPlay
-                                transitionInterval={10000}
+                                transitionInterval={3* 1000}
                                 //showIndicators
-                                //showIndicatorsOnItem
+                               // showIndicatorsOnItem
+                               // showItemNavigatorsOnHover
+                               // showItemNavigators 
                               />
                             </div>
                           </Grid>
@@ -515,7 +572,7 @@ const HomePage = () => {
                       <Grid size={5}>
                         {/* Claims */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid item xs={12}>
+                          <Grid xs={12}>
                             <Card
                               className="cardNew BorderRadius"
                               sx={{
@@ -538,7 +595,7 @@ const HomePage = () => {
                                 </Grid>
 
                                 {/* Loan Amount Pending */}
-                                <Grid item>
+                                <Grid>
                                   <div className="NewCard">
                                     <Typography className="fontSize-sm">
                                       Loan Amount Pending
@@ -555,7 +612,7 @@ const HomePage = () => {
                         </Grid>
                         {/* CL And PL Section */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid item xs={12}>
+                          <Grid xs={12}>
                             <Card
                               className="cardNew BorderRadius"
                               sx={{
@@ -565,7 +622,7 @@ const HomePage = () => {
                             >
                               <Grid container direction="column" spacing={1}>
                                 {/*CL Available*/}
-                                <Grid item>
+                                <Grid>
                                   <div className="NewCard">
                                     <Typography className="fontSize-sm">
                                       CL Available
@@ -578,7 +635,7 @@ const HomePage = () => {
                                 </Grid>
 
                                 {/* PL Available */}
-                                <Grid item>
+                                <Grid>
                                   <div className="NewCard">
                                     <Typography className="fontSize-sm">
                                       PL Available
@@ -595,7 +652,7 @@ const HomePage = () => {
                         </Grid>
                         {/* Attendance / Leaves Taken (Current Month) */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid item xs={12}>
+                          <Grid xs={12}>
                             <Card
                               className="cardNew BorderRadius"
                               sx={{
@@ -605,7 +662,7 @@ const HomePage = () => {
                             >
                               <Grid container direction="column" spacing={1}>
                                 {/*Attendance / Leaves Taken (Current Month)*/}
-                                <Grid item>
+                                <Grid>
                                   <div className="NewCard">
                                     <Typography className="fontSize-sm">
                                       Attendance / Leaves Taken (Current Month)
@@ -625,7 +682,7 @@ const HomePage = () => {
                       </Grid>
                       <Grid size={7}>
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid item xs={12}>
+                          <Grid xs={12}>
                             <Card
                               className="cardNew BorderRadius"
                               sx={{
