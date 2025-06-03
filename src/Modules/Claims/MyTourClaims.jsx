@@ -296,7 +296,7 @@ const MyTourClaims = () => {
           showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-        dataKey="requisition_id"
+        dataKey="travel_id"
          paginator
         rows={10}
       >

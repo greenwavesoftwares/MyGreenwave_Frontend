@@ -126,7 +126,12 @@ export default function MiniDrawer({ children }) {
     try {
       const { token } = getUserData();
       const response = await getUserPageInfo(token);
-      // console.log("User Page Info:", response);
+    let allotedPages=response.data.allotedPages
+      if(response.data.department==='HR')
+      {
+        allotedPages['Referrals']=['referral','hr-referral']
+      }
+     console.log("User Page Info:", allotedPages,response);
       if (response.status === 200) {
         setUserPageInfo(response.data.allotedPages);
       } else {

@@ -48,8 +48,8 @@ const TourClaim = () => {
   const [tourclaimformData, settourclaimformData] = useState({
     claim_id: "",
     advance: "",
-    requisition_id: "",
-    travelMode: "",
+    travel_id: "",
+  
     travelType: "",
     destination: "",
     purpose: "",
@@ -133,7 +133,7 @@ const TourClaim = () => {
                         settourclaimformData({
                           claim_id: "",
                           advance: "",
-                          requisition_id: "",
+                          travel_id: "",
                           travelMode: "",
                           travelType: "",
                           destination: "",
@@ -161,6 +161,8 @@ const TourClaim = () => {
                     settourClaimTableData={settourClaimTableData}
                     settoggleNewClaim={settoggleNewClaim}
                     setTravelModeOptions={setTravelModeOptions}
+                    selectedtravelMode={selectedtravelMode}
+                    setselectedtravelMode={setselectedtravelMode}
                   
                   />
                 </div>
@@ -176,6 +178,8 @@ const TourClaim = () => {
                     toggleNewClaim={toggleNewClaim}
                     travelTypeOptions={travelTypeOptions}
                     travelModeOptions={travelModeOptions}
+                    selectedtravelMode={selectedtravelMode}
+                    setselectedtravelMode={setselectedtravelMode}
                   />
                  
                   <TourClaimTable

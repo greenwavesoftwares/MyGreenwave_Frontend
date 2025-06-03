@@ -51,10 +51,20 @@ const TravelDesk = () => {
   //My Form Api Call 
   const myFormApi = async () => {
     try {
-      const { token } = getUserData();
-      const response = await getMyFormTravelData(token);
-      console.log("my form travel data", response);
-      setMyFormTableData(response?.data);
+     // const { token } = getUserData();
+      const response = await getMyFormTravelData();
+      console.log(1213,response)
+      if(!response.status)
+      {
+       toastRef.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: response.message,
+      });
+      }else{
+          setMyFormTableData(response.data);
+      }
+      
     } catch (error) {
       console.log(error);
     }
@@ -276,6 +286,62 @@ const TravelDesk = () => {
                         />
                       </div>
                     </div> */}
+                                      {/* <Dropdown
+                                        inputId="Select-Travel"
+                                        className="w-62 "
+                                       value={selectedtravelMode?selectedtravelMode.value:''}
+                                        options={travelModeOptions}
+                                       
+                                        onChange={(e) => {
+                                     
+                                          fetchTourClaimFormDetails(e.value); 
+                                          setselectedtravelMode(e)  
+                                        }}
+                                        placeholder="Select a Mode"
+                                        disabled={editableMode === true }
+                                      /> */}
+
+                     <div className="sm:col-span-5">
+                        <label
+                          htmlFor="travel-type"
+                          className="block text-sm font-medium leading-6 text-gray-900"
+                        >
+                          Type of Travel
+                        </label>
+                        <div className="mt-2 relative">
+                          <select
+                            id="travel-type"
+                            name="typeOfTravel"
+                            value={formFields.typeOfTravel}
+                            onChange={(e) =>
+                              setFormFields({
+                                ...formFields,
+                                typeOfTravel: e.target.value,
+                              })
+                            }
+                            className="block w-full rounded-md border-0 py-1.5 pl-3 pr-21 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 appearance-none"
+                          >
+                            <option value="" disabled className="text-gray-400">
+                              Select one
+                            </option>
+                            <option value="Sales Marketing">
+                              Sales Marketing
+                            </option>
+                            <option value="Project">Project</option>
+                            <option value="Service Paid">Service Paid</option>
+                            <option value="Service Free">Service Free</option>
+                            <option value="Survey">Survey</option>
+                            <option value="Training">Training</option>
+                            <option value="Others">Others</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1">
+                            <ChevronDownIcon
+                              className="h-8 w-8 text-gray-400"
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Purpose field */}
                       <div className="sm:col-span-5">

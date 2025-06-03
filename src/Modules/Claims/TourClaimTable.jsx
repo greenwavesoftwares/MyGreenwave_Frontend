@@ -254,6 +254,16 @@ const TourClaimTable = ({
             dateFormat="yy-mm-dd"
             showIcon
             className="p-inputtext-sm w-full"
+              minDate={
+    tourclaimformData.claimFromDate
+      ? new Date(tourclaimformData.claimFromDate)
+      : null
+  }
+  maxDate={
+    tourclaimformData.claimToDate
+      ? new Date(tourclaimformData.claimToDate)
+      : null
+  }
           />
         );
       } else if (field == "Remarks") {
@@ -354,7 +364,7 @@ const TourClaimTable = ({
   const handleDownloadFile = async () => {
     try {
       let d = await downloadTourClaimExpanseDocument(
-        tourclaimformData.claim_id
+       
       );
     } catch (error) {
       console.log(error);

@@ -18,6 +18,7 @@ import {
   getTourClaimTableDraftData,
   getlatestclaimtodate,
   formateDate,
+  getTravelMode
 } from "./claimServices";
 
 const DraftForm = ({
@@ -30,7 +31,8 @@ const DraftForm = ({
   settourclaimformData,
   settourClaimTableData,
   travelOptions,
-  setTravelModeOptions
+  setTravelModeOptions,
+  setselectedtravelMode
   
 }) => {
   const cellStyle = { padding: "12px 16px" };
@@ -42,17 +44,17 @@ const DraftForm = ({
   const handleDelete = async (claim_id, status) => {
     let response = await deleteDraftList(claim_id, status);
     if (!response.status) {
-      toast.current.show({
+      toast.current?.show({
         severity: "error",
         summary: "error",
         detail: response.message,
       });
     } else {
      
-      toast.current.show({
+      toast.current?.show({
         severity: "success",
         summary: "Success",
-        detail: response.message,
+        detail: response.message || "One more draft data deleted",
       });
        setDraftData(response.data);
       if (response.data.length == 0) {
@@ -70,13 +72,13 @@ const DraftForm = ({
     try {
       let response = await applyClaim(claim_id, status);
       if (!response.status) {
-        toast.current.show({
+        toast.current?.show({
           severity: "error",
           summary: "Error",
           detail: error?.message,
         });
       } else {
-         toast.current.show({
+         toast.current?.show({
           severity: "success",
           summary: "Success",
           detail: "You have successfully applied for approval.",
@@ -90,7 +92,7 @@ const DraftForm = ({
        
       }
     } catch (error) {
-      toast.current.show({
+      toast.current?.show({
         severity: "error",
         summary: "Error",
         detail: "Failed to apply: " + (error?.message || error),
@@ -98,47 +100,45 @@ const DraftForm = ({
     }
   };
 
-  const handleEdit = async (claim_id, requisition_id) => {
+  const handleEdit = async (claim_id, travel_id) => {
     try {
       const data = await getTourClaimTableDraftData(claim_id);
       const travelDropDown = await getTravelDropDown();
      
-     let obj = travelDropDown.data;
-    //  setTravelModeOptions(obj)
-
-      const matchedItem = obj.find(item => item.value === data.requisition_id);
-
-// const travelmodeLabel = matchedItem ? matchedItem.label : null;
-  
-      let dates = await getlatestclaimtodate(requisition_id);
-
      
-      // console.log('all data',obj)      
-      // console.log('this should be selected',matchedItem)
-      // console.log('req id',data.requisition_id)
-              
-           
+      let obj = travelDropDown.data;
+      const matchedItem = obj.find(item => item.value === data.travel_id);
+       if(travel_id==='Long-Term-Local-Conveyance')
+      {
+          setselectedtravelMode(matchedItem)
+      }else{
+        const travelmode= await getTravelMode(travel_id)
+        setselectedtravelMode({label:travelmode.data,value:travel_id}) 
+      }
+      let dates = await getlatestclaimtodate(travel_id);
+     // console.log('dates',dates)
+      
+     // travel_id==='Long-Term-Local-Conveyance'?setselectedtravelMode(matchedItem):setselectedtravelMode({label:travelmode.data,value:travel_id}) 
       settourclaimformData({
         advance: 0,
         claim_id: data.claim_id,
-        requisition_id: requisition_id,
-        travelMode: matchedItem,
+        travel_id: travel_id,    
         travelType: data.type,
         destination: data.destination,
         purpose: data.purpose,
         projectName: data.project,
         onAccount: data.account,
         travelfromDate: formateDate(dates[0].travelfromdate),
-        claimFromDate: formateDate(dates[0].claimformdate),
-        claimToDate: formateDate(dates[0].claimtodate),
+        claimFromDate:travel_id==='Long-Term-Local-Conveyance'?data.from_date:formateDate(dates[0].claimformdate),
+        claimToDate: travel_id==='Long-Term-Local-Conveyance'?data.to_date:formateDate(dates[0].claimtodate),
         filename: data.filename,
         file_type: data.file_type,
       });
-      // settourClaimTableData(data.tourClaimRecords)
+     
 
       const formattedRows = data.tourClaimRecords.map((row) => ({
         Date: row.date,
-        Lodging: row.lodging, // typo fixed from "loading"
+        Lodging: row.lodging, 
         Breakfast: row.breakfast,
         Lunch: row.lunch,
         Snacks: row.snacks,
@@ -154,6 +154,7 @@ const DraftForm = ({
       }));
 
       settourClaimTableData(formattedRows);
+        seteditableMode(true);
     } catch (error) {
       console.error("Fetch error:", error);
     }
@@ -165,8 +166,8 @@ const DraftForm = ({
         icon="pi pi-pencil"
         className="p-button-sm p-button-text p-button-info"
         onClick={() => {
-          seteditableMode(true);
-          handleEdit(rowData.claim_id, rowData.requisition_id);
+        
+          handleEdit(rowData.claim_id, rowData.travel_id);
         }}
         tooltip="Edit"
       />
@@ -241,7 +242,7 @@ const DraftForm = ({
       try {
         let d = await downloadTourClaimSupportingDocument(claim_id);
       } catch (error) {
-        toast.current.show({
+        toast.current?.show({
           severity: "error",
           summary: "error",
           detail: "Something Wrong.",
@@ -261,13 +262,13 @@ const DraftForm = ({
           file,
           rowData.claim_id
         ); // Adjust this call accordingly
-        toast.current.show({
+        toast.current?.show({
           severity: "success",
           summary: "Success",
           detail: "File Uploaded",
         });
       } catch (error) {
-        toast.current.show({
+        toast.current?.show({
           severity: "error",
           summary: "Error",
           detail: "Upload failed",
@@ -279,7 +280,7 @@ const DraftForm = ({
     };
     return (
       <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
-        <Toast ref={toast} />
+       
 
         {togglefileUpload ? (
           <FileUpload
@@ -320,6 +321,7 @@ const DraftForm = ({
 
   return (
     <div>
+       <Toast ref={toast} />
       <div>
         <DataTable
           value={draftData}
@@ -330,8 +332,17 @@ const DraftForm = ({
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
           <Column
-            field="requisition_id"
+            field="claim_id"
             header="Claim Id"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            sortable
+            filter
+          />
+
+           <Column
+            field="travel_id"
+            header="travel id"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
             sortable

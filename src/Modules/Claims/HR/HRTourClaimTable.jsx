@@ -346,8 +346,9 @@ const HRTourClaimTable = () => {
       >
         <DataTable
           value={viewtabledata}
-          showGridlines
-          tableStyle={{ minWidth: "50rem" }}
+          showGridlines 
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
           <Column
             field="date"

@@ -5,6 +5,8 @@
 import { parse } from "date-fns";
 import * as XLSX from "xlsx";
 import { getUserData } from "../Login/Encrypt";
+// const host = import.meta.env.VITE_API_HOST;
+// const port = import.meta.env.VITE_API_PORT;
 const host = "http://localhost";
 const port = "8081";
 
@@ -22,7 +24,7 @@ export const getDraftData = async () => {
 
   try {
     const response = await fetch(
-      "http://localhost:8081/claims/tour-claims/drafts",
+      `${host}:${port}/claims/tour-claims/drafts`,
       requestOptions
     );
     if(!response.ok)
@@ -66,7 +68,7 @@ export const handleSaveToDraft = (payload) => {
     redirect: "follow",
   };
 
-  return fetch("http://localhost:8081/claims/tour-claims", requestOptions)
+  return fetch(`${host}:${port}/claims/tour-claims`, requestOptions)
     .then((response) => response.json())
     .catch((error) => {
       console.error("Error saving draft:", error);
@@ -110,7 +112,7 @@ export const getTravelsDetails = async () => {
   };
 
   let response = await fetch(
-    "http://localhost:8081/traveldesk/travels",
+    `${host}:${port}/traveldesk/travels`,
     requestOptions
   );
   let data = response.json();
@@ -131,7 +133,7 @@ export const getTourClaimList = async () => {
   };
 
   const response = await fetch(
-    "http://localhost:8081/claims/tour-claims",
+    `${host}:${port}/claims/tour-claims`,
     requestOptions
   );
 
@@ -141,20 +143,20 @@ export const getTourClaimList = async () => {
 
   const data = await response.json();
 
-  // Group by requisition_id
+  // Group by travel_id
   const groupedMap = {};
 
   let formattedResult = [];
 
   traveldetails.forEach((item) => {
     const matchingClaims = data.filter(
-      (claim) => claim.requisition_id === item.requisionId
+      (claim) => claim.travel_id === item.requisionId
     );
     formattedResult.push({
       fromDate: item.fromDate,
       tentativeToDate: item.tentativeToDate,
       actualToDate: item.actualToDate,
-      requisition_id: item.requisionId,
+      travel_id: item.requisionId,
       destination: item.city,
       purpose: item.purpose,
       project: item.projectName,
@@ -164,10 +166,10 @@ export const getTourClaimList = async () => {
   });
 
   // data.forEach(item => {
-  //     const reqId = item.requisition_id;
+  //     const reqId = item.travel_id;
   //     if (!groupedMap[reqId]) {
   //         groupedMap[reqId] = {
-  //             requisition_id: reqId,
+  //             travel_id: reqId,
   //             destination: item.destination,
   //             purpose: item.purpose,
   //             project: item.project,
@@ -201,7 +203,7 @@ export const getTravelDropDown = async () => {
   };
 
   let response = await fetch(
-  "http://localhost:8081/traveldesk/ongoing-travels",
+  `${host}:${port}/traveldesk/ongoing-travels`,
   requestOptions
 );
 
@@ -244,6 +246,53 @@ return{
 
 };
 
+
+export const getTravelMode = async (travel_id) => {
+  try{
+  const myHeaders = new Headers();
+  myHeaders.append("Authorization", token);
+
+  const requestOptions = {
+    method: "GET",
+    headers: myHeaders,
+    redirect: "follow",
+  };
+
+  let response = await fetch(
+  `${host}:${port}/traveldesk/travels/${travel_id}`,
+  requestOptions
+);
+
+
+
+if(!response.ok)
+{
+  let message=await response.text();
+  return {
+    status:false,
+    message:message,
+    data:[]
+  }
+}
+
+let data=await response.json()
+return{
+  status:true,
+  message:"travels mode",
+  data:data.city+' - '+data.fromDate+' - '+data.projectName
+}
+  }catch(error)
+  {
+    return{
+      status:false,
+      message:error?.message,
+      data:[]
+    }
+  }
+
+};
+
+
 export const getTourClaimFormDetails = async (id) => {
   const myHeaders = new Headers();
   myHeaders.append("Authorization", token);
@@ -255,12 +304,17 @@ export const getTourClaimFormDetails = async (id) => {
   };
 
   let response = await fetch(
-    `http://localhost:8081/traveldesk/travels/${id}`,
+    `${host}:${port}/traveldesk/travels/${id}`,
     requestOptions
   );
   //   .then((response) => response.text())
   //   .then((result) => console.log(result))
   //   .catch((error) => console.error(error));
+
+  if(!response.ok)
+  {
+    return []
+  }
 
   let data = response.json();
   return data;
@@ -277,7 +331,7 @@ export const getAdvance = async () => {
   };
 
   let response = await fetch(
-    "http://localhost:8081/traveldesk/unsettled-advance",
+    `${host}:${port}/traveldesk/unsettled-advance`,
     requestOptions
   );
   let data = response.json();
@@ -300,7 +354,7 @@ export const uploadSupportingDocuments = async (file, claim_id) => {
     };
 
     let response = await fetch(
-      `http://localhost:8081/claims/tour-claims/doc/${claim_id}`,
+      `${host}:${port}/claims/tour-claims/doc/${claim_id}`,
       requestOptions
     );
     // let data=response.json();
@@ -323,12 +377,12 @@ export const deleteDraftList = async (claim_id, status) => {
     };
 
     let response = await fetch(
-      `http://localhost:8081/claims/tour-claims/${claim_id}/${status}`,
+      `${host}:${port}/claims/tour-claims/${claim_id}/${status}`,
       requestOptions
     );
    if(!response.ok)
    {
-    let message=response.text();
+    let message=await response.text();
     return{
       status:false,
       message:message,
@@ -401,7 +455,7 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     };
 
     const response = await fetch(
-      `http://localhost:8081/claims/tour-claims/doc/${claim_id}`,
+      `${host}:${port}/claims/tour-claims/doc/${claim_id}`,
       requestOptions
     );
 
@@ -459,7 +513,7 @@ export const downloadOtherClaimSupportingDocument = async (claim_id) => {
     };
 
     const response = await fetch(
-      `http://localhost:8081/claims/other-claims/doc/${claim_id}`,
+      `${host}:${port}/claims/other-claims/doc/${claim_id}`,
       requestOptions
     );
 
@@ -566,7 +620,7 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
 
     if (!claim_id) {
       var response = await fetch(
-        `http://localhost:8081/claims/tour-claims/excel`,
+        `${host}:${port}/claims/tour-claims/excel`,
         {
           method: "GET",
           headers: myHeaders,
@@ -575,7 +629,7 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
       );
     } else {
       var response = await fetch(
-        `http://localhost:8081/claims/tour-claims/excel/${claim_id}`,
+        `${host}:${port}/claims/tour-claims/excel/${claim_id}`,
         {
           method: "GET",
           headers: myHeaders,
@@ -615,6 +669,8 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
   }
 };
 
+
+
 export const getTourClaimTableDraftData = async (claim_id) => {
   try {
     const myHeaders = new Headers();
@@ -627,7 +683,7 @@ export const getTourClaimTableDraftData = async (claim_id) => {
     };
 
     const response = await fetch(
-      `http://localhost:8081/claims/tour-claims/${claim_id}`,
+      `${host}:${port}/claims/tour-claims/${claim_id}`,
       requestOptions
     );
 
@@ -639,22 +695,25 @@ export const getTourClaimTableDraftData = async (claim_id) => {
     //console.log("tabledata",data)
     return data;
     // const travelDropDownData = await getTravelDropDown();
-    // const key = Object.keys(travelDropDownData).find(key => travelDropDownData[key] === data.requisition_id);
+    // const key = Object.keys(travelDropDownData).find(key => travelDropDownData[key] === data.travel_id);
   } catch (error) {
     // console.error("Error in downloadTourClaimSupportingDocument:", error);
     throw error;
   }
 };
 
-export const getlatestclaimtodate = async (requisition_id) => {
+export const getlatestclaimtodate = async (travel_id) => {
   const result = [];
-  const tourClaimList = await getTourClaimList(); // Await here!
+
+  const tourClaimList = await getTourClaimList(); 
   const filteredClaims = tourClaimList.filter(
-    (row) => row.requisition_id === requisition_id
+    (row) => row.travel_id === travel_id
   );
 
   let latestToDate = null;
-  filteredClaims[0].expandabledata.forEach((claim) => {
+  if(filteredClaims.length>0)
+  {
+    filteredClaims[0].expandabledata.forEach((claim) => {
     const claimToDate = claim.to_date;
     if (claim.status !== "Rejected") {
       if (!latestToDate || claimToDate > latestToDate) {
@@ -662,8 +721,10 @@ export const getlatestclaimtodate = async (requisition_id) => {
       }
     }
   });
+  }
+ 
 
-  const data = await getTourClaimFormDetails(requisition_id);
+  const data = await getTourClaimFormDetails(travel_id);
   result.push({
     travelfromdate: data.fromDate,
     claimformdate: latestToDate,
@@ -705,7 +766,7 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
     myHeaders.append("Authorization", token); // make sure `token` is in scope
 
     const payload = {
-      requisition_id: tourclaimformData.requisition_id,
+      travel_id: tourclaimformData.travel_id,
       type: tourclaimformData.travelType,
       destination: tourclaimformData.destination,
       purpose: tourclaimformData.purpose,
@@ -729,7 +790,7 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
       redirect: "follow",
     };
 
-   let response= await fetch("http://localhost:8081/claims/tour-claims", requestOptions);
+   let response= await fetch(`${host}:${port}/claims/tour-claims`, requestOptions);
    if(!response.ok)
    {
     let message=await response.text()
@@ -792,7 +853,7 @@ export const updateDraftdata = async (
     myHeaders.append("Authorization", token); // make sure `token` is in scope
 
     const payload = {
-      requisition_id: tourclaimformData.requisition_id,
+      travel_id: tourclaimformData.travel_id,
       type: tourclaimformData.travelType,
       destination: tourclaimformData.destination,
       purpose: tourclaimformData.purpose,
@@ -817,7 +878,7 @@ export const updateDraftdata = async (
     };
 
    let response= await fetch(
-      `http://localhost:8081/claims/tour-claims/${claim_id}`,
+      `${host}:${port}/claims/tour-claims/${claim_id}`,
       requestOptions
     );
     // const data = await response.json();
@@ -956,7 +1017,7 @@ export const ApplyOtherClaim = async (
     };
 
     const response = await fetch(
-      "http://localhost:8081/claims/other-claims",
+      `${host}:${port}/claims/other-claims`,
       requestOptions
     );
 
@@ -988,7 +1049,7 @@ export const getOtherClaims = async () => {
       redirect: "follow",
     };
     let response = await fetch(
-      "http://localhost:8081/claims/other-claims",
+      `${host}:${port}/claims/other-claims`,
       requestOptions
     );
     const data = response.json();
@@ -1011,7 +1072,7 @@ export const getLoanDetails = async () => {
     };
 
     const response = await fetch(
-      "http://localhost:8081/claims/loan-claims",
+      `${host}:${port}/claims/loan-claims`,
       requestOptions
     );
     const data = await response.json();
@@ -1045,7 +1106,7 @@ export const applyLoan = async (formData) => {
     };
 
     let response = await fetch(
-      "http://localhost:8081/claims/loan-claims",
+      `${host}:${port}/claims/loan-claims`,
       requestOptions
     );
 
@@ -1081,7 +1142,7 @@ export const getApprovedTourClaims = async () => {
     };
 
     let ApprovedResponse = await fetch(
-      "http://localhost:8081/claims/tour-claims-by-status/Approved",
+      `${host}:${port}/claims/tour-claims-by-status/Approved`,
       requestOptions
     );
     if (!ApprovedResponse.ok) {
@@ -1096,7 +1157,7 @@ export const getApprovedTourClaims = async () => {
     let ApprovedData = await ApprovedResponse.json();
 
     let ReviewedResponse = await fetch(
-      "http://localhost:8081/claims/tour-claims-by-status/Reviewed",
+      `${host}:${port}/claims/tour-claims-by-status/Reviewed`,
       requestOptions
     );
     if (!ReviewedResponse.ok) {
@@ -1110,7 +1171,7 @@ export const getApprovedTourClaims = async () => {
     let ReviewedData = await ReviewedResponse.json();
 
     let CancelledResponse = await fetch(
-      "http://localhost:8081/claims/tour-claims-by-status/Cancelled",
+      `${host}:${port}/claims/tour-claims-by-status/Cancelled`,
       requestOptions
     );
     if (!CancelledResponse.ok) {

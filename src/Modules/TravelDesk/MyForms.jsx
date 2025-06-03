@@ -9,6 +9,7 @@ import { Dialog } from "primereact/dialog";
 import { useState } from "react";
 
 const MyForm = ({ myFormTableData }) => {
+  const [expandedRows, setExpandedRows] = useState(null);
   //Dialog visible
   const [visible, setVisible] = useState(false);
   //
@@ -24,49 +25,75 @@ const MyForm = ({ myFormTableData }) => {
     console.log("response", response);
   };
 
+  const rowExpansionTemplate = (rowData) => (
+    <DataTable
+      value={rowData.expandableData}
+      showGridlines
+      dataKey="requisionId"
+      className="text-xs"
+      tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+    >
+      <Column field="date" header="Date"></Column>
+      <Column field="advance" header="Advance"></Column>
+      <Column
+        body={(rowData) => {
+          return (
+            <Chip
+              label={rowData.status}
+              size="medium"
+              color={
+                rowData.status.toLowerCase() === "approved" ||
+                rowData.status.toLowerCase() === "completed"
+                  ? "success"
+                  : "warning"
+              }
+            />
+          );
+        }}
+        header="Status"
+      ></Column>
+      <Column
+        body={(rowData) => {
+          return (
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                handelShowPreviousData(rowData.requisionId);
+              }}
+            >
+              Show
+            </Button>
+          );
+        }}
+        header="View"
+      ></Column>
+      <Column field="" header="Download ticket"></Column>
+    </DataTable>
+  );
+
   return (
     <>
-      <DataTable value={myFormTableData}>
-        <Column field="date" header="Date"></Column>
+      <DataTable
+        value={myFormTableData}
+        expandedRows={expandedRows}
+        onRowToggle={(e) => setExpandedRows(e.data)}
+        rowExpansionTemplate={rowExpansionTemplate}
+        showGridlines
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        dataKey="travelId"
+        paginator
+        rows={10}
+      >
+        <Column expander style={{ width: "3rem" }} />
+        <Column field="fromDate" header="From Date"></Column>
+        <Column field="tentativeToDate" header="Tentative To Date"></Column>
+
         <Column field="purpose" header="Purpose"></Column>
         <Column field="projectName" header="Project Name"></Column>
         <Column field="city" header="City"></Column>
-        <Column
-          body={(rowData) => {
-            return (
-              <Chip
-                label={rowData.status}
-                size="medium"
-                color={
-                  rowData.status.toLowerCase() === "approved" || rowData.status.toLowerCase() ==="completed"
-                    ? "success"
-                    : "warning"
-                }
-              />
-            );
-          }}
-          header="Status"
-        ></Column>
-        <Column
-          body={(rowData) => {
-            return (
-              <Button
-                variant="contained"
-                onClick={(e) => {
-                  handelShowPreviousData(rowData.requisionId);
-                }}
-              >
-                Show
-              </Button>
-            );
-          }}
-          header="View"
-        ></Column>
-        <Column
-          field=""
-          header="Download ticket
-"
-        ></Column>
+        <Column field="localityArea" header="Locality/Area"></Column>
+        <Column field="typeOfTravel" header="Type Of Travel"></Column>
       </DataTable>
 
       <Dialog
@@ -91,22 +118,10 @@ const MyForm = ({ myFormTableData }) => {
               header="Mode of Transport"
               value={rowData.transportModes}
             >
-              <Column
-                field="mode"
-                header="Mode"
-              ></Column>
-              <Column
-                field="fromDate"
-                header="From Date"
-              ></Column>
-               <Column
-                field="comment"
-                header="Comment"
-              ></Column>
-              <Column
-                field="manager_remark"
-                header="Manager Remark"
-              ></Column>
+              <Column field="mode" header="Mode"></Column>
+              <Column field="fromDate" header="From Date"></Column>
+              <Column field="comment" header="Comment"></Column>
+              <Column field="manager_remark" header="Manager Remark"></Column>
             </DataTable>
           </Grid>
 
@@ -115,30 +130,12 @@ const MyForm = ({ myFormTableData }) => {
               header="Reservation of Accommodation"
               value={rowData.accommodations}
             >
-              <Column
-                field="type"
-                header="Type"
-              ></Column>
-              <Column
-                field="numberOfRooms"
-                header="Number Of Rooms"
-              ></Column>
-               <Column
-                field="numberOfNights"
-                header="Number Of Nights"
-              ></Column>
-              <Column
-                field="checkIn"
-                header="Check In"
-              ></Column>
-              <Column
-                field="checkOut"
-                header="Check Out"
-              ></Column>
-              <Column
-                field="comment"
-                header="Comment"
-              ></Column>
+              <Column field="type" header="Type"></Column>
+              <Column field="numberOfRooms" header="Number Of Rooms"></Column>
+              <Column field="numberOfNights" header="Number Of Nights"></Column>
+              <Column field="checkIn" header="Check In"></Column>
+              <Column field="checkOut" header="Check Out"></Column>
+              <Column field="comment" header="Comment"></Column>
             </DataTable>
           </Grid>
 

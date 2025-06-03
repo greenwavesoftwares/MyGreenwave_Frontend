@@ -17,13 +17,15 @@ const TourClaimForm = ({
   toggleNewClaim,
   travelModeOptions,
   travelTypeOptions,
+    selectedtravelMode,
+    setselectedtravelMode
 }) => {
+
+  
   const [advance, setadvance] = useState(null);
-
   const [isFormExpanded, setIsFormExpanded] = useState(true);
-
-  const handleChange = (value) => {
-    settourclaimformData((prev) => ({ ...prev, value }));
+  const handleChange = (field, value) => {   
+      settourclaimformData((prev) => ({ ...prev, [field]: value }));
   };
 
   const fetchTourClaimFormDetails = async (id) => {
@@ -32,10 +34,9 @@ const TourClaimForm = ({
         settourclaimformData((prev) => ({
           ...prev,
           advance: advance,
-          requisition_id: "Long-Term-Local-Conveyance",
+          travel_id: "Long-Term-Local-Conveyance",
           projectName: "",
           purpose: "",
-          travelMode: "Long-Term-Local-Conveyance",
           travelType: "",
           destination: "",
           onAccount: "",
@@ -46,15 +47,15 @@ const TourClaimForm = ({
       } else {
         const data = await getTourClaimFormDetails(id);
         const dates = await getlatestclaimtodate(id);
-        console.log("testing anish");
+       
 
         settourclaimformData((prev) => ({
           ...prev,
           advance: advance,
-          requisition_id: id,
+          travel_id: id,
           projectName: data.projectName,
           purpose: data.purpose,
-          travelMode: id,
+        
           travelType: data.typeOfTravel,
           destination: data.city,
           onAccount: "",
@@ -68,38 +69,23 @@ const TourClaimForm = ({
     }
   };
 
+ 
+
   useEffect(() => {
-    const fetchAdvanceBalence = async () => {
+    const fetchAdvanceBalence = async () => {     
       try {
         const advanceblance = await getAdvance();
         setadvance(advanceblance);
+
       } catch (error) {
         console.error("Error in get advancebalace:", error);
       }
+      
     };
-    // const fetchDropdownList = async () => {
-    //   try {
-    //     const travelDropDownData = await getTravelDropDown();
-    //     travelDropDownData["In-Station Local Conveyance"] =
-    //       "Long-Term-Local-Conveyance";
-
-    //     const formattedOptions = Object.entries(travelDropDownData).map(
-    //       ([label, value]) => ({
-    //         label,
-    //         value,
-    //       })
-    //     );
-
-    //     setTravelModeOptions(formattedOptions);
-    //   } catch (error) {
-    //     console.error("Error fetching tour claim list:", error);
-    //   }
-    // };
     fetchAdvanceBalence();
-    //   fetchDropdownList();
   }, []);
 
-  // console.log("tourclaimformData",tourclaimformData.travelMode?.label)
+ 
 
   return (
     <div className="p-4">
@@ -134,31 +120,29 @@ const TourClaimForm = ({
                 >
                   Select Travel
                 </label>
-                {editableMode === true ? (
-                    <InputText
-                  inputId="Select-Travel"
-                  className="w-62"
-                  value={
-                    tourclaimformData.travelMode?.label
-                  }
-              
+                {editableMode?<InputText
+                  inputId="selectedtravelMode_value"
+                  className="w-62 text-3xs"
+                  value={selectedtravelMode?selectedtravelMode.label:''}
+                 // onChange={(e) =>handleChange("destination", e.target.value)}
                   disabled
-                />
-                ) : (
+                />:
                   <Dropdown
                     inputId="Select-Travel"
                     className="w-62 "
-                    //value={selectedtravelMode}
-                    value={tourclaimformData.travelMode?.label}
+                   value={selectedtravelMode?selectedtravelMode.value:''}
                     options={travelModeOptions}
-                    //optionLabel="lable"
+                   
                     onChange={(e) => {
-                      handleChange(e.value);
-                      fetchTourClaimFormDetails(e.value);
+                 
+                      fetchTourClaimFormDetails(e.value); 
+                      setselectedtravelMode(e)  
                     }}
                     placeholder="Select a Mode"
+                    disabled={editableMode === true }
                   />
-                )}
+}
+                 
               </div>
               <div>
                 <label
@@ -172,10 +156,10 @@ const TourClaimForm = ({
                   className="w-62 text-sm"
                   value={tourclaimformData.travelType}
                   options={travelTypeOptions}
-                  onChange={(e) => handleChange(e.value)}
+                  onChange={(e) => handleChange("travelType", e.value)}
                   placeholder="Select a Type"
                   disabled={
-                    tourclaimformData.travelMode !==
+                    (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
                 />
@@ -192,9 +176,9 @@ const TourClaimForm = ({
                   inputId="Destination"
                   className="w-62 text-sm"
                   value={tourclaimformData.destination}
-                  onChange={(e) => handleChange(e.target.value)}
+                  onChange={(e) =>handleChange("destination", e.target.value)}
                   disabled={
-                    tourclaimformData.travelMode !==
+                    (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
                 />
@@ -212,9 +196,9 @@ const TourClaimForm = ({
                   inputId="Purpose-of-Trip"
                   className="w-62 text-sm"
                   value={tourclaimformData.purpose}
-                  onChange={(e) => handleChange(e.target.value)}
+                  onChange={(e) => handleChange("purpose", e.target.value)}
                   disabled={
-                    tourclaimformData.travelMode !==
+                    (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
                 />
@@ -231,9 +215,9 @@ const TourClaimForm = ({
                   inputId="Project-Name"
                   className="w-62"
                   value={tourclaimformData.projectName}
-                  onChange={(e) => handleChange(e.target.value)}
-                  disabled={
-                    tourclaimformData.travelMode !==
+                  onChange={(e) =>  handleChange("projectName", e.target.value)}
+                 disabled={
+                    (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
                 />
@@ -249,7 +233,7 @@ const TourClaimForm = ({
                   inputId="On-Account"
                   className="w-62"
                   value={tourclaimformData.onAccount}
-                  onChange={(e) => handleChange(e.target.value)}
+                  onChange={(e) => handleChange("onAccount", e.target.value)}
                 />
               </div>
 
@@ -270,7 +254,7 @@ const TourClaimForm = ({
                         ).toLocaleDateString()
                       : "No Date Selected"
                   }
-                  onChange={(e) => handleChange(e.target.value)}
+                  onChange={(e) =>  handleChange("travelfromDate", e.target.value)}
                   disabled
                 />
               </div>
@@ -283,12 +267,12 @@ const TourClaimForm = ({
                     inputId="claimFromDate"
                     showIcon
                     className="w-62"
-                    value={tourclaimformData.claimFromDate}
-                    onChange={(e) => handleChange(e.value)}
+                    value={new Date(tourclaimformData.claimFromDate)}
+                    onChange={(e) =>handleChange("claimFromDate", e.value)}
                     disabled={
-                      tourclaimformData.travelMode !==
-                      "Long-Term-Local-Conveyance"
-                    }
+                    (selectedtravelMode?selectedtravelMode.value:'') !==
+                    "Long-Term-Local-Conveyance"
+                  }
                   />
                 ) : (
                   <Calendar
@@ -322,7 +306,7 @@ const TourClaimForm = ({
                   showIcon
                   className="w-62"
                   value={new Date(tourclaimformData.claimToDate)}
-                  onChange={(e) => handleChange(e.value)}
+                  onChange={(e) =>  handleChange("claimToDate", e.target.value)}
                 />
               </div>
             </div>
