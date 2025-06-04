@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./UserLog.css";
 import DialogComponent from "../../../components/Dialog/DialogComponent";
 import { getUserLogs } from "./UserLogFunction";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import { Grid } from "@mui/material";
+import { Chip, Grid } from "@mui/material";
 import UserInformation from "./UserInformation";
-
-const UserLog = ({ userId, onHide, dialogVisible = false }) => {
+import Toast from '../../../components/Toast/Toast'
+const UserLog = ({ 
+    userId //userId of the user
+  , onHide //function to be called when the dialog is closed
+  , dialogVisible = false //prop to handle whether the dialog is open or closed
+}) => {
   const [logList, setLogList] = useState([]);//state to manage the list of logs
   const [expandedRows, setExpandedRows] = useState([]);//state to manage the expanded rows of the table
-
+  const toastRef=useRef(null)
   /**
    * 
    * @param {*} newData 
@@ -40,11 +44,19 @@ const UserLog = ({ userId, onHide, dialogVisible = false }) => {
    */
   const rowExpansionTemplate = (data) => {
     const changes = compareChanges(data.newData, data.oldData);//compares the old and new data to find the updated keys
-    return (
+    if(!(data.oldData||data.newData))
+    { 
+      toastRef.current.show({
+      severity: "error",
+      summary: "Error",
+      detail: 'No Logs Found',
+    }); 
+      return
+    }
+      return (
       <Grid container spacing={2}>
         <Grid item xs={12} gap={4}>
           <UserInformation
-            header={"Old Data"}
             changes={changes}
             oldUserDetails={data.oldData}
             newUserDetails={data.newData}
@@ -121,6 +133,7 @@ const UserLog = ({ userId, onHide, dialogVisible = false }) => {
           </Grid>
         </Grid>
       </DialogComponent>
+      <Toast ref={toastRef}/>
     </>
   );
 };

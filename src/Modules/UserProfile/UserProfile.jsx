@@ -10,10 +10,10 @@ import ResetPassword from "../ResetPassword/ResetPassword";
 import UserLog from "../AdminPage/UserLog/UserLog";
 
 export default function UserProfile() {
-  const [showAccountInfo, setShowAccountInfo] = useState(true);
-  const [userDetails, setUserDetails] = useState(null);
-  const [showLogsDialog,setShowLogsdialog]=useState(false)
-  const token = getUserData().token;
+  const [showAccountInfo, setShowAccountInfo] = useState(true);//state to show the Account Details if true and to show the Reset Password component if false
+  const [userDetails, setUserDetails] = useState(null);//state to hold the user details
+  const [showLogsDialog,setShowLogsdialog]=useState(false)//state to show logs if true
+  const token = getUserData().token;//constant to hold current token
 
   const fetchData = async () => {
     const details = await getUserDetails(token);

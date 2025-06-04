@@ -128,12 +128,12 @@ const UserDetailsTable = ({
                   oldUserDetails[key],
                   newUserDetails[key]
                 )}
-                // style={{zIndex:'1000'}}
+                style={{zIndex:'1000'}}
               >
                 <Badge
                   color="error"
                   badgeContent=" "
-                  variant="dot"
+                  variant="dot" style={{cursor:'pointer'}}
                   className="table-cell-info-badge"
                   anchorOrigin={{ vertical: "top", horizontal: "right" }}
                 />

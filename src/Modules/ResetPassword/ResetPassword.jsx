@@ -5,31 +5,34 @@ import { Container, Grid } from "@mui/material";
 import { Button } from "primereact/button";
 import { Password } from "primereact/password";
 import Toast from "../../components/Toast/Toast";
-import { getUserData } from "../Login/Encrypt";
 import { loginCheck } from "../Login/LoginAPI";
 
-export default function ResetPassword({userDetails ,currentPasswordCheck }) {
-  const toastRef = useRef(null);
+export default function ResetPassword({
+    userDetails //prop containing user details
+  , currentPasswordCheck //prop containing boolean value to check if to check the current password before resetting the password, or directly reset the password
+}) {
+  const toastRef = useRef(null);//reference of the toast showing messages
   const resetPasswordStructure = {
     userId: "",
     newPassword: "",
     confirmPassword: "",
-  };
+  };//constant to hold the structure of the reset password object
   const resetPasswordValidationStructure = {
     newPassword: true,
     confirmPassword: true,
-  };
-  const [resetPassword, setResetPassword] = useState(resetPasswordStructure);
+  };//constant to hold the structure of the reset password validation object
+  const [resetPassword, setResetPassword] = useState(resetPasswordStructure);//state to store the reset password object
   const [resetPasswordValidation, setResetPasswordValidation] = useState(
     resetPasswordValidationStructure
-  );
+  );//state to store the reset password validation object
   const [currentPasswordDetails, setCurrentPasswordDetails] = useState({
     userId: "",
     currentPassword: "",
     isCurrentPasswordValid: false,
-  });
+  });//state to store the current password details
+
+  //Function to show the toast message during wrong password log
   const showWrongPasswordDialog = (message) => {
-    console.log("Incorrect Password");
     toastRef.current.show({
       severity: "error",
       summary: "Error",
@@ -37,34 +40,38 @@ export default function ResetPassword({userDetails ,currentPasswordCheck }) {
     });
   };
 
+  //useEffect during component mount 
   useEffect(() => {
-    console.log("Reset password:", resetPassword);
-    setResetPassword((prev) => ({ ...prev, userId: userDetails.userId }));
+    setResetPassword((prev) => ({ ...prev, userId: userDetails.userId }));//update the userId in the reset password object
     setCurrentPasswordDetails((prev) => ({
       ...prev,
       userId: userDetails.userId,
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }));//update the userId in the current password details object
   }, []);
 
   return (
     <>
       <Container size="md">
+        {/* check whether current password validation is needed or not */}
         {currentPasswordCheck &&
+        // check whether the current password is valid or not
           !currentPasswordDetails.isCurrentPasswordValid && (
+            // If the current password is not valid then render this component
             <Grid container>
+              {/* Grid to hold the label of current password details */}
               <Grid size={5} className="currentPasswordCell">
                 <span className="font-bold">Enter Current Password</span>
               </Grid>
-
+              {/* Grid to hold the input field of current password details */}
               <Grid size={5} className="currentPasswordCell">
                 <div className="card flex justify-content-center">
                   <Password
                     value={currentPasswordDetails.currentPassword}
-                    toggleMask
+                    toggleMask //Whether to show an icon to display the password as plain text.
                     feedback={false}
                     invalid={!currentPasswordDetails.currentPassword}
                     onChange={(e) =>
+                      // update the currentPasswordDetails state with the new password
                       setCurrentPasswordDetails((prev) => ({
                         ...prev,
                         currentPassword: e.target.value,
@@ -86,24 +93,29 @@ export default function ResetPassword({userDetails ,currentPasswordCheck }) {
                         username: currentPasswordDetails.userId,
                         password: currentPasswordDetails.currentPassword,
                       },
-                      toastRef,
-                      showWrongPasswordDialog
+                      // check whether the current password is valid or not
+                      toastRef,//pass the reference of the toast component to show wrong password message
+                      showWrongPasswordDialog//function invoked when the password is incorrect
                     );
                     if(response!=null){
-                      console.log("Response for reset password:",response)
                       setCurrentPasswordDetails((prev)=>({...prev,isCurrentPasswordValid:true}))
+                      //if the password is valid then update the property isCurrentPasswordValid of state currentPasswordDetails to true
                     }
                   }}
                 />
               </Grid>
             </Grid>
           )}
+          {/* check whether to validate the current password or not */}
         {(!currentPasswordCheck ||
+        // check whether the  current password is vaild or not
           currentPasswordDetails.isCurrentPasswordValid) && (
+            // if one of the above check is true then render the below grid
           <Grid container>
             <Grid size={5} className="resetPasswordCell">
               <span className="font-bold">Enter New Password</span>
             </Grid>
+            {/* grid to hold the new password input field */}
             <Grid size={7} className="resetPasswordCell">
               <div className="card flex justify-content-center">
                 <Password
@@ -114,7 +126,7 @@ export default function ResetPassword({userDetails ,currentPasswordCheck }) {
                     setResetPassword((prev) => ({
                       ...prev,
                       newPassword: e.target.value,
-                    }))
+                    }))//update the reset password object
                   }
                 />
               </div>
@@ -132,12 +144,13 @@ export default function ResetPassword({userDetails ,currentPasswordCheck }) {
                     setResetPassword((prev) => ({
                       ...prev,
                       confirmPassword: e.target.value,
-                    }))
+                    }))//update the reset password object
                   }
                 />
               </div>
             </Grid>
             <Grid size={12} className="flex justify-content-center">
+              {/* button to submit the new password */}
               <Button
                 label="Set Password"
                 icon="pi pi-key"
@@ -150,13 +163,14 @@ export default function ResetPassword({userDetails ,currentPasswordCheck }) {
                     toastRef,
                     setResetPasswordValidation
                   );
-                }}
+                }}//validates whether the new password is matching with the confirm password
               />
             </Grid>
           </Grid>
         )}
       </Container>
       <Toast ref={toastRef} />
+      {/* Toast to show messages */}
     </>
   );
 }
