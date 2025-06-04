@@ -19,6 +19,10 @@ import { Checkbox } from "primereact/checkbox";
 import { Tag } from "primereact/tag";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import CircularProgress from "@mui/material/CircularProgress";
+import WorkIcon from "@mui/icons-material/Work";
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import { Card as PrimeReactCard } from "primereact/card";
 
 //Api
 import {
@@ -27,7 +31,9 @@ import {
   getTrainingData,
   getNextHoliday,
   getEventData,
-  getHomePageEvent
+  getHomePageEvent,
+  getNotificationData,
+  getProfileImage,
 } from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
 const endPoint = import.meta.env.VITE_END_POINT;
@@ -49,8 +55,10 @@ const HomePage = () => {
   //Set Next Holiday Data
   const [nextHolidayData, setNextHolidayData] = useState({});
   //Set Event Image
-  const [eventImage,setEventImage] = useState(null);
-  const [eventImageFileName, setEventImageFileName] = useState(null)
+  const [eventImage, setEventImage] = useState(null);
+  const [eventImageFileName, setEventImageFileName] = useState(null);
+  //Set Profile Image
+  const [userProfileImage, setUserProfileImage] = useState(null);
 
   //Call Home PAhe All
   const getHomePageData = async () => {
@@ -67,10 +75,12 @@ const HomePage = () => {
       const appraisalResponse = await getAppraisalData(token, user_doj);
       //Training Api Call
       const trainingResponse = await getTrainingData(token);
-      //Next Holiday API Call 
+      //Next Holiday API Call
       const nextHolidayResponse = await getNextHoliday(token);
       //Event API Call
       const eventResponse = await getEventData(token);
+      //Notification API Call
+      const notificationResponse = await getNotificationData(token);
 
       //Get Event Image
       // console.log("fileName", eventImageFileName);
@@ -87,6 +97,16 @@ const HomePage = () => {
         setNextHolidayData(nextHolidayResponse.data);
         //Event Data
         setEventData(eventResponse.data.eventList);
+        //Notification Data
+        setNotificationData(notificationResponse.data.notificationtList);
+
+        //User Profile
+        const userProfileFileName =
+          userProfile.employeeId + userProfile.userName?.replace(" ", "_");
+        const getUserProfileImage = await getProfileImage(userProfileFileName);
+        //console.log("getUserProfileImage",getUserProfileImage);
+        const blobResponse = URL.createObjectURL(getUserProfileImage.data);
+        setUserProfileImage(blobResponse);
 
         //Set Loader to false
         setLoader(false);
@@ -107,74 +127,106 @@ const HomePage = () => {
     getHomePageData();
   }, []);
 
-
   //Fetch Event Image
   useEffect(() => {
-  const fetchEventImage = async () => {
-    try {
-      if (eventImageFileName) {
-        const response = await getHomePageEvent(eventImageFileName);
-        const imageUrl = URL.createObjectURL(response.data);
-        setEventImage(imageUrl);
+    const fetchEventImage = async () => {
+      try {
+        if (eventImageFileName) {
+          const response = await getHomePageEvent(eventImageFileName);
+          const imageUrl = URL.createObjectURL(response.data);
+          setEventImage(imageUrl);
+        }
+      } catch (err) {
+        console.error("Failed to fetch event image:", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch event image:", err);
-    }
-  };
+    };
 
-  fetchEventImage();
-}, [eventImageFileName]);
+    fetchEventImage();
+  }, [eventImageFileName]);
 
   //Notification Template
   const itemNotificationTemplate = (item) => {
     return (
-      <div style={{ display: "grid", justifyContent: "start" }}>
-        <Typography
-          sx={{
-            fontSize: "1rem !important",
-            fontWeight: 700,
-            color: "#3be4b4",
-            textTransform: "capitalize",
-          }}
-        >
-          {item.title}
-        </Typography>
-        <Typography
+      <PrimeReactCard
+      className="primeReactCardStyle"
+        style={{ boxShadow: "none" }}
+        title={
+          <Typography
+            sx={{
+              fontSize: "1rem !important",
+              fontWeight: 700,
+              color: "#3be4b4",
+              textTransform: "capitalize",
+            }}
+          >
+            {item.title}
+          </Typography>
+        }
+        subTitle={
+          <Typography
           className="fontSize-sm"
           sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
         >
-          {(item.fromdate) - (item.Todate)}
+          {`${item.fromdate} - ${item.toDate}`}
         </Typography>
+        }
+        footer={
+          <a
+            style={{ fontWeight: "bold",fontSize:"0.8rem" }}
+            className=""
+            target="_blank"
+            href={item.url}
+          >
+            Click Here For More Information
+          </a>
+        }
+      >
+        
         <Typography className="fontSize-sm" sx={{ marginBottom: "0.2rem" }}>
           {item.notification}
         </Typography>
-        <a
-          style={{ fontWeight: "bold" }}
-          className=""
-          target="_blank"
-          href={item.url}
-        >
-          Click Here For More Information
-        </a>
-      </div>
+      </PrimeReactCard>
+      // <div style={{ display: "grid", justifyContent: "start" }}>
+      //   <Typography
+      //     sx={{
+      //       fontSize: "1rem !important",
+      //       fontWeight: 700,
+      //       color: "#3be4b4",
+      //       textTransform: "capitalize",
+      //     }}
+      //   >
+      //     {item.title}
+      //   </Typography>
+      //   <Typography
+      //     className="fontSize-sm"
+      //     sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
+      //   >
+      //     {`${item.fromdate} - ${item.toDate}`}
+      //   </Typography>
+      //   <Typography className="fontSize-sm" sx={{ marginBottom: "0.2rem" }}>
+      //     {item.notification}
+      //   </Typography>
+      //   <a
+      //     style={{ fontWeight: "bold" }}
+      //     className=""
+      //     target="_blank"
+      //     href={item.url}
+      //   >
+      //     Click Here For More Information
+      //   </a>
+      // </div>
     );
   };
 
-  
   //Event Template
-  const itemEventTemplate =  (item) => {
-  setEventImageFileName(item.filename);
-  
+  const itemEventTemplate = (item) => {
+    setEventImageFileName(item.filename);
 
     return (
       <>
-      {eventImage &&
-         <Image
-          src={eventImage}
-          alt="Image"
-          style={{ height: "100%" }}
-        /> 
-      }
+        {eventImage && (
+          <Image src={eventImage} alt="Image" style={{ height: "100%" }} />
+        )}
 
         <InfoIcon
           onClick={() => setVisible(true)}
@@ -251,12 +303,16 @@ const HomePage = () => {
                       marginBottom: "0.5rem",
                     }}
                   >
-                    <Avatar sx={{ width: 86, height: 86 }}>
+                    <Avatar
+                      sx={{
+                        width: 140,
+                        height: 140,
+                        background: "#F2F2FE",
+                        border: "4px solid #ffff",
+                      }}
+                    >
                       <Image
-                        src={`${imageApiUrl}/images/image/${
-                          userProfile.employeeId +
-                          userProfile.userName?.replace(" ", "_")
-                        }.png`}
+                        src={userProfileImage}
                         alt="Image"
                         style={{ height: "100%" }}
                       />
@@ -264,123 +320,111 @@ const HomePage = () => {
                   </Grid>
                   <Grid>
                     <Grid xs={12}>
-                      <Card
-                        className="cardNew BorderRadius"
+                      {/* <Card
+                      className="cardNew BorderRadius cardStyle" 
                         sx={{
                           padding: "0.9rem",
                           //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
                         }}
-                      >
-                        <Grid container>
-                          {/* Employee ID */}
-                          <Grid size={12}>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Employee ID
-                              </Typography>
-
-                              <Typography id="empID" className="fontSize-sm">
-                                {userProfile?.employeeId}
-                              </Typography>
-                            </div>
-                          </Grid>
-
-                          {/* Designation */}
-                          <Grid size={12}>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Designation
-                              </Typography>
-
-                              <Typography
-                                id="designation"
-                                className="fontSize-sm"
-                              >
-                                {userProfile?.designation}
-                              </Typography>
-                            </div>
-                          </Grid>
-
-                          {/* Department */}
-                          <Grid size={12}>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Department
-                              </Typography>
-
-                              <Typography
-                                id="department"
-                                className="fontSize-sm"
-                              >
-                                {userProfile?.department}
-                              </Typography>
-                            </div>
-                          </Grid>
-
-                          {/* Date of Joining */}
-                          <Grid size={12}>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Date Of Joining
-                              </Typography>
-
-                              <Typography id="doj" className="fontSize-sm">
-                                {formatDate(userProfile?.doj)}
-                              </Typography>
-                            </div>
-                          </Grid>
-
-                          {/* Password Expiration Date */}
-                          <Grid size={12}>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Password Expires
-                              </Typography>
-
-                              <Typography id="passExp" className="fontSize-sm">
-                                {userProfile?.passwordExpiryDate}
-                              </Typography>
-                            </div>
-                          </Grid>
-
-                          {/* Manager */}
-                          <Grid size={12}>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Manager
-                              </Typography>
-
-                              <Typography id="manager" className="fontSize-sm">
-                                {emailToName(userProfile?.manager)}
-                              </Typography>
-                            </div>
-                          </Grid>
+                      >  */}
+                      <Grid container>
+                        {/* Employee Name */}
+                        <Grid size={12}>
+                          <div style={{ textAlign: "center" }}>
+                            <Typography
+                              id="userName"
+                              style={{ color: "#29343D", fontSize: "1.1rem" }}
+                            >
+                              {userProfile?.userName}
+                            </Typography>
+                          </div>
                         </Grid>
-                      </Card>
+
+                        {/* Designation */}
+                        <Grid size={12}>
+                          <div style={{ textAlign: "center" }}>
+                            <Typography
+                              id="designation"
+                              className="fontSize-sm"
+                              sx={{ color: "#645e5e" }}
+                            >
+                              {userProfile?.designation}
+                            </Typography>
+                          </div>
+                        </Grid>
+
+                        {/* Department */}
+
+                        <Grid
+                          size={12}
+                          sx={{
+                            padding: "0.3rem",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "center",
+                              marginTop: "0.3rem",
+                              columnGap: "1rem",
+                            }}
+                          >
+                            <Typography
+                              id="department"
+                              className="fontSize-sm"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                color: "#645e5e",
+                              }}
+                            >
+                              <WorkIcon
+                                fontSize="small"
+                                className="departmentIconStyle"
+                              />
+                              {userProfile?.department}
+                            </Typography>
+
+                            <Typography
+                              id="manager"
+                              className="fontSize-sm"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                color: "#645e5e",
+                              }}
+                            >
+                              <SupervisorAccountIcon
+                                fontSize="small"
+                                className="managerIconStyle"
+                              />
+                              {emailToName(userProfile?.manager)}
+                            </Typography>
+
+                            {/* <Typography
+                              id="doj"
+                              className="fontSize-sm"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <CalendarTodayIcon fontSize="small"  className="dojIconStyle"/>
+                              {formatDate(userProfile?.doj)}
+                            </Typography> */}
+                          </div>
+                        </Grid>
+                      </Grid>
+                      {/* </Card>  */}
                     </Grid>
                   </Grid>
                   <Grid sx={{ marginTop: "0.5rem" }}>
                     <Grid xs={12}>
                       <Card
-                        className="cardNew BorderRadius"
+                        className="cardNew BorderRadius cardStyle"
                         sx={{
                           padding: "0.9rem",
                           //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
@@ -431,7 +475,7 @@ const HomePage = () => {
                   <Grid sx={{ marginTop: "0.5rem" }}>
                     <Grid xs={12}>
                       <Card
-                        className="cardNew BorderRadius"
+                        className="cardNew BorderRadius cardStyle"
                         sx={{
                           padding: "0.9rem",
                           //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
@@ -480,7 +524,7 @@ const HomePage = () => {
                   <Grid sx={{ marginTop: "0.5rem" }}>
                     <Grid xs={12}>
                       <Card
-                        className="cardNew BorderRadius"
+                        className="cardNew BorderRadius cardStyle"
                         sx={{
                           padding: "0.9rem",
                           //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
@@ -521,6 +565,20 @@ const HomePage = () => {
                               ></Tag>
                             </div>
                           </Grid>
+                          <Grid>
+                            <div className="NewCard">
+                              <Typography className="fontSize-sm">
+                                Last Claim
+                              </Typography>
+
+                              <Tag
+                                severity="success"
+                                className="TagStyle"
+                                value={basicUserInfo?.reviewingOrReviewedClaims}
+                                rounded
+                              ></Tag>
+                            </div>
+                          </Grid>
                         </Grid>
                       </Card>
                     </Grid>
@@ -530,7 +588,7 @@ const HomePage = () => {
                   <Grid>
                     <Grid xs={12}>
                       <Card
-                        className="cardNew BorderRadius"
+                        className="cardNew BorderRadius cardStyle"
                         sx={
                           {
                             //p: 2,
@@ -543,9 +601,11 @@ const HomePage = () => {
                           <Grid>
                             <div
                               className="NewCard"
-                              style={{ height: "18.5rem", display: "grid" }}
+                              style={{ height: "19rem", display: "grid" }}
                             >
-                              <Typography sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}>
+                              <Typography
+                                sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
+                              >
                                 {nextHolidayData?.nextHoliday}
                               </Typography>
 
@@ -554,14 +614,14 @@ const HomePage = () => {
                                 className="NotificationThumbnail"
                                 item={itemEventTemplate}
                                 //thumbnail={notificationThumbnailTemplate}
-                               // showThumbnailNavigators={false}
+                                // showThumbnailNavigators={false}
                                 circular
                                 autoPlay
-                                transitionInterval={3* 1000}
-                                //showIndicators
-                               // showIndicatorsOnItem
-                               // showItemNavigatorsOnHover
-                               // showItemNavigators 
+                                transitionInterval={1 * 1000}
+                                showIndicators
+                                //showIndicatorsOnItem
+                                // showItemNavigatorsOnHover
+                                // showItemNavigators
                               />
                             </div>
                           </Grid>
@@ -574,7 +634,7 @@ const HomePage = () => {
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid xs={12}>
                             <Card
-                              className="cardNew BorderRadius"
+                              className="cardNew BorderRadius cardStyle"
                               sx={{
                                 padding: "0.9rem",
                                 //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
@@ -614,7 +674,7 @@ const HomePage = () => {
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid xs={12}>
                             <Card
-                              className="cardNew BorderRadius"
+                              className="cardNew BorderRadius cardStyle"
                               sx={{
                                 padding: "0.9rem",
                                 //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
@@ -654,7 +714,7 @@ const HomePage = () => {
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid xs={12}>
                             <Card
-                              className="cardNew BorderRadius"
+                              className="cardNew BorderRadius cardStyle"
                               sx={{
                                 padding: "0.9rem",
                                 //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
@@ -684,9 +744,10 @@ const HomePage = () => {
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid xs={12}>
                             <Card
-                              className="cardNew BorderRadius"
+                              className="cardNew BorderRadius cardStyle"
                               sx={{
-                                p: 2,
+                                //p: 2,
+                                height: "15.5rem",
                                 //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
                               }}
                             >
@@ -698,7 +759,7 @@ const HomePage = () => {
                                 showThumbnailNavigators={false}
                                 circular
                                 autoPlay
-                                transitionInterval={5000}
+                                transitionInterval={5 * 1000}
                               />
                             </Card>
                           </Grid>

@@ -29,3 +29,38 @@
     line-height: 1.5;
     font-size: 0.65rem;
 }
+.cardStyle{
+    border: 1px solid #eeeeeed6;
+    box-shadow: rgba(0, 0, 0, 0.04) 1px 1px 2px !important;
+    border-radius: 0.4rem !important;
+}
+.primeReactCardStyle.p-card .p-card-content{
+    padding: 0 !important;
+}
+.departmentIconStyle{
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+    font-size: 1rem !important;
+    background: #E8F1FD;
+    color: #2973CD;
+    padding: 5px;
+    border-radius: 50%;
+}
+.managerIconStyle{
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+    font-size: 1rem !important;
+    background: #FEF0F5;
+    color: #CC6085;
+    padding: 5px;
+    border-radius: 50%;
+}
+.dojIconStyle{
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+    font-size: 1rem !important;
+    background: #E8F1FD;
+    color: #2973CD;
+    padding: 5px;
+    border-radius: 50%;
+}
