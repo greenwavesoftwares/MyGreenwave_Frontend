@@ -41,6 +41,7 @@ import HomepageMaster from "./Modules/HomePageMaster/HomepageMaster";
 
 //Menu Bar
 import MenuBar from "./components/MenuBar/MenuBar";
+import OpenTravelsTableCopy from "./Modules/TravelDesk/OpenTravelsTableCopy";
 
 function App() {
   return (
@@ -80,6 +81,9 @@ function App() {
         <Route path="/hr-loan-application" element={<HRLoanApplication />} />
         <Route path="/referral" element={<Referral/>} />
         <Route path="/hr-referral" element={<HRReferralPage/>} />
+        <Route path="/test" element={<OpenTravelsTableCopy/>} />
+
+
       
 
         <Route path="/appraisals-review" element={<AppraisalsReview />} />

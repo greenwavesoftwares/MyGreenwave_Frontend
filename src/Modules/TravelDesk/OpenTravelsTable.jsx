@@ -989,17 +989,17 @@ const OpenTravelsTable = () => {
     return rowData.length > 0;
   };
 
-  const header = (
-    <div className="flex flex-wrap justify-content-end gap-2">
-      <Button icon="pi pi-plus" label="Expand All" onClick={expandAll} text />
-      <Button
-        icon="pi pi-minus"
-        label="Collapse All"
-        onClick={collapseAll}
-        text
-      />
-    </div>
-  );
+  // const header = (
+  //   <div className="flex flex-wrap justify-content-end gap-2">
+  //     <Button icon="pi pi-plus" label="Expand All" onClick={expandAll} text />
+  //     <Button
+  //       icon="pi pi-minus"
+  //       label="Collapse All"
+  //       onClick={collapseAll}
+  //       text
+  //     />
+  //   </div>
+  // );
 
   return (
     <div className="card">
@@ -1010,7 +1010,7 @@ const OpenTravelsTable = () => {
         onRowToggle={(e) => setExpandedRows(e.data)}
         rowExpansionTemplate={rowExpansionTemplate}
         dataKey="requisionId"
-        header={header}
+        header={approvedAndSettledTravelDataHeader}
         tableStyle={{ minWidth: "60rem" }}
       >
         <Column expander={allowExpansion} style={{ width: "5rem" }} />

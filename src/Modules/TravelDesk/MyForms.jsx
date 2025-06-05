@@ -10,6 +10,7 @@ import { useState } from "react";
 
 const MyForm = ({ myFormTableData }) => {
   const [expandedRows, setExpandedRows] = useState(null);
+  console.log('table data',myFormTableData)
   //Dialog visible
   const [visible, setVisible] = useState(false);
   //
@@ -88,7 +89,6 @@ const MyForm = ({ myFormTableData }) => {
         <Column expander style={{ width: "3rem" }} />
         <Column field="fromDate" header="From Date"></Column>
         <Column field="tentativeToDate" header="Tentative To Date"></Column>
-
         <Column field="purpose" header="Purpose"></Column>
         <Column field="projectName" header="Project Name"></Column>
         <Column field="city" header="City"></Column>

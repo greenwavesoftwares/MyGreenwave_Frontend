@@ -246,6 +246,62 @@ return{
 
 };
 
+export const getTravelDropDown2 = async () => {
+  try{
+  const myHeaders = new Headers();
+  myHeaders.append("Authorization", token);
+
+  const requestOptions = {
+    method: "GET",
+    headers: myHeaders,
+    redirect: "follow",
+  };
+
+  let response = await fetch(
+  `${host}:${port}/traveldesk/ongoing-travels`,
+  requestOptions
+);
+
+
+
+if(!response.ok)
+{
+  let message=await response.text();
+  return {
+    status:false,
+    message:message,
+    data:[]
+  }
+}
+let travelDropDownData=await response.json()
+travelDropDownData["New Travel"] =
+        null;
+
+        const formattedOptions = Object.entries(travelDropDownData).map(
+          ([label, value]) => ({
+            label,
+            value,
+          })
+        );
+
+
+return{
+  status:true,
+  message:"travels mode",
+  data:formattedOptions
+}
+  }catch(error)
+  {
+    return{
+      status:false,
+      message:error?.message,
+      data:[]
+    }
+  }
+
+};
+
+
 
 export const getTravelMode = async (travel_id) => {
   try{
