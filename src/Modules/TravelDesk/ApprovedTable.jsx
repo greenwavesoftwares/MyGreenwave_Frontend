@@ -22,11 +22,14 @@ import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const ApprovedTable = () => {
-  const [expandedRows, setExpandedRows] = useState(null);
+  const [expandedRows, setExpandedRows] = useState(!null);
+
+  const [visible, setVisible] = useState(false);
   const toast = useRef();
   const [editRowId, setEditRowId] = useState(null);
   const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
     useState([]);
+  const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
   const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     date: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -67,54 +70,49 @@ const ApprovedTable = () => {
   //   }
   const [rowData, setRowData] = useState({});
 
-  const rowExpansionTemplate = (rowData) => (
-    <DataTable
-      value={rowData.expandableData}
-      showGridlines
-      dataKey="requisionId"
-      className="text-xs"
-      tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-    >
-      <Column field="fromDate" header="Date"></Column>
-      <Column field="advanceRequested" header="Advance Requested"></Column>
-      <Column field="advance" header="Advance Given"></Column>
-      <Column field="advanceRequested" header="Advance Requested"></Column>
-      <Column field="advanceRequested" header="Advance Requested"></Column>
-      <Column
-        body={(rowData) => {
-          return (
-            <Chip
-              label={rowData.status}
-              size="medium"
-              color={
-                rowData.status.toLowerCase() === "approved" ||
-                rowData.status.toLowerCase() === "completed"
-                  ? "success"
-                  : "warning"
-              }
-            />
-          );
-        }}
-        header="Status"
-      ></Column>
-      <Column
-        body={(rowData) => {
-          return (
-            <Button
-              variant="contained"
-              onClick={(e) => {
-                handelShowPreviousData(rowData.requisionId);
-              }}
+  //const rowExpansionTemplate = (rowData) => (
+
+  const rowExpansionTemplate = (rowData) => {
+    return (
+      <DataTable
+        value={rowData.expandableData}
+        showGridlines
+        dataKey="requisionId"
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+      >
+        <Column field="requisionId" header="Requisition ID" />
+        <Column field="fromDate" header="Date" />
+        <Column field="advanceRequested" header="Advance Requested" />
+        <Column field="status" header="Status" />
+        <Column
+          body={advanceColumnBody}
+          header="Advance Given"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          body={setAdvanceActions}
+          header="Set Advance"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          body={(rowData) => (
+            <IconButton
+              aria-label="View"
+              onClick={() => handelShowRequisitionForm(rowData.requisionId)}
             >
-              Show
-            </Button>
-          );
-        }}
-        header="View"
-      ></Column>
-      <Column field="" header="Download ticket"></Column>
-    </DataTable>
-  );
+              <VisibilityIcon />
+            </IconButton>
+          )}
+          header="View"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+      </DataTable>
+    );
+  };
 
   useEffect(() => {
     const fetchApprovedAndSettledTravelData = async () => {
@@ -200,8 +198,65 @@ const ApprovedTable = () => {
     return row.advance;
   };
 
+  const updateTravelRequisitionStatus = async (rowData, statusName) => {
+    try {
+      console.log('updateTravelRequisitionStatus : rowData : ', rowData)
+      const { token } = getUserData();
+      const updateTravelRequisitionStatusResponse =
+        await updateTravelRequisition(
+          token,
+          rowData,
+          rowData.travelId,
+          statusName
+        );
+      toast.current.show({
+        severity: "success",
+        summary: "Success",
+        detail: "You have successfully applied for approval.",
+      });
+      console.log(
+        "updateTravelRequisitionStatusResponse :=:=>> ",
+        updateTravelRequisitionStatusResponse
+      );
+    } catch (error) {
+      toast.current.show({
+        severity: "error",
+        summary: "error",
+        detail: error.message,
+      });
+    }
+  };
+
+  const handleSaveAdvance = (row) => {
+    const updated = approvedAndSettledTravelData.map((item) => {
+      // Find the correct expandableData row to update
+      const updatedExpandableData = item.expandableData.map((exp) => {
+        if (exp.requisionId === row.requisionId) {
+          return { ...exp, advance: newAdvanceAmount };
+        }
+        return exp;
+      });
+
+      updateTravelRequisitionStatus(row, "Settled");
+
+      return {
+        ...item,
+        expandableData: updatedExpandableData,
+      };
+    });
+
+    setApprovedAndSettledTravelData(updated);
+    setEditRowId(null);
+    // Optionally reset newAdvanceAmount
+  };
+
+  const handleCancelAdvance = (row) => {
+    setEditRowId(null);
+    setNewAdvanceAmount(row.advance);
+  };
+
   const setAdvanceActions = (row) => {
-    if (editRowId === row.requisionId && row.bit) {
+    if (editRowId === row.requisionId && !row.claimUnderProcess) {
       return (
         <>
           <IconButton
@@ -223,7 +278,7 @@ const ApprovedTable = () => {
         </>
       );
     }
-    if (row.bit) {
+    if (!row.claimUnderProcess) {
       return (
         <IconButton
           aria-label="Edit"
@@ -248,6 +303,7 @@ const ApprovedTable = () => {
           value={approvedAndSettledTravelData}
           expandedRows={expandedRows}
           onRowToggle={(e) => setExpandedRows(e.data)}
+          rowExpansionMode="single"
           rowExpansionTemplate={rowExpansionTemplate}
           showGridlines
           className="text-xs"
@@ -271,7 +327,7 @@ const ApprovedTable = () => {
           }
           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
           currentPageReportTemplate="{first} to {last} of {totalRecords}"
-          dataKey="id"
+          dataKey="travelId"
           filters={approvedAndSettledFilters}
           globalFilterFields={[
             "date",
@@ -295,6 +351,14 @@ const ApprovedTable = () => {
               filter
             /> */}
           <Column expander style={{ width: "3rem" }} />
+          <Column
+            field="travelId"
+            header="travelId"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
           <Column
             field="userName"
             header="Name"
@@ -328,14 +392,7 @@ const ApprovedTable = () => {
             sortable
             filter
           />
-          {/* <Column
-              field="advanceRequested"
-              header="Advance Requested"
-              headerStyle={{ textAlign: "center" }}
-              style={{ textAlign: "center" }}
-              sortable
-               filter
-            /> */}
+
           {/* <Column
               body={advanceColumnBody}
               header="Advance Given"
@@ -390,7 +447,10 @@ const ApprovedTable = () => {
                 <IconButton
                   aria-label="Complete"
                   onClick={() => {
-                    updateTravelRequisitionStatus(rowData, "CompleteRequested");
+                    updateTravelRequisitionStatus(
+                      rowData.expandableData[0],
+                      "CompleteRequested"
+                    );
                   }}
                 >
                   <CheckIcon />
@@ -404,7 +464,7 @@ const ApprovedTable = () => {
         </DataTable>
         <Dialog
           header="Requisition Form View"
-          //   visible={visible}
+          visible={visible}
           style={{ width: "70rem" }}
           onHide={() => {
             if (!visible) return;

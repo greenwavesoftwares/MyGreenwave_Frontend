@@ -232,6 +232,103 @@ export const getApprovedAndSettledData= async () => {
   }
 };
 
+export const getCompleteAndCompleteRequestedData= async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let completeresponseObj = await fetch(
+      `${host}traveldesk/travels-by-status/Completed`,
+      requestOptions
+    );
+
+    if (!completeresponseObj.ok) {
+      let message = completeresponseObj.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    }
+    let completeresponse = await completeresponseObj.json();
+
+    const completeRequestedresponseObj = await fetch(
+      `${host}traveldesk/travels-by-status/CompleteRequested`,
+      requestOptions
+    );
+
+    if (!completeRequestedresponseObj.ok) {
+      let message = await completeRequestedresponseObj.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    }
+    let completeRequestedresponse = await completeRequestedresponseObj.json();
+    const finalData = [...completeresponse, ...completeRequestedresponse];
+
+    const travelList = finalData;
+       console.log('travelList2', travelList)
+
+    // Grouping by travelId
+    const travelMap = {};
+
+    for (const travel of travelList) {
+      const id = travel.travelId;
+
+      if (!travelMap[id]) {
+        travelMap[id] = [];
+      }
+
+      travelMap[id].push(travel);
+    }
+
+    // Building grouped result
+    const groupedData = Object.entries(travelMap).map(([travelId, records]) => {
+      // Sort records by fromDate ascending
+      const sorted = records.sort(
+        (a, b) => new Date(a.fromDate) - new Date(b.fromDate)
+      );
+    
+      const oldest = sorted[0];
+      return {
+        travelId,
+        userName: oldest.userName,
+        empCode:oldest.empCode,
+        projectName: oldest.projectName,
+        city: oldest.city,
+        // localityArea: oldest.localityArea,
+        // typeOfTravel: oldest.typeOfTravel,
+        unsettledAmount:oldest.unsettledAmount,
+        tentativeToDate: oldest.tentativeToDate,
+        expandableData: sorted,
+      };
+    });
+
+    console.log('groupedData', groupedData)
+    
+
+    return {
+      status: true,
+      message: "loaded sucessfully",
+      data: groupedData,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
 export const updateTravelRequisition = async (
   token,
   requisition,
@@ -239,7 +336,7 @@ export const updateTravelRequisition = async (
   status
 ) => {
   try {
-    // console.log("updateTravelRequisition() called", requisition);
+    console.log("updateTravelRequisition() called", requisition,token,reqId,status);
     const response = await axios.put(
       `${host}traveldesk/travels/${reqId}/${status}`,
       requisition,

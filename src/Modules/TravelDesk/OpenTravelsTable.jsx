@@ -372,761 +372,761 @@ const OpenTravelsTable = () => {
 
   const completedTravelDataHeader = renderHeaderForCompletedTravelData();
 
-  // return (
-  //   <>
-  //     <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
-  //       <Toast ref={toast} />
-  //       {/* <DataTable
-  //       value={approvedAndSettledTravelData}
-  //       paginator
-  //       rows={5}
-  //       rowsPerPageOptions={[5, 10, 25, 50]}
-  //       tableStyle={{ minWidth: "50rem" }}
-  //     > */}
-  //       {isApprovedAndSettledLoading ? (
-  //         <DataTable
-  //           value={items}
-  //           paginator
-  //           showGridlines
-  //           rows={5}
-  //           rowsPerPageOptions={
-  //             items.length > 50
-  //               ? [5, 10, 25, 50, items.length]
-  //               : items.length > 25 && items.length < 50
-  //               ? [5, 10, 25, items.length]
-  //               : items.length > 10 && items.length < 25
-  //               ? [5, 10, items.length]
-  //               : items.length > 5 && items.length < 10
-  //               ? [5, items.length]
-  //               : [5]
-  //           }
-  //           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-  //           currentPageReportTemplate="{first} to {last} of {totalRecords}"
-  //           header={approvedAndSettledTravelDataHeader}
-  //           emptyMessage="No data found."
-  //         >
-  //           <Column
-  //             field="date"
-  //             header="Date"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="userName"
-  //             header="Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="empCode"
-  //             header="Employee Code"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="projectName"
-  //             header="Project Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             // headerClassName="center-header"
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="unsettledAmount"
-  //             header="Total Unsettled Amount"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="advanceRequested"
-  //             header="Advance Requested"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             body={<Skeleton />}
-  //             header="Advance Given"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           <Column
-  //             body={<Skeleton />}
-  //             header="Status"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           <Column
-  //             body={<Skeleton />}
-  //             header="View"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           {!approvedAndSettledChecked && (
-  //             <Column
-  //               body={<Skeleton />}
-  //               header="Set Advance"
-  //               headerStyle={{ textAlign: "center" }}
-  //               style={{ textAlign: "center" }}
-  //             />
-  //           )}
-  //           <Column
-  //             body={<Skeleton />}
-  //             header="Travel Complete"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //         </DataTable>
-  //       ) : (
-  //         <DataTable
-  //           value={approvedAndSettledTravelData}
-  //           paginator
-  //           size="small"
-  //           showGridlines
-  //           rows={5}
-  //           rowsPerPageOptions={
-  //             approvedAndSettledTravelData.length > 50
-  //               ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
-  //               : approvedAndSettledTravelData.length > 25 &&
-  //                 approvedAndSettledTravelData.length < 50
-  //               ? [5, 10, 25, approvedAndSettledTravelData.length]
-  //               : approvedAndSettledTravelData.length > 10 &&
-  //                 approvedAndSettledTravelData.length < 25
-  //               ? [5, 10, approvedAndSettledTravelData.length]
-  //               : approvedAndSettledTravelData.length > 5 &&
-  //                 approvedAndSettledTravelData.length < 10
-  //               ? [5, approvedAndSettledTravelData.length]
-  //               : [5]
-  //           }
-  //           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-  //           currentPageReportTemplate="{first} to {last} of {totalRecords}"
-  //           dataKey="id"
-  //           filters={approvedAndSettledFilters}
-  //           globalFilterFields={[
-  //             "date",
-  //             "userName",
-  //             "empCode",
-  //             "projectName",
-  //             "unsettledAmount",
-  //             "advanceRequested",
-  //           ]}
-  //           header={approvedAndSettledTravelDataHeader}
-  //           emptyMessage="No data found."
-  //           removableSort
-  //           sortMode="multiple"
-  //         >
-  //           <Column
-  //             field="date"
-  //             header="Date"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="userName"
-  //             header="Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="empCode"
-  //             header="Employee Code"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="projectName"
-  //             header="Project Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             // headerClassName="center-header"
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="unsettledAmount"
-  //             header="Total Unsettled Amount"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="advanceRequested"
-  //             header="Advance Requested"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             body={advanceColumnBody}
-  //             header="Advance Given"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           <Column
-  //             body={(rowData) => {
-  //               return (
-  //                 <Chip
-  //                   label={rowData.status}
-  //                   size="medium"
-  //                   color={
-  //                     rowData.status.toLowerCase() === "approved" ||
-  //                     rowData.status.toLowerCase() === "completed"
-  //                       ? "success"
-  //                       : "warning"
-  //                   }
-  //                 />
-  //               );
-  //             }}
-  //             header="Status"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           <Column
-  //             body={(rowData) => {
-  //               return (
-  //                 <IconButton
-  //                   aria-label="View"
-  //                   onClick={() => {
-  //                     handelShowRequisitionForm(rowData.requisionId);
-  //                   }}
-  //                 >
-  //                   <VisibilityIcon />
-  //                 </IconButton>
-  //               );
-  //             }}
-  //             header="View"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           {!approvedAndSettledChecked && (
-  //             <Column
-  //               body={setAdvanceActions}
-  //               header="Set Advance"
-  //               headerStyle={{ textAlign: "center" }}
-  //               style={{ textAlign: "center" }}
-  //             />
-  //           )}
-  //           <Column
-  //             body={(rowData) => {
-  //               return (
-  //                 <IconButton
-  //                   aria-label="Complete"
-  //                   onClick={() => {
-  //                     updateTravelRequisitionStatus(
-  //                       rowData,
-  //                       "CompleteRequested"
-  //                     );
-  //                   }}
-  //                 >
-  //                   <CheckIcon />
-  //                 </IconButton>
-  //               );
-  //             }}
-  //             header="Travel Complete"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //         </DataTable>
-  //       )}
-  //       {/* <DataTable
-  //       value={completedTravelData}
-  //       paginator
-  //       rows={5}
-  //       rowsPerPageOptions={[5, 10, 25, 50]}
-  //       tableStyle={{ minWidth: "50rem" }}
-  //     > */}
-  //       {isCompletedLoading ? (
-  //         <DataTable
-  //           value={items}
-  //           paginator
-  //           showGridlines
-  //           rows={5}
-  //           rowsPerPageOptions={
-  //             items.length > 50
-  //               ? [5, 10, 25, 50, items.length]
-  //               : items.length > 25 && items.length < 50
-  //               ? [5, 10, 25, items.length]
-  //               : items.length > 10 && items.length < 25
-  //               ? [5, 10, items.length]
-  //               : items.length > 5 && items.length < 10
-  //               ? [5, items.length]
-  //               : [5]
-  //           }
-  //           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-  //           currentPageReportTemplate="{first} to {last} of {totalRecords}"
-  //           header={completedTravelDataHeader}
-  //           emptyMessage="No data found."
-  //         >
-  //           <Column
-  //             field="date"
-  //             header="Date"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="userName"
-  //             header="Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="empCode"
-  //             header="Employee Code"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="projectName"
-  //             header="Project Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="unsettledAmount"
-  //             header="Total Unsettled Amount"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="advanceRequested"
-  //             header="Advance Requested"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             field="advance"
-  //             header="Advance Given"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //             body={<Skeleton />}
-  //           />
-  //           <Column
-  //             body={<Skeleton />}
-  //             header="Status"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           <Column
-  //             body={<Skeleton />}
-  //             header="View"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //         </DataTable>
-  //       ) : (
-  //         <DataTable
-  //           value={completedTravelData}
-  //           paginator
-  //           loading={isCompletedLoading}
-  //           size="small"
-  //           showGridlines
-  //           rows={5}
-  //           rowsPerPageOptions={
-  //             completedTravelData.length > 50
-  //               ? [5, 10, 25, 50, completedTravelData.length]
-  //               : completedTravelData.length > 25 &&
-  //                 completedTravelData.length < 50
-  //               ? [5, 10, 25, completedTravelData.length]
-  //               : completedTravelData.length > 10 &&
-  //                 completedTravelData.length < 25
-  //               ? [5, 10, completedTravelData.length]
-  //               : completedTravelData.length > 5 &&
-  //                 completedTravelData.length < 10
-  //               ? [5, completedTravelData.length]
-  //               : [5]
-  //           }
-  //           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-  //           currentPageReportTemplate="{first} to {last} of {totalRecords}"
-  //           dataKey="id"
-  //           filters={completedFilters}
-  //           globalFilterFields={["date", "userName", "empCode", "projectName"]}
-  //           header={completedTravelDataHeader}
-  //           emptyMessage="No data found."
-  //           removableSort
-  //           sortMode="multiple"
-  //         >
-  //           <Column
-  //             field="date"
-  //             header="Date"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="userName"
-  //             header="Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="empCode"
-  //             header="Employee Code"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="projectName"
-  //             header="Project Name"
-  //             headerStyle={{ textAlign: "center" }}
-  //             // headerClassName="center-header"
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="unsettledAmount"
-  //             header="Total Unsettled Amount"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="advanceRequested"
-  //             header="Advance Requested"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             field="advance"
-  //             header="Advance Given"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //             sortable
-  //           />
-  //           <Column
-  //             body={(rowData) => {
-  //               return (
-  //                 <Chip
-  //                   label={rowData.status}
-  //                   size="medium"
-  //                   color={
-  //                     rowData.status.toLowerCase() === "approved" ||
-  //                     rowData.status.toLowerCase() === "completed"
-  //                       ? "success"
-  //                       : "warning"
-  //                   }
-  //                 />
-  //               );
-  //             }}
-  //             header="Status"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //           <Column
-  //             body={(rowData) => {
-  //               return (
-  //                 <IconButton
-  //                   aria-label="View"
-  //                   onClick={() => {
-  //                     handelShowRequisitionForm(rowData.requisionId);
-  //                   }}
-  //                 >
-  //                   <VisibilityIcon />
-  //                 </IconButton>
-  //               );
-  //             }}
-  //             header="View"
-  //             headerStyle={{ textAlign: "center" }}
-  //             style={{ textAlign: "center" }}
-  //           />
-  //         </DataTable>
-  //       )}
-  //       <Dialog
-  //         header="Requisition Form View"
-  //         visible={visible}
-  //         style={{ width: "70rem" }}
-  //         onHide={() => {
-  //           if (!visible) return;
-  //           setVisible(false);
-  //         }}
-  //       >
-  //         <h2>Requisition Form View</h2>
-  //         <RequisitionFormView rowData={rowData} />
-  //       </Dialog>
-  //     </div>
-  //   </>
-  // );
-
-  const rowExpansionTemplate = (data) => {
-    console.log("data ===>>> ", data);
-    return (
-      <div className="p-3">
-        <h5>Orders for {data.userName}</h5>
-        <DataTable value={[data]}>
-          <Column field="requisionId" header="requisionId" sortable></Column>
-          <Column
-            field="date"
-            header="Date"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-          />
-          <Column
-            field="userName"
-            header="Name"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-          />
-          <Column
-            field="empCode"
-            header="Employee Code"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-          />
-          <Column
-            field="projectName"
-            header="Project Name"
-            headerStyle={{ textAlign: "center" }}
-            // headerClassName="center-header"
-            style={{ textAlign: "center" }}
-            sortable
-          />
-          <Column
-            field="unsettledAmount"
-            header="Total Unsettled Amount"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-          />
-          <Column
-            field="advanceRequested"
-            header="Advance Requested"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-          />
-          <Column
-            body={advanceColumnBody}
-            header="Advance Given"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-          />
-          <Column
-            body={(rowData) => {
-              return (
-                <Chip
-                  label={rowData.status}
-                  size="medium"
-                  color={
-                    rowData.status.toLowerCase() === "approved" ||
-                    rowData.status.toLowerCase() === "completed"
-                      ? "success"
-                      : "warning"
-                  }
-                />
-              );
-            }}
-            header="Status"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-          />
-          <Column
-            body={(rowData) => {
-              return (
-                <IconButton
-                  aria-label="View"
-                  onClick={() => {
-                    handelShowRequisitionForm(rowData.requisionId);
-                  }}
-                >
-                  <VisibilityIcon />
-                </IconButton>
-              );
-            }}
-            header="View"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-          />
-        </DataTable>
+  return (
+    <>
+      <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
+        <Toast ref={toast} />
+        {/* <DataTable
+        value={approvedAndSettledTravelData}
+        paginator
+        rows={5}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        tableStyle={{ minWidth: "50rem" }}
+      > */}
+        {isApprovedAndSettledLoading ? (
+          <DataTable
+            value={items}
+            paginator
+            showGridlines
+            rows={5}
+            rowsPerPageOptions={
+              items.length > 50
+                ? [5, 10, 25, 50, items.length]
+                : items.length > 25 && items.length < 50
+                ? [5, 10, 25, items.length]
+                : items.length > 10 && items.length < 25
+                ? [5, 10, items.length]
+                : items.length > 5 && items.length < 10
+                ? [5, items.length]
+                : [5]
+            }
+            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+            currentPageReportTemplate="{first} to {last} of {totalRecords}"
+            header={approvedAndSettledTravelDataHeader}
+            emptyMessage="No data found."
+          >
+            <Column
+              field="date"
+              header="Date"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="userName"
+              header="Name"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="empCode"
+              header="Employee Code"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="projectName"
+              header="Project Name"
+              headerStyle={{ textAlign: "center" }}
+              // headerClassName="center-header"
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="unsettledAmount"
+              header="Total Unsettled Amount"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="advanceRequested"
+              header="Advance Requested"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              body={<Skeleton />}
+              header="Advance Given"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            <Column
+              body={<Skeleton />}
+              header="Status"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            <Column
+              body={<Skeleton />}
+              header="View"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            {!approvedAndSettledChecked && (
+              <Column
+                body={<Skeleton />}
+                header="Set Advance"
+                headerStyle={{ textAlign: "center" }}
+                style={{ textAlign: "center" }}
+              />
+            )}
+            <Column
+              body={<Skeleton />}
+              header="Travel Complete"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+          </DataTable>
+        ) : (
+          <DataTable
+            value={approvedAndSettledTravelData}
+            paginator
+            size="small"
+            showGridlines
+            rows={5}
+            rowsPerPageOptions={
+              approvedAndSettledTravelData.length > 50
+                ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
+                : approvedAndSettledTravelData.length > 25 &&
+                  approvedAndSettledTravelData.length < 50
+                ? [5, 10, 25, approvedAndSettledTravelData.length]
+                : approvedAndSettledTravelData.length > 10 &&
+                  approvedAndSettledTravelData.length < 25
+                ? [5, 10, approvedAndSettledTravelData.length]
+                : approvedAndSettledTravelData.length > 5 &&
+                  approvedAndSettledTravelData.length < 10
+                ? [5, approvedAndSettledTravelData.length]
+                : [5]
+            }
+            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+            currentPageReportTemplate="{first} to {last} of {totalRecords}"
+            dataKey="id"
+            filters={approvedAndSettledFilters}
+            globalFilterFields={[
+              "date",
+              "userName",
+              "empCode",
+              "projectName",
+              "unsettledAmount",
+              "advanceRequested",
+            ]}
+            header={approvedAndSettledTravelDataHeader}
+            emptyMessage="No data found."
+            removableSort
+            sortMode="multiple"
+          >
+            <Column
+              field="date"
+              header="Date"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="userName"
+              header="Name"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="empCode"
+              header="Employee Code"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="projectName"
+              header="Project Name"
+              headerStyle={{ textAlign: "center" }}
+              // headerClassName="center-header"
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="unsettledAmount"
+              header="Total Unsettled Amount"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="advanceRequested"
+              header="Advance Requested"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              body={advanceColumnBody}
+              header="Advance Given"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            <Column
+              body={(rowData) => {
+                return (
+                  <Chip
+                    label={rowData.status}
+                    size="medium"
+                    color={
+                      rowData.status.toLowerCase() === "approved" ||
+                      rowData.status.toLowerCase() === "completed"
+                        ? "success"
+                        : "warning"
+                    }
+                  />
+                );
+              }}
+              header="Status"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            <Column
+              body={(rowData) => {
+                return (
+                  <IconButton
+                    aria-label="View"
+                    onClick={() => {
+                      handelShowRequisitionForm(rowData.requisionId);
+                    }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                );
+              }}
+              header="View"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            {!approvedAndSettledChecked && (
+              <Column
+                body={setAdvanceActions}
+                header="Set Advance"
+                headerStyle={{ textAlign: "center" }}
+                style={{ textAlign: "center" }}
+              />
+            )}
+            <Column
+              body={(rowData) => {
+                return (
+                  <IconButton
+                    aria-label="Complete"
+                    onClick={() => {
+                      updateTravelRequisitionStatus(
+                        rowData,
+                        "CompleteRequested"
+                      );
+                    }}
+                  >
+                    <CheckIcon />
+                  </IconButton>
+                );
+              }}
+              header="Travel Complete"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+          </DataTable>
+        )}
+        {/* <DataTable
+        value={completedTravelData}
+        paginator
+        rows={5}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        tableStyle={{ minWidth: "50rem" }}
+      > */}
+        {isCompletedLoading ? (
+          <DataTable
+            value={items}
+            paginator
+            showGridlines
+            rows={5}
+            rowsPerPageOptions={
+              items.length > 50
+                ? [5, 10, 25, 50, items.length]
+                : items.length > 25 && items.length < 50
+                ? [5, 10, 25, items.length]
+                : items.length > 10 && items.length < 25
+                ? [5, 10, items.length]
+                : items.length > 5 && items.length < 10
+                ? [5, items.length]
+                : [5]
+            }
+            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+            currentPageReportTemplate="{first} to {last} of {totalRecords}"
+            header={completedTravelDataHeader}
+            emptyMessage="No data found."
+          >
+            <Column
+              field="date"
+              header="Date"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="userName"
+              header="Name"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="empCode"
+              header="Employee Code"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="projectName"
+              header="Project Name"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="unsettledAmount"
+              header="Total Unsettled Amount"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="advanceRequested"
+              header="Advance Requested"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              field="advance"
+              header="Advance Given"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              body={<Skeleton />}
+            />
+            <Column
+              body={<Skeleton />}
+              header="Status"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            <Column
+              body={<Skeleton />}
+              header="View"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+          </DataTable>
+        ) : (
+          <DataTable
+            value={completedTravelData}
+            paginator
+            loading={isCompletedLoading}
+            size="small"
+            showGridlines
+            rows={5}
+            rowsPerPageOptions={
+              completedTravelData.length > 50
+                ? [5, 10, 25, 50, completedTravelData.length]
+                : completedTravelData.length > 25 &&
+                  completedTravelData.length < 50
+                ? [5, 10, 25, completedTravelData.length]
+                : completedTravelData.length > 10 &&
+                  completedTravelData.length < 25
+                ? [5, 10, completedTravelData.length]
+                : completedTravelData.length > 5 &&
+                  completedTravelData.length < 10
+                ? [5, completedTravelData.length]
+                : [5]
+            }
+            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+            currentPageReportTemplate="{first} to {last} of {totalRecords}"
+            dataKey="id"
+            filters={completedFilters}
+            globalFilterFields={["date", "userName", "empCode", "projectName"]}
+            header={completedTravelDataHeader}
+            emptyMessage="No data found."
+            removableSort
+            sortMode="multiple"
+          >
+            <Column
+              field="date"
+              header="Date"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="userName"
+              header="Name"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="empCode"
+              header="Employee Code"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="projectName"
+              header="Project Name"
+              headerStyle={{ textAlign: "center" }}
+              // headerClassName="center-header"
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="unsettledAmount"
+              header="Total Unsettled Amount"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="advanceRequested"
+              header="Advance Requested"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              field="advance"
+              header="Advance Given"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+            />
+            <Column
+              body={(rowData) => {
+                return (
+                  <Chip
+                    label={rowData.status}
+                    size="medium"
+                    color={
+                      rowData.status.toLowerCase() === "approved" ||
+                      rowData.status.toLowerCase() === "completed"
+                        ? "success"
+                        : "warning"
+                    }
+                  />
+                );
+              }}
+              header="Status"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+            <Column
+              body={(rowData) => {
+                return (
+                  <IconButton
+                    aria-label="View"
+                    onClick={() => {
+                      handelShowRequisitionForm(rowData.requisionId);
+                    }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                );
+              }}
+              header="View"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            />
+          </DataTable>
+        )}
+        <Dialog
+          header="Requisition Form View"
+          visible={visible}
+          style={{ width: "70rem" }}
+          onHide={() => {
+            if (!visible) return;
+            setVisible(false);
+          }}
+        >
+          <h2>Requisition Form View</h2>
+          <RequisitionFormView rowData={rowData} />
+        </Dialog>
       </div>
-    );
-  };
+    </>
+  );
 
-  const expandAll = () => {
-    let _expandedRows = {};
+  // const rowExpansionTemplate = (data) => {
+  //   console.log("data ===>>> ", data);
+  //   return (
+  //     <div className="p-3">
+  //       <h5>Orders for {data.userName}</h5>
+  //       <DataTable value={[data]}>
+  //         <Column field="requisionId" header="requisionId" sortable></Column>
+  //         <Column
+  //           field="date"
+  //           header="Date"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //           sortable
+  //         />
+  //         <Column
+  //           field="userName"
+  //           header="Name"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //           sortable
+  //         />
+  //         <Column
+  //           field="empCode"
+  //           header="Employee Code"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //           sortable
+  //         />
+  //         <Column
+  //           field="projectName"
+  //           header="Project Name"
+  //           headerStyle={{ textAlign: "center" }}
+  //           // headerClassName="center-header"
+  //           style={{ textAlign: "center" }}
+  //           sortable
+  //         />
+  //         <Column
+  //           field="unsettledAmount"
+  //           header="Total Unsettled Amount"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //           sortable
+  //         />
+  //         <Column
+  //           field="advanceRequested"
+  //           header="Advance Requested"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //           sortable
+  //         />
+  //         <Column
+  //           body={advanceColumnBody}
+  //           header="Advance Given"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //         />
+  //         <Column
+  //           body={(rowData) => {
+  //             return (
+  //               <Chip
+  //                 label={rowData.status}
+  //                 size="medium"
+  //                 color={
+  //                   rowData.status.toLowerCase() === "approved" ||
+  //                   rowData.status.toLowerCase() === "completed"
+  //                     ? "success"
+  //                     : "warning"
+  //                 }
+  //               />
+  //             );
+  //           }}
+  //           header="Status"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //         />
+  //         <Column
+  //           body={(rowData) => {
+  //             return (
+  //               <IconButton
+  //                 aria-label="View"
+  //                 onClick={() => {
+  //                   handelShowRequisitionForm(rowData.requisionId);
+  //                 }}
+  //               >
+  //                 <VisibilityIcon />
+  //               </IconButton>
+  //             );
+  //           }}
+  //           header="View"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //         />
+  //       </DataTable>
+  //     </div>
+  //   );
+  // };
 
-    approvedAndSettledTravelData.forEach(
-      (p) => (_expandedRows[`${p.id}`] = true)
-    );
+  // const expandAll = () => {
+  //   let _expandedRows = {};
 
-    setExpandedRows(_expandedRows);
-  };
+  //   approvedAndSettledTravelData.forEach(
+  //     (p) => (_expandedRows[`${p.id}`] = true)
+  //   );
 
-  const collapseAll = () => {
-    setExpandedRows(null);
-  };
+  //   setExpandedRows(_expandedRows);
+  // };
 
-  const allowExpansion = (rowData) => {
-    return rowData.length > 0;
-  };
+  // const collapseAll = () => {
+  //   setExpandedRows(null);
+  // };
 
-  // const header = (
-  //   <div className="flex flex-wrap justify-content-end gap-2">
-  //     <Button icon="pi pi-plus" label="Expand All" onClick={expandAll} text />
-  //     <Button
-  //       icon="pi pi-minus"
-  //       label="Collapse All"
-  //       onClick={collapseAll}
-  //       text
-  //     />
+  // const allowExpansion = (rowData) => {
+  //   return rowData.length > 0;
+  // };
+
+  // // const header = (
+  // //   <div className="flex flex-wrap justify-content-end gap-2">
+  // //     <Button icon="pi pi-plus" label="Expand All" onClick={expandAll} text />
+  // //     <Button
+  // //       icon="pi pi-minus"
+  // //       label="Collapse All"
+  // //       onClick={collapseAll}
+  // //       text
+  // //     />
+  // //   </div>
+  // // );
+
+  // return (
+  //   <div className="card">
+  //     <Toast ref={toast} />
+  //     <DataTable
+  //       value={approvedAndSettledTravelData}
+  //       expandedRows={expandedRows}
+  //       onRowToggle={(e) => setExpandedRows(e.data)}
+  //       rowExpansionTemplate={rowExpansionTemplate}
+  //       dataKey="requisionId"
+  //       header={approvedAndSettledTravelDataHeader}
+  //       tableStyle={{ minWidth: "60rem" }}
+  //     >
+  //       <Column expander={allowExpansion} style={{ width: "5rem" }} />
+  //       <Column
+  //         field="date"
+  //         header="Date"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //         sortable
+  //       />
+  //       <Column
+  //         field="userName"
+  //         header="Name"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //         sortable
+  //       />
+  //       <Column
+  //         field="empCode"
+  //         header="Employee Code"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //         sortable
+  //       />
+  //       <Column
+  //         field="projectName"
+  //         header="Project Name"
+  //         headerStyle={{ textAlign: "center" }}
+  //         // headerClassName="center-header"
+  //         style={{ textAlign: "center" }}
+  //         sortable
+  //       />
+  //       <Column
+  //         field="unsettledAmount"
+  //         header="Total Unsettled Amount"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //         sortable
+  //       />
+  //       <Column
+  //         field="advanceRequested"
+  //         header="Advance Requested"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //         sortable
+  //       />
+  //       <Column
+  //         body={advanceColumnBody}
+  //         header="Advance Given"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //       />
+  //       <Column
+  //         body={(rowData) => {
+  //           return (
+  //             <Chip
+  //               label={rowData.status}
+  //               size="medium"
+  //               color={
+  //                 rowData.status.toLowerCase() === "approved" ||
+  //                 rowData.status.toLowerCase() === "completed"
+  //                   ? "success"
+  //                   : "warning"
+  //               }
+  //             />
+  //           );
+  //         }}
+  //         header="Status"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //       />
+  //       <Column
+  //         body={(rowData) => {
+  //           return (
+  //             <IconButton
+  //               aria-label="View"
+  //               onClick={() => {
+  //                 handelShowRequisitionForm(rowData.requisionId);
+  //               }}
+  //             >
+  //               <VisibilityIcon />
+  //             </IconButton>
+  //           );
+  //         }}
+  //         header="View"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //       />
+  //       {!approvedAndSettledChecked && (
+  //         <Column
+  //           body={setAdvanceActions}
+  //           header="Set Advance"
+  //           headerStyle={{ textAlign: "center" }}
+  //           style={{ textAlign: "center" }}
+  //         />
+  //       )}
+  //       <Column
+  //         body={(rowData) => {
+  //           return (
+  //             <IconButton
+  //               aria-label="Complete"
+  //               onClick={() => {
+  //                 updateTravelRequisitionStatus(rowData, "CompleteRequested");
+  //               }}
+  //             >
+  //               <CheckIcon />
+  //             </IconButton>
+  //           );
+  //         }}
+  //         header="Travel Complete"
+  //         headerStyle={{ textAlign: "center" }}
+  //         style={{ textAlign: "center" }}
+  //       />
+  //     </DataTable>
   //   </div>
   // );
-
-  return (
-    <div className="card">
-      <Toast ref={toast} />
-      <DataTable
-        value={approvedAndSettledTravelData}
-        expandedRows={expandedRows}
-        onRowToggle={(e) => setExpandedRows(e.data)}
-        rowExpansionTemplate={rowExpansionTemplate}
-        dataKey="requisionId"
-        header={approvedAndSettledTravelDataHeader}
-        tableStyle={{ minWidth: "60rem" }}
-      >
-        <Column expander={allowExpansion} style={{ width: "5rem" }} />
-        <Column
-          field="date"
-          header="Date"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="userName"
-          header="Name"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="empCode"
-          header="Employee Code"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="projectName"
-          header="Project Name"
-          headerStyle={{ textAlign: "center" }}
-          // headerClassName="center-header"
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="unsettledAmount"
-          header="Total Unsettled Amount"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          field="advanceRequested"
-          header="Advance Requested"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-          sortable
-        />
-        <Column
-          body={advanceColumnBody}
-          header="Advance Given"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        <Column
-          body={(rowData) => {
-            return (
-              <Chip
-                label={rowData.status}
-                size="medium"
-                color={
-                  rowData.status.toLowerCase() === "approved" ||
-                  rowData.status.toLowerCase() === "completed"
-                    ? "success"
-                    : "warning"
-                }
-              />
-            );
-          }}
-          header="Status"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        <Column
-          body={(rowData) => {
-            return (
-              <IconButton
-                aria-label="View"
-                onClick={() => {
-                  handelShowRequisitionForm(rowData.requisionId);
-                }}
-              >
-                <VisibilityIcon />
-              </IconButton>
-            );
-          }}
-          header="View"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-        {!approvedAndSettledChecked && (
-          <Column
-            body={setAdvanceActions}
-            header="Set Advance"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-          />
-        )}
-        <Column
-          body={(rowData) => {
-            return (
-              <IconButton
-                aria-label="Complete"
-                onClick={() => {
-                  updateTravelRequisitionStatus(rowData, "CompleteRequested");
-                }}
-              >
-                <CheckIcon />
-              </IconButton>
-            );
-          }}
-          header="Travel Complete"
-          headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
-        />
-      </DataTable>
-    </div>
-  );
 };
 
 export default OpenTravelsTable;

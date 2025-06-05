@@ -1,44 +1,133 @@
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Toast } from "primereact/toast";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 //Call Api
 import {
+  getAdvanceDetails,
   getMyFormParticularRequisitionId,
-  getTravelsByStatus,
+  getCompleteAndCompleteRequestedData,
+  updateTravelRequisition,
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
-import { useState } from "react";
-import { InputText } from "primereact/inputtext";
 import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
+import { Dialog } from "primereact/dialog";
+import RequisitionFormView from "./RequisitionFormView";
 import { Chip, IconButton } from "@mui/material";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const CompletedTable = () => {
-  const [completedTravelData, setCompletedTravelData] = useState([]);
+  const [expandedRows, setExpandedRows] = useState(!null);
 
-  const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
-    useState("");
-  const [completedFilters, setCompletedFilters] = useState({
+  const [visible, setVisible] = useState(false);
+  const toast = useRef();
+  const [editRowId, setEditRowId] = useState(null);
+  const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
+    useState([]);
+  const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
+  const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     date: { value: null, matchMode: FilterMatchMode.CONTAINS },
     userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
     empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
     projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
   });
+  const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
+    useState("");
+  const [
+    approvedAndSettledGlobalFilterValue,
+    setApprovedAndSettledGlobalFilterValue,
+  ] = useState("");
+  const [rowData, setRowData] = useState({});
+
+  const rowExpansionTemplate = (rowData) => {
+    return (
+      <DataTable
+        value={rowData.expandableData}
+        showGridlines
+        dataKey="requisionId"
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+      >
+        <Column field="requisionId" header="Requisition ID" />
+        <Column field="fromDate" header="Date" />
+        <Column field="advanceRequested" header="Advance Requested" />
+        <Column field="status" header="Status" />
+        <Column
+          body={advanceColumnBody}
+          header="Advance Given"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+        <Column
+          body={(rowData) => (
+            <IconButton
+              aria-label="View"
+              onClick={() => handelShowRequisitionForm(rowData.requisionId)}
+            >
+              <VisibilityIcon />
+            </IconButton>
+          )}
+          header="View"
+          headerStyle={{ textAlign: "center" }}
+          style={{ textAlign: "center" }}
+        />
+      </DataTable>
+    );
+  };
 
   useEffect(() => {
-    const fetchCompletedTravelData = async () => {
+    const fetchApprovedAndSettledTravelData = async () => {
       try {
-        const { token } = getUserData();
-        const completedMergedData = await getTravelsByStatus(token, "Completed");
-        setCompletedTravelData(completedMergedData.data); // Save data to state
+        // const { token } = getUserData();
+
+        // const advancedData = await getAdvanceDetails();
+
+        const approvedandsettledresponse = await getCompleteAndCompleteRequestedData();
+        console.log("response", approvedandsettledresponse);
+
+        console.log(approvedandsettledresponse.message);
+
+        if (!approvedandsettledresponse.status) {
+          toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: approvedandsettledresponse.message,
+          });
+        }
+
+        // const cleanedData = approvedAndSettledMergedData.data.map((item) => {
+        //   const { unsettledAmount, ...rest } = item;
+        //   console.log("unsettledAmount ::: ", unsettledAmount);
+        //   return rest;
+        // });
+
+        // const finalData = mergeTravelData(cleanedData, advancedData.data);
+        setApprovedAndSettledTravelData(approvedandsettledresponse.data);
       } catch (error) {
         console.error("Error fetching travel data:", error);
       }
     };
 
-    fetchCompletedTravelData();
+    fetchApprovedAndSettledTravelData();
   }, []);
+
+  const approvedAndSettledOnGlobalFilterChange = (e) => {
+    const value = e.target.value;
+    let _approvedAndSettledFilters = { ...approvedAndSettledFilters };
+
+    _approvedAndSettledFilters["global"].value = value;
+
+    setApprovedAndSettledFilters(_approvedAndSettledFilters);
+    setApprovedAndSettledGlobalFilterValue(value);
+  };
 
   const handelShowRequisitionForm = async (requisionId) => {
     console.log("clickrequisionId", requisionId);
@@ -49,155 +138,290 @@ const CompletedTable = () => {
     setRowData(response?.data);
   };
 
-  const completedOnGlobalFilterChange = (e) => {
-    const value = e.target.value;
-    let _completedFilters = { ...completedFilters };
-
-    _completedFilters["global"].value = value;
-
-    setCompletedFilters(_completedFilters);
-    setCompletedGlobalFilterValue(value);
-  };
-
-  const renderHeaderForCompletedTravelData = () => {
-    const tabItems = [
-      { label: "Completed Travels Table" },
-    ];
+  const renderHeaderForApprovedAndSettledTravelData = () => {
+    const tabItems = [{ label: "Approved Travels Table" }];
     return (
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        </div>
         <InputText
-          value={completedGlobalFilterValue}
-          onChange={completedOnGlobalFilterChange}
+          value={approvedAndSettledGlobalFilterValue}
+          onChange={approvedAndSettledOnGlobalFilterChange}
           placeholder="Keyword Search"
           className="w-full sm:w-auto"
         />
       </div>
     );
   };
+  const approvedAndSettledTravelDataHeader =
+    renderHeaderForApprovedAndSettledTravelData();
 
-  const completedTravelDataHeader = renderHeaderForCompletedTravelData();
+  const advanceColumnBody = (row) => {
+    if (editRowId === row.requisionId) {
+      return (
+        <InputText
+          size="small"
+          value={newAdvanceAmount}
+          onChange={(e) => setNewAdvanceAmount(e.target.value)}
+        />
+      );
+    }
+    return row.advance;
+  };
+
+  const updateTravelRequisitionStatus = async (rowData, statusName) => {
+    const { token } = getUserData();
+    const updateTravelRequisitionStatusResponse = await updateTravelRequisition(
+      token,
+      rowData,
+      rowData.requisionId,
+      statusName
+    );
+    toast.current.show({
+      severity: "success",
+      summary: "Success",
+      detail: "You have successfully applied for approval.",
+    });
+    console.log(
+      "updateTravelRequisitionStatusResponse :=:=>> ",
+      updateTravelRequisitionStatusResponse
+    );
+  };
+
+    const handleSaveAdvance = (row) => {
+    const updated = approvedAndSettledTravelData.map((item) =>
+      item.requisionId === row.requisionId
+        ? { ...item, advance: newAdvanceAmount }
+        : item
+    );
+    setApprovedAndSettledTravelData(updated);
+    setEditRowId(null);
+    setNewAdvanceAmount(row.advance);
+    // Add API call to update backend here if needed
+  };
+
+  const handleCancelAdvance = (row) => {
+    setEditRowId(null);
+    setNewAdvanceAmount(row.advance);
+  };
+
+  const setAdvanceActions = (row) => {
+    if (editRowId === row.requisionId && !row.claimUnderProcess) {
+      return (
+        <>
+          <IconButton
+            aria-label="Save"
+            size="small"
+            color="success"
+            onClick={() => handleSaveAdvance(row)}
+          >
+            <SaveIcon />
+          </IconButton>
+          <IconButton
+            aria-label="Cancel"
+            size="small"
+            color="error"
+            onClick={() => handleCancelAdvance(row)}
+          >
+            <CancelIcon />
+          </IconButton>
+        </>
+      );
+    }
+    if (!row.claimUnderProcess) {
+      return (
+        <IconButton
+          aria-label="Edit"
+          label="View"
+          onClick={() => {
+            setEditRowId(row.requisionId);
+            setNewAdvanceAmount(row.advance);
+          }}
+        >
+          <EditIcon />
+        </IconButton>
+      );
+    }
+    return <h3>Pending Unsettled Claim</h3>;
+  };
 
   return (
-    <DataTable
-                value={completedTravelData}
-                paginator
-                size="small"
-                showGridlines
-                rows={5}
-                rowsPerPageOptions={
-                  completedTravelData.length > 50
-                    ? [5, 10, 25, 50, completedTravelData.length]
-                    : completedTravelData.length > 25 &&
-                      completedTravelData.length < 50
-                    ? [5, 10, 25, completedTravelData.length]
-                    : completedTravelData.length > 10 &&
-                      completedTravelData.length < 25
-                    ? [5, 10, completedTravelData.length]
-                    : completedTravelData.length > 5 &&
-                      completedTravelData.length < 10
-                    ? [5, completedTravelData.length]
-                    : [5]
-                }
-                paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-                currentPageReportTemplate="{first} to {last} of {totalRecords}"
-                dataKey="id"
-                filters={completedFilters}
-                globalFilterFields={["date", "userName", "empCode", "projectName"]}
-                header={completedTravelDataHeader}
-                emptyMessage="No data found."
-                removableSort
-                sortMode="multiple"
-              >
-                <Column
-                  field="date"
-                  header="Date"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  field="userName"
-                  header="Name"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  field="empCode"
-                  header="Employee Code"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  field="projectName"
-                  header="Project Name"
-                  headerStyle={{ textAlign: "center" }}
-                  // headerClassName="center-header"
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  field="unsettledAmount"
-                  header="Total Unsettled Amount"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  field="advanceRequested"
-                  header="Advance Requested"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  field="advance"
-                  header="Advance Given"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                  sortable
-                />
-                <Column
-                  body={(rowData) => {
-                    return (
-                      <Chip
-                        label={rowData.status}
-                        size="medium"
-                        color={
-                          rowData.status.toLowerCase() === "approved" ||
-                          rowData.status.toLowerCase() === "completed"
-                            ? "success"
-                            : "warning"
-                        }
-                      />
-                    );
+    <>
+      <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
+        <Toast ref={toast} />
+        <DataTable
+          value={approvedAndSettledTravelData}
+          expandedRows={expandedRows}
+          onRowToggle={(e) => setExpandedRows(e.data)}
+          rowExpansionMode="single"
+          rowExpansionTemplate={rowExpansionTemplate}
+          showGridlines
+          className="text-xs"
+          tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          paginator
+          size="small"
+          rows={5}
+          rowsPerPageOptions={
+            approvedAndSettledTravelData.length > 50
+              ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 25 &&
+                approvedAndSettledTravelData.length < 50
+              ? [5, 10, 25, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 10 &&
+                approvedAndSettledTravelData.length < 25
+              ? [5, 10, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 5 &&
+                approvedAndSettledTravelData.length < 10
+              ? [5, approvedAndSettledTravelData.length]
+              : [5]
+          }
+          paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+          currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          dataKey="travelId"
+          filters={approvedAndSettledFilters}
+          globalFilterFields={[
+            "date",
+            "userName",
+            "empCode",
+            "projectName",
+            "unsettledAmount",
+            "advanceRequested",
+          ]}
+          header={approvedAndSettledTravelDataHeader}
+          emptyMessage="No data found."
+          removableSort
+          sortMode="multiple"
+        >
+          {/* <Column
+              field="date"
+              header="Date"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+              sortable
+              filter
+            /> */}
+          <Column expander style={{ width: "3rem" }} />
+          <Column
+            field="travelId"
+            header="travelId"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="userName"
+            header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="empCode"
+            header="Employee Code"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="projectName"
+            header="Project Name"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+
+          {/* <Column
+              body={advanceColumnBody}
+              header="Advance Given"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            /> */}
+          {/* <Column
+              body={(rowData) => {
+                return (
+                  <Chip
+                    label={rowData.status}
+                    size="medium"
+                    color={
+                      rowData.status.toLowerCase() === "approved" ||
+                      rowData.status.toLowerCase() === "completed"
+                        ? "success"
+                        : "warning"
+                    }
+                  />
+                );
+              }}
+              header="Status"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            /> */}
+          {/* <Column
+              body={(rowData) => {
+                return (
+                  <IconButton
+                    aria-label="View"
+                    onClick={() => {
+                      handelShowRequisitionForm(rowData.requisionId);
+                    }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                );
+              }}
+              header="View"
+              headerStyle={{ textAlign: "center" }}
+              style={{ textAlign: "center" }}
+            /> */}
+          {/* <Column
+                body={setAdvanceActions}
+                header="Set Advance"
+                headerStyle={{ textAlign: "center" }}
+                style={{ textAlign: "center" }}
+              /> */}
+          {/* <Column
+            body={(rowData) => {
+              return (
+                <IconButton
+                  aria-label="Complete"
+                  onClick={() => {
+                    updateTravelRequisitionStatus(rowData, "CompleteRequested");
                   }}
-                  header="Status"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                />
-                <Column
-                  body={(rowData) => {
-                    return (
-                      <IconButton
-                        aria-label="View"
-                        onClick={() => {
-                          handelShowRequisitionForm(rowData.requisionId);
-                        }}
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    );
-                  }}
-                  header="View"
-                  headerStyle={{ textAlign: "center" }}
-                  style={{ textAlign: "center" }}
-                />
-              </DataTable>
-  )
-}
+                >
+                  <CheckIcon />
+                </IconButton>
+              );
+            }}
+            header="Travel Complete"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          /> */}
+        </DataTable>
+        <Dialog
+          header="Requisition Form View"
+          visible={visible}
+          style={{ width: "70rem" }}
+          onHide={() => {
+            if (!visible) return;
+            setVisible(false);
+          }}
+        >
+          <h2>Requisition Form View</h2>
+          <RequisitionFormView rowData={rowData} />
+        </Dialog>
+      </div>
+    </>
+  );
+};
 
 export default CompletedTable
