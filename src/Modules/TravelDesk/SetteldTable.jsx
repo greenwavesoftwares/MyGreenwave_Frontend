@@ -6,7 +6,7 @@ import { Column } from "primereact/column";
 import {
     getAdvanceDetails,
   getMyFormParticularRequisitionId,
-  getTravelsByStatus,
+  getApprovedAndSettledData,
   updateTravelRequisition,
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
@@ -75,7 +75,7 @@ function mergeTravelData(mergedData, dummydataJson) {
         
         const advancedData = await getAdvanceDetails();
 
-        const approvedAndSettledMergedData = await getTravelsByStatus(
+        const approvedAndSettledMergedData = await getApprovedAndSettledData(
             token,
             "Settled"
           );

@@ -86,8 +86,23 @@ const getMyFormParticularRequisitionId = async (token, requisionId) => {
     console.log(error);
   }
 };
+export const getTravelsByStatus = async (token, statusName) => {
+  try {
+    const response = await axios.get(
+      `${host}traveldesk/travels-by-status/${statusName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-export const getTravelsByStatus = async () => {
+export const getApprovedAndSettledData= async () => {
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);

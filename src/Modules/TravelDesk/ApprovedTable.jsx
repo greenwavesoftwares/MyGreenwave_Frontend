@@ -1,12 +1,12 @@
-import React, { useEffect, useRef,useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 //Call Api
 import {
-    getAdvanceDetails,
+  getAdvanceDetails,
   getMyFormParticularRequisitionId,
-  getTravelsByStatus,
+  getApprovedAndSettledData,
   updateTravelRequisition,
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
@@ -21,72 +21,119 @@ import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-
 const ApprovedTable = () => {
-    const toast =useRef()
-    const [editRowId, setEditRowId] = useState(null);
-     const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
-        useState([]);
-        const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
-            global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            date: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
-          });
-    const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
-        useState("");
+  const [expandedRows, setExpandedRows] = useState(null);
+  const toast = useRef();
+  const [editRowId, setEditRowId] = useState(null);
+  const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
+    useState([]);
+  const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    date: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  });
+  const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
+    useState("");
   const [
     approvedAndSettledGlobalFilterValue,
     setApprovedAndSettledGlobalFilterValue,
   ] = useState("");
-// function mergeTravelData(mergedData, dummydataJson) {
-//     const dataMap = new Map();
+  // function mergeTravelData(mergedData, dummydataJson) {
+  //     const dataMap = new Map();
 
-//     // Create a lookup map for dummydata
-//     dummydataJson.forEach((entry) => {
-//       dataMap.set(entry.userId.toLowerCase(), {
-//         unsettledAmount: parseFloat(entry.unsettledAmount),
-//         claimUnderProcess: entry.claimUnderProcess,
-//       });
-//     });
+  //     // Create a lookup map for dummydata
+  //     dummydataJson.forEach((entry) => {
+  //       dataMap.set(entry.userId.toLowerCase(), {
+  //         unsettledAmount: parseFloat(entry.unsettledAmount),
+  //         claimUnderProcess: entry.claimUnderProcess,
+  //       });
+  //     });
 
-//     // Merge dummydata into dummyobj
-//     const merged = mergedData.map((entry) => {
-//       const match = dataMap.get(entry.user_id.toLowerCase());
-//       return {
-//         ...entry,
-//         unsettledAmount: match ? match.unsettledAmount : 0.0,
-//         claimUnderProcess: match ? match.claimUnderProcess : 0,
-//       };
-//     });
+  //     // Merge dummydata into dummyobj
+  //     const merged = mergedData.map((entry) => {
+  //       const match = dataMap.get(entry.user_id.toLowerCase());
+  //       return {
+  //         ...entry,
+  //         unsettledAmount: match ? match.unsettledAmount : 0.0,
+  //         claimUnderProcess: match ? match.claimUnderProcess : 0,
+  //       };
+  //     });
 
-//     return merged;
-//   }
+  //     return merged;
+  //   }
   const [rowData, setRowData] = useState({});
 
-  useEffect(() => {
+  const rowExpansionTemplate = (rowData) => (
+    <DataTable
+      value={rowData.expandableData}
+      showGridlines
+      dataKey="requisionId"
+      className="text-xs"
+      tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+    >
+      <Column field="fromDate" header="Date"></Column>
+      <Column field="advanceRequested" header="Advance Requested"></Column>
+      <Column field="advance" header="Advance Given"></Column>
+      <Column field="advanceRequested" header="Advance Requested"></Column>
+      <Column field="advanceRequested" header="Advance Requested"></Column>
+      <Column
+        body={(rowData) => {
+          return (
+            <Chip
+              label={rowData.status}
+              size="medium"
+              color={
+                rowData.status.toLowerCase() === "approved" ||
+                rowData.status.toLowerCase() === "completed"
+                  ? "success"
+                  : "warning"
+              }
+            />
+          );
+        }}
+        header="Status"
+      ></Column>
+      <Column
+        body={(rowData) => {
+          return (
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                handelShowPreviousData(rowData.requisionId);
+              }}
+            >
+              Show
+            </Button>
+          );
+        }}
+        header="View"
+      ></Column>
+      <Column field="" header="Download ticket"></Column>
+    </DataTable>
+  );
 
+  useEffect(() => {
     const fetchApprovedAndSettledTravelData = async () => {
       try {
         // const { token } = getUserData();
-        
+
         // const advancedData = await getAdvanceDetails();
 
-        const approvedandsettledresponse = await getTravelsByStatus();
-        console.log('response',approvedandsettledresponse)
+        const approvedandsettledresponse = await getApprovedAndSettledData();
+        console.log("response", approvedandsettledresponse);
 
-           console.log(approvedandsettledresponse.message)
+        console.log(approvedandsettledresponse.message);
 
-        if(!approvedandsettledresponse.status)
-        {
+        if (!approvedandsettledresponse.status) {
           toast.current?.show({
-          severity: "error",
-          summary: "error",
-          detail:approvedandsettledresponse.message ,
-        });
+            severity: "error",
+            summary: "error",
+            detail: approvedandsettledresponse.message,
+          });
         }
 
         // const cleanedData = approvedAndSettledMergedData.data.map((item) => {
@@ -95,7 +142,7 @@ const ApprovedTable = () => {
         //   return rest;
         // });
 
-       // const finalData = mergeTravelData(cleanedData, advancedData.data);
+        // const finalData = mergeTravelData(cleanedData, advancedData.data);
         setApprovedAndSettledTravelData(approvedandsettledresponse.data);
       } catch (error) {
         console.error("Error fetching travel data:", error);
@@ -115,48 +162,45 @@ const ApprovedTable = () => {
     setApprovedAndSettledGlobalFilterValue(value);
   };
 
-    const handelShowRequisitionForm = async (requisionId) => {
-      console.log("clickrequisionId", requisionId);
-      //Dialog visible set
-      setVisible(true);
-      const { token } = getUserData();
-      const response = await getMyFormParticularRequisitionId(token, requisionId);
-      setRowData(response?.data);
-    };
-  
-    const renderHeaderForApprovedAndSettledTravelData = () => {
-      const tabItems = [
-        { label: "Approved Travels Table" },
-      ];
-      return (
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        
-          <InputText
-            value={approvedAndSettledGlobalFilterValue}
-            onChange={approvedAndSettledOnGlobalFilterChange}
-            placeholder="Keyword Search"
-            className="w-full sm:w-auto"
-          />
-        </div>
-      );
-    };
+  const handelShowRequisitionForm = async (requisionId) => {
+    console.log("clickrequisionId", requisionId);
+    //Dialog visible set
+    setVisible(true);
+    const { token } = getUserData();
+    const response = await getMyFormParticularRequisitionId(token, requisionId);
+    setRowData(response?.data);
+  };
+
+  const renderHeaderForApprovedAndSettledTravelData = () => {
+    const tabItems = [{ label: "Approved Travels Table" }];
+    return (
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <InputText
+          value={approvedAndSettledGlobalFilterValue}
+          onChange={approvedAndSettledOnGlobalFilterChange}
+          placeholder="Keyword Search"
+          className="w-full sm:w-auto"
+        />
+      </div>
+    );
+  };
   const approvedAndSettledTravelDataHeader =
     renderHeaderForApprovedAndSettledTravelData();
 
-      const advanceColumnBody = (row) => {
-        if (editRowId === row.requisionId) {
-          return (
-            <InputText
-              size="small"
-              value={newAdvanceAmount}
-              onChange={(e) => setNewAdvanceAmount(e.target.value)}
-            />
-          );
-        }
-        return row.advance;
-      };
+  const advanceColumnBody = (row) => {
+    if (editRowId === row.requisionId) {
+      return (
+        <InputText
+          size="small"
+          value={newAdvanceAmount}
+          onChange={(e) => setNewAdvanceAmount(e.target.value)}
+        />
+      );
+    }
+    return row.advance;
+  };
 
-        const setAdvanceActions = (row) => {
+  const setAdvanceActions = (row) => {
     if (editRowId === row.requisionId && row.bit) {
       return (
         <>
@@ -196,48 +240,53 @@ const ApprovedTable = () => {
     return <h3>Pending Unsettled Claim</h3>;
   };
 
- return (
+  return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
         <Toast ref={toast} />
-          <DataTable
-            value={approvedAndSettledTravelData}
-            paginator
-            size="small"
-            showGridlines
-            rows={5}
-            rowsPerPageOptions={
-              approvedAndSettledTravelData.length > 50
-                ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
-                : approvedAndSettledTravelData.length > 25 &&
-                  approvedAndSettledTravelData.length < 50
-                ? [5, 10, 25, approvedAndSettledTravelData.length]
-                : approvedAndSettledTravelData.length > 10 &&
-                  approvedAndSettledTravelData.length < 25
-                ? [5, 10, approvedAndSettledTravelData.length]
-                : approvedAndSettledTravelData.length > 5 &&
-                  approvedAndSettledTravelData.length < 10
-                ? [5, approvedAndSettledTravelData.length]
-                : [5]
-            }
-            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-            currentPageReportTemplate="{first} to {last} of {totalRecords}"
-            dataKey="id"
-            filters={approvedAndSettledFilters}
-            globalFilterFields={[
-              "date",
-              "userName",
-              "empCode",
-              "projectName",
-              "unsettledAmount",
-              "advanceRequested",
-            ]}
-            header={approvedAndSettledTravelDataHeader}
-            emptyMessage="No data found."
-            removableSort
-            sortMode="multiple"
-          >
-            {/* <Column
+        <DataTable
+          value={approvedAndSettledTravelData}
+          expandedRows={expandedRows}
+          onRowToggle={(e) => setExpandedRows(e.data)}
+          rowExpansionTemplate={rowExpansionTemplate}
+          showGridlines
+          className="text-xs"
+          tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          paginator
+          size="small"
+          rows={5}
+          rowsPerPageOptions={
+            approvedAndSettledTravelData.length > 50
+              ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 25 &&
+                approvedAndSettledTravelData.length < 50
+              ? [5, 10, 25, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 10 &&
+                approvedAndSettledTravelData.length < 25
+              ? [5, 10, approvedAndSettledTravelData.length]
+              : approvedAndSettledTravelData.length > 5 &&
+                approvedAndSettledTravelData.length < 10
+              ? [5, approvedAndSettledTravelData.length]
+              : [5]
+          }
+          paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+          currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          dataKey="id"
+          filters={approvedAndSettledFilters}
+          globalFilterFields={[
+            "date",
+            "userName",
+            "empCode",
+            "projectName",
+            "unsettledAmount",
+            "advanceRequested",
+          ]}
+          header={approvedAndSettledTravelDataHeader}
+          emptyMessage="No data found."
+          removableSort
+          sortMode="multiple"
+        >
+          {/* <Column
               field="date"
               header="Date"
               headerStyle={{ textAlign: "center" }}
@@ -245,40 +294,41 @@ const ApprovedTable = () => {
               sortable
               filter
             /> */}
-            <Column
-              field="userName"
-              header="Name"
-              headerStyle={{ textAlign: "center" }}
-              style={{ textAlign: "center" }}
-              sortable
-               filter
-            />
-            <Column
-              field="empCode"
-              header="Employee Code"
-              headerStyle={{ textAlign: "center" }}
-              style={{ textAlign: "center" }}
-              sortable
-               filter
-            />
-            <Column
-              field="projectName"
-              header="Project Name"
-              headerStyle={{ textAlign: "center" }}
-              // headerClassName="center-header"
-              style={{ textAlign: "center" }}
-              sortable
-               filter
-            />
-            <Column
-              field="unsettledAmount"
-              header="Total Unsettled Amount"
-              headerStyle={{ textAlign: "center" }}
-              style={{ textAlign: "center" }}
-              sortable
-               filter
-            />
-            {/* <Column
+          <Column expander style={{ width: "3rem" }} />
+          <Column
+            field="userName"
+            header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="empCode"
+            header="Employee Code"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="projectName"
+            header="Project Name"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          {/* <Column
               field="advanceRequested"
               header="Advance Requested"
               headerStyle={{ textAlign: "center" }}
@@ -286,13 +336,13 @@ const ApprovedTable = () => {
               sortable
                filter
             /> */}
-            {/* <Column
+          {/* <Column
               body={advanceColumnBody}
               header="Advance Given"
               headerStyle={{ textAlign: "center" }}
               style={{ textAlign: "center" }}
             /> */}
-            {/* <Column
+          {/* <Column
               body={(rowData) => {
                 return (
                   <Chip
@@ -311,7 +361,7 @@ const ApprovedTable = () => {
               headerStyle={{ textAlign: "center" }}
               style={{ textAlign: "center" }}
             /> */}
-            {/* <Column
+          {/* <Column
               body={(rowData) => {
                 return (
                   <IconButton
@@ -328,36 +378,33 @@ const ApprovedTable = () => {
               headerStyle={{ textAlign: "center" }}
               style={{ textAlign: "center" }}
             /> */}
-              {/* <Column
+          {/* <Column
                 body={setAdvanceActions}
                 header="Set Advance"
                 headerStyle={{ textAlign: "center" }}
                 style={{ textAlign: "center" }}
               /> */}
-            <Column
-              body={(rowData) => {
-                return (
-                  <IconButton
-                    aria-label="Complete"
-                    onClick={() => {
-                      updateTravelRequisitionStatus(
-                        rowData,
-                        "CompleteRequested"
-                      );
-                    }}
-                  >
-                    <CheckIcon />
-                  </IconButton>
-                );
-              }}
-              header="Travel Complete"
-              headerStyle={{ textAlign: "center" }}
-              style={{ textAlign: "center" }}
-            />
-          </DataTable>
+          <Column
+            body={(rowData) => {
+              return (
+                <IconButton
+                  aria-label="Complete"
+                  onClick={() => {
+                    updateTravelRequisitionStatus(rowData, "CompleteRequested");
+                  }}
+                >
+                  <CheckIcon />
+                </IconButton>
+              );
+            }}
+            header="Travel Complete"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+          />
+        </DataTable>
         <Dialog
           header="Requisition Form View"
-        //   visible={visible}
+          //   visible={visible}
           style={{ width: "70rem" }}
           onHide={() => {
             if (!visible) return;
@@ -370,6 +417,6 @@ const ApprovedTable = () => {
       </div>
     </>
   );
-}
+};
 
-export default ApprovedTable
+export default ApprovedTable;
