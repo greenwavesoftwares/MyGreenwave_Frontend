@@ -7,7 +7,6 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import {
   approveLeave,
-  getLeaveRequestsForManagerApproval,
   rejectLeave,
   reviewingLeave,
 } from "./LeaveManagerApprovalFunctions";
@@ -47,7 +46,7 @@ const LeaveRequestTable = ({
               "Confirmation",
               "Do you want to approve this leave?",
               async () => {
-                await approveLeave(row, toastRef);
+                await approveLeave(row, toastRef, setLeaveRequestTable);
               },
               null
             );
@@ -203,7 +202,8 @@ const LeaveRequestTable = ({
                   rejectedReason,
                   setRejectedValidation,
                   hideRejectDialog,
-                  toastRef
+                  toastRef,
+                  setLeaveRequestTable
                 );
               }}
             />

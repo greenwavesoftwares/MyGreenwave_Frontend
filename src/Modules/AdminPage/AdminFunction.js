@@ -51,5 +51,16 @@ const getUserIdAndEmpCodes = async () => {
         }))
     : [];
 };
+const getUserIdAndName = async () => {
+  const data = await getAllUsersAPI();
+  return data
+    ? data.userdata
+        .filter((p) => p.active)
+        .map((p) => ({
+          userId: p.userId,
+          userName: p.userName,
+        }))
+    : [];
+};
 
-export { onPageLoad, getInitial, getUserIdAndEmpCodes };
+export { onPageLoad, getInitial, getUserIdAndEmpCodes, getUserIdAndName };

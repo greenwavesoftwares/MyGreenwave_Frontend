@@ -67,10 +67,7 @@ const LeaveManagerApproval = () => {
                   />
                 </TabPanel>
                 <TabPanel header="Team Leaves">
-                  <TeamLeaveCalender
-                    teamLeaveCalender={teamLeaveCalender}
-                    setTeamLeaveCalender={setTeamLeaveCalender}
-                  />
+                  <TeamLeaveCalender teamLeaveCalender={teamLeaveCalender} />
                 </TabPanel>
               </TabView>
             </Card>

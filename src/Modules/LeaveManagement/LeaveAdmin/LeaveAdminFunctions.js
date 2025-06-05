@@ -2,60 +2,26 @@ import {
   showErrorMessage,
   showSuccessMessage,
 } from "../../../components/Toast/ShowMessage";
-import { getInitial } from "../../AdminPage/AdminFunction";
+import { getHolidayDates } from "../../HolidayMaster/HolidayFunction";
+import { getActualLeave } from "../LeaveApplication/LeaveApplicationFunctions";
 import {
+  applyLeaveOnBehalfAPI,
   approveLeaveAPI,
-  getLeaveRequestsForManagerApprovalAPI,
-  getTeamLeavesCalenderForManagerAPI,
-  getTeamLeavesTableForManagerAPI,
+  getLeaveOnBehalfDataAPI,
+  getLeaveReportDataAPI,
+  getLeaveRequestsForAdminApprovalAPI,
+  getOntourReportDataAPI,
   getUserLeaveInfoAPI,
   rejectLeaveAPI,
-  reviewingLeaveAPI,
 } from "./LeaveAdminAPI";
 import { format, parse } from "date-fns";
 
 const dateformat = "yyyy-MM-dd";
 
-const onPageLoad = async () => {
-  let hrLeaveData = {};
-
-  // let requestValue = await getLeaveRequestsForManagerApprovalAPI();
-  // hrLeaveData.requestData = requestValue
-  //   ? requestValue.managerHRRemarkTable
-  //   : [];
-
-  // let calenderValue = await getTeamLeavesCalenderForManagerAPI();
-  // hrLeaveData.calenderData = calenderValue
-  //   ? await setCalenderData(calenderValue.managerHRRemarkTable)
-  //   : [];
-
-  return hrLeaveData;
-};
-const getUserLeaveInfo = async (year) => {
-  let userLeaveInfo = await getUserLeaveInfoAPI(year);
-  return userLeaveInfo ? userLeaveInfo : [];
-};
-const setCalenderData = async (calenderValue) => {
-  let calenderDataList = [];
-  const uniqueDates = [...new Set(calenderValue.map((p) => p.fromDate))];
-  uniqueDates.map((date) => {
-    let calenderData = {};
-    calenderData.start = date;
-    calenderData.end = date;
-    calenderData.overlap = false;
-    calenderData.leaves = calenderValue
-      .filter((p) => p.fromDate === date)
-      .map((p) => {
-        let initial = getInitial(p.userName);
-        p.initialName = initial.initialName;
-        p.initialColor = stringToVibrantPastelColor(p.userName);
-        p.statusColor = getCalenderStatusColor(p.status);
-        return p;
-      });
-
-    calenderDataList.push(calenderData);
-  });
-  return calenderDataList;
+//Leave Requests for Admin Approval
+const getLeaveRequestsForAdminApproval = async () => {
+  const requestValue = await getLeaveRequestsForAdminApprovalAPI();
+  return requestValue ? requestValue.managerHRRemarkTable : [];
 };
 const onSelectRowEdit = async (
   row,
@@ -74,9 +40,13 @@ const onSelectRowEdit = async (
   }));
   setEditLeaveDialogVisible(true);
 };
-const approveLeave = async (leaveData, toastRef) => {
+const approveLeave = async (leaveData, toastRef, setLeaveRequestTable) => {
   const data = await approveLeaveAPI(leaveData, toastRef);
   if (data) {
+    setLeaveRequestTable((prev) => ({
+      ...prev,
+      table: prev.table.filter((leave) => leave.leaveId !== leaveData.leaveId),
+    }));
     showSuccessMessage(toastRef, "Success", "Leave Approved");
   }
 };
@@ -84,7 +54,9 @@ const rejectLeave = async (
   leaveData,
   reason,
   setRejectedValidation,
-  toastRef
+  hideRejectDialog,
+  toastRef,
+  setLeaveRequestTable
 ) => {
   if (reason.trim().length === 0) {
     showErrorMessage(
@@ -98,18 +70,20 @@ const rejectLeave = async (
   setRejectedValidation(true);
   const data = await rejectLeaveAPI(leaveData, reason, toastRef);
   if (data) {
+    setLeaveRequestTable((prev) => ({
+      ...prev,
+      table: prev.table.filter((leave) => leave.leaveId !== leaveData.leaveId),
+    }));
+    hideRejectDialog();
     showSuccessMessage(toastRef, "Success", "Leave Rejected");
   }
 };
-const reviewingLeave = async (leaveData, isReviewing, toastRef) => {
-  await reviewingLeaveAPI(leaveData, isReviewing, toastRef);
-};
 
-// const getNextDate = (date) => {
-//   let parsedDate = parse(date, dateformat, new Date());
-//   parsedDate.setDate(parsedDate.getDate() + 1);
-//   return format(parsedDate, dateformat);
-// };
+// Get User Leave Info
+const getUserLeaveInfo = async (year) => {
+  let userLeaveInfo = await getUserLeaveInfoAPI(year);
+  return userLeaveInfo ? userLeaveInfo : [];
+};
 const getCurrentDate = () => {
   const currentDate = new Date();
   return currentDate;
@@ -122,89 +96,116 @@ const getYearList = () => {
   }
   return yearList;
 };
-// const getCalenderStatusColor = (status) => {
-//   switch (status) {
-//     case "Approved":
-//       return "bg-green-400";
-//     case "Rejected":
-//       return "bg-red-400";
-//     case "Pending":
-//       return "bg-yellow-300";
-//     default:
-//       return null;
-//   }
-// };
-const getCalenderStatusColor = (status) => {
-  switch (status) {
-    case "Approved":
-      return "#4ade80"; // Tailwind green-400
-    case "Rejected":
-      return "#f87171"; // Tailwind red-400
-    case "Pending":
-      return "#fde047"; // Tailwind yellow-300
-    default:
-      return "#9ae600"; // Custom lime green
+
+// Apply Leave On Behalf
+const getLeaveOnBehalfData = async () => {
+  const data = await getLeaveOnBehalfDataAPI();
+  return data ? data : [];
+};
+const validateLeave = async (leaveData, setLeaveValidation, toastRef) => {
+  if (
+    !leaveData.dates[0] ||
+    !leaveData.dates[1] ||
+    !leaveData.reason ||
+    !leaveData.type ||
+    !leaveData.userId
+  ) {
+    setLeaveValidation((prevData) => ({
+      ...prevData,
+      dates: leaveData.dates[0] && leaveData.dates[1],
+      reason: leaveData.reason,
+      type: leaveData.type,
+      userId: leaveData.userId,
+    }));
+    showErrorMessage(toastRef, "Validation Error!", "Please enter all fields");
+    return false;
+  } else
+    setLeaveValidation((prevData) => ({
+      ...prevData,
+      dates: true,
+      reason: true,
+      type: true,
+      userId: true,
+    }));
+
+  let holidayDates = await getHolidayDates();
+  let actualLeave = getActualLeave(leaveData, holidayDates);
+  switch (leaveData.type) {
+    case "CL":
+      if (actualLeave > 2) {
+        showErrorMessage(
+          toastRef,
+          "Validation Error!",
+          actualLeave > 2
+            ? "CL can be taken for only 1 or 2 days"
+            : "Something went wrong!"
+        );
+        setLeaveValidation((prev) => ({ ...prev, dates: false }));
+        return false;
+      }
+      break;
+  }
+  return true;
+};
+const applyLeaveOnBehalf = async (
+  leaveData,
+  setLeaveValidation,
+  setLeaveOnBehalfTable,
+  setLeaveVisible,
+  toastRef
+) => {
+  if (await validateLeave(leaveData, setLeaveValidation, toastRef)) {
+    let applyData = {};
+    applyData.userId = leaveData.userId;
+    applyData.fromDate = format(leaveData.dates[0], dateformat);
+    applyData.toDate = format(leaveData.dates[1], dateformat);
+    applyData.leaveReason = leaveData.reason;
+    applyData.leaveType = leaveData.type;
+
+    const response = await applyLeaveOnBehalfAPI(applyData, toastRef);
+    if (response) {
+      setLeaveOnBehalfTable((prev) => ({
+        ...prev,
+        table: [...prev.table, response],
+      }));
+      setLeaveVisible(false);
+      showSuccessMessage(toastRef, "Success", "Leave applied successfully!");
+    }
   }
 };
 
-function stringToVibrantPastelColor(input) {
-  // Normalize and validate input
-  input = input
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "")
-    .slice(0, 6);
-
-  // Convert base-26 string to a number
-  let base26 = 0;
-  for (let i = 0; i < input.length; i++) {
-    base26 = base26 * 26 + (input.charCodeAt(i) - 65);
+// Get On Tour Report Data
+const getOntourReportData = async (dates) => {
+  if (dates[0] && dates[1]) {
+    const data = await getOntourReportDataAPI(
+      format(dates[0], dateformat),
+      format(dates[1], dateformat)
+    );
+    return data ? data : [];
   }
+};
 
-  // Use sine wave for smooth, controlled color distribution across the RGB spectrum
-  function vibrantComponent(seedOffset) {
-    const value = (Math.sin(base26 + seedOffset) + 1) / 2; // 0 to 1 range
-    const min = 180; // Light pastel starts at 180
-    const max = 255; // Upper limit for pastel (bright, but not too saturated)
-    return Math.floor(min + value * (max - min)); // Value between min and max
+// Get Leave Report Data
+const getLeaveReportData = async (dates) => {
+  if (dates[0] && dates[1]) {
+    const data = await getLeaveReportDataAPI(
+      format(dates[0], dateformat),
+      format(dates[1], dateformat)
+    );
+    return data ? data : [];
   }
-
-  const r = vibrantComponent(1); // Red component
-  const g = vibrantComponent(2); // Green component
-  const b = vibrantComponent(3); // Blue component
-
-  const toHex = (c) => c.toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-const getColorBySeverity = (severity) => {
-  const documentStyle = getComputedStyle(document.documentElement);
-  let color = "";
-  switch (severity) {
-    case "success":
-      color = documentStyle.getPropertyValue("--green-500");
-      break;
-    case "warning":
-      color = documentStyle.getPropertyValue("--yellow-300");
-      break;
-    case "danger":
-      color = documentStyle.getPropertyValue("--red-500");
-      break;
-    case "info":
-      color = documentStyle.getPropertyValue("--blue-500");
-      break;
-    default:
-      color = "";
-      break;
-  }
-  return color;
 };
 
 export {
   getCurrentDate,
-  onPageLoad,
+  getLeaveRequestsForAdminApproval,
   getYearList,
   onSelectRowEdit,
   approveLeave,
   rejectLeave,
-  reviewingLeave,
   getUserLeaveInfo,
+  getOntourReportData,
+  getLeaveReportData,
+  getLeaveOnBehalfData,
+  applyLeaveOnBehalf,
 };

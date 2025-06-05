@@ -562,4 +562,5 @@ export {
   onSelectRowEdit,
   getTypeName,
   getCurrentYear,
+  getActualLeave,
 };

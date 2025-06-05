@@ -68,9 +68,13 @@ const onSelectRowEdit = async (
   }));
   setEditLeaveDialogVisible(true);
 };
-const approveLeave = async (leaveData, toastRef) => {
+const approveLeave = async (leaveData, toastRef, setLeaveRequestTable) => {
   const data = await approveLeaveAPI(leaveData, toastRef);
   if (data) {
+    setLeaveRequestTable((prev) => ({
+      ...prev,
+      table: prev.table.filter((p) => p.leaveId !== leaveData.leaveId),
+    }));
     showSuccessMessage(toastRef, "Success", "Leave Approved");
   }
 };
@@ -79,7 +83,8 @@ const rejectLeave = async (
   reason,
   setRejectedValidation,
   hideRejectDialog,
-  toastRef
+  toastRef,
+  setLeaveRequestTable
 ) => {
   if (reason.trim().length === 0) {
     showErrorMessage(
@@ -93,6 +98,10 @@ const rejectLeave = async (
   setRejectedValidation(true);
   const data = await rejectLeaveAPI(leaveData, reason, toastRef);
   if (data) {
+    setLeaveRequestTable((prev) => ({
+      ...prev,
+      table: prev.table.filter((p) => p.leaveId !== leaveData.leaveId),
+    }));
     hideRejectDialog();
     showSuccessMessage(toastRef, "Success", "Leave Rejected");
   }

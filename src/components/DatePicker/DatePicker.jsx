@@ -17,6 +17,7 @@ const DatePicker = ({
   inputClassName,
   disabledDates,
   size = "small",
+  placeholder = "Select a date",
 }) => {
   const [sizeClassName, setSizeClassName] = useState("");
   useEffect(() => {
@@ -42,7 +43,7 @@ const DatePicker = ({
         hideOnRangeSelection={hideOnRangeSelection}
         disabledDays={disabledDays}
         className="calendar"
-        placeholder="Select a date" // Hint text here
+        placeholder={placeholder}
         minDate={minDate}
         showIcon={showIcon}
         dateFormat={dateFormat}

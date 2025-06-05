@@ -5,37 +5,10 @@ import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 const endPoint = import.meta.env.VITE_END_POINT;
 const userData = getUserData();
 
-const getLeaveRequestsForManagerApprovalAPI = async () => {
+//Leave Requests for Admin Approval
+const getLeaveRequestsForAdminApprovalAPI = async () => {
   try {
-    const response = await axios.get(`${endPoint}leaves/review`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userData.token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching forminfo with versions:", error);
-    return null;
-  }
-};
-const getTeamLeavesTableForManagerAPI = async () => {
-  try {
-    const response = await axios.get(`${endPoint}leaves/review/all`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userData.token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching forminfo with versions:", error);
-    return null;
-  }
-};
-const getTeamLeavesCalenderForManagerAPI = async () => {
-  try {
-    const response = await axios.get(`${endPoint}leaves/review/calendar`, {
+    const response = await axios.get(`${endPoint}leaves/admin/review`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userData.token}`,
@@ -93,27 +66,8 @@ const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
     return null;
   }
 };
-const reviewingLeaveAPI = async (leaveData, isReviewing, toastRef) => {
-  try {
-    const response = await axios.put(`${endPoint}leaves/reviewing`, {
-      params: { leaveId: leaveData.leaveId, isReviewing: isReviewing },
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userData.token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching forminfo with versions:", error);
-    const response = error.response.data;
-    if (error.status === 500) {
-      showErrorMessage(toastRef, "Error", response.error);
-    } else {
-      showErrorMessage(toastRef, "Error", response.toString());
-    }
-    return null;
-  }
-};
+
+// Get User Leave Info
 const getUserLeaveInfoAPI = async (year) => {
   try {
     const response = await axios.get(
@@ -132,12 +86,94 @@ const getUserLeaveInfoAPI = async (year) => {
   }
 };
 
+// Apply Leave On Behalf
+const getLeaveOnBehalfDataAPI = async () => {
+  try {
+    const response = await axios.get(
+      `${endPoint}leaves/admin/leave-on-behalf`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userData.token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return null;
+  }
+};
+const applyLeaveOnBehalfAPI = async (leaveData, toastRef) => {
+  try {
+    const response = await axios.post(
+      `${endPoint}leaves/application-on-behalf`,
+      leaveData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userData.token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    const response = error.response.data;
+    if (error.status === 500) {
+      showErrorMessage(toastRef, "Error", response.error);
+    } else {
+      showErrorMessage(toastRef, "Error", response.toString());
+    }
+    return null;
+  }
+};
+
+// Get On Tour Report Data
+const getOntourReportDataAPI = async (fromDate, toDate) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}leaves/admin/on-tour-report/${fromDate}/${toDate}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userData.token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return null;
+  }
+};
+
+// Get Leave Report Data
+const getLeaveReportDataAPI = async (fromDate, toDate) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}leaves/admin/leave-report-data/${fromDate}/${toDate}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userData.token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return null;
+  }
+};
+
 export {
-  getLeaveRequestsForManagerApprovalAPI,
-  getTeamLeavesTableForManagerAPI,
-  getTeamLeavesCalenderForManagerAPI,
+  getLeaveRequestsForAdminApprovalAPI,
   approveLeaveAPI,
   rejectLeaveAPI,
-  reviewingLeaveAPI,
   getUserLeaveInfoAPI,
+  getOntourReportDataAPI,
+  getLeaveReportDataAPI,
+  getLeaveOnBehalfDataAPI,
+  applyLeaveOnBehalfAPI,
 };

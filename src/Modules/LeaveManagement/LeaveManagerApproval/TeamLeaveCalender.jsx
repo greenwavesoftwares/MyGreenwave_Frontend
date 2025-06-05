@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Calender from "../../../components/Calender/Calender";
-import { getTeamLeavesCalenderForManager } from "./LeaveManagerApprovalFunctions";
 import "./LeaveManagerApproval.css";
 import { Tooltip } from "primereact/tooltip";
 import { Avatar } from "primereact/avatar";
@@ -8,7 +7,7 @@ import { OverlayPanel } from "primereact/overlaypanel";
 import { AvatarGroup } from "primereact/avatargroup";
 import { Chip } from "primereact/chip";
 
-const TeamLeaveCalender = ({ teamLeaveCalender, setTeamLeaveCalender }) => {
+const TeamLeaveCalender = ({ teamLeaveCalender }) => {
   const [selectedTeamLeave, setSelectedTeamLeave] = useState([]);
   const overlayRef = useRef(null);
   const tooltipRef = useRef(null);

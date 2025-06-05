@@ -5,9 +5,11 @@ import { Column } from "primereact/column";
 import { Dropdown } from "primereact/dropdown";
 import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
 
-const UserLeaveInfo = ({ tableStructure, statusBodyTemplate }) => {
-  //User Leave Info Table
-  const [userLeaveInfoTable, setUserLeaveInfoTable] = useState(tableStructure);
+const UserLeaveInfo = ({
+  userLeaveInfoTable,
+  setUserLeaveInfoTable,
+  statusBodyTemplate,
+}) => {
   const [expandedRows, setExpandedRows] = useState([]);
   const [years, setYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState(0);
@@ -85,6 +87,7 @@ const UserLeaveInfo = ({ tableStructure, statusBodyTemplate }) => {
       }));
     };
     if (selectedYear !== 0) init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
   return (
