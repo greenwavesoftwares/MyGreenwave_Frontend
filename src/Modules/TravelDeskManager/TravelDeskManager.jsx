@@ -2,13 +2,14 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { useEffect, useRef, useState } from "react";
 import {
+  getAdvanceDetails,
   getMyFormParticularRequisitionId,
   // getMyFormTravelData,
   getTravelsByStatus,
   updateTravelRequisition,
 } from "../TravelDesk/TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
-import { Box, Button, CircularProgress, Grid } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, Grid } from "@mui/material";
 import { Dialog } from "primereact/dialog";
 import MyForm from "../TravelDesk/MyForms";
 import "./TravelDeskManager.css";
@@ -20,13 +21,19 @@ import { InputText } from "primereact/inputtext";
 import CustomToast from "../../components/Toast/Toast";
 import {  showInfoMessage, showSuccessMessage } from "../../components/Toast/ShowMessage";
 import RequisitionFormView from "../TravelDesk/RequisitionFormView";
-
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord'; // or any other icon
 
 export default function TravelDeskManager() {
-  const [travelData, setTravelData] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [visible, setVisible] = useState(false);
-  const [globalFilter, setGlobalFilter] = useState(null);
+
+
+  const [travelData, setTravelData] = useState(null);//  DataTable data
+  const [formData, setFormData] = useState({});//form data for storing the managers remarks
+  const [visible, setVisible] = useState(false);//Dialog visibility
+  const [globalFilter, setGlobalFilter] = useState(null);// Global filter for DataTable
+  const [expandedRows, setExpandedRows] = useState(null);//for expanded rows in DataTable
+
+
+
   const PENDING_STATUS = "Pending";
   const { token,userDetails } = getUserData();
   const toastRef=useRef(null);
@@ -41,10 +48,31 @@ export default function TravelDeskManager() {
       const { data } = await getTravelsByStatus(token, PENDING_STATUS);
       console.log("response", data);
       const pendingData = data.filter(
-        (item) => item?.status=== PENDING_STATUS 
-        && item?.manager_id === userDetails?.userId
+        (item) => 
+          // item?.status=== PENDING_STATUS  &&
+        item?.manager_id === userDetails?.userId
       );
-      setTravelData(pendingData ?? []);
+
+      const {data : advanceTravelData}= await getAdvanceDetails();
+      console.log("advanceTravelData", advanceTravelData);
+
+      const updatedPendingData = pendingData.map((travel) => {
+        const userName=advanceTravelData?.find(
+          (claims) => claims?.userId === travel?.user_id
+        )?.userName || "Unknown User";
+
+          const unsettledAmount=advanceTravelData?.find(
+          (claims) => claims?.userId === travel?.user_id
+        )?.unsettledAmount || 0;
+       
+        return {
+          ...travel,
+          userName,
+          unsettledAmount
+        };
+    });
+    console.log('Updated Pending Data:', updatedPendingData);
+     setTravelData(updatedPendingData ?? []);
     } catch (error) {
       console.error("Error fetching travel data:", error);
       setTravelData([])
@@ -99,6 +127,7 @@ export default function TravelDeskManager() {
   }
 
   const handleShowClick = async (e, rowData) => {
+    e.stopPropagation(); // Prevent the event from bubbling up
     if (visible) return; // Prevent multiple clicks
     console.log("rowdata", rowData);
     console.log("Event", e);
@@ -154,13 +183,89 @@ export default function TravelDeskManager() {
             );
           }
 
+          const renderStatusChip = (row) => {
+const status = row?.status;
+  let color = 'default';
+
+  switch (status?.toLowerCase()) {
+    case 'approved':
+    case 'completed':
+      color = 'success';
+      break;
+    case 'pending':
+      color = 'error';
+      break;
+    case 'rejected':
+    case 'cancelled':
+      color = 'error';
+      break;
+    default:
+      color = 'info';
+  }
+
+  return <Chip label={status} color={color} size="small" />;
+};
+
+
+
+          const rowExpansionTemplate = (row) => {
+            const updatedTravelData=travelData.filter(travel=> travel.travelId === row.travelId);
+  return (
+    <>
+    <DataTable
+        value={updatedTravelData}
+       
+      >
+        <Column sortable field="date" header="Date"></Column>
+        {/* <Column sortable field="user_id" header="Name"></Column> */}
+        <Column sortable field="status" header="Status" body={renderStatusChip}></Column>
+        {/* <Column sortable field="purpose" header="Purpose of Travel"></Column>
+        <Column sortable field="projectName" header="Project Name"></Column>
+        <Column sortable field="city" header="City"></Column> */}
+        <Column sortable field="advanceRequested" header="Advance Requested"></Column>
+        <Column sortable field="advance" header="Advance Given"></Column>
+        <Column
+          body={renderShowButton}
+          header="View"
+        ></Column>
+      </DataTable>
+    </>
+  );
+}
+
+
+
+
+const uniqueTravels =
+  travelData?.reduce((acc, item) => {
+    if (!acc[item?.travelId]) {
+      acc[item?.travelId] = item; // store only the first occurrence
+    }
+    return acc;
+  }, {})
+
+const updatedTravelData = Object.values(uniqueTravels??[]).map((travel) => { 
+  const foundPendingData = travelData?.find(
+    (item) => item.travelId === travel.travelId && item.status === PENDING_STATUS
+  );
+
+  return {
+    ...travel,
+    pending: foundPendingData ? true : false,
+  };
+ });
+
   return (
     <div>
       {/* DataTable */}
     <CustomToast ref={toastRef} />
       <DataTable
-        value={travelData}
+        value={updatedTravelData}
         className="UserInfoTableStyle HeaderColor"
+        expandedRows={expandedRows}
+        onRowToggle={(e) => setExpandedRows(e.data)}
+        rowExpansionTemplate={(row)=>rowExpansionTemplate(row,travelData)}
+        // dataKey="travelId"
         emptyMessage={
           travelData?.length === 0 ? (
             "No data found"
@@ -171,16 +276,40 @@ export default function TravelDeskManager() {
         header={renderHeader}
         globalFilter={globalFilter}
       >
-        <Column sortable field="date" header="Date"></Column>
-        <Column sortable field="user_id" header="Name"></Column>
+         <Column expander />
+         <Column
+  field="userName"
+  header="User"
+  sortable
+  body={(rowData) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      {rowData.pending && (
+        <FiberManualRecordIcon
+          fontSize="small"
+          style={{ fontSize: '.8rem' }}
+          color="warning" // or use a specific color code
+          // style={{ color: '#fbc02d' }} // yellow for "pending"
+        />
+      )}
+      {rowData.userName}
+    </div>
+  )}
+/>
+
+        <Column sortable field="unsettledAmount" header="Unsettled"></Column>
+        <Column sortable field="fromDate" header="From Date"></Column>
+        <Column sortable field="tentativeToDate" header="Tentative To Date"></Column>
+        
+        {/* <Column sortable field="user_id" header="Name"></Column> */}
         <Column sortable field="typeOfTravel" header="Type of Travel"></Column>
         <Column sortable field="purpose" header="Purpose of Travel"></Column>
         <Column sortable field="projectName" header="Project Name"></Column>
+         <Column sortable field="localityArea" header="Locality/Area"></Column>
         <Column sortable field="city" header="City"></Column>
-        <Column
+        {/* <Column
           body={renderShowButton}
           header="View"
-        ></Column>
+        ></Column> */}
       </DataTable>
 
       {/* Dialog component */}

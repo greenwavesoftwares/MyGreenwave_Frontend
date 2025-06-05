@@ -55,7 +55,7 @@ const RequisitionFormView = ({
         <Grid size={12}>Manager Name : {rowData.manager_id}</Grid>
         <Grid size={12}>
           {" "}
-          {formData?.manager_id === userDetails?.userId ? (
+          {formData?.manager_id === userDetails?.userId  && formData?.status === "Pending"? (
             <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
               {/* <Grid item xs={6}>
                 Manager Name:{" "}
