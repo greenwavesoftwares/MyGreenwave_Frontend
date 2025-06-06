@@ -65,6 +65,7 @@ function App() {
         <Route path="/travel-desk" element={<TravelDesk />} />
         <Route path="/travel-deskmanager" element={<TravelDeskManager />} />
         <Route path="/travel-desk-advanced" element={<TravelDeskAdvanced />} />
+        <Route path="/travel-desk-advanced2" element={<OpenTravelsTableCopy/>} />
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route
           path="/ModeOfTransportTable"
@@ -81,7 +82,7 @@ function App() {
         <Route path="/hr-loan-application" element={<HRLoanApplication />} />
         <Route path="/referral" element={<Referral/>} />
         <Route path="/hr-referral" element={<HRReferralPage/>} />
-        <Route path="/test" element={<OpenTravelsTableCopy/>} />
+
 
 
       

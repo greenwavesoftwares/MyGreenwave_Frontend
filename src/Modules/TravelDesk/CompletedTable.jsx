@@ -6,7 +6,7 @@ import { Column } from "primereact/column";
 import {
   getAdvanceDetails,
   getMyFormParticularRequisitionId,
-  getCompleteAndCompleteRequestedData,
+  getCompleteData,
   updateTravelRequisition,
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
@@ -30,21 +30,21 @@ const CompletedTable = () => {
   const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
     useState([]);
   const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
-  const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    date: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  });
-  const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
-    useState("");
-  const [
-    approvedAndSettledGlobalFilterValue,
-    setApprovedAndSettledGlobalFilterValue,
-  ] = useState("");
+  // const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
+  //   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  //   date: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  //   userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  //   empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  //   projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  //   unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  //   advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  // });
+  // const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
+  //   useState("");
+  // const [
+  //   approvedAndSettledGlobalFilterValue,
+  //   setApprovedAndSettledGlobalFilterValue,
+  // ] = useState("");
   const [rowData, setRowData] = useState({});
 
   const rowExpansionTemplate = (rowData) => {
@@ -90,7 +90,7 @@ const CompletedTable = () => {
 
         // const advancedData = await getAdvanceDetails();
 
-        const approvedandsettledresponse = await getCompleteAndCompleteRequestedData();
+        const approvedandsettledresponse = await getCompleteData();
         console.log("response", approvedandsettledresponse);
 
         console.log(approvedandsettledresponse.message);
@@ -119,15 +119,15 @@ const CompletedTable = () => {
     fetchApprovedAndSettledTravelData();
   }, []);
 
-  const approvedAndSettledOnGlobalFilterChange = (e) => {
-    const value = e.target.value;
-    let _approvedAndSettledFilters = { ...approvedAndSettledFilters };
+  // const approvedAndSettledOnGlobalFilterChange = (e) => {
+  //   const value = e.target.value;
+  //   let _approvedAndSettledFilters = { ...approvedAndSettledFilters };
 
-    _approvedAndSettledFilters["global"].value = value;
+  //   _approvedAndSettledFilters["global"].value = value;
 
-    setApprovedAndSettledFilters(_approvedAndSettledFilters);
-    setApprovedAndSettledGlobalFilterValue(value);
-  };
+  //   setApprovedAndSettledFilters(_approvedAndSettledFilters);
+  //   setApprovedAndSettledGlobalFilterValue(value);
+  // };
 
   const handelShowRequisitionForm = async (requisionId) => {
     console.log("clickrequisionId", requisionId);
@@ -138,21 +138,21 @@ const CompletedTable = () => {
     setRowData(response?.data);
   };
 
-  const renderHeaderForApprovedAndSettledTravelData = () => {
-    const tabItems = [{ label: "Approved Travels Table" }];
-    return (
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <InputText
-          value={approvedAndSettledGlobalFilterValue}
-          onChange={approvedAndSettledOnGlobalFilterChange}
-          placeholder="Keyword Search"
-          className="w-full sm:w-auto"
-        />
-      </div>
-    );
-  };
-  const approvedAndSettledTravelDataHeader =
-    renderHeaderForApprovedAndSettledTravelData();
+  // const renderHeaderForApprovedAndSettledTravelData = () => {
+  //   //const tabItems = [{ label: "Approved Travels Table" }];
+  //   return (
+  //     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+  //       <InputText
+  //         value={approvedAndSettledGlobalFilterValue}
+  //         onChange={approvedAndSettledOnGlobalFilterChange}
+  //         placeholder="Keyword Search"
+  //         className="w-full sm:w-auto"
+  //       />
+  //     </div>
+  //   );
+  // };
+  // const approvedAndSettledTravelDataHeader =
+  //   renderHeaderForApprovedAndSettledTravelData();
 
   const advanceColumnBody = (row) => {
     if (editRowId === row.requisionId) {
@@ -167,81 +167,81 @@ const CompletedTable = () => {
     return row.advance;
   };
 
-  const updateTravelRequisitionStatus = async (rowData, statusName) => {
-    const { token } = getUserData();
-    const updateTravelRequisitionStatusResponse = await updateTravelRequisition(
-      token,
-      rowData,
-      rowData.requisionId,
-      statusName
-    );
-    toast.current.show({
-      severity: "success",
-      summary: "Success",
-      detail: "You have successfully applied for approval.",
-    });
-    console.log(
-      "updateTravelRequisitionStatusResponse :=:=>> ",
-      updateTravelRequisitionStatusResponse
-    );
-  };
+  // const updateTravelRequisitionStatus = async (rowData, statusName) => {
+  //   const { token } = getUserData();
+  //   const updateTravelRequisitionStatusResponse = await updateTravelRequisition(
+  //     token,
+  //     rowData,
+  //     rowData.requisionId,
+  //     statusName
+  //   );
+  //   toast.current.show({
+  //     severity: "success",
+  //     summary: "Success",
+  //     detail: "You have successfully applied for approval.",
+  //   });
+  //   console.log(
+  //     "updateTravelRequisitionStatusResponse :=:=>> ",
+  //     updateTravelRequisitionStatusResponse
+  //   );
+  // };
 
-    const handleSaveAdvance = (row) => {
-    const updated = approvedAndSettledTravelData.map((item) =>
-      item.requisionId === row.requisionId
-        ? { ...item, advance: newAdvanceAmount }
-        : item
-    );
-    setApprovedAndSettledTravelData(updated);
-    setEditRowId(null);
-    setNewAdvanceAmount(row.advance);
-    // Add API call to update backend here if needed
-  };
+  //   const handleSaveAdvance = (row) => {
+  //   const updated = approvedAndSettledTravelData.map((item) =>
+  //     item.requisionId === row.requisionId
+  //       ? { ...item, advance: newAdvanceAmount }
+  //       : item
+  //   );
+  //   setApprovedAndSettledTravelData(updated);
+  //   setEditRowId(null);
+  //   setNewAdvanceAmount(row.advance);
+  //   // Add API call to update backend here if needed
+  // };
 
-  const handleCancelAdvance = (row) => {
-    setEditRowId(null);
-    setNewAdvanceAmount(row.advance);
-  };
+  // const handleCancelAdvance = (row) => {
+  //   setEditRowId(null);
+  //   setNewAdvanceAmount(row.advance);
+  // };
 
-  const setAdvanceActions = (row) => {
-    if (editRowId === row.requisionId && !row.claimUnderProcess) {
-      return (
-        <>
-          <IconButton
-            aria-label="Save"
-            size="small"
-            color="success"
-            onClick={() => handleSaveAdvance(row)}
-          >
-            <SaveIcon />
-          </IconButton>
-          <IconButton
-            aria-label="Cancel"
-            size="small"
-            color="error"
-            onClick={() => handleCancelAdvance(row)}
-          >
-            <CancelIcon />
-          </IconButton>
-        </>
-      );
-    }
-    if (!row.claimUnderProcess) {
-      return (
-        <IconButton
-          aria-label="Edit"
-          label="View"
-          onClick={() => {
-            setEditRowId(row.requisionId);
-            setNewAdvanceAmount(row.advance);
-          }}
-        >
-          <EditIcon />
-        </IconButton>
-      );
-    }
-    return <h3>Pending Unsettled Claim</h3>;
-  };
+  // const setAdvanceActions = (row) => {
+  //   if (editRowId === row.requisionId && !row.claimUnderProcess) {
+  //     return (
+  //       <>
+  //         <IconButton
+  //           aria-label="Save"
+  //           size="small"
+  //           color="success"
+  //           onClick={() => handleSaveAdvance(row)}
+  //         >
+  //           <SaveIcon />
+  //         </IconButton>
+  //         <IconButton
+  //           aria-label="Cancel"
+  //           size="small"
+  //           color="error"
+  //           onClick={() => handleCancelAdvance(row)}
+  //         >
+  //           <CancelIcon />
+  //         </IconButton>
+  //       </>
+  //     );
+  //   }
+  //   if (!row.claimUnderProcess) {
+  //     return (
+  //       <IconButton
+  //         aria-label="Edit"
+  //         label="View"
+  //         onClick={() => {
+  //           setEditRowId(row.requisionId);
+  //           setNewAdvanceAmount(row.advance);
+  //         }}
+  //       >
+  //         <EditIcon />
+  //       </IconButton>
+  //     );
+  //   }
+  //   return <h3>Pending Unsettled Claim</h3>;
+  // };
 
   return (
     <>
@@ -251,44 +251,44 @@ const CompletedTable = () => {
           value={approvedAndSettledTravelData}
           expandedRows={expandedRows}
           onRowToggle={(e) => setExpandedRows(e.data)}
-          rowExpansionMode="single"
+          //rowExpansionMode="single"
           rowExpansionTemplate={rowExpansionTemplate}
           showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           paginator
           size="small"
-          rows={5}
-          rowsPerPageOptions={
-            approvedAndSettledTravelData.length > 50
-              ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
-              : approvedAndSettledTravelData.length > 25 &&
-                approvedAndSettledTravelData.length < 50
-              ? [5, 10, 25, approvedAndSettledTravelData.length]
-              : approvedAndSettledTravelData.length > 10 &&
-                approvedAndSettledTravelData.length < 25
-              ? [5, 10, approvedAndSettledTravelData.length]
-              : approvedAndSettledTravelData.length > 5 &&
-                approvedAndSettledTravelData.length < 10
-              ? [5, approvedAndSettledTravelData.length]
-              : [5]
-          }
-          paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-          currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          rows={10}
+          // rowsPerPageOptions={
+          //   approvedAndSettledTravelData.length > 50
+          //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
+          //     : approvedAndSettledTravelData.length > 25 &&
+          //       approvedAndSettledTravelData.length < 50
+          //     ? [5, 10, 25, approvedAndSettledTravelData.length]
+          //     : approvedAndSettledTravelData.length > 10 &&
+          //       approvedAndSettledTravelData.length < 25
+          //     ? [5, 10, approvedAndSettledTravelData.length]
+          //     : approvedAndSettledTravelData.length > 5 &&
+          //       approvedAndSettledTravelData.length < 10
+          //     ? [5, approvedAndSettledTravelData.length]
+          //     : [5]
+          // }
+          //paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+        //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
           dataKey="travelId"
-          filters={approvedAndSettledFilters}
-          globalFilterFields={[
-            "date",
-            "userName",
-            "empCode",
-            "projectName",
-            "unsettledAmount",
-            "advanceRequested",
-          ]}
-          header={approvedAndSettledTravelDataHeader}
+          //filters={approvedAndSettledFilters}
+          // globalFilterFields={[
+          //   "date",
+          //   "userName",
+          //   "empCode",
+          //   "projectName",
+          //   "unsettledAmount",
+          //   "advanceRequested",
+          // ]}
+        //  header={approvedAndSettledTravelDataHeader}
           emptyMessage="No data found."
-          removableSort
-          sortMode="multiple"
+          // removableSort
+          // sortMode="multiple"
         >
           {/* <Column
               field="date"
@@ -300,47 +300,102 @@ const CompletedTable = () => {
             /> */}
           <Column expander style={{ width: "3rem" }} />
           <Column
-            field="travelId"
-            header="travelId"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
-          <Column
-            field="userName"
-            header="Name"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
-          <Column
-            field="empCode"
-            header="Employee Code"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
-          <Column
-            field="projectName"
-            header="Project Name"
-            headerStyle={{ textAlign: "center" }}
-            // headerClassName="center-header"
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
-          <Column
-            field="unsettledAmount"
-            header="Total Unsettled Amount"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
-
+                      field="travelId"
+                      header="travelId"
+                      headerStyle={{ textAlign: "center" }}
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+                    <Column
+                      field="userName"
+                      header="Name"
+                      headerStyle={{ textAlign: "center" }}
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+                    <Column
+                      field="fromDate"
+                      header="From Date"
+                      headerStyle={{ textAlign: "center" }}
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+                    <Column
+                      field="tentativeToDate"
+                      header="Tentative To Date"
+                      headerStyle={{ textAlign: "center" }}
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+          
+                    <Column
+                      field="empCode"
+                      header="Employee Code"
+                      headerStyle={{ textAlign: "center" }}
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+          
+                    <Column
+                      field="purpose"
+                      header="Purpose"
+                      headerStyle={{ textAlign: "center" }}
+                      // headerClassName="center-header"
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+                    <Column
+                      field="projectName"
+                      header="Project Name"
+                      headerStyle={{ textAlign: "center" }}
+                      // headerClassName="center-header"
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+          
+                    <Column
+                      field="localityArea"
+                      header="Locality/Area"
+                      headerStyle={{ textAlign: "center" }}
+                      // headerClassName="center-header"
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+                    <Column
+                      field="city"
+                      header="City"
+                      headerStyle={{ textAlign: "center" }}
+                      // headerClassName="center-header"
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+                    <Column
+                      field="typeOfTravel"
+                      header="Type Of Travel"
+                      headerStyle={{ textAlign: "center" }}
+                      // headerClassName="center-header"
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
+          
+                    <Column
+                      field="unsettledAmount"
+                      header="Total Unsettled Amount"
+                      headerStyle={{ textAlign: "center" }}
+                      style={{ textAlign: "center" }}
+                      sortable
+                      filter
+                    />
           {/* <Column
               body={advanceColumnBody}
               header="Advance Given"
