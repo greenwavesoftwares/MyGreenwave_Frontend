@@ -6,31 +6,46 @@ import { FileUpload } from "primereact/fileupload";
 import { uploadSalarySlip } from "./SalarySlipAPI";
 import { saveSalarySlipData } from "./SalarySlipAPI";
 import { uploadForm16Zip } from "./SalarySlipAPI";
-import { Button } from "primereact/button";
 import { getUserData } from "../Login/Encrypt";
+import { ProgressSpinner } from "primereact/progressspinner";
 
 export default function SalarySlipUpload() {
   const [rowDataList, setRowDataList] = useState([]);
   const [sumOfNetPayable, setSumOfNetPayable] = useState(0);
+  const [loading, setLoading] = useState(false);
   const toast = useRef(null);
   const fileUploadRef = useRef(null);
   const zipfileUploadRef = useRef(null);
-  const department = "Accounts";
+  const [userInfo] = useState(getUserData());
+  console.log(userInfo.userDetails);
 
   const onExcelUpload = async (event) => {
+    setLoading(true); // Start spinner
     const file = event.files[0];
 
     try {
-      const response = await uploadSalarySlip(file, department);
-      console.log("Upload response:", response);
-
+      const response = await uploadSalarySlip(
+        file,
+        userInfo.userDetails.department
+      );
+      console.log(response);
+      if (!response.rowDataList || response.rowDataList.length === 0) {
+        toast.current.show({
+          severity: "warn",
+          summary: "Upload failed!!",
+          detail: response.message,
+        });
+        setRowDataList([]); // Clear previous table if needed
+        setSumOfNetPayable(0);
+        return; // Exit early
+      }
       setRowDataList(response.rowDataList);
       setSumOfNetPayable(response.sumOfNetPayable);
 
       toast.current.show({
         severity: "success",
         summary: "Upload Successful",
-        detail: "Salary slip uploaded.",
+        detail: response.message,
       });
     } catch (error) {
       console.error("Upload failed:", error);
@@ -39,12 +54,14 @@ export default function SalarySlipUpload() {
         summary: "Upload Failed",
         detail: "Something went wrong.",
       });
+    } finally {
+      setLoading(false); // Stop spinner
     }
   };
 
   const onSave = async () => {
     try {
-    await saveSalarySlipData(rowDataList, department);
+      await saveSalarySlipData(rowDataList, userInfo.userDetails.department);
 
       toast.current.show({
         severity: "success",
@@ -59,6 +76,8 @@ export default function SalarySlipUpload() {
         fileUploadRef.current.clear();
       }
     } catch (error) {
+      console.log(error);
+
       toast.current.show({
         severity: "error",
         summary: "Save Failed",
@@ -76,11 +95,12 @@ export default function SalarySlipUpload() {
 
   const onZipUpload = async ({ files }) => {
     const zipFile = files[0];
-    const department = "Accounts";
 
     try {
-      const result = await uploadForm16Zip(zipFile, department);
-      console.log(result);
+      const result = await uploadForm16Zip(
+        zipFile,
+        userInfo.userDetails.department
+      );
 
       toast.current.show({
         severity: "success",
@@ -100,123 +120,153 @@ export default function SalarySlipUpload() {
   };
 
   return (
-    <div className="card p-4" style={{ maxWidth: "95%", margin: "0 auto" }}>
-      <Toast ref={toast} />
+    <div className="container mx-auto px-4">
+      <div className="mx-auto">
+        <div className="card mt-4 py-2 px-3">
+          <Toast ref={toast} />
 
-      <div
-        className="p-3 mb-3"
-        style={{
-          background: "#e3f2fd",
-          borderLeft: "5px solid #64b5f6",
-          borderRadius: "10px",
-          color: "#0d47a1",
-          fontWeight: "600",
-          fontSize: "1rem",
-          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-          transition: "box-shadow 0.3s ease-in-out",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = "0 6px 14px rgba(0, 0, 0, 0.15)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.1)";
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "1rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <img
-              src=".\src\assets\Images\GreenwaveLogo.png"
-              alt="Upload Icon"
-              style={{ width: "40px", height: "40px" }}
-            />
+          <div
+            className="p-3 mb-3"
+            style={{
+              background: "#e3f2fd",
+              borderLeft: "5px solid #64b5f6",
+              borderRadius: "10px",
+              color: "#0d47a1",
+              fontWeight: "600",
+              fontSize: "1rem",
+              boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+              transition: "box-shadow 0.3s ease-in-out",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 6px 14px rgba(0, 0, 0, 0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.1)";
+            }}
+          >
             <div
               style={{
-                fontSize: "1.5 rem",
-                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "1rem",
               }}
             >
-              Upload Salary Slip & Form 16
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+              >
+                <img
+                  src=".\src\assets\Images\GreenwaveLogo.png"
+                  alt="Upload Icon"
+                  style={{ width: "40px", height: "40px" }}
+                />
+                <div
+                  style={{
+                    fontSize: "1.5 rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Upload Salary Slip & Form 16
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "1rem",
+                }}
+              >
+                <FileUpload
+                  ref={zipfileUploadRef}
+                  name="zipFile"
+                  accept=".zip"
+                  maxFileSize={1000000}
+                  customUpload
+                  uploadHandler={onZipUpload}
+                  mode="basic"
+                  chooseLabel="Choose Form 16"
+                  uploadLabel="Upload"
+                />
+                <FileUpload
+                  ref={fileUploadRef}
+                  name="excel[]"
+                  accept=".xls,.xlsx"
+                  maxFileSize={1000000}
+                  customUpload
+                  uploadHandler={onExcelUpload}
+                  mode="basic"
+                  chooseLabel="Choose Excel File"
+                  uploadLabel="Upload"
+                />
+              </div>
             </div>
           </div>
+          {rowDataList?.length > 0 && (
+            <div
+              className="flex justify-between align-items-center p-3 mt-3"
+              style={{
+                background: "#d1e7dd",
+                borderLeft: "5px solidrgb(36, 215, 144)",
+                borderRadius: "6px",
+                color: "#0f5132",
+                fontWeight: "600",
+                fontSize: "1rem",
+              }}
+            >
+              <div
+                style={{ fontWeight: 600, fontSize: "1rem", color: "#0f3c68" }}
+              >
+                Total Net Payable: ₹ {sumOfNetPayable}
+              </div>
+            </div>
+          )}
 
-          <FileUpload
-            ref={zipfileUploadRef}
-            name="zipFile"
-            accept=".zip"
-            maxFileSize={1000000}
-            customUpload
-            uploadHandler={onZipUpload}
-            mode="basic"
-            chooseLabel="Choose Form 16"
-            uploadLabel="Upload"
-          />
-          <FileUpload
-            ref={fileUploadRef}
-            name="excel[]"
-            accept=".xls,.xlsx"
-            maxFileSize={1000000}
-            customUpload
-            uploadHandler={onExcelUpload}
-            mode="basic"
-            chooseLabel="Choose Excel File"
-            uploadLabel="Upload"
-          />
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <ProgressSpinner
+                style={{ width: "50px", height: "50px" }}
+                strokeWidth="8"
+                fill="var(--surface-ground)"
+                animationDuration=".5s"
+              />
+            </div>
+          ) : (
+            rowDataList.length > 0 && (
+              <div className="mt-4" style={{ width: "88vw" }}>
+                <DataTable
+                  value={rowDataList}
+                  paginator
+                  rows={3}
+                  scrollable
+                  className="text-sm"
+                  showGridlines
+                  stripedRows
+                  tableStyle={{ minWidth: "50rem" }}
+                >
+                  {Object.keys(rowDataList[0]).map((colKey) => (
+                    <Column
+                      key={colKey}
+                      field={colKey}
+                      header={colKey}
+                      style={{ minWidth: "150px" }}
+                    />
+                  ))}
+                </DataTable>
+                <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+                  <button
+                    className="p-button p-component p-button-success"
+                    onClick={onSave}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            )
+          )}
         </div>
       </div>
-      {rowDataList?.length > 0 && (
-        <div
-          className="flex justify-between align-items-center p-3 mt-3"
-          style={{
-            background: "#d1e7dd",
-            borderLeft: "5px solidrgb(36, 215, 144)",
-            borderRadius: "6px",
-            color: "#0f5132",
-            fontWeight: "600",
-            fontSize: "1rem",
-          }}
-        >
-          <div style={{ fontWeight: 600, fontSize: "1rem", color: "#0f3c68" }}>
-            Total Net Payable: ₹ {sumOfNetPayable}
-          </div>
-        </div>
-      )}
-
-      {rowDataList.length > 0 && (
-        <div className="mt-4" style={{ overflowX: "auto" }}>
-          <DataTable
-            value={rowDataList}
-            paginator
-            rows={10}
-            scrollable
-            scrollHeight="400px"
-            className="text-sm"
-          >
-            {Object.keys(rowDataList[0]).map((colKey) => (
-              <Column
-                key={colKey}
-                field={colKey}
-                header={colKey}
-                style={{ minWidth: "150px" }}
-              />
-            ))}
-          </DataTable>
-          <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
-            <button
-              className="p-button p-component p-button-success"
-              onClick={onSave}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

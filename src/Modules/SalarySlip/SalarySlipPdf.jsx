@@ -123,7 +123,9 @@ const MyDocument = ({ salaryData }) => (
         </View>
         <View style={styles.headertext}>
           <Text style={styles.title}>GREENWAVE SOLUTIONS PVT. LTD.</Text>
-          <Text style={styles.subtitle}>SALARY SLIP - {salaryData.yearmonth}</Text>
+          <Text style={styles.subtitle}>
+            SALARY SLIP - {salaryData.yearmonth}
+          </Text>
         </View>
       </View>
 
@@ -196,36 +198,61 @@ const MyDocument = ({ salaryData }) => (
         </View>
 
         {[
-          ["BASIC", salaryData.earnedBasic, "ESI", salaryData.esi],
+          [
+            "BASIC",
+            salaryData.earnedBasic.toFixed(2),
+            "ESI",
+            salaryData.esi.toFixed(2),
+          ],
           [
             "HOUSE RENT ALLOWANCE",
-            salaryData.earnedHouseRent,
+            salaryData.earnedHouseRent.toFixed(2),
             "EPF",
-            salaryData.deductionAgainstPf,
+            salaryData.deductionAgainstPf.toFixed(2),
           ],
           [
             "CONVEYANCE ALLOWANCE",
-            salaryData.earnedConveyance,
+            salaryData.earnedConveyance.toFixed(2),
             "PROFESSIONAL TAX",
-            salaryData.professionalTax,
+            salaryData.professionalTax.toFixed(2),
           ],
           [
             "MANAGEMENT ALLOWANCE",
-            salaryData.earnedManagementAllowance,
+            salaryData.earnedManagementAllowance.toFixed(2),
             "TDS",
-            salaryData.tds,
+            salaryData.tds.toFixed(2),
           ],
           [
             "MEDICAL ALLOWANCE",
-            salaryData.medicalAllowance,
+            salaryData.medicalAllowance.toFixed(2),
             "AGAINST LOAN",
-            salaryData.deductionAgainstLone,
+            salaryData.deductionAgainstLone.toFixed(2),
           ],
-          ["SPECIAL ALLOWANCE", salaryData.earnedSpecialAllowance, "--", "--"],
-          ["TELEPHONE ALLOWANCE", salaryData.earnedPhoneAllowane, "--", "--"],
-          ["ARREAR", salaryData.arrear, "--", "--"],
-          ["RETENTION BONUS", salaryData.earnedAssuredBonus, "--", "--"],
-          ["PERFORMANCE BONUS", salaryData.earnedPerformanceBonus, "--", "--"],
+          [
+            "SPECIAL ALLOWANCE",
+            salaryData.earnedSpecialAllowance.toFixed(2),
+            "--",
+            "--",
+          ],
+          [
+            "TELEPHONE ALLOWANCE",
+            salaryData.earnedPhoneAllowane.toFixed(2),
+            "--",
+            "--",
+          ],
+          ["ARREAR", salaryData.arrear.toFixed(2), "--", "--"],
+          [
+            "RETENTION BONUS",
+            salaryData.earnedAssuredBonus.toFixed(2),
+            "--",
+            "--",
+          ],
+          [
+            "PERFORMANCE BONUS",
+            salaryData.earnedPerformanceBonus.toFixed(2),
+            "--",
+            "--",
+          ],
         ].map((row, index) => (
           <View key={index} style={styles.row}>
             <Text style={styles.cell}>{row[0]}</Text>
@@ -248,22 +275,27 @@ const MyDocument = ({ salaryData }) => (
           GROSS TOTAL EARNINGS
         </Text>
         <Text style={[styles.cellsmall, styles.cellHeader]}>
-          {salaryData.earnedGross +
-            salaryData.earnedPhoneAllowane +
-            salaryData.earnedAssuredBonus +
-            salaryData.earnedPerformanceBonus +
-            salaryData.medicalAllowance +
-            salaryData.arrear}
+          {(
+            (salaryData.earnedGross ?? 0) +
+            (salaryData.earnedPhoneAllowane ?? 0) +
+            (salaryData.earnedAssuredBonus ?? 0) +
+            (salaryData.earnedPerformanceBonus ?? 0) +
+            (salaryData.medicalAllowance ?? 0) +
+            (salaryData.arrear ?? 0)
+          ).toFixed(2)}
         </Text>
+
         <Text style={[styles.cell, styles.cellHeader]}>
           GROSS TOTAL DEDUCTIONS
         </Text>
         <Text style={[styles.cellsmall, styles.cellHeader]}>
-          {salaryData.deductionAgainstLone +
-            salaryData.deductionAgainstPf +
-            salaryData.esi +
-            salaryData.tds +
-            salaryData.professionalTax}
+          {(
+            (salaryData.deductionAgainstLone ?? 0) +
+            (salaryData.deductionAgainstPf ?? 0) +
+            (salaryData.esi ?? 0) +
+            (salaryData.tds ?? 0) +
+            (salaryData.professionalTax ?? 0)
+          ).toFixed(2)}
         </Text>
       </View>
 
@@ -292,7 +324,7 @@ const MyDocument = ({ salaryData }) => (
             styles.cellHeader,
           ]}
         >
-          {salaryData.netpayable}
+          {salaryData.netpayable.toFixed(2)}
         </Text>
       </View>
       <View style={styles.signatureSection}>
@@ -322,8 +354,28 @@ const MyDocument = ({ salaryData }) => (
 
 const SalarySlipPdf = ({ salaryData }) => {
   const generatePdf = async () => {
+    // Format current date and time
+    const now = new Date();
+    const formattedDateTime = `${now.getFullYear()}.${String(
+      now.getMonth() + 1
+    ).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}.${String(
+      now.getHours()
+    ).padStart(2, "0")}.${String(now.getMinutes()).padStart(2, "0")}.${String(
+      now.getSeconds()
+    ).padStart(2, "0")}`;
+
+    // Format employee name (capitalize first letter of each word)
+    const employeeName = (salaryData.employeeName ?? "Employee")
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Final filename
+    const fileName = `${employeeName}_Salary_Slip_${formattedDateTime}.pdf`;
+
     const blob = await pdf(<MyDocument salaryData={salaryData} />).toBlob();
-    saveAs(blob, "document.pdf");
+    saveAs(blob, fileName);
   };
 
   return (

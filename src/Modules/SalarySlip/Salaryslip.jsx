@@ -108,14 +108,14 @@ export default function SalarySlip() {
     <>
       <Container
         className="card p-4"
-        style={{ maxWidth: "85%", margin: "0 auto" }}
+        style={{ maxWidth: "90%", margin: "0 auto" }}
       >
         <Toast ref={toast} />
         <div
           className="p-3 mb-3"
           style={{
             background: "#e3f2fd",
-            borderLeft: "5px solidrgb(169, 243, 227)",
+            borderLeft: "5px solid #64b5f6",
             borderRadius: "10px",
             color: "#0d47a1",
             fontWeight: "600",
@@ -131,87 +131,102 @@ export default function SalarySlip() {
           }}
         >
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "1rem",
-            }}
+          // style={{
+          //   display: "flex",
+          //   alignItems: "center",
+          //   justifyContent: "space-between",
+          //   gap: "1rem",
+          // }}
           >
             <div
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                justifyContent: "space-between",
+              }}
             >
-              <img
-                src=".\src\assets\Images\GreenwaveLogo.png"
-                alt="Upload Icon"
-                style={{ width: "40px", height: "40px" }}
-              />
               <div
-                style={{
-                  fontSize: "1.5 rem",
-                  fontWeight: "bold",
-                }}
+                className="leftSection"
+                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
-                Download Salary Slip & Form 16 Here
+                <img
+                  src=".\src\assets\Images\GreenwaveLogo.png"
+                  alt="Upload Icon"
+                  style={{ width: "40px", height: "40px" }}
+                />
+                <div
+                  style={{
+                    fontSize: "1.5 rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Download Salary Slip & Form 16
+                </div>
               </div>
 
               <div
-                style={{
-                  fontSize: "1.5 rem",
-                  fontWeight: "bold",
-                  color: "red",
-                }}
+                className="rightSection"
+                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
-                <Dropdown
-                  id="year"
-                  value={selection.year}
-                  onChange={handleYearChange}
-                  options={years}
-                  optionLabel="name"
-                  placeholder="Select year"
-                  filter
-                  showClear
-                />
-              </div>
-              <div
-                style={{
-                  fontSize: "1.5 rem",
-                  fontWeight: "bold",
-                  color: "red",
-                }}
-              >
-                <Dropdown
-                  id="month"
-                  value={selection.month}
-                  onChange={handleMonthChange}
-                  options={months}
-                  disabled={!selection.year}
-                  optionLabel="name"
-                  placeholder="Select month"
-                  filter
-                  showClear
-                />
-              </div>
+                <div
+                  style={{
+                    fontSize: "1.5 rem",
+                    fontWeight: "bold",
+                    color: "red",
+                  }}
+                >
+                  <Dropdown
+                    id="year"
+                    value={selection.year}
+                    onChange={handleYearChange}
+                    options={years}
+                    optionLabel="name"
+                    placeholder="Select year"
+                    filter
+                    showClear
+                  />
+                </div>
+                <div
+                  style={{
+                    fontSize: "1.5 rem",
+                    fontWeight: "bold",
+                    color: "red",
+                  }}
+                >
+                  <Dropdown
+                    id="month"
+                    value={selection.month}
+                    onChange={handleMonthChange}
+                    options={months}
+                    disabled={!selection.year}
+                    optionLabel="name"
+                    placeholder="Select month"
+                    filter
+                    showClear
+                  />
+                </div>
 
-              <div className="flex justify-between items-center flex-wrap gap-4">
-                {selection.month && (
-                  <div className="flex gap-4 items-center">
-                    <SalarySlipPdf
-                      salaryData={selection.salaryData}
-                    ></SalarySlipPdf>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  {selection.month && (
+                    <div className="flex gap-4 items-center">
+                      <SalarySlipPdf
+                        salaryData={selection.salaryData}
+                      ></SalarySlipPdf>
+                    </div>
+                  )}
+                </div>
+                {selection.year && (
+                  <div>
+                    <button
+                      className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl shadow hover:bg-blue-800 transition duration-300"
+                      title="Download Form 16"
+                    >
+                      Form 16
+                    </button>
                   </div>
                 )}
               </div>
-              {selection.year && (
-                <div>
-                  <button
-                    className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl shadow hover:bg-blue-800 transition duration-300"
-                    title="Download Form 16"
-                  >
-                    Form 16
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
