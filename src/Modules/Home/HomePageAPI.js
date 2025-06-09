@@ -203,7 +203,7 @@ const postOnTourSwitchUpdate = async (token, onTourSwitch) => {
 const postFeedbackForm = async (token, feedback) => {
   try {
     const response = await axios.post(
-      `${endPoint}emails/feedback?recipientmail=pranab.quila@greenwave.co.in&subject=My Greenwave Feedback&body=${feedback}`,
+      `${endPoint}emails/feedback?body=${feedback}`,
       {},
       {
         headers: {

@@ -28,6 +28,7 @@ import { styled } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
 import EditIcon from "@mui/icons-material/Edit";
 import Toast from "../../components/Toast/Toast";
+import CommentIcon from "@mui/icons-material/Comment";
 //Api
 import {
   getUserDataAPI,
@@ -41,6 +42,7 @@ import {
   getTourClaimsData,
   postProfilePictureUpload,
   postOnTourSwitchUpdate,
+  postFeedbackForm,
 } from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
 const endPoint = import.meta.env.VITE_END_POINT;
@@ -77,6 +79,7 @@ const HomePage = () => {
   const [onTourSwitch, setOnTourSwitch] = useState(false);
   //Feedback Visible
   const [feedbackDialogVisible, setFeedbackDialogVisible] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
   //Call Home PAhe All
   const getHomePageData = async () => {
@@ -384,8 +387,21 @@ const HomePage = () => {
   //Submit Feedback
   const handelFeedBackSubmit = async (e) => {
     e.preventDefault();
-    const feedback = document.getElementById("feedback").value;
-    console.log(feedback);
+    console.log("Feedback submitted:", feedback);
+    const { token } = getUserData();
+    const feedbackApiResponse = await postFeedbackForm(token, feedback);
+    console.log("feedbackApiResponse", feedbackApiResponse);
+    if (feedbackApiResponse.status === 200) {
+      showSuccessMessage(
+        toastRef,
+        "Success",
+        "Feedback submitted successfully"
+      );
+      setFeedback("");
+      setFeedbackDialogVisible(false);
+    } else {
+      showErrorMessage(toastRef, "Error", "Feedback submission failed");
+    }
   };
 
   return (
@@ -524,11 +540,11 @@ const HomePage = () => {
                                 color: "#645e5e",
                               }}
                             >
-                                <Tooltip title="Department" placement="top">
-                              <WorkIcon
-                                fontSize="small"
-                                className="departmentIconStyle"
-                              />
+                              <Tooltip title="Department" placement="top">
+                                <WorkIcon
+                                  fontSize="small"
+                                  className="departmentIconStyle"
+                                />
                               </Tooltip>
                               {userProfile?.department}
                             </Typography>
@@ -544,10 +560,10 @@ const HomePage = () => {
                               }}
                             >
                               <Tooltip title="Manager Name" placement="top">
-                              <SupervisorAccountIcon
-                                fontSize="small"
-                                className="managerIconStyle"
-                              />
+                                <SupervisorAccountIcon
+                                  fontSize="small"
+                                  className="managerIconStyle"
+                                />
                               </Tooltip>
                               {emailToName(userProfile?.manager)}
                             </Typography>
@@ -776,13 +792,15 @@ const HomePage = () => {
                                     onChange={handleChangeOnTour}
                                   />
 
-                                  {/* <Button
-                                    label="Show"
-                                    icon="pi pi-external-link"
+                                  <IconButton
+                                    aria-label="delete"
+                                    size="small"
                                     onClick={() =>
                                       setFeedbackDialogVisible(true)
                                     }
-                                  /> */}
+                                  >
+                                    <CommentIcon fontSize="inherit" />
+                                  </IconButton>
                                 </div>
                               </div>
                               <Galleria
@@ -964,17 +982,48 @@ const HomePage = () => {
           <Dialog
             header="YOUR FEEDBACK FORM"
             visible={feedbackDialogVisible}
-            style={{ width: "50vw" }}
+            style={{ width: "30vw" }}
             onHide={() => {
               if (!feedbackDialogVisible) return;
               setFeedbackDialogVisible(false);
             }}
             className="dialogHeader dialogContent"
           >
-            <form onSubmit={(e) => handelFeedBackSubmit(e)}>
-              <input type="text" id="feedText" />
-              <button type="submit">Submit</button>
-            </form>
+            <div style={{ display: "grid" }}>
+              <form onSubmit={handelFeedBackSubmit}>
+                <input
+                  type="text"
+                  id="feedText"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Enter Your Feedback"
+                  style={{
+                    borderRadius: "5px",
+                    border: "1px solid #ccc",
+                    padding: "0.5rem",
+                    width: "100%",
+                    marginTop: "0.5rem",
+                  }}
+                />
+                <br />
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: "rgb(76, 175, 80)",
+                    color: "white",
+                    padding: "5px 10px",
+                    border: "none",
+                    borderRadius: "1rem",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    marginTop: "10px",
+                  }}
+                >
+                  Submit
+                </button>
+              </form>
+            </div>
           </Dialog>
           <Toast ref={toastRef} />
         </div>
