@@ -7,8 +7,9 @@ import {
   IconButton,
   Button,
   Box,
+  Switch,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./HomePage.css";
 import { Galleria } from "primereact/galleria";
 import { formatDate, formatDateTime } from "../Appraisal/formatDate";
@@ -23,7 +24,10 @@ import WorkIcon from "@mui/icons-material/Work";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { Card as PrimeReactCard } from "primereact/card";
-
+import { styled } from "@mui/material/styles";
+import Badge from "@mui/material/Badge";
+import EditIcon from "@mui/icons-material/Edit";
+import Toast from "../../components/Toast/Toast";
 //Api
 import {
   getUserDataAPI,
@@ -34,14 +38,23 @@ import {
   getHomePageEvent,
   getNotificationData,
   getProfileImage,
+  getTourClaimsData,
+  postProfilePictureUpload,
+  postOnTourSwitchUpdate,
 } from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
 const endPoint = import.meta.env.VITE_END_POINT;
 const imageApiUrl = import.meta.env.VITE_IMAGE_API;
 //SCSS Import
 import "../Appraisal/Appraisal.scss";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "../../components/Toast/ShowMessage";
 
 const HomePage = () => {
+  const toastRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [notificationData, setNotificationData] = useState([]);
   const [eventData, setEventData] = useState([]);
   const [basicUserInfo, setBasicUserInfo] = useState({});
@@ -59,6 +72,11 @@ const HomePage = () => {
   const [eventImageFileName, setEventImageFileName] = useState(null);
   //Set Profile Image
   const [userProfileImage, setUserProfileImage] = useState(null);
+  //Set Tour Claims
+  const [tourClaims, setTourClaims] = useState({});
+  const [onTourSwitch, setOnTourSwitch] = useState(false);
+  //Feedback Visible
+  const [feedbackDialogVisible, setFeedbackDialogVisible] = useState(false);
 
   //Call Home PAhe All
   const getHomePageData = async () => {
@@ -81,12 +99,19 @@ const HomePage = () => {
       const eventResponse = await getEventData(token);
       //Notification API Call
       const notificationResponse = await getNotificationData(token);
+      //Tour Claims
+      const tourClaimsResponse = await getTourClaimsData(token);
 
-      //Get Event Image
-      // console.log("fileName", eventImageFileName);
-      // const eventImageResponse = await getHomePageEvent('5bac25e0-94f5-4691-8d58-13b22a812b25MicrosoftTeams-image.png');
-      // const imageUrl = URL.createObjectURL(eventImageResponse.data);
-      // setEventImage(imageUrl);
+      //User Profile
+      //Set User Profile File Name
+      const {
+        userDetails: { employeeId, userName },
+      } = getUserData();
+      const userProfileFileName = employeeId + userName;
+      //Call User Profile API
+      const getUserProfileImage = await getProfileImage(userProfileFileName);
+      console.log("userProfileFileName", userProfileFileName);
+      const blobResponse = URL.createObjectURL(getUserProfileImage.data);
 
       if (appraisalResponse.status === 200) {
         //Appraisal Data
@@ -99,15 +124,10 @@ const HomePage = () => {
         setEventData(eventResponse.data.eventList);
         //Notification Data
         setNotificationData(notificationResponse.data.notificationtList);
-
-        //User Profile
-        const userProfileFileName =
-          userProfile.employeeId + userProfile.userName?.replace(" ", "_");
-        const getUserProfileImage = await getProfileImage(userProfileFileName);
-        //console.log("getUserProfileImage",getUserProfileImage);
-        const blobResponse = URL.createObjectURL(getUserProfileImage.data);
+        //Tour Claims Data
+        setTourClaims(tourClaimsResponse.data);
+        //Set User Profile Image
         setUserProfileImage(blobResponse);
-
         //Set Loader to false
         setLoader(false);
       }
@@ -148,7 +168,7 @@ const HomePage = () => {
   const itemNotificationTemplate = (item) => {
     return (
       <PrimeReactCard
-      className="primeReactCardStyle"
+        className="primeReactCardStyle"
         style={{ boxShadow: "none" }}
         title={
           <Typography
@@ -164,15 +184,15 @@ const HomePage = () => {
         }
         subTitle={
           <Typography
-          className="fontSize-sm"
-          sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
-        >
-          {`${item.fromdate} - ${item.toDate}`}
-        </Typography>
+            className="fontSize-sm"
+            sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
+          >
+            {`${item.fromdate} - ${item.toDate}`}
+          </Typography>
         }
         footer={
           <a
-            style={{ fontWeight: "bold",fontSize:"0.8rem" }}
+            style={{ fontWeight: "bold", fontSize: "0.8rem" }}
             className=""
             target="_blank"
             href={item.url}
@@ -181,7 +201,6 @@ const HomePage = () => {
           </a>
         }
       >
-        
         <Typography className="fontSize-sm" sx={{ marginBottom: "0.2rem" }}>
           {item.notification}
         </Typography>
@@ -231,7 +250,7 @@ const HomePage = () => {
         <InfoIcon
           onClick={() => setVisible(true)}
           className="infobtn"
-          color="secondary"
+          color="info"
         />
         <Dialog
           header={item.title}
@@ -272,7 +291,102 @@ const HomePage = () => {
     return formattedName.join(" ");
   };
 
-  //console.log("basicUserInfo",basicUserInfo);
+  //For MUI Avatar
+  const StyledBadge = styled(Badge)(({ theme }) => ({
+    "& .MuiBadge-badge": {
+      backgroundColor: "#2196f3",
+      color: "white",
+      boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+      borderRadius: "50%",
+      width: 22,
+      height: 22,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      bottom: 0,
+      //right: 0,
+      top: 20,
+      //left:5
+    },
+  }));
+
+  //On Tour Switch
+  const handleChangeOnTour = async (event) => {
+    //console.log("event.target.checked", event.target.checked);
+    const checkValue = event.target.checked;
+    const { token } = getUserData();
+    const onTourSwitchUpdate = await postOnTourSwitchUpdate(token, checkValue);
+    //console.log("onTourSwitchUpdate", onTourSwitchUpdate);
+    if (onTourSwitchUpdate.status === 200) {
+      setOnTourSwitch(checkValue);
+      showSuccessMessage(toastRef, "Confirmed", "Your tour has started");
+    } else if (onTourSwitchUpdate.status === 400) {
+      showErrorMessage(
+        toastRef,
+        "Invalid Action",
+        "You might have already closed a travel today!"
+      );
+    } else {
+      showErrorMessage(toastRef, "Error", "Internal Server Error");
+    }
+  };
+
+  //Set On Tour Switch Api Value
+  useEffect(() => {
+    setOnTourSwitch(nextHolidayData?.onTour ?? false);
+  }, [nextHolidayData]);
+
+  //Change Profile Picture
+  const inputRef = useRef(null); // Make sure this is declared at the top of your component
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      console.warn("No file selected.");
+      return;
+    }
+
+    console.log("upload_file", file);
+
+    const {
+      token,
+      userDetails: { employeeId, userName },
+    } = getUserData();
+
+    try {
+      const profileUploadResponse = await postProfilePictureUpload(
+        token,
+        file,
+        employeeId,
+        userName
+      );
+
+      console.log("profileUploadResponse", profileUploadResponse);
+
+      if (profileUploadResponse?.status === 201) {
+        const imageUrl = URL.createObjectURL(file);
+        setUserProfileImage(imageUrl);
+        showSuccessMessage(toastRef, "Success", "File Upload Successfully");
+      } else {
+        showErrorMessage(toastRef, "Error", "File upload failed");
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      showErrorMessage(toastRef, "Error", "Something went wrong");
+    } finally {
+      // Reset input so user can reselect the same file
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    }
+  };
+
+  //Submit Feedback
+  const handelFeedBackSubmit = async (e) => {
+    e.preventDefault();
+    const feedback = document.getElementById("feedback").value;
+    console.log(feedback);
+  };
 
   return (
     <>
@@ -303,23 +417,54 @@ const HomePage = () => {
                       marginBottom: "0.5rem",
                     }}
                   >
-                    <Avatar
-                      sx={{
-                        width: 140,
-                        height: 140,
-                        background: "#F2F2FE",
-                        border: "4px solid #ffff",
-                      }}
+                    <StyledBadge
+                      overlap="circular"
+                      anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                      badgeContent={
+                        <>
+                          <input
+                            ref={inputRef}
+                            id="avatar-upload"
+                            type="file"
+                            style={{
+                              display: "none",
+                            }}
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                          />
+                          <label htmlFor="avatar-upload">
+                            <IconButton
+                              size="small"
+                              component="span"
+                              // style={{ padding: 0, background: "#6366f1", borderRadius: "50%" }}
+                            >
+                              <EditIcon
+                                fontSize="small"
+                                sx={{ color: "white", fontSize: "0.9rem" }}
+                              />
+                            </IconButton>
+                          </label>
+                        </>
+                      }
                     >
-                      <Image
-                        src={userProfileImage}
-                        alt="Image"
-                        style={{ height: "100%" }}
-                      />
-                    </Avatar>
+                      <Avatar
+                        sx={{
+                          width: 140,
+                          height: 140,
+                          background: "#F2F2FE",
+                          border: "4px solid #fff",
+                        }}
+                      >
+                        <Image
+                          src={userProfileImage}
+                          alt="Image"
+                          style={{ height: "100%" }}
+                        />
+                      </Avatar>
+                    </StyledBadge>
                   </Grid>
                   <Grid>
-                    <Grid xs={12}>
+                    <Grid size={12}>
                       {/* <Card
                       className="cardNew BorderRadius cardStyle" 
                         sx={{
@@ -379,10 +524,12 @@ const HomePage = () => {
                                 color: "#645e5e",
                               }}
                             >
+                                <Tooltip title="Department" placement="top">
                               <WorkIcon
                                 fontSize="small"
                                 className="departmentIconStyle"
                               />
+                              </Tooltip>
                               {userProfile?.department}
                             </Typography>
 
@@ -396,25 +543,14 @@ const HomePage = () => {
                                 color: "#645e5e",
                               }}
                             >
+                              <Tooltip title="Manager Name" placement="top">
                               <SupervisorAccountIcon
                                 fontSize="small"
                                 className="managerIconStyle"
                               />
+                              </Tooltip>
                               {emailToName(userProfile?.manager)}
                             </Typography>
-
-                            {/* <Typography
-                              id="doj"
-                              className="fontSize-sm"
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              <CalendarTodayIcon fontSize="small"  className="dojIconStyle"/>
-                              {formatDate(userProfile?.doj)}
-                            </Typography> */}
                           </div>
                         </Grid>
                       </Grid>
@@ -422,7 +558,7 @@ const HomePage = () => {
                     </Grid>
                   </Grid>
                   <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid xs={12}>
+                    <Grid size={12}>
                       <Card
                         className="cardNew BorderRadius cardStyle"
                         sx={{
@@ -442,7 +578,8 @@ const HomePage = () => {
                               </Typography>
 
                               <Tag
-                                severity="success"
+                                style={{ background: "#8399a2" }}
+                                //severity="success"
                                 className="TagStyle"
                                 value={appraisalData.lastAppraisalDate ?? "NA"}
                                 rounded
@@ -460,7 +597,8 @@ const HomePage = () => {
                                 Next Appraisal Date
                               </Typography>
                               <Tag
-                                severity="success"
+                                style={{ background: "#8399a2" }}
+                                //severity="success"
                                 className="TagStyle"
                                 value={appraisalData.nextAppraisalDate ?? "NA"}
                                 rounded
@@ -473,7 +611,7 @@ const HomePage = () => {
                   </Grid>
 
                   <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid xs={12}>
+                    <Grid size={12}>
                       <Card
                         className="cardNew BorderRadius cardStyle"
                         sx={{
@@ -490,9 +628,9 @@ const HomePage = () => {
                               </Typography>
 
                               <Tag
-                                severity="Info"
+                                severity="info"
                                 className="TagStyle"
-                                value={trainingData.currentTraining ?? "sdfgh"}
+                                value={trainingData.currentTraining ?? "NA"}
                                 rounded
                               ></Tag>
                             </div>
@@ -511,7 +649,7 @@ const HomePage = () => {
                               <Tag
                                 severity="Info"
                                 className="TagStyle"
-                                value={trainingData.nextTraining ?? "dsfgnhm"}
+                                value={trainingData.nextTraining ?? "NA"}
                                 rounded
                               ></Tag>
                             </div>
@@ -522,7 +660,7 @@ const HomePage = () => {
                   </Grid>
 
                   <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid xs={12}>
+                    <Grid size={12}>
                       <Card
                         className="cardNew BorderRadius cardStyle"
                         sx={{
@@ -544,7 +682,7 @@ const HomePage = () => {
                               <Tag
                                 severity="success"
                                 className="TagStyle"
-                                value={basicUserInfo?.approvedClaims}
+                                value={tourClaims?.approvedClaims ?? "NA"}
                                 rounded
                               ></Tag>
                             </div>
@@ -560,7 +698,9 @@ const HomePage = () => {
                               <Tag
                                 severity="success"
                                 className="TagStyle"
-                                value={basicUserInfo?.reviewingOrReviewedClaims}
+                                value={
+                                  tourClaims?.tourClaimsUnderReview ?? "NA"
+                                }
                                 rounded
                               ></Tag>
                             </div>
@@ -568,13 +708,16 @@ const HomePage = () => {
                           <Grid>
                             <div className="NewCard">
                               <Typography className="fontSize-sm">
-                                Last Claim
+                                Travel Status
                               </Typography>
 
                               <Tag
                                 severity="success"
                                 className="TagStyle"
-                                value={basicUserInfo?.reviewingOrReviewedClaims}
+                                value={
+                                  tourClaims?.travelReqUnderProcessStatus ??
+                                  "NA"
+                                }
                                 rounded
                               ></Tag>
                             </div>
@@ -586,7 +729,7 @@ const HomePage = () => {
                 </Grid>
                 <Grid size={9}>
                   <Grid>
-                    <Grid xs={12}>
+                    <Grid size={12}>
                       <Card
                         className="cardNew BorderRadius cardStyle"
                         sx={
@@ -601,14 +744,47 @@ const HomePage = () => {
                           <Grid>
                             <div
                               className="NewCard"
-                              style={{ height: "19rem", display: "grid" }}
+                              style={{ height: "19.3rem", display: "grid" }}
                             >
-                              <Typography
-                                sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
                               >
-                                {nextHolidayData?.nextHoliday}
-                              </Typography>
+                                <Typography
+                                  sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
+                                >
+                                  {nextHolidayData?.nextHoliday}
+                                </Typography>
 
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Typography
+                                    sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
+                                  >
+                                    On Tour
+                                  </Typography>
+                                  <Switch
+                                    size="small"
+                                    checked={onTourSwitch}
+                                    onChange={handleChangeOnTour}
+                                  />
+
+                                  {/* <Button
+                                    label="Show"
+                                    icon="pi pi-external-link"
+                                    onClick={() =>
+                                      setFeedbackDialogVisible(true)
+                                    }
+                                  /> */}
+                                </div>
+                              </div>
                               <Galleria
                                 value={eventData}
                                 className="NotificationThumbnail"
@@ -617,7 +793,7 @@ const HomePage = () => {
                                 // showThumbnailNavigators={false}
                                 circular
                                 autoPlay
-                                transitionInterval={1 * 1000}
+                                transitionInterval={5 * 1000}
                                 showIndicators
                                 //showIndicatorsOnItem
                                 // showItemNavigatorsOnHover
@@ -632,7 +808,7 @@ const HomePage = () => {
                       <Grid size={5}>
                         {/* Claims */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid xs={12}>
+                          <Grid size={12}>
                             <Card
                               className="cardNew BorderRadius cardStyle"
                               sx={{
@@ -649,7 +825,7 @@ const HomePage = () => {
                                     </Typography>
 
                                     <Typography className="fontSize-sm">
-                                      {basicUserInfo?.totalUnsettledAdvance}
+                                      {tourClaims?.totalUnsettledAmount ?? "NA"}
                                     </Typography>
                                   </div>
                                 </Grid>
@@ -657,12 +833,17 @@ const HomePage = () => {
                                 {/* Loan Amount Pending */}
                                 <Grid>
                                   <div className="NewCard">
-                                    <Typography className="fontSize-sm">
-                                      Loan Amount Pending
-                                    </Typography>
+                                    <Tooltip
+                                      placement="top"
+                                      title={`Total Loan Amount - ${tourClaims?.totalLoanAmount}`}
+                                    >
+                                      <Typography className="fontSize-sm">
+                                        Loan Amount Pending
+                                      </Typography>
+                                    </Tooltip>
 
                                     <Typography className="fontSize-sm">
-                                      {basicUserInfo?.loanAmountPending}
+                                      {tourClaims?.pendingLoanAmount ?? "NA"}
                                     </Typography>
                                   </div>
                                 </Grid>
@@ -672,7 +853,7 @@ const HomePage = () => {
                         </Grid>
                         {/* CL And PL Section */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid xs={12}>
+                          <Grid size={12}>
                             <Card
                               className="cardNew BorderRadius cardStyle"
                               sx={{
@@ -684,12 +865,17 @@ const HomePage = () => {
                                 {/*CL Available*/}
                                 <Grid>
                                   <div className="NewCard">
-                                    <Typography className="fontSize-sm">
-                                      CL Available
-                                    </Typography>
+                                    <Tooltip
+                                      placement="top"
+                                      title={`Total CL Used - ${tourClaims?.clUsed}`}
+                                    >
+                                      <Typography className="fontSize-sm">
+                                        CL Available
+                                      </Typography>
+                                    </Tooltip>
 
                                     <Typography className="fontSize-sm">
-                                      {basicUserInfo?.clAvailable}
+                                      {tourClaims?.clAvailable ?? "NA"}
                                     </Typography>
                                   </div>
                                 </Grid>
@@ -697,12 +883,17 @@ const HomePage = () => {
                                 {/* PL Available */}
                                 <Grid>
                                   <div className="NewCard">
-                                    <Typography className="fontSize-sm">
-                                      PL Available
-                                    </Typography>
+                                    <Tooltip
+                                      placement="top"
+                                      title={`Total PL Used - ${tourClaims?.plUsed}`}
+                                    >
+                                      <Typography className="fontSize-sm">
+                                        PL Available
+                                      </Typography>
+                                    </Tooltip>
 
                                     <Typography className="fontSize-sm">
-                                      {basicUserInfo?.plAvailable}
+                                      {tourClaims?.plAvailable ?? "NA"}
                                     </Typography>
                                   </div>
                                 </Grid>
@@ -712,7 +903,7 @@ const HomePage = () => {
                         </Grid>
                         {/* Attendance / Leaves Taken (Current Month) */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid xs={12}>
+                          <Grid size={12}>
                             <Card
                               className="cardNew BorderRadius cardStyle"
                               sx={{
@@ -729,9 +920,8 @@ const HomePage = () => {
                                     </Typography>
 
                                     <Typography className="fontSize-sm">
-                                      {
-                                        basicUserInfo?.attendanceOrLeavesTakenCurrentMonth
-                                      }
+                                      {tourClaims?.leaveAndAttendanceInMonth ??
+                                        "NA"}
                                     </Typography>
                                   </div>
                                 </Grid>
@@ -742,7 +932,7 @@ const HomePage = () => {
                       </Grid>
                       <Grid size={7}>
                         <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid xs={12}>
+                          <Grid size={12}>
                             <Card
                               className="cardNew BorderRadius cardStyle"
                               sx={{
@@ -771,6 +961,22 @@ const HomePage = () => {
               </Grid>
             </div>
           </div>
+          <Dialog
+            header="YOUR FEEDBACK FORM"
+            visible={feedbackDialogVisible}
+            style={{ width: "50vw" }}
+            onHide={() => {
+              if (!feedbackDialogVisible) return;
+              setFeedbackDialogVisible(false);
+            }}
+            className="dialogHeader dialogContent"
+          >
+            <form onSubmit={(e) => handelFeedBackSubmit(e)}>
+              <input type="text" id="feedText" />
+              <button type="submit">Submit</button>
+            </form>
+          </Dialog>
+          <Toast ref={toastRef} />
         </div>
       )}
     </>

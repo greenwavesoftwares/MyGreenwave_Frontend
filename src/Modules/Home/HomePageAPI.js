@@ -128,11 +128,13 @@ const getProfileImage = async (filename) => {
 //Get Notification Data
 const getNotificationData = async (token) => {
   try {
-    const response = await axios.get(`${endPoint}homepagemaster/homepage-notificationlist`,{
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+    const response = await axios.get(
+      `${endPoint}homepagemaster/homepage-notificationlist`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
     return response;
   } catch (error) {
@@ -140,6 +142,81 @@ const getNotificationData = async (token) => {
   }
 };
 
+//Get Tour Claims Data
+const getTourClaimsData = async (token) => {
+  try {
+    const response = await axios.get(`${endPoint}api/homepage-details`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//Post Profile Picture Upload
+const postProfilePictureUpload = async (token, file, empId, userName) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("empId", empId);
+    formData.append("userName", userName);
+
+    const response = await axios.post(
+      `${endPoint}homepagemaster/save-profilepictue`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+//Post On Tour Switch Update
+const postOnTourSwitchUpdate = async (token, onTourSwitch) => {
+  try {
+    const response = await axios.post(
+      `${endPoint}homepagemaster/homepage-ontour?status=${onTourSwitch}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    return error;
+    // console.log(error);
+    // throw error;
+  }
+};
+
+//Post Feedback Form
+const postFeedbackForm = async (token, feedback) => {
+  try {
+    const response = await axios.post(
+      `${endPoint}emails/feedback?recipientmail=pranab.quila@greenwave.co.in&subject=My Greenwave Feedback&body=${feedback}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
 export {
   getNotificationData,
   getUserDataAPI,
@@ -149,4 +226,8 @@ export {
   getEventData,
   getHomePageEvent,
   getProfileImage,
+  getTourClaimsData,
+  postProfilePictureUpload,
+  postOnTourSwitchUpdate,
+  postFeedbackForm
 };
