@@ -42,6 +42,7 @@ import HomepageMaster from "./Modules/HomePageMaster/HomepageMaster";
 //Menu Bar
 import MenuBar from "./components/MenuBar/MenuBar";
 import OpenTravelsTableCopy from "./Modules/TravelDesk/OpenTravelsTableCopy";
+import AccountMain from "./Modules/TravelDesk/TravelDeskAccount/AccountMain";
 
 function App() {
   return (
@@ -66,6 +67,8 @@ function App() {
         <Route path="/travel-deskmanager" element={<TravelDeskManager />} />
         <Route path="/travel-desk-advanced" element={<TravelDeskAdvanced />} />
         <Route path="/travel-desk-advanced2" element={<OpenTravelsTableCopy/>} />
+        <Route path="/travel-desk-booking" element={ <AccountMain/>} />
+                          
         <Route path="/salary-slip" element={<SalarySlip />} />
         <Route
           path="/ModeOfTransportTable"

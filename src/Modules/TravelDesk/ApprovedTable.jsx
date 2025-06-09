@@ -8,6 +8,8 @@ import {
   getMyFormParticularRequisitionId,
   getApprovedAndSettledAndCompleteRequestedData,
   updateTravelRequisition,
+  uploadDocumentsByReqId,
+  downloadDocumentsByReqId
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
@@ -20,6 +22,9 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+const cellStyle = { padding: "12px 16px" };
+import { FileUpload } from "primereact/fileupload";
+import {Button} from "primereact/button"
 
 const ApprovedTable = () => {
   const [expandedRows, setExpandedRows] = useState(!null);
@@ -163,6 +168,78 @@ const ApprovedTable = () => {
       return <h3>Pending Unsettled Claim</h3>;
     };
 
+    const supportingDocumentBody = (rowData) => {
+        // const [fileUploaded, setFileUploaded] = useState(
+        //   rowData.filename ? true : false
+        // );
+        // const [togglefileUpload, settogglefileUpload] = useState(
+        //   rowData.filename ? false : true
+        // );
+        const handleDownloadFile = async (requisionId) => {
+          try {
+            let d = await downloadDocumentsByReqId(requisionId);
+          } catch (error) {
+            toast.current?.show({
+              severity: "error",
+              summary: "error",
+              detail: "Something Wrong.",
+            });
+          }
+        };
+        // const onFileSelect = async (event) => {
+        //   const file = event.files[0]; // Get the uploaded file
+         
+        //   const formData = new FormData();
+        //   formData.append("file", file); // Append file to formData
+    
+        //   try {
+        //     const response = await uploadDocumentsByReqId(
+        //       file,
+        //       rowData.requisionId
+        //     ); // Adjust this call accordingly
+        //     if(response.status)
+        //     {
+        //       setFileUploaded(true);
+        //   settogglefileUpload(false);
+          
+
+          
+    
+        //     toast.current?.show({
+        //       severity: "success",
+        //       summary: "Success",
+        //       detail: "File Uploaded",
+        //     });
+        //   }else{
+        //       toast.current?.show({
+        //       severity: "error",
+        //       summary: "Error",
+        //       detail: response.message,
+        //     });
+        //   }
+        //   } catch (error) {
+        //     toast.current?.show({
+        //       severity: "error",
+        //       summary: "Error",
+        //       detail: "Upload failed",
+        //     });
+        //     console.log(error);
+        //     setFileUploaded(false);
+        //     settogglefileUpload(true);
+        //   }
+        // };
+        return (
+        <Button
+                icon="pi pi-download"
+                className="p-button-sm p-button-text p-button-success"
+                onClick={() => {
+                  handleDownloadFile(rowData.requisionId);
+                }}
+                tooltip={`${rowData.file_name}`}
+              />
+        );
+      };
+
     return (
       <DataTable
         value={rowData.expandableData}
@@ -200,6 +277,15 @@ const ApprovedTable = () => {
           headerStyle={{ textAlign: "center" }}
           style={{ textAlign: "center" }}
         />
+
+          <Column
+                    header="Upload Document"
+                    body={supportingDocumentBody}
+                    headerStyle={cellStyle}
+                    bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
+                    sortable
+                    filter
+                  />
       </DataTable>
     );
   };
@@ -324,14 +410,17 @@ const ApprovedTable = () => {
           'CompleteRequested'
         );
 
-     if(!response.status)
+      
+
+     if(response.status!=201)
      {
           toast.current?.show({
             severity: "error",
             summary: "error",
-            detail: response.message,
+            detail: response.data,
           });
      }else{
+    let response=  await getApprovedAndSettledAndCompleteRequestedData()
       setApprovedAndSettledTravelData(response.data);
      // setEditRowId(null);
       toast.current?.show({

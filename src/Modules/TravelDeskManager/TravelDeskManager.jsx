@@ -87,7 +87,7 @@ export default function TravelDeskManager() {
       status: "ManagerReviewed",
      };
 
-   const response=await updateTravelRequisition(token, updatedForm, formData.requisionId, 'ManagerReviewed');
+   const response=await updateTravelRequisition( updatedForm, formData.requisionId, 'ManagerReviewed');
 
    if(response?.status===201){
     console.log('Travel approved successfully');
