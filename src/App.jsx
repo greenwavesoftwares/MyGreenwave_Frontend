@@ -43,6 +43,7 @@ import HomepageMaster from "./Modules/HomePageMaster/HomepageMaster";
 import MenuBar from "./components/MenuBar/MenuBar";
 import OpenTravelsTableCopy from "./Modules/TravelDesk/OpenTravelsTableCopy";
 import AccountMain from "./Modules/TravelDesk/TravelDeskAccount/AccountMain";
+import TravelDeskBooking from "./Modules/TravelDesk/TravelDeskBooking";
 
 function App() {
   return (
