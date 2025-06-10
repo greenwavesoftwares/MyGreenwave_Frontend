@@ -22,14 +22,94 @@ const RequisitionFormView = ({
   return (
     <>
       <Grid container spacing={2}>
-        <Grid size={6}>Purpose : {rowData.purpose}</Grid>
-        <Grid size={6}>Project Name : {rowData.projectName}</Grid>
-        <Grid size={6}>City : {rowData.city}</Grid>
-        <Grid size={6}>Locality/Area : {rowData.localityArea}</Grid>
-        <Grid size={4}>Type of Travel : {rowData.typeOfTravel}</Grid>
-        <Grid size={4}>Advance Requested : {rowData.advanceRequested}</Grid>
-        <Grid size={4}>Advance Given : {rowData.advance}</Grid>
-        <Grid size={12}>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Purpose :{" "}
+          </span>
+          <span>{rowData.purpose}</span>
+        </Grid>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Project Name :{" "}
+          </span>
+          <span>{rowData.projectName}</span>
+        </Grid>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            City :{" "}
+          </span>
+          <span>{rowData.city}</span>
+        </Grid>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Locality/Area :{" "}
+          </span>
+          <span>{rowData.localityArea}</span>
+        </Grid>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Type of Travel :{" "}
+          </span>
+          <span>{rowData.typeOfTravel}</span>
+        </Grid>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Advance Requested :{" "}
+          </span>
+          <span>{rowData.advanceRequested}</span>
+        </Grid>
+        <Grid
+          size={12}
+          sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}
+        >
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Advance Given :{" "}
+          </span>
+          <span>{rowData.advance}</span>
+        </Grid>
+        <Grid size={12} sx={{ border: "1px solid #ccc" }}>
           <DataTable header="Mode of Transport" value={rowData.transportModes}>
             <Column field="mode" header="Mode"></Column>
             <Column field="fromDate" header="From Date"></Column>
@@ -38,7 +118,7 @@ const RequisitionFormView = ({
           </DataTable>
         </Grid>
 
-        <Grid size={12}>
+        <Grid size={12} sx={{ border: "1px solid #ccc" }}>
           <DataTable
             header="Reservation of Accommodation"
             value={rowData.accommodations}
@@ -52,10 +132,22 @@ const RequisitionFormView = ({
           </DataTable>
         </Grid>
 
-        <Grid size={12}>Manager Name : {rowData.manager_id}</Grid>
-        <Grid size={12}>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+          <span
+            style={{
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+              marginRight: "4px",
+            }}
+          >
+            Manager Name :{" "}
+          </span>
+          {rowData.manager_id}
+        </Grid>
+        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
           {" "}
-          {formData?.manager_id === userDetails?.userId  && formData?.status === "Pending"? (
+          {formData?.manager_id === userDetails?.userId &&
+          formData?.status === "Pending" ? (
             <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
               {/* <Grid item xs={6}>
                 Manager Name:{" "}

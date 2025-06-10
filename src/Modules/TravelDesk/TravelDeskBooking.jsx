@@ -726,7 +726,6 @@ const TravelDeskBooking = () => {
             setVisible(false);
           }}
         >
-          <h2>Requisition Form View</h2>
           <RequisitionFormView
             rowData={rowData}
             // handleApproveTravel={handleApproveTravel}

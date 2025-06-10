@@ -35,7 +35,7 @@ import TravelDeskManager from "./Modules/TravelDeskManager/TravelDeskManager";
 import UserProfile from "./Modules/UserProfile/UserProfile";
 import AccountMiscellanousClaim from "./Modules/Claims/Account/AccountMiscellanousClaim";
 import Referral from "./Modules/Referrals/Referral";
-import HRReferralPage from "./Modules/Referrals/HRReferralPage"
+import HRReferralPage from "./Modules/Referrals/HRReferralPage";
 import HomePage from "./Modules/Home/HomePage";
 import HomepageMaster from "./Modules/HomePageMaster/HomepageMaster";
 
@@ -46,71 +46,70 @@ import AccountMain from "./Modules/TravelDesk/TravelDeskAccount/AccountMain";
 
 function App() {
   return (
-    
     <Router>
-      <MenuBar >
-      {/* <DropdownCheckbox> </DropdownCheckbox> */}
-      {/* <DialogComponent></DialogComponent> */}
-      {/* <DatePicker></DatePicker> */}
-      {/* <Carousel> </Carousel> */}
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/leave-application" element={<LeaveApplication />} />
-        <Route
-          path="/leave-manager-approval"
-          element={<LeaveManagerApproval />}
-        />
-        <Route path="/leave-admin" element={<LeaveAdmin />} />
-        <Route path="/travel-desk" element={<TravelDesk />} />
-        <Route path="/travel-deskmanager" element={<TravelDeskManager />} />
-        <Route path="/travel-desk-advanced" element={<TravelDeskAdvanced />} />
-        <Route path="/travel-desk-advanced2" element={<OpenTravelsTableCopy/>} />
-        <Route path="/travel-desk-booking" element={ <AccountMain/>} />
-                          
-        <Route path="/salary-slip" element={<SalarySlip />} />
-        <Route
-          path="/ModeOfTransportTable"
-          element={<ModeOfTransportTable />}
-        />
-        <Route path="/appraisal" element={<Appraisal />} />
-        <Route path="/claim" element={<Claim />} />
-        <Route path="/tour-claim" element={<TourClaim />} />
-        <Route path="/account-tour-claim" element={<AccountTourClaims />} />
-        <Route path="/hr-tour-claim" element={<HRTourClaims />} />
-        <Route path="/miscellaneous-claim" element={<MiscellaneousClaim />} />
-        <Route path="/account-miscellaneous-claim" element={<AccountMiscellanousClaim />} />
-        <Route path="/loan-application" element={<LoanApplication />} />
-        <Route path="/hr-loan-application" element={<HRLoanApplication />} />
-        <Route path="/referral" element={<Referral/>} />
-        <Route path="/hr-referral" element={<HRReferralPage/>} />
+      <MenuBar>
+        {/* <DropdownCheckbox> </DropdownCheckbox> */}
+        {/* <DialogComponent></DialogComponent> */}
+        {/* <DatePicker></DatePicker> */}
+        {/* <Carousel> </Carousel> */}
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/leave-application" element={<LeaveApplication />} />
+          <Route
+            path="/leave-manager-approval"
+            element={<LeaveManagerApproval />}
+          />
+          <Route path="/leave-admin" element={<LeaveAdmin />} />
+          <Route path="/travel-desk" element={<TravelDesk />} />
+          <Route path="/travel-deskmanager" element={<TravelDeskManager />} />
+          <Route
+            path="/travel-desk-advanced"
+            element={<TravelDeskAdvanced />}
+          />
+          <Route
+            path="/travel-desk-advanced2"
+            element={<OpenTravelsTableCopy />}
+          />
+          <Route path="/travel-desk-booking" element={<TravelDeskBooking />} />
+          <Route path="/travel-desk-booking2" element={<AccountMain />} />
 
+          <Route path="/salary-slip" element={<SalarySlip />} />
+          <Route
+            path="/ModeOfTransportTable"
+            element={<ModeOfTransportTable />}
+          />
+          <Route path="/appraisal" element={<Appraisal />} />
+          <Route path="/claim" element={<Claim />} />
+          <Route path="/tour-claim" element={<TourClaim />} />
+          <Route path="/account-tour-claim" element={<AccountTourClaims />} />
+          <Route path="/hr-tour-claim" element={<HRTourClaims />} />
+          <Route path="/miscellaneous-claim" element={<MiscellaneousClaim />} />
+          <Route
+            path="/account-miscellaneous-claim"
+            element={<AccountMiscellanousClaim />}
+          />
+          <Route path="/loan-application" element={<LoanApplication />} />
+          <Route path="/hr-loan-application" element={<HRLoanApplication />} />
+          <Route path="/referral" element={<Referral />} />
+          <Route path="/hr-referral" element={<HRReferralPage />} />
 
-
-      
-
-        <Route path="/appraisals-review" element={<AppraisalsReview />} />
-        <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
-        <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
-        <Route path="/appraisaltracker" element={<AppraisalTracker />} />
-        <Route path="/training-master" element={<TrainingMaster />} />
-        <Route path="/holidaymaster" element={<HolidayMaster />} />
-        <Route path="/nalanda" element={<Nalanda />} />
-        <Route
-          path="/training-schedule-master"
-          element={<TrainingScheduleMaster />}
-        />
-        <Route path="/userprofile" element={<UserProfile/>}/>
-         <Route
-          path="/homePage"
-          element={<HomePage/>}
-        />
-        <Route
-          path="/homepageMaster"
-          element={<HomepageMaster/>}
-        />
-      </Routes>
+          <Route path="/appraisals-review" element={<AppraisalsReview />} />
+          <Route path="/appraisals-approver" element={<AppraisalsApprover />} />
+          <Route path="/salaryslipupload" element={<SalarySlipUpload />} />
+          <Route path="/appraisaltracker" element={<AppraisalTracker />} />
+          <Route path="/training-master" element={<TrainingMaster />} />
+          <Route path="/holidaymaster" element={<HolidayMaster />} />
+          <Route path="/nalanda" element={<Nalanda />} />
+          <Route
+            path="/training-schedule-master"
+            element={<TrainingScheduleMaster />}
+          />
+          <Route path="/userprofile" element={<UserProfile />} />
+          <Route path="/homePage" element={<HomePage />} />
+          <Route path="/homepageMaster" element={<HomepageMaster />} />
+        </Routes>
       </MenuBar>
     </Router>
   );
