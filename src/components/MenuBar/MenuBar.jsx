@@ -1,34 +1,45 @@
 import * as React from "react";
-import { styled, useTheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import MuiDrawer from "@mui/material/Drawer";
-import MuiAppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import CssBaseline from "@mui/material/CssBaseline";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
+import {
+  Box,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Divider,
+  Collapse,
+  Tooltip,
+  Avatar,
+  Typography,
+  Button,
+  Popover,
+  MenuItem,
+  Chip,
+} from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
-import menuItems from "./MenuIcon";
-import { FaCar } from "react-icons/fa";
-
-//Page Info Api
-import { getUserPageInfo } from "./MenuBarAPI";
-import { getUserData } from "../../Modules/Login/Encrypt";
-import { useEffect } from "react";
-import { useState } from "react";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import PersonIcon from "@mui/icons-material/Person";
+import KeyIcon from "@mui/icons-material/VpnKey";
+import { styled, useTheme } from "@mui/material/styles";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+import { library } from "@fortawesome/fontawesome-svg-core";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getMenuInfoDetails } from "./MenuBarAPI";
+import LogoutIcon from "@mui/icons-material/Logout"; // Logout icon
+import { getUserData } from "../../Modules/Login/Encrypt";
+
+library.add(fas);
 
 const drawerWidth = 240;
+const drawerBgColor = "#263238";
 
 const openedMixin = (theme) => ({
   width: drawerWidth,
@@ -51,235 +62,301 @@ const closedMixin = (theme) => ({
   },
 });
 
-const DrawerHeader = styled("div")(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-}));
-
-const AppBar = styled(MuiAppBar, {
+const StyledDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== "open",
-})(({ theme }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  variants: [
-    {
-      props: ({ open }) => open,
-      style: {
-        marginLeft: drawerWidth,
-        width: `calc(100% - ${drawerWidth}px)`,
-        transition: theme.transitions.create(["width", "margin"], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-      },
-    },
-  ],
-}));
-
-const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme }) => ({
+})(({ theme, open }) => ({
   width: drawerWidth,
   flexShrink: 0,
   whiteSpace: "nowrap",
   boxSizing: "border-box",
-  variants: [
-    {
-      props: ({ open }) => open,
-      style: {
-        ...openedMixin(theme),
-        "& .MuiDrawer-paper": openedMixin(theme),
-      },
+  ...(open && {
+    ...openedMixin(theme),
+    "& .MuiDrawer-paper": {
+      ...openedMixin(theme),
+      backgroundColor: drawerBgColor,
+      color: "white",
     },
-    {
-      props: ({ open }) => !open,
-      style: {
-        ...closedMixin(theme),
-        "& .MuiDrawer-paper": closedMixin(theme),
-      },
+  }),
+  ...(!open && {
+    ...closedMixin(theme),
+    "& .MuiDrawer-paper": {
+      ...closedMixin(theme),
+      backgroundColor: drawerBgColor,
+      color: "white",
     },
-  ],
+  }),
 }));
+
+const DrawerHeader = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+}));
+
+function convertToInitials(name) {
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  return parts.map((p) => p[0].toUpperCase()).join("");
+}
 
 export default function MiniDrawer({ children }) {
   const theme = useTheme();
-  const [open, setOpen] = React.useState(false);
-  const [userPageInfo, setUserPageInfo] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [menuInfo, setMenuInfo] = useState(null);
+  const [expandedItems, setExpandedItems] = useState({});
+  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
-  const handleDrawerOpen = () => {
-    setOpen(true);
+  const userDetails = getUserData();
+  const userName = userDetails?.userDetails?.userName;
+
+  const handleDrawerOpen = () => setOpen(true);
+  const handleDrawerClose = () => setOpen(false);
+  const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
+  const handleCloseMenu = () => setAnchorEl(null);
+  const openMenu = Boolean(anchorEl);
+
+  const fetchMenuDetails = async () => {
+    const menu = await getMenuInfoDetails();
+    setMenuInfo(menu);
   };
 
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
-
-  //Call User Page Info API
-  const fetchPageInfo = async () => {
-    try {
-      const { token } = getUserData();
-      const response = await getUserPageInfo(token);
-    let allotedPages=response.data.allotedPages
-      if(response.data.department==='HR')
-      {
-        allotedPages['Referrals']=['referral','hr-referral']
-      }
-     console.log("User Page Info:", allotedPages,response);
-      if (response.status === 200) {
-        setUserPageInfo(response.data.allotedPages);
-      } else {
-        console.error("Failed to fetch user page info:", response);
-      }
-    } catch (error) {
-      console.error("Error fetching user page info:", error);
-    }
-  };
-
-  //Call User Page Info API on component mount
   useEffect(() => {
-    fetchPageInfo();
+    fetchMenuDetails();
   }, []);
 
-  //Handle Menu Click
-  const handelMenuClick = (text) => {
-    console.log("Menu Clicked:", text);
-    navigate(text.toLowerCase());
+  const toggleExpand = (key) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+  const displayNoMenu = () => {
+    return (
+      window.location.pathname === "/login" ||
+      window.location.pathname === "/" ||
+      !userDetails?.userDetails?.userId.length > 0
+    );
+  };
+
+  const renderMenuItems = (items, parentKey = "") =>
+    items.map((item, index) => {
+      const fullPath = item.path || "";
+      const key = `${parentKey}${item.label}-${index}`;
+      const selected = window.location.pathname === fullPath;
+      const hasChildren = Array.isArray(item.items) && item.items.length > 0;
+      const isExpanded = expandedItems[key];
+
+      const handleItemClick = () => {
+        if (hasChildren) {
+          toggleExpand(key);
+        } else if (fullPath) {
+          navigate(fullPath);
+        }
+      };
+
+      return (
+        <React.Fragment key={key}>
+          <ListItem disablePadding sx={{ display: "block" }}>
+            <ListItemButton
+              onClick={handleItemClick}
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? "initial" : "center",
+                px: 2.5,
+                backgroundColor: selected ? "#37474F" : drawerBgColor,
+                color: "white",
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : "auto",
+                  justifyContent: "center",
+                  color: selected ? "#4FC3F7" : "white",
+                }}
+              >
+                {hasChildren &&
+                  (isExpanded ? (
+                    <KeyboardArrowDownIcon sx={{ color: "white" }} />
+                  ) : (
+                    <KeyboardArrowRightIcon sx={{ color: "white" }} />
+                  ))}
+                {!hasChildren && item.logo && (
+                  <FontAwesomeIcon icon={item.logo.split(" ")} />
+                )}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.label}
+                sx={{ opacity: open ? 1 : 0 }}
+              />
+            </ListItemButton>
+          </ListItem>
+          {hasChildren && (
+            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <Box sx={{ pl: open ? 4 : 0 }}>
+                {renderMenuItems(item.items, key + "/")}
+              </Box>
+            </Collapse>
+          )}
+        </React.Fragment>
+      );
+    });
+  const handleLogout = () => {
+    localStorage.clear();
+  };
+  const renderLogout = () => {
+    return (
+      <Box
+        sx={{
+          background: "#263238",
+          display:displayNoMenu()?'none':''
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            handleLogout();
+            // navigate(`/?tenant=${tenant}`);
+            navigate(`/`);
+          }}
+        >
+          <ListItemIcon>
+            <LogoutIcon sx={{ color: "white" }} fontSize="small" />
+          </ListItemIcon>
+          <Typography sx={{ color: "white" }}>Logout</Typography>
+        </MenuItem>
+      </Box>
+    );
   };
 
   return (
     <Box sx={{ display: "flex" }}>
-      {/* <AppBar position="fixed" open={open}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={[
-              {
-                marginRight: 5,
-              },
-              open && { display: 'none' },
-            ]}
-          >
-            <MenuIcon />
-          </IconButton>
-          
-        </Toolbar>
-      </AppBar> */}
-      <Drawer
+      <StyledDrawer
         variant="permanent"
         open={open}
-        sx={
-          window.location.pathname === "/login" ||
-          window.location.pathname === "/"
-            ? { display: "none" }
-            : {}
-        }
+        sx={{
+          display:
+            displayNoMenu() ? "none"
+              : "flex",
+        }}
       >
         <DrawerHeader>
-          <IconButton
-            onClick={handleDrawerOpen}
-            sx={[
-              {
-                marginRight: "4px",
-              },
-              open && { display: "none" },
-            ]}
-          >
-            <MenuIcon />
-          </IconButton>
-          {open && (
+          {!open ? (
+            <IconButton onClick={handleDrawerOpen}>
+              <MenuIcon sx={{ color: "white" }} />
+            </IconButton>
+          ) : (
             <IconButton onClick={handleDrawerClose}>
               {theme.direction === "rtl" ? (
-                <ChevronRightIcon />
+                <ChevronRightIcon sx={{ color: "white" }} />
               ) : (
-                <ChevronLeftIcon />
+                <ChevronLeftIcon sx={{ color: "white" }} />
               )}
             </IconButton>
           )}
         </DrawerHeader>
-        <Divider />
-        <List>
-          {userPageInfo.map((text, index) => {
-            const currentPage =
-              window.location.pathname.split("/")[1] === text.toLowerCase();
-            return (
-              <ListItem key={text} disablePadding sx={{ display: "block" }}>
-                <ListItemButton
-                  onClick={() => handelMenuClick(text)}
-                  sx={[
-                    {
-                      minHeight: 48,
-                      px: 2.5,
-                      backgroundColor: currentPage ? "#EAEFEF" : "transparent",
-                    },
-                    open
-                      ? {
-                          justifyContent: "initial",
-                        }
-                      : {
-                          justifyContent: "center",
-                        },
-                  ]}
-                >
-                  <ListItemIcon
-                    sx={[
-                      {
-                        minWidth: 0,
-                        justifyContent: "center",
-                        color: currentPage ? "#54A8C9" : "",
-                      },
-                      open
-                        ? {
-                            mr: 3,
-                          }
-                        : {
-                            mr: "auto",
-                          },
-                    ]}
-                  >
-                    {menuItems.map((item, id) => {
-                      if (item.label.toLowerCase() === text.toLowerCase()) {
-                        // console.log(
-                        //   "iconName",
-                        //   item.label.toLowerCase(),
-                        //   text.toLowerCase()
-                        // );
-                        return <i key={id} style={{marginLeft:"3px"}} className={item.icon} />
-                      } else {
-                        <p>NA</p>;
-                      }
-                    })}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={text}
-                    sx={[
-                      open
-                        ? {
-                            opacity: 1,
-                          }
-                        : {
-                            opacity: 0,
-                          },
-                    ]}
-                  />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
-        <Divider />
-      </Drawer>
 
-      <Box sx={{ flexGrow: 1, p: 1 }}>{children}</Box>
+        <Divider sx={{ borderColor: "#455A64" }} />
+
+        <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
+
+        {/* Fixed bottom section */}
+        <div
+          className="fixedSection"
+          style={{
+            position: "sticky",
+            bottom: "0",
+            left: "0",
+            background: drawerBgColor,
+            zIndex: "+1",
+          }}
+        >
+          <Divider sx={{ borderColor: "#455A64" }} />
+
+          <ListItemButton
+            sx={{ justifyContent: open ? "initial" : "center", color: "white" }}
+            onClick={handleMenuClick}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                mr: open ? 3 : "auto",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "white",
+              }}
+            >
+              <Tooltip
+                title={
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <PersonIcon sx={{ fontSize: "1.2rem" }} />
+                      <Typography sx={{ fontSize: "0.9rem" }}>
+                        {userName}
+                      </Typography>
+                    </Box>
+                  </div>
+                }
+                placement="right"
+              >
+                <Avatar
+                  sx={{
+                    width: 35,
+                    height: 35,
+                    fontSize: "0.9rem",
+                    background: "#4097FF",
+                    color: "white",
+                  }}
+                >
+                  {convertToInitials(userName)}
+                </Avatar>
+              </Tooltip>
+            </ListItemIcon>
+
+            <ListItemText
+              sx={{ opacity: open ? 1 : 0 }}
+              primary={
+                <Chip
+                  disabled={!open}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    border: "1px solid white",
+                    color: "white",
+                    borderRadius: "1rem",
+                    fontSize: "0.75rem",
+                  }}
+                  label={userName}
+                />
+              }
+            />
+          </ListItemButton>
+
+          <Popover
+            open={openMenu}
+            anchorEl={anchorEl}
+            onClose={handleCloseMenu}
+            anchorOrigin={{
+              vertical: "center",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "center",
+              horizontal: "left",
+            }}
+            elevation={0}
+            sx={{ mt: "1rem" }}
+          >
+            {renderLogout()}
+          </Popover>
+        </div>
+      </StyledDrawer>
+
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <DrawerHeader />
+        {children}
+      </Box>
     </Box>
   );
 }
