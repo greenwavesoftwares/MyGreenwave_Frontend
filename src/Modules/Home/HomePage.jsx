@@ -8,6 +8,7 @@ import {
   Button,
   Box,
   Switch,
+  Chip,
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import "./HomePage.css";
@@ -29,6 +30,7 @@ import Badge from "@mui/material/Badge";
 import EditIcon from "@mui/icons-material/Edit";
 import Toast from "../../components/Toast/Toast";
 import CommentIcon from "@mui/icons-material/Comment";
+import DeleteIcon from "@mui/icons-material/Delete";
 //Api
 import {
   getUserDataAPI,
@@ -53,6 +55,7 @@ import {
   showErrorMessage,
   showSuccessMessage,
 } from "../../components/Toast/ShowMessage";
+import { FileUpload } from "primereact/fileupload";
 
 const HomePage = () => {
   const toastRef = useRef(null);
@@ -80,8 +83,14 @@ const HomePage = () => {
   //Feedback Visible
   const [feedbackDialogVisible, setFeedbackDialogVisible] = useState(false);
   const [feedback, setFeedback] = useState("");
+  //File Upload
+  const [fileUploadDialog, setFileUploadDialog] = useState(false);
+  const [file, setFile] = useState(null);
+  const [fileUploadRow, setFileUploadRow] = useState(null);
+  const [fileUploadName, setFileUploadName] = useState(null);
+  const fileUploadRef = useRef(null);
 
-  //Call Home PAhe All
+  //Call Home Page All
   const getHomePageData = async () => {
     try {
       const { token } = getUserData();
@@ -340,17 +349,37 @@ const HomePage = () => {
   }, [nextHolidayData]);
 
   //Change Profile Picture
-  const inputRef = useRef(null); // Make sure this is declared at the top of your component
-  const handleAvatarChange = async (event) => {
-    const file = event.target.files?.[0];
+   //Upload File
+  const onUploadFile = async (event) => {
+    console.log(event);
+    const file = event.files[0];
+    setFile(file);
+    console.log("file?.name", event.files[0]?.name);
+    //Set Upload File Name
+    setFileUploadName(event.files[0]?.name);
+  };
 
+  //REmove Button
+  const handleRemoveAndReupload = () => {
+    setFile(null);
+    setFileUploadName(null);
+
+    // Clear file input and trigger click to reopen dialog
+    if (fileUploadRef.current) {
+      fileUploadRef.current.clear(); // Reset the UI
+      const fileInput = fileUploadRef.current.fileInput?.current;
+      if (fileInput) {
+        fileInput.click(); // Reopen file dialog
+      }
+    }
+  };
+
+  const handleAvatarChange = async (event) => {
     if (!file) {
       console.warn("No file selected.");
       return;
     }
-
-    console.log("upload_file", file);
-
+    //console.log("upload_file", file);
     const {
       token,
       userDetails: { employeeId, userName },
@@ -370,19 +399,20 @@ const HomePage = () => {
         const imageUrl = URL.createObjectURL(file);
         setUserProfileImage(imageUrl);
         showSuccessMessage(toastRef, "Success", "File Upload Successfully");
+        setFileUploadDialog(false)
+        setFile(null);
+      setFileUploadName(null);
       } else {
         showErrorMessage(toastRef, "Error", "File upload failed");
       }
     } catch (error) {
       console.error("Upload failed:", error);
       showErrorMessage(toastRef, "Error", "Something went wrong");
-    } finally {
-      // Reset input so user can reselect the same file
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
-    }
+    } 
   };
+
+
+
 
   //Submit Feedback
   const handelFeedBackSubmit = async (e) => {
@@ -438,21 +468,14 @@ const HomePage = () => {
                       anchorOrigin={{ vertical: "top", horizontal: "right" }}
                       badgeContent={
                         <>
-                          <input
-                            ref={inputRef}
-                            id="avatar-upload"
-                            type="file"
-                            style={{
-                              display: "none",
-                            }}
-                            accept="image/*"
-                            onChange={handleAvatarChange}
-                          />
+                          
                           <label htmlFor="avatar-upload">
                             <IconButton
                               size="small"
                               component="span"
-                              // style={{ padding: 0, background: "#6366f1", borderRadius: "50%" }}
+                               onClick={() => {
+                            setFileUploadDialog(true);
+                               }}
                             >
                               <EditIcon
                                 fontSize="small"
@@ -470,12 +493,13 @@ const HomePage = () => {
                           background: "#F2F2FE",
                           border: "4px solid #fff",
                         }}
+                         src={userProfileImage}
                       >
-                        <Image
+                        {/* <Image
                           src={userProfileImage}
                           alt="Image"
-                          style={{ height: "100%" }}
-                        />
+                          style={{ height: "100%" ,background:"red"}}
+                        /> */}
                       </Avatar>
                     </StyledBadge>
                   </Grid>
@@ -1025,6 +1049,66 @@ const HomePage = () => {
               </form>
             </div>
           </Dialog>
+
+           {/* Add File Upload Dialog */}
+
+      <Dialog
+        header="Upload Profile Picture"
+        className="dialogHeader dialogContent"
+        visible={fileUploadDialog}
+        style={{ width: "32rem" }}
+        onHide={() => {
+          if (!fileUploadDialog) return;
+          setFileUploadDialog(false);
+        }}
+      >
+        <div
+          style={{ display: "grid", rowGap: "0.7rem", justifyItems: "center" }}
+        >
+          {fileUploadName === null ? (
+            ""
+          ) : (
+            <>
+            <div style={{display:"flex",alignItems:"center"}}>
+              <Chip
+                size="medium"
+                color="info"
+                variant="outlined"
+                label={fileUploadName}
+              />
+              <IconButton variant="contained" color="error" onClick={handleRemoveAndReupload}>
+                <DeleteIcon />
+              </IconButton>
+              </div>
+            </>
+          )}
+
+          <FileUpload
+            ref={fileUploadRef}
+            className="primeReactButtonPadding"
+            //name="demo[]"
+            mode="basic"
+            //url="/api/upload"
+            // multiple
+            auto
+            accept="image/*"
+            customUpload
+            //maxFileSize={1000000}
+            // onUploadHa={onUploadFile}
+            //  onUpload={onUploadFile}
+            uploadHandler={onUploadFile}
+            // emptyTemplate={
+            //   <p className="m-0">Drag and drop files to here to upload.</p>
+            // }
+          />
+
+          <Button variant="contained" size="small" 
+          onClick={handleAvatarChange}
+          >
+            Submit
+          </Button>
+        </div>
+      </Dialog>
           <Toast ref={toastRef} />
         </div>
       )}
