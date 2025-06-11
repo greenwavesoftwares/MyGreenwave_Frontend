@@ -7,8 +7,9 @@ import * as XLSX from "xlsx";
 import { getUserData } from "../Login/Encrypt";
 // const host = import.meta.env.VITE_API_HOST;
 // const port = import.meta.env.VITE_API_PORT;
-const host = "http://localhost";
-const port = "8081";
+// const host = "http://localhost";
+// const port = "8081";
+const host = import.meta.env.VITE_END_POINT;
 
 const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
@@ -24,7 +25,7 @@ export const getDraftData = async () => {
 
   try {
     const response = await fetch(
-      `${host}:${port}/claims/tour-claims/drafts`,
+      `${host}claims/tour-claims/drafts`,
       requestOptions
     );
     if(!response.ok)
@@ -68,7 +69,7 @@ export const handleSaveToDraft = (payload) => {
     redirect: "follow",
   };
 
-  return fetch(`${host}:${port}/claims/tour-claims`, requestOptions)
+  return fetch(`${host}claims/tour-claims`, requestOptions)
     .then((response) => response.json())
     .catch((error) => {
       console.error("Error saving draft:", error);
@@ -112,7 +113,7 @@ export const getTravelsDetails = async () => {
   };
 
   let response = await fetch(
-    `${host}:${port}/traveldesk/travels`,
+    `${host}traveldesk/travels`,
     requestOptions
   );
   let data = response.json();
@@ -133,7 +134,7 @@ export const getTourClaimList = async () => {
   };
 
   const response = await fetch(
-    `${host}:${port}/claims/tour-claims`,
+    `${host}claims/tour-claims`,
     requestOptions
   );
 
@@ -203,7 +204,7 @@ export const getTravelDropDown = async () => {
   };
 
   let response = await fetch(
-  `${host}:${port}/traveldesk/ongoing-travels`,
+  `${host}traveldesk/ongoing-travels`,
   requestOptions
 );
 
@@ -258,7 +259,7 @@ export const getTravelDropDown2 = async () => {
   };
 
   let response = await fetch(
-  `${host}:${port}/traveldesk/ongoing-travels`,
+  `${host}traveldesk/ongoing-travels`,
   requestOptions
 );
 
@@ -315,7 +316,7 @@ export const getTravelMode = async (travel_id) => {
   };
 
   let response = await fetch(
-  `${host}:${port}/traveldesk/travels/${travel_id}`,
+  `${host}traveldesk/travels/${travel_id}`,
   requestOptions
 );
 
@@ -360,7 +361,7 @@ export const getTourClaimFormDetails = async (id) => {
   };
 
   let response = await fetch(
-    `${host}:${port}/traveldesk/travels/${id}`,
+    `${host}traveldesk/travels/${id}`,
     requestOptions
   );
   //   .then((response) => response.text())
@@ -387,7 +388,7 @@ export const getAdvance = async () => {
   };
 
   let response = await fetch(
-    `${host}:${port}/traveldesk/unsettled-advance`,
+    `${host}traveldesk/unsettled-advance`,
     requestOptions
   );
   let data = response.json();
@@ -410,7 +411,7 @@ export const uploadSupportingDocuments = async (file, claim_id) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/tour-claims/doc/${claim_id}`,
+      `${host}claims/tour-claims/doc/${claim_id}`,
       requestOptions
     );
     // let data=response.json();
@@ -433,7 +434,7 @@ export const deleteDraftList = async (claim_id, status) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/tour-claims/${claim_id}/${status}`,
+      `${host}claims/tour-claims/${claim_id}/${status}`,
       requestOptions
     );
    if(!response.ok)
@@ -473,7 +474,7 @@ export const applyClaim = async (claim_id, status) => {
     };
 
     const response = await fetch(
-      `${host}:${port}/claims/tour-claims/${claim_id}/${status}`,
+      `${host}claims/tour-claims/${claim_id}/${status}`,
       requestOptions
     );
 
@@ -511,7 +512,7 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     };
 
     const response = await fetch(
-      `${host}:${port}/claims/tour-claims/doc/${claim_id}`,
+      `${host}claims/tour-claims/doc/${claim_id}`,
       requestOptions
     );
 
@@ -569,7 +570,7 @@ export const downloadOtherClaimSupportingDocument = async (claim_id) => {
     };
 
     const response = await fetch(
-      `${host}:${port}/claims/other-claims/doc/${claim_id}`,
+      `${host}claims/other-claims/doc/${claim_id}`,
       requestOptions
     );
 
@@ -676,7 +677,7 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
 
     if (!claim_id) {
       var response = await fetch(
-        `${host}:${port}/claims/tour-claims/excel`,
+        `${host}claims/tour-claims/excel`,
         {
           method: "GET",
           headers: myHeaders,
@@ -685,7 +686,7 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
       );
     } else {
       var response = await fetch(
-        `${host}:${port}/claims/tour-claims/excel/${claim_id}`,
+        `${host}claims/tour-claims/excel/${claim_id}`,
         {
           method: "GET",
           headers: myHeaders,
@@ -739,7 +740,7 @@ export const getTourClaimTableDraftData = async (claim_id) => {
     };
 
     const response = await fetch(
-      `${host}:${port}/claims/tour-claims/${claim_id}`,
+      `${host}claims/tour-claims/${claim_id}`,
       requestOptions
     );
 
@@ -792,6 +793,8 @@ export const getlatestclaimtodate = async (travel_id) => {
 
 export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
   try {
+    console.log('tourclaimformData', tourclaimformData)
+    console.log('tourClaimTableData', tourClaimTableData)
     let total_expense = 0;
     let tabledata = [];
 
@@ -813,7 +816,7 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
         snacks: Number(row["Snacks"]) || 0,
         other: Number(row["Other Business Expenses"]) || 0,
         total: rowTotal,
-        remarks: row["Remarks"],
+        remarks: row["Remarks"]|| "",
       });
     });
 
@@ -846,7 +849,7 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
       redirect: "follow",
     };
 
-   let response= await fetch(`${host}:${port}/claims/tour-claims`, requestOptions);
+   let response= await fetch(`${host}claims/tour-claims`, requestOptions);
    if(!response.ok)
    {
     let message=await response.text()
@@ -934,7 +937,7 @@ export const updateDraftdata = async (
     };
 
    let response= await fetch(
-      `${host}:${port}/claims/tour-claims/${claim_id}`,
+      `${host}claims/tour-claims/${claim_id}`,
       requestOptions
     );
     // const data = await response.json();
@@ -1073,7 +1076,7 @@ export const ApplyOtherClaim = async (
     };
 
     const response = await fetch(
-      `${host}:${port}/claims/other-claims`,
+      `${host}claims/other-claims`,
       requestOptions
     );
 
@@ -1105,7 +1108,7 @@ export const getOtherClaims = async () => {
       redirect: "follow",
     };
     let response = await fetch(
-      `${host}:${port}/claims/other-claims`,
+      `${host}claims/other-claims`,
       requestOptions
     );
     const data = response.json();
@@ -1128,7 +1131,7 @@ export const getLoanDetails = async () => {
     };
 
     const response = await fetch(
-      `${host}:${port}/claims/loan-claims`,
+      `${host}claims/loan-claims`,
       requestOptions
     );
     const data = await response.json();
@@ -1162,7 +1165,7 @@ export const applyLoan = async (formData) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/loan-claims`,
+      `${host}claims/loan-claims`,
       requestOptions
     );
 
@@ -1198,7 +1201,7 @@ export const getApprovedTourClaims = async () => {
     };
 
     let ApprovedResponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/Approved`,
+      `${host}claims/tour-claims-by-status/Approved`,
       requestOptions
     );
     if (!ApprovedResponse.ok) {
@@ -1213,7 +1216,7 @@ export const getApprovedTourClaims = async () => {
     let ApprovedData = await ApprovedResponse.json();
 
     let ReviewedResponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/Reviewed`,
+      `${host}claims/tour-claims-by-status/Reviewed`,
       requestOptions
     );
     if (!ReviewedResponse.ok) {
@@ -1227,7 +1230,7 @@ export const getApprovedTourClaims = async () => {
     let ReviewedData = await ReviewedResponse.json();
 
     let CancelledResponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/Cancelled`,
+      `${host}claims/tour-claims-by-status/Cancelled`,
       requestOptions
     );
     if (!CancelledResponse.ok) {
@@ -1262,7 +1265,7 @@ export const getAppliedTourClaims = async () => {
     };
 
     let appliedresponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/applied`,
+      `${host}claims/tour-claims-by-status/applied`,
       requestOptions
     );
     if (!appliedresponse.ok) {
@@ -1275,7 +1278,7 @@ export const getAppliedTourClaims = async () => {
     }
 
     let reviewingresponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/reviewing`,
+      `${host}claims/tour-claims-by-status/reviewing`,
       requestOptions
     );
 
@@ -1318,7 +1321,7 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
 
     // Step 1: Check if any claim is under review
     const getResponse = await fetch(
-      `${host}:${port}/claims/tour-claims-user-and-status/reviewing/${userId}`,
+      `${host}claims/tour-claims-user-and-status/reviewing/${userId}`,
       requestOptions
     );
 
@@ -1343,7 +1346,7 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
 
     // Step 2: Update status to Reviewing
     const putResponse = await fetch(
-      `${host}:${port}/claims/tour-claims/${claim_id}/Reviewing`,
+      `${host}claims/tour-claims/${claim_id}/Reviewing`,
       {
         method: "PUT",
         redirect: "follow",
@@ -1393,7 +1396,7 @@ export const tourClaimSendForApproval = async (
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/tour-claims/review/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
+      `${host}claims/tour-claims/review/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
       requestOptions
     );
     if (!response.ok) {
@@ -1431,7 +1434,7 @@ export const getReviewedTourClaims = async () => {
     };
 
     let reviewedresponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/Reviewed`,
+      `${host}claims/tour-claims-by-status/Reviewed`,
       requestOptions
     );
     if (!reviewedresponse.ok) {
@@ -1464,7 +1467,7 @@ export const getApprovedHRTourClaims = async () => {
     };
 
     let approvedresponse = await fetch(
-      `${host}:${port}/claims/tour-claims-by-status/Approved`,
+      `${host}claims/tour-claims-by-status/Approved`,
       requestOptions
     );
     if (!approvedresponse.ok) {
@@ -1499,7 +1502,7 @@ export const ApprovedTourClaim = async (claim_id, reason) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/tour-claims/approval/${claim_id}/approved?reason=${reason}`,
+      `${host}claims/tour-claims/approval/${claim_id}/approved?reason=${reason}`,
       requestOptions
     );
     if (!response.ok) {
@@ -1515,7 +1518,7 @@ export const ApprovedTourClaim = async (claim_id, reason) => {
     if (getReviewedTourClaimsData.status) {
       return {
         status: true,
-        message: "sent for approval",
+        message: "Claim has been approved",
         data: getReviewedTourClaimsData.data,
       };
     } else {
@@ -1547,7 +1550,7 @@ export const RejectTourClaim = async (claim_id, reason) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/tour-claims/approval/${claim_id}/rejected?reason=${reason}`,
+      `${host}claims/tour-claims/approval/${claim_id}/rejected?reason=${reason}`,
       requestOptions
     );
     if (!response.ok) {
@@ -1594,7 +1597,7 @@ export const getloanclaimsapplied = async () => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/loan-claims-by-status/applied`,
+      `${host}claims/loan-claims-by-status/applied`,
       requestOptions
     );
 
@@ -1636,7 +1639,7 @@ export const getloanclaimsapproveandreject = async () => {
     };
 
     let rejectedresponse = await fetch(
-      `${host}:${port}/claims/loan-claims-by-status/rejected`,
+      `${host}claims/loan-claims-by-status/rejected`,
       requestOptions
     );
 
@@ -1653,7 +1656,7 @@ export const getloanclaimsapproveandreject = async () => {
     }
 
     let approvedresponse = await fetch(
-      `${host}:${port}/claims/loan-claims-by-status/Approved`,
+      `${host}claims/loan-claims-by-status/Approved`,
       requestOptions
     );
 
@@ -1697,7 +1700,7 @@ export const rejectLoanClaim = async (claim_id, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/loan-claims/${claim_id}/rejected?reason=${remarks}`,
+      `${host}claims/loan-claims/${claim_id}/rejected?reason=${remarks}`,
       requestOptions
     );
 
@@ -1739,7 +1742,7 @@ export const approveLoanClaim = async (claim_id, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/loan-claims/${claim_id}/Approved?reason=${remarks}`,
+      `${host}claims/loan-claims/${claim_id}/Approved?reason=${remarks}`,
       requestOptions
     );
 
@@ -1780,7 +1783,7 @@ export const approveMiscellanousClaim = async (claim_id, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/other-claims/${claim_id}/Approved?reason=${remarks}`,
+      `${host}claims/other-claims/${claim_id}/Approved?reason=${remarks}`,
       requestOptions
     );
 
@@ -1829,7 +1832,7 @@ export const rejectMiscellanousClaim = async (claim_id, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/claims/other-claims/${claim_id}/Rejected?reason=${remarks}`,
+      `${host}claims/other-claims/${claim_id}/Rejected?reason=${remarks}`,
       requestOptions
     );
 
@@ -1877,7 +1880,7 @@ const requestOptions = {
   redirect: "follow"
 };
 
-let response=await fetch(`${host}:${port}/claims/other-claims-by-status/Applied`, requestOptions)
+let response=await fetch(`${host}claims/other-claims-by-status/Applied`, requestOptions)
 if(!response.ok)
 {
   let message=await response.text();
@@ -1919,7 +1922,7 @@ export const getApprovedAndRejectMiscellanousClaim=async()=>{
     };
 
     let rejectedresponse = await fetch(
-      `${host}:${port}/claims/other-claims-by-status/rejected`,
+      `${host}claims/other-claims-by-status/rejected`,
       requestOptions
     );
 
@@ -1936,7 +1939,7 @@ export const getApprovedAndRejectMiscellanousClaim=async()=>{
     }
 
     let approvedresponse = await fetch(
-      `${host}:${port}/claims/other-claims-by-status/Approved`,
+      `${host}claims/other-claims-by-status/Approved`,
       requestOptions
     );
 

@@ -2,12 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+const cellStyle = { padding: "12px 16px" };
 //Call Api
 import {
   getAdvanceDetails,
   getMyFormParticularRequisitionId,
   getCompleteData,
   updateTravelRequisition,
+  downloadDocumentsByReqId
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
@@ -20,6 +22,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import {Button} from "primereact/button"
 
 const CompletedTable = () => {
   const [expandedRows, setExpandedRows] = useState(!null);
@@ -48,6 +51,75 @@ const CompletedTable = () => {
   const [rowData, setRowData] = useState({});
 
   const rowExpansionTemplate = (rowData) => {
+    const supportingDocumentBody = (rowData) => {
+      // const [fileUploaded, setFileUploaded] = useState(
+      //   rowData.filename ? true : false
+      // );
+      // const [togglefileUpload, settogglefileUpload] = useState(
+      //   rowData.filename ? false : true
+      // );
+      const handleDownloadFile = async (requisionId) => {
+        try {
+          let d = await downloadDocumentsByReqId(requisionId);
+        } catch (error) {
+          toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: "Something Wrong.",
+          });
+        }
+      };
+      // const onFileSelect = async (event) => {
+      //   const file = event.files[0]; // Get the uploaded file
+
+      //   const formData = new FormData();
+      //   formData.append("file", file); // Append file to formData
+
+      //   try {
+      //     const response = await uploadDocumentsByReqId(
+      //       file,
+      //       rowData.requisionId
+      //     ); // Adjust this call accordingly
+      //     if(response.status)
+      //     {
+      //       setFileUploaded(true);
+      //   settogglefileUpload(false);
+
+      //     toast.current?.show({
+      //       severity: "success",
+      //       summary: "Success",
+      //       detail: "File Uploaded",
+      //     });
+      //   }else{
+      //       toast.current?.show({
+      //       severity: "error",
+      //       summary: "Error",
+      //       detail: response.message,
+      //     });
+      //   }
+      //   } catch (error) {
+      //     toast.current?.show({
+      //       severity: "error",
+      //       summary: "Error",
+      //       detail: "Upload failed",
+      //     });
+      //     console.log(error);
+      //     setFileUploaded(false);
+      //     settogglefileUpload(true);
+      //   }
+      // };
+      return (
+        <Button
+          icon="pi pi-download"
+          className="p-button-sm p-button-text p-button-success"
+          onClick={() => {
+            handleDownloadFile(rowData.requisionId);
+          }}
+          disabled={rowData.file_name == null}
+          tooltip={`${rowData.file_name}`}
+        />
+      );
+    };
     return (
       <DataTable
         value={rowData.expandableData}
@@ -56,7 +128,7 @@ const CompletedTable = () => {
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
-        <Column field="requisionId" header="Requisition ID" />
+        {/* <Column field="requisionId" header="Requisition ID" /> */}
         <Column field="fromDate" header="Date" />
         <Column field="advanceRequested" header="Advance Requested" />
         <Column field="status" header="Status" />
@@ -78,6 +150,14 @@ const CompletedTable = () => {
           header="View"
           headerStyle={{ textAlign: "center" }}
           style={{ textAlign: "center" }}
+        />
+        <Column
+          header="Download Document"
+          body={supportingDocumentBody}
+          headerStyle={cellStyle}
+          bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
+          sortable
+          filter
         />
       </DataTable>
     );
@@ -274,7 +354,7 @@ const CompletedTable = () => {
           //     : [5]
           // }
           //paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-        //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
           dataKey="travelId"
           //filters={approvedAndSettledFilters}
           // globalFilterFields={[
@@ -285,7 +365,7 @@ const CompletedTable = () => {
           //   "unsettledAmount",
           //   "advanceRequested",
           // ]}
-        //  header={approvedAndSettledTravelDataHeader}
+          //  header={approvedAndSettledTravelDataHeader}
           emptyMessage="No data found."
           // removableSort
           // sortMode="multiple"
@@ -299,103 +379,103 @@ const CompletedTable = () => {
               filter
             /> */}
           <Column expander style={{ width: "3rem" }} />
+          {/* <Column
+            field="travelId"
+            header="travelId"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          /> */}
           <Column
-                      field="travelId"
-                      header="travelId"
-                      headerStyle={{ textAlign: "center" }}
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-                    <Column
-                      field="userName"
-                      header="Name"
-                      headerStyle={{ textAlign: "center" }}
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-                    <Column
-                      field="fromDate"
-                      header="From Date"
-                      headerStyle={{ textAlign: "center" }}
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-                    <Column
-                      field="tentativeToDate"
-                      header="Tentative To Date"
-                      headerStyle={{ textAlign: "center" }}
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-          
-                    <Column
-                      field="empCode"
-                      header="Employee Code"
-                      headerStyle={{ textAlign: "center" }}
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-          
-                    <Column
-                      field="purpose"
-                      header="Purpose"
-                      headerStyle={{ textAlign: "center" }}
-                      // headerClassName="center-header"
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-                    <Column
-                      field="projectName"
-                      header="Project Name"
-                      headerStyle={{ textAlign: "center" }}
-                      // headerClassName="center-header"
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-          
-                    <Column
-                      field="localityArea"
-                      header="Locality/Area"
-                      headerStyle={{ textAlign: "center" }}
-                      // headerClassName="center-header"
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-                    <Column
-                      field="city"
-                      header="City"
-                      headerStyle={{ textAlign: "center" }}
-                      // headerClassName="center-header"
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-                    <Column
-                      field="typeOfTravel"
-                      header="Type Of Travel"
-                      headerStyle={{ textAlign: "center" }}
-                      // headerClassName="center-header"
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
-          
-                    <Column
-                      field="unsettledAmount"
-                      header="Total Unsettled Amount"
-                      headerStyle={{ textAlign: "center" }}
-                      style={{ textAlign: "center" }}
-                      sortable
-                      filter
-                    />
+            field="userName"
+            header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="fromDate"
+            header="From Date"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="tentativeToDate"
+            header="Tentative To Date"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+
+          <Column
+            field="empCode"
+            header="Employee Code"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+
+          <Column
+            field="purpose"
+            header="Purpose"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="projectName"
+            header="Project Name"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+
+          <Column
+            field="localityArea"
+            header="Locality/Area"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="city"
+            header="City"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+          <Column
+            field="typeOfTravel"
+            header="Type Of Travel"
+            headerStyle={{ textAlign: "center" }}
+            // headerClassName="center-header"
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+
+          <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
           {/* <Column
               body={advanceColumnBody}
               header="Advance Given"
@@ -479,4 +559,4 @@ const CompletedTable = () => {
   );
 };
 
-export default CompletedTable
+export default CompletedTable;

@@ -78,7 +78,7 @@ function AdminRoutes() {
       <Route path="homepage" element={<HomepageMaster />} />
 
       {/* For wrong routing go to login */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
     </React.Fragment>
   );
 }

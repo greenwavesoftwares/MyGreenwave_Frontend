@@ -60,13 +60,14 @@ const TourClaimTable = ({
     const seen = new Set();
     for (let row of data) {
       const date = row["Date"];
-      const total = parseFloat(row["Total"]) || 0;
-      if (!date) continue;
+     // const total = parseFloat(row["Total"]) || 0;
+      if (!date) 
+        return { hasIssue: true, reason: "Date cann't be null" };
       if (seen.has(date))
         return { hasIssue: true, reason: "Duplicate date found" };
       seen.add(date);
-      if (total === 0)
-        return { hasIssue: true, reason: "Total amount is zero" };
+      // if (total === 0)
+      //   return { hasIssue: true, reason: "Total amount is zero" };
     }
     return { hasIssue: false };
   };
@@ -177,7 +178,7 @@ const TourClaimTable = ({
       toast.current?.show({
         severity: "info",
         summary: "Import Result",
-        detail: `${validatedData.length} row(s) imported. ${skippedRows} skipped.`,
+        detail: `${validatedData.length} row(s) imported.`,
       });
     };
 
@@ -251,7 +252,7 @@ const TourClaimTable = ({
           <Calendar
             value={rowData["Date"] ? new Date(rowData["Date"]) : null}
             onChange={(e) => handleDateChange(e, rowIndex)}
-            dateFormat="yy-mm-dd"
+            dateFormat="dd-mm-yy"
             showIcon
             className="p-inputtext-sm w-full"
               minDate={
@@ -496,6 +497,7 @@ const TourClaimTable = ({
                 settoggleNewClaim(false);
               }}
               className="p-button-sm"
+              disabled={toggleNewClaim===true}
             />
           </div>
         )}

@@ -44,8 +44,13 @@ const getMyFormTravelData = async () => {
       );
 
       const oldest = sorted[0];
+        const allCompleteRequested = records.every(
+        (record) => record.status === "CompleteRequested"
+      );
+    
       return {
         travelId,
+        requestCompletedFlag: allCompleteRequested,
         purpose: oldest.purpose,
         projectName: oldest.projectName,
         city: oldest.city,
@@ -367,12 +372,29 @@ export const getApprovedAndSettledAndCompleteRequestedData = async () => {
       );
 
       const oldest = sorted[0];
-      const allCompleteRequested = records.every(
-        (record) => record.status === "CompleteRequested"
+     // const  = records.some((record) => record.status === 'CompleteRequested');
+       
+
+
+      
+     const list2 = records.filter(
+  (row) => (row.status || '').trim().toLowerCase() !== 'completerequested'
+);
+
+   console.log('list2', list2)
+      
+
+     const allSettled = list2.every(
+        (record) => record.status === "Settled"
       );
+
+
+      
+
+
       return {
         travelId,
-        requestCompletedFlag: allCompleteRequested,
+        requestCompletedFlag:list2.length==0?false: allSettled,
         userName: oldest.userName,
         empCode: oldest.empCode,
         fromDate: oldest.fromDate,
@@ -558,13 +580,14 @@ export const getCompleteData = async () => {
 // };
 
 export const updateTravelRequisition = async (
-  
   requisition,
   reqId,
   status
 ) => {
   try {
-    // console.log("updateTravelRequisition() called", requisition);
+    console.log("updateTravelRequisition() called", requisition,
+  reqId,
+  status);
     const response = await axios.put(
       `${host}traveldesk/travels/${reqId}/${status}`,
       requisition,
@@ -574,11 +597,63 @@ export const updateTravelRequisition = async (
         },
       }
     );
+    console.log('response status', response)
     return response;
   } catch (error) {
     console.log(error);
   }
 };
+
+export const updateTravelRequisition2 = async (
+  requisition,
+  reqId,
+  status
+) => {
+  try {
+  console.log("updateTravelRequisition() called", requisition,
+  reqId,
+  status);
+  console.log('reqId', reqId)
+
+const myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
+myHeaders.append("Authorization", token);
+
+
+const requestOptions = {
+  method: "PUT",
+  headers: myHeaders,
+  body: JSON.stringify(requisition),
+  redirect: "follow"
+};
+
+let response=await fetch(`${host}traveldesk/travels/${reqId}/${status}`,requestOptions)
+  
+   if(!response.ok)
+   {
+    let message=await response.text()
+    return{
+      status:false,
+      message:message,
+      data:[]
+    }
+   }
+
+   
+   return{
+      status:true,
+      message:'Status Updated',
+      data:[]
+    }   
+  } catch (error) {
+    return{
+      status:false,
+      message:error?.message,
+      data:[]
+    }
+  }
+};
+
 
 export const getTravelDetailsFromTravelId = async (travel_id) => {
   try {

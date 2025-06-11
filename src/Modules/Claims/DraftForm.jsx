@@ -115,7 +115,7 @@ const DraftForm = ({
         const travelmode= await getTravelMode(travel_id)
         setselectedtravelMode({label:travelmode.data,value:travel_id}) 
       }
-      let dates = await getlatestclaimtodate(travel_id);
+    let dates = await getlatestclaimtodate(travel_id);
      // console.log('dates',dates)
       
      // travel_id==='Long-Term-Local-Conveyance'?setselectedtravelMode(matchedItem):setselectedtravelMode({label:travelmode.data,value:travel_id}) 
@@ -129,8 +129,8 @@ const DraftForm = ({
         projectName: data.project,
         onAccount: data.account,
         travelfromDate: formateDate(dates[0].travelfromdate),
-        claimFromDate:travel_id==='Long-Term-Local-Conveyance'?data.from_date:formateDate(dates[0].claimformdate),
-        claimToDate: travel_id==='Long-Term-Local-Conveyance'?data.to_date:formateDate(dates[0].claimtodate),
+        claimFromDate:data.from_date,
+        claimToDate:data.to_date,
         filename: data.filename,
         file_type: data.file_type,
       });

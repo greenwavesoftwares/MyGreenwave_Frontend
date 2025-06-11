@@ -1,16 +1,18 @@
 import React from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Button, Chip, Grid } from "@mui/material";
+import { Chip, Grid, IconButton } from "@mui/material";
 //Call Api
 import { getMyFormParticularRequisitionId } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Dialog } from "primereact/dialog";
+import CheckIcon from "@mui/icons-material/Check";
 import { useState } from "react";
+import {Button } from "primereact/button"
 
 const MyForm = ({ myFormTableData }) => {
   const [expandedRows, setExpandedRows] = useState(null);
-  console.log('table data',myFormTableData)
+  console.log("table data", myFormTableData);
   //Dialog visible
   const [visible, setVisible] = useState(false);
   //
@@ -72,6 +74,50 @@ const MyForm = ({ myFormTableData }) => {
     </DataTable>
   );
 
+  const completeTravel = async (rowData) => {
+    //  let updatedData={...row,advance: newAdvanceAmount}
+    let response = await updateTravelRequisition(
+      rowData,
+      rowData.travelId,
+      "CompleteRequested"
+    );
+
+    if (response.status != 201) {
+      toast.current?.show({
+        severity: "error",
+        summary: "error",
+        detail: response.data,
+      });
+    } else {
+      let response = await getApprovedAndSettledAndCompleteRequestedData();
+      setApprovedAndSettledTravelData(response.data);
+      // setEditRowId(null);
+      toast.current?.show({
+        severity: "success",
+        summary: "Success",
+        detail: response.message,
+      });
+
+      // Optionally reset newAdvanceAmount
+    }
+  };
+
+  const checkBody=(rowData)=>{
+      return(
+    <Button
+      icon="pi pi-check"
+      className="p-button-sm p-button-text p-button-success"
+        onClick={() => {
+        completeTravel(rowData.expandableData[0], "CompleteRequested");
+        }}
+        tooltip="Complete Travel"
+      disabled={rowData.requestCompletedFlag === false}
+      />
+    // <span>Hii</span>
+      )
+      
+  }
+
   return (
     <>
       <DataTable
@@ -94,6 +140,27 @@ const MyForm = ({ myFormTableData }) => {
         <Column field="city" header="City"></Column>
         <Column field="localityArea" header="Locality/Area"></Column>
         <Column field="typeOfTravel" header="Type Of Travel"></Column>
+        <Column body={checkBody} header="Complete Travel"></Column>
+       
+        {/* <Column
+  body={(rowData) => {
+    return (
+      <Button
+        icon="pi pi-check"
+        label="Apply"
+        className="p-button-sm p-button-success p-button-text"
+        onClick={() => {
+          completeTravel(rowData.expandableData[0], "CompleteRequested");
+        }}
+        tooltip="Apply for Approval"
+       // disabled={rowData.requestCompletedFlag === false}
+      />
+    );
+  }}
+  header="Travel Complete"
+  headerStyle={{ textAlign: "center" }}
+  style={{ textAlign: "center" }}
+/> */}
       </DataTable>
 
       <Dialog

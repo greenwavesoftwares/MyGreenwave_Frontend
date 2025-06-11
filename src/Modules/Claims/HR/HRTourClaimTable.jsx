@@ -195,8 +195,8 @@ const HRTourClaimTable = () => {
         if (response.status) {
             setreviewedtourclaimData(response.data)
               toast.current.show({
-          severity: "sucess",
-          summary: "sucess",
+          severity: "success",
+          summary: "success",
           detail: response.message,
         });
             

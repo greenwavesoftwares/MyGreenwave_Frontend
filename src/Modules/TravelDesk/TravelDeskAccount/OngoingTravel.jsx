@@ -7,7 +7,7 @@ import {
   getAdvanceDetails,
   getMyFormParticularRequisitionId,
   getOngoingTravelData,
-  updateTravelRequisition,
+  updateTravelRequisition2,
   downloadDocumentsByReqId,
   uploadDocumentsByReqId
 } from "../TravelDeskAPI";
@@ -161,8 +161,8 @@ const OngoingTravel = () => {
       // const [settlementAmount, setSettlementAmount] = useState("");
       const handleApproveSubmit = async () => {
         try {
-          const response = await updateTravelRequisition(rowData, rowData.travelId,"Approved");
-          if (response.status==201) {
+          const responseData = await updateTravelRequisition2(rowData, rowData.travelId,"Approved");
+          if (responseData.status) {
             let response=  await getOngoingTravelData()
             setongoingtravelData(response.data);
             // setreviewedtourclaimData(response.data);
@@ -175,7 +175,7 @@ const OngoingTravel = () => {
             toast.current.show({
               severity: "error",
               summary: "Error",
-              detail: response.data,
+              detail: responseData.message,
             });
           }
         } catch (error) {
@@ -189,8 +189,8 @@ const OngoingTravel = () => {
 
       const handleSubmitReject = async () => {
         try {
-          const response = await updateTravelRequisition(rowData, rowData.travelId,"Rejected"); //await RejectTourClaim(rowData.claim_id, "Rejected");
-          if (response.status==201) {
+          const response = await updateTravelRequisition2(rowData, rowData.travelId,"Rejected"); //await RejectTourClaim(rowData.claim_id, "Rejected");
+          if (response.status) {
            let response=await getOngoingTravelData()
            setongoingtravelData(response.data);
             toast.current.show({
@@ -227,7 +227,7 @@ const OngoingTravel = () => {
         />
       </>
     ) : (
-      <span className="text-gray-500 italic">Not eligible</span>
+      <span className="text-gray-500 italic">Action Taken</span>
     )}
         </div>
       );

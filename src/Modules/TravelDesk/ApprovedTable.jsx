@@ -7,7 +7,7 @@ import {
   getAdvanceDetails,
   getMyFormParticularRequisitionId,
   getApprovedAndSettledAndCompleteRequestedData,
-  updateTravelRequisition,
+  updateTravelRequisition2,
   uploadDocumentsByReqId,
   downloadDocumentsByReqId
 } from "./TravelDeskAPI";
@@ -78,47 +78,47 @@ const ApprovedTable = () => {
   //const rowExpansionTemplate = (rowData) => (
 
   const rowExpansionTemplate = (rowData) => {
+    
     const handleSaveAdvance = async(row) => {
-      let updatedExpandableData = null;
-      // const updated = approvedAndSettledTravelData.map((item) => {
-      //   // Find the correct expandableData row to update
-      //   updatedExpandableData = item.expandableData.map((exp) => {
-      //     if (exp.requisionId === row.requisionId) {
-      //       return { ...exp, advance: newAdvanceAmount };
-      //     }
-      //     return exp;
-      //   });
-
-      //   return {
-      //     ...item,
-      //     expandableData: updatedExpandableData,
-      //   };
-      // });
+     // let updatedExpandableData = null;
+    try{
       let updatedData={...row,advance: newAdvanceAmount}
-     let response=  await updateTravelRequisition(        
+     let responseData=  await updateTravelRequisition2(        
           updatedData,
           updatedData.travelId,
           'Settled'
         );
 
-     if(!response.status)
-     {
-          toast.current?.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
-     }else{
+      if(responseData.status)
+      {
+       
+         const response =
+          await getApprovedAndSettledAndCompleteRequestedData();
       setApprovedAndSettledTravelData(response.data);
       setEditRowId(null);
       toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: response.message,
+            detail: responseData.message,
           });
-
-      // Optionally reset newAdvanceAmount
-     }
+         
+     }else{
+     
+          toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: responseData.message,
+          });
+      
+    }
+    }catch(error)
+    {
+       toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: error?.message,
+          });
+    }
       
      
     };
@@ -151,6 +151,8 @@ const ApprovedTable = () => {
           </>
         );
       }
+
+
       if (!row.claimUnderProcess && row.status==="Approved") {
         return (
           <IconButton
@@ -164,8 +166,14 @@ const ApprovedTable = () => {
             <EditIcon />
           </IconButton>
         );
+      }else 
+      if(row.claimUnderProcess)
+      {
+       return <h3>Pending Unsettled Claim</h3>;
       }
-      return <h3>Pending Unsettled Claim</h3>;
+      else{
+       
+      }
     };
 
     const supportingDocumentBody = (rowData) => {
@@ -235,6 +243,7 @@ const ApprovedTable = () => {
                 onClick={() => {
                   handleDownloadFile(rowData.requisionId);
                 }}
+                 disabled={rowData.file_name == null}
                 tooltip={`${rowData.file_name}`}
               />
         );
@@ -248,7 +257,7 @@ const ApprovedTable = () => {
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
-        <Column field="requisionId" header="Requisition ID" />
+        {/* <Column field="requisionId" header="Requisition ID" /> */}
         <Column field="date" header="Date" />
         <Column field="advanceRequested" header="Advance Requested" />
         <Column field="status" header="Status" />
@@ -279,7 +288,7 @@ const ApprovedTable = () => {
         />
 
           <Column
-                    header="Upload Document"
+                    header="Download Document"
                     body={supportingDocumentBody}
                     headerStyle={cellStyle}
                     bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
@@ -402,36 +411,50 @@ const ApprovedTable = () => {
   //   }
   // };
 
-  const conpleteTravel=async(rowData)=>{
+  const completeTravel=async(rowData)=>{
    //  let updatedData={...row,advance: newAdvanceAmount}
-     let response=  await updateTravelRequisition(        
+     let responseData=  await updateTravelRequisition2(        
           rowData,
           rowData.travelId,
           'CompleteRequested'
         );
-
-      
-
-     if(response.status!=201)
+     if(responseData.status)
      {
-          toast.current?.show({
-            severity: "error",
-            summary: "error",
-            detail: response.data,
-          });
-     }else{
-    let response=  await getApprovedAndSettledAndCompleteRequestedData()
+      let response=  await getApprovedAndSettledAndCompleteRequestedData()
       setApprovedAndSettledTravelData(response.data);
      // setEditRowId(null);
       toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: response.message,
+            detail: responseData.message,
           });
 
       // Optionally reset newAdvanceAmount
      }
+      else{
+    toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: responseData.message,
+          });
+     }
   }
+
+  const checkBody=(rowData)=>{
+        return(
+      <Button
+        icon="pi pi-check"
+        className="p-button-sm p-button-text p-button-success"
+          onClick={() => {
+          completeTravel(rowData.expandableData[0], "CompleteRequested");
+          }}
+          tooltip="Complete Travel"
+        disabled={rowData.requestCompletedFlag === false}
+        />
+      // <span>Hii</span>
+        )
+        
+    }
 
   return (
     <>
@@ -494,7 +517,7 @@ const ApprovedTable = () => {
               filter
             /> */}
           <Column expander style={{ width: "3rem" }} />
-
+{/* 
           <Column
             field="travelId"
             header="travelId"
@@ -502,7 +525,7 @@ const ApprovedTable = () => {
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
+          /> */}
           <Column
             field="userName"
             header="Name"
@@ -641,14 +664,16 @@ const ApprovedTable = () => {
                 headerStyle={{ textAlign: "center" }}
                 style={{ textAlign: "center" }}
               /> */}
-          <Column
+
+          <Column body={checkBody} header="Complete Travel"></Column>
+          {/* <Column
             body={(rowData) => {
               return (
                 !rowData.requestCompletedFlag?(
                 <IconButton
                   aria-label="Complete"
                   onClick={() => {
-                    conpleteTravel(rowData.expandableData[0],"CompleteRequested")
+                    completeTravel(rowData.expandableData[0],"CompleteRequested")
                     // updateTravelRequisitionStatus(
                     //   rowData.expandableData[0],
                     //   "CompleteRequested"
@@ -657,13 +682,13 @@ const ApprovedTable = () => {
                  // disabled={rowData.requestCompletedFlag}
                 >
                   <CheckIcon />
-                </IconButton>):(<span>Completed</span>)
+                </IconButton>):(<span>''</span>)
               );
             }}
             header="Travel Complete"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
-          />
+          /> */}
         </DataTable>
         <Dialog
           header="Requisition Form View"
