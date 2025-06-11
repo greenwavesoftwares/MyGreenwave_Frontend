@@ -34,6 +34,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getMenuInfoDetails } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
+import GreenwaveLogo from '../../assets/Images/GreenwaveLogo.png'
 import "./MenuBar.css";
 
 library.add(fas);
@@ -114,7 +115,7 @@ export default function MiniDrawer({ children }) {
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => {
     setOpen(false);
-    setExpandedItems({})
+    setExpandedItems({});
   };
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleCloseMenu = () => setAnchorEl(null);
@@ -134,7 +135,7 @@ export default function MiniDrawer({ children }) {
       ...prev,
       [key]: !prev[key],
     }));
-    setOpen(true)
+    setOpen(true);
   };
 
   const displayNoMenu = () =>
@@ -161,6 +162,7 @@ export default function MiniDrawer({ children }) {
       return (
         <React.Fragment key={key}>
           <ListItem disablePadding className="menu-list-item">
+            <Tooltip title={open?"":item.label} placement="right">
             <ListItemButton
               onClick={handleItemClick}
               className={`menu-item ${selected ? "selected" : ""}`}
@@ -178,6 +180,7 @@ export default function MiniDrawer({ children }) {
               </ListItemIcon>
               <ListItemText primary={item.label} className="menu-text" />
             </ListItemButton>
+            </Tooltip>
           </ListItem>
           {hasChildren && (
             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
@@ -221,25 +224,47 @@ export default function MiniDrawer({ children }) {
         <DrawerHeader>
           {!open ? (
             <IconButton onClick={handleDrawerOpen}>
-              <MenuIcon style={{color:'white'}}/>
+              <MenuIcon style={{ color: "white" }} />
             </IconButton>
           ) : (
-            <IconButton onClick={handleDrawerClose}>
-              {theme.direction === "rtl" ? (
-                <ChevronRightIcon style={{ color: "white" }} />
-              ) : (
-                <ChevronLeftIcon style={{ color: "white" }} />
-              )}
-            </IconButton>
+            <div style={{ display: "flex", flexDirection: "row" }}>
+              <IconButton onClick={handleDrawerClose}>
+                {theme.direction === "rtl" ? (
+                  <ChevronRightIcon style={{ color: "white" }} />
+                ) : (
+                  <ChevronLeftIcon style={{ color: "white" }} />
+                )}
+              </IconButton>
+              <Chip
+                label="My Greenwave"
+                size="medium"
+                style={{ color: "white", backgroundColor: "#3c4a52" }}
+                avatar={<img
+                src={GreenwaveLogo}
+                style={{ width: "1rem", height: "1rem" }}
+
+                />}
+              />
+            </div>
           )}
         </DrawerHeader>
 
-        <Divider />
+        <Divider
+          sx={{
+            borderColor: "#ffffff30",
+            margin: "3px 0px !important",
+          }}
+        />
 
         <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
 
         <div className="fixed-section">
-          <Divider />
+          <Divider
+            sx={{
+              borderColor: "#ffffff30",
+              margin: "3px 0px !important",
+            }}
+          />
           <ListItemButton
             onClick={handleMenuClick}
             className="menu-item user-profile"
@@ -269,7 +294,6 @@ export default function MiniDrawer({ children }) {
                 <Chip
                   disabled={!open}
                   size="medium"
-                  variant="outlined"
                   label={userName}
                   className="username-chip"
                 />

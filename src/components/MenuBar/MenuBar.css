@@ -4,7 +4,7 @@
 
 .main-content {
   flex-grow: 1;
-  padding: 24px;
+  padding: 0.2px;
 }
 
 /* .hidden {
@@ -57,7 +57,7 @@
   border: 1px solid white !important;
   color: white !important;
   border-radius: 1rem !important;
-  font-size: 0.75rem !important;
+  font-size: 0.8rem !important;
 }
 
 .tooltip-content {
@@ -75,4 +75,5 @@
 
 .logout-box {
   background: #263238;
+  color: white;
 }
