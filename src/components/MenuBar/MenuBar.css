@@ -14,7 +14,7 @@
 .menu-item {
   min-height: 48px;
   justify-content: initial;
-  padding-left: 1px !important;
+  padding-left: 2px !important;
   background-color: #263238;
 }
 
@@ -23,14 +23,15 @@
 }
 
 .menu-icon {
-  margin-right: 16px !important;
-  justify-content: center !important;
+  margin-right: 0.5px !important;
+  /* justify-content: center !important; */
+  align-items: center !important;
   color: white !important;
 }
 
 .menu-text {
   opacity: 1;
-  color: inherit;
+  color: white;
 }
 
 .submenu-box {
@@ -46,11 +47,15 @@
 }
 
 .avatar {
-  width: 35px!important;
+  width: 35px !important;
   height: 35px !important;
   font-size: 0.9rem !important;
   background-color: #4097FF !important;
   color: white !important;
+}
+
+.username-avatar {
+   margin-left: 5px !important;
 }
 
 .username-chip {
@@ -58,6 +63,7 @@
   color: white !important;
   border-radius: 1rem !important;
   font-size: 0.8rem !important;
+  
 }
 
 .tooltip-content {
@@ -70,10 +76,16 @@
 }
 
 .popover {
-  margin-top: 1rem;
+  /* margin-top: 1rem; */
 }
 
 .logout-box {
   background: #263238;
   color: white;
+}
+
+.divider {
+  border-color: #ffffff30 !important;
+  margin: 3px 0px !important;
+
 }

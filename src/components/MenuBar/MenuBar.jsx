@@ -18,6 +18,7 @@ import {
   Popover,
   MenuItem,
   Chip,
+  Link,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -34,7 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getMenuInfoDetails } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
-import GreenwaveLogo from '../../assets/Images/GreenwaveLogo.png'
+import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import "./MenuBar.css";
 
 library.add(fas);
@@ -161,25 +162,35 @@ export default function MiniDrawer({ children }) {
 
       return (
         <React.Fragment key={key}>
-          <ListItem disablePadding className="menu-list-item">
-            <Tooltip title={open?"":item.label} placement="right">
-            <ListItemButton
-              onClick={handleItemClick}
-              className={`menu-item ${selected ? "selected" : ""}`}
-            >
-              <ListItemIcon className="menu-icon">
-                {hasChildren ? (
-                  isExpanded ? (
-                    <KeyboardArrowDownIcon />
-                  ) : (
-                    <KeyboardArrowRightIcon />
-                  )
-                ) : (
-                  item.logo && <FontAwesomeIcon icon={item.logo.split(" ")} />
-                )}
-              </ListItemIcon>
-              <ListItemText primary={item.label} className="menu-text" />
-            </ListItemButton>
+          <ListItem
+            disablePadding
+            className={`menu-item ${selected ? "selected" : ""} menu-list-item`}
+          >
+            <Tooltip title={open ? "" : item.label} placement="right">
+              <Link
+                href={item.path}
+                style={{ textDecoration: "none", color: "black" }}
+                onClick={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                <ListItemButton onClick={handleItemClick}>
+                  <ListItemIcon className="menu-icon">
+                    {hasChildren ? (
+                      isExpanded ? (
+                        <KeyboardArrowDownIcon />
+                      ) : (
+                        <KeyboardArrowRightIcon />
+                      )
+                    ) : (
+                      item.logo && (
+                        <FontAwesomeIcon icon={item.logo.split(" ")} />
+                      )
+                    )}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} className="menu-text" />
+                </ListItemButton>
+              </Link>
             </Tooltip>
           </ListItem>
           {hasChildren && (
@@ -239,35 +250,26 @@ export default function MiniDrawer({ children }) {
                 label="My Greenwave"
                 size="medium"
                 style={{ color: "white", backgroundColor: "#3c4a52" }}
-                avatar={<img
-                src={GreenwaveLogo}
-                style={{ width: "1rem", height: "1rem" }}
-
-                />}
+                avatar={
+                  <img
+                    src={GreenwaveLogo}
+                    style={{ width: "1rem", height: "1rem" }}
+                  />
+                }
               />
             </div>
           )}
         </DrawerHeader>
 
-        <Divider
-          sx={{
-            borderColor: "#ffffff30",
-            margin: "3px 0px !important",
-          }}
-        />
+        <Divider className="divider" />
 
         <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
 
         <div className="fixed-section">
-          <Divider
-            sx={{
-              borderColor: "#ffffff30",
-              margin: "3px 0px !important",
-            }}
-          />
+          <Divider className="divider" />
           <ListItemButton
             onClick={handleMenuClick}
-            className="menu-item user-profile"
+            className="menu-item username-avatar"
           >
             <ListItemIcon className="menu-icon">
               <Tooltip
