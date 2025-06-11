@@ -45,10 +45,6 @@ import OpenTravelsTableCopy from "./Modules/TravelDesk/OpenTravelsTableCopy";
 function WrappedRoutes() {
   return (
       <MenuBar >
-      {/* <DropdownCheckbox> </DropdownCheckbox> */}
-      {/* <DialogComponent></DialogComponent> */}
-      {/* <DatePicker></DatePicker> */}
-      {/* <Carousel> </Carousel> */}
       <Routes>
        <Route path="/admin" element={<AdminPage />} />
           <Route path="/leave-application" element={<LeaveApplication />} />

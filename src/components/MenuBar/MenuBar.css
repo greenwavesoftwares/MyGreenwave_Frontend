@@ -1,0 +1,78 @@
+.drawer-root {
+  display: flex;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 24px;
+}
+
+/* .hidden {
+  display: none !important;
+} */
+
+.menu-item {
+  min-height: 48px;
+  justify-content: initial;
+  padding-left: 1px !important;
+  background-color: #263238;
+}
+
+.menu-item.selected {
+  background-color: #37474F;
+}
+
+.menu-icon {
+  margin-right: 16px !important;
+  justify-content: center !important;
+  color: white !important;
+}
+
+.menu-text {
+  opacity: 1;
+  color: inherit;
+}
+
+.submenu-box {
+  padding-left: 32px;
+}
+
+.fixed-section {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  background: #263238;
+  z-index: 1;
+}
+
+.avatar {
+  width: 35px!important;
+  height: 35px !important;
+  font-size: 0.9rem !important;
+  background-color: #4097FF !important;
+  color: white !important;
+}
+
+.username-chip {
+  border: 1px solid white !important;
+  color: white !important;
+  border-radius: 1rem !important;
+  font-size: 0.75rem !important;
+}
+
+.tooltip-content {
+  display: grid;
+  gap: 8px;
+}
+
+.tooltip-text {
+  font-size: 0.9rem;
+}
+
+.popover {
+  margin-top: 1rem;
+}
+
+.logout-box {
+  background: #263238;
+}

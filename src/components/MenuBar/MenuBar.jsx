@@ -25,7 +25,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PersonIcon from "@mui/icons-material/Person";
-import KeyIcon from "@mui/icons-material/VpnKey";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { styled, useTheme } from "@mui/material/styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { fas } from "@fortawesome/free-solid-svg-icons";
@@ -33,8 +33,8 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getMenuInfoDetails } from "./MenuBarAPI";
-import LogoutIcon from "@mui/icons-material/Logout"; // Logout icon
 import { getUserData } from "../../Modules/Login/Encrypt";
+import "./MenuBar.css";
 
 library.add(fas);
 
@@ -112,7 +112,10 @@ export default function MiniDrawer({ children }) {
   const userName = userDetails?.userDetails?.userName;
 
   const handleDrawerOpen = () => setOpen(true);
-  const handleDrawerClose = () => setOpen(false);
+  const handleDrawerClose = () => {
+    setOpen(false);
+    setExpandedItems({})
+  };
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleCloseMenu = () => setAnchorEl(null);
   const openMenu = Boolean(anchorEl);
@@ -131,14 +134,13 @@ export default function MiniDrawer({ children }) {
       ...prev,
       [key]: !prev[key],
     }));
+    setOpen(true)
   };
-  const displayNoMenu = () => {
-    return (
-      window.location.pathname === "/login" ||
-      window.location.pathname === "/" ||
-      !userDetails?.userDetails?.userId.length > 0
-    );
-  };
+
+  const displayNoMenu = () =>
+    window.location.pathname === "/login" ||
+    window.location.pathname === "/" ||
+    !userDetails?.userDetails?.userId.length > 0;
 
   const renderMenuItems = (items, parentKey = "") =>
     items.map((item, index) => {
@@ -158,44 +160,28 @@ export default function MiniDrawer({ children }) {
 
       return (
         <React.Fragment key={key}>
-          <ListItem disablePadding sx={{ display: "block" }}>
+          <ListItem disablePadding className="menu-list-item">
             <ListItemButton
               onClick={handleItemClick}
-              sx={{
-                minHeight: 48,
-                justifyContent: open ? "initial" : "center",
-                px: 2.5,
-                backgroundColor: selected ? "#37474F" : drawerBgColor,
-                color: "white",
-              }}
+              className={`menu-item ${selected ? "selected" : ""}`}
             >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: open ? 3 : "auto",
-                  justifyContent: "center",
-                  color: selected ? "#4FC3F7" : "white",
-                }}
-              >
-                {hasChildren &&
-                  (isExpanded ? (
-                    <KeyboardArrowDownIcon sx={{ color: "white" }} />
+              <ListItemIcon className="menu-icon">
+                {hasChildren ? (
+                  isExpanded ? (
+                    <KeyboardArrowDownIcon />
                   ) : (
-                    <KeyboardArrowRightIcon sx={{ color: "white" }} />
-                  ))}
-                {!hasChildren && item.logo && (
-                  <FontAwesomeIcon icon={item.logo.split(" ")} />
+                    <KeyboardArrowRightIcon />
+                  )
+                ) : (
+                  item.logo && <FontAwesomeIcon icon={item.logo.split(" ")} />
                 )}
               </ListItemIcon>
-              <ListItemText
-                primary={item.label}
-                sx={{ opacity: open ? 1 : 0 }}
-              />
+              <ListItemText primary={item.label} className="menu-text" />
             </ListItemButton>
           </ListItem>
           {hasChildren && (
             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-              <Box sx={{ pl: open ? 4 : 0 }}>
+              <Box className="submenu-box">
                 {renderMenuItems(item.items, key + "/")}
               </Box>
             </Collapse>
@@ -203,96 +189,68 @@ export default function MiniDrawer({ children }) {
         </React.Fragment>
       );
     });
+
   const handleLogout = () => {
     localStorage.clear();
   };
-  const renderLogout = () => {
-    return (
-      <Box
-        sx={{
-          background: "#263238",
-          display:displayNoMenu()?'none':''
+
+  const renderLogout = () => (
+    <Box className={`logout-box ${displayNoMenu() ? "hidden" : ""}`}>
+      <MenuItem
+        onClick={() => {
+          handleLogout();
+          navigate(`/`);
         }}
       >
-        <MenuItem
-          onClick={() => {
-            handleLogout();
-            // navigate(`/?tenant=${tenant}`);
-            navigate(`/`);
-          }}
-        >
-          <ListItemIcon>
-            <LogoutIcon sx={{ color: "white" }} fontSize="small" />
-          </ListItemIcon>
-          <Typography sx={{ color: "white" }}>Logout</Typography>
-        </MenuItem>
-      </Box>
-    );
-  };
+        <ListItemIcon className="menu-icon">
+          <LogoutIcon fontSize="small" />
+        </ListItemIcon>
+        <Typography className="menu-text">Logout</Typography>
+      </MenuItem>
+    </Box>
+  );
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box className="drawer-root">
       <StyledDrawer
         variant="permanent"
         open={open}
-        sx={{
-          display:
-            displayNoMenu() ? "none"
-              : "flex",
-        }}
+        // className={displayNoMenu() ? "hidden" : ""}
+        style={{ display: displayNoMenu() ? "none" : "" }}
       >
         <DrawerHeader>
           {!open ? (
             <IconButton onClick={handleDrawerOpen}>
-              <MenuIcon sx={{ color: "white" }} />
+              <MenuIcon style={{color:'white'}}/>
             </IconButton>
           ) : (
             <IconButton onClick={handleDrawerClose}>
               {theme.direction === "rtl" ? (
-                <ChevronRightIcon sx={{ color: "white" }} />
+                <ChevronRightIcon style={{ color: "white" }} />
               ) : (
-                <ChevronLeftIcon sx={{ color: "white" }} />
+                <ChevronLeftIcon style={{ color: "white" }} />
               )}
             </IconButton>
           )}
         </DrawerHeader>
 
-        <Divider sx={{ borderColor: "#455A64" }} />
+        <Divider />
 
         <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
 
-        {/* Fixed bottom section */}
-        <div
-          className="fixedSection"
-          style={{
-            position: "sticky",
-            bottom: "0",
-            left: "0",
-            background: drawerBgColor,
-            zIndex: "+1",
-          }}
-        >
-          <Divider sx={{ borderColor: "#455A64" }} />
-
+        <div className="fixed-section">
+          <Divider />
           <ListItemButton
-            sx={{ justifyContent: open ? "initial" : "center", color: "white" }}
             onClick={handleMenuClick}
+            className="menu-item user-profile"
           >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                mr: open ? 3 : "auto",
-                justifyContent: "center",
-                alignItems: "center",
-                color: "white",
-              }}
-            >
+            <ListItemIcon className="menu-icon">
               <Tooltip
                 title={
-                  <div style={{ display: "grid", gap: "8px" }}>
+                  <div className="tooltip-content">
                     <Box display="flex" alignItems="center" gap={1}>
-                      <PersonIcon sx={{ fontSize: "1.2rem" }} />
-                      <Typography sx={{ fontSize: "0.9rem" }}>
+                      <PersonIcon className="tooltip-icon" />
+                      <Typography className="tooltip-text">
                         {userName}
                       </Typography>
                     </Box>
@@ -300,60 +258,39 @@ export default function MiniDrawer({ children }) {
                 }
                 placement="right"
               >
-                <Avatar
-                  sx={{
-                    width: 35,
-                    height: 35,
-                    fontSize: "0.9rem",
-                    background: "#4097FF",
-                    color: "white",
-                  }}
-                >
+                <Avatar className="avatar">
                   {convertToInitials(userName)}
                 </Avatar>
               </Tooltip>
             </ListItemIcon>
-
             <ListItemText
-              sx={{ opacity: open ? 1 : 0 }}
+              className="menu-text"
               primary={
                 <Chip
                   disabled={!open}
-                  size="small"
+                  size="medium"
                   variant="outlined"
-                  sx={{
-                    border: "1px solid white",
-                    color: "white",
-                    borderRadius: "1rem",
-                    fontSize: "0.75rem",
-                  }}
                   label={userName}
+                  className="username-chip"
                 />
               }
             />
           </ListItemButton>
-
           <Popover
             open={openMenu}
             anchorEl={anchorEl}
             onClose={handleCloseMenu}
-            anchorOrigin={{
-              vertical: "center",
-              horizontal: "right",
-            }}
-            transformOrigin={{
-              vertical: "center",
-              horizontal: "left",
-            }}
+            anchorOrigin={{ vertical: "center", horizontal: "right" }}
+            transformOrigin={{ vertical: "center", horizontal: "left" }}
             elevation={0}
-            sx={{ mt: "1rem" }}
+            className="popover"
           >
             {renderLogout()}
           </Popover>
         </div>
       </StyledDrawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" className="main-content">
         <DrawerHeader />
         {children}
       </Box>
