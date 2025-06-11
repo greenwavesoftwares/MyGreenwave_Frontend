@@ -5,23 +5,23 @@ import KeyIcon from "@mui/icons-material/Key";
 import "./UserProfile.css";
 import { useEffect, useState } from "react";
 import { getUserData } from "../Login/Encrypt";
-import { getUserDetails } from "../Login/LoginAPI";
+import { getUserDetailsAPI } from "../Login/LoginAPI";
 import ResetPassword from "../ResetPassword/ResetPassword";
 import UserLog from "../AdminPage/UserLog/UserLog";
 
 export default function UserProfile() {
-  const [showAccountInfo, setShowAccountInfo] = useState(true);//state to show the Account Details if true and to show the Reset Password component if false
-  const [userDetails, setUserDetails] = useState(null);//state to hold the user details
-  const [showLogsDialog,setShowLogsdialog]=useState(false)//state to show logs if true
-  const token = getUserData().token;//constant to hold current token
+  const [showAccountInfo, setShowAccountInfo] = useState(true); //state to show the Account Details if true and to show the Reset Password component if false
+  const [userDetails, setUserDetails] = useState(null); //state to hold the user details
+  const [showLogsDialog, setShowLogsdialog] = useState(false); //state to show logs if true
+  const token = getUserData().token; //constant to hold current token
 
   const fetchData = async () => {
-    const details = await getUserDetails(token);
+    const details = await getUserDetailsAPI(token);
     setUserDetails(details);
   };
-  const onHideLogs=()=>{
-    setShowLogsdialog(false)
-  }
+  const onHideLogs = () => {
+    setShowLogsdialog(false);
+  };
   useEffect(() => {
     fetchData();
   }, []);
@@ -148,16 +148,29 @@ export default function UserProfile() {
                 <div className="table-row">
                   <div className="table-cell table-cell-header">Logs</div>
                   <div className="table-cell">
-                      <FileCopyOutlinedIcon color="info" className="logs-icon" onClick={()=>{setShowLogsdialog(true)}} />
+                    <FileCopyOutlinedIcon
+                      color="info"
+                      className="logs-icon"
+                      onClick={() => {
+                        setShowLogsdialog(true);
+                      }}
+                    />
                   </div>
                 </div>
               </div>
             </Paper>
           )}
-          {!showAccountInfo&&
-          <ResetPassword userDetails={userDetails} currentPasswordCheck={true}/>
-          }
-          <UserLog dialogVisible={showLogsDialog} onHide={onHideLogs} userId={userDetails?.userId}/>
+          {!showAccountInfo && (
+            <ResetPassword
+              userDetails={userDetails}
+              currentPasswordCheck={true}
+            />
+          )}
+          <UserLog
+            dialogVisible={showLogsDialog}
+            onHide={onHideLogs}
+            userId={userDetails?.userId}
+          />
         </div>
       )}
     </>

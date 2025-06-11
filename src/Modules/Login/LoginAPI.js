@@ -1,9 +1,10 @@
 import axios from "axios";
 import { showErrorMessage } from "../../components/Toast/ShowMessage";
+import { getUserData } from "./Encrypt";
 
 const endPoint = import.meta.env.VITE_END_POINT;
 
-const loginCheck = async (credential, toastRef, showWPDialog) => {
+const loginCheckAPI = async (credential, toastRef, showWPDialog) => {
   try {
     const response = await axios.post(`${endPoint}authenticate`, credential);
     return response.data;
@@ -20,7 +21,7 @@ const loginCheck = async (credential, toastRef, showWPDialog) => {
     return null;
   }
 };
-const getUserDetails = async (token) => {
+const getUserDetailsAPI = async (token) => {
   try {
     const response = await axios.get(`${endPoint}users`, {
       headers: {
@@ -34,5 +35,20 @@ const getUserDetails = async (token) => {
     return null;
   }
 };
+const extendTokenExpirationAPI = async () => {
+  const userData = getUserData();
+  try {
+    const response = await axios.get(`${endPoint}extendTokenExpiration`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching forminfo with versions:", error);
+    return null;
+  }
+};
 
-export { loginCheck, getUserDetails };
+export { loginCheckAPI, getUserDetailsAPI, extendTokenExpirationAPI };

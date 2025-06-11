@@ -1,30 +1,143 @@
 .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(8px);
-    background: rgba(255, 255, 255, 0.3);
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(2px);
+  background: rgba(255, 255, 255, 0.3);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* .spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-  
-  .spinner {
-    border: 8px solid #f3f3f3;
-    border-top: 8px solid #3498db;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
+  100% {
+    transform: rotate(360deg);
   }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+} */
+
+.loadingContainer {
+  --uib-size: 40px;
+  --uib-color: #3498db;
+  --uib-speed: 1.75s;
+  position: relative;
+  height: var(--uib-size);
+  width: var(--uib-size);
+  filter: url("#uib-jelly-triangle-ooze");
+  margin-bottom: 16px;
+}
+
+.loadingContainer::before,
+.loadingContainer::after,
+.dot {
+  content: "";
+  position: absolute;
+  width: 33%;
+  height: 33%;
+  background-color: #bf3f3f;
+  border-radius: 100%;
+  will-change: transform;
+  transition: background-color 0.3s ease;
+}
+
+.dot {
+  top: 6%;
+  left: 30%;
+  animation: grow var(--uib-speed) ease infinite,
+    backgroundColorAnimation var(--uib-speed) ease infinite;
+}
+
+.loadingContainer::before {
+  bottom: 6%;
+  right: 0;
+  animation: grow var(--uib-speed) ease calc(var(--uib-speed) * -0.666) infinite,
+    backgroundColorAnimation var(--uib-speed) ease infinite;
+}
+
+.loadingContainer::after {
+  bottom: 6%;
+  left: 0;
+  animation: grow var(--uib-speed) ease calc(var(--uib-speed) * -0.333) infinite,
+    backgroundColorAnimation var(--uib-speed) ease infinite;
+}
+
+.traveler {
+  position: absolute;
+  top: 6%;
+  left: 30%;
+  width: 33%;
+  height: 33%;
+  background-color: #bf3f3f;
+  border-radius: 100%;
+  animation: triangulate var(--uib-speed) ease infinite,
+    backgroundColorAnimation var(--uib-speed) ease infinite;
+  transition: background-color 0.3s ease;
+}
+
+.svg {
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+@keyframes triangulate {
+  0%,
+  100% {
+    transform: none;
   }
-  
+
+  33.333% {
+    transform: translate(120%, 175%);
+  }
+
+  66.666% {
+    transform: translate(-95%, 175%);
+  }
+}
+
+@keyframes grow {
+  0%,
+  85%,
+  100% {
+    transform: scale(1.5);
+  }
+
+  50%,
+  60% {
+    transform: scale(0);
+  }
+}
+
+@keyframes backgroundColorAnimation {
+  0% {
+    background-color: #e27d6b; /* warm coral */
+  }
+  25% {
+    background-color: #8fbf7a; /* sage green */
+  }
+  50% {
+    background-color: #73b7c4; /* soft teal */
+  }
+  75% {
+    background-color: #a78bb1; /* dusty lavender */
+  }
+  100% {
+    background-color: #d1aa74; /* warm sand */
+  }
+}

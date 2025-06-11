@@ -19,6 +19,10 @@ import OnTourReport from "./OnTourReport";
 import LeaveReport from "./LeaveReport";
 import LeaveOnBehalf from "./LeaveOnBehalf";
 import { getUserIdAndName } from "../../AdminPage/AdminFunction";
+import {
+  hideLoading,
+  showLoading,
+} from "../../../components/LoadingScreen/LoadingContext";
 
 const LeaveAdmin = () => {
   const tableStructure = () => ({
@@ -58,10 +62,12 @@ const LeaveAdmin = () => {
 
   useEffect(() => {
     const init = async () => {
+      showLoading();
       await getLeaveRequestData();
       await getUserLeaveInfoOnLoad(new Date().getFullYear());
       await getLeaveOnBehalfTableData();
       setUserList(await getUserIdAndName());
+      hideLoading();
     };
     init();
   }, []);

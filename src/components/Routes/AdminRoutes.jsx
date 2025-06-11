@@ -1,0 +1,86 @@
+import { Navigate, Outlet, Route } from "react-router-dom";
+import AdminPage from "../../Modules/AdminPage/AdminPage";
+import AppraisalsReview from "../../Modules/Appraisal/Appraisals Review/AppraisalsReview";
+import AppraisalsApprover from "../../Modules/Appraisal/Appraisals Approver/AppraisalsApprover";
+import SalarySlipUpload from "../../Modules/SalarySlip/SalarySlipUpload";
+import AppraisalTracker from "../../Modules/AppraisalTracker/AppraisalTracker";
+import TrainingMaster from "../../Modules/Training_Master/TrainingMaster";
+import HolidayMaster from "../../Modules/HolidayMaster/HolidayMaster";
+import TrainingScheduleMaster from "../../Modules/TrainingScheduleMaster/TrainingScheduleMaster";
+import LeaveManagerApproval from "../../Modules/LeaveManagement/LeaveManagerApproval/LeaveManagerApproval";
+import LeaveAdmin from "../../Modules/LeaveManagement/LeaveAdmin/LeaveAdmin";
+import AccountTourClaims from "../../Modules/Claims/Account/AccountTourClaims";
+import HRTourClaims from "../../Modules/Claims/HR/HRTourClaims";
+import HRLoanApplication from "../../Modules/Claims/HR/HRLoanApplication";
+import TravelDeskManager from "../../Modules/TravelDeskManager/TravelDeskManager";
+import AccountMiscellanousClaim from "../../Modules/Claims/Account/AccountMiscellanousClaim";
+import HRReferralPage from "../../Modules/Referrals/HRReferralPage";
+import HomepageMaster from "../../Modules/HomePageMaster/HomepageMaster";
+import TravelDeskBooking from "../../Modules/TravelDesk/TravelDeskBooking";
+import AccountMain from "../../Modules/TravelDesk/TravelDeskAccount/AccountMain";
+import OpenTravelsTableCopy from "../../Modules/TravelDesk/OpenTravelsTableCopy";
+import React from "react";
+
+function AdminRoutes() {
+  return (
+    <React.Fragment>
+      {/* Admin home */}
+      <Route index element={<AdminPage />} />
+
+      {/* Leave */}
+      <Route path="leave" element={<Outlet />}>
+        <Route path="manager-approval" element={<LeaveManagerApproval />} />
+        <Route path="admin" element={<LeaveAdmin />} />
+      </Route>
+
+      {/* Travel desk */}
+      <Route path="travel-desk" element={<Outlet />}>
+        <Route path="manager" element={<TravelDeskManager />} />
+        <Route path="advanced" element={<OpenTravelsTableCopy />} />
+        <Route path="booking" element={<TravelDeskBooking />} />
+        <Route path="booking2" element={<AccountMain />} />
+      </Route>
+
+      {/* Claim */}
+      <Route path="claim" element={<Outlet />}>
+        <Route path="account-tour" element={<AccountTourClaims />} />
+        <Route path="hr-tour" element={<HRTourClaims />} />
+        <Route
+          path="account-miscellaneous"
+          element={<AccountMiscellanousClaim />}
+        />
+        <Route path="hr-loan-application" element={<HRLoanApplication />} />
+      </Route>
+
+      {/* Referral */}
+      <Route path="hr-referral" element={<HRReferralPage />} />
+
+      {/* Appraisals */}
+      <Route path="appraisal" element={<Outlet />}>
+        <Route path="review" element={<AppraisalsReview />} />
+        <Route path="approver" element={<AppraisalsApprover />} />
+        <Route path="tracker" element={<AppraisalTracker />} />
+      </Route>
+
+      {/* Salary Slip */}
+      <Route path="salary-slip-upload" element={<SalarySlipUpload />} />
+
+      {/* Training */}
+      <Route path="training" element={<Outlet />}>
+        <Route path="master" element={<TrainingMaster />} />
+        <Route path="schedule-master" element={<TrainingScheduleMaster />} />
+      </Route>
+
+      {/* Holiday */}
+      <Route path="holiday-master" element={<HolidayMaster />} />
+
+      {/* Home Page */}
+      <Route path="homepage-master" element={<HomepageMaster />} />
+
+      {/* For wrong routing go to login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </React.Fragment>
+  );
+}
+
+export default AdminRoutes;

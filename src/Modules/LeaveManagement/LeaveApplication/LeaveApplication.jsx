@@ -37,6 +37,8 @@ import LeaveBalanceCard from "./LeaveBalanceCard";
 import CustomInputText from "../../../components/InputText/InputText";
 import CustomButton from "../../../components/Button/Button";
 import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
+import YearCarouselPrime from "./YearCarouselPrime";
+import Holiday from "../../Holiday/Holiday";
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -70,40 +72,38 @@ const LeaveApplication = () => {
   const [chartData, setChartData] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [appVersion, setAppVersion] = useState("1.0");
-  const editBodyTemplate = (row) => {
+  const actionBodyTemplate = (row) => {
     return (
-      <CustomButton
-        icon="pi pi-pencil"
-        rounded
-        outlined
-        severity="warning"
-        disabled={row.status !== "Pending" && row.status !== "Editing"}
-        onClick={() => {
-          setLeaveData(onSelectRowEdit(row));
-          showleaveDialog("", true);
-        }}
-      />
-    );
-  };
-  const deleteBodyTemplate = (row) => {
-    return (
-      <CustomButton
-        icon="pi pi-trash"
-        rounded
-        outlined
-        severity="danger"
-        disabled={row.status !== "Pending" && row.status !== "Editing"}
-        onClick={() => {
-          showConfirm(
-            "Confirmation",
-            "Do you want to delete this leave?",
-            async () => {
-              await deleteLeave(row, setLeaveInfo, toastRef);
-            },
-            null
-          );
-        }}
-      />
+      <div className="flex justify-content-center">
+        <CustomButton
+          icon="pi pi-pencil"
+          rounded
+          outlined
+          severity="warning"
+          disabled={row.status !== "Pending" && row.status !== "Editing"}
+          onClick={() => {
+            setLeaveData(onSelectRowEdit(row));
+            showleaveDialog("", true);
+          }}
+        />
+        <CustomButton
+          icon="pi pi-trash"
+          rounded
+          outlined
+          severity="danger"
+          disabled={row.status !== "Pending" && row.status !== "Editing"}
+          onClick={() => {
+            showConfirm(
+              "Confirmation",
+              "Do you want to delete this leave?",
+              async () => {
+                await deleteLeave(row, setLeaveInfo, toastRef);
+              },
+              null
+            );
+          }}
+        />
+      </div>
     );
   };
   const statusBodyTemplate = (row) => {
@@ -247,16 +247,11 @@ const LeaveApplication = () => {
   return (
     <>
       <Container maxWidth="lg">
-        <Grid
-          container
-          spacing={1}
-          marginTop={2}
-          sx={{
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <Grid container spacing={1} marginTop={2} className="items-stretch">
           {/* <Grid size={12}>
+            <YearCarouselPrime />
+          </Grid>
+          <Grid size={12}>
             Version
             <Dropdown
               value={appVersion}
@@ -400,7 +395,7 @@ const LeaveApplication = () => {
           {(appVersion === "1.0" || appVersion === "1.1") && (
             <>
               <Grid size={{ md: 3.3, xs: 12 }}>
-                <Card>
+                <Card className="h-full">
                   <Grid container rowGap={1.5}>
                     <Grid size={12}>Year :</Grid>
                     <Grid size={12}>
@@ -504,7 +499,7 @@ const LeaveApplication = () => {
                     ))}
                   </Grid>
                 ) : (
-                  <Card>
+                  <Card className="h-full">
                     <Chart
                       className={
                         selectedYear == getCurrentYear()
@@ -520,7 +515,7 @@ const LeaveApplication = () => {
               </Grid>
             </>
           )}
-          <Grid size={12}>
+          {/* <Grid size={12}>
             <Card>
               <TabView>
                 <TabPanel header="Calender View">
@@ -604,6 +599,92 @@ const LeaveApplication = () => {
                   </DataTable>
                 </TabPanel>
               </TabView>
+            </Card>
+          </Grid> */}
+          <Grid size={{ md: 6, xs: 12 }}>
+            <Card className="h-full">
+              <Tooltip ref={tooltipRef} target="#selectedEvent" mouseTrack />
+              <Calender
+                initialView="dayGridMonth"
+                height={"31rem"}
+                events={leaveInfo.calenderData}
+                eventMouseEnter={(info) => {
+                  info.el.id = "selectedEvent";
+                  info.el.setAttribute("data-pr-tooltip", info.event.id);
+                  info.el.setAttribute("data-pr-position", "mouse");
+                  tooltipRef.current.updateTargetEvents("#selectedEvent");
+                }}
+              />
+            </Card>
+          </Grid>
+          <Grid size={{ md: 6, xs: 12 }} className="h-full">
+            <Card className="h-full">
+              <DataTable
+                value={leaveTable.table}
+                filters={leaveTable.filterStructure}
+                globalFilterFields={["fromDate", "type", "reason", "status"]}
+                header={leaveHeader}
+                paginator
+                rows={5}
+                rowsPerPageOptions={
+                  leaveTable.table?.length > 50
+                    ? [5, 10, 25, 50, leaveTable.table?.length]
+                    : leaveTable.table?.length > 25
+                    ? [5, 10, 25, leaveTable.table?.length]
+                    : leaveTable.table?.length > 10
+                    ? [5, 10, leaveTable.table?.length]
+                    : leaveTable.table?.length > 5
+                    ? [5, leaveTable.table?.length]
+                    : [5]
+                }
+                paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                currentPageReportTemplate="{first} to {last} of {totalRecords}"
+                sortField="fromDate"
+                sortOrder={-1}
+                size="small"
+                className="text-sm"
+                rowClassName={() =>
+                  "hover:bg-gray-100 transition-all duration-200"
+                }
+              >
+                <Column
+                  field="fromDate"
+                  header="From Date"
+                  style={{ width: "14vw" }}
+                  sortable
+                ></Column>
+                <Column
+                  field="toDate"
+                  header="To Date"
+                  style={{ width: "14vw" }}
+                  sortable
+                ></Column>
+                <Column
+                  field="actualLeave"
+                  header="Leave"
+                  style={{ width: "10vw" }}
+                ></Column>
+                <Column
+                  field="type"
+                  header="Type"
+                  style={{ width: "10vw" }}
+                ></Column>
+                <Column
+                  field="reason"
+                  header="Reason"
+                  style={{ width: "10vw" }}
+                />
+                <Column
+                  header="Status"
+                  body={statusBodyTemplate}
+                  style={{ width: "10vw" }}
+                ></Column>
+                <Column
+                  header="Action"
+                  style={{ width: "10vw" }}
+                  body={actionBodyTemplate}
+                ></Column>
+              </DataTable>
             </Card>
           </Grid>
         </Grid>

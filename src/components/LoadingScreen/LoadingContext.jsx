@@ -5,7 +5,7 @@ const LoadingContext = createContext();
 
 let setLoadingGlobal = () => {};
 
-export const LoadingProvider = ({ children }) => {
+const LoadingProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   setLoadingGlobal = setIsLoading;
 
@@ -16,7 +16,8 @@ export const LoadingProvider = ({ children }) => {
   );
 };
 
-export const showLoading = () => setLoadingGlobal(true);
-export const hideLoading = () => setLoadingGlobal(false);
+const showLoading = () => setLoadingGlobal(true);
+const hideLoading = () => setLoadingGlobal(false);
+const useLoading = () => useContext(LoadingContext);
 
-export const useLoading = () => useContext(LoadingContext);
+export { LoadingProvider, showLoading, hideLoading, useLoading };

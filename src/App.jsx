@@ -1,24 +1,61 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 import "primereact/resources/primereact.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 
-import WrappedRoutes from "./WrappedRoutes";
+import PrivateRoute from "./components/PrivateRouter/PrivateRouter";
+import MenuBar from "./components/MenuBar/MenuBar";
+import WrappedRoutes from "./components/Routes/WrappedRoutes";
 import Login from "./Modules/Login/Login";
+import { getUserData } from "./Modules/Login/Encrypt";
+import { useEffect } from "react";
 
 function App() {
+  const userData = getUserData();
+  useEffect(() => {
+    const setLastActionTime = () =>
+      localStorage.setItem(
+        "lastActionTime",
+        Math.floor(Date.now() / 1000).toString()
+      );
+
+    window.addEventListener("mousemove", setLastActionTime);
+
+    return () => {
+      window.removeEventListener("mousemove", setLastActionTime);
+    };
+  }, []);
+
   return (
-    
-    <Router>
-      
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/mygreenwave/*" element={<WrappedRoutes />} />
-          
-      </Routes>
-    </Router>
+    <Routes>
+      {/* This will be only accessible for public */}
+      <Route path="login" element={<Login />} />
+
+      {/* Any other route will go via this  */}
+      <Route element={<PrivateRoute />}>
+        <Route
+          index
+          element={
+            <Navigate
+              to={`mygreenwave/${userData?.userDetails?.espHomepage}`}
+              replace
+            />
+          }
+        />
+        <Route path="mygreenwave" element={<MenuBar />}>
+          {WrappedRoutes()}
+        </Route>
+      </Route>
+
+      {/* For wrong routing go to login */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
 

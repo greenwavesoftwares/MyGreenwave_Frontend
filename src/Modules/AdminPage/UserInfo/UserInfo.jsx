@@ -388,8 +388,10 @@ const UserInfo = ({
           <TabPanel header="Page Allocation">
             <Grid container>
               <Grid size={{ lg: 6, md: 12 }} className="userCell">
-                <div className="flex flex-column gap-3">
-                  <span className="font-bold">My Greenwave Pages</span>
+                <div className="flex flex-col gap-3">
+                  <span className="font-bold flex items-center">
+                    My Greenwave Pages
+                  </span>
                   <ListBox
                     value={userData.allotedPages}
                     onChange={(e) =>
@@ -402,14 +404,14 @@ const UserInfo = ({
                     options={pageList}
                     invalid={!userDataValidation.allotedPages}
                     className="w-full"
-                    listClassName="max-h-16rem"
+                    listClassName="max-h-[16rem]"
                     multiple
                     filter
                   />
                 </div>
               </Grid>
               <Grid size={{ lg: 6, md: 12 }} className="userCell">
-                <div className="flex flex-column gap-3">
+                <div className="flex flex-col gap-3">
                   <span className="font-bold">Select a Homepage</span>
                   <ListBox
                     value={userData.espHomepage}
@@ -422,7 +424,7 @@ const UserInfo = ({
                     }
                     options={userData.allotedPages}
                     className="w-full"
-                    listClassName="max-h-16rem"
+                    listClassName="max-h-[16rem]"
                     filter
                   />
                 </div>

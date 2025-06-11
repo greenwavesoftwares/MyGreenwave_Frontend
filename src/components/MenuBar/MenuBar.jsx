@@ -31,7 +31,7 @@ import { styled, useTheme } from "@mui/material/styles";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getMenuInfoDetails } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
@@ -103,7 +103,7 @@ function convertToInitials(name) {
   return parts.map((p) => p[0].toUpperCase()).join("");
 }
 
-export default function MiniDrawer({ children }) {
+export default function MiniDrawer() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [menuInfo, setMenuInfo] = useState(null);
@@ -318,7 +318,7 @@ export default function MiniDrawer({ children }) {
 
       <Box component="main" className="main-content">
         <DrawerHeader />
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );

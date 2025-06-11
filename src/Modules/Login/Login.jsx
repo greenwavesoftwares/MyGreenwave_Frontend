@@ -117,7 +117,9 @@ const Login = () => {
                       );
                       if (loginCheck) {
                         let userData = getUserData();
-                        navigate("/" + userData.userDetails.espHomepage);
+                        navigate(
+                          "/mygreenwave/" + userData.userDetails.espHomepage
+                        );
                       }
                     }}
                   ></Button>
