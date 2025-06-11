@@ -37,8 +37,8 @@ function WrappedRoutes() {
       <Route path="appraisal" element={<Appraisal />} />
       <Route path="referral" element={<Referral />} />
       <Route path="nalanda" element={<Nalanda />} />
-      <Route path="user-profile" element={<UserProfile />} />
-      <Route path="home-page" element={<HomePage />} />
+      <Route path="profile" element={<UserProfile />} />
+      <Route path="home" element={<HomePage />} />
 
       {/* Claim section with nested routes */}
       <Route path="claim" element={<Outlet />}>

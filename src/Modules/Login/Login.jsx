@@ -20,6 +20,7 @@ import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import RightSideImage from "../../assets/Images/RightSideImage.png";
 
 const Login = () => {
+  const baseRoute = import.meta.env.VITE_BASE_ROUTE;
   const [credential, setCredential] = useState({ username: "", password: "" });
   const navigate = useNavigate();
   const toastRef = useRef(null);
@@ -118,7 +119,7 @@ const Login = () => {
                       if (loginCheck) {
                         let userData = getUserData();
                         navigate(
-                          "/mygreenwave/" + userData.userDetails.espHomepage
+                          `/${baseRoute}/${userData.userDetails.espHomepage}`
                         );
                       }
                     }}

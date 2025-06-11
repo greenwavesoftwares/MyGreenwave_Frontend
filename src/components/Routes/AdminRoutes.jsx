@@ -30,15 +30,15 @@ function AdminRoutes() {
       {/* Leave */}
       <Route path="leave" element={<Outlet />}>
         <Route path="manager-approval" element={<LeaveManagerApproval />} />
-        <Route path="admin" element={<LeaveAdmin />} />
+        <Route index element={<LeaveAdmin />} />
       </Route>
 
       {/* Travel desk */}
       <Route path="travel-desk" element={<Outlet />}>
         <Route path="manager" element={<TravelDeskManager />} />
         <Route path="advanced" element={<OpenTravelsTableCopy />} />
-        <Route path="booking" element={<TravelDeskBooking />} />
-        <Route path="booking2" element={<AccountMain />} />
+        {/* <Route path="booking" element={<TravelDeskBooking />} /> */}
+        <Route path="booking" element={<AccountMain />} />
       </Route>
 
       {/* Claim */}
@@ -63,7 +63,7 @@ function AdminRoutes() {
       </Route>
 
       {/* Salary Slip */}
-      <Route path="salary-slip-upload" element={<SalarySlipUpload />} />
+      <Route path="salary-slip" element={<SalarySlipUpload />} />
 
       {/* Training */}
       <Route path="training" element={<Outlet />}>
@@ -72,10 +72,10 @@ function AdminRoutes() {
       </Route>
 
       {/* Holiday */}
-      <Route path="holiday-master" element={<HolidayMaster />} />
+      <Route path="holiday" element={<HolidayMaster />} />
 
       {/* Home Page */}
-      <Route path="homepage-master" element={<HomepageMaster />} />
+      <Route path="homepage" element={<HomepageMaster />} />
 
       {/* For wrong routing go to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
