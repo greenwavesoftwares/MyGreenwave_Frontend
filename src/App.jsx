@@ -18,6 +18,7 @@ import { useEffect } from "react";
 
 function App() {
   const userData = getUserData();
+  const baseRoute = import.meta.env.VITE_BASE_ROUTE;
   useEffect(() => {
     const setLastActionTime = () =>
       localStorage.setItem(
@@ -43,12 +44,12 @@ function App() {
           index
           element={
             <Navigate
-              to={`mygreenwave/${userData?.userDetails?.espHomepage}`}
+              to={`${baseRoute}/${userData?.userDetails?.espHomepage}`}
               replace
             />
           }
         />
-        <Route path="mygreenwave" element={<MenuBar />}>
+        <Route path={`${baseRoute}`} element={<MenuBar />}>
           {WrappedRoutes()}
         </Route>
       </Route>
