@@ -23,7 +23,7 @@ function WrappedRoutes() {
   return (
     <React.Fragment>
       {/* Redirect base to home */}
-      <Route index element={<Navigate to="home-page" />} />
+      <Route index element={<Navigate to="home" />} />
 
       {/* Admin section with nested routes */}
       <Route path="admin" element={<Outlet />}>
@@ -31,7 +31,7 @@ function WrappedRoutes() {
       </Route>
 
       {/* Individual Routes */}
-      <Route path="leave-application" element={<LeaveApplication />} />
+      <Route path="leave" element={<LeaveApplication />} />
       <Route path="travel-desk" element={<TravelDesk />} />
       <Route path="salary-slip" element={<SalarySlip />} />
       <Route path="appraisal" element={<Appraisal />} />
@@ -44,11 +44,11 @@ function WrappedRoutes() {
       <Route path="claim" element={<Outlet />}>
         <Route path="tour" element={<TourClaim />} />
         <Route path="miscellaneous" element={<MiscellaneousClaim />} />
-        <Route path="loan-application" element={<LoanApplication />} />
+        <Route path="loan" element={<LoanApplication />} />
       </Route>
 
       {/* For wrong routing go to login */}
-      {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </React.Fragment>
   );
 }

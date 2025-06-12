@@ -29,37 +29,34 @@ function AdminRoutes() {
 
       {/* Leave */}
       <Route path="leave" element={<Outlet />}>
-        <Route path="manager-approval" element={<LeaveManagerApproval />} />
+        <Route path="manager" element={<LeaveManagerApproval />} />
         <Route index element={<LeaveAdmin />} />
       </Route>
 
       {/* Travel desk */}
       <Route path="travel-desk" element={<Outlet />}>
         <Route path="manager" element={<TravelDeskManager />} />
-        <Route path="advanced" element={<OpenTravelsTableCopy />} />
+        <Route path="overview" element={<OpenTravelsTableCopy />} />
         {/* <Route path="booking" element={<TravelDeskBooking />} /> */}
         <Route path="booking" element={<AccountMain />} />
       </Route>
 
       {/* Claim */}
       <Route path="claim" element={<Outlet />}>
-        <Route path="account-tour" element={<AccountTourClaims />} />
-        <Route path="hr-tour" element={<HRTourClaims />} />
-        <Route
-          path="account-miscellaneous"
-          element={<AccountMiscellanousClaim />}
-        />
-        <Route path="hr-loan-application" element={<HRLoanApplication />} />
+        <Route path="review-tour" element={<AccountTourClaims />} />
+        <Route path="approve-tour" element={<HRTourClaims />} />
+        <Route path="miscellaneous" element={<AccountMiscellanousClaim />} />
+        <Route path="loan" element={<HRLoanApplication />} />
       </Route>
 
       {/* Referral */}
-      <Route path="hr-referral" element={<HRReferralPage />} />
+      <Route path="referral" element={<HRReferralPage />} />
 
       {/* Appraisals */}
       <Route path="appraisal" element={<Outlet />}>
         <Route path="review" element={<AppraisalsReview />} />
         <Route path="approver" element={<AppraisalsApprover />} />
-        <Route path="tracker" element={<AppraisalTracker />} />
+        <Route index element={<AppraisalTracker />} />
       </Route>
 
       {/* Salary Slip */}
@@ -67,18 +64,18 @@ function AdminRoutes() {
 
       {/* Training */}
       <Route path="training" element={<Outlet />}>
-        <Route path="master" element={<TrainingMaster />} />
-        <Route path="schedule-master" element={<TrainingScheduleMaster />} />
+        <Route index element={<TrainingMaster />} />
+        <Route path="schedule" element={<TrainingScheduleMaster />} />
       </Route>
 
       {/* Holiday */}
       <Route path="holiday" element={<HolidayMaster />} />
 
       {/* Home Page */}
-      <Route path="homepage" element={<HomepageMaster />} />
+      <Route path="event" element={<HomepageMaster />} />
 
       {/* For wrong routing go to login */}
-      {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </React.Fragment>
   );
 }
