@@ -7,6 +7,7 @@ import SalarySlipPdf from "./SalarySlipPdf";
 import SalarySlipPanelGrid from "./SalarySlipPanelGrid";
 import { Toast } from "primereact/toast";
 import { fetchSalarySlip } from "./SalarySlipAPI";
+import { form16Download } from "./SalarySlipAPI";
 
 export default function SalarySlip() {
   const [selection, setSelection] = useState({
@@ -101,6 +102,19 @@ export default function SalarySlip() {
           });
         }
       }
+    }
+  };
+
+  const handleForm16Download = () => {
+    if (selection.year) {
+      form16Download(selection.year.name); // pass the selected year as a string
+    } else {
+      toast.current.show({
+        severity: "warn",
+        summary: "Warning",
+        detail: "Please select a year to download Form 16.",
+        life: 3000,
+      });
     }
   };
 
@@ -219,6 +233,7 @@ export default function SalarySlip() {
                 {selection.year && (
                   <div>
                     <button
+                      onClick={handleForm16Download}
                       className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl shadow hover:bg-blue-800 transition duration-300"
                       title="Download Form 16"
                     >
