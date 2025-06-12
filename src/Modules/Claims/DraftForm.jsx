@@ -18,8 +18,10 @@ import {
   getTourClaimTableDraftData,
   getlatestclaimtodate,
   formateDate,
-  getTravelMode
+  getTravelMode,
+  downloadTourClaimExpanseDocument
 } from "./claimServices";
+import { ProgressBar } from "primereact/progressbar";
 
 const DraftForm = ({
   draftData,
@@ -37,9 +39,12 @@ const DraftForm = ({
 }) => {
   const cellStyle = { padding: "12px 16px" };
   const toast = useRef(null);
+    const [rowData, setRowData] = useState({});
 
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [selectedRowData, setSelectedRowData] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+    const [viewtabledata, setviewtabledata] = useState();
 
   const handleDelete = async (claim_id, status) => {
     let response = await deleteDraftList(claim_id, status);
@@ -210,7 +215,7 @@ const DraftForm = ({
   );
 
   const tourDetailsBody = (rowData) => (
-    <div className="text-xs space-y-1 flex flex-col justify-center">
+    <div className="flex flex-col items-start justify-center space-y-1">
       <div>
         <span className="font-bold">Destination:</span> {rowData["destination"]}
       </div>
@@ -319,6 +324,55 @@ const DraftForm = ({
     );
   };
 
+  const downloadExpense = (rowData) => {
+    const handleDownloadFile = async (claim_id) => {
+      try {
+        let d = await downloadTourClaimExpanseDocument(claim_id);
+      } catch (error) {
+        toast.current.show({
+          severity: "error",
+          summary: "error",
+          detail: "Something Wrong.",
+        });
+      }
+    };
+
+    const viewtable = async (claim_id) => {
+      try {
+        let data = await getTourClaimTableDraftData(claim_id);
+        setviewtabledata(data.tourClaimRecords);
+        setShowViewDialog(true);
+      } catch (error) {
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to load table.",
+        });
+      }
+    };
+
+    return (
+      <div className="flex justify-center items-center gap-2">
+        <Button
+          icon="pi pi-download"
+          className="p-button-sm p-button-text p-button-success"
+          onClick={() => {
+            handleDownloadFile(rowData.claim_id);
+          }}
+          tooltip={""}
+        />
+        <Button
+          icon="pi pi-eye"
+          className="p-button-sm p-button-text p-button-success"
+          onClick={() => {
+            viewtable(rowData.claim_id);
+          }}
+          tooltip={""}
+        />
+      </div>
+    );
+  };
+
   return (
     <div>
        <Toast ref={toast} />
@@ -330,8 +384,15 @@ const DraftForm = ({
           rows={10}
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+           emptyMessage={
+          rowData?.length === 0 ? (
+            "No data found"
+          ) : (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+          )
+        }
         >
-          <Column
+          {/* <Column
             field="claim_id"
             header="Claim Id"
             headerStyle={cellStyle}
@@ -347,7 +408,7 @@ const DraftForm = ({
             bodyStyle={cellStyle}
             sortable
             filter
-          />
+          /> */}
           
           <Column
             field="to_date"
@@ -390,6 +451,13 @@ const DraftForm = ({
             filter
           />
           <Column
+          field="Expense"
+          header="Expense"
+          body={downloadExpense}
+          headerStyle={cellStyle}
+          bodyStyle={cellStyle}
+        />
+          <Column
             header="Action"
             body={actionBodyTemplate}
             headerStyle={{ ...cellStyle, textAlign: "center" }}
@@ -398,6 +466,53 @@ const DraftForm = ({
             filter
           />
         </DataTable>
+         <Dialog
+                header="Tour Claim Details"
+                visible={showViewDialog}
+                style={{ width: "90vw" }}
+                onHide={() => setShowViewDialog(false)}
+                modal
+              >
+                <DataTable
+                  value={viewtabledata}
+                  showGridlines 
+                className="text-xs"
+                tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+                >
+                  <Column field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
+                  bodyStyle={cellStyle} />
+                  <Column field="lodging" header="Lodging"   headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="breakfast" header="Breakfast"   headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="lunch" header="Lunch"   headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="snacks" header="Snacks"   headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="dinner" header="Dinner"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="teaWater" header="Tea & Water"   headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column
+                    field="longTravel"
+                    header="Airfare, Bus, Train, Taxi Rental"
+                    headerStyle={cellStyle}
+                    bodyStyle={cellStyle}
+                  />
+                  <Column field="shortTravel" header="Auto, Cab"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle} />
+                  <Column field="tollTax" header="Parking, Toll, Fuel"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="incidentals" header="Incidentals"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="other" header="Other Business Expenses"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="total" header="Total"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                  <Column field="remarks" header="Remarks"  headerStyle={cellStyle}
+                  bodyStyle={cellStyle}/>
+                </DataTable>
+              </Dialog>
       </div>
 
       {/* 

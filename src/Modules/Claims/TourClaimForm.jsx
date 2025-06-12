@@ -115,7 +115,7 @@ const TourClaimForm = ({
                   htmlFor="Select-Travel"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Select Travel
+                  Select Travel -
                 </label>
                 {editableMode?<InputText
                   inputId="selectedtravelMode_value"
@@ -146,7 +146,7 @@ const TourClaimForm = ({
                   htmlFor="Type-of-Travel"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Type of Travel
+                  Type of Travel -
                 </label>
                 <Dropdown
                   inputId="Type-of-Travel"
@@ -166,7 +166,7 @@ const TourClaimForm = ({
                   htmlFor="Destination"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Destination
+                  Destination -
                 </label>
 
                 <InputText
@@ -186,7 +186,7 @@ const TourClaimForm = ({
                   htmlFor="Purpose-of-Trip"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Purpose of Trip
+                  Purpose of Trip -
                 </label>
 
                 <InputText
@@ -205,7 +205,7 @@ const TourClaimForm = ({
                   htmlFor="Project-Name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Project Name
+                  Project Name -
                 </label>
 
                 <InputText
@@ -224,7 +224,7 @@ const TourClaimForm = ({
                   htmlFor="On-Account"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  On Account:
+                  On Account -
                 </label>
                 <InputText
                   inputId="On-Account"
@@ -239,7 +239,7 @@ const TourClaimForm = ({
                   htmlFor="fromdate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Travel From Date:
+                  Travel From Date -
                 </label>
                 <InputText
                   inputId="travelfromDate"
@@ -291,7 +291,7 @@ const TourClaimForm = ({
                 >
                   <div className="flex  items-center">
                     <span>
-                      Claim To Date:-{" "}
+                      Claim To Date -
                       {tourclaimFormLabeData.toDate
                         ? new Date(
                             tourclaimFormLabeData.toDate

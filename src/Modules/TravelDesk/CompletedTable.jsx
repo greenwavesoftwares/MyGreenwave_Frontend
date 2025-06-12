@@ -11,6 +11,7 @@ import {
   updateTravelRequisition,
   downloadDocumentsByReqId
 } from "./TravelDeskAPI";
+import { ProgressBar } from "primereact/progressbar";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
@@ -331,7 +332,7 @@ const CompletedTable = () => {
           value={approvedAndSettledTravelData}
           expandedRows={expandedRows}
           onRowToggle={(e) => setExpandedRows(e.data)}
-          //rowExpansionMode="single"
+          //rowExpansionMode="single"rowExpansionTemplate
           rowExpansionTemplate={rowExpansionTemplate}
           showGridlines
           className="text-xs"
@@ -339,6 +340,13 @@ const CompletedTable = () => {
           paginator
           size="small"
           rows={10}
+           emptyMessage={
+          rowData?.length === 0 ? (
+            "No data found"
+          ) : (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+          )
+        }
           // rowsPerPageOptions={
           //   approvedAndSettledTravelData.length > 50
           //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
@@ -366,7 +374,7 @@ const CompletedTable = () => {
           //   "advanceRequested",
           // ]}
           //  header={approvedAndSettledTravelDataHeader}
-          emptyMessage="No data found."
+        //  emptyMessage="No data found."
           // removableSort
           // sortMode="multiple"
         >
@@ -390,6 +398,14 @@ const CompletedTable = () => {
           <Column
             field="userName"
             header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+           <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
@@ -468,14 +484,7 @@ const CompletedTable = () => {
             filter
           />
 
-          <Column
-            field="unsettledAmount"
-            header="Total Unsettled Amount"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
+         
           {/* <Column
               body={advanceColumnBody}
               header="Advance Given"

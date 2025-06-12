@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { ProgressBar } from "primereact/progressbar";
 //Call Api
 import {
   getAdvanceDetails,
@@ -25,6 +26,11 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 const cellStyle = { padding: "12px 16px" };
 import { FileUpload } from "primereact/fileupload";
 import {Button} from "primereact/button"
+
+import {
+  hideLoading,
+  showLoading,
+} from "../../components/LoadingScreen/LoadingContext";
 
 const ApprovedTable = () => {
   const [expandedRows, setExpandedRows] = useState(!null);
@@ -292,8 +298,7 @@ const ApprovedTable = () => {
                     body={supportingDocumentBody}
                     headerStyle={cellStyle}
                     bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
-                    sortable
-                    filter
+                   
                   />
       </DataTable>
     );
@@ -301,6 +306,7 @@ const ApprovedTable = () => {
 
   useEffect(() => {
     const fetchApprovedAndSettledTravelData = async () => {
+     
       try {
         // const { token } = getUserData();
 
@@ -324,10 +330,13 @@ const ApprovedTable = () => {
         // });
 
         // const finalData = mergeTravelData(cleanedData, advancedData.data);
+        
         setApprovedAndSettledTravelData(approvedandsettledresponse.data);
+       
       } catch (error) {
         console.error("Error fetching travel data:", error);
       }
+      
     };
 
     fetchApprovedAndSettledTravelData();
@@ -456,6 +465,23 @@ const ApprovedTable = () => {
         
     }
 
+     const tourDetailsBody = (rowData) => (
+    <div className="flex flex-col items-start justify-center space-y-1">
+      <div>
+        <span className="font-bold">City:</span> {rowData["city"]}
+      </div>
+      <div>
+        <span className="font-bold">Purpose:</span> {rowData["purpose"]}
+      </div>
+      <div>
+        <span className="font-bold">Project:</span> {rowData["projectName"]}
+      </div>
+      <div>
+        <span className="font-bold">Type Of Travel:</span> {rowData["typeOfTravel"]}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -472,6 +498,13 @@ const ApprovedTable = () => {
           paginator
           size="small"
           rows={10}
+           emptyMessage={
+          rowData?.length === 0 ? (
+            "No data found"
+          ) : (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+          )
+        }
           // rowsPerPageOptions={
           //   approvedAndSettledTravelData.length > 50
           //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
@@ -499,7 +532,7 @@ const ApprovedTable = () => {
           //   "advanceRequested",
           // ]}
        //   header={approvedAndSettledTravelDataHeader}
-          emptyMessage="No data found."
+         // emptyMessage="No data found."
         //  removableSort
         //  sortMode="multiple"
 
@@ -534,6 +567,14 @@ const ApprovedTable = () => {
             sortable
             filter
           />
+            <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
           <Column
             field="fromDate"
             header="From Date"
@@ -561,15 +602,15 @@ const ApprovedTable = () => {
           />
 
           <Column
-            field="purpose"
-            header="Purpose"
+           // field="purpose"
+           body={tourDetailsBody}
+            header="Travel Details"
             headerStyle={{ textAlign: "center" }}
             // headerClassName="center-header"
             style={{ textAlign: "center" }}
-            sortable
-            filter
+           
           />
-          <Column
+          {/* <Column
             field="projectName"
             header="Project Name"
             headerStyle={{ textAlign: "center" }}
@@ -577,7 +618,7 @@ const ApprovedTable = () => {
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
+          /> */}
 
           <Column
             field="localityArea"
@@ -588,7 +629,7 @@ const ApprovedTable = () => {
             sortable
             filter
           />
-          <Column
+          {/* <Column
             field="city"
             header="City"
             headerStyle={{ textAlign: "center" }}
@@ -596,8 +637,8 @@ const ApprovedTable = () => {
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
-          <Column
+          /> */}
+          {/* <Column
             field="typeOfTravel"
             header="Type Of Travel"
             headerStyle={{ textAlign: "center" }}
@@ -605,16 +646,9 @@ const ApprovedTable = () => {
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
+          /> */}
 
-          <Column
-            field="unsettledAmount"
-            header="Total Unsettled Amount"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
+         
 
           {/* <Column
               body={advanceColumnBody}

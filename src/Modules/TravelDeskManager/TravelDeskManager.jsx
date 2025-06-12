@@ -214,6 +214,9 @@ const status = row?.status;
     <>
     <DataTable
         value={updatedTravelData}
+          className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+         showGridlines
        
       >
         <Column sortable field="date" header="Date"></Column>
@@ -256,12 +259,13 @@ const updatedTravelData = Object.values(uniqueTravels??[]).map((travel) => {
  });
 
   return (
-    <div>
+    // <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100"></div>
+    <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100">
       {/* DataTable */}
     <CustomToast ref={toastRef} />
       <DataTable
         value={updatedTravelData}
-        className="UserInfoTableStyle HeaderColor"
+        className="text-xs"
         expandedRows={expandedRows}
         onRowToggle={(e) => setExpandedRows(e.data)}
         rowExpansionTemplate={(row)=>rowExpansionTemplate(row,travelData)}
@@ -275,6 +279,12 @@ const updatedTravelData = Object.values(uniqueTravels??[]).map((travel) => {
         }
         header={renderHeader}
         globalFilter={globalFilter}
+         showGridlines
+        // className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+         paginator
+          size="small"
+          rows={10}
       >
          <Column expander />
          <Column

@@ -784,7 +784,7 @@ export const getlatestclaimtodate = async (travel_id) => {
   const data = await getTourClaimFormDetails(travel_id);
   result.push({
     travelfromdate: data.fromDate,
-    claimformdate: latestToDate,
+    claimformdate: latestToDate?latestToDate:data.fromDate,
     claimtodate: data.tentativeToDate>new Date()?data.tentativeToDate:new Date(),
   });
 
@@ -820,7 +820,7 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
       });
     });
 
-    const myHeaders = new Headers();
+  const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
     myHeaders.append("Authorization", token); // make sure `token` is in scope
 

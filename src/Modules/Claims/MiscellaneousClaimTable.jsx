@@ -5,12 +5,14 @@ import { getOtherClaims,downloadOtherClaimSupportingDocument } from './claimServ
 const cellStyle = { padding: "8px 12px" };
 import { Button } from "primereact/button";
 import { Toast } from 'primereact/toast';
+import { ProgressBar } from "primereact/progressbar";
 
 
 const MiscellaneousClaimTable = () => {
     const toast = useRef(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+   
   const downloadSupportingDocument = (rowData) => {
       const handleDownloadFile = async (claim_id) => {
         try {
@@ -72,8 +74,15 @@ const MiscellaneousClaimTable = () => {
           showGridlines
           stripedRows
           dataKey="claim_id"
-          emptyMessage="No claims found."
+        //  emptyMessage="No claims found."
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+           emptyMessage={
+          data?.length === 0 ? (
+            "No data found"
+          ) : (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+          )
+        }
         >
           <Column field="type" header="Claim Type" sortable filter  />
           <Column field="claim_date" header="Application Date" sortable filter  />

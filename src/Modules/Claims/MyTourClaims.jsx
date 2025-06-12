@@ -13,6 +13,7 @@ import { Button } from "primereact/button";
 import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
+import { ProgressBar } from "primereact/progressbar";
 
 //import ViewTable from "./ViewTable";
 const cellStyle = {
@@ -22,6 +23,7 @@ const cellStyle = {
 };
 
 const MyTourClaims = () => {
+    const [rowData, setRowData] = useState({});
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
   const [expandedRows, setExpandedRows] = useState(null);
@@ -299,6 +301,13 @@ const MyTourClaims = () => {
         dataKey="travel_id"
          paginator
         rows={10}
+         emptyMessage={
+          rowData?.length === 0 ? (
+            "No data found"
+          ) : (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+          )
+        }
       >
         <Column expander style={{ width: "3rem" }} />
         <Column

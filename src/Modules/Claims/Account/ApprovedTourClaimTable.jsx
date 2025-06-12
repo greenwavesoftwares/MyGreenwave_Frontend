@@ -14,6 +14,7 @@ import {
 } from "../claimServices";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
+import { ProgressBar } from "primereact/progressbar";
 
 const ApprovedTourClaimTable = () => {
   const toast = useRef(null);
@@ -21,6 +22,7 @@ const ApprovedTourClaimTable = () => {
   const [loading, setLoading] = useState();
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
+    const [rowData, setRowData] = useState({});
 
   const downloadExpense = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
@@ -175,6 +177,7 @@ const ApprovedTourClaimTable = () => {
           });
         }
         setapprovedtourclaimData(result.data);
+        setRowData(result.data)
         console.log(result);
       } catch (error) {
         console.error("Error fetching claims:", error);
@@ -196,6 +199,13 @@ const ApprovedTourClaimTable = () => {
         showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+         emptyMessage={
+          rowData?.length === 0 ? (
+            "No data found"
+          ) : (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+          )
+        }
       >
         <Column
           field="name"

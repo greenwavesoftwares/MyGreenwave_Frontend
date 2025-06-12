@@ -25,6 +25,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Button } from "primereact/button";
 const cellStyle = { padding: "8px 12px" };
 import { FileUpload } from "primereact/fileupload";
+import { ProgressBar } from "primereact/progressbar";
 
 const OngoingTravel = () => {
   const [expandedRows, setExpandedRows] = useState(!null);
@@ -315,7 +316,7 @@ const OngoingTravel = () => {
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
-        <Column field="requisionId" header="Requisition ID" />
+        {/* <Column field="requisionId" header="Requisition ID" /> */}
         <Column field="date" header="Date" />
         <Column field="advanceRequested" header="Advance Requested" />
         <Column field="status" header="Status" />
@@ -434,6 +435,23 @@ const OngoingTravel = () => {
 //     }
 //   };
 
+  const tourDetailsBody = (rowData) => (
+    <div className="flex flex-col items-start justify-center space-y-1">
+      <div>
+        <span className="font-bold">City:</span> {rowData["city"]}
+      </div>
+      <div>
+        <span className="font-bold">Purpose:</span> {rowData["purpose"]}
+      </div>
+      <div>
+        <span className="font-bold">Project:</span> {rowData["projectName"]}
+      </div>
+      <div>
+        <span className="font-bold">Type Of Travel:</span> {rowData["typeOfTravel"]}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -451,21 +469,35 @@ const OngoingTravel = () => {
           size="small"
           rows={10}
           dataKey="travelId"
-          emptyMessage="No data found."
+         emptyMessage={
+                  rowData?.length === 0 ? (
+                    "No data found"
+                  ) : (
+                    <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+                  )
+                }
         >
           <Column expander style={{ width: "3rem" }} />
 
-          <Column
+          {/* <Column
             field="travelId"
             header="travelId"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
+          /> */}
           <Column
             field="userName"
             header="Name"
+            headerStyle={{ textAlign: "center" }}
+            style={{ textAlign: "center" }}
+            sortable
+            filter
+          />
+           <Column
+            field="unsettledAmount"
+            header="Total Unsettled Amount"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
@@ -498,21 +530,22 @@ const OngoingTravel = () => {
           />
 
           <Column
-            field="purpose"
-            header="Purpose"
+            //field="purpose"
+            header="Travel Details"
+            body={tourDetailsBody}
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
             filter
           />
-          <Column
+          {/* <Column
             field="projectName"
             header="Project Name"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
+          /> */}
 
           <Column
             field="localityArea"
@@ -522,31 +555,24 @@ const OngoingTravel = () => {
             sortable
             filter
           />
-          <Column
+          {/* <Column
             field="city"
             header="City"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
-          <Column
+          /> */}
+          {/* <Column
             field="typeOfTravel"
             header="Type Of Travel"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
             sortable
             filter
-          />
+          /> */}
 
-          <Column
-            field="unsettledAmount"
-            header="Total Unsettled Amount"
-            headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
-          />
+         
 
           {/* <Column
             body={(rowData) => {

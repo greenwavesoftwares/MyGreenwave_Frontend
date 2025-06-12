@@ -44,13 +44,25 @@ const getMyFormTravelData = async () => {
       );
 
       const oldest = sorted[0];
-        const allCompleteRequested = records.every(
-        (record) => record.status === "CompleteRequested"
+      //   const allCompleteRequested = records.every(
+      //   (record) => record.status === "CompleteRequested"
+      // );
+
+          
+        const list2 = records.filter(
+        (row) => (row.status || '').trim().toLowerCase() !== 'Settled'
+      );
+
+   console.log('list2', list2)
+      
+
+     const allcompleterequested = list2.every(
+        (record) => record.status === "completerequested"
       );
     
       return {
         travelId,
-        requestCompletedFlag: allCompleteRequested,
+        requestCompletedFlag: list2.length==0?false: allcompleterequested,
         purpose: oldest.purpose,
         projectName: oldest.projectName,
         city: oldest.city,
@@ -377,7 +389,7 @@ export const getApprovedAndSettledAndCompleteRequestedData = async () => {
 
 
       
-     const list2 = records.filter(
+  const list2 = records.filter(
   (row) => (row.status || '').trim().toLowerCase() !== 'completerequested'
 );
 

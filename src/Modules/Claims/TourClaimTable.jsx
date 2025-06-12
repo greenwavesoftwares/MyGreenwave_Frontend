@@ -497,7 +497,7 @@ const TourClaimTable = ({
                 settoggleNewClaim(false);
               }}
               className="p-button-sm"
-              disabled={toggleNewClaim===true}
+             // disabled={toggleNewClaim===true}
             />
           </div>
         )}
