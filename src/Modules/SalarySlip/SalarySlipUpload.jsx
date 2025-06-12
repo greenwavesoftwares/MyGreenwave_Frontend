@@ -8,6 +8,7 @@ import { saveSalarySlipData } from "./SalarySlipAPI";
 import { uploadForm16Zip } from "./SalarySlipAPI";
 import { getUserData } from "../Login/Encrypt";
 import { ProgressSpinner } from "primereact/progressspinner";
+import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 
 export default function SalarySlipUpload() {
   const [rowDataList, setRowDataList] = useState([]);
@@ -157,7 +158,7 @@ export default function SalarySlipUpload() {
                 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
                 <img
-                  src=".\src\assets\Images\GreenwaveLogo.png"
+                  src={GreenwaveLogo}
                   alt="Upload Icon"
                   style={{ width: "40px", height: "40px" }}
                 />

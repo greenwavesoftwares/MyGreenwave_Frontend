@@ -8,6 +8,7 @@ import SalarySlipPanelGrid from "./SalarySlipPanelGrid";
 import { Toast } from "primereact/toast";
 import { fetchSalarySlip } from "./SalarySlipAPI";
 import { form16Download } from "./SalarySlipAPI";
+import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 
 export default function SalarySlip() {
   const [selection, setSelection] = useState({
@@ -165,7 +166,7 @@ export default function SalarySlip() {
                 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
                 <img
-                  src=".\src\assets\Images\GreenwaveLogo.png"
+                  src={GreenwaveLogo}
                   alt="Upload Icon"
                   style={{ width: "40px", height: "40px" }}
                 />
