@@ -10,6 +10,7 @@ import { getUserData } from "../Login/Encrypt";
 // const host = "http://localhost";
 // const port = "8081";
 const host = import.meta.env.VITE_END_POINT;
+import {getTravelDetailsFromTravelId2} from '../TravelDesk/TravelDeskAPI'
 
 const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
@@ -781,7 +782,9 @@ export const getlatestclaimtodate = async (travel_id) => {
   }
  
 
-  const data = await getTourClaimFormDetails(travel_id);
+  //const data = await getTourClaimFormDetails(travel_id);
+ let response=await getTravelDetailsFromTravelId2(travel_id)
+ let data=response.data
   result.push({
     travelfromdate: data.fromDate,
     claimformdate: latestToDate?latestToDate:data.fromDate,

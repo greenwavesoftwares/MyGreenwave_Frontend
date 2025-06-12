@@ -22,7 +22,7 @@ import {
 } from "../TravelDesk/TravelDeskAPI";
 //MY Form Component Call
 import MyForm from "./MyForms";
-import { getTravelDetailsFromTravelId } from "./TravelDeskAPI";
+import { getTravelDetailsFromTravelId2 } from "./TravelDeskAPI";
 //import {getTravelDropDown} from '../Claims/claimServices'
 
 const TravelDesk = () => {
@@ -60,7 +60,7 @@ const TravelDesk = () => {
 
   const handlesetFormData = async (travelId) => {
     if (travelId != "New Travel") {
-      let response = await getTravelDetailsFromTravelId(travelId);
+      let response = await getTravelDetailsFromTravelId2(travelId);
       if (!response.status) {
         toastRef.current?.show({
           severity: "error",

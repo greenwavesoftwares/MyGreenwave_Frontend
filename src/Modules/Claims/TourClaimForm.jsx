@@ -13,7 +13,9 @@ import {
   getTourClaimFormDetails,
   getAdvance,
   getlatestclaimtodate,
+  
 } from "./claimServices";
+import {getTravelDetailsFromTravelId2} from "../TravelDesk/TravelDeskAPI"
 
 const TourClaimForm = ({
   tourclaimformData,
@@ -37,6 +39,7 @@ const TourClaimForm = ({
   
 
   const fetchTourClaimFormDetails = async (id) => {
+    console.log('id', id)
     try {
       if (id === "Long-Term-Local-Conveyance") {
         settourclaimformData((prev) => ({
@@ -53,9 +56,17 @@ const TourClaimForm = ({
           claimToDate: "",
         }));
       } else {
-        const data = await getTourClaimFormDetails(id);
-        const dates = await getlatestclaimtodate(id);
-       
+        //const data = await getTourClaimFormDetails(id);
+      const responseData=await getTravelDetailsFromTravelId2(id)
+      // console.log('data.typeOfTravel.',data.typeOfTravel)
+      // console.log('data.porpus.',data.purpose)
+      // console.log('data.projectName', data.projectName)
+      // console.log('data.city', data.city)
+      let data=responseData.data
+
+      console.log('data', data)
+
+      const dates = await getlatestclaimtodate(id);
 
         settourclaimformData((prev) => ({
           ...prev,

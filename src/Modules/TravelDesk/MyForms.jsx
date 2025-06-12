@@ -9,6 +9,7 @@ import { Dialog } from "primereact/dialog";
 import CheckIcon from "@mui/icons-material/Check";
 import { useState } from "react";
 import {Button } from "primereact/button"
+import RequisitionFormView from "./RequisitionFormView";
 
 const MyForm = ({ myFormTableData }) => {
   const [expandedRows, setExpandedRows] = useState(null);
@@ -37,7 +38,8 @@ const MyForm = ({ myFormTableData }) => {
       tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
     >
       <Column field="date" header="Date"></Column>
-      <Column field="advance" header="Advance"></Column>
+      <Column field="advanceRequested" header="Advance Requested"></Column>
+      <Column field="advance" header="Advance Given"></Column>
       <Column
         body={(rowData) => {
           return (
@@ -162,8 +164,20 @@ const MyForm = ({ myFormTableData }) => {
   style={{ textAlign: "center" }}
 /> */}
       </DataTable>
+       <Dialog
+          header="Requisition Form View"
+          visible={visible}
+          style={{ width: "70rem" }}
+          onHide={() => {
+            if (!visible) return;
+            setVisible(false);
+          }}
+        >
+          <h2>Requisition Form View</h2>
+          <RequisitionFormView rowData={rowData} />
+        </Dialog>
 
-      <Dialog
+      {/* <Dialog
         header="Requisition Form View"
         visible={visible}
         style={{ width: "70rem" }}
@@ -209,7 +223,7 @@ const MyForm = ({ myFormTableData }) => {
           <Grid size={12}>Manager Name : {rowData.manager_id}</Grid>
           <Grid size={12}>Manager Comment : {rowData.manager_suggestion}</Grid>
         </Grid>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 };

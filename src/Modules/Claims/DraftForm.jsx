@@ -22,6 +22,7 @@ import {
   downloadTourClaimExpanseDocument
 } from "./claimServices";
 import { ProgressBar } from "primereact/progressbar";
+import {getTravelDetailsFromTravelId2} from "../TravelDesk/TravelDeskAPI"
 
 const DraftForm = ({
   draftData,
@@ -45,6 +46,7 @@ const DraftForm = ({
   const [selectedRowData, setSelectedRowData] = useState(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
     const [viewtabledata, setviewtabledata] = useState();
+    
 
   const handleDelete = async (claim_id, status) => {
     let response = await deleteDraftList(claim_id, status);
@@ -117,8 +119,12 @@ const DraftForm = ({
       {
           setselectedtravelMode(matchedItem)
       }else{
-        const travelmode= await getTravelMode(travel_id)
-        setselectedtravelMode({label:travelmode.data,value:travel_id}) 
+        //const travelmode= await getTravelMode(travel_id)
+       let responsedata= await getTravelDetailsFromTravelId2(travel_id)
+       let data=responsedata.data
+       let labelname= data.city+' - '+data.fromDate+' - '+data.projectName
+       // console.log('travelmode', travelmode)
+        setselectedtravelMode({label:labelname,value:travel_id}) 
       }
     let dates = await getlatestclaimtodate(travel_id);
      // console.log('dates',dates)

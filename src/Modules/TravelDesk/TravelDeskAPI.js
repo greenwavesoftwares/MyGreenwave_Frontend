@@ -707,6 +707,47 @@ export const getTravelDetailsFromTravelId = async (travel_id) => {
   }
 };
 
+export const getTravelDetailsFromTravelId2 = async (travel_id) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
+    console.log('travel_id', travel_id)
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
+
+    let response = await fetch(
+      `${host}traveldesk/travels-by-id/${travel_id}`,
+      requestOptions
+    );
+
+    if (!response.ok) {
+      let message = await response.text();
+      return {
+        status: false,
+        message: message,
+        data: [],
+      };
+    }
+
+    let responsedata = await response.json();
+    return {
+      status: true,
+      message: "travels detail",
+      data: responsedata[0],
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
+  }
+};
+
 export const getTravelDropDown = async () => {
   try {
     const myHeaders = new Headers();
