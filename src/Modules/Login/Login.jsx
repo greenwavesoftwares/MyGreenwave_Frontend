@@ -13,14 +13,12 @@ import { checkCredential } from "./LoginFunction";
 import { useNavigate } from "react-router-dom";
 import Grid from "../../components/Grid/Grid";
 import Toast from "../../components/Toast/Toast";
-import { getUserData } from "./Encrypt";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import DialogComponent from "../../components/Dialog/DialogComponent";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import RightSideImage from "../../assets/Images/RightSideImage.png";
 
 const Login = () => {
-  const baseRoute = import.meta.env.VITE_BASE_ROUTE;
   const [credential, setCredential] = useState({ username: "", password: "" });
   const navigate = useNavigate();
   const toastRef = useRef(null);
@@ -117,10 +115,7 @@ const Login = () => {
                         showWPDialog
                       );
                       if (loginCheck) {
-                        let userData = getUserData();
-                        navigate(
-                          `/${baseRoute}/${userData.userDetails.espHomepage}`
-                        );
+                        navigate(`/`);
                       }
                     }}
                   ></Button>

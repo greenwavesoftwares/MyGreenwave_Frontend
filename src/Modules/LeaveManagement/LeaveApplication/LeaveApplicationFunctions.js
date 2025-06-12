@@ -335,8 +335,8 @@ const validateLeave = (
           actualLeave > 2
             ? "CL can be taken for only 1 or 2 days"
             : actualLeave > cardData.clBalance
-            ? "Not enough CL"
-            : "Something went wrong!"
+              ? "Not enough CL"
+              : "Something went wrong!"
         );
         setLeaveValidation((prev) => ({ ...prev, dates: false }));
         return false;
@@ -425,6 +425,7 @@ const applyOrEditLeave = async (
       ? await editLeaveAPI(applyData, toastRef)
       : await applyLeaveAPI(applyData, toastRef);
     if (response) {
+      setLeaveInfo(await onPageLoad(getCurrentYear()));
       let message = editMode
         ? "Leave Edited Successfully"
         : response.leaveDetails.type +
@@ -432,7 +433,6 @@ const applyOrEditLeave = async (
           response.appliedTo;
       showSuccessMessage(toastRef, "Success", message);
       hideleaveDialog();
-      setLeaveInfo(await onPageLoad(getCurrentYear()));
     }
   }
   hideLoading();
@@ -441,8 +441,8 @@ const deleteLeave = async (leaveData, setLeaveInfo, toastRef) => {
   showLoading();
   const response = await deleteLeaveAPI(leaveData, toastRef);
   if (response) {
-    showSuccessMessage(toastRef, "Success", "Leave deleted Successfully");
     setLeaveInfo(await onPageLoad(getCurrentYear()));
+    showSuccessMessage(toastRef, "Success", "Leave deleted Successfully");
   }
   hideLoading();
 };
