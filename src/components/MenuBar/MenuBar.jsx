@@ -144,65 +144,70 @@ export default function MiniDrawer() {
     window.location.pathname === "/" ||
     !userDetails?.userDetails?.userId.length > 0;
 
-  const renderMenuItems = (items, parentKey = "") =>
-    items.map((item, index) => {
-      const fullPath = item.path || "";
-      const key = `${parentKey}${item.label}-${index}`;
-      const selected = window.location.pathname === fullPath;
-      const hasChildren = Array.isArray(item.items) && item.items.length > 0;
-      const isExpanded = expandedItems[key];
+const renderMenuItems = (items, parentKey = "", level = 0) =>
+  items.map((item, index) => {
+    const fullPath = item.path || "";
+    const key = `${parentKey}${item.label}-${index}`;
+    const selected = window.location.pathname === fullPath;
+    const hasChildren = Array.isArray(item.items) && item.items.length > 0;
+    const isExpanded = expandedItems[key];
 
-      const handleItemClick = () => {
-        if (hasChildren) {
-          toggleExpand(key);
-        } else if (fullPath) {
-          navigate(fullPath);
-        }
-      };
+    const handleItemClick = () => {
+      if (hasChildren) {
+        toggleExpand(key);
+      } else if (fullPath) {
+        navigate(fullPath);
+      }
+    };
 
-      return (
-        <React.Fragment key={key}>
-          <ListItem
-            disablePadding
-            className={`menu-item ${selected ? "selected" : ""} menu-list-item`}
-          >
-            <Tooltip title={open ? "" : item.label} placement="right">
-              <Link
-                href={item.path}
-                style={{ textDecoration: "none", color: "black" }}
-                onClick={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                <ListItemButton onClick={handleItemClick}>
-                  <ListItemIcon className="menu-icon">
-                    {hasChildren ? (
-                      isExpanded ? (
-                        <KeyboardArrowDownIcon />
-                      ) : (
-                        <KeyboardArrowRightIcon />
-                      )
+    const levelClass = `menu-level-${level}`;
+
+    return (
+      <React.Fragment key={key}>
+        <ListItem
+          disablePadding
+          className={`menu-item ${selected ? "selected" : ""} ${levelClass}`}
+        >
+          <Tooltip title={open ? "" : item.label} placement="right">
+            <Link
+              href={item.path}
+              style={{ textDecoration: "none", color: "inherit" }}
+              onClick={(event) => event.preventDefault()}
+            >
+              <ListItemButton onClick={handleItemClick}>
+                <ListItemIcon className={`menu-icon ${levelClass}`}>
+                  {hasChildren ? (
+                    isExpanded ? (
+                      <KeyboardArrowDownIcon />
                     ) : (
-                      item.logo && (
-                        <FontAwesomeIcon icon={item.logo.split(" ")} />
-                      )
-                    )}
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} className="menu-text" />
-                </ListItemButton>
-              </Link>
-            </Tooltip>
-          </ListItem>
-          {hasChildren && (
-            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-              <Box className="submenu-box">
-                {renderMenuItems(item.items, key + "/")}
-              </Box>
-            </Collapse>
-          )}
-        </React.Fragment>
-      );
-    });
+                      <KeyboardArrowRightIcon />
+                    )
+                  ) : (
+                    item.logo && (
+                      <FontAwesomeIcon icon={item.logo.split(" ")} />
+                    )
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={<Typography className={`menu-text ${levelClass}`}>{item.label}</Typography>}
+                  // className={`menu-text ${levelClass}`}
+                  
+                />
+              </ListItemButton>
+            </Link>
+          </Tooltip>
+        </ListItem>
+
+        {hasChildren && (
+          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+            <Box className="submenu-box">
+              {renderMenuItems(item.items, key + "/", level + 1)}
+            </Box>
+          </Collapse>
+        )}
+      </React.Fragment>
+    );
+  });
 
   const handleLogout = () => {
     localStorage.clear();
