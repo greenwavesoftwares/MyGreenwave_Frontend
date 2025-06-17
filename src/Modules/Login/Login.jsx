@@ -17,6 +17,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import DialogComponent from "../../components/Dialog/DialogComponent";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import RightSideImage from "../../assets/Images/RightSideImage.png";
+import { getUserData } from "./Encrypt";
 
 const Login = () => {
   const [credential, setCredential] = useState({ username: "", password: "" });
@@ -115,7 +116,11 @@ const Login = () => {
                         showWPDialog
                       );
                       if (loginCheck) {
-                        navigate(`/`);
+                        const userData = getUserData();
+                        const baseRoute = import.meta.env.VITE_BASE_ROUTE;
+                        navigate(
+                          `/${baseRoute}/${userData?.userDetails?.espHomepage}`
+                        );
                       }
                     }}
                   ></Button>
