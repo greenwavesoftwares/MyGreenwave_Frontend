@@ -9,9 +9,12 @@ import { useForm } from "react-hook-form";
 import { postCreateNotification } from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
 
-const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDialogProps}) => {
+const CreateNotification = ({
+  setCreateNotificationDialog,
+  setCreateNotificationDialogProps,
+}) => {
   const toastRef = useRef(null);
-  
+
   const {
     register,
     handleSubmit,
@@ -20,7 +23,6 @@ const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDi
     setValue,
   } = useForm();
 
-  
   const newNotification = async (data) => {
     console.log("New Notification Data:", data);
     const notificationData = {
@@ -32,6 +34,9 @@ const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDi
       status: "",
     };
     const { token } = getUserData();
+    if(data.fromdate > data.toDate) {
+        return showErrorMessage(toastRef, "Error", "To Date must be greater than or equal to From Date");
+      }
     //Call NOtification API
     const response = await postCreateNotification(token, notificationData);
     console.log("response:", response);
@@ -63,9 +68,11 @@ const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDi
               {...register("title", { required: "Title is required" })}
               placeholder="Title"
             />
-            {errors.title?.message
-              ? showErrorMessage(toastRef, `${errors.title?.message}`, "")
-              : null}
+            {errors.title && (
+              <p style={{ color: "red", fontSize: "0.8rem" }}>
+                {errors.title.message}
+              </p>
+            )}
             <input
               style={inputStyle}
               type="text"
@@ -74,13 +81,11 @@ const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDi
               })}
               placeholder="Description"
             />
-            {errors.notification?.message
-              ? showErrorMessage(
-                  toastRef,
-                  `${errors.notification?.message}`,
-                  ""
-                )
-              : null}
+            {errors.notification && (
+              <p style={{ color: "red", fontSize: "0.8rem" }}>
+                {errors.notification.message}
+              </p>
+            )}
             <input
               style={inputStyle}
               type="date"
@@ -90,9 +95,11 @@ const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDi
               placeholder="From Date"
               format="yyyy-MM-dd"
             />
-            {errors.fromdate?.message
-              ? showErrorMessage(toastRef, `${errors.fromdate?.message}`, "")
-              : null}
+            {errors.fromdate && (
+              <p style={{ color: "red", fontSize: "0.8rem" }}>
+                {errors.fromdate.message}
+              </p>
+            )}
             <input
               style={inputStyle}
               type="date"
@@ -102,19 +109,23 @@ const CreateNotification = ({setCreateNotificationDialog,setCreateNotificationDi
               placeholder="To Date"
               format="yyyy-MM-dd"
             />
-            {errors.toDate?.message
-              ? showErrorMessage(toastRef, `${errors.toDate?.message}`, "")
-              : null}
+            {errors.toDate && (
+              <p style={{ color: "red", fontSize: "0.8rem" }}>
+                {errors.toDate.message}
+              </p>
+            )}
             <input
               style={inputStyle}
               type="text"
-              {...register("url")}
+              {...register("url",{ required: "URL is required" })}
               placeholder="URL"
             />
 
-            {errors.eventImage?.message
-              ? showErrorMessage(toastRef, `${errors.eventImage?.message}`, "")
-              : null}
+            {errors.url && (
+              <p style={{ color: "red", fontSize: "0.8rem" }}>
+                {errors.url.message}
+              </p>
+            )}
             <input
               style={{
                 background: "#1e88e5",

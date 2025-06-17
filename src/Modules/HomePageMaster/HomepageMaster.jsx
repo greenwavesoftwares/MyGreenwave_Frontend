@@ -5,7 +5,7 @@ import { getUserData } from "../Login/Encrypt";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import "../Appraisal/Appraisal.scss";
-import { Button, Fab, IconButton } from "@mui/material";
+import { Button, Chip, Fab, IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CreateIcon from "@mui/icons-material/Create";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
@@ -121,6 +121,14 @@ const HomepageMaster = () => {
     setVisible(true);
   };
 
+
+//Get Current Date in YYYY-MM-DD format
+const date = new Date();
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0'); 
+const day = String(date.getDate()).padStart(2, '0');
+const formattedDate = `${year}-${month}-${day}`;
+
   
 
   console.log("Update Event Data:", updateEventDataProps);
@@ -148,6 +156,25 @@ const HomepageMaster = () => {
                     style={{ width: "7rem" }}
                     field="toDate"
                     header="Expire Date"
+                  ></Column>
+                  <Column
+                    header="Status"
+                   // sortable 
+                    body={(rowData) => {
+                      return (
+                        <>
+                        {formattedDate >= rowData.toDate ? (
+                          <Chip size="small" label="Expired" color="error" />
+                        ) : (
+                          <Chip size="small" label="Active" color="success" />
+                          
+                        )}
+                        
+                        </>
+                      )
+                    }
+                  }
+                      
                   ></Column>
                   <Column field="url" header="URL"></Column>
                   <Column
@@ -220,6 +247,25 @@ const HomepageMaster = () => {
                     style={{ width: "7rem" }}
                     field="toDate"
                     header="Expire Date"
+                  ></Column>
+                    <Column
+                    header="Status"
+                   // sortable 
+                    body={(rowData) => {
+                      return (
+                        <>
+                        {formattedDate >= rowData.toDate ? (
+                          <Chip size="small" label="Expired" color="error" />
+                        ) : (
+                          <Chip size="small" label="Active" color="success" />
+                          
+                        )}
+                        
+                        </>
+                      )
+                    }
+                  }
+                      
                   ></Column>
                   <Column field="url" header="URL"></Column>
                   <Column

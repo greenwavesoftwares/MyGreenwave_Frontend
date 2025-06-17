@@ -1,7 +1,7 @@
 import { Typography } from "@mui/material";
 import { Message } from "primereact/message";
 import { Toast } from "primereact/toast";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   showErrorMessage,
@@ -68,6 +68,10 @@ const CreateEvent = ({
         serverUrl: "",
         status: "",
       };
+      //console.log("date",data.fromdate,data.toDate);
+      if(data.fromdate > data.toDate) {
+        return showErrorMessage(toastRef, "Error", "To Date must be greater than or equal to From Date");
+      }
       // Build FormData for file upload
       const formData = new FormData();
       formData.append(
@@ -110,11 +114,15 @@ const CreateEvent = ({
   console.log("selectRowEventData", selectRowEventData);
 
   // Select Row Event Data
-  setValue("title", selectRowEventData?.title || "");
-  setValue("notification", selectRowEventData?.notification || "");
-  setValue("fromdate", selectRowEventData?.fromdate);
-  setValue("toDate", selectRowEventData?.toDate);
-  setValue("url", selectRowEventData?.url || "");
+  useEffect(() => {
+    if (selectRowEventData) {
+      setValue("title", selectRowEventData.title || "");
+      setValue("notification", selectRowEventData.notification || "");
+      setValue("fromdate", selectRowEventData.fromdate);
+      setValue("toDate", selectRowEventData.toDate);
+      setValue("url", selectRowEventData.url || "");
+    }
+  }, [selectRowEventData]);
 
   return (
     <div>
@@ -126,9 +134,12 @@ const CreateEvent = ({
             {...register("title", { required: "Title is required" })}
             placeholder="Title"
           />
-          {errors.title?.message
-            ? showErrorMessage(toastRef, `${errors.title?.message}`, "")
-            : null}
+          {errors.title && (
+            <p style={{ color: "red", fontSize: "0.8rem" }}>
+              {errors.title.message}
+            </p>
+          )}
+
           <input
             style={inputStyle}
             type="text"
@@ -137,9 +148,11 @@ const CreateEvent = ({
             })}
             placeholder="Description"
           />
-          {errors.notification?.message
-            ? showErrorMessage(toastRef, `${errors.notification?.message}`, "")
-            : null}
+          {errors.notification && (
+            <p style={{ color: "red", fontSize: "0.8rem" }}>
+              {errors.notification.message}
+            </p>
+          )}
           <input
             style={inputStyle}
             type="date"
@@ -149,9 +162,11 @@ const CreateEvent = ({
             placeholder="From Date"
             format="yyyy-MM-dd"
           />
-          {errors.fromdate?.message
-            ? showErrorMessage(toastRef, `${errors.fromdate?.message}`, "")
-            : null}
+          {errors.fromdate && (
+            <p style={{ color: "red", fontSize: "0.8rem" }}>
+              {errors.fromdate.message}
+            </p>
+          )}
           <input
             style={inputStyle}
             type="date"
@@ -161,9 +176,11 @@ const CreateEvent = ({
             placeholder="To Date"
             format="yyyy-MM-dd"
           />
-          {errors.toDate?.message
-            ? showErrorMessage(toastRef, `${errors.toDate?.message}`, "")
-            : null}
+          {errors.toDate && (
+            <p style={{ color: "red", fontSize: "0.8rem" }}>
+              {errors.toDate.message}
+            </p>
+          )}
           <input
             style={inputStyle}
             type="text"
@@ -176,11 +193,12 @@ const CreateEvent = ({
               accept="image/*"
               {...register("eventImage", { required: "Image is required" })}
             />
-            
           )}
-          {errors.eventImage?.message
-            ? showErrorMessage(toastRef, `${errors.eventImage?.message}`, "")
-            : null}
+          {errors.eventImage && (
+            <p style={{ color: "red", fontSize: "0.8rem" }}>
+              {errors.eventImage.message}
+            </p>
+          )}
           <input
             style={{
               background: "#1e88e5",

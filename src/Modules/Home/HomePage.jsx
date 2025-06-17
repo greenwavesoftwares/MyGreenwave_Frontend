@@ -9,6 +9,7 @@ import {
   Box,
   Switch,
   Chip,
+  Fab,
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import "./HomePage.css";
@@ -31,6 +32,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import Toast from "../../components/Toast/Toast";
 import CommentIcon from "@mui/icons-material/Comment";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FeedbackIcon from "@mui/icons-material/Feedback";
 //Api
 import {
   getUserDataAPI,
@@ -122,24 +124,29 @@ const HomePage = () => {
       const userProfileFileName = employeeId + userName;
       //Call User Profile API
       const getUserProfileImage = await getProfileImage(userProfileFileName);
-      console.log("userProfileFileName", userProfileFileName);
-      const blobResponse = URL.createObjectURL(getUserProfileImage.data);
+      //console.log("userProfileFileName", userProfileFileName);
+      console.log("getUserProfileImage", getUserProfileImage);
+      if (getUserProfileImage?.status === 200) {
+        const blobResponse = URL.createObjectURL(getUserProfileImage?.data);
+        //Set User Profile Image
+        setUserProfileImage(blobResponse);
+      } else {
+        console.log("Profile Image Not Found");
+      }
 
       if (appraisalResponse.status === 200) {
         //Appraisal Data
-        setAppraisalData(appraisalResponse.data.appraisalTable);
+        setAppraisalData(appraisalResponse?.data.appraisalTable);
         // Training Data
-        setTrainingData(trainingResponse.data);
+        setTrainingData(trainingResponse?.data);
         // Next Holiday Data
-        setNextHolidayData(nextHolidayResponse.data);
+        setNextHolidayData(nextHolidayResponse?.data);
         //Event Data
-        setEventData(eventResponse.data.eventList);
+        setEventData(eventResponse?.data.eventList);
         //Notification Data
-        setNotificationData(notificationResponse.data.notificationtList);
+        setNotificationData(notificationResponse?.data.notificationtList);
         //Tour Claims Data
-        setTourClaims(tourClaimsResponse.data);
-        //Set User Profile Image
-        setUserProfileImage(blobResponse);
+        setTourClaims(tourClaimsResponse?.data);
         //Set Loader to false
         setLoader(false);
       }
@@ -287,8 +294,36 @@ const HomePage = () => {
 
   //Notification Thumbnail Template
   // const notificationThumbnailTemplate = (item) => {
-  //   return <p>{item.title}</p>;
+  //   return (
+  //     <>
+  //     <h1>sfhsdhfsdg</h1>
+  //     </>
+  //   )
   // };
+
+  //Event Caption Template
+  const eventCaptionTemplate = (item) => {
+    return (
+      <div className="p-galleria-caption">
+        <div className="p-galleria-caption-content">
+          <Typography
+            sx={{
+              fontSize: "0.9rem !important",
+              //fontWeight: 700,
+              //color: "#3be4b4",
+              textTransform: "capitalize",
+            }}
+          >
+            {item.title} - {`${item.fromdate} - ${item.toDate}`}
+          </Typography>
+
+          <Typography sx={{ fontSize: "0.8rem", marginTop: "0.2rem" }}>
+            {item.notification}
+          </Typography>
+        </div>
+      </div>
+    );
+  };
 
   //Email ID to Name
   const emailToName = (email) => {
@@ -332,13 +367,10 @@ const HomePage = () => {
     if (onTourSwitchUpdate.status === 200) {
       setOnTourSwitch(checkValue);
       showSuccessMessage(toastRef, "Confirmed", "Your tour has started");
-    } 
-    else if (onTourSwitchUpdate.status === 201) {
+    } else if (onTourSwitchUpdate.status === 201) {
       setOnTourSwitch(checkValue);
       showSuccessMessage(toastRef, "Confirmed", "Your tour has ended");
-    }
-
-    else if (onTourSwitchUpdate.status === 400) {
+    } else if (onTourSwitchUpdate.status === 400) {
       showErrorMessage(
         toastRef,
         "Invalid Action",
@@ -354,9 +386,9 @@ const HomePage = () => {
     setOnTourSwitch(nextHolidayData?.onTour ?? false);
   }, [nextHolidayData]);
 
-  console.log("nextHolidayData?.onTour",nextHolidayData?.onTour);
+  console.log("nextHolidayData?.onTour", nextHolidayData?.onTour);
   //Change Profile Picture
-   //Upload File
+  //Upload File
   const onUploadFile = async (event) => {
     console.log(event);
     const file = event.files[0];
@@ -406,20 +438,17 @@ const HomePage = () => {
         const imageUrl = URL.createObjectURL(file);
         setUserProfileImage(imageUrl);
         showSuccessMessage(toastRef, "Success", "File Upload Successfully");
-        setFileUploadDialog(false)
+        setFileUploadDialog(false);
         setFile(null);
-      setFileUploadName(null);
+        setFileUploadName(null);
       } else {
         showErrorMessage(toastRef, "Error", "File upload failed");
       }
     } catch (error) {
       console.error("Upload failed:", error);
       showErrorMessage(toastRef, "Error", "Something went wrong");
-    } 
+    }
   };
-
-
-
 
   //Submit Feedback
   const handelFeedBackSubmit = async (e) => {
@@ -475,14 +504,13 @@ const HomePage = () => {
                       anchorOrigin={{ vertical: "top", horizontal: "right" }}
                       badgeContent={
                         <>
-                          
                           <label htmlFor="avatar-upload">
                             <IconButton
                               size="small"
                               component="span"
-                               onClick={() => {
-                            setFileUploadDialog(true);
-                               }}
+                              onClick={() => {
+                                setFileUploadDialog(true);
+                              }}
                             >
                               <EditIcon
                                 fontSize="small"
@@ -500,7 +528,7 @@ const HomePage = () => {
                           background: "#F2F2FE",
                           border: "4px solid #fff",
                         }}
-                         src={userProfileImage}
+                        src={userProfileImage}
                       >
                         {/* <Image
                           src={userProfileImage}
@@ -791,63 +819,91 @@ const HomePage = () => {
                           <Grid>
                             <div
                               className="NewCard"
-                              style={{ height: "19.3rem", display: "grid" }}
+                              style={{
+                                height: "19.3rem",
+                                display: "list-item",
+                                justifyContent: "center",
+                              }}
                             >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Typography
-                                  sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
-                                >
-                                  {nextHolidayData?.nextHoliday}
-                                </Typography>
-
+                              <div className="nextHolidayContainer">
                                 <div
                                   style={{
                                     display: "flex",
+                                    justifyContent: "space-between",
                                     alignItems: "center",
                                   }}
                                 >
                                   <Typography
                                     sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
                                   >
-                                    On Tour
+                                    {nextHolidayData?.nextHoliday}
                                   </Typography>
-                                  <Switch
-                                    size="small"
-                                    checked={onTourSwitch}
-                                    onChange={handleChangeOnTour}
-                                  />
 
-                                  <IconButton
-                                    aria-label="delete"
-                                    size="small"
-                                    onClick={() =>
-                                      setFeedbackDialogVisible(true)
-                                    }
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                    }}
                                   >
-                                    <CommentIcon fontSize="inherit" />
-                                  </IconButton>
+                                    <Typography
+                                      sx={{
+                                        m: "0.2rem 0.5rem",
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      On Tour
+                                    </Typography>
+                                    <Switch
+                                      size="small"
+                                      checked={onTourSwitch}
+                                      onChange={handleChangeOnTour}
+                                    />
+
+                                    <div
+                                      style={{
+                                        position: "fixed",
+                                        bottom: "1.5rem",
+                                        right: "1.5rem",
+                                        zIndex: 1000,
+                                      }}
+                                    >
+                                      <Fab
+                                        size="small"
+                                        color="primary"
+                                        aria-label="add"
+                                      >
+                                        <IconButton
+                                          aria-label="delete"
+                                          size="small"
+                                          onClick={() =>
+                                            setFeedbackDialogVisible(true)
+                                          }
+                                        >
+                                          <FeedbackIcon
+                                            sx={{ color: "white" }}
+                                          />
+                                        </IconButton>
+                                      </Fab>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <Galleria
-                                value={eventData}
-                                className="NotificationThumbnail"
-                                item={itemEventTemplate}
-                                //thumbnail={notificationThumbnailTemplate}
-                                // showThumbnailNavigators={false}
-                                circular
-                                autoPlay
-                                transitionInterval={5 * 1000}
-                                showIndicators
-                                //showIndicatorsOnItem
-                                // showItemNavigatorsOnHover
-                                // showItemNavigators
-                              />
+                              <div className="galleriaContainer-eventSection">
+                                <Galleria
+                                  value={eventData}
+                                  className="EventThumbnailStyle"
+                                  item={itemEventTemplate}
+                                  //caption={eventCaptionTemplate}
+                                  // showThumbnailNavigators={false}
+                                  circular
+                                  autoPlay
+                                  transitionInterval={5 * 1000}
+                                  showIndicators
+                                  //showIndicatorsOnItem
+                                  // showItemNavigatorsOnHover
+                                  // showItemNavigators
+                                />
+                              </div>
                             </div>
                           </Grid>
                         </Grid>
@@ -1057,65 +1113,75 @@ const HomePage = () => {
             </div>
           </Dialog>
 
-           {/* Add File Upload Dialog */}
+          {/* Add File Upload Dialog */}
 
-      <Dialog
-        header="Upload Profile Picture"
-        className="dialogHeader dialogContent"
-        visible={fileUploadDialog}
-        style={{ width: "32rem" }}
-        onHide={() => {
-          if (!fileUploadDialog) return;
-          setFileUploadDialog(false);
-        }}
-      >
-        <div
-          style={{ display: "grid", rowGap: "0.7rem", justifyItems: "center" }}
-        >
-          {fileUploadName === null ? (
-            ""
-          ) : (
-            <>
-            <div style={{display:"flex",alignItems:"center"}}>
-              <Chip
-                size="medium"
-                color="info"
-                variant="outlined"
-                label={fileUploadName}
-              />
-              <IconButton variant="contained" color="error" onClick={handleRemoveAndReupload}>
-                <DeleteIcon />
-              </IconButton>
-              </div>
-            </>
-          )}
-
-          <FileUpload
-            ref={fileUploadRef}
-            className="primeReactButtonPadding"
-            //name="demo[]"
-            mode="basic"
-            //url="/api/upload"
-            // multiple
-            auto
-            accept="image/*"
-            customUpload
-            //maxFileSize={1000000}
-            // onUploadHa={onUploadFile}
-            //  onUpload={onUploadFile}
-            uploadHandler={onUploadFile}
-            // emptyTemplate={
-            //   <p className="m-0">Drag and drop files to here to upload.</p>
-            // }
-          />
-
-          <Button variant="contained" size="small" 
-          onClick={handleAvatarChange}
+          <Dialog
+            header="Upload Profile Picture"
+            className="dialogHeader dialogContent"
+            visible={fileUploadDialog}
+            style={{ width: "32rem" }}
+            onHide={() => {
+              if (!fileUploadDialog) return;
+              setFileUploadDialog(false);
+            }}
           >
-            Submit
-          </Button>
-        </div>
-      </Dialog>
+            <div
+              style={{
+                display: "grid",
+                rowGap: "0.7rem",
+                justifyItems: "center",
+              }}
+            >
+              {fileUploadName === null ? (
+                ""
+              ) : (
+                <>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <Chip
+                      size="medium"
+                      color="info"
+                      variant="outlined"
+                      label={fileUploadName}
+                    />
+                    <IconButton
+                      variant="contained"
+                      color="error"
+                      onClick={handleRemoveAndReupload}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </div>
+                </>
+              )}
+
+              <FileUpload
+                ref={fileUploadRef}
+                className="primeReactButtonPadding"
+                //name="demo[]"
+                mode="basic"
+                //url="/api/upload"
+                // multiple
+                auto
+                accept="image/*"
+                customUpload
+                //maxFileSize={1000000}
+                // onUploadHa={onUploadFile}
+                //  onUpload={onUploadFile}
+                uploadHandler={onUploadFile}
+                // emptyTemplate={
+                //   <p className="m-0">Drag and drop files to here to upload.</p>
+                // }
+              />
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleAvatarChange}
+              >
+                Submit
+              </Button>
+            </div>
+          </Dialog>
           <Toast ref={toastRef} />
         </div>
       )}
