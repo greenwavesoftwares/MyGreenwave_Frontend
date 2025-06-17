@@ -110,6 +110,7 @@ export default function TravelDeskManager() {
   //Any travel that is pending can see the details and approve or reject
   const handleApproveTravel = async () => {
     console.log("handleApproveTravel() called");
+    try{
     const updatedForm = {
       ...formData,
       status: "ManagerReviewed",
@@ -133,7 +134,16 @@ export default function TravelDeskManager() {
       setTravelData(updatedPendingData);
       setVisible(false);
     }
+  }
+  catch (error) {
+    console.error("Error approving travel:", error);
+    showInfoMessage(
+      toastRef,
+      "Error",
+      "Failed to approve travel. Please try again."
+    );
   };
+}
 
 
 
