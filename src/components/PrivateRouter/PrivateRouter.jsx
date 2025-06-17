@@ -36,14 +36,13 @@ const PrivateRoute = () => {
 
   useEffect(() => {
     pollRef.start();
-    pollInterval <= 1 ? checkForSession() : null;
     return () => pollRef.stop();
   }, [pollRef]);
 
   return userData &&
     userData.userDetails &&
     userData.token &&
-    expriryTime > Math.floor(Date.now() / 1000) ? (
+    expriryTime - 10 > Math.floor(Date.now() / 1000) ? (
     <Outlet />
   ) : (
     <Navigate to="/login" replace />
