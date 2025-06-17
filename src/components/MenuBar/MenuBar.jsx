@@ -243,13 +243,9 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
               <MenuIcon style={{ color: "white" }} />
             </IconButton>
           ) : (
-            <div style={{ display: "flex", flexDirection: "row" }}>
+            <div style={{ display: "flex", flexDirection: "row", gap:'10px'}}>
               <IconButton onClick={handleDrawerClose}>
-                {theme.direction === "rtl" ? (
-                  <ChevronRightIcon style={{ color: "white" }} />
-                ) : (
-                  <ChevronLeftIcon style={{ color: "white" }} />
-                )}
+                <MenuIcon style={{ color: "white" }} />
               </IconButton>
               <Chip
                 label="My Greenwave"
