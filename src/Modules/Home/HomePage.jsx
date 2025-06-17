@@ -332,7 +332,13 @@ const HomePage = () => {
     if (onTourSwitchUpdate.status === 200) {
       setOnTourSwitch(checkValue);
       showSuccessMessage(toastRef, "Confirmed", "Your tour has started");
-    } else if (onTourSwitchUpdate.status === 400) {
+    } 
+    else if (onTourSwitchUpdate.status === 201) {
+      setOnTourSwitch(checkValue);
+      showSuccessMessage(toastRef, "Confirmed", "Your tour has ended");
+    }
+
+    else if (onTourSwitchUpdate.status === 400) {
       showErrorMessage(
         toastRef,
         "Invalid Action",
@@ -348,6 +354,7 @@ const HomePage = () => {
     setOnTourSwitch(nextHolidayData?.onTour ?? false);
   }, [nextHolidayData]);
 
+  console.log("nextHolidayData?.onTour",nextHolidayData?.onTour);
   //Change Profile Picture
    //Upload File
   const onUploadFile = async (event) => {
