@@ -4,6 +4,7 @@
     align-items: center;
     margin-bottom: 4px;
 }
+/*For Notification*/
 .NotificationThumbnail.p-galleria .p-galleria-thumbnail-container{
     padding: 0 !important;
 }
@@ -11,6 +12,24 @@
     display: flex;
     justify-content: flex-start !important;
 }
+
+
+/*For Event */
+.EventThumbnailStyle.p-galleria .p-galleria-thumbnail-container{
+    padding: 0 !important;
+    display: none !important;
+}
+.EventThumbnailStyle.p-galleria-item {
+    display: flex;
+    justify-content: flex-start !important;
+}
+.EventThumbnailStyle.p-galleria .p-galleria-indicators  {
+    display: none !important;
+}
+
+
+
+
 .p-galleria-item{
     justify-content: flex-start !important;
 }
