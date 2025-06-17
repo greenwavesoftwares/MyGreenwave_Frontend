@@ -3,9 +3,10 @@ import { getUserData } from "../../Login/Encrypt";
 import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const onPageLoadAPI = async (year) => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}leaves/${year}`, {
       headers: {
@@ -20,6 +21,7 @@ const onPageLoadAPI = async (year) => {
   }
 };
 const applyLeaveAPI = async (leaveData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.post(
       `${endPoint}leaves/applications`,
@@ -44,6 +46,7 @@ const applyLeaveAPI = async (leaveData, toastRef) => {
   }
 };
 const deleteLeaveAPI = async (leaveRowData, toastRef) => {
+  const userData = getUserData();
   console.log(leaveRowData);
   try {
     const response = await axios.delete(`${endPoint}leaves`, {
@@ -66,6 +69,7 @@ const deleteLeaveAPI = async (leaveRowData, toastRef) => {
   }
 };
 const editLeaveAPI = async (leaveData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(`${endPoint}leaves`, leaveData, {
       params: { leaveId: leaveData.leaveId },

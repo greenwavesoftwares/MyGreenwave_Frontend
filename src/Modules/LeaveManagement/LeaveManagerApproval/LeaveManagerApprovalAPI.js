@@ -3,9 +3,10 @@ import { getUserData } from "../../Login/Encrypt";
 import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const getLeaveRequestsForManagerApprovalAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}leaves/review`, {
       headers: {
@@ -14,12 +15,13 @@ const getLeaveRequestsForManagerApprovalAPI = async () => {
       },
     });
     return response.data;
-  } catch (error) {
+  } catch {
     // console.error("Error fetching forminfo with versions:", error);
     return null;
   }
 };
 const getTeamLeavesTableForManagerAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}leaves/review/all`, {
       headers: {
@@ -34,6 +36,7 @@ const getTeamLeavesTableForManagerAPI = async () => {
   }
 };
 const getTeamLeavesCalenderForManagerAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}leaves/review/calendar`, {
       headers: {
@@ -48,6 +51,7 @@ const getTeamLeavesCalenderForManagerAPI = async () => {
   }
 };
 const approveLeaveAPI = async (leaveData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(
       `${endPoint}leaves/accept-action`,
@@ -73,6 +77,7 @@ const approveLeaveAPI = async (leaveData, toastRef) => {
   }
 };
 const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(`${endPoint}leaves/rejection`, leaveData, {
       params: { leaveId: leaveData.leaveId, reason: reason },
@@ -94,6 +99,7 @@ const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
   }
 };
 const reviewingLeaveAPI = async (leaveData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(`${endPoint}leaves/reviewing`, leaveData, {
       params: { leaveId: leaveData.leaveId },

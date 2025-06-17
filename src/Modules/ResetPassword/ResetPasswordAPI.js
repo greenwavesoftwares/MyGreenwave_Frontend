@@ -3,9 +3,10 @@ import { getUserData } from "../Login/Encrypt";
 import { showErrorMessage } from "../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const resetPasswordAPI = async (body, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(`${endPoint}admin/resetpassword`, body, {
       headers: {

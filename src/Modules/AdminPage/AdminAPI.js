@@ -2,9 +2,10 @@ import axios from "axios";
 import { getUserData } from "../Login/Encrypt";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const getAllUsersAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}admin/allusers`, {
       headers: {

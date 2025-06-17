@@ -168,7 +168,7 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
           disablePadding
           className={`menu-item ${selected ? "selected" : ""} ${levelClass}`}
         >
-          <Tooltip title={open ? "" : item.label} placement="right">
+          <Tooltip title={open ? "" : item.label} className="tooltip-content" placement="right">
             <Link
               href={item.path}
               style={{ textDecoration: "none", color: "inherit" }}
@@ -322,7 +322,7 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
       </StyledDrawer>
 
       <Box component="main" className="main-content">
-        <DrawerHeader />
+       
         <Outlet />
       </Box>
     </Box>
