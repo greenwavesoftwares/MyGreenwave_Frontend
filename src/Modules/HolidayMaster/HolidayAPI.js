@@ -3,9 +3,10 @@ import { getUserData } from "../Login/Encrypt";
 import { showErrorMessage } from "../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const getHolidaysAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}holidays`, {
       headers: {
@@ -20,6 +21,7 @@ const getHolidaysAPI = async () => {
   }
 };
 const getHolidayDatesAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}holidays/dates`, {
       headers: {
@@ -34,6 +36,7 @@ const getHolidayDatesAPI = async () => {
   }
 };
 const addHolidaysAPI = async (addholidayData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.post(`${endPoint}holidays`, addholidayData, {
       headers: {
@@ -48,6 +51,7 @@ const addHolidaysAPI = async (addholidayData, toastRef) => {
   }
 };
 const editHolidaysAPI = async (editholidayData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.patch(
       `${endPoint}holidays/${editholidayData.holidayId}`,

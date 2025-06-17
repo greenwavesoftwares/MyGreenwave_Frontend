@@ -3,9 +3,10 @@ import { getUserData } from "../../Login/Encrypt";
 import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const addDepartmentAPI = async (department, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.post(
       `${endPoint}admin/adddepartment`,
@@ -24,6 +25,7 @@ const addDepartmentAPI = async (department, toastRef) => {
   }
 };
 const editDepartmentAPI = async (departmentId, department, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(
       `${endPoint}admin/updatedepartment/${departmentId}`,

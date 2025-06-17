@@ -3,10 +3,11 @@ import { getUserData } from "../../Login/Encrypt";
 import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 //Leave Requests for Admin Approval
 const getLeaveRequestsForAdminApprovalAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}leaves/admin/review`, {
       headers: {
@@ -21,6 +22,7 @@ const getLeaveRequestsForAdminApprovalAPI = async () => {
   }
 };
 const approveLeaveAPI = async (leaveData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(
       `${endPoint}leaves/accept-action`,
@@ -46,6 +48,7 @@ const approveLeaveAPI = async (leaveData, toastRef) => {
   }
 };
 const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.put(`${endPoint}leaves/rejection`, leaveData, {
       params: { leaveId: leaveData.leaveId, reason: reason },
@@ -69,6 +72,7 @@ const rejectLeaveAPI = async (leaveData, reason, toastRef) => {
 
 // Get User Leave Info
 const getUserLeaveInfoAPI = async (year) => {
+  const userData = getUserData();
   try {
     const response = await axios.get(
       `${endPoint}leaves/admin/user-leave-info/${year}`,
@@ -88,6 +92,7 @@ const getUserLeaveInfoAPI = async (year) => {
 
 // Apply Leave On Behalf
 const getLeaveOnBehalfDataAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(
       `${endPoint}leaves/admin/leave-on-behalf`,
@@ -105,6 +110,7 @@ const getLeaveOnBehalfDataAPI = async () => {
   }
 };
 const applyLeaveOnBehalfAPI = async (leaveData, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.post(
       `${endPoint}leaves/application-on-behalf`,
@@ -131,6 +137,7 @@ const applyLeaveOnBehalfAPI = async (leaveData, toastRef) => {
 
 // Get On Tour Report Data
 const getOntourReportDataAPI = async (fromDate, toDate) => {
+  const userData = getUserData();
   try {
     const response = await axios.get(
       `${endPoint}leaves/admin/on-tour-report/${fromDate}/${toDate}`,
@@ -150,6 +157,7 @@ const getOntourReportDataAPI = async (fromDate, toDate) => {
 
 // Get Leave Report Data
 const getLeaveReportDataAPI = async (fromDate, toDate) => {
+  const userData = getUserData();
   try {
     const response = await axios.get(
       `${endPoint}leaves/admin/leave-report-data/${fromDate}/${toDate}`,

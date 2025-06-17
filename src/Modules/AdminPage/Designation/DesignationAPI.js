@@ -3,9 +3,10 @@ import { getUserData } from "../../Login/Encrypt";
 import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 
 const endPoint = import.meta.env.VITE_END_POINT;
-const userData = getUserData();
+// const userData = getUserData();
 
 const getAllDesignationsAPI = async () => {
+  const userData = getUserData();
   try {
     const response = await axios.get(`${endPoint}admin/designation`, {
       headers: {
@@ -20,6 +21,7 @@ const getAllDesignationsAPI = async () => {
   }
 };
 const addDesignationAPI = async (designation, toastRef) => {
+  const userData = getUserData();
   try {
     const response = await axios.post(
       `${endPoint}admin/designation/${designation}`,
