@@ -322,7 +322,7 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
       </StyledDrawer>
 
       <Box component="main" className="main-content">
-        <DrawerHeader />
+       
         <Outlet />
       </Box>
     </Box>
