@@ -13,13 +13,14 @@ import {
   Collapse,
   Tooltip,
   Avatar,
-  Typography,
+  
   Button,
   Popover,
   MenuItem,
   Chip,
   Link,
 } from "@mui/material";
+import Typography from "../Typography/Typography";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -237,6 +238,7 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
         // className={displayNoMenu() ? "hidden" : ""}
         style={{ display: displayNoMenu() ? "none" : "" }}
       >
+        <div  className="fixed-drawer">
         <DrawerHeader>
           {!open ? (
             <IconButton onClick={handleDrawerOpen}>
@@ -263,7 +265,7 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
         </DrawerHeader>
 
         <Divider className="divider" />
-
+          </div>
         <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
 
         <div className="fixed-section">

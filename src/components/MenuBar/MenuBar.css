@@ -30,8 +30,8 @@
 }
 
 .menu-text {
-  opacity: 1;
-  color: white;
+  opacity: 1 !important;
+  color: white !important;
 }
 
 .submenu-box {
@@ -46,6 +46,13 @@
   z-index: 1;
 }
 
+.divider-top {
+  position: sticky;
+  top: 10;
+  left: 0;
+  background: #263238;
+  z-index: 1;
+}
 .avatar {
   width: 35px !important;
   height: 35px !important;
@@ -91,10 +98,10 @@
 }
 /* Top-level menu (default) */
 .menu-level-0 .menu-text {
-  font-size: 0.92rem;
+  font-size: 0.92rem !important;
   font-weight:700 !important;
-  color: #ECEFF1	;
-  font-family: sans-serif !important;
+  color: #ECEFF1	!important;
+   
 }
 .menu-level-0 .menu-icon {
   font-size: 1.1rem;
@@ -102,10 +109,10 @@
 
 /* First nested level */
 .menu-level-1 .menu-text {
-  font-size: 0.92rem;
+  font-size: 0.92rem !important;
   font-weight:650 !important;
-  font-family: sans-serif !important;
-  color: #CFD8DC;
+   
+  color: #CFD8DC !important;
 }
 .menu-level-1 .menu-icon {
   font-size: 1rem;
@@ -113,10 +120,10 @@
 
 /* Second nested level */
 .menu-level-2 .menu-text {
-  font-size: 0.92rem;
-  color: #B0BEC5;
+  font-size: 0.92rem !important;
+  color: #B0BEC5 !important;
   font-weight:600 !important;
-  font-family: sans-serif !important;
+   
 
 }
 .menu-level-2 .menu-icon {
@@ -125,10 +132,10 @@
 
 /* Third nested level */
 .menu-level-3 .menu-text {
-  font-size: 0.92rem;
+  font-size: 0.92rem !important;
   font-weight:550 !important;
-  font-family: sans-serif !important;
-  color: #90A4AE	;
+   
+  color: #90A4AE	!important;
 }
 .menu-level-3 .menu-icon {
   font-size: 0.9rem;
