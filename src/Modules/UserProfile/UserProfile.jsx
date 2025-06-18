@@ -1,4 +1,4 @@
-import { Badge, Card, Chip, Grid, Paper, Typography } from "@mui/material";
+import { Badge, Card, Chip, Grid, Paper } from "@mui/material";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import KeyIcon from "@mui/icons-material/Key";
@@ -8,6 +8,7 @@ import { getUserData } from "../Login/Encrypt";
 import { getUserDetailsAPI } from "../Login/LoginAPI";
 import ResetPassword from "../ResetPassword/ResetPassword";
 import UserLog from "../AdminPage/UserLog/UserLog";
+import Typography from "../../components/Typography/Typography";
 
 export default function UserProfile() {
   const [showAccountInfo, setShowAccountInfo] = useState(true); //state to show the Account Details if true and to show the Reset Password component if false
@@ -72,23 +73,23 @@ export default function UserProfile() {
           </div>
           {showAccountInfo && (
             <Paper className="paper-div">
-              <Typography className="table-header">User Profile</Typography>
+              <div className="table-header">User Profile</div>
 
               <div className="table">
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">User Name</div>
-                  <div className="table-cell">{userDetails.userName}</div>
+                  <Typography className="table-cell table-cell-header">User Name</Typography>
+                  <Typography className="table-cell">{userDetails.userName}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">User Id</div>
-                  <div className="table-cell">{userDetails.userId}</div>
+                  <Typography className="table-cell table-cell-header">User Id</Typography>
+                  <Typography className="table-cell">{userDetails.userId}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">
+                  <Typography className="table-cell table-cell-header">
                     Allotted Pages
-                  </div>
+                  </Typography>
                   <div className="table-cell">
                     <div className="table-cell-allottedpages">
                       {userDetails.allotedPages.map(
@@ -101,52 +102,52 @@ export default function UserProfile() {
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">
+                  <Typography className="table-cell table-cell-header">
                     Phone Number
-                  </div>
-                  <div className="table-cell">{userDetails.phoneNumber}</div>
+                  </Typography>
+                  <Typography className="table-cell">{userDetails.phoneNumber}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">Created On</div>
-                  <div className="table-cell">{userDetails.createdOn}</div>
+                  <Typography className="table-cell table-cell-header">Created On</Typography>
+                  <Typography className="table-cell">{userDetails.createdOn}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">
+                  <Typography className="table-cell table-cell-header">
                     Last Modified On
-                  </div>
+                  </Typography>
                   <div className="table-cell">{userDetails.modifiedOn}</div>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">Created By</div>
-                  <div className="table-cell">{userDetails.createdBy}</div>
+                  <Typography className="table-cell table-cell-header">Created By</Typography>
+                  <Typography className="table-cell">{userDetails.createdBy}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">
+                  <Typography className="table-cell table-cell-header">
                     Last Modified By
-                  </div>
-                  <div className="table-cell">{userDetails.modifiedBy}</div>
+                  </Typography>
+                  <Typography className="table-cell">{userDetails.modifiedBy}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">Last Login</div>
-                  <div className="table-cell">{userDetails.lastLogin}</div>
+                  <Typography className="table-cell table-cell-header">Last Login</Typography>
+                  <Typography className="table-cell">{userDetails.lastLogin}</Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">
+                  <Typography className="table-cell table-cell-header">
                     Password Expiry Date
-                  </div>
-                  <div className="table-cell">
+                  </Typography>
+                  <Typography className="table-cell">
                     {userDetails.passwordExpiryDate}
-                  </div>
+                  </Typography>
                 </div>
 
                 <div className="table-row">
-                  <div className="table-cell table-cell-header">Logs</div>
+                  <Typography className="table-cell table-cell-header">Logs</Typography>
                   <div className="table-cell">
                     <FileCopyOutlinedIcon
                       color="info"

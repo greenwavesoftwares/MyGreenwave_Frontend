@@ -46,6 +46,14 @@
   z-index: 1;
 }
 
+.fixed-drawer {
+  position: sticky;
+  top: 0;
+  left: 0;
+  background: #263238;
+  z-index: 1;
+}
+
 .divider-top {
   position: sticky;
   top: 10;
