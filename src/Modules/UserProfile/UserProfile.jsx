@@ -117,7 +117,7 @@ export default function UserProfile() {
                   <Typography className="table-cell table-cell-header">
                     Last Modified On
                   </Typography>
-                  <div className="table-cell">{userDetails.modifiedOn}</div>
+                  <Typography className="table-cell">{userDetails.modifiedOn}</Typography>
                 </div>
 
                 <div className="table-row">

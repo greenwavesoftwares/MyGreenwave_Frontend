@@ -1,6 +1,8 @@
 import { Paper, Chip, Badge, Tooltip } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+
+import Typography from "../../../components/Typography/Typography";
 import "./UserLog.css";
 
 const UserDetailsTable = ({
@@ -76,22 +78,24 @@ const UserDetailsTable = ({
    * which will be displayed on value update
    */
   const tableData = fields.map(
-    ({ label //label to be displayed as table header
-     , key //key of the field
-     , isChips //checks whether the values are displayed in a chips
-     , isBoolean //checks whether the field is boolean or not
-     , trueText //text to display when the boolean value is true
-     , falseText //text to display when the boolean value is false
+    ({
+      label, //label to be displayed as table header
+      key, //key of the field
+      isChips, //checks whether the values are displayed in a chips
+      isBoolean, //checks whether the field is boolean or not
+      trueText, //text to display when the boolean value is true
+      falseText, //text to display when the boolean value is false
     }) => {
       /**
-       * 
-       * @param {*} val 
+       *
+       * @param {*} val
        * @returns the value in updated format
        */
       const formatValue = (val) => {
         if (isBoolean) return val ? trueText || "Yes" : falseText || "No";
         //checks whether the value is boolean or not, if so return trueText or falseText if available else return Yes or No
-        if (isChips && Array.isArray(val)) {//checks whether the value is an array or not, and whether the values are to be displayed in chips or not
+        if (isChips && Array.isArray(val)) {
+          //checks whether the value is an array or not, and whether the values are to be displayed in chips or not
           return (
             <div className="table-cell-allottedpages-info">
               {val.map((page, i) => (
@@ -104,13 +108,14 @@ const UserDetailsTable = ({
       };
 
       return {
+        //checks whether the field is highlighted or not, if so display it in warning color else display it in default color
         field: (
           <Chip
             label={label}
             className="ellipsis-text"
             color={isHighLighted(key) ? "warning" : "default"}
             size="small"
-          />//checks whether the field is highlighted or not, if so display it in warning color else display it in default color
+          />
         ),
         oldData: (
           <div className="info-modified-wrap">
@@ -128,12 +133,13 @@ const UserDetailsTable = ({
                   oldUserDetails[key],
                   newUserDetails[key]
                 )}
-                style={{zIndex:'1000'}}
+                style={{ zIndex: "1000" }}
               >
                 <Badge
                   color="error"
                   badgeContent=" "
-                  variant="dot" style={{cursor:'pointer'}}
+                  variant="dot"
+                  style={{ cursor: "pointer" }}
                   className="table-cell-info-badge"
                   anchorOrigin={{ vertical: "top", horizontal: "right" }}
                 />
@@ -155,9 +161,24 @@ const UserDetailsTable = ({
         scrollHeight="400px" //the maximum height of the datatable
         showGridlines //show gridlines between cells
       >
-        <Column header="Field" field="field" />
-        <Column header="Old Data" field="oldData" />
-        <Column header="New Data" field="newData" />
+        <Column
+          header={<Typography>Field</Typography>}
+          body={(rowData) => (
+            <Typography variant="body2">{rowData.field}</Typography>
+          )}
+        />
+        <Column
+          header={<Typography>Old Data</Typography>}
+          body={(rowData) => (
+            <Typography variant="body2">{rowData.oldData}</Typography>
+          )}
+        />
+        <Column
+          header={<Typography>New Data</Typography>}
+          body={(rowData) => (
+            <Typography variant="body2">{rowData.newData}</Typography>
+          )}
+        />
       </DataTable>
     </Paper>
   );
