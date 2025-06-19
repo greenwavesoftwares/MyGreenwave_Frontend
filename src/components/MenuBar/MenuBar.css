@@ -28,12 +28,6 @@
   align-items: center !important;
   color: white !important;
 }
-
-.menu-text {
-  opacity: 1 !important;
-  color: white !important;
-}
-
 .submenu-box {
   padding-left: 15px;
 }
@@ -91,7 +85,7 @@
 }
 
 .popover {
-  /* margin-top: 1rem; */
+  left: 2px !important
 }
 
 .logout-box {
@@ -104,47 +98,45 @@
   margin: 3px 0px !important;
 
 }
-/* Top-level menu (default) */
-.menu-level-0 .menu-text {
+/* Shared menu text style */
+.menu-text {
+  opacity: 1 !important;
+  color: white !important;
   font-size: 0.92rem !important;
-  font-weight:700 !important;
-  color: #ECEFF1	!important;
-   
-}
-.menu-level-0 .menu-icon {
-  font-size: 1.1rem;
 }
 
-/* First nested level */
-.menu-level-1 .menu-text {
-  font-size: 0.92rem !important;
-  font-weight:650 !important;
-   
+/* Top-level */
+.menu-level-0.menu-item .menu-text {
+  font-weight: 700 !important;
+  color: #ECEFF1 !important;
+}
+.menu-level-0.menu-item .menu-icon {
+  font-size: 1.1rem !important;
+}
+
+/* First nested */
+.menu-level-1.menu-item .menu-text {
+  font-weight: 650 !important;
   color: #CFD8DC !important;
 }
-.menu-level-1 .menu-icon {
-  font-size: 1rem;
+.menu-level-1.menu-item .menu-icon {
+  font-size: 1rem !important;
 }
 
-/* Second nested level */
-.menu-level-2 .menu-text {
-  font-size: 0.92rem !important;
+/* Second nested */
+.menu-level-2.menu-item .menu-text {
+  font-weight: 600 !important;
   color: #B0BEC5 !important;
-  font-weight:600 !important;
-   
-
 }
-.menu-level-2 .menu-icon {
-  font-size: 0.95rem;
+.menu-level-2.menu-item .menu-icon {
+  font-size: 0.95rem !important;
 }
 
-/* Third nested level */
-.menu-level-3 .menu-text {
-  font-size: 0.92rem !important;
-  font-weight:550 !important;
-   
-  color: #90A4AE	!important;
+/* Third nested */
+.menu-level-3.menu-item .menu-text {
+  font-weight: 550 !important;
+  color: #90A4AE !important;
 }
-.menu-level-3 .menu-icon {
-  font-size: 0.9rem;
+.menu-level-3.menu-item .menu-icon {
+  font-size: 0.9rem !important;
 }

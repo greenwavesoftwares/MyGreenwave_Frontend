@@ -1,3 +1,4 @@
+// ... all previous imports stay unchanged
 import * as React from "react";
 import {
   Box,
@@ -13,7 +14,6 @@ import {
   Collapse,
   Tooltip,
   Avatar,
-  
   Button,
   Popover,
   MenuItem,
@@ -110,6 +110,7 @@ export default function MiniDrawer() {
   const [menuInfo, setMenuInfo] = useState(null);
   const [expandedItems, setExpandedItems] = useState({});
   const [anchorEl, setAnchorEl] = useState(null);
+  const [popoverStack, setPopoverStack] = useState([]);
   const navigate = useNavigate();
   const userDetails = getUserData();
   const userName = userDetails?.userDetails?.userName;
@@ -118,18 +119,15 @@ export default function MiniDrawer() {
   const handleDrawerClose = () => {
     setOpen(false);
     setExpandedItems({});
+    setPopoverStack([]);
   };
+
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleCloseMenu = () => setAnchorEl(null);
   const openMenu = Boolean(anchorEl);
 
-  const fetchMenuDetails = async () => {
-    const menu = await getMenuInfoDetails();
-    setMenuInfo(menu);
-  };
-
   useEffect(() => {
-    fetchMenuDetails();
+    getMenuInfoDetails().then((menu) => setMenuInfo(menu));
   }, []);
 
   const toggleExpand = (key) => {
@@ -137,85 +135,165 @@ export default function MiniDrawer() {
       ...prev,
       [key]: !prev[key],
     }));
-    setOpen(true);
   };
 
-  const displayNoMenu = () =>
-    window.location.pathname === "/login" ||
-    window.location.pathname === "/" ||
-    !userDetails?.userDetails?.userId.length > 0;
-
-const renderMenuItems = (items, parentKey = "", level = 0) =>
-  items.map((item, index) => {
-    const fullPath = item.path || "";
-    const key = `${parentKey}${item.label}-${index}`;
-    const selected = window.location.pathname === fullPath;
-    const hasChildren = Array.isArray(item.items) && item.items.length > 0;
-    const isExpanded = expandedItems[key];
-
-    const handleItemClick = () => {
-      if (hasChildren) {
-        toggleExpand(key);
-      } else if (fullPath) {
-        navigate(fullPath);
-      }
-    };
-
-    const levelClass = `menu-level-${level}`;
-
-    return (
-      <React.Fragment key={key}>
-        <ListItem
-          disablePadding
-          className={`menu-item ${selected ? "selected" : ""} ${levelClass}`}
-        >
-          <Tooltip title={open ? "" : item.label} className="tooltip-content" placement="right">
-            <Link
-              href={item.path}
-              style={{ textDecoration: "none", color: "inherit" }}
-              onClick={(event) => event.preventDefault()}
-            >
-              <ListItemButton onClick={handleItemClick}>
-                <ListItemIcon className={`menu-icon ${levelClass}`}>
-                  {hasChildren ? (
-                    isExpanded ? (
-                      <KeyboardArrowDownIcon />
-                    ) : (
-                      <KeyboardArrowRightIcon />
-                    )
-                  ) : (
-                    item.logo && (
-                      <FontAwesomeIcon icon={item.logo.split(" ")} />
-                    )
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={<Typography className={`menu-text ${levelClass}`}>{item.label}</Typography>}
-                  // className={`menu-text ${levelClass}`}
+  const renderNestedPopover = (level = 0) => {
+    return popoverStack.map((entry, index) => (
+      <Popover
+      elevation={0}
+            className="popover"
+        key={index}
+        open={Boolean(entry.anchorEl)}
+        anchorEl={entry.anchorEl}
+        onClose={() => setPopoverStack((prev) => prev.slice(0, index))}
+        anchorOrigin={{
+    vertical: 'bottom',
+    horizontal: 'right',
+  }}
+  transformOrigin={{
+    vertical: 'bottom',
+    horizontal: 'left',
+  }}
+      >
+        <Box>
+          {entry.items.map((item, i) => {
+            const key = `${item.label}-${i}`;
+            const selected = window.location.pathname === item.path;
+            const hasChildren =
+              Array.isArray(item.items) && item.items.length > 0;
+            const levelClass = `menu-level-${entry.level}`;
+            return (
+              <ListItem
+                key={key}
+                disablePadding
+                className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
+                onClick={(e) => {
+                    if (hasChildren) {
+                      console.log("Level::::"+entry.level+1)
+                      const newAnchor = {
+                        anchorEl: e.currentTarget,
+                        items: item.items,
+                        level: entry.level + 1,
+                      };
+                      setPopoverStack((prev) => [
+                        ...prev.slice(0, index + 1),
+                        newAnchor,
+                      ]);
+                    } else if (item.path) {
+                      navigate(item.path);
+                      setPopoverStack([]);
+                    }
+                  }}
+              >
+                <ListItemButton
                   
-                />
-              </ListItemButton>
-            </Link>
-          </Tooltip>
-        </ListItem>
+                >
+                  <ListItemIcon className="menu-icon" >
+                    {item.logo && (
+                      <FontAwesomeIcon icon={item.logo.split(" ")} />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    disableTypography
+                    primary={
+                      <Typography className={`menu-text`}>
+                        {item.label}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </Box>
+      </Popover>
+    ));
+  };
 
-        {hasChildren && (
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <Box className="submenu-box">
-              {renderMenuItems(item.items, key + "/", level + 1)}
-            </Box>
-          </Collapse>
-        )}
-      </React.Fragment>
-    );
-  });
+  const renderMenuItems = (items, parentKey = "", level = 0) =>
+    items.map((item, index) => {
+      const fullPath = item.path || "";
+      const key = `${parentKey}${item.label}-${index}`;
+      const selected = window.location.pathname === fullPath;
+      const hasChildren = Array.isArray(item.items) && item.items.length > 0;
+      const isExpanded = expandedItems[key];
+      const levelClass = `menu-level-${level}`;
+
+      return (
+        <React.Fragment key={key}>
+          <ListItem
+            disablePadding
+            className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
+            onClick={(e) => {
+                    if (hasChildren && open) toggleExpand(key);
+                    else if (!open && hasChildren) {
+                      console.log("Level::::"+level+1)
+                      setPopoverStack([
+                        {
+                          anchorEl: e.currentTarget,
+                          items: item.items,
+                          level: level + 1,
+                        },
+                      ]);
+                    } else navigate(fullPath);
+                  }}
+                  
+          >
+              <Link
+                href={item.path}
+                style={{ textDecoration: "none", color: "inherit" }}
+                onClick={(e) => e.preventDefault()}
+              >
+                <ListItemButton style={{width:'100%'}}
+                  
+                  
+                >
+                  <Tooltip title={open ? "" : item.label} placement="right">
+            
+                  <ListItemIcon className="menu-icon"
+                 
+                  >
+                    {hasChildren ? (
+                      isExpanded ? (
+                        <KeyboardArrowDownIcon />
+                      ) : (
+                        <KeyboardArrowRightIcon />
+                      )
+                    ) : (
+                      item.logo && (
+                        <FontAwesomeIcon icon={item.logo.split(" ")} />
+                      )
+                    )}
+                  </ListItemIcon>
+                  </Tooltip>
+                  <ListItemText
+                    disableTypography
+                    primary={
+                      <Typography className="menu-text">
+                        {item.label}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </Link>
+          </ListItem>
+          {hasChildren && open && (
+            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <Box className="submenu-box">
+                {renderMenuItems(item.items, key + "/", level + 1)}
+              </Box>
+            </Collapse>
+          )}
+        </React.Fragment>
+      );
+    });
 
   const handleLogout = () => {
     localStorage.clear();
   };
 
   const renderLogout = () => (
-    <Box className={`logout-box ${displayNoMenu() ? "hidden" : ""}`}>
+    <Box className={`logout-box`}>
       <MenuItem
         onClick={() => {
           handleLogout();
@@ -232,41 +310,37 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
 
   return (
     <Box className="drawer-root">
-      <StyledDrawer
-        variant="permanent"
-        open={open}
-        // className={displayNoMenu() ? "hidden" : ""}
-        style={{ display: displayNoMenu() ? "none" : "" }}
-      >
-        <div  className="fixed-drawer">
-        <DrawerHeader>
-          {!open ? (
-            <IconButton onClick={handleDrawerOpen}>
-              <MenuIcon style={{ color: "white" }} />
-            </IconButton>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "row", gap:'10px'}}>
-              <IconButton onClick={handleDrawerClose}>
+      <StyledDrawer variant="permanent" open={open}>
+        <div className="fixed-drawer">
+          <DrawerHeader>
+            {!open ? (
+              <IconButton onClick={handleDrawerOpen}>
                 <MenuIcon style={{ color: "white" }} />
               </IconButton>
-              <Chip
-                label="My Greenwave"
-                size="medium"
-                style={{ color: "white", backgroundColor: "#3c4a52" }}
-                avatar={
-                  <img
-                    src={GreenwaveLogo}
-                    style={{ width: "1rem", height: "1rem" }}
-                  />
-                }
-              />
-            </div>
-          )}
-        </DrawerHeader>
-
-        <Divider className="divider" />
-          </div>
-        <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
+            ) : (
+              <div
+                style={{ display: "flex", flexDirection: "row", gap: "10px" }}
+              >
+                <IconButton onClick={handleDrawerClose}>
+                  <MenuIcon style={{ color: "white" }} />
+                </IconButton>
+                <Chip
+                  label="My Greenwave"
+                  size="medium"
+                  style={{ color: "white", backgroundColor: "#3c4a52" }}
+                  avatar={
+                    <img
+                      src={GreenwaveLogo}
+                      style={{ width: "1rem", height: "1rem" }}
+                    />
+                  }
+                />
+              </div>
+            )}
+          </DrawerHeader>
+          <Divider className="divider" />
+        </div>
+        <List >{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
 
         <div className="fixed-section">
           <Divider className="divider" />
@@ -320,9 +394,10 @@ const renderMenuItems = (items, parentKey = "", level = 0) =>
       </StyledDrawer>
 
       <Box component="main" className="main-content">
-       
         <Outlet />
       </Box>
+
+      {renderNestedPopover()}
     </Box>
   );
 }
