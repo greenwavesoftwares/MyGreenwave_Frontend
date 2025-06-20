@@ -24,6 +24,7 @@ import {
   currentAppraisalFormAPI,
   appraisalListApi,
   trainingApi,
+  getPreviousAndNextAppraisalDate,
 } from "./AppraisalAPI";
 //Format Date
 import { formatDate } from "./formatDate";
@@ -73,6 +74,9 @@ function Appraisal() {
   //set appraisal form id
   const [appraisalFormID, setApraisalFormID] = useState("NA");
 
+  //Set Previous And Next Appraisal Date
+  const [previousAndNextAppraisalDate, setPreviousAndNextAppraisalDate] = useState({});
+
   //temp data
   //const empList = [{ userName: "test1" }, { userName: "test2" }, { userName: "test3" }];
   //Call Api
@@ -103,6 +107,12 @@ function Appraisal() {
         const trainingData = await trainingApi(authToken);
         console.log("trainingData_Api", trainingData);
         setTrainingData(trainingData?.data);
+
+        //Previous And Next Appraisal Date
+        const dateOfJoin= formatDate(localStorageAuth?.userDetails.doj)
+        const responsePreviousAndNextAppraisalDates = await getPreviousAndNextAppraisalDate(authToken, dateOfJoin);
+        setPreviousAndNextAppraisalDate(responsePreviousAndNextAppraisalDates?.data);
+
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
         if (error.message === "unauthorized") {
@@ -179,9 +189,9 @@ function Appraisal() {
               {/* Appraisal Dates */}
               <div className="flex items-center gap-4">
                 <p className="text-sm">Last Appraisal</p>
-                <Chip label="NA" color="primary" size="small" />
+                <Chip label={previousAndNextAppraisalDate.appraisalTable?.lastAppraisalDate ?? "NA"} color="primary" size="small" />
                 <p className="text-sm">Next Appraisal</p>
-                <Chip label="NA" color="primary" size="small" />
+                <Chip label={previousAndNextAppraisalDate.appraisalTable?.nextAppraisalDate ?? "NA"} color="primary" size="small" />
               </div>
 
               {/* Appraisal Form Buttons */}

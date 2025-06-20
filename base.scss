@@ -7,3 +7,12 @@ $dialogContentPadding: 0.2rem 0.9rem 0.7rem 0.9rem;
 $dataTableHeaderFontSize: 0.8rem;
 $noPadding:0;
 $primeReactButton:0.2rem 0.6rem;
+
+
+body {
+  background-color: var(--bg-main);
+  color: var(--menu-text);
+}
+.MuiDivider-root {
+  background-color: var(--divider-color);
+}

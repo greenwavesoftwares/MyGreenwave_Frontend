@@ -38,6 +38,8 @@ import { getMenuInfoDetails } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import "./MenuBar.css";
+import ThemeToggle from "../../../ThemeToggle";
+import "./MenuBar.scss";
 
 library.add(fas);
 
@@ -59,10 +61,8 @@ const closedMixin = (theme) => ({
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: "hidden",
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up("sm")]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
-  },
+  width: `calc(${theme.spacing(6.9)} + 1px)`,
+  
 });
 
 const StyledDrawer = styled(Drawer, {
@@ -261,7 +261,7 @@ export default function MiniDrawer() {
                       )
                     ) : (
                       item.logo && (
-                        <FontAwesomeIcon icon={item.logo.split(" ")} />
+                        <FontAwesomeIcon icon={item.logo.split(" ")} className="menu-icon"/>
                       )
                     )}
                   </ListItemIcon>
@@ -314,20 +314,20 @@ export default function MiniDrawer() {
         <div className="fixed-drawer">
           <DrawerHeader>
             {!open ? (
-              <IconButton onClick={handleDrawerOpen}>
-                <MenuIcon style={{ color: "white" }} />
+              <IconButton onClick={handleDrawerOpen} >
+                <MenuIcon  />
               </IconButton>
             ) : (
               <div
                 style={{ display: "flex", flexDirection: "row", gap: "10px" }}
               >
                 <IconButton onClick={handleDrawerClose}>
-                  <MenuIcon style={{ color: "white" }} />
+                  <MenuIcon  style={{paddingLeft:"4px"}}/>
                 </IconButton>
                 <Chip
                   label="My Greenwave"
                   size="medium"
-                  style={{ color: "white", backgroundColor: "#3c4a52" }}
+                  //style={{ color: "white", backgroundColor: "#3c4a52" }}
                   avatar={
                     <img
                       src={GreenwaveLogo}
@@ -344,6 +344,7 @@ export default function MiniDrawer() {
 
         <div className="fixed-section">
           <Divider className="divider" />
+          <ThemeToggle/>
           <ListItemButton
             onClick={handleMenuClick}
             className="menu-item username-avatar"

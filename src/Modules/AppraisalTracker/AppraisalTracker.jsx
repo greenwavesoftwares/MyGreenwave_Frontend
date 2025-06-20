@@ -102,7 +102,7 @@ const AppraisalTracker = () => {
       //Call Appraisal List API (New From)
       const employeeName = localStorageAuth?.userDetails.userId;
       const responseData = await appraisalAPI(authToken, employeeName);
-      console.log("employeeName", employeeName, authToken);
+      console.log("responseData", responseData);
       setAppraisalData(responseData);
 
       //Set DataTable Data
@@ -233,6 +233,7 @@ const AppraisalTracker = () => {
     }
 
   };
+  console.log("appraisalData", appraisalData);
 
   //Data Table Header
   const tableHeader = (
@@ -439,7 +440,7 @@ const AppraisalTracker = () => {
                   filter
                   required
                   onChange={(e) => setEmpName(e.value)}
-                  options={appraisalData?.employeeidlist}
+                  options={appraisalData?.employeeidlist}//
                   optionLabel="userName"
                   placeholder="Employee Name"
                   className="w-full p-inputtext-sm"

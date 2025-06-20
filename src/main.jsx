@@ -8,6 +8,7 @@ import "primeicons/primeicons.css"; /* Icons */
 import { LoadingProvider } from "./components/LoadingScreen/LoadingContext.jsx";
 import LoadingScreen from "./components/LoadingScreen/LoadingScreen.jsx";
 import { BrowserRouter } from "react-router-dom";
+import '../main.scss';
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>

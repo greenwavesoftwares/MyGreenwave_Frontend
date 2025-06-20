@@ -124,6 +124,7 @@ const TrainingScheduleMaster = () => {
 
   //Add Schedule Submit Button
   const handleSubmit = async (e) => {
+    console.log("handleSubmit", e);
     e.preventDefault();
     const newScheduleFormData = {
       eventId: "",
@@ -135,6 +136,14 @@ const TrainingScheduleMaster = () => {
       isCompleted: false,
       isCertificateAvailable: false,
     };
+    if(!newScheduleFormData.assignedUserId || !newScheduleFormData.fromDate || !newScheduleFormData.toDate || !newScheduleFormData.trainingName) {
+      alert("Please fill all fields before saving.");
+      return;
+    }
+    if (newScheduleFormData.fromDate > newScheduleFormData.toDate) {
+      alert("From Date cannot be greater than To Date.");
+      return;
+    }
 
     console.log("newScheduleFormData", newScheduleFormData);
     const { token } = getUserData();

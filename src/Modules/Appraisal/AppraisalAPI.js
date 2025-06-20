@@ -121,6 +121,24 @@ const trainingApi = async (token) => {
   }
 };
 
+//Get Appraisal data
+const getPreviousAndNextAppraisalDate = async (token, doj) => {
+  try {
+    const response = await axios.get(
+      `${endPoint}homepagemaster/homepage-appraisal?doj=${doj}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export {
   appraisalAPI,
   appraiserFormApi,
@@ -128,4 +146,5 @@ export {
   currentAppraisalFormAPI,
   appraisalListApi,
   trainingApi,
+  getPreviousAndNextAppraisalDate
 };

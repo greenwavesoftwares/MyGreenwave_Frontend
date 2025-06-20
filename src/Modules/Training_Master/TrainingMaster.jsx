@@ -116,6 +116,7 @@ const TrainingScheduleMaster = () => {
             header={<Typography className="text-sm">Training Details</Typography>}
             value={trainingList}
             showGridlines
+            stripedRows
             className="dataTableHeader dataTableBody dataTableBodyPadding"
           >
             <Column
@@ -191,6 +192,7 @@ const TrainingScheduleMaster = () => {
                     icon="pi pi-pencil"
                     size="small"
                     type="button"
+                    style={{width:"1.5rem", height: "1.5rem"}}
                     text
                     onClick={() => handleEditRow(rowData, rowIndex)}
                   />
@@ -204,6 +206,7 @@ const TrainingScheduleMaster = () => {
                   severity="danger"
                   size="small"
                   icon="pi pi-trash"
+                  style={{width:"1.5rem", height: "1.5rem"}}
                   rounded
                   text
                   onClick={() => handleDeleteRow(rowData)}

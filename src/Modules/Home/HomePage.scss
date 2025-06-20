@@ -1,0 +1,73 @@
+
+
+// Card Style
+.cardStyle{
+    box-shadow: rgba(0, 0, 0, 0.04) 1px 1px 2px !important;
+    border-radius: 0.4rem !important;
+    background-color: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+}
+.primeReactCardStyle.p-card{
+     background-color: transparent !important;
+}
+
+
+// Typography Style
+.fontSize-sm {
+    font-size: 0.92rem !important;
+    color: var(--menu-text) !important;
+}
+.userNameStyle {
+    color: var(--menu-text) !important;
+    font-size: 1.1rem !important;
+}
+
+
+
+// User Profile Avatar Style
+.userProfileImageStyle{
+    background-color: var(--card-bg) !important;
+    border: 4px solid var(--card-bg) !important;
+}
+
+// Dialog Style
+.dialogHeader.p-dialog .p-dialog-header {
+    background-color: var(--card-bg) !important;
+    color: var(--menu-text) !important;
+    backdrop-filter: blur(16px);
+}
+.dialogContent.p-dialog .p-dialog-content{
+    background-color: var(--card-bg) !important;
+    backdrop-filter: blur(16px);
+}
+
+
+
+
+.managerIconStyle{
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+    font-size: 1rem !important;
+    background:  var(--card-bg) !important;
+    color: #CC6085;
+    padding: 5px;
+    border-radius: 50%;
+}
+.dojIconStyle{
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+    font-size: 1rem !important;
+    background:  var(--card-bg) !important;
+    color: #2973CD;
+    padding: 5px;
+    border-radius: 50%;
+}
+.departmentIconStyle{
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+    font-size: 1rem !important;
+     background:  var(--card-bg) !important;
+    color: #2973CD;
+    padding: 5px;
+    border-radius: 50%;
+}

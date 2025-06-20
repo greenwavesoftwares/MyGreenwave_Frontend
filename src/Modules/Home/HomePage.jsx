@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import "./HomePage.css";
+import "./HomePage.scss"
 import { Galleria } from "primereact/galleria";
 import { formatDate, formatDateTime } from "../Appraisal/formatDate";
 import { Image } from "primereact/image";
@@ -212,9 +213,10 @@ const HomePage = () => {
         footer={
           <a
             style={{ fontWeight: "bold", fontSize: "0.8rem" }}
-            className=""
+            className="fontSize-sm"
             target="_blank"
             href={item.url}
+
           >
             Click Here For More Information
           </a>
@@ -525,10 +527,11 @@ const HomePage = () => {
                         sx={{
                           width: 140,
                           height: 140,
-                          background: "#F2F2FE",
-                          border: "4px solid #fff",
+                          //background: "#F2F2FE",
+                          //border: "4px solid #fff",
                         }}
                         src={userProfileImage}
+                        className="userProfileImageStyle"
                       >
                         {/* <Image
                           src={userProfileImage}
@@ -554,6 +557,7 @@ const HomePage = () => {
                             <Typography
                               id="userName"
                               style={{ color: "#29343D", fontSize: "1.1rem" }}
+                              className="userNameStyle"
                             >
                               {userProfile?.userName}
                             </Typography>
@@ -820,7 +824,7 @@ const HomePage = () => {
                             <div
                               className="NewCard"
                               style={{
-                                height: "19.3rem",
+                                height: "19.8rem",
                                 display: "list-item",
                                 justifyContent: "center",
                               }}
@@ -834,7 +838,8 @@ const HomePage = () => {
                                   }}
                                 >
                                   <Typography
-                                    sx={{ m: "0.2rem 0.5rem", fontWeight: 500 }}
+                                    sx={{ m: "0.5rem 0.5rem", fontWeight: 500 }}
+                                    className="fontSize-sm"
                                   >
                                     {nextHolidayData?.nextHoliday}
                                   </Typography>
@@ -850,6 +855,7 @@ const HomePage = () => {
                                         m: "0.2rem 0.5rem",
                                         fontWeight: 500,
                                       }}
+                                      className="fontSize-sm"
                                     >
                                       On Tour
                                     </Typography>
@@ -1176,6 +1182,7 @@ const HomePage = () => {
               <Button
                 variant="contained"
                 size="small"
+                sx={{boxShadow:"none"}}
                 onClick={handleAvatarChange}
               >
                 Submit
