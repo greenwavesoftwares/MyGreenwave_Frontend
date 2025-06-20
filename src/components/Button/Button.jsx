@@ -11,6 +11,7 @@ const CustomButton = ({
   size = "small",
   label,
   className,
+  tooltip
 }) => {
   return (
     <Button
@@ -23,6 +24,7 @@ const CustomButton = ({
       size={size}
       label={label}
       className={className}
+      tooltip={tooltip}
     />
   );
 };

@@ -1,16 +1,23 @@
-import React, { useRef, useState } from "react";
-import { InputText } from "primereact/inputtext";
-import { FileUpload } from "primereact/fileupload";
-import { Button } from "primereact/button";
+import  { useRef, useState } from "react";
+//import { InputText } from "primereact/inputtext";
+import { CustomeFileUpload } from "../../components/FileUpload/CustomeFileUpload";
+//import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import Dropdown from "../../components/Claim/Dropdown";
 import { ApplyOtherClaim } from "./claimServices";
 import { getUserData } from "../Login/Encrypt";
+import CustomButton from "../../components/Button/Button";
 
 const userDetails = getUserData()?.userDetails;
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../../components/Toast/ShowMessage";
+import CustomInputText from "../../components/InputText/InputText"
 
 const MiscellaneousClaimForm = () => {
-  const toast = useRef(null);
+  const toastRef = useRef(null);
   const fileUploadRef = useRef(null);
   const [file, setFile] = useState(null);
   const [claimType, setClaimType] = useState(null);
@@ -30,21 +37,15 @@ const MiscellaneousClaimForm = () => {
   const onUpload = async (event) => {
     if (event.files && event.files.length > 0) {
       setFile(event.files[0]);
-      toast.current.show({
-        severity: "success",
-        summary: "Success",
-        detail: "File Uploaded",
-      });
+        showSuccessMessage(toastRef,"success","File Uploaded")
+     
     }
   };
 
   const handleOnClick = async () => {
     if (!claimType || !claimAmount || !claimDetails || !file) {
-      toast.current.show({
-        severity: "warn",
-        summary: "Missing Fields",
-        detail: "Please fill all fields and upload a file.",
-      });
+      showWarningMessage(toastRef,"warn", "Please fill all fields and upload a file.",)
+     
       return;
     }
 
@@ -52,11 +53,13 @@ const MiscellaneousClaimForm = () => {
       const data = await ApplyOtherClaim(file, claimType, claimAmount, claimDetails);
 
       if (data.status === true) {
-        toast.current.show({
-          severity: "success",
-          summary: "Success",
-          detail: data.message,
-        });
+        showSuccessMessage(
+          toastRef,
+          "success",
+         data.message,
+        );
+    
+      
 
         setFile(null);
         setClaimAmount("");
@@ -64,17 +67,18 @@ const MiscellaneousClaimForm = () => {
         fileUploadRef.current?.clear();
       }
     } catch (error) {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: error?.message || "Upload failed",
-      });
+        showErrorMessage(
+                toastRef,
+               "error",
+               error?.message || "Upload failed"
+              );
+     
     }
   };
 
   return (
     <div className="flex items-center justify-center px-4 overflow-x-hidden">
-      <Toast ref={toast} />
+      <Toast ref={toastRef} />
       <div className="bg-white p-6 max-w-3xl w-full mx-4">
         <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
           Miscellaneous Claim
@@ -108,7 +112,7 @@ const MiscellaneousClaimForm = () => {
           <div className="flex items-center">
             <label className="w-1/3 text-sm font-medium text-gray-700">Claim Amount (INR)</label>
             <div className="w-2/3">
-              <InputText
+              <CustomInputText
                 className="w-full  rounded-md shadow-sm"
                 value={claimAmount}
                 onChange={(e) => setClaimAmount(e.target.value)}
@@ -120,7 +124,7 @@ const MiscellaneousClaimForm = () => {
           <div className="flex items-center">
             <label className="w-1/3 text-sm font-medium text-gray-700">Details of the Claim</label>
             <div className="w-2/3">
-              <InputText
+              <CustomInputText
                 className="w-full  rounded-md shadow-sm"
                 value={claimDetails}
                 onChange={(e) => setClaimDetails(e.target.value)}
@@ -132,7 +136,7 @@ const MiscellaneousClaimForm = () => {
           <div className="flex items-center">
             <label className="w-1/3 text-sm font-medium text-gray-700">Upload File</label>
             <div className="w-2/3">
-              <FileUpload
+              <CustomeFileUpload
                 ref={fileUploadRef}
                 name="file"
                 customUpload
@@ -148,7 +152,7 @@ const MiscellaneousClaimForm = () => {
 
           {/* Submit Button */}
           <div className="flex justify-center mt-6">
-            <Button
+            <CustomButton
               label="Send for Approval"
               icon="pi pi-send"
               className="px-6 py-2 p-button-success"

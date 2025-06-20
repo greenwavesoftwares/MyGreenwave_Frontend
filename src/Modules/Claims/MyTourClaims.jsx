@@ -14,6 +14,8 @@ import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { ProgressBar } from "primereact/progressbar";
+import {ExpandableDataTableComponent,CustomColumn,DataTableComponent} from "../../components/DataTable/DataTableComponent";
+import CustomButton from "../../components/Button/Button";
 
 //import ViewTable from "./ViewTable";
 const cellStyle = {
@@ -23,7 +25,8 @@ const cellStyle = {
 };
 
 const MyTourClaims = () => {
-    const [rowData, setRowData] = useState({});
+  const [loader,setLoader]=useState(false)
+  const [rowData, setRowData] = useState({});
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
   const [expandedRows, setExpandedRows] = useState(null);
@@ -156,7 +159,7 @@ const MyTourClaims = () => {
 
     return (
       <div className="flex justify-center items-center gap-2">
-        <Button
+        <CustomButton
           icon="pi pi-download"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
@@ -164,7 +167,7 @@ const MyTourClaims = () => {
           }}
           tooltip={""}
         />
-        <Button
+        <CustomButton
           icon="pi pi-eye"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
@@ -190,7 +193,7 @@ const MyTourClaims = () => {
     };
 
     return (
-      <Button
+      <CustomButton
         icon="pi pi-download"
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
@@ -210,13 +213,13 @@ const MyTourClaims = () => {
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
-        <Column
+        <CustomColumn
           header="Claim Duration"
           body={datebody}
           headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
         />
        
-        <Column
+        <CustomColumn
           header="Claim Calculation"
           body={claimCalculationBody}
           headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
@@ -227,7 +230,7 @@ const MyTourClaims = () => {
             wordBreak: "break-word",
           }}
         />
-        <Column
+        <CustomColumn
           header="Approver - Remarks"
           body={approverBody}
           headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
@@ -238,7 +241,7 @@ const MyTourClaims = () => {
             wordBreak: "break-word",
           }}
         />
-        <Column
+        <CustomColumn
           header="Reviewer - Remarks"
           body={reviewerBody}
           headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
@@ -249,21 +252,21 @@ const MyTourClaims = () => {
             wordBreak: "break-word",
           }}
         />
-        <Column
+        <CustomColumn
           field="status"
           header="Status"
           body={statusBody}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="Expense"
           header="Expense"
           body={downloadExpense}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="downloadSupportingDocument"
           header="Supporting Document"
           body={downloadSupportingDocument}
@@ -277,12 +280,14 @@ const MyTourClaims = () => {
   useEffect(() => {
     const fetchTourClaimList = async () => {
       try {
+        setLoader(true)
         const data = await getTourClaimList();
         setTourClaims(data);
         console.log(data);
       } catch (error) {
         console.error("Error fetching tour claim list:", error);
       }
+      setLoader(false)
     };
 
     fetchTourClaimList();
@@ -290,83 +295,84 @@ const MyTourClaims = () => {
 
   return (
     <div className="overflow-x-auto p-4">
-      <DataTable
-        value={tourClaims}
+      <ExpandableDataTableComponent
+        data={tourClaims}
         expandedRows={expandedRows}
         onRowToggle={(e) => setExpandedRows(e.data)}
         rowExpansionTemplate={rowExpansionTemplate}
-          showGridlines
+          //showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         dataKey="travel_id"
          paginator
         rows={10}
          emptyMessage={
-          rowData?.length === 0 ? (
-            "No data found"
+          loader? (
+             <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+           
           ) : (
-            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+              "No data found"
           )
         }
       >
         <Column expander style={{ width: "3rem" }} />
-        <Column
+        <CustomColumn
           field="fromDate"
           header="From Date"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="tentativeToDate"
           header="Tentative Date"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="actualToDate"
           header="Actual To Date"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="project"
           header="Project"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="purpose"
           header="Purpose"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="destination"
           header="Destination"
-          sortable
-          filter
+         sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="type"
           header="Type"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-      </DataTable>
+      </ExpandableDataTableComponent>
       <Dialog
         header="Tour Claim Details"
         visible={showViewDialog}
@@ -377,40 +383,40 @@ const MyTourClaims = () => {
         <DataTable
           value={viewtabledata}
           showGridlines 
-        className="text-xs"
-        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          className="text-xs"
+           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
-          <Column field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
+          <CustomColumn field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
           bodyStyle={cellStyle} />
-          <Column field="lodging" header="Lodging"   headerStyle={cellStyle}
+          <CustomColumn field="lodging" header="Lodging"   headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="breakfast" header="Breakfast"   headerStyle={cellStyle}
+          <CustomColumn field="breakfast" header="Breakfast"   headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="lunch" header="Lunch"   headerStyle={cellStyle}
+          <CustomColumn field="lunch" header="Lunch"   headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="snacks" header="Snacks"   headerStyle={cellStyle}
+          <CustomColumn field="snacks" header="Snacks"   headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="dinner" header="Dinner"  headerStyle={cellStyle}
+          <CustomColumn field="dinner" header="Dinner"  headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="teaWater" header="Tea & Water"   headerStyle={cellStyle}
+          <CustomColumn field="teaWater" header="Tea & Water"   headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column
+          <CustomColumn
             field="longTravel"
             header="Airfare, Bus, Train, Taxi Rental"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column field="shortTravel" header="Auto, Cab"  headerStyle={cellStyle}
+          <CustomColumn field="shortTravel" header="Auto, Cab"  headerStyle={cellStyle}
           bodyStyle={cellStyle} />
-          <Column field="tollTax" header="Parking, Toll, Fuel"  headerStyle={cellStyle}
+          <CustomColumn field="tollTax" header="Parking, Toll, Fuel"  headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="incidentals" header="Incidentals"  headerStyle={cellStyle}
+          <CustomColumn field="incidentals" header="Incidentals"  headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="other" header="Other Business Expenses"  headerStyle={cellStyle}
+          <CustomColumn field="other" header="Other Business Expenses"  headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="total" header="Total"  headerStyle={cellStyle}
+          <CustomColumn field="total" header="Total"  headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
-          <Column field="remarks" header="Remarks"  headerStyle={cellStyle}
+          <CustomColumn field="remarks" header="Remarks"  headerStyle={cellStyle}
           bodyStyle={cellStyle}/>
         </DataTable>
       </Dialog>

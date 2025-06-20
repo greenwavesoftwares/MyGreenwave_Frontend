@@ -1,32 +1,54 @@
-import React, { useEffect, useState, useRef } from "react";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+import { useEffect, useState, useRef } from "react";
+import {
+  CustomColumn,
+  DataTableComponent,
+} from "../../../components/DataTable/DataTableComponent";
+//import { DataTable } from "primereact/datatable";
 import { getloanclaimsapproveandreject } from "../claimServices";
 const cellStyle = { padding: "8px 12px" };
 import { Toast } from "primereact/toast";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../../../components/Toast/ShowMessage";
+
+import {ProgressBarComponent} from "../../../components/ProgressBar/ProgressBarComponent"
+import { DataTable } from "primereact/datatable";
+import { Column } from "primereact/column";
 
 const ApprovedLoanApplicationTable = () => {
-  const toast = useRef(null);
+  const toastRef = useRef(null);
   const [loanData, setloanData] = useState();
-  const [loading, setLoading] = useState();
+  const [loader, setLoader] = useState(false);
 
   useEffect(() => {
     const fetchloandetails = async () => {
       try {
+        setLoader(true)
         const result = await getloanclaimsapproveandreject();
+       
         if (!result.status) {
-          toast.current.show({
-            severity: "error",
-            summary: "Error",
-            detail: result.message,
-          });
+          showErrorMessage(
+          toastRef,
+         "error",
+          result.message
+        );
         } else {
+          console.log('result', result)
           setloanData(result.data);
+           setLoader(false)
         }
       } catch (error) {
+         showErrorMessage(
+          toastRef,
+         "error",
+          error?.message
+        );
         console.error("Error fetching claims:", error);
       } finally {
-        setLoading(false);
+        
+        setLoader(false)
       }
     };
 
@@ -35,100 +57,106 @@ const ApprovedLoanApplicationTable = () => {
 
   return (
     <div>
-      <Toast ref={toast} />
-      <DataTable
-        value={loanData}
-        loading={loading}
-        showGridlines
+      <Toast ref={toastRef} />
+      <DataTableComponent
+        data={loanData} 
+        rows={10}     
+       // showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+         emptyMessage={
+                loader ? (
+                  <ProgressBarComponent mode="indeterminate" style={{ height: "6px" }} />
+                ) : (
+                  "No data found"
+                )}
       >
-        <Column
+        <CustomColumn
           field="name"
           header="Name"
           headerStyle={{ ...cellStyle, maxWidth: "107px" }}
           bodyStyle={{ ...cellStyle, maxWidth: "107px" }}
         />
-        <Column
+        <CustomColumn
           field="designation"
           header="Designation"
           headerStyle={{ ...cellStyle, maxWidth: "107px" }}
           bodyStyle={{ ...cellStyle, maxWidth: "107px" }}
         />
-        <Column
+        <CustomColumn
           field="claimDate"
           header="Claim Date"
           headerStyle={{ ...cellStyle, minWidth: "100px" }}
           bodyStyle={{ ...cellStyle, minWidth: "100px" }}
         />
-        <Column
+        <CustomColumn
           field="requirementDate"
           header="Loan Start Date"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="amount"
           header="Loan Amount"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="emi"
           header="Total EMIs"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="emiAmount"
           header="EMI Amount"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="numberOfEMIsPending"
           header="EMIs Pending"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="loanAmountPending"
           header="Pending Loan Amount"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="numberOfMonthsAfterLastEMI"
           header="Months After Last EMI"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="reason"
           header="Reason"
           headerStyle={{ ...cellStyle, minWidth: "100px" }}
           bodyStyle={{ ...cellStyle, minWidth: "100px" }}
         />
-        <Column
+        <CustomColumn
           field="status"
           header="Status"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="approverName"
           header="Approver Name"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         {/* <Column field="approver" header="Approver Email" style={{ minWidth: '150px' }}/> */}
-        <Column
+        <CustomColumn
           field="approver_remarks"
           header="Approver Remarks"
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-      </DataTable>
+      </DataTableComponent>
     </div>
   );
 };

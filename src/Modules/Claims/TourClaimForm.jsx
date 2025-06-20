@@ -31,7 +31,7 @@ const TourClaimForm = ({
 
   
   const [advance, setadvance] = useState(null);
-  const [isFormExpanded, setIsFormExpanded] = useState(true);
+  const [isFormExpanded, setIsFormExpanded] = useState(false);
   const handleChange = (field, value) => {   
       settourclaimformData((prev) => ({ ...prev, [field]: value }));
   };
@@ -108,7 +108,7 @@ const TourClaimForm = ({
   return (
     <div className="p-4">
       <div className="p-4 bg-white space-y-6 mt-4">
-        <Accordion>
+        <Accordion defaultExpanded>
         <AccordionSummary
           expandIcon={<ArrowDropDownIcon />}
           aria-controls="panel2-content"

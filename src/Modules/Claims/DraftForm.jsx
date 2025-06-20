@@ -1,14 +1,18 @@
-import React, { useState, useRef } from "react";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { Button } from "primereact/button";
-import { Dialog } from "primereact/dialog";
+import { useState, useRef } from "react";
+import { DataTableComponent,CustomColumn } from "../../components/DataTable/DataTableComponent";
+import CustomDialog from "../../components/Dialog/DialogComponent"
+
+
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
+import CustomButton from "../../components/Button/Button";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../../components/Toast/ShowMessage";
 
-import TourClaimForm from "./TourClaimForm";
-import TourClaimTable from "./TourClaimTable";
-import { FiUpload } from "react-icons/fi";
+
 import {
   getTravelDropDown,
   uploadSupportingDocuments,
@@ -19,10 +23,10 @@ import {
   getlatestclaimtodate,
   formateDate,
   getTravelMode,
-  downloadTourClaimExpanseDocument
+  downloadTourClaimExpanseDocument,
 } from "./claimServices";
-import { ProgressBar } from "primereact/progressbar";
-import {getTravelDetailsFromTravelId2} from "../TravelDesk/TravelDeskAPI"
+
+import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 
 const DraftForm = ({
   draftData,
@@ -35,75 +39,74 @@ const DraftForm = ({
   settourClaimTableData,
   travelOptions,
   setTravelModeOptions,
-  setselectedtravelMode
-  
+  setselectedtravelMode,
 }) => {
   const cellStyle = { padding: "12px 16px" };
-  const toast = useRef(null);
-    const [rowData, setRowData] = useState({});
+const toastRef = useRef(null);
+  const [rowData, setRowData] = useState({});
 
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [selectedRowData, setSelectedRowData] = useState(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
-    const [viewtabledata, setviewtabledata] = useState();
-    
+  const [viewtabledata, setviewtabledata] = useState();
 
   const handleDelete = async (claim_id, status) => {
     let response = await deleteDraftList(claim_id, status);
     if (!response.status) {
-      toast.current?.show({
-        severity: "error",
-        summary: "error",
-        detail: response.message,
-      });
-    } else {
+      showErrorMessage(
+          toastRef,
+         "error",
+          response.message
+        );
      
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: response.message || "One more draft data deleted",
-      });
-       setDraftData(response.data);
-      if (response.data.length == 0) {
-      settoggleNewClaim(true);
-      seteditableMode(false);
-      settourClaimTableData([]);
-      settourclaimformData([])
-    }
-    }
-
+    } else {
+      showSuccessMessage(
+          toastRef,
+          "success",
+          response.message || "One more draft data deleted",
+        );
     
+      setDraftData(response.data);
+      if (response.data.length == 0) {
+        settoggleNewClaim(true);
+        seteditableMode(false);
+        settourClaimTableData([]);
+        settourclaimformData([]);
+      }
+    }
   };
 
   const handleApplyApproval = async (claim_id, status) => {
     try {
       let response = await applyClaim(claim_id, status);
       if (!response.status) {
-        toast.current?.show({
-          severity: "error",
-          summary: "Error",
-          detail: error?.message,
-        });
+
+       showErrorMessage(
+          toastRef,
+         "error",
+          response.message
+        );
       } else {
-         toast.current?.show({
-          severity: "success",
-          summary: "Success",
-          detail: "You have successfully applied for approval.",
-        });
+         showSuccessMessage(
+          toastRef,
+          "success",
+          "You have successfully applied for approval."
+        );
+       
         setDraftData(response.data);
         if (response.data.length == 0) {
           settoggleNewClaim(true);
           seteditableMode(false);
           settourClaimTableData([]);
         }
-       
       }
     } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to apply: " + (error?.message || error),
-      });
+      showErrorMessage(
+          toastRef,
+         "error",
+          "Failed to apply: " + (error?.message || error),
+        );
+    
     }
   };
 
@@ -111,45 +114,43 @@ const DraftForm = ({
     try {
       const data = await getTourClaimTableDraftData(claim_id);
       const travelDropDown = await getTravelDropDown();
-     
-     
+
       let obj = travelDropDown.data;
-      const matchedItem = obj.find(item => item.value === data.travel_id);
-       if(travel_id==='Long-Term-Local-Conveyance')
-      {
-          setselectedtravelMode(matchedItem)
-      }else{
+      const matchedItem = obj.find((item) => item.value === data.travel_id);
+      if (travel_id === "Long-Term-Local-Conveyance") {
+        setselectedtravelMode(matchedItem);
+      } else {
         //const travelmode= await getTravelMode(travel_id)
-       let responsedata= await getTravelDetailsFromTravelId2(travel_id)
-       let data=responsedata.data
-       let labelname= data.city+' - '+data.fromDate+' - '+data.projectName
-       // console.log('travelmode', travelmode)
-        setselectedtravelMode({label:labelname,value:travel_id}) 
+        let responsedata = await getTravelDetailsFromTravelId2(travel_id);
+        let data = responsedata.data;
+        let labelname =
+          data.city + " - " + data.fromDate + " - " + data.projectName;
+        // console.log('travelmode', travelmode)
+        setselectedtravelMode({ label: labelname, value: travel_id });
       }
-    let dates = await getlatestclaimtodate(travel_id);
-     // console.log('dates',dates)
-      
-     // travel_id==='Long-Term-Local-Conveyance'?setselectedtravelMode(matchedItem):setselectedtravelMode({label:travelmode.data,value:travel_id}) 
+      let dates = await getlatestclaimtodate(travel_id);
+      // console.log('dates',dates)
+
+      // travel_id==='Long-Term-Local-Conveyance'?setselectedtravelMode(matchedItem):setselectedtravelMode({label:travelmode.data,value:travel_id})
       settourclaimformData({
         advance: 0,
         claim_id: data.claim_id,
-        travel_id: travel_id,    
+        travel_id: travel_id,
         travelType: data.type,
         destination: data.destination,
         purpose: data.purpose,
         projectName: data.project,
         onAccount: data.account,
         travelfromDate: formateDate(dates[0].travelfromdate),
-        claimFromDate:data.from_date,
-        claimToDate:data.to_date,
+        claimFromDate: data.from_date,
+        claimToDate: data.to_date,
         filename: data.filename,
         file_type: data.file_type,
       });
-     
 
       const formattedRows = data.tourClaimRecords.map((row) => ({
         Date: row.date,
-        Lodging: row.lodging, 
+        Lodging: row.lodging,
         Breakfast: row.breakfast,
         Lunch: row.lunch,
         Snacks: row.snacks,
@@ -165,7 +166,7 @@ const DraftForm = ({
       }));
 
       settourClaimTableData(formattedRows);
-        seteditableMode(true);
+      seteditableMode(true);
     } catch (error) {
       console.error("Fetch error:", error);
     }
@@ -173,22 +174,21 @@ const DraftForm = ({
 
   const actionBodyTemplate = (rowData) => (
     <div className="flex gap-2">
-      <Button
+      <CustomButton
         icon="pi pi-pencil"
         className="p-button-sm p-button-text p-button-info"
         onClick={() => {
-        
           handleEdit(rowData.claim_id, rowData.travel_id);
         }}
         tooltip="Edit"
       />
-      <Button
+      <CustomButton
         icon="pi pi-trash"
         className="p-button-sm p-button-text p-button-danger"
         onClick={() => handleDelete(rowData.claim_id, "Cancelled")}
         tooltip="Delete"
       />
-      <Button
+      <CustomButton
         icon="pi pi-send"
         label="Apply"
         className="p-button-sm p-button-success p-button-text"
@@ -253,11 +253,12 @@ const DraftForm = ({
       try {
         let d = await downloadTourClaimSupportingDocument(claim_id);
       } catch (error) {
-        toast.current?.show({
-          severity: "error",
-          summary: "error",
-          detail: "Something Wrong.",
-        });
+        showErrorMessage(
+          toastRef,
+         "error",
+          "Something Wrong."
+        );
+       
       }
     };
     const onFileSelect = async (event) => {
@@ -273,17 +274,20 @@ const DraftForm = ({
           file,
           rowData.claim_id
         ); // Adjust this call accordingly
-        toast.current?.show({
-          severity: "success",
-          summary: "Success",
-          detail: "File Uploaded",
-        });
+        
+         showSuccessMessage(
+          toastRef,
+          "success",
+          "File Uploaded"
+        );
+       
       } catch (error) {
-        toast.current?.show({
-          severity: "error",
-          summary: "Error",
-          detail: "Upload failed",
-        });
+        showErrorMessage(
+          toastRef,
+         "error",
+         "Upload failed"
+        );
+        
         console.log(error);
         setFileUploaded(false);
         settogglefileUpload(true);
@@ -291,8 +295,6 @@ const DraftForm = ({
     };
     return (
       <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
-       
-
         {togglefileUpload ? (
           <FileUpload
             mode="basic"
@@ -307,7 +309,7 @@ const DraftForm = ({
 
         {fileUploaded && (
           <div>
-            <Button
+            <CustomButton
               icon="pi pi-download"
               className="p-button-sm p-button-text p-button-success"
               onClick={() => {
@@ -315,7 +317,7 @@ const DraftForm = ({
               }}
               tooltip={`${rowData.filename}`}
             />
-            <Button
+            <CustomButton
               icon="pi pi-times"
               className="p-button-sm p-button-text p-button-danger"
               onClick={() => {
@@ -335,11 +337,12 @@ const DraftForm = ({
       try {
         let d = await downloadTourClaimExpanseDocument(claim_id);
       } catch (error) {
-        toast.current.show({
-          severity: "error",
-          summary: "error",
-          detail: "Something Wrong.",
-        });
+        showErrorMessage(
+          toastRef,
+         "error",
+          "Something Wrong."
+        );
+     
       }
     };
 
@@ -349,31 +352,49 @@ const DraftForm = ({
         setviewtabledata(data.tourClaimRecords);
         setShowViewDialog(true);
       } catch (error) {
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: "Failed to load table.",
-        });
+        showErrorMessage(
+          toastRef,
+         "error",
+          "Failed to load table."
+        );
+
+      
       }
     };
 
     return (
       <div className="flex justify-center items-center gap-2">
-        <Button
+        <CustomButton
+          icon="pi pi-download"
+          rounded
+          outlined
+          severity="success"
+          disabled={false}
+          onClick={() => {
+            handleDownloadFile(rowData.claim_id);
+          }}
+          size=""
+          label={""}
+          className="p-button-sm p-button-text p-button-success"
+        />
+        {/* <Button
           icon="pi pi-download"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
             handleDownloadFile(rowData.claim_id);
           }}
           tooltip={""}
-        />
-        <Button
+        /> */}
+        <CustomButton
           icon="pi pi-eye"
-          className="p-button-sm p-button-text p-button-success"
+          rounded
+          outlined
+          severity="success"
+          disabled={false}
           onClick={() => {
             viewtable(rowData.claim_id);
           }}
-          tooltip={""}
+          className="p-button-sm p-button-text p-button-success"
         />
       </div>
     );
@@ -381,50 +402,25 @@ const DraftForm = ({
 
   return (
     <div>
-       <Toast ref={toast} />
+      <Toast ref={toastRef} />
       <div>
-        <DataTable
-          value={draftData}
-          showGridlines
-          paginator
+        <DataTableComponent
+          data={draftData}
           rows={10}
-          className="text-xs"
+          textSize="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-           emptyMessage={
-          rowData?.length === 0 ? (
-            "No data found"
-          ) : (
-            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
-          )
-        }
+          emptyMessage="No data found"
         >
-          {/* <Column
-            field="claim_id"
-            header="Claim Id"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-            sortable
-            filter
-          />
-
-           <Column
-            field="travel_id"
-            header="travel id"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-            sortable
-            filter
-          /> */}
           
-          <Column
+          <CustomColumn
             field="to_date"
             header="To"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
-            sortable
-            filter
+            sortable={true}
+            filter={true}
           />
-          <Column
+          <CustomColumn
             field="account"
             header="On Account"
             headerStyle={cellStyle}
@@ -432,112 +428,154 @@ const DraftForm = ({
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             header="Tour Details"
             body={tourDetailsBody}
             headerStyle={cellStyle}
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
-            sortable
-            filter
+            sortable={true}
+            filter={true}
           />
-          <Column
+          <CustomColumn
             header="Claim Calculation"
             body={claimCalculationBody}
             headerStyle={cellStyle}
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
-            sortable
-            filter
+            sortable={true}
+            filter={true}
           />
-          <Column
+          <CustomColumn
             header="Upload Supporting Document"
             body={supportingDocumentBody}
             headerStyle={cellStyle}
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
-            sortable
-            filter
+           sortable={true}
+            filter={true}
           />
-          <Column
-          field="Expense"
-          header="Expense"
-          body={downloadExpense}
-          headerStyle={cellStyle}
-          bodyStyle={cellStyle}
-        />
-          <Column
+          <CustomColumn
+            field="Expense"
+            header="Expense"
+            body={downloadExpense}
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+          />
+          <CustomColumn
             header="Action"
             body={actionBodyTemplate}
             headerStyle={{ ...cellStyle, textAlign: "center" }}
             bodyStyle={{ ...cellStyle, textAlign: "center" }}
-            sortable
-            filter
+           sortable={true}
+            filter={true}
           />
-        </DataTable>
-         <Dialog
-                header="Tour Claim Details"
-                visible={showViewDialog}
-                style={{ width: "90vw" }}
-                onHide={() => setShowViewDialog(false)}
-                modal
-              >
-                <DataTable
+        </DataTableComponent>
+        <CustomDialog
+          header="Tour Claim Details"
+          visible={showViewDialog}
+          style={{ width: "90vw" }}
+          onHide={() => setShowViewDialog(false)}
+          modal
+        >
+          <DataTableComponent
+            data={viewtabledata}
+            rows={10}
+            textSize="text-xs"
+            tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+            emptyMessage="No data found"
+          >
+            {/* </DataTableComponent> */}
+            {/* <DataTable
                   value={viewtabledata}
                   showGridlines 
                 className="text-xs"
                 tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-                >
-                  <Column field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
-                  bodyStyle={cellStyle} />
-                  <Column field="lodging" header="Lodging"   headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="breakfast" header="Breakfast"   headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="lunch" header="Lunch"   headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="snacks" header="Snacks"   headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="dinner" header="Dinner"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="teaWater" header="Tea & Water"   headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column
-                    field="longTravel"
-                    header="Airfare, Bus, Train, Taxi Rental"
-                    headerStyle={cellStyle}
-                    bodyStyle={cellStyle}
-                  />
-                  <Column field="shortTravel" header="Auto, Cab"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle} />
-                  <Column field="tollTax" header="Parking, Toll, Fuel"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="incidentals" header="Incidentals"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="other" header="Other Business Expenses"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="total" header="Total"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                  <Column field="remarks" header="Remarks"  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}/>
-                </DataTable>
-              </Dialog>
+                > */}
+            <CustomColumn
+              field="date"
+              header="Date"
+              headerStyle={{ ...cellStyle, minWidth: "100px" }}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="lodging"
+              header="Lodging"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="breakfast"
+              header="Breakfast"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="lunch"
+              header="Lunch"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="snacks"
+              header="Snacks"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="dinner"
+              header="Dinner"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="teaWater"
+              header="Tea & Water"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="longTravel"
+              header="Airfare, Bus, Train, Taxi Rental"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="shortTravel"
+              header="Auto, Cab"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="tollTax"
+              header="Parking, Toll, Fuel"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="incidentals"
+              header="Incidentals"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="other"
+              header="Other Business Expenses"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="total"
+              header="Total"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+            <CustomColumn
+              field="remarks"
+              header="Remarks"
+              headerStyle={cellStyle}
+              bodyStyle={cellStyle}
+            />
+          </DataTableComponent>
+        </CustomDialog>
       </div>
-
-      {/* 
-            Future Dialog if needed
-            <Dialog
-                header="Edit Tour Claim"
-                visible={editDialogVisible}
-                onHide={() => setEditDialogVisible(false)}
-                style={{ width: '80vw' }}
-                breakpoints={{ '960px': '75vw', '641px': '90vw' }}
-                modal
-            >
-                <TourClaimForm mode="popup" />
-                <div className="flex justify-center gap-2 mt-4">
-                    <Button label="Download" icon="pi pi-download" className="p-button-sm p-button-success" />
-                </div>
-                <TourClaimTable mode="popup" />
-            </Dialog>
-            */}
     </div>
   );
 };

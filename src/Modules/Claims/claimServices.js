@@ -125,7 +125,7 @@ export const getTourClaimList = async () => {
   let traveldetails = await getTravelsDetails();
 
   const myHeaders = new Headers();
-  myHeaders.append("A", "");
+  //myHeaders.append("A", "");
   myHeaders.append("Authorization", token); // Truncated for clarity
 
   const requestOptions = {
@@ -152,7 +152,7 @@ export const getTourClaimList = async () => {
 
   traveldetails.forEach((item) => {
     const matchingClaims = data.filter(
-      (claim) => claim.travel_id === item.requisionId
+      (claim) => claim.travel_id === item.travelId
     );
     formattedResult.push({
       fromDate: item.fromDate,

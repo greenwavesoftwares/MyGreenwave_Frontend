@@ -1,12 +1,19 @@
 import React, { useRef, useState } from "react";
-import { Button } from "primereact/button";
-import { InputText } from "primereact/inputtext";
+
 import { Calendar } from "primereact/calendar";
 import { Toast } from "primereact/toast";
 import { applyLoan } from "./claimServices";
+import CustomInputText from "../../components/InputText/InputText"
+import CustomButton from "../../components/Button/Button";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../../components/Toast/ShowMessage";
+
 
 const LoanApplicationForm = () => {
-  const toast = useRef(null);
+  const toastRef = useRef(null);
 
   const [formData, setFormData] = useState({
     loanAmount: "",
@@ -26,11 +33,13 @@ const LoanApplicationForm = () => {
   const handleClickApply = async () => {
     const response = await applyLoan(formData);
     if (response.status) {
-      toast.current.show({
-        severity: "success",
-        summary: "Success",
-        detail: response.message,
-      });
+
+       showSuccessMessage(
+                toastRef,
+                "success",
+              response.message
+              );
+     
       setFormData({
         loanAmount: "",
         emiAmount: "",
@@ -39,17 +48,18 @@ const LoanApplicationForm = () => {
         requirementDate: null,
       });
     } else {
-      toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: response.message,
-      });
+    showErrorMessage(
+                toastRef,
+                "error",
+              response.message
+              );
+      
     }
   };
 
   return (
     <div className="flex items-center justify-center ">
-      <Toast ref={toast} />
+      <Toast ref={toastRef} />
       <div className="bg-white p-6 max-w-3xl w-1/2 mx-4">
         <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
           Loan Application Form
@@ -63,7 +73,7 @@ const LoanApplicationForm = () => {
             >
               Loan Amount (₹)
             </label>
-            <InputText
+            <CustomInputText
               id="loanAmount"
               name="loanAmount"
               value={formData.loanAmount}
@@ -79,7 +89,7 @@ const LoanApplicationForm = () => {
             >
               Loan Tenure (In Month)
             </label>
-            <InputText
+            <CustomInputText
               id="loanTenure"
               name="loanTenure"
               value={formData.loanTenure}
@@ -110,7 +120,7 @@ const LoanApplicationForm = () => {
             >
               Purpose of Loan
             </label>
-            <InputText
+            <CustomInputText
               id="purpose"
               name="purpose"
               value={formData.purpose}
@@ -139,7 +149,7 @@ const LoanApplicationForm = () => {
         </div>
 
         <div className="flex justify-center mt-6">
-          <Button
+          <CustomButton
             label="Apply"
             icon="pi pi-check"
             className="px-6 py-2"

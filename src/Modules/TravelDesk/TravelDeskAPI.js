@@ -711,7 +711,7 @@ export const getTravelDetailsFromTravelId2 = async (travel_id) => {
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
-    console.log('travel_id', travel_id)
+   // console.log('travel_id', travel_id)
 
     const requestOptions = {
       method: "GET",
@@ -719,13 +719,21 @@ export const getTravelDetailsFromTravelId2 = async (travel_id) => {
       redirect: "follow",
     };
 
-    let response = await fetch(
+     let response = await axios(
       `${host}traveldesk/travels-by-id/${travel_id}`,
       requestOptions
     );
 
-    if (!response.ok) {
-      let message = await response.text();
+    // console.log('response2', response2)
+
+    // let response = await fetch(
+    //   `${host}traveldesk/travels-by-id/${travel_id}`,
+    //   requestOptions
+    // );
+    console.log('response', response)
+
+    if (response.status!=200) {
+      
       return {
         status: false,
         message: message,
@@ -733,13 +741,14 @@ export const getTravelDetailsFromTravelId2 = async (travel_id) => {
       };
     }
 
-    let responsedata = await response.json();
+    //let responsedata = await response.json();
     return {
       status: true,
       message: "travels detail",
-      data: responsedata[0],
+      data:response.data[0],
     };
   } catch (error) {
+    console.log('error-----------------------------', error?.message)
     return {
       status: false,
       message: error?.message,

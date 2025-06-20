@@ -3,15 +3,23 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { getOtherClaims,downloadOtherClaimSupportingDocument } from './claimServices'; // Adjust the path as needed
 const cellStyle = { padding: "8px 12px" };
-import { Button } from "primereact/button";
+//import { Button } from "primereact/button";
 import { Toast } from 'primereact/toast';
 import { ProgressBar } from "primereact/progressbar";
+import {CustomColumn,DataTableComponent} from "../../components/DataTable/DataTableComponent";
+import CustomButton from "../../components/Button/Button";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../../components/Toast/ShowMessage";
+
 
 
 const MiscellaneousClaimTable = () => {
-    const toast = useRef(null);
+    const toastRef = useRef(null);
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loader, setLoader] = useState(false);
    
   const downloadSupportingDocument = (rowData) => {
       const handleDownloadFile = async (claim_id) => {
@@ -19,24 +27,26 @@ const MiscellaneousClaimTable = () => {
           let response = await downloadOtherClaimSupportingDocument(claim_id);
           if(!response.status)
           {
-          toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
+             showErrorMessage(
+          toastRef,
+         "error",
+          response.message
+        );
+         
           }
 
         } catch (error) {
-          toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: error?.message,
-          });
+           showErrorMessage(
+          toastRef,
+         "error",
+          error?.message,
+        );
+         
         }
       };
   
       return (
-        <Button
+        <CustomButton
           icon="pi pi-download"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
@@ -51,12 +61,13 @@ const MiscellaneousClaimTable = () => {
   useEffect(() => {
     const fetchClaims = async () => {
       try {
+        setLoader(true)
         const result = await getOtherClaims();
         setData(result);
       } catch (error) {
         console.error('Error fetching claims:', error);
       } finally {
-        setLoading(false);
+        setLoader(false);
       }
     };
 
@@ -65,33 +76,34 @@ const MiscellaneousClaimTable = () => {
 
   return (
     <div>
-    <Toast ref={toast} />
-        <DataTable
-          value={data}
-          paginator
+    <Toast ref={toastRef} />
+        <DataTableComponent
+          data={data}
+        
           rows={10}
-          loading={loading}
+      
           showGridlines
           stripedRows
           dataKey="claim_id"
         //  emptyMessage="No claims found."
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-           emptyMessage={
-          data?.length === 0 ? (
-            "No data found"
+         emptyMessage={
+          loader? (
+             <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+           
           ) : (
-            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+              "No data found"
           )
         }
         >
-          <Column field="type" header="Claim Type" sortable filter  />
-          <Column field="claim_date" header="Application Date" sortable filter  />
-          <Column field="amount" header="Amount" sortable filter  />
-          <Column field="reason" header="Details" sortable filter  />
-          <Column field="status" header="Status" sortable filter  />
-          <Column field="approver_remarks" header="Approved Remarks" sortable filter  />
-          <Column field="approver" header="Approver" sortable filter />
-            <Column
+          <CustomColumn field="type" header="Claim Type" sortable filter  />
+          <CustomColumn field="claim_date" header="Application Date" sortable filter  />
+          <CustomColumn field="amount" header="Amount" sortable filter  />
+          <CustomColumn field="reason" header="Details" sortable filter  />
+          <CustomColumn field="status" header="Status" sortable filter  />
+          <CustomColumn field="approver_remarks" header="Approved Remarks" sortable filter  />
+          <CustomColumn field="approver" header="Approver" sortable filter />
+            <CustomColumn
                     field="downloadSupportingDocument"
                     header="Supporting Document"
                     body={downloadSupportingDocument}
@@ -99,7 +111,7 @@ const MiscellaneousClaimTable = () => {
                     bodyStyle={cellStyle}
                     sortable filter
                   />
-        </DataTable>
+        </DataTableComponent>
          </div>
   );
 };

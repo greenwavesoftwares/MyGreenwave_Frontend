@@ -2,11 +2,19 @@ import React, { useState, useRef } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
+import CustomButton from "../../components/Button/Button";
+
 import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
 import * as XLSX from "xlsx";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../../components/Toast/ShowMessage";
+
 import {
   formateDate,
   savetodraft,
@@ -47,7 +55,7 @@ const TourClaimTable = ({
   draftData,
 }) => {
   const [editingIndex, setEditingIndex] = useState(null);
-  const toast = useRef(null);
+  const toastRef = useRef(null);
 
   const calculateTotal = (entry) => {
     const keys = Object.keys(initialFormState).filter(
@@ -60,9 +68,8 @@ const TourClaimTable = ({
     const seen = new Set();
     for (let row of data) {
       const date = row["Date"];
-     // const total = parseFloat(row["Total"]) || 0;
-      if (!date) 
-        return { hasIssue: true, reason: "Date cann't be null" };
+      // const total = parseFloat(row["Total"]) || 0;
+      if (!date) return { hasIssue: true, reason: "Date cann't be null" };
       if (seen.has(date))
         return { hasIssue: true, reason: "Duplicate date found" };
       seen.add(date);
@@ -175,11 +182,11 @@ const TourClaimTable = ({
 
       settourClaimTableData((prev) => [...prev, ...validatedData]);
 
-      toast.current?.show({
-        severity: "info",
-        summary: "Import Result",
-        detail: `${validatedData.length} row(s) imported.`,
-      });
+      showSuccessMessage(
+        toastRef,
+        "success",
+        `${validatedData.length} row(s) imported.`
+      );
     };
 
     reader.readAsBinaryString(file);
@@ -189,28 +196,18 @@ const TourClaimTable = ({
     try {
       const response = await savetodraft(tourclaimformData, tourClaimTableData);
       //   if (response?.success) {
-      if(!response.status)
-      {
-         toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
-      }else{
-         toast.current.show({
-            severity: "success",
-            summary: "success",
-            detail: response.message,
-          });
-      setDraftData(response.data);
-      seteditableMode(false);
-      settoggleNewClaim(false);
-     
-    }
-     
-     
+      if (!response.status) {
+        showErrorMessage(toastRef, "error", response.message);
+      } else {
+        showSuccessMessage(toastRef, "success", response.message);
+
+        setDraftData(response.data);
+        seteditableMode(false);
+        settoggleNewClaim(false);
+      }
     } catch (error) {
-      toast.current.show({ severity: "error", summary: "error", detail: error?.message });
+      showErrorMessage(toastRef, "error", error?.message);
+
       console.log(error);
     }
   };
@@ -222,26 +219,17 @@ const TourClaimTable = ({
         tourClaimTableData,
         tourclaimformData.claim_id
       );
-      if(!response.status)
-      {
-         toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
-      }else
-      {
-        toast.current.show({
-            severity: "success",
-            summary: "Success",
-            detail: response.message,
-          });
-      setDraftData(response.data);
-      seteditableMode(false);
-       
+      if (!response.status) {
+        showErrorMessage(toastRef, "error", response.message);
+      } else {
+        showSuccessMessage(toastRef, "success", response.message);
+
+        setDraftData(response.data);
+        seteditableMode(false);
       }
     } catch (error) {
-      toast.current.show({ severity: "error", summary: "", detail: error });
+      showErrorMessage(toastRef, "error", error?.message);
+
       console.log(error);
     }
   };
@@ -255,16 +243,16 @@ const TourClaimTable = ({
             dateFormat="dd-mm-yy"
             showIcon
             className="p-inputtext-sm w-full"
-              minDate={
-    tourclaimformData.claimFromDate
-      ? new Date(tourclaimformData.claimFromDate)
-      : null
-  }
-  maxDate={
-    tourclaimformData.claimToDate
-      ? new Date(tourclaimformData.claimToDate)
-      : null
-  }
+            minDate={
+              tourclaimformData.claimFromDate
+                ? new Date(tourclaimformData.claimFromDate)
+                : null
+            }
+            maxDate={
+              tourclaimformData.claimToDate
+                ? new Date(tourclaimformData.claimToDate)
+                : null
+            }
           />
         );
       } else if (field == "Remarks") {
@@ -324,7 +312,7 @@ const TourClaimTable = ({
   const actionBodyTemplate = (row, { rowIndex }) => (
     <div className="flex gap-2">
       {editingIndex === rowIndex ? (
-        <Button
+        <CustomButton
           icon="pi pi-check"
           className="p-button-sm p-button-success"
           onClick={() => {
@@ -347,13 +335,13 @@ const TourClaimTable = ({
           }}
         />
       ) : (
-        <Button
+        <CustomButton
           icon="pi pi-pencil"
           className="p-button-sm p-button-text p-button-info"
           onClick={() => openEditMode(rowIndex)}
         />
       )}
-      <Button
+      <CustomButton
         icon="pi pi-trash"
         className="p-button-sm p-button-text p-button-danger"
         onClick={() => handleDelete(rowIndex)}
@@ -364,9 +352,7 @@ const TourClaimTable = ({
   const fields = Object.keys(initialFormState);
   const handleDownloadFile = async () => {
     try {
-      let d = await downloadTourClaimExpanseDocument(
-       
-      );
+      let d = await downloadTourClaimExpanseDocument();
     } catch (error) {
       console.log(error);
     }
@@ -374,7 +360,7 @@ const TourClaimTable = ({
 
   return (
     <>
-      <Toast ref={toast} />
+      <Toast ref={toastRef} />
       <div className="flex justify-end mb-2 gap-2">
         <FileUpload
           mode="basic"
@@ -385,14 +371,14 @@ const TourClaimTable = ({
           maxFileSize={1000000}
           chooseLabel="Upload"
         />
-        <Button
+        <CustomButton
           // label="Add Row"
           icon="pi pi-plus"
           className="p-button-sm "
           onClick={handleAddRow}
           tooltip="Add Row"
         />
-        <Button
+        <CustomButton
           icon="pi pi-file-export"
           className="p-button-sm"
           onClick={() => {
@@ -404,7 +390,7 @@ const TourClaimTable = ({
 
       <DataTable
         value={tourClaimTableData}
-          showGridlines
+        showGridlines
         scrollable
         scrollHeight="250px"
         className="text-xs"
@@ -438,29 +424,30 @@ const TourClaimTable = ({
       <div className="flex justify-center mt-4">
         {editableMode ? (
           <div className="flex gap-2">
-            <Button
+            <CustomButton
               label="Update"
               icon="pi pi-save"
               className="p-button-sm"
               onClick={() => {
                 const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
                 if (result.hasIssue) {
-                  toast.current?.show({
-                    severity: "warn",
-                    summary: "Validation Warning",
-                    detail: result.reason,
-                  });
+                  showWarningMessage(toastRef, "warn", result.reason);
+                  // toast.current?.show({
+                  //   severity: "warn",
+                  //   summary: "Validation Warning",
+                  //   detail: result.reason,
+                  // });
                 } else {
                   handleUpdate();
-                  toast.current.show({
-                    severity: "success",
-                    summary: "Updated",
-                    detail: "Tour claim updated!",
-                  });
+                  showSuccessMessage(
+                    toastRef,
+                    "success",
+                    "Tour claim updated!"
+                  );
                 }
               }}
             />
-            <Button
+            <CustomButton
               label="Home"
               icon="pi pi-home"
               onClick={() => {
@@ -471,25 +458,26 @@ const TourClaimTable = ({
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button
+            <CustomButton
               label="Save to Draft"
               icon="pi pi-save"
               className="p-button-sm"
               onClick={() => {
                 const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
                 if (result.hasIssue) {
-                  toast.current?.show({
-                    severity: "warn",
-                    summary: "Validation Warning",
-                    detail: result.reason,
-                  });
+                  showWarningMessage(toastRef, "warn", result.reason);
+                  // toast.current?.show({
+                  //   severity: "warn",
+                  //   summary: "Validation Warning",
+                  //   detail: result.reason,
+                  // });
                   return;
                 }
                 handleSaveToDraft();
               }}
             />
 
-            <Button
+            <CustomButton
               label="Home"
               icon="pi pi-home"
               onClick={() => {
@@ -497,7 +485,7 @@ const TourClaimTable = ({
                 settoggleNewClaim(false);
               }}
               className="p-button-sm"
-             // disabled={toggleNewClaim===true}
+              // disabled={toggleNewClaim===true}
             />
           </div>
         )}
