@@ -1,8 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { ProgressBar } from "primereact/progressbar";
+import {
+  DataTableComponent,
+  CustomColumn,
+  ExpandableDataTableComponent,
+} from "../../components/DataTable/DataTableComponent";
+import CustomDialog from "../../components/Dialog/DialogComponent";
+import CustomButton from "../../components/Button/Button";
+
+import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
 //Call Api
 import {
   getAdvanceDetails,
@@ -10,12 +16,11 @@ import {
   getApprovedAndSettledAndCompleteRequestedData,
   updateTravelRequisition2,
   uploadDocumentsByReqId,
-  downloadDocumentsByReqId
+  downloadDocumentsByReqId,
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
-import { Dialog } from "primereact/dialog";
 import RequisitionFormView from "./RequisitionFormView";
 import { Chip, IconButton } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
@@ -25,7 +30,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 const cellStyle = { padding: "12px 16px" };
 import { FileUpload } from "primereact/fileupload";
-import {Button} from "primereact/button"
+//import { Button } from "primereact/button";
 
 import {
   hideLoading,
@@ -34,6 +39,7 @@ import {
 
 const ApprovedTable = () => {
   const [expandedRows, setExpandedRows] = useState(!null);
+  const [loader, setLoader] = useState(false);
 
   const [visible, setVisible] = useState(false);
   const toast = useRef();
@@ -84,49 +90,40 @@ const ApprovedTable = () => {
   //const rowExpansionTemplate = (rowData) => (
 
   const rowExpansionTemplate = (rowData) => {
-    
-    const handleSaveAdvance = async(row) => {
-     // let updatedExpandableData = null;
-    try{
-      let updatedData={...row,advance: newAdvanceAmount}
-     let responseData=  await updateTravelRequisition2(        
+    const handleSaveAdvance = async (row) => {
+      // let updatedExpandableData = null;
+      try {
+        let updatedData = { ...row, advance: newAdvanceAmount };
+        let responseData = await updateTravelRequisition2(
           updatedData,
           updatedData.travelId,
-          'Settled'
+          "Settled"
         );
 
-      if(responseData.status)
-      {
-       
-         const response =
-          await getApprovedAndSettledAndCompleteRequestedData();
-      setApprovedAndSettledTravelData(response.data);
-      setEditRowId(null);
-      toast.current?.show({
+        if (responseData.status) {
+          const response =
+            await getApprovedAndSettledAndCompleteRequestedData();
+          setApprovedAndSettledTravelData(response.data);
+          setEditRowId(null);
+          toast.current?.show({
             severity: "success",
             summary: "Success",
             detail: responseData.message,
           });
-         
-     }else{
-     
+        } else {
           toast.current?.show({
             severity: "error",
             summary: "error",
             detail: responseData.message,
           });
-      
-    }
-    }catch(error)
-    {
-       toast.current?.show({
-            severity: "error",
-            summary: "error",
-            detail: error?.message,
-          });
-    }
-      
-     
+        }
+      } catch (error) {
+        toast.current?.show({
+          severity: "error",
+          summary: "error",
+          detail: error?.message,
+        });
+      }
     };
 
     const handleCancelAdvance = (row) => {
@@ -135,7 +132,11 @@ const ApprovedTable = () => {
     };
 
     const setAdvanceActions = (row) => {
-      if (editRowId === row.requisionId && !row.claimUnderProcess && row.status==="Approved") {
+      if (
+        editRowId === row.requisionId &&
+        !row.claimUnderProcess &&
+        row.status === "Approved"
+      ) {
         return (
           <>
             <IconButton
@@ -158,8 +159,7 @@ const ApprovedTable = () => {
         );
       }
 
-
-      if (!row.claimUnderProcess && row.status==="Approved") {
+      if (!row.claimUnderProcess && row.status === "Approved") {
         return (
           <IconButton
             aria-label="Edit"
@@ -172,114 +172,118 @@ const ApprovedTable = () => {
             <EditIcon />
           </IconButton>
         );
-      }else 
-      if(row.claimUnderProcess)
-      {
-       return <h3>Pending Unsettled Claim</h3>;
-      }
-      else{
-       
+      } else if (row.claimUnderProcess) {
+        return <h3>Pending Unsettled Claim</h3>;
+      } else {
       }
     };
 
     const supportingDocumentBody = (rowData) => {
-        // const [fileUploaded, setFileUploaded] = useState(
-        //   rowData.filename ? true : false
-        // );
-        // const [togglefileUpload, settogglefileUpload] = useState(
-        //   rowData.filename ? false : true
-        // );
-        const handleDownloadFile = async (requisionId) => {
-          try {
-            let d = await downloadDocumentsByReqId(requisionId);
-          } catch (error) {
-            toast.current?.show({
-              severity: "error",
-              summary: "error",
-              detail: "Something Wrong.",
-            });
-          }
-        };
-        // const onFileSelect = async (event) => {
-        //   const file = event.files[0]; // Get the uploaded file
-         
-        //   const formData = new FormData();
-        //   formData.append("file", file); // Append file to formData
-    
-        //   try {
-        //     const response = await uploadDocumentsByReqId(
-        //       file,
-        //       rowData.requisionId
-        //     ); // Adjust this call accordingly
-        //     if(response.status)
-        //     {
-        //       setFileUploaded(true);
-        //   settogglefileUpload(false);
-          
-
-          
-    
-        //     toast.current?.show({
-        //       severity: "success",
-        //       summary: "Success",
-        //       detail: "File Uploaded",
-        //     });
-        //   }else{
-        //       toast.current?.show({
-        //       severity: "error",
-        //       summary: "Error",
-        //       detail: response.message,
-        //     });
-        //   }
-        //   } catch (error) {
-        //     toast.current?.show({
-        //       severity: "error",
-        //       summary: "Error",
-        //       detail: "Upload failed",
-        //     });
-        //     console.log(error);
-        //     setFileUploaded(false);
-        //     settogglefileUpload(true);
-        //   }
-        // };
-        return (
-        <Button
-                icon="pi pi-download"
-                className="p-button-sm p-button-text p-button-success"
-                onClick={() => {
-                  handleDownloadFile(rowData.requisionId);
-                }}
-                 disabled={rowData.file_name == null}
-                tooltip={`${rowData.file_name}`}
-              />
-        );
+      // const [fileUploaded, setFileUploaded] = useState(
+      //   rowData.filename ? true : false
+      // );
+      // const [togglefileUpload, settogglefileUpload] = useState(
+      //   rowData.filename ? false : true
+      // );
+      const handleDownloadFile = async (requisionId) => {
+        try {
+          let d = await downloadDocumentsByReqId(requisionId);
+        } catch (error) {
+          toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: "Something Wrong.",
+          });
+        }
       };
+      // const onFileSelect = async (event) => {
+      //   const file = event.files[0]; // Get the uploaded file
+
+      //   const formData = new FormData();
+      //   formData.append("file", file); // Append file to formData
+
+      //   try {
+      //     const response = await uploadDocumentsByReqId(
+      //       file,
+      //       rowData.requisionId
+      //     ); // Adjust this call accordingly
+      //     if(response.status)
+      //     {
+      //       setFileUploaded(true);
+      //   settogglefileUpload(false);
+
+      //     toast.current?.show({
+      //       severity: "success",
+      //       summary: "Success",
+      //       detail: "File Uploaded",
+      //     });
+      //   }else{
+      //       toast.current?.show({
+      //       severity: "error",
+      //       summary: "Error",
+      //       detail: response.message,
+      //     });
+      //   }
+      //   } catch (error) {
+      //     toast.current?.show({
+      //       severity: "error",
+      //       summary: "Error",
+      //       detail: "Upload failed",
+      //     });
+      //     console.log(error);
+      //     setFileUploaded(false);
+      //     settogglefileUpload(true);
+      //   }
+      // };
+      return (
+        <CustomButton
+          icon="pi pi-download"
+          className="p-button-sm p-button-text p-button-success"
+          onClick={() => {
+            handleDownloadFile(rowData.requisionId);
+          }}
+          disabled={rowData.file_name == null}
+          tooltip={`${rowData.file_name}`}
+        />
+      );
+    };
 
     return (
-      <DataTable
-        value={rowData.expandableData}
-        showGridlines
+      <DataTableComponent
+        data={rowData.expandableData}
+        paginator={false}
+        rows={10}
         dataKey="requisionId"
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        emptyMessage={
+          loader ? (
+            <ProgressBarComponent
+              mode="indeterminate"
+              style={{ height: "6px" }}
+            />
+          ) : (
+            "No data found"
+          )
+        }
       >
-        {/* <Column field="requisionId" header="Requisition ID" /> */}
-        <Column field="date" header="Date" />
-        <Column field="advanceRequested" header="Advance Requested" />
-        <Column field="status" header="Status" />
-        <Column
+        {/* <CustomColumn field="requisionId" header="Requisition ID" /> */}
+        <CustomColumn field="date" header="Date" />
+        <CustomColumn field="advanceRequested" header="Advance Requested" />
+        <CustomColumn field="status" header="Status" />
+        <CustomColumn
           body={advanceColumnBody}
           header="Advance Given"
           headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
+          bodyStyle={{ textAlign: "center" }}
         />
-        <Column
+        <CustomColumn
           body={setAdvanceActions}
           header="Set Advance"
           headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
+          bodyStyle={{ textAlign: "center" }}
         />
-        <Column
+        <CustomColumn
           body={(rowData) => (
             <IconButton
               aria-label="View"
@@ -290,27 +294,26 @@ const ApprovedTable = () => {
           )}
           header="View"
           headerStyle={{ textAlign: "center" }}
-          style={{ textAlign: "center" }}
+          bodyStyle={{ textAlign: "center" }}
         />
 
-          <Column
-                    header="Download Document"
-                    body={supportingDocumentBody}
-                    headerStyle={cellStyle}
-                    bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
-                   
-                  />
-      </DataTable>
+        <CustomColumn
+          header="Download Document"
+          body={supportingDocumentBody}
+          headerStyle={cellStyle}
+          bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
+        />
+      </DataTableComponent>
     );
   };
 
   useEffect(() => {
     const fetchApprovedAndSettledTravelData = async () => {
-     
       try {
         // const { token } = getUserData();
 
         // const advancedData = await getAdvanceDetails();
+        setLoader(true);
 
         const approvedandsettledresponse =
           await getApprovedAndSettledAndCompleteRequestedData();
@@ -330,13 +333,12 @@ const ApprovedTable = () => {
         // });
 
         // const finalData = mergeTravelData(cleanedData, advancedData.data);
-        
+
         setApprovedAndSettledTravelData(approvedandsettledresponse.data);
-       
+        setLoader(false);
       } catch (error) {
         console.error("Error fetching travel data:", error);
       }
-      
     };
 
     fetchApprovedAndSettledTravelData();
@@ -420,52 +422,49 @@ const ApprovedTable = () => {
   //   }
   // };
 
-  const completeTravel=async(rowData)=>{
-   //  let updatedData={...row,advance: newAdvanceAmount}
-     let responseData=  await updateTravelRequisition2(        
-          rowData,
-          rowData.travelId,
-          'CompleteRequested'
-        );
-     if(responseData.status)
-     {
-      let response=  await getApprovedAndSettledAndCompleteRequestedData()
+  const completeTravel = async (rowData) => {
+    //  let updatedData={...row,advance: newAdvanceAmount}
+    let responseData = await updateTravelRequisition2(
+      rowData,
+      rowData.travelId,
+      "CompleteRequested"
+    );
+    if (responseData.status) {
+      let response = await getApprovedAndSettledAndCompleteRequestedData();
       setApprovedAndSettledTravelData(response.data);
-     // setEditRowId(null);
+      // setEditRowId(null);
       toast.current?.show({
-            severity: "success",
-            summary: "Success",
-            detail: responseData.message,
-          });
+        severity: "success",
+        summary: "Success",
+        detail: responseData.message,
+      });
 
       // Optionally reset newAdvanceAmount
-     }
-      else{
-    toast.current?.show({
-            severity: "error",
-            summary: "error",
-            detail: responseData.message,
-          });
-     }
-  }
+    } else {
+      toast.current?.show({
+        severity: "error",
+        summary: "error",
+        detail: responseData.message,
+      });
+    }
+  };
 
-  const checkBody=(rowData)=>{
-        return(
-      <Button
+  const checkBody = (rowData) => {
+    return (
+      <CustomButton
         icon="pi pi-check"
         className="p-button-sm p-button-text p-button-success"
-          onClick={() => {
+        onClick={() => {
           completeTravel(rowData.expandableData[0], "CompleteRequested");
-          }}
-          tooltip="Complete Travel"
+        }}
+        tooltip="Complete Travel"
         disabled={rowData.requestCompletedFlag === false}
-        />
+      />
       // <span>Hii</span>
-        )
-        
-    }
+    );
+  };
 
-     const tourDetailsBody = (rowData) => (
+  const tourDetailsBody = (rowData) => (
     <div className="flex flex-col items-start justify-center space-y-1">
       <div>
         <span className="font-bold">City:</span> {rowData["city"]}
@@ -477,7 +476,8 @@ const ApprovedTable = () => {
         <span className="font-bold">Project:</span> {rowData["projectName"]}
       </div>
       <div>
-        <span className="font-bold">Type Of Travel:</span> {rowData["typeOfTravel"]}
+        <span className="font-bold">Type Of Travel:</span>{" "}
+        {rowData["typeOfTravel"]}
       </div>
     </div>
   );
@@ -486,25 +486,28 @@ const ApprovedTable = () => {
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
         <Toast ref={toast} />
-        <DataTable
-          value={approvedAndSettledTravelData}
+        <ExpandableDataTableComponent
+          data={approvedAndSettledTravelData}
           expandedRows={expandedRows}
           onRowToggle={(e) => setExpandedRows(e.data)}
-          rowExpansionMode="single"
+          //</div> rowExpansionMode="single"
           rowExpansionTemplate={rowExpansionTemplate}
-          showGridlines
+          //</> showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-          paginator
-          size="small"
+          // paginator
+          //size="small"
           rows={10}
-           emptyMessage={
-          rowData?.length === 0 ? (
-            "No data found"
-          ) : (
-            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
-          )
-        }
+          emptyMessage={
+            loader ? (
+              <ProgressBarComponent
+                mode="indeterminate"
+                style={{ height: "6px" }}
+              />
+            ) : (
+              "No data found"
+            )
+          }
           // rowsPerPageOptions={
           //   approvedAndSettledTravelData.length > 50
           //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
@@ -519,10 +522,10 @@ const ApprovedTable = () => {
           //     ? [5, approvedAndSettledTravelData.length]
           //     : [5]
           // }
-         // paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-        //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
+          // paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+          //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
           dataKey="travelId"
-         // filters={approvedAndSettledFilters}
+          // filters={approvedAndSettledFilters}
           // globalFilterFields={[
           //   "date",
           //   "userName",
@@ -531,17 +534,17 @@ const ApprovedTable = () => {
           //   "unsettledAmount",
           //   "advanceRequested",
           // ]}
-       //   header={approvedAndSettledTravelDataHeader}
-         // emptyMessage="No data found."
-        //  removableSort
-        //  sortMode="multiple"
+          //   header={approvedAndSettledTravelDataHeader}
+          // emptyMessage="No data found."
+          //  removableSort
+          //  sortMode="multiple"
 
-        //   rowClassName={(rowData) => {
-        //   if (rowData[0].status == "Applied") return "bg-cyan-50";
-        //   if (rowData[0].status == "Reviewing") return "bg-green-50";
-        // }}
+          //   rowClassName={(rowData) => {
+          //   if (rowData[0].status == "Applied") return "bg-cyan-50";
+          //   if (rowData[0].status == "Reviewing") return "bg-green-50";
+          // }}
         >
-          {/* <Column
+          {/* <CustomColumn
               field="date"
               header="Date"
               headerStyle={{ textAlign: "center" }}
@@ -549,9 +552,9 @@ const ApprovedTable = () => {
               sortable
               filter
             /> */}
-          <Column expander style={{ width: "3rem" }} />
-{/* 
-          <Column
+          <CustomColumn expander style={{ width: "3rem" }} />
+          {/* 
+          <CustomColumn
             field="travelId"
             header="travelId"
             headerStyle={{ textAlign: "center" }}
@@ -559,58 +562,57 @@ const ApprovedTable = () => {
             sortable
             filter
           /> */}
-          <Column
+          <CustomColumn
             field="userName"
             header="Name"
             headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
+            bodyStyle={{ textAlign: "center" }}
+            sortable={true}
+            filter={true}
           />
-            <Column
+          <CustomColumn
             field="unsettledAmount"
             header="Total Unsettled Amount"
             headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
+            bodyStyle={{ textAlign: "center" }}
+            sortable={true}
+            filter={true}
           />
-          <Column
+          <CustomColumn
             field="fromDate"
             header="From Date"
             headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
+            bodyStyle={{ textAlign: "center" }}
+            sortable={true}
+            filter={true}
           />
-          <Column
+          <CustomColumn
             field="tentativeToDate"
             header="Tentative To Date"
             headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
+            bodyStyle={{ textAlign: "center" }}
+            sortable={true}
+            filter={true}
           />
 
-          <Column
+          <CustomColumn
             field="empCode"
             header="Employee Code"
             headerStyle={{ textAlign: "center" }}
-            style={{ textAlign: "center" }}
-            sortable
-            filter
+            bodyStyle={{ textAlign: "center" }}
+            sortable={true}
+            filter={true}
           />
 
-          <Column
-           // field="purpose"
-           body={tourDetailsBody}
+          <CustomColumn
+            // field="purpose"
+            body={tourDetailsBody}
             header="Travel Details"
             headerStyle={{ textAlign: "center" }}
             // headerClassName="center-header"
-            style={{ textAlign: "center" }}
-           
+            bodyStyle={{ textAlign: "center" }}
           />
-          {/* <Column
+          {/* <CustomColumn
             field="projectName"
             header="Project Name"
             headerStyle={{ textAlign: "center" }}
@@ -620,16 +622,16 @@ const ApprovedTable = () => {
             filter
           /> */}
 
-          <Column
+          <CustomColumn
             field="localityArea"
             header="Locality/Area"
             headerStyle={{ textAlign: "center" }}
             // headerClassName="center-header"
-            style={{ textAlign: "center" }}
-            sortable
-            filter
+            bodyStyle={{ textAlign: "center" }}
+            sortable={true}
+            filter={true}
           />
-          {/* <Column
+          {/* <CustomColumn
             field="city"
             header="City"
             headerStyle={{ textAlign: "center" }}
@@ -638,7 +640,7 @@ const ApprovedTable = () => {
             sortable
             filter
           /> */}
-          {/* <Column
+          {/* <CustomColumn
             field="typeOfTravel"
             header="Type Of Travel"
             headerStyle={{ textAlign: "center" }}
@@ -648,15 +650,13 @@ const ApprovedTable = () => {
             filter
           /> */}
 
-         
-
-          {/* <Column
+          {/* <CustomColumn
               body={advanceColumnBody}
               header="Advance Given"
               headerStyle={{ textAlign: "center" }}
               style={{ textAlign: "center" }}
             /> */}
-          {/* <Column
+          {/* <CustomColumn
               body={(rowData) => {
                 return (
                   <Chip
@@ -675,7 +675,7 @@ const ApprovedTable = () => {
               headerStyle={{ textAlign: "center" }}
               style={{ textAlign: "center" }}
             /> */}
-          {/* <Column
+          {/* <CustomColumn
               body={(rowData) => {
                 return (
                   <IconButton
@@ -692,15 +692,18 @@ const ApprovedTable = () => {
               headerStyle={{ textAlign: "center" }}
               style={{ textAlign: "center" }}
             /> */}
-          {/* <Column
+          {/* <CustomColumn
                 body={setAdvanceActions}
                 header="Set Advance"
                 headerStyle={{ textAlign: "center" }}
                 style={{ textAlign: "center" }}
               /> */}
 
-          <Column body={checkBody} header="Complete Travel"></Column>
-          {/* <Column
+          <CustomColumn
+            body={checkBody}
+            header="Complete Travel"
+          ></CustomColumn>
+          {/* <CustomColumn
             body={(rowData) => {
               return (
                 !rowData.requestCompletedFlag?(
@@ -723,8 +726,8 @@ const ApprovedTable = () => {
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
           /> */}
-        </DataTable>
-        <Dialog
+        </ExpandableDataTableComponent>
+        <CustomDialog
           header="Requisition Form View"
           visible={visible}
           style={{ width: "70rem" }}
@@ -735,7 +738,7 @@ const ApprovedTable = () => {
         >
           <h2>Requisition Form View</h2>
           <RequisitionFormView rowData={rowData} />
-        </Dialog>
+        </CustomDialog>
       </div>
     </>
   );

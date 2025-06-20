@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+import {
+  DataTableComponent,
+  CustomColumn,
+  ExpandableDataTableComponent,
+} from "../../components/DataTable/DataTableComponent";
+import CustomDialog from "../../components/Dialog/DialogComponent";
 const cellStyle = { padding: "12px 16px" };
 //Call Api
 import {
@@ -9,13 +13,12 @@ import {
   getMyFormParticularRequisitionId,
   getCompleteData,
   updateTravelRequisition,
-  downloadDocumentsByReqId
+  downloadDocumentsByReqId,
 } from "./TravelDeskAPI";
 import { ProgressBar } from "primereact/progressbar";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
-import { Dialog } from "primereact/dialog";
 import RequisitionFormView from "./RequisitionFormView";
 import { Chip, IconButton } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
@@ -23,7 +26,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import {Button} from "primereact/button"
+import { Button } from "primereact/button";
 
 const CompletedTable = () => {
   const [expandedRows, setExpandedRows] = useState(!null);
@@ -122,24 +125,26 @@ const CompletedTable = () => {
       );
     };
     return (
-      <DataTable
-        value={rowData.expandableData}
-        showGridlines
+      <DataTableComponent
+        data={rowData.expandableData}
+        // showGridlines
         dataKey="requisionId"
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        rows={10}
+        paginator={false}
       >
         {/* <Column field="requisionId" header="Requisition ID" /> */}
-        <Column field="fromDate" header="Date" />
-        <Column field="advanceRequested" header="Advance Requested" />
-        <Column field="status" header="Status" />
-        <Column
+        <CustomColumn field="fromDate" header="Date" />
+        <CustomColumn field="advanceRequested" header="Advance Requested" />
+        <CustomColumn field="status" header="Status" />
+        <CustomColumn
           body={advanceColumnBody}
           header="Advance Given"
           headerStyle={{ textAlign: "center" }}
           style={{ textAlign: "center" }}
         />
-        <Column
+        <CustomColumn
           body={(rowData) => (
             <IconButton
               aria-label="View"
@@ -152,7 +157,7 @@ const CompletedTable = () => {
           headerStyle={{ textAlign: "center" }}
           style={{ textAlign: "center" }}
         />
-        <Column
+        <CustomColumn
           header="Download Document"
           body={supportingDocumentBody}
           headerStyle={cellStyle}
@@ -160,7 +165,7 @@ const CompletedTable = () => {
           sortable
           filter
         />
-      </DataTable>
+      </DataTableComponent>
     );
   };
 
@@ -328,25 +333,23 @@ const CompletedTable = () => {
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
         <Toast ref={toast} />
-        <DataTable
-          value={approvedAndSettledTravelData}
+        <ExpandableDataTableComponent
+          data={approvedAndSettledTravelData}
           expandedRows={expandedRows}
           onRowToggle={(e) => setExpandedRows(e.data)}
           //rowExpansionMode="single"rowExpansionTemplate
           rowExpansionTemplate={rowExpansionTemplate}
-          showGridlines
+          // showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-          paginator
-          size="small"
           rows={10}
-           emptyMessage={
-          rowData?.length === 0 ? (
-            "No data found"
-          ) : (
-            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
-          )
-        }
+          emptyMessage={
+            rowData?.length === 0 ? (
+              "No data found"
+            ) : (
+              <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+            )
+          }
           // rowsPerPageOptions={
           //   approvedAndSettledTravelData.length > 50
           //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
@@ -374,7 +377,7 @@ const CompletedTable = () => {
           //   "advanceRequested",
           // ]}
           //  header={approvedAndSettledTravelDataHeader}
-        //  emptyMessage="No data found."
+          //  emptyMessage="No data found."
           // removableSort
           // sortMode="multiple"
         >
@@ -386,7 +389,7 @@ const CompletedTable = () => {
               sortable
               filter
             /> */}
-          <Column expander style={{ width: "3rem" }} />
+          <CustomColumn expander style={{ width: "3rem" }} />
           {/* <Column
             field="travelId"
             header="travelId"
@@ -395,7 +398,7 @@ const CompletedTable = () => {
             sortable
             filter
           /> */}
-          <Column
+          <CustomColumn
             field="userName"
             header="Name"
             headerStyle={{ textAlign: "center" }}
@@ -403,7 +406,7 @@ const CompletedTable = () => {
             sortable
             filter
           />
-           <Column
+          <CustomColumn
             field="unsettledAmount"
             header="Total Unsettled Amount"
             headerStyle={{ textAlign: "center" }}
@@ -411,7 +414,7 @@ const CompletedTable = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="fromDate"
             header="From Date"
             headerStyle={{ textAlign: "center" }}
@@ -419,7 +422,7 @@ const CompletedTable = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="tentativeToDate"
             header="Tentative To Date"
             headerStyle={{ textAlign: "center" }}
@@ -428,7 +431,7 @@ const CompletedTable = () => {
             filter
           />
 
-          <Column
+          <CustomColumn
             field="empCode"
             header="Employee Code"
             headerStyle={{ textAlign: "center" }}
@@ -437,7 +440,7 @@ const CompletedTable = () => {
             filter
           />
 
-          <Column
+          <CustomColumn
             field="purpose"
             header="Purpose"
             headerStyle={{ textAlign: "center" }}
@@ -446,7 +449,7 @@ const CompletedTable = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="projectName"
             header="Project Name"
             headerStyle={{ textAlign: "center" }}
@@ -456,7 +459,7 @@ const CompletedTable = () => {
             filter
           />
 
-          <Column
+          <CustomColumn
             field="localityArea"
             header="Locality/Area"
             headerStyle={{ textAlign: "center" }}
@@ -465,7 +468,7 @@ const CompletedTable = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="city"
             header="City"
             headerStyle={{ textAlign: "center" }}
@@ -474,7 +477,7 @@ const CompletedTable = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="typeOfTravel"
             header="Type Of Travel"
             headerStyle={{ textAlign: "center" }}
@@ -484,7 +487,6 @@ const CompletedTable = () => {
             filter
           />
 
-         
           {/* <Column
               body={advanceColumnBody}
               header="Advance Given"
@@ -550,8 +552,8 @@ const CompletedTable = () => {
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
           /> */}
-        </DataTable>
-        <Dialog
+        </ExpandableDataTableComponent>
+        <CustomDialog
           header="Requisition Form View"
           visible={visible}
           style={{ width: "70rem" }}
@@ -562,7 +564,7 @@ const CompletedTable = () => {
         >
           <h2>Requisition Form View</h2>
           <RequisitionFormView rowData={rowData} />
-        </Dialog>
+        </CustomDialog>
       </div>
     </>
   );

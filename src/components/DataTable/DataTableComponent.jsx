@@ -3,45 +3,62 @@ import { DataTable } from "primereact/datatable";
 import { ProgressBar } from "primereact/progressbar";
 import { Column } from "primereact/column";
 
-export const DataTableComponent = ({ data, rows,  tableStyle, emptyMessage, children,className }) => {
+export const DataTableComponent = ({
+  data,
+  rows,
+  tableStyle,
+  emptyMessage,
+  children,
+  className,
+  dataKey,
+  paginator = true,
+}) => {
   return (
     <DataTable
       value={data}
       showGridlines
-      paginator
+      paginator={paginator}
       rows={rows}
       className={className}
       tableStyle={tableStyle}
       emptyMessage={emptyMessage}
+      dataKey={dataKey}
     >
       {children}
     </DataTable>
   );
 };
 
-export const ExpandableDataTableComponent=({ data, rows, className, tableStyle,dataKey, emptyMessage, children ,onRowToggle,expandedRows,rowExpansionTemplate})=>
-{
-     return (
-        <DataTable
-               value={data}
-               expandedRows={expandedRows}
-               onRowToggle={onRowToggle}
-               rowExpansionTemplate={rowExpansionTemplate}
-               showGridlines
-               className={className}
-               tableStyle={tableStyle}
-               dataKey={dataKey}
-               paginator
-               rows={rows}
-                emptyMessage={
-                  emptyMessage
-               }
-             
-             >
-              {children}
-             </DataTable>
+export const ExpandableDataTableComponent = ({
+  data,
+  rows,
+  className,
+  tableStyle,
+  dataKey,
+  emptyMessage,
+  children,
+  onRowToggle,
+  expandedRows,
+  rowExpansionTemplate,
+}) => {
+  return (
+    <DataTable
+      value={data}
+      expandedRows={expandedRows}
+      onRowToggle={onRowToggle}
+      rowExpansionTemplate={rowExpansionTemplate}
+      showGridlines
+      className={className}
+      tableStyle={tableStyle}
+      dataKey={dataKey}
+      paginator
+      rows={rows}
+      emptyMessage={emptyMessage}
+    >
+      {children}
+    </DataTable>
   );
-}
+};
 
 export const CustomColumn = ({
   field,
@@ -50,7 +67,7 @@ export const CustomColumn = ({
   bodyStyle,
   sortable = false,
   filter = false,
-  body
+  body,
 }) => {
   return (
     <Column
@@ -64,6 +81,3 @@ export const CustomColumn = ({
     />
   );
 };
-
-
-
