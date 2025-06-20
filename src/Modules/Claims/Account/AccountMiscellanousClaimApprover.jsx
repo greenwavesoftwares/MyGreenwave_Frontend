@@ -1,45 +1,45 @@
-import React, { useEffect, useState, useRef } from "react";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+import { useEffect, useState, useRef } from "react";
+
 import {
   getAppliedMiscellanousClaimAccount,
   downloadOtherClaimSupportingDocument,
   approveMiscellanousClaim,
-  rejectMiscellanousClaim
+  rejectMiscellanousClaim,
 } from "../claimServices"; // Adjust the path as needed
 const cellStyle = { padding: "8px 12px" };
-import { Button } from "primereact/button";
-import { Toast } from "primereact/toast";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+} from "../../../components/Toast/ShowMessage";
+
+import CustomButton from "../../../components/Button/Button";
+import CustomToast from "../../../components/Toast/Toast";
+import {
+  CustomColumn,
+  DataTableComponent,
+} from "../../../components/DataTable/DataTableComponent";
+import { ProgressBarComponent } from "../../../components/ProgressBar/ProgressBarComponent";
 
 const AccountMiscellanousClaimApprover = () => {
-  const toast = useRef(null);
-  
-  const [loading, setLoading] = useState(true);
-  const [miscellanousData,setmiscellanousData]=useState()
-  
-  const downloadSupportingDocument = (rowData) => {
+  const toastRef = useRef(null);
 
+  const [loader, setLoader] = useState(false);
+  const [miscellanousData, setmiscellanousData] = useState();
+
+  const downloadSupportingDocument = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
       try {
         let response = await downloadOtherClaimSupportingDocument(claim_id);
         if (!response.status) {
-          toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
+          showErrorMessage(toastRef, "error", response.message);
         }
       } catch (error) {
-        toast.current.show({
-          severity: "error",
-          summary: "error",
-          detail: error?.message,
-        });
+        showErrorMessage(toastRef, "error", error?.message);
       }
     };
 
     return (
-      <Button
+      <CustomButton
         icon="pi pi-download"
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
@@ -50,77 +50,43 @@ const AccountMiscellanousClaimApprover = () => {
     );
   };
 
-   const actionbody = (rowData) => {
-    const [remarks,setRemarks]=useState()
-      
-      const handleRejectClick=async(claim_id,remarks)=>{
-      try{
-            let response=  await rejectMiscellanousClaim(claim_id,remarks)
-            if(response.status)
-            {
-              setmiscellanousData(response.data)
-               toast.current.show({ 
-                  severity: 'success', 
-                  summary: 'Success', 
-                  detail: response.message
-              });
-              setRemarks('')
-              setmiscellanousData(response.data)
+  const actionbody = (rowData) => {
+    const [remarks, setRemarks] = useState();
 
-             
-            }else
-            {
-            toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
-            }
-         }catch(error)
-         {
-            toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: error?.message
-          });
-         }
-     
+    const handleRejectClick = async (claim_id, remarks) => {
+      try {
+        let response = await rejectMiscellanousClaim(claim_id, remarks);
+        if (response.status) {
+          setmiscellanousData(response.data);
+          showSuccessMessage(toastRef, "success", response.message);
+          setRemarks("");
+          setmiscellanousData(response.data);
+        } else {
+          showErrorMessage(toastRef, "error", response.message);
+        }
+      } catch (error) {
+        showErrorMessage(toastRef, "error", error?.message);
       }
-  
-  
-      const handleApproveClick=async(claim_id,remarks)=>{
-      try{
-            let response=  await approveMiscellanousClaim(claim_id,remarks)
-            if(response.status)
-            {
-              setmiscellanousData(response.data)
-               toast.current.show({ 
-                  severity: 'success', 
-                  summary: 'Success', 
-                  detail: response.message
-              });
-             
-            }else
-            {
-            toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
-            }
-         }catch(error)
-         {
-            toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: error?.message
-          });
-         }
-     
+    };
+
+    const handleApproveClick = async (claim_id, remarks) => {
+      try {
+        let response = await approveMiscellanousClaim(claim_id, remarks);
+        if (response.status) {
+          setmiscellanousData(response.data);
+          showSuccessMessage(toastRef, "success", response.message);
+        } else {
+          showErrorMessage(toastRef, "error", response.message);
+        }
+      } catch (error) {
+        showErrorMessage(toastRef, "error", error?.message);
       }
-      
+    };
+
     return (
-      <div className="flex flex-col gap-y-2 max-w-xs"> {/* limits total width */}
+      <div className="flex flex-col gap-y-2 max-w-xs">
+        {" "}
+        {/* limits total width */}
         <textarea
           placeholder="remarks"
           className="border border-md rounded-md p-2 w-full"
@@ -129,45 +95,38 @@ const AccountMiscellanousClaimApprover = () => {
           onChange={(e) => setRemarks(e.target.value)}
         ></textarea>
         <div className="flex gap-x-1">
-          <Button
+          <CustomButton
             label="Approve"
             size="small"
-             className="bg-green-100 text-green-800 hover:bg-green-200 border-none"
-             onClick={()=>handleApproveClick(rowData.claim_id,remarks)}
-            
-           
+            className="bg-green-100 text-green-800 hover:bg-green-200 border-none"
+            onClick={() => handleApproveClick(rowData.claim_id, remarks)}
           />
-          <Button
+          <CustomButton
             label="Reject"
             size="small"
-          className="bg-red-100 text-red-800 hover:bg-red-200 border-none"
-            onClick={()=>handleRejectClick(rowData.claim_id,remarks)}
-     
+            className="bg-red-100 text-red-800 hover:bg-red-200 border-none"
+            onClick={() => handleRejectClick(rowData.claim_id, remarks)}
           />
         </div>
       </div>
     );
   };
-  
-  
 
   useEffect(() => {
     const fetchClaims = async () => {
       try {
+        setLoader(true)
         const response = await getAppliedMiscellanousClaimAccount();
         if (response.status) {
           setmiscellanousData(response.data);
         } else {
-          toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: response.message,
-          });
+          showErrorMessage(toastRef, "error", response.message);
         }
       } catch (error) {
+        showErrorMessage(toastRef, "error", error?.message);
         console.error("Error fetching claims:", error);
       } finally {
-        setLoading(false);
+        setLoader(false);
       }
     };
 
@@ -176,28 +135,37 @@ const AccountMiscellanousClaimApprover = () => {
 
   return (
     <div>
-      <Toast ref={toast} />
-      <DataTable
-        value={miscellanousData}
-        paginator
+      <CustomToast ref={toastRef} />
+      <DataTableComponent
+        data={miscellanousData}
+       // paginator
         rows={10}
-        loading={loading}
-        showGridlines
-        stripedRows
+       // loading={loading}
+       // showGridlines
+      //  stripedRows
         dataKey="claim_id"
-        emptyMessage="No claims found."
+         emptyMessage={
+          loader ? (
+            <ProgressBarComponent
+              mode="indeterminate"
+              style={{ height: "6px" }}
+            />
+          ) : (
+            "No data found"
+          )
+        }
+       
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
-       
         {/* <Column field="claim_id" header="claim_id" sortable filter /> */}
-        <Column field="name" header="Name" sortable filter />
-        <Column field="designation" header="Designation" sortable filter />
-        
-        <Column field="type" header="Claim Type" sortable filter />
-        <Column field="claim_date" header="Application Date" sortable filter />
-        <Column field="amount" header="Amount" sortable filter />
-        <Column field="reason" header="Details" sortable filter />
-        <Column field="status" header="Status" sortable filter />
+        <CustomColumn field="name" header="Name" sortable={true} filter={true} />
+        <CustomColumn field="designation" header="Designation" sortable filter />
+
+        <CustomColumn field="type" header="Claim Type" sortable={true} filter={true} />
+        <CustomColumn field="claim_date" header="Application Date" sortable={true} filter={true} />
+        <CustomColumn field="amount" header="Amount" sortable={true} filter={true} />
+        <CustomColumn field="reason" header="Details" sortable={true} filter={true} />
+        <CustomColumn field="status" header="Status" sortable={true} filter={true}/>
         {/* <Column
           field="approver_remarks"
           header="Approved Remarks"s
@@ -205,23 +173,21 @@ const AccountMiscellanousClaimApprover = () => {
           filter
         /> */}
         {/* <Column field="approver" header="Approver" sortable filter /> */}
-        <Column
+        <CustomColumn
           field="downloadSupportingDocument"
           header="Supporting Document"
           body={downloadSupportingDocument}
-          headerStyle={{...cellStyle,maxWidth:"125px"}}
-          bodyStyle={{...cellStyle,maxWidth:"125px"}}
-          sortable
-          filter
+          headerStyle={{ ...cellStyle, maxWidth: "125px" }}
+          bodyStyle={{ ...cellStyle, maxWidth: "125px" }}
+         sortable={true} filter={true}
         />
-        <Column
-                body={actionbody}
-                header="Action"
-                
-                headerStyle={{...cellStyle,}}
-                bodyStyle={{...cellStyle,}}
-              />
-      </DataTable>
+        <CustomColumn
+          body={actionbody}
+          header="Action"
+          headerStyle={{ ...cellStyle }}
+          bodyStyle={{ ...cellStyle }}
+        />
+      </DataTableComponent>
     </div>
   );
 };

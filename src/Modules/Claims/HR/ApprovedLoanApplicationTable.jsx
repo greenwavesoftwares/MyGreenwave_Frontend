@@ -3,10 +3,11 @@ import {
   CustomColumn,
   DataTableComponent,
 } from "../../../components/DataTable/DataTableComponent";
-//import { DataTable } from "primereact/datatable";
+
 import { getloanclaimsapproveandreject } from "../claimServices";
 const cellStyle = { padding: "8px 12px" };
-import { Toast } from "primereact/toast";
+
+import CustomToast from "../../../components/Toast/Toast";
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -14,8 +15,7 @@ import {
 } from "../../../components/Toast/ShowMessage";
 
 import {ProgressBarComponent} from "../../../components/ProgressBar/ProgressBarComponent"
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+
 
 const ApprovedLoanApplicationTable = () => {
   const toastRef = useRef(null);
@@ -57,7 +57,7 @@ const ApprovedLoanApplicationTable = () => {
 
   return (
     <div>
-      <Toast ref={toastRef} />
+      <CustomToast ref={toastRef} />
       <DataTableComponent
         data={loanData} 
         rows={10}     

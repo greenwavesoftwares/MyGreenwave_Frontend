@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+import  { useState, useEffect, useRef } from "react";
+import {
+  CustomColumn,
+  DataTableComponent,
+} from "../../../components/DataTable/DataTableComponent";
+import {ProgressBarComponent} from "../../../components/ProgressBar/ProgressBarComponent"
 
 const cellStyle = { padding: "8px 12px" };
 import {
@@ -11,20 +14,22 @@ import {
   ApprovedTourClaim,
   RejectTourClaim
 } from "../claimServices";
-import { Toast } from "primereact/toast";
-import { Dialog } from "primereact/dialog";
-import { Button } from "primereact/button";
-import { ToggleButton } from "primereact/togglebutton";
-import { Card } from "primereact/card";
 
+
+import CustomToast from "../../../components/Toast/Toast";
+
+import CustomDialog from "../../../components/Dialog/DialogComponent"
+
+
+import CustomButton from "../../../components/Button/Button";
 const HRTourClaimTable = () => {
-  const toast = useRef(null);
+  const toastRef = useRef(null);
   const [reviewedtourclaimData, setreviewedtourclaimData] = useState();
-  const [loading, setLoading] = useState();
-  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [loader, setLoader] = useState(false);
+  //const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
-  const [reviewData, setreviewData] = useState([]);
+  //const [reviewData, setreviewData] = useState([]);
 
   const datebody = (rowData) => {
     return (
@@ -88,11 +93,12 @@ const HRTourClaimTable = () => {
       try {
         let d = await downloadTourClaimExpanseDocument(claim_id);
       } catch (error) {
-        toast.current.show({
-          severity: "error",
-          summary: "error",
-          detail: "Something Wrong.",
-        });
+          showErrorMessage(
+          toastRef,
+         "error",
+         "Something Wrong."
+        );
+       
       }
     };
 
@@ -103,17 +109,18 @@ const HRTourClaimTable = () => {
 
         setShowViewDialog(true);
       } catch (error) {
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: "Failed to load table.",
-        });
+          showErrorMessage(
+                  toastRef,
+                 "error",
+                 "Failed to load table."
+                );
+        
       }
     };
 
     return (
       <div className="flex justify-center items-center gap-2">
-        <Button
+        <CustomButton
           icon="pi pi-download"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
@@ -121,7 +128,7 @@ const HRTourClaimTable = () => {
           }}
           tooltip={""}
         />
-        <Button
+        <CustomButton
           icon="pi pi-eye"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
@@ -138,16 +145,17 @@ const HRTourClaimTable = () => {
       try {
         let d = await downloadTourClaimSupportingDocument(claim_id);
       } catch (error) {
-        toast.current.show({
-          severity: "error",
-          summary: "error",
-          detail: "Something Wrong.",
-        });
+          showErrorMessage(
+          toastRef,
+         "error",
+         error?.message
+        );
+       
       }
     };
 
     return (
-      <Button
+      <CustomButton
         icon="pi pi-download"
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
@@ -166,25 +174,28 @@ const HRTourClaimTable = () => {
         const response =await ApprovedTourClaim(rowData.claim_id, "Approved");
         if (response.status) {
             setreviewedtourclaimData(response.data)
-              toast.current.show({
-          severity: "sucess",
-          summary: "sucess",
-          detail: response.message,
-        });
+             showSuccessMessage(
+                      toastRef,
+                      "success",
+                      response.message 
+                    );
+             
             
         }else{
-             toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: response.message,
-        });
+            showErrorMessage(
+          toastRef,
+         "error",
+          response.message
+        );
+            
         }
       } catch (error) {
-         toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: error?.message,
-        });
+        showErrorMessage(
+          toastRef,
+         "error",
+         error?.message
+        );
+        
       }
     };
 
@@ -194,33 +205,39 @@ const HRTourClaimTable = () => {
         const response =await RejectTourClaim(rowData.claim_id, "Rejected");
         if (response.status) {
             setreviewedtourclaimData(response.data)
-              toast.current.show({
-          severity: "success",
-          summary: "success",
-          detail: response.message,
-        });
+             showSuccessMessage(
+                      toastRef,
+                      "success",
+                      response.message ,
+                    );
+            
             
         }else{
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: response.message,
-        });
+            showErrorMessage(
+          toastRef,
+         "error",
+          result.message
+        );
+       
         }
       } catch (error) {
-
+          showErrorMessage(
+          toastRef,
+         "error",
+         error?.message
+        );
       }
     }
 
     return (
       <div className="flex gap-2">
-        <Button
+        <CustomButton
           label="Approve"
           size="small"
           severity="success"
           onClick={() => handleApproveSubmit()} 
         />
-        <Button label="Reject" size="small" severity="danger"   onClick={() => handleSubmitReject()} />
+        <CustomButton label="Reject" size="small" severity="danger"   onClick={() => handleSubmitReject()} />
       </div>
     );
   };
@@ -228,19 +245,21 @@ const HRTourClaimTable = () => {
   useEffect(() => {
     const fetchreviewedtourclaim = async () => {
       try {
+        setLoader(true)
         const result = await getReviewedTourClaims();
         if (!result.status) {
-          toast.current.show({
-            severity: "error",
-            summary: "error",
-            detail: result.message,
-          });
+            showErrorMessage(
+          toastRef,
+         "error",
+          result.message
+        );
+          
         }
         setreviewedtourclaimData(result.data);
       } catch (error) {
         console.error("Error fetching claims:", error);
       } finally {
-        setLoading(false);
+        setLoader(false);
       }
     };
 
@@ -248,194 +267,198 @@ const HRTourClaimTable = () => {
   }, [setreviewedtourclaimData]);
   return (
     <div>
-      <Toast ref={toast} />
-      <DataTable
-        value={reviewedtourclaimData}
-        loading={loading}
-        paginator
+      <CustomToast ref={toastRef} />
+      <DataTableComponent
+        data={reviewedtourclaimData}
+        //loading={loading}
+       // paginator
         rows={10}
-        showGridlines
+        emptyMessage={
+                loader ? (
+                  <ProgressBarComponent mode="indeterminate" style={{ height: "6px" }} />
+                ) : (
+                  "No data found"
+                )}  
         className="text-xs"
-        //style={{backgroundColor:"e6f0ff"}}
-
         tableStyle={{
           minWidth: "100%",
           fontSize: "0.7rem",
           backgroundColor: "#e6f0ff",
         }}
       >
-        <Column
+        <CustomColumn
           field="name"
           header="Name"
-          sortable
-          filter
+         sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
 
-        <Column
+        <CustomColumn
           body={datebody}
           header="Claim Duration"
-          sortable
-          filter
+           sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
 
-        <Column
+        <CustomColumn
           body={tourDetailsBody}
           header="Tour Details"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
 
-        <Column
+        <CustomColumn
           body={claimCalculationBody}
           header="Claim Calculation"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
 
-        <Column
+        <CustomColumn
           field="Expense"
           header="Expense"
           body={downloadExpense}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
-          sortable
-          filter
+           sortable={true}
+          filter={true}
         />
 
-        <Column
+        <CustomColumn
           field="supportingDocuments"
           header="Supporting Documents"
           body={downloadSupportingDocument}
-          sortable
-          filter
+           sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <Column
+        <CustomColumn
           field="status"
           header="Status"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         {/* Action Columns */}
-        <Column
+        <CustomColumn
           body={actionbody}
           header="Approval Action"
-          sortable
-          filter
+          sortable={false}
+          filter={false}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-      </DataTable>
-      <Dialog
+      </DataTableComponent>
+      <CustomDialog
+      
         header="Tour Claim Details"
         visible={showViewDialog}
         style={{ width: "90vw" }}
         onHide={() => setShowViewDialog(false)}
-        modal
+        
       >
-        <DataTable
+        <DataTableComponent
           value={viewtabledata}
           showGridlines 
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
-          <Column
+          <CustomColumn
             field="date"
             header="Date"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="lodging"
             header="Lodging"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="breakfast"
             header="Breakfast"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="lunch"
             header="Lunch"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="snacks"
             header="Snacks"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="dinner"
             header="Dinner"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="teaWater"
             header="Tea & Water"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="longTravel"
             header="Airfare, Bus, Train, Taxi Rental"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="shortTravel"
             header="Auto, Cab"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="tollTax"
             header="Parking, Toll, Fuel"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="incidentals"
             header="Incidentals"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="other"
             header="Other Business Expenses"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="total"
             header="Total"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-          <Column
+          <CustomColumn
             field="remarks"
             header="Remarks"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
           />
-        </DataTable>
-      </Dialog>
+        </DataTableComponent>
+      </CustomDialog>
     </div>
   );
 };
