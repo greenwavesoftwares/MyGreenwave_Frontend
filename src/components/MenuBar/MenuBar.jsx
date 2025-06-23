@@ -141,7 +141,7 @@ export default function MiniDrawer() {
     return popoverStack.map((entry, index) => (
       <Popover
       elevation={0}
-            className="popover"
+        className="popover popover-menu-style"
         key={index}
         open={Boolean(entry.anchorEl)}
         anchorEl={entry.anchorEl}
@@ -188,7 +188,7 @@ export default function MiniDrawer() {
                 <ListItemButton
                   
                 >
-                  <ListItemIcon className="menu-icon" >
+                  <ListItemIcon className="menu-icon nested-menu-bg"  sx={{minWidth: '40px'}}>
                     {item.logo && (
                       <FontAwesomeIcon icon={item.logo.split(" ")} />
                     )}
@@ -257,7 +257,7 @@ export default function MiniDrawer() {
                       isExpanded ? (
                         <KeyboardArrowDownIcon />
                       ) : (
-                        <KeyboardArrowRightIcon />
+                        <FontAwesomeIcon icon="fa-solid fa-angles-right" className="menu-icon"/>
                       )
                     ) : (
                       item.logo && (
@@ -315,19 +315,19 @@ export default function MiniDrawer() {
           <DrawerHeader>
             {!open ? (
               <IconButton onClick={handleDrawerOpen} >
-                <MenuIcon  />
+                <MenuIcon  className="menu-icon"/>
               </IconButton>
             ) : (
               <div
-                style={{ display: "flex", flexDirection: "row", gap: "10px" }}
+                style={{ display: "flex", flexDirection: "row", gap: "10px",alignItems: "center" }}
               >
                 <IconButton onClick={handleDrawerClose}>
-                  <MenuIcon  style={{paddingLeft:"4px"}}/>
+                  <MenuIcon  style={{paddingLeft:"4px"}} className="menu-icon"/>
                 </IconButton>
                 <Chip
                   label="My Greenwave"
                   size="medium"
-                  //style={{ color: "white", backgroundColor: "#3c4a52" }}
+                  //style={{ color: "white", backgroundColor: "#4097ff" }}
                   avatar={
                     <img
                       src={GreenwaveLogo}
@@ -373,7 +373,9 @@ export default function MiniDrawer() {
               primary={
                 <Chip
                   disabled={!open}
-                  size="medium"
+                  color="primary"
+                  sx={{ backgroundColor: "#4097ff", color: "white",border:"none !important" }}
+                  size="small"
                   label={userName}
                   className="username-chip"
                 />
@@ -391,6 +393,7 @@ export default function MiniDrawer() {
           >
             {renderLogout()}
           </Popover>
+          {/* <FontAwesomeIcon icon={"fa-solid fa-user-tie"}  className="menu-icon"/> */}
         </div>
       </StyledDrawer>
 

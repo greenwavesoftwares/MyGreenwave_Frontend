@@ -7,7 +7,7 @@
 .dialogHeader.p-dialog .p-dialog-header {
   padding: base.$dialogHeaderPadding;
   font-size: base.$baseHeaderFontSize;
-  border-bottom: 1px solid base.$borderColor;
+  border-bottom: 1px solid var(--headerBottomBorder) !important;
 }
 .dialogHeader.p-dialog .p-dialog-header .p-dialog-title {
   font-size: base.$baseHeaderFontSize;
@@ -37,17 +37,41 @@
   font-size: base.$dataTableHeaderFontSize;
   padding: 0.5rem 0.7rem;
   text-align: center !important;
-  border-bottom: 1px solid base.$borderColor;
+  background: var(--tableOddRow) !important;
+  color: var(--fontColor) !important;
+  border: 1px solid var(--tableOuterBorder) !important;
 }
+
+//Table Body
+.dataTableBody.p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-row-odd  {
+  background-color: var(--tableOddRow) !important;
+  color: var(--fontColor) !important;
+   border: 1px solid var(--tableOuterBorder) !important;
+}
+.dataTableBody.p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-row-even  {
+  background-color: var(--card-bg) !important;
+  color: var(--fontColor) !important;
+}
+.dataTableBody.p-datatable .p-datatable-tbody > tr{
+  background: none !important;
+  color: var(--fontColor) !important;
+}
+
+
+
+
 .dataTableHeader.p-datatable.p-datatable-sm .p-datatable-header{
   font-size: base.$dataTableHeaderFontSize;
-  background: white;
+  background: none !important;
+  border: 1px solid var(--card-border) !important;
 }
 .dataTableBody.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
   font-size: base.$dataTableHeaderFontSize;
   padding: base.$noPadding !important;
   text-align: center !important;
-  border-bottom: 1px solid base.$borderColor;
+ border: 1px solid var(--tableOuterBorder) !important;
+ background: none !important;
+  color: var(--fontColor) !important;
 }
 .dataTableBodyPadding.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td{
   padding:0.2rem 0.4rem !important;
@@ -62,15 +86,39 @@
 }
 
 //Date Table Pagination
-.dataTablePaginator.p-paginator {
+.dataTablePaginator.p-datatable.p-datatable-gridlines .p-paginator-bottom  {
   padding: 0.2rem !important;
+  background: none !important;
+  border: none !important;
 }
+.p-paginator .p-paginator-pages .p-paginator-page{
+  min-width: 2.5rem;
+    height: 2.5rem;
+}
+.dataTablePaginator .p-paginator .p-paginator-pages .p-paginator-page.p-highlight{
+  background: var(--tablePaginator-active) !important;
+  color: var(--fontColor) !important;
+}
+
 
 
 //Accordion Styles
 .accordionNoSpace .MuiAccordionDetails-root{
   padding: 0 !important;
 }
+.accordionStyle{
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--fontColor) !important;
+}
+.ExpandMoreIconStyle{
+  background: var(--ExpandMoreIconStyle) !important;
+    border-radius: 50%;
+    padding-top: 1px;
+}
+
+
+
 
 //Icon Style 
 .accordionIconBGStyle{
@@ -88,4 +136,16 @@
 
 .primeReactButtonPadding.p-button{
   padding: 0.2rem 0.4rem !important;
+}
+
+
+
+//Card Styles
+.cardStyle {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+}
+.text-sm {
+  font-size: 0.875rem !important;
+  color: var(--fontColor) !important;
 }

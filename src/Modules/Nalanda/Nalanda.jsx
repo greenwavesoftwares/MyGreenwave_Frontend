@@ -36,7 +36,7 @@ const Nalanda = () => {
     <>
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-4 bg-white shadow rounded">
+          <div className="cardStyle mt-4 bg-white shadow rounded">
             <DataTable
               size="small"
               emptyMessage={

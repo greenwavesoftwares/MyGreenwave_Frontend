@@ -16,3 +16,22 @@ body {
 .MuiDivider-root {
   background-color: var(--divider-color);
 }
+.p-inputtext {
+    padding: 0.65rem 0.65rem !important;
+     background: var(--card-bg) !important;
+      border: 1px solid var(--divider-color) !important;
+      font-size: 0.85rem !important;
+       color: var(--fontColor) !important;
+}
+
+
+//Dropdown styles
+.p-dropdown{
+  background: var(--card-bg) !important;
+  border: 1px solid var(--divider-color) !important;
+}
+.p-dropdown .p-dropdown-label {
+  color: var(--fontColor) !important;
+  font-size: 0.85rem !important;
+  //border: 1px solid var(--divider-color) !important;
+}

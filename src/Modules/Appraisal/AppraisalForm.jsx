@@ -353,7 +353,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
   return (
     <>
-      <div className="card mt-1 py-2 px-3 bg-white shadow rounded">
+      <div className="cardStyle mt-1 py-2 px-3 bg-white shadow rounded">
         <div
           className="flex justify-between items-center pb-1 mb-1.5 "
           style={{}}
@@ -376,11 +376,13 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               <Accordion
                 expanded={expanded.includes("panel1")}
                 onChange={handleAccordionChange("panel1")}
+                className="accordionStyle"
               >
                 <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
+                  expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
                   aria-controls="panel1-content"
                   id="panel1-header"
+                 
                 >
                   <Typography
                     component="span"
@@ -690,12 +692,13 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
             {/* Accordion for My Goals */}
             <Accordion
-              className="accordionNoSpace"
+              className="accordionNoSpace accordionStyle"
               expanded={expanded.includes("panel2")}
               onChange={handleAccordionChange("panel2")}
+              
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon  className="ExpandMoreIconStyle"/>}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -726,12 +729,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
             {/* Accordion for My KRA */}
             <Accordion
-              className="accordionNoSpace"
+              className="accordionNoSpace accordionStyle"
               expanded={expanded.includes("panel3")}
               onChange={handleAccordionChange("panel3")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -768,12 +771,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
             {/* Accordion for Training */}
             <Accordion
-              className="accordionNoSpace"
+              className="accordionNoSpace accordionStyle"
               expanded={expanded.includes("panel4")}
               onChange={handleAccordionChange("panel4")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -810,12 +813,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
             {/* My Insights*/}
             <Accordion
-              className="accordionNoSpace"
+              className="accordionNoSpace accordionStyle"
               expanded={expanded.includes("panel5")}
               onChange={handleAccordionChange("panel5")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -842,12 +845,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
             {/* My Confirmation*/}
             <Accordion
-              className="accordionNoSpace"
+              className="accordionNoSpace accordionStyle"
               expanded={expanded.includes("panel6")}
               onChange={handleAccordionChange("panel6")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >

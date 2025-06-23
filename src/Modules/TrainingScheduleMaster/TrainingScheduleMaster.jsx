@@ -40,7 +40,8 @@ import { ConfirmDialog } from "primereact/confirmdialog";
 import { InputText } from "primereact/inputtext";
 import { FileUpload } from "primereact/fileupload";
 import DeleteIcon from "@mui/icons-material/Delete";
-
+import BackupIcon from '@mui/icons-material/Backup';
+import AddIcon from '@mui/icons-material/Add';
 const TrainingScheduleMaster = () => {
   //For Toast
   const toastRef = useRef(null);
@@ -287,11 +288,11 @@ const TrainingScheduleMaster = () => {
     <>
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-4 bg-white shadow rounded">
+          <div className="cardStyle mt-4 bg-white shadow rounded">
             <DataTable
               paginator
-              rows={15}
-              rowsPerPageOptions={[10, 15, 20, 25]}
+              rows={10}
+              //rowsPerPageOptions={[10, 15, 20, 25]}
               size="small"
               emptyMessage={
                 loader ? <LinearProgress color="inherit" /> : "No Data Found"
@@ -312,6 +313,7 @@ const TrainingScheduleMaster = () => {
                       sx={{ boxShadow: "none" }}
                       variant="contained"
                       size="small"
+                      startIcon={<AddIcon />}
                       onClick={() => setVisible(true)}
                     >
                       {" "}
@@ -322,7 +324,7 @@ const TrainingScheduleMaster = () => {
               }
               value={allTrainingData}
               showGridlines
-              className="dataTableHeader dataTableBody dataTableBodyPadding"
+              className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
             >
               <Column header="User Id" field="assignedUserId"></Column>
 
@@ -403,13 +405,13 @@ const TrainingScheduleMaster = () => {
                         <IconButton
                           size="small"
                           aria-label="ModeEditIcon"
-                          color="default"
+                         // color="default"
                           onClick={
                             // e.preventDefault();
                             handelSaveForm
                           }
                         >
-                          <CheckIcon />
+                          <CheckIcon className="menu-icon"/>
                         </IconButton>
                       ) : (
                         <IconButton
@@ -421,7 +423,7 @@ const TrainingScheduleMaster = () => {
                             handleEditRow(rowData, rowIndex);
                           }}
                         >
-                          <ModeEditIcon />
+                          <ModeEditIcon className="menu-icon"/>
                         </IconButton>
                       )}
                     </>
@@ -459,6 +461,7 @@ const TrainingScheduleMaster = () => {
                           sx={{ boxShadow: "none" }}
                           size="small"
                           variant="contained"
+                          startIcon={<BackupIcon />}
                           onClick={() => {
                             setFileUploadDialog(true);
                             setFileUploadRow(rowData);

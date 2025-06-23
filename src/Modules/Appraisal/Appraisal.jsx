@@ -184,7 +184,7 @@ function Appraisal() {
       {/* Appraisal Header */}
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-4 py-2 px-3 bg-white shadow rounded">
+          <div className="cardStyle mt-4 py-2 px-3 bg-white shadow rounded">
             <div className="flex justify-between items-center">
               {/* Appraisal Dates */}
               <div className="flex items-center gap-4">
@@ -221,7 +221,7 @@ function Appraisal() {
         )}
 
         {/* Previous Appraisal Data */}
-        <div className="card mt-2 mb-5 py-0 px-0 bg-white shadow rounded">
+        <div className="cardStyle mt-2 mb-5 py-0 px-0 bg-white shadow rounded">
           <DataTable
             size="small"
             stripedRows
@@ -245,7 +245,7 @@ function Appraisal() {
             <Column
               body={(rowData) => {
                 return (
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
                     {formatDate(rowData.appraisalDate)}
                   </Typography>
                 );
@@ -269,7 +269,7 @@ function Appraisal() {
                     }
                     color={
                       rowData.approved
-                        ? "default"
+                        ? "primary"
                         : rowData.reviewed
                         ? "warning"
                         : rowData.active
