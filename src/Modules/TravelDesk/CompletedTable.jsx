@@ -6,6 +6,7 @@ import {
   ExpandableDataTableComponent,
 } from "../../components/DataTable/DataTableComponent";
 import CustomDialog from "../../components/Dialog/DialogComponent";
+import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
 const cellStyle = { padding: "12px 16px" };
 //Call Api
 import {
@@ -26,9 +27,12 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Button } from "primereact/button";
+// import { Button } from "primereact/button";
+import CustomButton from "../../components/Button/Button";
 
 const CompletedTable = () => {
+  const [loader, setLoader] = useState(false);
+
   const [expandedRows, setExpandedRows] = useState(!null);
 
   const [visible, setVisible] = useState(false);
@@ -113,7 +117,7 @@ const CompletedTable = () => {
       //   }
       // };
       return (
-        <Button
+        <CustomButton
           icon="pi pi-download"
           className="p-button-sm p-button-text p-button-success"
           onClick={() => {
@@ -175,7 +179,7 @@ const CompletedTable = () => {
         // const { token } = getUserData();
 
         // const advancedData = await getAdvanceDetails();
-
+        setLoader(true);
         const approvedandsettledresponse = await getCompleteData();
         console.log("response", approvedandsettledresponse);
 
@@ -197,6 +201,7 @@ const CompletedTable = () => {
 
         // const finalData = mergeTravelData(cleanedData, advancedData.data);
         setApprovedAndSettledTravelData(approvedandsettledresponse.data);
+        setLoader(false);
       } catch (error) {
         console.error("Error fetching travel data:", error);
       }
@@ -344,10 +349,13 @@ const CompletedTable = () => {
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           rows={10}
           emptyMessage={
-            rowData?.length === 0 ? (
-              "No data found"
+            loader ? (
+              <ProgressBarComponent
+                mode="indeterminate"
+                style={{ height: "6px" }}
+              />
             ) : (
-              <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+              "No data found"
             )
           }
           // rowsPerPageOptions={

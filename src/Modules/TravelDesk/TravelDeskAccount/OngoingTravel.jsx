@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Toast } from "primereact/toast";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
+import {
+  DataTableComponent,
+  CustomColumn,
+  ExpandableDataTableComponent,
+} from "../../../components/DataTable/DataTableComponent";
+import CustomDialog from "../../../components/Dialog/DialogComponent";
+import { ProgressBarComponent } from "../../../components/ProgressBar/ProgressBarComponent";
 //Call Api
 import {
   getAdvanceDetails,
@@ -9,7 +14,7 @@ import {
   getOngoingTravelData,
   updateTravelRequisition2,
   downloadDocumentsByReqId,
-  uploadDocumentsByReqId
+  uploadDocumentsByReqId,
 } from "../TravelDeskAPI";
 import { getUserData } from "../../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
@@ -22,19 +27,21 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Button } from "primereact/button";
+// import { Button } from "primereact/button";
+import CustomButton from "../../../components/Button/Button";
 const cellStyle = { padding: "8px 12px" };
 import { FileUpload } from "primereact/fileupload";
-import { ProgressBar } from "primereact/progressbar";
+// import { ProgressBar } from "primereact/progressbar";
 
 const OngoingTravel = () => {
+  const [loader, setLoader] = useState(false);
+
   const [expandedRows, setExpandedRows] = useState(!null);
 
   const [visible, setVisible] = useState(false);
   const toast = useRef();
   const [editRowId, setEditRowId] = useState(null);
-  const [ongoingtravelData, setongoingtravelData] =
-    useState([]);
+  const [ongoingtravelData, setongoingtravelData] = useState([]);
   const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
   const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -55,122 +62,123 @@ const OngoingTravel = () => {
   const [rowData, setRowData] = useState({});
 
   const rowExpansionTemplate = (rowData) => {
-    console.log('test',rowData.checkAtleastOneManagerReviewed)
+    console.log("test", rowData.checkAtleastOneManagerReviewed);
 
-     const supportingDocumentBody = (rowData) => {
-               const [fileUploaded, setFileUploaded] = useState(
-                   rowData.file_name ? true : false
-                 );
-                 const [togglefileUpload, settogglefileUpload] = useState(
-                   rowData.file_name ? false : true
-                 );
-               const handleDownloadFile = async (requisionId) => {
-               try {
-                 let d = await downloadDocumentsByReqId(requisionId);
-               } catch (error) {
-                 toast.current?.show({
-                   severity: "error",
-                   summary: "error",
-                   detail: "Something Wrong.",
-                 });
-               }
-             };
-             const onFileSelect = async (event) => {
-               const file = event.files[0]; // Get the uploaded file
-               setFileUploaded(true);
-               settogglefileUpload(false);
-               const formData = new FormData();
-               formData.append("file", file); // Append file to formData
-         
-               try {
-                 const response = await uploadDocumentsByReqId(
-                   file,
-                   rowData.requisionId
-                 ); // Adjust this call accordingly
-                 if(response.message==='File uploaded successfully')
-                 {        
-                 toast.current?.show({
-                   severity: "success",
-                   summary: "Success",
-                   detail: response.message,
-                 });
-               }else{
-                   toast.current?.show({
-                   severity: "error",
-                   summary: "Error",
-                   detail: response.message,
-                 });
-               }
-               } catch (error) {
-                 toast.current?.show({
-                   severity: "error",
-                   summary: "Error",
-                   detail: "Upload failed",
-                 });
-                 console.log(error);
-                 setFileUploaded(false);
-                 settogglefileUpload(true);
-               }
-             };
-             return (
-               <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
-                
-         
-                 {togglefileUpload ? (
-                   <FileUpload
-                     mode="basic"
-                     name="file"
-                     accept="*/*"
-                     customUpload
-                     uploadHandler={onFileSelect}
-                     maxFileSize={1000000}
-                     chooseLabel="Upload"
-                   />
-                 ) : null}
-         
-                 {fileUploaded && (
-                   <div>
-                     <Button
-                       icon="pi pi-download"
-                       className="p-button-sm p-button-text p-button-success"
-                       onClick={() => {
-                         handleDownloadFile(rowData.requisionId);
-                       }}
-                       tooltip={`${rowData.file_name}`}
-                     />
-                     <Button
-                       icon="pi pi-times"
-                       className="p-button-sm p-button-text p-button-danger"
-                       onClick={() => {
-                         setFileUploaded(false);
-                         settogglefileUpload(true);
-                       }}
-                       tooltip="Cancel"
-                     />
-                   </div>
-                 )}
-               </div>
-             );
-           };
+    const supportingDocumentBody = (rowData) => {
+      const [fileUploaded, setFileUploaded] = useState(
+        rowData.file_name ? true : false
+      );
+      const [togglefileUpload, settogglefileUpload] = useState(
+        rowData.file_name ? false : true
+      );
+      const handleDownloadFile = async (requisionId) => {
+        try {
+          let d = await downloadDocumentsByReqId(requisionId);
+        } catch (error) {
+          toast.current?.show({
+            severity: "error",
+            summary: "error",
+            detail: "Something Wrong.",
+          });
+        }
+      };
+      const onFileSelect = async (event) => {
+        const file = event.files[0]; // Get the uploaded file
+        setFileUploaded(true);
+        settogglefileUpload(false);
+        const formData = new FormData();
+        formData.append("file", file); // Append file to formData
+
+        try {
+          const response = await uploadDocumentsByReqId(
+            file,
+            rowData.requisionId
+          ); // Adjust this call accordingly
+          if (response.message === "File uploaded successfully") {
+            toast.current?.show({
+              severity: "success",
+              summary: "Success",
+              detail: response.message,
+            });
+          } else {
+            toast.current?.show({
+              severity: "error",
+              summary: "Error",
+              detail: response.message,
+            });
+          }
+        } catch (error) {
+          toast.current?.show({
+            severity: "error",
+            summary: "Error",
+            detail: "Upload failed",
+          });
+          console.log(error);
+          setFileUploaded(false);
+          settogglefileUpload(true);
+        }
+      };
+      return (
+        <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
+          {togglefileUpload ? (
+            <FileUpload
+              mode="basic"
+              name="file"
+              accept="*/*"
+              customUpload
+              uploadHandler={onFileSelect}
+              maxFileSize={1000000}
+              chooseLabel="Upload"
+            />
+          ) : null}
+
+          {fileUploaded && (
+            <div>
+              <CustomButton
+                icon="pi pi-download"
+                className="p-button-sm p-button-text p-button-success"
+                onClick={() => {
+                  handleDownloadFile(rowData.requisionId);
+                }}
+                tooltip={`${rowData.file_name}`}
+              />
+              <CustomButton
+                icon="pi pi-times"
+                className="p-button-sm p-button-text p-button-danger"
+                onClick={() => {
+                  setFileUploaded(false);
+                  settogglefileUpload(true);
+                }}
+                tooltip="Cancel"
+              />
+            </div>
+          )}
+        </div>
+      );
+    };
 
     const actionbody = (rowData) => {
-    //   if (!rowData.checkAtleastOneManagerReviewed) {
-    //     return <span>Not eligible</span>
-    //   }
+      //   if (!rowData.checkAtleastOneManagerReviewed) {
+      //     return <span>Not eligible</span>
+      //   }
 
       // const [reason, setReason] = useState("");
       // const [settlementAmount, setSettlementAmount] = useState("");
       const handleApproveSubmit = async () => {
         try {
-          const responseData = await updateTravelRequisition2(rowData, rowData.travelId,"Approved");
+          const responseData = await updateTravelRequisition2(
+            rowData,
+            rowData.travelId,
+            "Approved"
+          );
           if (responseData.status) {
-            let response=  await getOngoingTravelData()
+            let response = await getOngoingTravelData();
             setongoingtravelData(response.data);
             // setreviewedtourclaimData(response.data);
             toast.current.show({
               severity: "success",
               summary: "success",
-              detail: 'Approved',
+              detail: "Approved",
             });
           } else {
             toast.current.show({
@@ -190,16 +198,19 @@ const OngoingTravel = () => {
 
       const handleSubmitReject = async () => {
         try {
-          const response = await updateTravelRequisition2(rowData, rowData.travelId,"Rejected"); //await RejectTourClaim(rowData.claim_id, "Rejected");
+          const response = await updateTravelRequisition2(
+            rowData,
+            rowData.travelId,
+            "Rejected"
+          ); //await RejectTourClaim(rowData.claim_id, "Rejected");
           if (response.status) {
-           let response=await getOngoingTravelData()
-           setongoingtravelData(response.data);
+            let response = await getOngoingTravelData();
+            setongoingtravelData(response.data);
             toast.current.show({
               severity: "success",
               summary: "success",
-              detail:"Rejected",
+              detail: "Rejected",
             });
-
           } else {
             toast.current.show({
               severity: "error",
@@ -212,24 +223,24 @@ const OngoingTravel = () => {
 
       return (
         <div className="flex gap-2">
-          {rowData.status === 'ManagerReviewed' ? (
-      <>
-        <Button
-          label="Approve"
-          size="small"
-          severity="success"
-          onClick={() => handleApproveSubmit()}
-        />
-        <Button
-          label="Reject"
-          size="small"
-          severity="danger"
-          onClick={() => handleSubmitReject()}
-        />
-      </>
-    ) : (
-      <span className="text-gray-500 italic">Action Taken</span>
-    )}
+          {rowData.status === "ManagerReviewed" ? (
+            <>
+              <CustomButton
+                label="Approve"
+                size="small"
+                severity="success"
+                onClick={() => handleApproveSubmit()}
+              />
+              <CustomButton
+                label="Reject"
+                size="small"
+                severity="danger"
+                onClick={() => handleSubmitReject()}
+              />
+            </>
+          ) : (
+            <span className="text-gray-500 italic">Action Taken</span>
+          )}
         </div>
       );
     };
@@ -309,19 +320,21 @@ const OngoingTravel = () => {
     // };
 
     return (
-      <DataTable
-        value={rowData.expandableData}
-        showGridlines
+      <DataTableComponent
+        data={rowData.expandableData}
+        rows={10}
+        paginator={false}
+        // showGridlines
         dataKey="requisionId"
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
         {/* <Column field="requisionId" header="Requisition ID" /> */}
-        <Column field="date" header="Date" />
-        <Column field="advanceRequested" header="Advance Requested" />
-        <Column field="status" header="Status" />
+        <CustomColumn field="date" header="Date" />
+        <CustomColumn field="advanceRequested" header="Advance Requested" />
+        <CustomColumn field="status" header="Status" />
 
-        <Column
+        <CustomColumn
           body={advanceColumnBody}
           header="Advance Given"
           headerStyle={{ textAlign: "center" }}
@@ -333,7 +346,7 @@ const OngoingTravel = () => {
           headerStyle={{ textAlign: "center" }}
           style={{ textAlign: "center" }}
         /> */}
-        <Column
+        <CustomColumn
           body={(rowData) => (
             <IconButton
               aria-label="View"
@@ -347,16 +360,14 @@ const OngoingTravel = () => {
           style={{ textAlign: "center" }}
         />
 
-         <Column
-                 
-                  header="Document"
-                  body={supportingDocumentBody}
-                  headerStyle={cellStyle}
-                  bodyStyle={cellStyle}
-                />
-       
+        <CustomColumn
+          header="Document"
+          body={supportingDocumentBody}
+          headerStyle={cellStyle}
+          bodyStyle={cellStyle}
+        />
 
-        <Column
+        <CustomColumn
           body={actionbody}
           header="Approval Action"
           sortable
@@ -365,12 +376,13 @@ const OngoingTravel = () => {
           bodyStyle={cellStyle}
           // disabled={rowData.checkAtleastOneManagerReviewed === false }
         />
-      </DataTable>
+      </DataTableComponent>
     );
   };
 
   useEffect(() => {
     const fetchongoingtravelData = async () => {
+      setLoader(true);
       try {
         const approvedandsettledresponse = await getOngoingTravelData();
 
@@ -383,6 +395,7 @@ const OngoingTravel = () => {
         }
 
         setongoingtravelData(approvedandsettledresponse.data);
+        setLoader(false);
       } catch (error) {
         console.error("Error fetching travel data:", error);
       }
@@ -411,29 +424,29 @@ const OngoingTravel = () => {
     return row.advance;
   };
 
-//   const conpleteTravel = async (rowData) => {
-//     let response = await updateTravelRequisition(
-//       rowData,
-//       rowData.travelId,
-//       "CompleteRequested"
-//     );
+  //   const conpleteTravel = async (rowData) => {
+  //     let response = await updateTravelRequisition(
+  //       rowData,
+  //       rowData.travelId,
+  //       "CompleteRequested"
+  //     );
 
-//     if (!response.status) {
-//       toast.current?.show({
-//         severity: "error",
-//         summary: "error",
-//         detail: response.message,
-//       });
-//     } else {
-//       setApprovedAndSettledTravelData(response.data);
+  //     if (!response.status) {
+  //       toast.current?.show({
+  //         severity: "error",
+  //         summary: "error",
+  //         detail: response.message,
+  //       });
+  //     } else {
+  //       setApprovedAndSettledTravelData(response.data);
 
-//       toast.current?.show({
-//         severity: "success",
-//         summary: "Success",
-//         detail: response.message,
-//       });
-//     }
-//   };
+  //       toast.current?.show({
+  //         severity: "success",
+  //         summary: "Success",
+  //         detail: response.message,
+  //       });
+  //     }
+  //   };
 
   const tourDetailsBody = (rowData) => (
     <div className="flex flex-col items-start justify-center space-y-1">
@@ -447,7 +460,8 @@ const OngoingTravel = () => {
         <span className="font-bold">Project:</span> {rowData["projectName"]}
       </div>
       <div>
-        <span className="font-bold">Type Of Travel:</span> {rowData["typeOfTravel"]}
+        <span className="font-bold">Type Of Travel:</span>{" "}
+        {rowData["typeOfTravel"]}
       </div>
     </div>
   );
@@ -456,28 +470,31 @@ const OngoingTravel = () => {
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
         <Toast ref={toast} />
-        <DataTable
-          value={ongoingtravelData}
+        <ExpandableDataTableComponent
+          data={ongoingtravelData}
           expandedRows={expandedRows}
           onRowToggle={(e) => setExpandedRows(e.data)}
           rowExpansionMode="single"
           rowExpansionTemplate={rowExpansionTemplate}
-          showGridlines
+          // showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           paginator
-          size="small"
+          // size="small"
           rows={10}
           dataKey="travelId"
-         emptyMessage={
-                  rowData?.length === 0 ? (
-                    "No data found"
-                  ) : (
-                    <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
-                  )
-                }
+          emptyMessage={
+            loader ? (
+              <ProgressBarComponent
+                mode="indeterminate"
+                style={{ height: "6px" }}
+              />
+            ) : (
+              "No data found"
+            )
+          }
         >
-          <Column expander style={{ width: "3rem" }} />
+          <CustomColumn expander style={{ width: "3rem" }} />
 
           {/* <Column
             field="travelId"
@@ -487,7 +504,7 @@ const OngoingTravel = () => {
             sortable
             filter
           /> */}
-          <Column
+          <CustomColumn
             field="userName"
             header="Name"
             headerStyle={{ textAlign: "center" }}
@@ -495,7 +512,7 @@ const OngoingTravel = () => {
             sortable
             filter
           />
-           <Column
+          <CustomColumn
             field="unsettledAmount"
             header="Total Unsettled Amount"
             headerStyle={{ textAlign: "center" }}
@@ -503,7 +520,7 @@ const OngoingTravel = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="fromDate"
             header="From Date"
             headerStyle={{ textAlign: "center" }}
@@ -511,7 +528,7 @@ const OngoingTravel = () => {
             sortable
             filter
           />
-          <Column
+          <CustomColumn
             field="tentativeToDate"
             header="Tentative To Date"
             headerStyle={{ textAlign: "center" }}
@@ -520,7 +537,7 @@ const OngoingTravel = () => {
             filter
           />
 
-          <Column
+          <CustomColumn
             field="empCode"
             header="Employee Code"
             headerStyle={{ textAlign: "center" }}
@@ -529,7 +546,7 @@ const OngoingTravel = () => {
             filter
           />
 
-          <Column
+          <CustomColumn
             //field="purpose"
             header="Travel Details"
             body={tourDetailsBody}
@@ -547,7 +564,7 @@ const OngoingTravel = () => {
             filter
           /> */}
 
-          <Column
+          <CustomColumn
             field="localityArea"
             header="Locality/Area"
             headerStyle={{ textAlign: "center" }}
@@ -572,8 +589,6 @@ const OngoingTravel = () => {
             filter
           /> */}
 
-         
-
           {/* <Column
             body={(rowData) => {
               return !rowData.requestCompletedFlag ? (
@@ -596,8 +611,8 @@ const OngoingTravel = () => {
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
           /> */}
-        </DataTable>
-        <Dialog
+        </ExpandableDataTableComponent>
+        <CustomDialog
           header="Requisition Form View"
           visible={visible}
           style={{ width: "70rem" }}
@@ -608,7 +623,7 @@ const OngoingTravel = () => {
         >
           <h2>Requisition Form View</h2>
           <RequisitionFormView rowData={rowData} />
-        </Dialog>
+        </CustomDialog>
       </div>
     </>
   );
