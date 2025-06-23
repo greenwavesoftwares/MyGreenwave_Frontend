@@ -10,49 +10,31 @@ import { getUserData } from "../Login/Encrypt";
 // const host = "http://localhost";
 // const port = "8081";
 const host = import.meta.env.VITE_END_POINT;
-import {getTravelDetailsFromTravelId2} from '../TravelDesk/TravelDeskAPI'
+import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
+import axios from "axios";
 
 const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
 export const getDraftData = async () => {
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
-
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
-
   try {
-    const response = await fetch(
-      `${host}claims/tour-claims/drafts`,
-      requestOptions
-    );
-    if(!response.ok)
-    {
-      let message=await response.text()
-      return{
-        status:false,
-        message:message,
-        data:[]
-      }
-    }else{
-    let data=await response.json()
-      return{
-        status:true,
-        message:'Draft data loaded',
-        data:data
-      }
-    }
-    
-   
+    const response = await axios.get(`${host}claims/tour-claims/drafts`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+
+    return {
+      status: true,
+      message: "Draft data loaded",
+      data: response?.data,
+    };
   } catch (error) {
-   return{
-        status:false,
-        message:error?.message,
-        data:[]
-      }
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
@@ -102,432 +84,374 @@ export const formateDate = (value) => {
   return "";
 };
 
-
 export const getTravelsDetails = async () => {
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
+  // const myHeaders = new Headers();
+  // myHeaders.append("Authorization", token);
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
+  // const requestOptions = {
+  //   method: "GET",
+  //   headers: myHeaders,
+  //   redirect: "follow",
+  // };
 
-  let response = await fetch(
-    `${host}traveldesk/travels`,
-    requestOptions
-  );
-  let data = response.json();
-  return data;
+  // let response = await fetch(
+  //   `${host}traveldesk/travels`,
+  //   requestOptions
+  // );
+  // let data = response.json();
+  // return data;
+  try {
+    const response = await axios.get(`${host}traveldesk/travels`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.log( error);
+    return error.response?.data || error.message;
+  }
 };
 
 export const getTourClaimList = async () => {
-  let traveldetails = await getTravelsDetails();
+  try {
+    let traveldetails = await getTravelsDetails();
 
-  const myHeaders = new Headers();
-  //myHeaders.append("A", "");
-  myHeaders.append("Authorization", token); // Truncated for clarity
-
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
-
-  const response = await fetch(
-    `${host}claims/tour-claims`,
-    requestOptions
-  );
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  // Group by travel_id
-  const groupedMap = {};
-
-  let formattedResult = [];
-
-  traveldetails.forEach((item) => {
-    const matchingClaims = data.filter(
-      (claim) => claim.travel_id === item.travelId
-    );
-    formattedResult.push({
-      fromDate: item.fromDate,
-      tentativeToDate: item.tentativeToDate,
-      actualToDate: item.actualToDate,
-      travel_id: item.requisionId,
-      destination: item.city,
-      purpose: item.purpose,
-      project: item.projectName,
-      type: item.typeOfTravel,
-      expandabledata: matchingClaims,
+    const response = await axios.get(`${host}claims/tour-claims`, {
+      headers: {
+        Authorization: token,
+      },
     });
-  });
 
-  // data.forEach(item => {
-  //     const reqId = item.travel_id;
-  //     if (!groupedMap[reqId]) {
-  //         groupedMap[reqId] = {
-  //             travel_id: reqId,
-  //             destination: item.destination,
-  //             purpose: item.purpose,
-  //             project: item.project,
-  //             type: item.type,
-  //             name: item.name,
-  //             emp_id: item.emp_id,
-  //             designation: item.designation,
-  //             expandabledata: []
-  //         };
-  //     }
+    const data = response.data;
 
-  //     // Push this claim into expandabledata array
-  //     groupedMap[reqId].expandabledata.push(item);
-  // });
+    const groupedMap = {};
 
-  // const formattedResult = Object.values(groupedMap);
-  // console.log("Formatted Result:", formattedResult);
+    let formattedResult = [];
 
-  return formattedResult;
+    traveldetails.forEach((item) => {
+      const matchingClaims = data.filter(
+        (claim) => claim.travel_id === item.travelId
+      );
+      formattedResult.push({
+        fromDate: item.fromDate,
+        tentativeToDate: item.tentativeToDate,
+        actualToDate: item.actualToDate,
+        travel_id: item.requisionId,
+        destination: item.city,
+        purpose: item.purpose,
+        project: item.projectName,
+        type: item.typeOfTravel,
+        expandabledata: matchingClaims,
+      });
+    });
+
+    return formattedResult;
+  } catch (error) {
+    console.log( error);
+    return error.response?.data || error.message;
+  }
 };
 
 export const getTravelDropDown = async () => {
-  try{
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
+  try {
+    let response = await axios.get(`${host}traveldesk/ongoing-travels`, {
+      headers: {
+        Authorization: token,
+      },
+    });
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
+    let travelDropDownData = response.data;
+    travelDropDownData["In-Station Local Conveyance"] =
+      "Long-Term-Local-Conveyance";
 
-  let response = await fetch(
-  `${host}traveldesk/ongoing-travels`,
-  requestOptions
-);
+    const formattedOptions = Object.entries(travelDropDownData).map(
+      ([label, value]) => ({
+        label,
+        value,
+      })
+    );
 
-
-
-if(!response.ok)
-{
-  let message=await response.text();
-  return {
-    status:false,
-    message:message,
-    data:[]
+    return {
+      status: true,
+      message: "travels mode",
+      data: formattedOptions,
+    };
+  } catch (error) {
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
   }
-}
-let travelDropDownData=await response.json()
-travelDropDownData["In-Station Local Conveyance"] =
-        "Long-Term-Local-Conveyance";
-
-        const formattedOptions = Object.entries(travelDropDownData).map(
-          ([label, value]) => ({
-            label,
-            value,
-          })
-        );
-
-
-return{
-  status:true,
-  message:"travels mode",
-  data:formattedOptions
-}
-  }catch(error)
-  {
-    return{
-      status:false,
-      message:error?.message,
-      data:[]
-    }
-  }
-
 };
 
 export const getTravelDropDown2 = async () => {
-  try{
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
+  try {
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-  let response = await fetch(
-  `${host}traveldesk/ongoing-travels`,
-  requestOptions
-);
+    let response = await axios.get(`${host}traveldesk/ongoing-travels`, {
+      headers: {
+        Authorization: token,
+      },
+    });
 
+    // if (!response.ok) {
+    //   let message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
+    let travelDropDownData = response.data;
+    travelDropDownData["New Travel"] = null;
 
+    const formattedOptions = Object.entries(travelDropDownData).map(
+      ([label, value]) => ({
+        label,
+        value,
+      })
+    );
 
-if(!response.ok)
-{
-  let message=await response.text();
-  return {
-    status:false,
-    message:message,
-    data:[]
+    return {
+      status: true,
+      message: "travels mode",
+      data: formattedOptions,
+    };
+  } catch (error) {
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
   }
-}
-let travelDropDownData=await response.json()
-travelDropDownData["New Travel"] =
-        null;
-
-        const formattedOptions = Object.entries(travelDropDownData).map(
-          ([label, value]) => ({
-            label,
-            value,
-          })
-        );
-
-
-return{
-  status:true,
-  message:"travels mode",
-  data:formattedOptions
-}
-  }catch(error)
-  {
-    return{
-      status:false,
-      message:error?.message,
-      data:[]
-    }
-  }
-
 };
-
-
 
 export const getTravelMode = async (travel_id) => {
-  try{
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
+  try {
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-  let response = await fetch(
-  `${host}traveldesk/travels/${travel_id}`,
-  requestOptions
-);
+    let response = await axios.get(`${host}traveldesk/travels/${travel_id}`, {
+      headers: {
+        Authorization: token,
+      },
+    });
 
-
-
-if(!response.ok)
-{
-  let message=await response.text();
-  return {
-    status:false,
-    message:message,
-    data:[]
+    let data = response.data;
+    return {
+      status: true,
+      message: "travels mode",
+      data: data.city + " - " + data.fromDate + " - " + data.projectName,
+    };
+  } catch (error) {
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
   }
-}
-
-let data=await response.json()
-return{
-  status:true,
-  message:"travels mode",
-  data:data.city+' - '+data.fromDate+' - '+data.projectName
-}
-  }catch(error)
-  {
-    return{
-      status:false,
-      message:error?.message,
-      data:[]
-    }
-  }
-
 };
 
-
 export const getTourClaimFormDetails = async (id) => {
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
+  try {
+    let response = await axios.get(`${host}traveldesk/travels/${id}`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+    //   .then((response) => response.text())
+    //   .then((result) => console.log(result))
+    //   .catch((error) => console.error(error));
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
-
-  let response = await fetch(
-    `${host}traveldesk/travels/${id}`,
-    requestOptions
-  );
-  //   .then((response) => response.text())
-  //   .then((result) => console.log(result))
-  //   .catch((error) => console.error(error));
-
-  if(!response.ok)
-  {
-    return []
+    let data = response.data;
+    return data;
+  } catch (error) {
+    console.log( error);
+    return error.response?.data || error.message;
   }
-
-  let data = response.json();
-  return data;
 };
 
 export const getAdvance = async () => {
-  const myHeaders = new Headers();
-  myHeaders.append("Authorization", token);
+  // const myHeaders = new Headers();
+  // myHeaders.append("Authorization", token);
 
-  const requestOptions = {
-    method: "GET",
-    headers: myHeaders,
-    redirect: "follow",
-  };
-
-  let response = await fetch(
-    `${host}traveldesk/unsettled-advance`,
-    requestOptions
-  );
-  let data = response.json();
-  return data;
+  // const requestOptions = {
+  //   method: "GET",
+  //   headers: myHeaders,
+  //   redirect: "follow",
+  // };
+  try {
+    let response = await axios.get(`${host}traveldesk/unsettled-advance`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+    let data = response.data;
+    return data;
+  } catch (error) {
+    console.log( error);
+    return error.response?.data || error.message;
+  }
 };
 
 export const uploadSupportingDocuments = async (file, claim_id) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
-
     const formData = new FormData();
     formData.append("file", file);
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: formData,
-      redirect: "follow",
-    };
-
-    let response = await fetch(
+     const response = await axios.post(
       `${host}claims/tour-claims/doc/${claim_id}`,
-      requestOptions
+      formData,
+      {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
-    // let data=response.json();
-    return response;
+    return response.data;
   } catch (error) {
     console.log(error);
+    return error.response?.data || error.message
   }
 };
 
 export const deleteDraftList = async (claim_id, status) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
 
-      redirect: "follow",
-    };
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.put(
       `${host}claims/tour-claims/${claim_id}/${status}`,
-      requestOptions
+       null, // no request body
+      {
+         headers: {
+      Authorization: token,
+    },
+      }
     );
-   if(!response.ok)
-   {
-    let message=await response.text();
-    return{
-      status:false,
-      message:message,
-      data:[]
-    }
-   } 
+    // if (!response.ok) {
+    //   let message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
     let draftData = await getDraftData();
-      return{
-      status:draftData.status,
-      message:'One Draft claim deleted',
-      data:draftData.data
-   
-      } 
+    console.log('draftData', draftData)
+    return {
+      status: draftData.status,
+      message: "One Draft claim deleted",
+      data: draftData.data,
+    };
   } catch (error) {
-     return{
-      status:false,
-      message:error?.message,
-      data:[]
-    }
+    console.log('error', error)
+    return {
+      status: false,
+      message:error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
 export const applyClaim = async (claim_id, status) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    const response = await fetch(
+    const response = await axios.put(
       `${host}claims/tour-claims/${claim_id}/${status}`,
-      requestOptions
+       null, // no request body
+      {
+         headers: {
+      Authorization: token,
+    },
+      }
     );
 
-    if (!response.ok) {
-    
-      const message = await response.text(); 
-      return{
-        status:false,
-        message:message,
-        data:[]
-      }
-     
-    }
+    // if (!response.ok) {
+    //   const message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
     const draftData = await getDraftData();
 
     return draftData;
   } catch (error) {
-  return{
-    status:false,
-    message:error?.message,
-    data:[]
-  }
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
 export const downloadTourClaimSupportingDocument = async (claim_id) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    const response = await fetch(
+    const response = await axios.get(
       `${host}claims/tour-claims/doc/${claim_id}`,
-      requestOptions
+     {
+       headers: {
+      Authorization: token,
+    },
+     }
     );
 
-    if (!response.ok) {
-      const message = await response.text();
-      return {
-        status:false,
-        message:message,
-        data:[]
-      }
-    }
+    // if (!response.ok) {
+    //   const message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
 
     // Parse JSON containing base64 data
-    const result = await response.json();
+    const result =response.data
     const { fileName, fileType, data: base64Data } = result;
 
     // Correct and reliable base64 to Blob conversion
@@ -551,41 +475,46 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    return{
-      status:false,
-      message:error?.message,
-      data:[]
-    }
+    console.log( error);
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
   }
 };
 
 export const downloadOtherClaimSupportingDocument = async (claim_id) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    const response = await fetch(
+    const response = await axios.get(
       `${host}claims/other-claims/doc/${claim_id}`,
-      requestOptions
+     {
+       headers: {
+      Authorization: token,
+    },
+     }
     );
 
-    if (!response.ok) {
-      const message = await response.text();
-      return {
-        status:false,
-        message:message,
-        data:[]
-      }
-    }
+    // if (!response.ok) {
+    //   const message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
 
     // Parse JSON containing base64 data
-    const result = await response.json();
+    const result = response.data
     const { fileName, fileType, data: base64Data } = result;
 
     // Correct and reliable base64 to Blob conversion
@@ -608,17 +537,18 @@ export const downloadOtherClaimSupportingDocument = async (claim_id) => {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    return{
-      status:true,
-      message:'downloaded',
-      data:[]
-    }
+    return {
+      status: true,
+      message: "downloaded",
+      data: [],
+    };
   } catch (error) {
-    return{
-      status:false,
-      message:error?.message,
-      data:[]
-    }
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
@@ -673,35 +603,32 @@ export const downloadOtherClaimSupportingDocument = async (claim_id) => {
 
 export const downloadTourClaimExpanseDocument = async (claim_id) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
     if (!claim_id) {
-      var response = await fetch(
-        `${host}claims/tour-claims/excel`,
-        {
-          method: "GET",
-          headers: myHeaders,
-          redirect: "follow",
-        }
-      );
+      var response = await axios.get(`${host}claims/tour-claims/excel`, {
+        headers: {
+      Authorization: token,
+    },
+      });
     } else {
-      var response = await fetch(
+      var response = await axios.get(
         `${host}claims/tour-claims/excel/${claim_id}`,
         {
-          method: "GET",
-          headers: myHeaders,
-          redirect: "follow",
+          headers: {
+      Authorization: token,
+    },
         }
       );
     }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Internal Server Error ${response.status}: ${errorText}`);
-    }
+    // if (!response.ok) {
+    //   const errorText = await response.text();
+    //   throw new Error(`Internal Server Error ${response.status}: ${errorText}`);
+    // }
 
-    const result = await response.json();
+    const result = response.data
     const { fileName, fileType, data: base64Data } = result;
 
     // Base64 to Blob (correct way)
@@ -722,73 +649,74 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    console.error("Error in downloadTourClaimSupportingDocument:", error);
-    throw error;
+    console.log(error)
+    return error.response?.data || error.message
   }
 };
 
-
-
 export const getTourClaimTableDraftData = async (claim_id) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    const response = await fetch(
+    const response = await axios.get(
       `${host}claims/tour-claims/${claim_id}`,
-      requestOptions
+   {
+     headers: {
+      Authorization: token,
+    },
+   }
     );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    // if (!response.ok) {
+    //   throw new Error(`HTTP error! status: ${response.status}`);
+    // }
 
-    const data = await response.json();
+    const data = response.data
     //console.log("tabledata",data)
     return data;
     // const travelDropDownData = await getTravelDropDown();
     // const key = Object.keys(travelDropDownData).find(key => travelDropDownData[key] === data.travel_id);
   } catch (error) {
-    // console.error("Error in downloadTourClaimSupportingDocument:", error);
-    throw error;
+     console.log( error);
+   return error.response?.data || error.message
   }
 };
 
 export const getlatestclaimtodate = async (travel_id) => {
   const result = [];
 
-  const tourClaimList = await getTourClaimList(); 
+  const tourClaimList = await getTourClaimList();
   const filteredClaims = tourClaimList.filter(
     (row) => row.travel_id === travel_id
   );
 
   let latestToDate = null;
-  if(filteredClaims.length>0)
-  {
+  if (filteredClaims.length > 0) {
     filteredClaims[0].expandabledata.forEach((claim) => {
-    const claimToDate = claim.to_date;
-    if (claim.status !== "Rejected") {
-      if (!latestToDate || claimToDate > latestToDate) {
-        latestToDate = claimToDate;
+      const claimToDate = claim.to_date;
+      if (claim.status !== "Rejected") {
+        if (!latestToDate || claimToDate > latestToDate) {
+          latestToDate = claimToDate;
+        }
       }
-    }
-  });
+    });
   }
- 
 
   //const data = await getTourClaimFormDetails(travel_id);
- let response=await getTravelDetailsFromTravelId2(travel_id)
- let data=response.data
+  let response = await getTravelDetailsFromTravelId2(travel_id);
+  let data = response.data;
   result.push({
     travelfromdate: data.fromDate,
-    claimformdate: latestToDate?latestToDate:data.fromDate,
-    claimtodate: data.tentativeToDate>new Date()?data.tentativeToDate:new Date(),
+    claimformdate: latestToDate ? latestToDate : data.fromDate,
+    claimtodate:
+      data.tentativeToDate > new Date() ? data.tentativeToDate : new Date(),
   });
 
   return result;
@@ -796,8 +724,8 @@ export const getlatestclaimtodate = async (travel_id) => {
 
 export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
   try {
-    console.log('tourclaimformData', tourclaimformData)
-    console.log('tourClaimTableData', tourClaimTableData)
+    console.log("tourclaimformData", tourclaimformData);
+    console.log("tourClaimTableData", tourClaimTableData);
     let total_expense = 0;
     let tabledata = [];
 
@@ -819,13 +747,13 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
         snacks: Number(row["Snacks"]) || 0,
         other: Number(row["Other Business Expenses"]) || 0,
         total: rowTotal,
-        remarks: row["Remarks"]|| "",
+        remarks: row["Remarks"] || "",
       });
     });
 
-  const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", token); // make sure `token` is in scope
+   // const myHeaders = new Headers();
+    // myHeaders.append("Content-Type", "application/json");
+    // myHeaders.append("Authorization", token); // make sure `token` is in scope
 
     const payload = {
       travel_id: tourclaimformData.travel_id,
@@ -843,39 +771,42 @@ export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
       tourClaimRecords: tabledata,
     };
 
-    const raw = JSON.stringify(payload);
+   // const raw = JSON.stringify(payload);
 
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "POST",
+    //   headers: myHeaders,
+    //   body: raw,
+    //   redirect: "follow",
+    // };
 
-   let response= await fetch(`${host}claims/tour-claims`, requestOptions);
-   if(!response.ok)
-   {
-    let message=await response.text()
-    return{
-      status:false,
-      message:message,
-      data:[]
-    }
-   }
-    
+    let response = await axios.post(`${host}claims/tour-claims`, payload,{ headers: {
+      Authorization: token,
+      'Content-Type': 'application/json'
+    },});
+    // if (!response.ok) {
+    //   let message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
+
     const draftData = await getDraftData();
 
-   return {
-    status:true,
-    message:'Saved to draft',
-    data:draftData.data
-   }
+    return {
+      status: true,
+      message: "Saved to draft",
+      data: draftData.data,
+    };
   } catch (error) {
-   return{
-    status:false,
-    message:error?.message,
-    data:[]
-   }
+    console.log( error);
+    return {
+      status: false,
+      message: error?.message,
+      data: [],
+    };
   }
 };
 
@@ -910,9 +841,9 @@ export const updateDraftdata = async (
       });
     });
 
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", token); // make sure `token` is in scope
+    // const myHeaders = new Headers();
+    // myHeaders.append("Content-Type", "application/json");
+    // myHeaders.append("Authorization", token); // make sure `token` is in scope
 
     const payload = {
       travel_id: tourclaimformData.travel_id,
@@ -930,40 +861,42 @@ export const updateDraftdata = async (
       tourClaimRecords: tabledata,
     };
 
-    const raw = JSON.stringify(payload);
+    //const raw = JSON.stringify(payload);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
+    //   body: raw,
+    //   redirect: "follow",
+    // };
 
-   let response= await fetch(
-      `${host}claims/tour-claims/${claim_id}`,
-      requestOptions
+    let response = await axios.put(
+      `${host}claims/tour-claims/${claim_id}`,payload,{ headers: {
+      Authorization: token,
+      'Content-Type': 'application/json'
+    },}
+      
     );
     // const data = await response.json();
-    if(!response.ok)
-    {
-      let message=response.text();
-      return{
-        status:false,
-        message:message,
-        data:[]
-      }
-    }
+    // if (!response.ok) {
+    //   let message = response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
 
-  
     const draftData = await getDraftData();
 
     return draftData;
   } catch (error) {
+    console.log( error);
     return {
-      status:false,
-      message:error?.message,
-      data:[]
-    }
+      status: false,
+      message: error?.message,
+      data: [],
+    };
   }
 };
 
@@ -1062,8 +995,8 @@ export const ApplyOtherClaim = async (
   claimDetails
 ) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token); // ensure token is defined
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token); // ensure token is defined
 
     const formData = new FormData();
     formData.append("file", file);
@@ -1071,180 +1004,167 @@ export const ApplyOtherClaim = async (
     formData.append("amount", claimAmount);
     formData.append("reason", claimDetails);
 
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders, // DO NOT set Content-Type manually with FormData
-      body: formData,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "POST",
+    //   headers: myHeaders, // DO NOT set Content-Type manually with FormData
+    //   body: formData,
+    //   redirect: "follow",
+    // };
 
-    const response = await fetch(
-      `${host}claims/other-claims`,
-      requestOptions
-    );
+    const response = await axios.post(`${host}claims/other-claims`, formData,{ headers: {
+      Authorization: token
+     // 'Content-Type': 'application/json'
+    },});
 
-    const message = await response.text();
+   // const message = await response.text();
 
-    if (!response.ok) {
-      throw new Error(message || "Failed to submit claim");
-    }
+    // if (!response.ok) {
+    //   throw new Error(message || "Failed to submit claim");
+    // }
 
     return {
       status: true,
-      message: message,
+      message: response.message,
       data: {},
     };
   } catch (error) {
     console.error("Error applying other claim:", error);
-    throw error;
+   return {
+    status:false,
+    message:error.response?.data || error.message,
+    data:[]
+   }
   }
 };
 
 export const getOtherClaims = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
-
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
-    let response = await fetch(
-      `${host}claims/other-claims`,
-      requestOptions
-    );
-    const data = response.json();
+    let response = await axios.get(`${host}claims/other-claims`, { headers: {
+      Authorization: token
+    },});
+    const data = response.data
     return data;
   } catch (error) {
     console.log(error);
-    throw error;
+    return error.response?.data || error.message
   }
 };
 
 export const getLoanDetails = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    const response = await fetch(
-      `${host}claims/loan-claims`,
-      requestOptions
-    );
-    const data = await response.json();
+    const response = await axios.get(`${host}claims/loan-claims`, { headers: {
+      Authorization: token
+    },});
+    const data = response.data
     return {
       status: true,
-      message: [],
+      message: '',
       data: data,
     };
   } catch (error) {
     console.log(error);
+     return {
+      status: false,
+      message:error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
 export const applyLoan = async (formData) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", token);
-    const raw = JSON.stringify({
+    const raw = {
       amount: formData.loanAmount,
       reason: formData.purpose,
       emi: formData.loanTenure,
       requirementDate: formateDate(formData.requirementDate),
-    });
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
     };
 
-    let response = await fetch(
-      `${host}claims/loan-claims`,
-      requestOptions
-    );
+    let response = await axios.post(`${host}claims/loan-claims`, raw, {
+      headers: {
+        Authorization: token,
+        'Content-Type': 'application/json'
+      }
+    });
 
-    if (!response.ok) {
-      const message = await response.text();
-      return {
-        status: false,
-        message: message || "NOt able to apply!",
-        data: [],
-      };
-    }
-    let data = await response.json();
     return {
       status: true,
       message: "Applied successfully.",
-      data: data,
+      data: response.data,
     };
   } catch (error) {
     console.log(error);
+    return {
+      status: false,
+      message: error.response?.data || error.message  ,
+      data: [],
+    };
   }
 };
+
 
 //Admin part
 
 export const getApprovedTourClaims = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let ApprovedResponse = await fetch(
+    let ApprovedResponse = await axios.get(
       `${host}claims/tour-claims-by-status/Approved`,
-      requestOptions
+      { headers: {
+      Authorization: token
+    }}
     );
-    if (!ApprovedResponse.ok) {
-      const message = await ApprovedResponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
+   
 
-    let ApprovedData = await ApprovedResponse.json();
+    let ApprovedData =  ApprovedResponse.data;
 
-    let ReviewedResponse = await fetch(
+    let ReviewedResponse = await axios.get(
       `${host}claims/tour-claims-by-status/Reviewed`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
-    if (!ReviewedResponse.ok) {
-      const message = await ReviewedResponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
-    let ReviewedData = await ReviewedResponse.json();
+    // if (!ReviewedResponse.ok) {
+    //   const message = await ReviewedResponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
+    let ReviewedData = ReviewedResponse.data //await ReviewedResponse.json();
 
-    let CancelledResponse = await fetch(
+    let CancelledResponse = await axios.get(
       `${host}claims/tour-claims-by-status/Cancelled`,
-      requestOptions
+      { headers: {
+      Authorization: token
+    }}
     );
-    if (!CancelledResponse.ok) {
-      const message = await ReviewedResponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
-    let CancelledData = await CancelledResponse.json();
+    // if (!CancelledResponse.ok) {
+    //   const message = await ReviewedResponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
+    let CancelledData =  CancelledResponse.data;
     let finaldata = [...ReviewedData, ...CancelledData, ...ApprovedData];
 
     return {
@@ -1254,47 +1174,56 @@ export const getApprovedTourClaims = async () => {
     };
   } catch (error) {
     console.log(error);
+      return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: finaldata,
+    };
   }
 };
 
 export const getAppliedTourClaims = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let appliedresponse = await fetch(
+    let appliedresponse = await axios.get(
       `${host}claims/tour-claims-by-status/applied`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
-    if (!appliedresponse.ok) {
-      const message = await appliedresponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
+    // if (!appliedresponse.ok) {
+    //   const message = await appliedresponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
 
-    let reviewingresponse = await fetch(
+    let reviewingresponse = await axios.get(
       `${host}claims/tour-claims-by-status/reviewing`,
-      requestOptions
+      { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!reviewingresponse.ok) {
-      const message = await reviewingresponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
-    let applieddata = await appliedresponse.json();
-    let reviewingdata = await reviewingresponse.json();
+    // if (!reviewingresponse.ok) {
+    //   const message = await reviewingresponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
+    let applieddata =  appliedresponse.data;
+    let reviewingdata =  reviewingresponse.data;
 
     let finaldata = [...reviewingdata, ...applieddata];
 
@@ -1305,6 +1234,11 @@ export const getAppliedTourClaims = async () => {
     };
   } catch (error) {
     console.log(error);
+      return {
+      status: false,
+      message:error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
@@ -1323,21 +1257,23 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
     };
 
     // Step 1: Check if any claim is under review
-    const getResponse = await fetch(
+    const getResponse = await axios.get(
       `${host}claims/tour-claims-user-and-status/reviewing/${userId}`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!getResponse.ok) {
-      const message = await getResponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
+    // if (!getResponse.ok) {
+    //   const message = await getResponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
 
-    const reviewClaims = await getResponse.json();
+    const reviewClaims =  getResponse.data;
 
     if (reviewClaims.length > 0) {
       return {
@@ -1348,23 +1284,23 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
     }
 
     // Step 2: Update status to Reviewing
-    const putResponse = await fetch(
+    const putResponse = await axios.put(
       `${host}claims/tour-claims/${claim_id}/Reviewing`,
-      {
-        method: "PUT",
-        redirect: "follow",
-        headers: myHeaders,
-      }
+       null,
+        {headers: {
+            Authorization: token,
+          'Content-Type': 'application/json'
+    }},
     );
 
-    if (!putResponse.ok) {
-      const message = await putResponse.text();
-      return {
-        status: false,
-        message: message || "Failed to update claim status",
-        data: [],
-      };
-    }
+    // if (!putResponse.ok) {
+    //   const message = await putResponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Failed to update claim status",
+    //     data: [],
+    //   };
+    // }
 
     let allData = await getAppliedTourClaims();
 
@@ -1374,9 +1310,10 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
       data: allData.data,
     };
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message || "Server error",
+      message: error.response?.data || error.message,
       data: [],
     };
   }
@@ -1388,28 +1325,32 @@ export const tourClaimSendForApproval = async (
   settlement_amount
 ) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
 
-      redirect: "follow",
-    };
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.put(
       `${host}claims/tour-claims/review/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
-      requestOptions
+      null,
+      { headers: {
+      Authorization: token,
+      'Content-Type': 'application/json'
+    },}
     );
-    if (!response.ok) {
-      const message = await response.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
+    // if (!response.ok) {
+    //   const message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
     let getAappliedAndReviewData = await getAppliedTourClaims();
     //let data = response.json();
     return {
@@ -1418,9 +1359,10 @@ export const tourClaimSendForApproval = async (
       data: getAappliedAndReviewData.data,
     };
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message || "Server error",
+      message: error.response?.data || error.message,
       data: [],
     };
   }
@@ -1428,27 +1370,29 @@ export const tourClaimSendForApproval = async (
 
 export const getReviewedTourClaims = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let reviewedresponse = await fetch(
+    let reviewedresponse = await axios.get(
       `${host}claims/tour-claims-by-status/Reviewed`,
-      requestOptions
+      { headers: {
+      Authorization: token
+    },}
     );
-    if (!reviewedresponse.ok) {
-      const message = await reviewedresponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
-    let revieweddata = await reviewedresponse.json();
+    // if (!reviewedresponse.ok) {
+    //   const message = await reviewedresponse.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
+    let revieweddata =  reviewedresponse.data;
     return {
       status: true,
       message: "applied TourClaim Details.",
@@ -1456,32 +1400,26 @@ export const getReviewedTourClaims = async () => {
     };
   } catch (error) {
     console.log(error);
+     return {
+      status: false,
+      message:error.response?.data || error.message,
+      data: [],
+    };
   }
 };
 
 export const getApprovedHRTourClaims = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+   
 
-    let approvedresponse = await fetch(
+    let approvedresponse = await axios.get(
       `${host}claims/tour-claims-by-status/Approved`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
-    if (!approvedresponse.ok) {
-      const message = await approvedresponse.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
-    let approveddata = await approvedresponse.json();
+   
+    let approveddata = approvedresponse.data;
     return {
       status: true,
       message: "approved TourClaim Details.",
@@ -1489,33 +1427,41 @@ export const getApprovedHRTourClaims = async () => {
     };
   } catch (error) {
     console.log(error);
+    return{
+      status:false,
+      message:error.response?.data || error.message,
+      data:[]
+    }
   }
 };
 
 export const ApprovedTourClaim = async (claim_id, reason) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
 
-      redirect: "follow",
-    };
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.put(
       `${host}claims/tour-claims/approval/${claim_id}/approved?reason=${reason}`,
-      requestOptions
+      null,
+       { headers: {
+      Authorization: token
+    }}
     );
-    if (!response.ok) {
-      const message = await response.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
+    // if (!response.ok) {
+    //   const message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
     let getReviewedTourClaimsData = await getReviewedTourClaims();
     //let data = response.json();
     if (getReviewedTourClaimsData.status) {
@@ -1532,9 +1478,10 @@ export const ApprovedTourClaim = async (claim_id, reason) => {
       };
     }
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message || "Server error",
+      message: error.response?.data || error.message,
       data: [],
     };
   }
@@ -1542,28 +1489,31 @@ export const ApprovedTourClaim = async (claim_id, reason) => {
 
 export const RejectTourClaim = async (claim_id, reason) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
 
-      redirect: "follow",
-    };
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.put(
       `${host}claims/tour-claims/approval/${claim_id}/rejected?reason=${reason}`,
-      requestOptions
+      null,
+       { headers: {
+      Authorization: token
+    }}
     );
-    if (!response.ok) {
-      const message = await response.text();
-      return {
-        status: false,
-        message: message || "Internal server error!",
-        data: [],
-      };
-    }
+    // if (!response.ok) {
+    //   const message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message || "Internal server error!",
+    //     data: [],
+    //   };
+    // }
     let getReviewedTourClaimsData = await getReviewedTourClaims();
     //let data = response.json();
     if (getReviewedTourClaimsData.status) {
@@ -1580,6 +1530,7 @@ export const RejectTourClaim = async (claim_id, reason) => {
       };
     }
   } catch (error) {
+    console.log( error);
     return {
       status: false,
       message: error?.message || "Server error",
@@ -1590,38 +1541,42 @@ export const RejectTourClaim = async (claim_id, reason) => {
 
 export const getloanclaimsapplied = async () => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.get(
       `${host}claims/loan-claims-by-status/applied`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
+      
     );
 
-    if (!response.ok) {
-      let message = await response.text();
-      return {
-        status: false,
-        message: message,
-        data: [],
-      };
-    }
-    let data = await response.json();
+    // if (!response.ok) {
+    //   let message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // }
+    let data = response.data;
     return {
       status: true,
       message: "loan details",
       data: data,
     };
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message: error.response?.data || error.message,
       data: [],
     };
   }
@@ -1632,48 +1587,52 @@ export const getloanclaimsapproveandreject = async () => {
     let message;
     let approveddata = [];
     let rejecteddata = [];
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let rejectedresponse = await fetch(
+    let rejectedresponse = await axios.get(
       `${host}claims/loan-claims-by-status/rejected`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!rejectedresponse.ok) {
-      message = await rejectedresponse.text();
-      if (message != "User Claim Not Found")
-        return {
-          status: false,
-          message: message,
-          data: [],
-        };
-    } else {
-      rejecteddata = await rejectedresponse.json();
-    }
+    // if (!rejectedresponse.ok) {
+    //   message = await rejectedresponse.text();
+    //   if (message != "User Claim Not Found")
+    //     return {
+    //       status: false,
+    //       message: message,
+    //       data: [],
+    //     };
+    // } else {
+      rejecteddata =  rejectedresponse.data;
+  //  }
 
-    let approvedresponse = await fetch(
+    let approvedresponse = await axios.get(
       `${host}claims/loan-claims-by-status/Approved`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!approvedresponse.ok) {
-      message = await approvedresponse.text();
-      if (message != "User Claim Not Found")
-        return {
-          status: false,
-          message: message,
-          data: [],
-        };
-    } else {
-      approveddata = await approvedresponse.json();
-    }
+    // if (!approvedresponse.ok) {
+    //   message = await approvedresponse.text();
+    //   if (message != "User Claim Not Found")
+    //     return {
+    //       status: false,
+    //       message: message,
+    //       data: [],
+    //     };
+    // } else {
+      approveddata = approvedresponse.data;
+  //  }
 
     let finaldata = [...approveddata, ...rejecteddata];
 
@@ -1683,9 +1642,10 @@ export const getloanclaimsapproveandreject = async () => {
       data: finaldata,
     };
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message: error.response?.data || error.message,
       data: [],
     };
   }
@@ -1693,81 +1653,85 @@ export const getloanclaimsapproveandreject = async () => {
 
 export const rejectLoanClaim = async (claim_id, remarks) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
-      `${host}claims/loan-claims/${claim_id}/rejected?reason=${remarks}`,
-      requestOptions
+    let response = await axios.put(
+      `${host}claims/loan-claims/${claim_id}/rejected?reason=${remarks}`,null,
+       { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!response.ok) {
-      let message = response.text();
-      return {
-        status: false,
-        message: message,
-        data: [],
-      };
-    } else {
-      let response = await getloanclaimsapplied();
+    // if (!response.ok) {
+    //   let message = response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // } else {
+      let responseData = await getloanclaimsapplied();
       return {
         status: true,
         message: "Loan Claim Rejected",
-        data:response.data,
+        data: responseData.data,
       };
-    }
+    //}
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message: error.response?.data || error.message,
       data: [],
     };
   }
 };
 
-
-
 export const approveLoanClaim = async (claim_id, remarks) => {
   try {
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.put(
       `${host}claims/loan-claims/${claim_id}/Approved?reason=${remarks}`,
-      requestOptions
+      null, { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!response.ok) {
-      let message = response.text();
-      return {
-        status: false,
-        message: message,
-        data: [],
-      };
-    } else {
-      let response = await getloanclaimsapplied();
+    // if (!response.ok) {
+    //   let message = response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // } else {
+      let responseData = await getloanclaimsapplied();
       return {
         status: true,
         message: "Loan Claim Approved",
-        data:response.data,
+        data: responseData.data,
       };
-    }
+   // }
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message: error.response?.data || error.message,
       data: [],
     };
   }
@@ -1775,45 +1739,46 @@ export const approveLoanClaim = async (claim_id, remarks) => {
 
 export const approveMiscellanousClaim = async (claim_id, remarks) => {
   try {
-    
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
-      `${host}claims/other-claims/${claim_id}/Approved?reason=${remarks}`,
-      requestOptions
+    let response = await axios.put(
+      `${host}claims/other-claims/${claim_id}/Approved?reason=${remarks}`,null,
+       { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!response.ok) {
-      let message = response.text();
-      return {
-        status: false,
-        message: message,
-        data: [],
-      };
-    } else {
-      let response =await getAppliedMiscellanousClaimAccount();
-      if(!response.status)
-      {
-         return {
-        status: false,
-        message: response.message,
-        data:[],
-      };
-      }
+    // if (!response.ok) {
+    //   let message = response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // } else {
+      let responseData = await getAppliedMiscellanousClaimAccount();
+      // if (!response.status) {
+      //   return {
+      //     status: false,
+      //     message: response.message,
+      //     data: [],
+      //   };
+      // }
       return {
         status: true,
         message: "Miscellanous Claim Approved",
-        data:response.data,
+        data: responseData.data,
       };
-    }
+   // }
   } catch (error) {
+    console.log( error);
     return {
       status: false,
       message: error?.message,
@@ -1824,139 +1789,146 @@ export const approveMiscellanousClaim = async (claim_id, remarks) => {
 
 export const rejectMiscellanousClaim = async (claim_id, remarks) => {
   try {
-    console.log(claim_id,remarks)
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    console.log(claim_id, remarks);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "PUT",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "PUT",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let response = await fetch(
+    let response = await axios.put(
       `${host}claims/other-claims/${claim_id}/Rejected?reason=${remarks}`,
-      requestOptions
+      null, { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!response.ok) {
-      let message = response.text();
-      return {
-        status: false,
-        message: message,
-        data: [],
-      };
-    } else {
-      let response = await getAppliedMiscellanousClaimAccount();
-      if(!response.status)
-      {
-         return {
-        status: false,
-        message:response.message,
-        data:[],
-      };
-      }
+    // if (!response.ok) {
+    //   let message = response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // } else {
+      let responseData = await getAppliedMiscellanousClaimAccount();
+      // if (!response.status) {
+      //   return {
+      //     status: false,
+      //     message: response.message,
+      //     data: [],
+      //   };
+      // }
       return {
         status: true,
         message: "Miscellanous Claim Rejected",
-        data:response.data,
+        data: responseData.data,
       };
-    }
+   // }
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message:error.response?.data || error.message,
       data: [],
     };
   }
 };
 
+export const getAppliedMiscellanousClaimAccount = async () => {
+  try {
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-export const getAppliedMiscellanousClaimAccount=async()=>{
-  try{
-     const myHeaders = new Headers();
-myHeaders.append("Authorization", token);
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-const requestOptions = {
-  method: "GET",
-  headers: myHeaders,
-  redirect: "follow"
+    let response = await axios.get(
+      `${host}claims/other-claims-by-status/Applied`,
+       { headers: {
+      Authorization: token
+    }}
+    );
+    // if (!response.ok) {
+    //   let message = await response.text();
+    //   return {
+    //     status: false,
+    //     message: message,
+    //     data: [],
+    //   };
+    // } else {
+    //   let data = await response.json();
+      return {
+        status: true,
+        message: "applied miscellanous claim loaded",
+        data: response.data,
+      };
+  //  }
+  } catch (error) {
+    console.log( error);
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
+  }
 };
 
-let response=await fetch(`${host}claims/other-claims-by-status/Applied`, requestOptions)
-if(!response.ok)
-{
-  let message=await response.text();
-  return{
-    status:false,
-    message:message,
-    data:[]
-  }
-}else{
-  let data=await response.json();
-   return{
-    status:true,
-    message:'applied miscellanous claim loaded',
-    data:data
-  }
-}
-  }catch(error)
-  {
-    return{
-    status:false,
-    message:error?.message,
-    data:[]
-  }
-  }
-}
-
-export const getApprovedAndRejectMiscellanousClaim=async()=>{
-      try {
+export const getApprovedAndRejectMiscellanousClaim = async () => {
+  try {
     let message;
     let approveddata = [];
     let rejecteddata = [];
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", token);
+    // const myHeaders = new Headers();
+    // myHeaders.append("Authorization", token);
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-      redirect: "follow",
-    };
+    // const requestOptions = {
+    //   method: "GET",
+    //   headers: myHeaders,
+    //   redirect: "follow",
+    // };
 
-    let rejectedresponse = await fetch(
+    let rejectedresponse = await axios.get(
       `${host}claims/other-claims-by-status/rejected`,
       requestOptions
     );
 
-    if (!rejectedresponse.ok) {
-      message = await rejectedresponse.text();
-      if (message != "User Claim Not Found")
-        return {
-          status: false,
-          message: message,
-          data: [],
-        };
-    } else {
-      rejecteddata = await rejectedresponse.json();
-    }
+    // if (!rejectedresponse.ok) {
+    //   message = await rejectedresponse.text();
+    //   if (message != "User Claim Not Found")
+    //     return {
+    //       status: false,
+    //       message: message,
+    //       data: [],
+    //     };
+    // } else {
+      rejecteddata = rejectedresponse.data;
+   // }
 
-    let approvedresponse = await fetch(
+    let approvedresponse = await axios.get(
       `${host}claims/other-claims-by-status/Approved`,
-      requestOptions
+       { headers: {
+      Authorization: token
+    }}
     );
 
-    if (!approvedresponse.ok) {
-      message = await approvedresponse.text();
-      if (message != "User Claim Not Found")
-        return {
-          status: false,
-          message: message,
-          data: [],
-        };
-    } else {
-      approveddata = await approvedresponse.json();
-    }
+    // if (!approvedresponse.ok) {
+    //   message = await approvedresponse.text();
+    //   if (message != "User Claim Not Found")
+    //     return {
+    //       status: false,
+    //       message: message,
+    //       data: [],
+    //     };
+    // } else {
+      approveddata = approvedresponse.data;
+  //  }
 
     let finaldata = [...approveddata, ...rejecteddata];
 
@@ -1966,10 +1938,11 @@ export const getApprovedAndRejectMiscellanousClaim=async()=>{
       data: finaldata,
     };
   } catch (error) {
+    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message: error.response?.data || error.message,
       data: [],
     };
   }
-}
+};
