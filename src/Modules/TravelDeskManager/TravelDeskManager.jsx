@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import {
   downloadDocumentsByReqId,
   getAdvanceDetails,
+  getManagerwiseongoingtravels,
   getMyFormParticularRequisitionId,
   // getMyFormTravelData,
   getTravelsByStatus,
   updateTravelRequisition,
+  getExpandableData,
 } from "../TravelDesk/TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Box, Button, Chip, CircularProgress, Grid } from "@mui/material";
@@ -50,8 +52,6 @@ const renderStatusChip = (row) => {
   return <Chip label={status} color={color} size="small" />;
 };
 
-
-
 export default function TravelDeskManager() {
   const [travelData, setTravelData] = useState(null); //  DataTable data
   const [formData, setFormData] = useState({}); //form data for storing the managers remarks
@@ -70,84 +70,88 @@ export default function TravelDeskManager() {
 
   const fetchTravelData = async () => {
     try {
-      const { data } = await getTravelsByStatus(token, PENDING_STATUS);
-      console.log("response", data);
-      const pendingData = data.filter(
-        (item) =>
-          // item?.status=== PENDING_STATUS  &&
-          item?.manager_id === userDetails?.userId
-      );
+      const response = await getManagerwiseongoingtravels(); //await getTravelsByStatus(token, PENDING_STATUS);
+      console.log("response.data", response.data);
 
-      const { data: advanceTravelData } = await getAdvanceDetails();
-      console.log("advanceTravelData", advanceTravelData);
+      // const pendingData = data.filter(
+      //   (item) =>
+      //     // item?.status=== PENDING_STATUS  &&
+      //     item?.manager_id === userDetails?.userId
+      // );
 
-      const updatedPendingData = pendingData.map((travel) => {
-        const userName =
-          advanceTravelData?.find(
-            (claims) => claims?.userId === travel?.user_id
-          )?.userName || "Unknown User";
+      // const { data: advanceTravelData } = await getAdvanceDetails();
+      //  console.log("advanceTravelData", advanceTravelData);
 
-        const unsettledAmount =
-          advanceTravelData?.find(
-            (claims) => claims?.userId === travel?.user_id
-          )?.unsettledAmount || 0;
+      // const updatedPendingData = pendingData.map((travel) => {
+      //   const userName =
+      //     advanceTravelData?.find(
+      //       (claims) => claims?.userId === travel?.user_id
+      //     )?.userName || "Unknown User";
 
-        return {
-          ...travel,
-          userName,
-          unsettledAmount,
-        };
-      });
-      console.log("Updated Pending Data:", updatedPendingData);
-      setTravelData(updatedPendingData ?? []);
+      //   const unsettledAmount =
+      //     advanceTravelData?.find(
+      //       (claims) => claims?.userId === travel?.user_id
+      //     )?.unsettledAmount || 0;
+
+      //   return {
+      //     ...travel,
+      //     userName,
+      //     unsettledAmount,
+      //   };
+      // });
+      // console.log("Updated Pending Data:", updatedPendingData);
+      if (response.status) {
+        setTravelData(response.data);
+      } else {
+        showInfoMessage(toastRef, "Error", response.message);
+      }
     } catch (error) {
       console.error("Error fetching travel data:", error);
       setTravelData([]);
     }
   };
 
-
   //Any travel that is pending can see the details and approve or reject
   const handleApproveTravel = async () => {
     console.log("handleApproveTravel() called");
-    try{
-    const updatedForm = {
-      ...formData,
-      status: "ManagerReviewed",
-    };
+    try {
+      const updatedForm = {
+        ...formData,
+        status: "ManagerReviewed",
+      };
 
-    const response = await updateTravelRequisition(
-      updatedForm,
-      formData.requisionId,
-      "ManagerReviewed"
-    );
-
-    const { status } = response;
-    if (status === 201) {
-      console.log("Travel approved successfully");
-      showSuccessMessage(toastRef, "Success", "Travel approved successfully !");
-
-      // setFormData({});
-      const updatedPendingData = travelData.filter(
-        (item) => item.requisionId !== formData.requisionId
+      const response = await updateTravelRequisition(
+        updatedForm,
+        formData.requisionId,
+        "ManagerReviewed"
       );
-      setTravelData(updatedPendingData);
-      setVisible(false);
+
+      const { status } = response;
+      console.log('Updated Response : ',response)
+      if (status === 200) {
+        console.log("Travel approved successfully");
+        showSuccessMessage(
+          toastRef,
+          "Success",
+          "Travel approved successfully !"
+        );
+
+        // setFormData({});
+        const updatedPendingData = travelData.filter(
+          (item) => item.requisionId !== formData.requisionId
+        );
+        setTravelData(updatedPendingData);
+        setVisible(false);
+      }
+    } catch (error) {
+      console.error("Error approving travel:", error);
+      showInfoMessage(
+        toastRef,
+        "Error",
+        "Failed to approve travel. Please try again."
+      );
     }
-  }
-  catch (error) {
-    console.error("Error approving travel:", error);
-    showInfoMessage(
-      toastRef,
-      "Error",
-      "Failed to approve travel. Please try again."
-    );
   };
-}
-
-
-
-
 
   const handleRejectTravel = async () => {
     console.log("handleRejectTravel() called");
@@ -164,7 +168,7 @@ export default function TravelDeskManager() {
     );
 
     const { status } = response;
-    if (status === 201) {
+    if (status === 200) {
       console.log("Travel rejected successfully");
       showInfoMessage(toastRef, "Success", "Travel rejected successfully !");
 
@@ -209,6 +213,7 @@ export default function TravelDeskManager() {
 
   const isRowClicked = (rowData) => {
     // console.log("Row clicked");
+    console.log("rowData", rowData);
     return (
       travelData?.length > 0 &&
       formData?.requisionId === rowData?.requisionId &&
@@ -244,42 +249,50 @@ export default function TravelDeskManager() {
     );
   };
 
-
   const renderDownloadTicket = (rowData) => {
-  return (
-    <Box>
-      <PrimeReactButton
-        variant="contained"
-        icon="pi pi-download"
-        size="small"
-        onClick={async() => {
-          console.log("Download ticket clicked for row:", rowData);
-          const {status ,message}=await downloadDocumentsByReqId(rowData.requisionId);
-          // console.log("Ticket data:", ticket);
+    return (
+      <Box>
+        <PrimeReactButton
+          variant="contained"
+          icon="pi pi-download"
+          size="small"
+          onClick={async () => {
+            console.log("Download ticket clicked for row:", rowData);
+            const { status, message } = await downloadDocumentsByReqId(
+              rowData.requisionId
+            );
+            // console.log("Ticket data:", ticket);
 
-          if(!status)
-          {
-            showInfoMessage(toastRef, "Error", message || "Failed to download ticket.");
-            return;
-          }
+            if (!status) {
+              showInfoMessage(
+                toastRef,
+                "Error",
+                message || "Failed to download ticket."
+              );
+              return;
+            }
 
-          
-          // Implement download logic here
-        }}
-      />
-       
-    </Box>
-  );
-};
-
+            // Implement download logic here
+          }}
+        />
+      </Box>
+    );
+  };
 
   const rowExpansionTemplate = (row) => {
-    const updatedTravelData = travelData.filter(
-      (travel) => travel.travelId === row.travelId
-    );
+    // const updatedTravelData = travelData.filter(
+    //   (travel) => travel.travelId === row.travelId
+    console.log(" Expanded row", row);
+    // );
     return (
       <>
-        <DataTable value={updatedTravelData}>
+        <DataTable
+          value={row}
+          showGridlines
+          className="text-xs"
+          tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          size="small"
+        >
           <Column sortable field="date" header="Date"></Column>
           {/* <Column sortable field="user_id" header="Name"></Column> */}
           <Column
@@ -298,42 +311,56 @@ export default function TravelDeskManager() {
           ></Column>
           <Column sortable field="advance" header="Advance Given"></Column>
           <Column body={renderShowButton} header="View"></Column>
-           <Column body={renderDownloadTicket} header="Ticket"></Column>
+          <Column body={renderDownloadTicket} header="Ticket"></Column>
         </DataTable>
       </>
     );
   };
 
-  const uniqueTravels = travelData?.reduce((acc, item) => {
-    if (!acc[item?.travelId]) {
-      acc[item?.travelId] = item; // store only the first occurrence
-    }
-    return acc;
-  }, {});
+  // const uniqueTravels = travelData?.reduce((acc, item) => {
+  //   if (!acc[item?.travelId]) {
+  //     acc[item?.travelId] = item; // store only the first occurrence
+  //   }
+  //   return acc;
+  // }, {});
 
-  const updatedTravelData = Object.values(uniqueTravels ?? []).map((travel) => {
-    const foundPendingData = travelData?.find(
-      (item) =>
-        item.travelId === travel.travelId && item.status === PENDING_STATUS
-    );
+  // const updatedTravelData = Object.values(uniqueTravels ?? []).map((travel) => {
+  //   const foundPendingData = travelData?.find(
+  //     (item) =>
+  //       item.travelId === travel.travelId && item.status === PENDING_STATUS
+  //   );
 
-    return {
-      ...travel,
-      pending: foundPendingData ? true : false,
-    };
-  });
+  //   return {
+  //     ...travel,
+  //     pending: foundPendingData ? true : false,
+  //   };
+  // });
 
+  const handlerowexpand = async (data) => {
+    console.log("data -> ", data);
+    console.log("travelId", Object.keys(data)[0]);
+    // return;
+    const travelId = Object.keys(data)[0];
+    let response = await getExpandableData(travelId);
+    setExpandedRows(response.data);
+    console.log("response", response);
+  };
   return (
-    <div>
+    // <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100"></div>
+    <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100">
       {/* DataTable */}
       <CustomToast ref={toastRef} />
       <DataTable
-        value={updatedTravelData}
-        className="UserInfoTableStyle HeaderColor"
+        className="text-xs"
+        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        showGridlines
+        value={travelData}
         expandedRows={expandedRows}
-        onRowToggle={(e) => setExpandedRows(e.data)}
-        rowExpansionTemplate={(row) => rowExpansionTemplate(row, travelData)}
-        // dataKey="travelId"
+        onRowToggle={(e) => handlerowexpand(e.data)}
+        rowExpansionTemplate={(row) => rowExpansionTemplate(expandedRows)}
+        paginator
+        rows={10}
+        dataKey="travelId"
         emptyMessage={
           travelData?.length === 0 ? (
             "No data found"
@@ -351,7 +378,7 @@ export default function TravelDeskManager() {
           sortable
           body={(rowData) => (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {rowData.pending && (
+              {rowData.managerActionRequiredFlag && (
                 <FiberManualRecordIcon
                   fontSize="small"
                   style={{ fontSize: ".8rem" }}
