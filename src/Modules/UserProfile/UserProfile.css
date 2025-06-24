@@ -7,7 +7,7 @@
 }
 
 .paper-div {
-    width: 50vw !important;
+    width: 70vw !important;
     padding: 2 !important;
 }
 
@@ -74,6 +74,10 @@
 
 .logs-icon {
     cursor: pointer !important;
+}
+.p-tabview .p-tabview-nav {
+    
+    width: 80vw !important;
 }
 .card-style.selected-card {
     background-color: rgb(116, 153, 196) !important

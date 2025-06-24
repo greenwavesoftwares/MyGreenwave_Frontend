@@ -10,6 +10,7 @@ import UserLog from "../AdminPage/UserLog/UserLog";
 import Typography from "../../components/Typography/Typography";
 import "./UserProfile.css";
 import "./UserProfile.scss";
+import { TabPanel, TabView } from "primereact/tabview";
 
 export default function UserProfile() {
   const [showAccountInfo, setShowAccountInfo] = useState(true); //state to show the Account Details if true and to show the Reset Password component if false
@@ -32,40 +33,8 @@ export default function UserProfile() {
     <>
       {userDetails && (
         <div className="main-div">
-          <div className="card-div">
-            <Card
-              variant="elevation"
-              className={`card-style ${showAccountInfo === true ? 'selected-card':''}`}
-              
-              onClick={() => setShowAccountInfo(true)}
-            >
-              <div className="inner-card-style">
-                <PersonIcon />
-                <Typography variant="h6" fontWeight="bold">
-                  Account Info
-                </Typography>
-                <Typography color="textSecondary">
-                  View your account information
-                </Typography>
-              </div>
-            </Card>
-            <Card
-              variant="elevation"
-              className={`card-style ${showAccountInfo === true ? '':'selected-card'}`}
-              onClick={() => setShowAccountInfo(false)}
-            >
-              <div className="inner-card-style">
-                <KeyIcon />
-                <Typography variant="h6" fontWeight="bold">
-                  Change Password
-                </Typography>
-                <Typography color="textSecondary">
-                  Change your password and security key
-                </Typography>
-              </div>
-            </Card>
-          </div>
-          {showAccountInfo && (
+          <TabView panelContainerClassName="tab-view" >
+            <TabPanel header="Account Info" headerClassName="tab-view" contentClassName="tab-view" className="tab-view">
             <Paper className="paper-div">
               <div className="table-header">User Profile</div>
               <div className="table">
@@ -155,13 +124,16 @@ export default function UserProfile() {
                 </div>
               </div>
             </Paper>
-          )}
-          {!showAccountInfo && (
+          
+          </TabPanel>
+          <TabPanel header="Change Password" headerClassName="tab-view" className="tab-view" contentClassName="tab-view">
             <ResetPassword
               userDetails={userDetails}
               currentPasswordCheck={true}
             />
-          )}
+          
+          </TabPanel>
+          </TabView>
           <UserLog
             dialogVisible={showLogsDialog}
             onHide={onHideLogs}
