@@ -5,7 +5,7 @@ import DialogComponent from "../../../components/Dialog/DialogComponent";
 import { getUserLogs } from "./UserLogFunction";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import { Chip, Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 import UserInformation from "./UserInformation";
 import Toast from "../../../components/Toast/Toast";
 import Typography from "../../../components/Typography/Typography";

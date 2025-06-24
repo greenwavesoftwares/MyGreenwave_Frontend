@@ -1,4 +1,4 @@
-import { Badge, Card, Chip, Grid, Paper } from "@mui/material";
+import { Paper } from "@mui/material";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import KeyIcon from "@mui/icons-material/Key";
@@ -8,6 +8,7 @@ import { getUserDetailsAPI } from "../Login/LoginAPI";
 import ResetPassword from "../ResetPassword/ResetPassword";
 import UserLog from "../AdminPage/UserLog/UserLog";
 import Typography from "../../components/Typography/Typography";
+import Chip from "../../components/Chip/Chip";
 import "./UserProfile.css";
 import "./UserProfile.scss";
 import { TabPanel, TabView } from "primereact/tabview";

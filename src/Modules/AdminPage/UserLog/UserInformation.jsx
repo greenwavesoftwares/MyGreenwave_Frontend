@@ -1,8 +1,9 @@
-import { Paper, Chip, Badge, Tooltip } from "@mui/material";
+import { Paper, Badge, Tooltip } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 
 import Typography from "../../../components/Typography/Typography";
+import Chip from "../../../components/Chip/Chip";
 import "./UserLog.css";
 
 const UserDetailsTable = ({
