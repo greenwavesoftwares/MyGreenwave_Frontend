@@ -3,7 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Chip, Grid, IconButton } from "@mui/material";
 //Call Api
-import { getMyFormParticularRequisitionId } from "./TravelDeskAPI";
+import { getMyFormParticularRequisitionId,getExpandableData } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Dialog } from "primereact/dialog";
 import CheckIcon from "@mui/icons-material/Check";
@@ -31,7 +31,7 @@ const MyForm = ({ myFormTableData }) => {
 
   const rowExpansionTemplate = (rowData) => (
     <DataTable
-      value={rowData.expandableData}
+      value={rowData}
       showGridlines
       dataKey="requisionId"
       className="text-xs"
@@ -78,6 +78,7 @@ const MyForm = ({ myFormTableData }) => {
 
   const completeTravel = async (rowData) => {
     //  let updatedData={...row,advance: newAdvanceAmount}
+    
     let response = await updateTravelRequisition(
       rowData,
       rowData.travelId,
@@ -108,16 +109,27 @@ const MyForm = ({ myFormTableData }) => {
       return(
     <Button
       icon="pi pi-check"
-      className="p-button-sm p-button-text p-button-success"
+      style={rowData.travelCompleteFlag === false ? { color: '#708090' }:{}}
+      className="p-button-sm p-button-text p-button-success "
         onClick={() => {
         completeTravel(rowData.expandableData[0], "CompleteRequested");
         }}
         tooltip="Complete Travel"
-      disabled={rowData.requestCompletedFlag === false}
+      disabled={rowData.travelCompleteFlag === false}
       />
     // <span>Hii</span>
       )
       
+  }
+
+  const handlerowexpand =async(data)=>{
+    console.log("data -> ",data)
+    console.log('travelId',  Object.keys(data)[0])
+    // return;
+    const travelId = Object.keys(data)[0]
+  let response= await getExpandableData(travelId)
+      setExpandedRows(response.data)
+      console.log('response', response)
   }
 
   return (
@@ -125,12 +137,12 @@ const MyForm = ({ myFormTableData }) => {
       <DataTable
         value={myFormTableData}
         expandedRows={expandedRows}
-        onRowToggle={(e) => setExpandedRows(e.data)}
-        rowExpansionTemplate={rowExpansionTemplate}
+        onRowToggle={(e) => handlerowexpand(e.data)}
+        rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
         showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-        dataKey="travelId"
+         dataKey="travelId"
         paginator
         rows={10}
       >

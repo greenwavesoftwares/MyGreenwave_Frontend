@@ -7,14 +7,17 @@ import {
 } from "../../../components/DataTable/DataTableComponent";
 import CustomDialog from "../../../components/Dialog/DialogComponent";
 import { ProgressBarComponent } from "../../../components/ProgressBar/ProgressBarComponent";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; 
 //Call Api
 import {
   getAdvanceDetails,
   getMyFormParticularRequisitionId,
   getOngoingTravelData,
+  getOngoingTravelDataAccount,
   updateTravelRequisition2,
   downloadDocumentsByReqId,
   uploadDocumentsByReqId,
+  getExpandableData,
 } from "../TravelDeskAPI";
 import { getUserData } from "../../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
@@ -172,7 +175,7 @@ const OngoingTravel = () => {
             "Approved"
           );
           if (responseData.status) {
-            let response = await getOngoingTravelData();
+            let response = await getOngoingTravelDataAccount();
             setongoingtravelData(response.data);
             // setreviewedtourclaimData(response.data);
             toast.current.show({
@@ -204,7 +207,7 @@ const OngoingTravel = () => {
             "Rejected"
           ); //await RejectTourClaim(rowData.claim_id, "Rejected");
           if (response.status) {
-            let response = await getOngoingTravelData();
+            let response = await getOngoingTravelDataAccount();
             setongoingtravelData(response.data);
             toast.current.show({
               severity: "success",
@@ -238,6 +241,10 @@ const OngoingTravel = () => {
                 onClick={() => handleSubmitReject()}
               />
             </>
+          ) : rowData.status === "Pending" ? (
+            <span className="text-blue-500 italic">
+              Waiting for Manager Review
+            </span>
           ) : (
             <span className="text-gray-500 italic">Action Taken</span>
           )}
@@ -321,7 +328,7 @@ const OngoingTravel = () => {
 
     return (
       <DataTableComponent
-        data={rowData.expandableData}
+        data={rowData}
         rows={10}
         paginator={false}
         // showGridlines
@@ -330,12 +337,14 @@ const OngoingTravel = () => {
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
         {/* <Column field="requisionId" header="Requisition ID" /> */}
-        <CustomColumn field="date" header="Date" />
+        <CustomColumn field="date" header="Date"
+         />
         <CustomColumn field="advanceRequested" header="Advance Requested" />
         <CustomColumn field="status" header="Status" />
 
         <CustomColumn
-          body={advanceColumnBody}
+          //body={advanceColumnBody}
+          field={"advance"}
           header="Advance Given"
           headerStyle={{ textAlign: "center" }}
           style={{ textAlign: "center" }}
@@ -384,7 +393,7 @@ const OngoingTravel = () => {
     const fetchongoingtravelData = async () => {
       setLoader(true);
       try {
-        const approvedandsettledresponse = await getOngoingTravelData();
+        const approvedandsettledresponse = await getOngoingTravelDataAccount();
 
         if (!approvedandsettledresponse.status) {
           toast.current?.show({
@@ -466,6 +475,16 @@ const OngoingTravel = () => {
     </div>
   );
 
+  const handlerowexpand = async (data) => {
+    console.log("data -> ", data);
+    console.log("travelId", Object.keys(data)[0]);
+    // return;
+    const travelId = Object.keys(data)[0];
+    let response = await getExpandableData(travelId);
+    setExpandedRows(response.data);
+    console.log("response", response);
+  };
+
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -473,9 +492,9 @@ const OngoingTravel = () => {
         <ExpandableDataTableComponent
           data={ongoingtravelData}
           expandedRows={expandedRows}
-          onRowToggle={(e) => setExpandedRows(e.data)}
+          onRowToggle={(e) => handlerowexpand(e.data)}
           rowExpansionMode="single"
-          rowExpansionTemplate={rowExpansionTemplate}
+          rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           // showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
@@ -509,6 +528,19 @@ const OngoingTravel = () => {
             header="Name"
             headerStyle={{ textAlign: "center" }}
             style={{ textAlign: "center" }}
+            body={(rowData) => (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {rowData.travelDeskActionRequiredFlag && (
+                <FiberManualRecordIcon
+                  fontSize="small"
+                  style={{ fontSize: ".8rem" }}
+                  color="warning" // or use a specific color code
+                  // style={{ color: '#fbc02d' }} // yellow for "pending"
+                />
+              )}
+              {rowData.userName}
+            </div>
+          )}
             sortable
             filter
           />

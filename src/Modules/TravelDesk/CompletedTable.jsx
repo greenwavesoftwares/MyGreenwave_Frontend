@@ -13,8 +13,10 @@ import {
   getAdvanceDetails,
   getMyFormParticularRequisitionId,
   getCompleteData,
+  getCompleteTravels,
   updateTravelRequisition,
   downloadDocumentsByReqId,
+  getExpandableData
 } from "./TravelDeskAPI";
 import { ProgressBar } from "primereact/progressbar";
 import { getUserData } from "../Login/Encrypt";
@@ -130,7 +132,7 @@ const CompletedTable = () => {
     };
     return (
       <DataTableComponent
-        data={rowData.expandableData}
+        data={rowData}
         // showGridlines
         dataKey="requisionId"
         className="text-xs"
@@ -180,7 +182,7 @@ const CompletedTable = () => {
 
         // const advancedData = await getAdvanceDetails();
         setLoader(true);
-        const approvedandsettledresponse = await getCompleteData();
+        const approvedandsettledresponse = await getCompleteTravels()//await getCompleteData();
         console.log("response", approvedandsettledresponse);
 
         console.log(approvedandsettledresponse.message);
@@ -255,7 +257,7 @@ const CompletedTable = () => {
         />
       );
     }
-    return row.advance;
+    return row.advanceGiven;
   };
 
   // const updateTravelRequisitionStatus = async (rowData, statusName) => {
@@ -334,6 +336,16 @@ const CompletedTable = () => {
   //   return <h3>Pending Unsettled Claim</h3>;
   // };
 
+  const handlerowexpand =async(data)=>{
+        console.log("data -> ",data)
+        console.log('travelId',  Object.keys(data)[0])
+        // return;
+        const travelId = Object.keys(data)[0]
+      let response= await getExpandableData(travelId)
+          setExpandedRows(response.data)
+          console.log('response', response)
+      }
+    
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -341,9 +353,9 @@ const CompletedTable = () => {
         <ExpandableDataTableComponent
           data={approvedAndSettledTravelData}
           expandedRows={expandedRows}
-          onRowToggle={(e) => setExpandedRows(e.data)}
+          onRowToggle={(e) => handlerowexpand(e.data)}
           //rowExpansionMode="single"rowExpansionTemplate
-          rowExpansionTemplate={rowExpansionTemplate}
+          rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           // showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}

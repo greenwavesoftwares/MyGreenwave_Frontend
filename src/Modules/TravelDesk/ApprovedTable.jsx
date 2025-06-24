@@ -7,7 +7,7 @@ import {
 } from "../../components/DataTable/DataTableComponent";
 import CustomDialog from "../../components/Dialog/DialogComponent";
 import CustomButton from "../../components/Button/Button";
-
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; 
 import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
 //Call Api
 import {
@@ -17,6 +17,8 @@ import {
   updateTravelRequisition2,
   uploadDocumentsByReqId,
   downloadDocumentsByReqId,
+  getOngoingTravelDataAccount,
+  getExpandableData
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
@@ -101,8 +103,9 @@ const ApprovedTable = () => {
         );
 
         if (responseData.status) {
-          const response =
-            await getApprovedAndSettledAndCompleteRequestedData();
+          // const response =
+          //   await getApprovedAndSettledAndCompleteRequestedData();
+          const response=await getOngoingTravelDataAccount()
           setApprovedAndSettledTravelData(response.data);
           setEditRowId(null);
           toast.current?.show({
@@ -132,8 +135,11 @@ const ApprovedTable = () => {
     };
 
     const setAdvanceActions = (row) => {
+      console.log('editRowId', editRowId)
+      console.log('row.requisionId', row.requisionId)
+      console.log('row.claimUnderProcess', row.claimUnderProcess)
       if (
-        editRowId === row.requisionId &&
+        // editRowId === row.requisionId &&
         !row.claimUnderProcess &&
         row.status === "Approved"
       ) {
@@ -250,7 +256,7 @@ const ApprovedTable = () => {
 
     return (
       <DataTableComponent
-        data={rowData.expandableData}
+        data={rowData}
         paginator={false}
         rows={10}
         dataKey="requisionId"
@@ -315,14 +321,15 @@ const ApprovedTable = () => {
         // const advancedData = await getAdvanceDetails();
         setLoader(true);
 
-        const approvedandsettledresponse =
-          await getApprovedAndSettledAndCompleteRequestedData();
+        // const approvedandsettledresponse =
+        //   await getApprovedAndSettledAndCompleteRequestedData();
+        const response=await getOngoingTravelDataAccount()
 
-        if (!approvedandsettledresponse.status) {
+        if (!response.status) {
           toast.current?.show({
             severity: "error",
             summary: "error",
-            detail: approvedandsettledresponse.message,
+            detail: response.message,
           });
         }
 
@@ -334,7 +341,7 @@ const ApprovedTable = () => {
 
         // const finalData = mergeTravelData(cleanedData, advancedData.data);
 
-        setApprovedAndSettledTravelData(approvedandsettledresponse.data);
+        setApprovedAndSettledTravelData(response.data);
         setLoader(false);
       } catch (error) {
         console.error("Error fetching travel data:", error);
@@ -389,7 +396,7 @@ const ApprovedTable = () => {
         />
       );
     }
-    return row.advance;
+    return row.advanceGiven;
   };
 
   // const updateTravelRequisitionStatus = async (rowData, statusName) => {
@@ -430,7 +437,8 @@ const ApprovedTable = () => {
       "CompleteRequested"
     );
     if (responseData.status) {
-      let response = await getApprovedAndSettledAndCompleteRequestedData();
+     // let response = await getApprovedAndSettledAndCompleteRequestedData();
+     let response= await getOngoingTravelDataAccount()
       setApprovedAndSettledTravelData(response.data);
       // setEditRowId(null);
       toast.current?.show({
@@ -453,12 +461,13 @@ const ApprovedTable = () => {
     return (
       <CustomButton
         icon="pi pi-check"
+          style={rowData.travelCompleteFlag === false ? { color: '#708090' }:{}}
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
           completeTravel(rowData.expandableData[0], "CompleteRequested");
         }}
         tooltip="Complete Travel"
-        disabled={rowData.requestCompletedFlag === false}
+        disabled={rowData.travelCompleteFlag === false}
       />
       // <span>Hii</span>
     );
@@ -482,6 +491,17 @@ const ApprovedTable = () => {
     </div>
   );
 
+   const handlerowexpand =async(data)=>{
+      console.log("data -> ",data)
+      console.log('travelId',  Object.keys(data)[0])
+      // return;
+      const travelId = Object.keys(data)[0]
+    let response= await getExpandableData(travelId)
+        setExpandedRows(response.data)
+        console.log('response', response)
+    }
+  
+
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -489,9 +509,9 @@ const ApprovedTable = () => {
         <ExpandableDataTableComponent
           data={approvedAndSettledTravelData}
           expandedRows={expandedRows}
-          onRowToggle={(e) => setExpandedRows(e.data)}
+          onRowToggle={(e) =>  handlerowexpand(e.data)}
           //</div> rowExpansionMode="single"
-          rowExpansionTemplate={rowExpansionTemplate}
+          rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           //</> showGridlines
           className="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
@@ -508,6 +528,9 @@ const ApprovedTable = () => {
               "No data found"
             )
           }
+
+
+          settlementActionRequiredFlag
           // rowsPerPageOptions={
           //   approvedAndSettledTravelData.length > 50
           //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
@@ -569,6 +592,19 @@ const ApprovedTable = () => {
             bodyStyle={{ textAlign: "center" }}
             sortable={true}
             filter={true}
+            body={(rowData) => (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {rowData.settlementActionRequiredFlag && (
+                <FiberManualRecordIcon
+                  fontSize="small"
+                  style={{ fontSize: ".8rem" }}
+                  color="warning" // or use a specific color code
+                  // style={{ color: '#fbc02d' }} // yellow for "pending"
+                />
+              )}
+              {rowData.userName}
+            </div>
+          )}
           />
           <CustomColumn
             field="unsettledAmount"

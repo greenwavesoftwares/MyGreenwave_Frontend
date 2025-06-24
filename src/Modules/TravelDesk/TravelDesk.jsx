@@ -16,6 +16,7 @@ import {
 import { Dropdown } from "primereact/dropdown";
 //Call Api
 import {
+  getMyFormTravelData_New,
   getMyFormTravelData,
   getTravelDropDown,
   createRequisition,
@@ -117,7 +118,8 @@ const TravelDesk = () => {
   const myFormApi = async () => {
     try {
       // const { token } = getUserData();
-      const response = await getMyFormTravelData();
+      //await getMyFormTravelData()
+      const response =  await getMyFormTravelData_New();
       console.log(1213, response);
       if (!response.status) {
         toastRef.current?.show({
@@ -158,7 +160,7 @@ const TravelDesk = () => {
     fetchDropdownList();
     //MY Form api function call
     myFormApi();
-  }, []);
+  }, [active]);
 
   useEffect(() => {}, [transportModes, accommodations]); // Update dependencies as needed
 

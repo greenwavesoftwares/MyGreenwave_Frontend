@@ -53,7 +53,7 @@ const getMyFormTravelData = async () => {
         (row) => (row.status || '').trim().toLowerCase() !== 'Settled'
       );
 
-   console.log('list2', list2)
+        console.log('list2', list2)
       
 
      const allcompleterequested = list2.every(
@@ -88,6 +88,54 @@ const getMyFormTravelData = async () => {
   }
 };
 
+export const getMyFormTravelData_New = async () => {
+  try {
+    const response = await axios.get(`${host}traveldesk/userwise-all-travels`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+
+  
+
+    return {
+      status: true,
+      message: "Successfully loaded",
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      status: false,
+      message: error.response?.data || error.message,
+      data: [],
+    };
+  }
+};
+
+export const getExpandableData= async(travelId)=>{
+  try{
+    console.log("getExpandableData URl : ",`${host}traveldesk/travels-by-id/${travelId}`)
+       const response = await axios.get(`${host}traveldesk/travels-by-id/${travelId}`, {
+        headers: {
+        Authorization: token,
+      },
+    });
+    return {
+      status: true,
+      message: "Successfully loaded",
+      data: response.data,
+    };
+  }catch(error)
+  {
+    console.log('error', error)
+    return{
+      status:false,
+      message:error?.response.data || error.message
+    }
+  }
+
+}
+
 const getMyFormParticularRequisitionId = async (token, requisionId) => {
   try {
     const response = await axios.get(
@@ -118,6 +166,29 @@ export const getTravelsByStatus = async (token, statusName) => {
     console.log(error);
   }
 };
+
+export const getManagerwiseongoingtravels=async()=>{
+  try{
+     let response=  await axios.get(`${host}traveldesk/managerwise-ongoing-travels`, {
+        headers: {
+          Authorization: token,
+        },
+      })
+      console.log('response', response)
+      return{
+        status:true,
+        message:"data loaded",
+        data:response.data
+      }
+  }catch(error)
+  {
+    return {
+      status: false,
+      message: error?.message,
+      data:[]
+    }
+  }
+}
 
 export const checkAtleastOneStatus = (list, status) => {
   return list.some(record => record.status === status);
@@ -444,6 +515,28 @@ export const getApprovedAndSettledAndCompleteRequestedData = async () => {
   }
 };
 
+
+export const getOngoingTravelDataAccount=async()=>{
+    try{
+        let response=  await axios.get(`${host}traveldesk/all-ongoing-travels`, { headers: {
+      Authorization: token
+    }})
+
+    return{
+      status:true,
+      message:'data loaded',
+      data:response.data
+    }
+    }catch(error)
+    {
+        return{
+      status:false,
+      message:error?.message,
+      data:[]
+    }
+    }
+}
+
 export const getCompleteData = async () => {
   try {
     const myHeaders = new Headers();
@@ -504,11 +597,10 @@ export const getCompleteData = async () => {
 
     // Building grouped result
     const groupedData = Object.entries(travelMap).map(([travelId, records]) => {
-      // Sort records by fromDate ascending
+      
       const sorted = records.sort(
         (a, b) => new Date(a.fromDate) - new Date(b.fromDate)
       );
-
       const oldest = sorted[0];
       return {
         travelId:oldest.travelId,
@@ -542,6 +634,28 @@ export const getCompleteData = async () => {
     };
   }
 };
+
+export const getCompleteTravels=async()=>{
+    try{
+         let response=     await axios.get(`${host}traveldesk/completed-travels`, { headers: {
+      Authorization: token
+    }})
+
+         return {
+          status:true,
+          message:'data loaded',
+          data:response.data
+         }
+    }catch(error)
+    {
+      console.log(error)
+      return {
+        status:false,
+        message:error?.message,
+        data:[]
+      }
+    }
+}
 
 // export const updateTravelRequisition = async (requisition, reqId, status) => {
 //   try {
