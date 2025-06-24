@@ -1,6 +1,7 @@
-.userLogDialog {
+.user-log-dialog {
     width: 90vw;
     max-width: 1200px;
+    
 }
 
 
@@ -61,8 +62,6 @@
 .table-header-info {
     text-align: center;
     margin-bottom: 1rem;
-    background-color: white;
-    color: black;
     font-weight: 600 !important;
 }
 
@@ -73,10 +72,6 @@
     max-width: 100%;
     /* Or whatever width you need */
     display: block;
-}
-
-.table-cell-header-info {
-    background-color: white;
 }
 
 .table-cell-body-info {

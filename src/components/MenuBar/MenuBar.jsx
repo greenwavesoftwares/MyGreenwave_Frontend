@@ -17,10 +17,10 @@ import {
   Button,
   Popover,
   MenuItem,
-  Chip,
   Link,
 } from "@mui/material";
 import Typography from "../Typography/Typography";
+import Chip from "../Chip/Chip";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -62,7 +62,6 @@ const closedMixin = (theme) => ({
   }),
   overflowX: "hidden",
   width: `calc(${theme.spacing(6.9)} + 1px)`,
-  
 });
 
 const StyledDrawer = styled(Drawer, {
@@ -140,20 +139,20 @@ export default function MiniDrawer() {
   const renderNestedPopover = (level = 0) => {
     return popoverStack.map((entry, index) => (
       <Popover
-      elevation={0}
+        elevation={0}
         className="popover popover-menu-style"
         key={index}
         open={Boolean(entry.anchorEl)}
         anchorEl={entry.anchorEl}
         onClose={() => setPopoverStack((prev) => prev.slice(0, index))}
         anchorOrigin={{
-    vertical: 'bottom',
-    horizontal: 'right',
-  }}
-  transformOrigin={{
-    vertical: 'bottom',
-    horizontal: 'left',
-  }}
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
       >
         <Box>
           {entry.items.map((item, i) => {
@@ -168,27 +167,28 @@ export default function MiniDrawer() {
                 disablePadding
                 className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
                 onClick={(e) => {
-                    if (hasChildren) {
-                      console.log("Level::::"+entry.level+1)
-                      const newAnchor = {
-                        anchorEl: e.currentTarget,
-                        items: item.items,
-                        level: entry.level + 1,
-                      };
-                      setPopoverStack((prev) => [
-                        ...prev.slice(0, index + 1),
-                        newAnchor,
-                      ]);
-                    } else if (item.path) {
-                      navigate(item.path);
-                      setPopoverStack([]);
-                    }
-                  }}
+                  if (hasChildren) {
+                    console.log("Level::::" + entry.level + 1);
+                    const newAnchor = {
+                      anchorEl: e.currentTarget,
+                      items: item.items,
+                      level: entry.level + 1,
+                    };
+                    setPopoverStack((prev) => [
+                      ...prev.slice(0, index + 1),
+                      newAnchor,
+                    ]);
+                  } else if (item.path) {
+                    navigate(item.path);
+                    setPopoverStack([]);
+                  }
+                }}
               >
-                <ListItemButton
-                  
-                >
-                  <ListItemIcon className="menu-icon nested-menu-bg"  sx={{minWidth: '40px'}}>
+                <ListItemButton>
+                  <ListItemIcon
+                    className="menu-icon nested-menu-bg"
+                    sx={{ minWidth: "40px" }}
+                  >
                     {item.logo && (
                       <FontAwesomeIcon icon={item.logo.split(" ")} />
                     )}
@@ -225,61 +225,58 @@ export default function MiniDrawer() {
             disablePadding
             className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
             onClick={(e) => {
-                    if (hasChildren && open) toggleExpand(key);
-                    else if (!open && hasChildren) {
-                      console.log("Level::::"+level+1)
-                      setPopoverStack([
-                        {
-                          anchorEl: e.currentTarget,
-                          items: item.items,
-                          level: level + 1,
-                        },
-                      ]);
-                    } else navigate(fullPath);
-                  }}
-                  
+              if (hasChildren && open) toggleExpand(key);
+              else if (!open && hasChildren) {
+                console.log("Level::::" + level + 1);
+                setPopoverStack([
+                  {
+                    anchorEl: e.currentTarget,
+                    items: item.items,
+                    level: level + 1,
+                  },
+                ]);
+              } else navigate(fullPath);
+            }}
           >
-              <Link
-                href={item.path}
-                style={{ textDecoration: "none", color: "inherit" }}
-                onClick={(e) => e.preventDefault()}
-              >
-                <ListItemButton style={{width:'100%'}}
-                  
-                  
-                >
-                  <Tooltip title={open ? "" : item.label} placement="right">
-            
-                  <ListItemIcon className="menu-icon"
-                 
-                  >
+            <Link
+              href={item.path}
+              style={{ textDecoration: "none", color: "inherit" }}
+              onClick={(e) => e.preventDefault()}
+            >
+              <ListItemButton style={{ width: "100%" }}>
+                <Tooltip title={open ? "" : item.label} placement="right">
+                  <ListItemIcon className="menu-icon">
                     {hasChildren ? (
                       isExpanded ? (
                         <KeyboardArrowDownIcon />
                       ) : (
-                        <FontAwesomeIcon icon="fa-solid fa-angles-right" className="menu-icon"/>
+                        <FontAwesomeIcon
+                          icon="fa-solid fa-angles-right"
+                          className="menu-icon"
+                        />
                       )
                     ) : (
                       item.logo && (
-                        <FontAwesomeIcon icon={item.logo.split(" ")} className="menu-icon"/>
+                        <FontAwesomeIcon
+                          icon={item.logo.split(" ")}
+                          className="menu-icon"
+                        />
                       )
                     )}
                   </ListItemIcon>
-                  </Tooltip>
-                  <ListItemText
-                    disableTypography
-                    primary={
-                      <Typography className="menu-text">
-                        {item.label}
-                      </Typography>
-                    }
-                  />
-                </ListItemButton>
-              </Link>
+                </Tooltip>
+                <ListItemText
+                  disableTypography
+                  primary={
+                    <Typography className="menu-text">{item.label}</Typography>
+                  }
+                />
+              </ListItemButton>
+            </Link>
           </ListItem>
           {hasChildren && open && (
             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-              <Box className="submenu-box">
+              <Box className="submenu-box drawer-list">
                 {renderMenuItems(item.items, key + "/", level + 1)}
               </Box>
             </Collapse>
@@ -290,6 +287,7 @@ export default function MiniDrawer() {
 
   const handleLogout = () => {
     localStorage.clear();
+    localStorage.setItem("Theme", "light");
   };
 
   const renderLogout = () => (
@@ -314,15 +312,23 @@ export default function MiniDrawer() {
         <div className="fixed-drawer">
           <DrawerHeader>
             {!open ? (
-              <IconButton onClick={handleDrawerOpen} >
-                <MenuIcon  className="menu-icon"/>
+              <IconButton onClick={handleDrawerOpen}>
+                <MenuIcon className="menu-icon" />
               </IconButton>
             ) : (
               <div
-                style={{ display: "flex", flexDirection: "row", gap: "10px",alignItems: "center" }}
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "10px",
+                  alignItems: "center",
+                }}
               >
                 <IconButton onClick={handleDrawerClose}>
-                  <MenuIcon  style={{paddingLeft:"4px"}} className="menu-icon"/>
+                  <MenuIcon
+                    style={{ paddingLeft: "4px" }}
+                    className="menu-icon"
+                  />
                 </IconButton>
                 <Chip
                   label="My Greenwave"
@@ -340,11 +346,11 @@ export default function MiniDrawer() {
           </DrawerHeader>
           <Divider className="divider" />
         </div>
-        <List >{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
+        <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
 
         <div className="fixed-section">
           <Divider className="divider" />
-          <ThemeToggle/>
+          <ThemeToggle />
           <ListItemButton
             onClick={handleMenuClick}
             className="menu-item username-avatar"
@@ -374,7 +380,11 @@ export default function MiniDrawer() {
                 <Chip
                   disabled={!open}
                   color="primary"
-                  sx={{ backgroundColor: "#4097ff", color: "white",border:"none !important" }}
+                  sx={{
+                    backgroundColor: "#4097ff",
+                    color: "white",
+                    border: "none !important",
+                  }}
                   size="small"
                   label={userName}
                   className="username-chip"

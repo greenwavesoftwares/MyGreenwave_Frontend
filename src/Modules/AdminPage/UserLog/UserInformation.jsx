@@ -1,8 +1,9 @@
-import { Paper, Chip, Badge, Tooltip } from "@mui/material";
+import { Paper, Badge, Tooltip } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 
 import Typography from "../../../components/Typography/Typography";
+import Chip from "../../../components/Chip/Chip";
 import "./UserLog.css";
 
 const UserDetailsTable = ({
@@ -156,7 +157,7 @@ const UserDetailsTable = ({
     <Paper className="paper-div-info" elevation={2}>
       <DataTable
         value={tableData}
-        className="p-datatable-sm"
+        className="p-datatable-s "
         scrollable //the datatable is scrollable
         scrollHeight="400px" //the maximum height of the datatable
         showGridlines //show gridlines between cells
@@ -166,18 +167,25 @@ const UserDetailsTable = ({
           body={(rowData) => (
             <Typography variant="body2">{rowData.field}</Typography>
           )}
+          headerClassName="table-header-info"
+          className="user-logs-datatable-columns"      
         />
         <Column
           header={<Typography>Old Data</Typography>}
           body={(rowData) => (
             <Typography variant="body2">{rowData.oldData}</Typography>
           )}
+          headerClassName="table-header-info"
+          className="user-logs-datatable-columns"   
         />
         <Column
           header={<Typography>New Data</Typography>}
           body={(rowData) => (
             <Typography variant="body2">{rowData.newData}</Typography>
           )}
+          
+          headerClassName="table-header-info"
+          className="user-logs-datatable-columns"   
         />
       </DataTable>
     </Paper>

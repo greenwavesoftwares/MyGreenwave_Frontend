@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import "./UserLog.css";
+import "./UserLog.scss";
 import DialogComponent from "../../../components/Dialog/DialogComponent";
 import { getUserLogs } from "./UserLogFunction";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import { Chip, Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 import UserInformation from "./UserInformation";
 import Toast from "../../../components/Toast/Toast";
 import Typography from "../../../components/Typography/Typography";
@@ -54,7 +55,7 @@ const UserLog = ({
       return;
     }
     return (
-      <Grid container spacing={2}>
+      <Grid container spacing={2} >
         <Grid item xs={12} gap={4}>
           <UserInformation
             changes={changes}
@@ -82,7 +83,9 @@ const UserLog = ({
       <DialogComponent
         header={"User Logs"}
         visible={dialogVisible}
-        className="userLogDialog"
+        className="user-log-dialog"
+        contentClassName="user-log-dialog-content"
+        headerClassName="user-log-dialog-header"
         onHide={onHide}
       >
         <Grid container>
@@ -99,12 +102,19 @@ const UserLog = ({
               scrollable
               scrollHeight="400px"
               dataKey="timestamp"
+              // tableClassName=""
+              paginatorClassName="table-paginator-info"
+              
+              
             >
               <Column
                 expander={(row) => {
                   return row[0].data;
                 }}
                 style={{width:'1px'}}
+                headerClassName="table-header-info"
+                className="user-logs-datatable-columns"
+              
                 // className="max-w-[10px]"
               />
               
@@ -118,6 +128,7 @@ const UserLog = ({
                     {rowData.transactionId}
                   </Typography>
                 )}
+                headerClassName="table-header-info"
                 className="whitespace-nowrap overflow-hidden text-ellipsis user-logs-datatable-columns user-logs-datatable-columns-transactionid"
               />
               <Column
@@ -126,6 +137,7 @@ const UserLog = ({
                 body={(rowData) => (
                   <Typography variant="body2">{rowData.timestamp}</Typography>
                 )}
+                headerClassName="table-header-info"
                 className="whitespace-nowrap overflow-hidden text-ellipsis user-logs-datatable-columns user-logs-datatable-columns-timestamp"
               />
               <Column
@@ -136,6 +148,7 @@ const UserLog = ({
                 body={(rowData) => (
                   <Typography variant="body2">{rowData.doneBy}</Typography>
                 )}
+                headerClassName="table-header-info"
                 className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px] user-logs-datatable-columns user-logs-datatable-columns-modifiedby"
               />
               <Column
@@ -148,6 +161,7 @@ const UserLog = ({
                 body={(rowData) => (
                   <Typography variant="body2">{rowData.data}</Typography>
                 )}
+                headerClassName="table-header-info"
                 className="whitespace-nowrap overflow-hidden info-modified-wrap user-logs-datatable-columns user-logs-datatable-columns-information"
               />
             </DataTable>

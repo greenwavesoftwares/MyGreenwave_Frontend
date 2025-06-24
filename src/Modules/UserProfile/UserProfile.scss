@@ -1,0 +1,38 @@
+
+.table-cell{
+    background-color: var(--bg-drawer)!important;
+    color:var(--menu-text);
+    border: 1px solid var(--tableOuterBorder) !important;
+    
+}
+.table-header{
+    background-color: var(--bg-drawer)!important;
+    color:var(--menu-text);
+    border: 1px solid var(--tableOuterBorder) !important;
+    
+}
+.card-style{
+    border: var(--card-border) !important;
+    background-color: var(--card-bg) !important;
+}
+.inner-card-style{
+    color: var(--menu-text);
+}
+.tab-view {
+    background-color: var(--bg-drawer) !important;
+}
+.p-tabview .p-tabview-nav {
+    background: var(--bg-drawer) !important;
+}
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link{ //for unselected tabs
+    background: var(--bg-drawer) !important;
+    color: #6366f1 !important
+}
+.p-tabview .p-tabview-nav li .p-tabview-nav-link{ //for selected tabs
+    background: var(--bg-drawer) !important;
+    color: var(--menu-text) !important;
+}
+.css-1gtchvp-MuiPaper-root {
+    background: var(--bg-drawer) !important;
+    color: var(--menu-text) !important;
+}
