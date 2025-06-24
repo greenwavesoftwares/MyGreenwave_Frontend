@@ -8,6 +8,8 @@ const CustomDialog = ({
   onHide,
   children,
   className,
+  contentClassName,
+  headerClassName
 }) => {
   return (
     <>
@@ -17,6 +19,8 @@ const CustomDialog = ({
         style={style}
         onHide={onHide}
         className={className}
+        contentClassName={contentClassName}
+        headerClassName={headerClassName}
       >
         {children}
       </Dialog>

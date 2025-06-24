@@ -1,0 +1,24 @@
+
+.table-cell{
+    background-color: var(--bg-drawer)!important;
+    color:var(--menu-text);
+    border: 1px solid var(--tableOuterBorder) !important;
+    
+}
+.table-header{
+    background-color: var(--bg-drawer)!important;
+    color:var(--menu-text);
+    border: 1px solid var(--tableOuterBorder) !important;
+    
+}
+.chip-info{
+    color: var(--chip-color) !important;
+    border: var(--chip-border) !important;
+}
+.card-style{
+    border: var(--card-border) !important;
+    background-color: var(--card-bg) !important;
+}
+.inner-card-style{
+    color: var(--menu-text);
+}

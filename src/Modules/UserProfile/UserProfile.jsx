@@ -2,13 +2,14 @@ import { Badge, Card, Chip, Grid, Paper } from "@mui/material";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import KeyIcon from "@mui/icons-material/Key";
-import "./UserProfile.css";
 import { useEffect, useState } from "react";
 import { getUserData } from "../Login/Encrypt";
 import { getUserDetailsAPI } from "../Login/LoginAPI";
 import ResetPassword from "../ResetPassword/ResetPassword";
 import UserLog from "../AdminPage/UserLog/UserLog";
 import Typography from "../../components/Typography/Typography";
+import "./UserProfile.css";
+import "./UserProfile.scss";
 
 export default function UserProfile() {
   const [showAccountInfo, setShowAccountInfo] = useState(true); //state to show the Account Details if true and to show the Reset Password component if false
@@ -34,11 +35,8 @@ export default function UserProfile() {
           <div className="card-div">
             <Card
               variant="elevation"
-              className="card-style"
-              style={{
-                backgroundColor:
-                  showAccountInfo === true ? "rgb(196, 224, 254)" : "white",
-              }}
+              className={`card-style ${showAccountInfo === true ? 'selected-card':''}`}
+              
               onClick={() => setShowAccountInfo(true)}
             >
               <div className="inner-card-style">
@@ -53,11 +51,7 @@ export default function UserProfile() {
             </Card>
             <Card
               variant="elevation"
-              className="card-style"
-              style={{
-                backgroundColor:
-                  showAccountInfo === false ? "rgb(196, 224, 254)" : "white",
-              }}
+              className={`card-style ${showAccountInfo === true ? '':'selected-card'}`}
               onClick={() => setShowAccountInfo(false)}
             >
               <div className="inner-card-style">
@@ -74,8 +68,9 @@ export default function UserProfile() {
           {showAccountInfo && (
             <Paper className="paper-div">
               <div className="table-header">User Profile</div>
-
               <div className="table">
+              
+              
                 <div className="table-row">
                   <Typography className="table-cell table-cell-header">User Name</Typography>
                   <Typography className="table-cell">{userDetails.userName}</Typography>
@@ -94,7 +89,7 @@ export default function UserProfile() {
                     <div className="table-cell-allottedpages">
                       {userDetails.allotedPages.map(
                         (allotedPage, pageIndex) => (
-                          <Chip key={pageIndex} label={allotedPage} />
+                          <Chip key={pageIndex} label={allotedPage} className="chip-info"/>
                         )
                       )}
                     </div>
