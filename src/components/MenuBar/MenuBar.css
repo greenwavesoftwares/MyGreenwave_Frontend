@@ -1,5 +1,6 @@
 .drawer-root {
   display: flex;
+  
 }
 
 .main-content {
@@ -31,14 +32,20 @@
 .submenu-box {
   padding-left: 15px;
 }
+.css-b7dj7n-MuiList-root {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
 
 .fixed-section {
-  position: absolute;
+  flex-shrink: 0;
+  position: sticky;
   bottom: 0;
-  left: 0;
-  /* background: #263238; */
   z-index: 1;
+  
 }
+
 
 .fixed-drawer {
   position: sticky;
@@ -118,4 +125,10 @@
 }
 .MuiList-root{
   padding: 0 !important;
+}
+
+.MuiDrawer-paper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }

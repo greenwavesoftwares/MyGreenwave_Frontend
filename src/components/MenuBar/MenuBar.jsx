@@ -17,10 +17,10 @@ import {
   Button,
   Popover,
   MenuItem,
-  Chip,
   Link,
 } from "@mui/material";
 import Typography from "../Typography/Typography";
+import Chip from "../Chip/Chip";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -276,7 +276,7 @@ export default function MiniDrawer() {
           </ListItem>
           {hasChildren && open && (
             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-              <Box className="submenu-box">
+              <Box className="submenu-box drawer-list">
                 {renderMenuItems(item.items, key + "/", level + 1)}
               </Box>
             </Collapse>
