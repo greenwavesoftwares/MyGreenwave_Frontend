@@ -350,48 +350,51 @@ export default function MiniDrawer() {
 
         <div className="fixed-section">
           <Divider className="divider" />
-          <ThemeToggle />
-          <ListItemButton
-            onClick={handleMenuClick}
-            className="menu-item username-avatar"
+
+          <div
+            style={{ display: "flex", flexDirection: open ? "row" : "column" }}
           >
-            <ListItemIcon className="menu-icon">
-              <Tooltip
-                title={
-                  <div className="tooltip-content">
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <PersonIcon className="tooltip-icon" />
-                      <Typography className="tooltip-text">
-                        {userName}
-                      </Typography>
-                    </Box>
-                  </div>
-                }
-                placement="right"
-              >
-                <Avatar className="avatar">
-                  {convertToInitials(userName)}
-                </Avatar>
-              </Tooltip>
-            </ListItemIcon>
-            <ListItemText
-              className="menu-text"
-              primary={
-                <Chip
-                  disabled={!open}
-                  color="primary"
-                  sx={{
-                    backgroundColor: "#4097ff",
-                    color: "white",
-                    border: "none !important",
-                  }}
-                  size="small"
-                  label={userName}
-                  className="username-chip"
+            <ThemeToggle />
+            <ListItemButton
+              onClick={handleMenuClick}
+              className="menu-item username-avatar"
+            >
+              {!open && (
+                <ListItemIcon className="menu-icon">
+                  <Tooltip
+                    title={
+                      <div className="tooltip-content">
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <PersonIcon className="tooltip-icon" />
+                          <Typography className="tooltip-text">
+                            {userName}
+                          </Typography>
+                        </Box>
+                      </div>
+                    }
+                    placement="right"
+                  >
+                    <Avatar className="avatar">
+                      {convertToInitials(userName)}
+                    </Avatar>
+                  </Tooltip>
+                </ListItemIcon>
+              )}
+              {open && (
+                <ListItemText
+                  className="menu-text"
+                  primary={
+                    <Chip
+                      disabled={!open}
+                      color="primary"
+                      size="small"
+                      label={userName}
+                    />
+                  }
                 />
-              }
-            />
-          </ListItemButton>
+              )}
+            </ListItemButton>
+          </div>
           <Popover
             open={openMenu}
             anchorEl={anchorEl}

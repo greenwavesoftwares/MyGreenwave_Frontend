@@ -34,16 +34,16 @@
 }
 .css-b7dj7n-MuiList-root {
     overflow-y: auto;
-    overflow-x: hidden;
     scrollbar-width: none;
+    height: 100vh;
 }
 
 .fixed-section {
   flex-shrink: 0;
-  position: sticky;
+  position: absolute;
   bottom: 0;
   z-index: 1;
-  
+  width:100%
 }
 
 
@@ -72,14 +72,6 @@
 
 .username-avatar {
    margin-left: 5px !important;
-}
-
-.username-chip {
-  border: 1px solid white !important;
-  color: white !important;
-  border-radius: 1rem !important;
-  font-size: 0.8rem !important;
-  
 }
 
 .tooltip-content {
