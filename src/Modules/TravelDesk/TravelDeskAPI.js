@@ -745,6 +745,9 @@ export const updateTravelRequisition2 = async (
   reqId,
   status
 ) => {
+  console.log('requisition', requisition)
+  console.log('reqId', reqId)
+  console.log('status', status)
   const token = `Bearer ${getUserData()?.token}`;
   try {
   console.log("updateTravelRequisition() called", requisition,
@@ -950,9 +953,10 @@ export const createRequisition = async (payload) => {
       };
     }
   } catch (error) {
+  console.log('error', error)
     return {
       status: false,
-      message: error?.message,
+      message: error.response?.data || error.message ,
       data: [],
     };
   }
