@@ -29,7 +29,6 @@ import {
 import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // or any other icon
 
-
 const renderStatusChip = (row) => {
   const status = row?.status || "";
   let color = "default";
@@ -58,7 +57,6 @@ const renderStatusChip = (row) => {
 
   return <Chip label={status} color={color} size="small" />;
 };
-
 
 export default function TravelDeskManager() {
   const [travelData, setTravelData] = useState(null); //  DataTable data
@@ -119,6 +117,20 @@ export default function TravelDeskManager() {
     }
   };
 
+  const updateTravelInfo = () => {
+    const updatedTravelData = travelData?.map((item) => {
+      if (item.requisionId === formData.requisionId) {
+        return {
+          ...item,
+          managerActionRequiredFlag: false, // Update the status in the travel data
+        };
+      }
+      return item;
+    });
+
+    return updatedTravelData;
+  };
+
   //Any travel that is pending can see the details and approve or reject
   const handleApproveTravel = async () => {
     console.log("handleApproveTravel() called");
@@ -135,7 +147,7 @@ export default function TravelDeskManager() {
       );
 
       const { status } = response;
-      console.log('Updated Response : ',response)
+      console.log("Updated Response : ", response);
       if (status === 200) {
         console.log("Travel approved successfully");
         showSuccessMessage(
@@ -149,7 +161,9 @@ export default function TravelDeskManager() {
         //   (item) => item.requisionId !== formData.requisionId
         // );
         // setTravelData(updatedPendingData);
-        await fetchTravelData(); // Refresh the travel data after approval
+        // await fetchTravelData(); // Refresh the travel data after approval
+
+        setTravelData(updateTravelInfo()); // Update the travel data with the new status
 
         const newExpanedRows = expandedRows?.map((row) => {
           if (row.requisionId === formData.requisionId) {
@@ -158,12 +172,11 @@ export default function TravelDeskManager() {
               status: "ManagerReviewed", // Update the status in the expanded row
             };
           }
-          return row; 
-        }
-        );
+          return row;
+        });
         setExpandedRows(newExpanedRows); // Update the expanded rows state
-        
-      //  await handlerowexpand();
+
+        //  await handlerowexpand();
         setFormData({});
         setVisible(false);
       }
@@ -179,46 +192,46 @@ export default function TravelDeskManager() {
 
   const handleRejectTravel = async () => {
     console.log("handleRejectTravel() called");
-try{
-    const updatedForm = {
-      ...formData,
-      status: "Rejected",
-    };
+    try {
+      const updatedForm = {
+        ...formData,
+        status: "Rejected",
+      };
 
-    const response = await updateTravelRequisition(
-      updatedForm,
-      formData.requisionId,
-      "Rejected"
-    );
+      const response = await updateTravelRequisition(
+        updatedForm,
+        formData.requisionId,
+        "Rejected"
+      );
 
-    const { status } = response;
-    if (status === 200) {
-      console.log("Travel rejected successfully");
-      showInfoMessage(toastRef, "Success", "Travel rejected successfully !");
+      const { status } = response;
+      if (status === 200) {
+        console.log("Travel rejected successfully");
+        showInfoMessage(toastRef, "Success", "Travel rejected successfully !");
 
-      // setFormData({});
-      // const updatedPendingData = travelData.filter(
-      //   (item) => item.requisionId !== formData.requisionId
-      // );
-      // setTravelData(updatedPendingData);
-      await fetchTravelData(); // Refresh the travel data after approval
-      //  await handlerowexpand();
-       const newExpanedRows = expandedRows?.map((row) => {
+        // setFormData({});
+        // const updatedPendingData = travelData.filter(
+        //   (item) => item.requisionId !== formData.requisionId
+        // );
+        // setTravelData(updatedPendingData);
+        // await fetchTravelData(); // Refresh the travel data after approval
+        //  await handlerowexpand();
+
+        setTravelData(updateTravelInfo());
+        const newExpanedRows = expandedRows?.map((row) => {
           if (row.requisionId === formData.requisionId) {
             return {
               ...row,
               status: "Rejected", // Update the status in the expanded row
             };
           }
-          return row; 
-        }
-        );
+          return row;
+        });
         setExpandedRows(newExpanedRows); // Update the expanded rows state
-      setFormData({});
-      setVisible(false);
-    }
-  }
-  catch (error) {
+        setFormData({});
+        setVisible(false);
+      }
+    } catch (error) {
       console.error("Error rejecting travel:", error);
       showInfoMessage(
         toastRef,
@@ -382,17 +395,18 @@ try{
   //     pending: foundPendingData ? true : false,
   //   };
   // });
-   const handlerowexpand =async(data)=>{
-       
-        const travelId = (Object.keys(data)[1] === undefined ? Object.keys(data)[0] :Object.keys(data)[1])
-        let response= await getExpandableData(travelId)
-        if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
-          setExpandedRows([]);
-        } else {
-          setExpandedRows(response.data);
-        }
-  
-      }
+  const handlerowexpand = async (data) => {
+    const travelId =
+      Object.keys(data)[1] === undefined
+        ? Object.keys(data)[0]
+        : Object.keys(data)[1];
+    let response = await getExpandableData(travelId);
+    if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
+      setExpandedRows([]);
+    } else {
+      setExpandedRows(response.data);
+    }
+  };
 
   // const handlerowexpand = async (data) => {
   //   console.log("data -> ", data);
