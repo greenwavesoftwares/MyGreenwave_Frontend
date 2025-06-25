@@ -1,11 +1,12 @@
 import axios from "axios";
 const host = import.meta.env.VITE_END_POINT;
 import { getUserData } from "../Login/Encrypt";
-const userDetails = getUserData()?.userDetails;
-const token = `Bearer ${getUserData()?.token}`;
+//const userDetails = getUserData()?.userDetails;
+//const token = `Bearer ${getUserData()?.token}`;
 
 //My Form Api Call For the login user
 const getMyFormTravelData = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     const response = await axios.get(`${host}traveldesk/travels/all`, {
       headers: {
@@ -89,6 +90,7 @@ const getMyFormTravelData = async () => {
 };
 
 export const getMyFormTravelData_New = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     const response = await axios.get(`${host}traveldesk/userwise-all-travels`, {
       headers: {
@@ -113,6 +115,7 @@ export const getMyFormTravelData_New = async () => {
 };
 
 export const getExpandableData= async(travelId)=>{
+  const token = `Bearer ${getUserData()?.token}`;
   try{
     console.log("getExpandableData URl : ",`${host}traveldesk/travels-by-id/${travelId}`)
        const response = await axios.get(`${host}traveldesk/travels-by-id/${travelId}`, {
@@ -168,6 +171,7 @@ export const getTravelsByStatus = async (token, statusName) => {
 };
 
 export const getManagerwiseongoingtravels=async()=>{
+  const token = `Bearer ${getUserData()?.token}`;
   try{
      let response=  await axios.get(`${host}traveldesk/managerwise-ongoing-travels`, {
         headers: {
@@ -195,6 +199,7 @@ export const checkAtleastOneStatus = (list, status) => {
 }; 
 
 export const getOngoingTravelData = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -340,6 +345,7 @@ export const getOngoingTravelData = async () => {
 
 
 export const getApprovedAndSettledAndCompleteRequestedData = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -517,6 +523,7 @@ export const getApprovedAndSettledAndCompleteRequestedData = async () => {
 
 
 export const getOngoingTravelDataAccount=async()=>{
+  const token = `Bearer ${getUserData()?.token}`;
     try{
         let response=  await axios.get(`${host}traveldesk/all-ongoing-travels`, { headers: {
       Authorization: token
@@ -538,6 +545,7 @@ export const getOngoingTravelDataAccount=async()=>{
 }
 
 export const getCompleteData = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -636,6 +644,7 @@ export const getCompleteData = async () => {
 };
 
 export const getCompleteTravels=async()=>{
+  const token = `Bearer ${getUserData()?.token}`;
     try{
          let response=     await axios.get(`${host}traveldesk/completed-travels`, { headers: {
       Authorization: token
@@ -710,6 +719,7 @@ export const updateTravelRequisition = async (
   reqId,
   status
 ) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     console.log("updateTravelRequisition() called", requisition,
   reqId,
@@ -735,6 +745,7 @@ export const updateTravelRequisition2 = async (
   reqId,
   status
 ) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
   console.log("updateTravelRequisition() called", requisition,
   reqId,
@@ -783,6 +794,7 @@ let response=await fetch(`${host}traveldesk/travels/${reqId}/${status}`,requestO
 
 export const getTravelDetailsFromTravelId = async (travel_id) => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
 
@@ -823,6 +835,7 @@ export const getTravelDetailsFromTravelId = async (travel_id) => {
 
 export const getTravelDetailsFromTravelId2 = async (travel_id) => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
    // console.log('travel_id', travel_id)
@@ -873,6 +886,7 @@ export const getTravelDetailsFromTravelId2 = async (travel_id) => {
 
 export const getTravelDropDown = async () => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
 
@@ -921,6 +935,7 @@ export const getTravelDropDown = async () => {
 
 export const createRequisition = async (payload) => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     const response = await axios.post(`${host}traveldesk/travels`, payload, {
       headers: {
         Authorization: token,
@@ -944,7 +959,9 @@ export const createRequisition = async (payload) => {
 };
 
 export const getAdvanceDetails = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
+
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
     const requestOptions = {
@@ -983,6 +1000,7 @@ export const getAdvanceDetails = async () => {
 
 export const uploadDocumentsByReqId=async(file,reqId)=>
 {
+    const token = `Bearer ${getUserData()?.token}`;
     try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -1033,6 +1051,7 @@ export const uploadDocumentsByReqId=async(file,reqId)=>
 
 export const downloadDocumentsByReqId = async (reqId) => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
 

@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import "./HomePage.css";
-import "./HomePage.scss"
+import "./HomePage.scss";
 import { Galleria } from "primereact/galleria";
 import { formatDate, formatDateTime } from "../Appraisal/formatDate";
 import { Image } from "primereact/image";
@@ -34,6 +34,8 @@ import Toast from "../../components/Toast/Toast";
 import CommentIcon from "@mui/icons-material/Comment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FeedbackIcon from "@mui/icons-material/Feedback";
+import { InputTextarea } from "primereact/inputtextarea";
+
 //Api
 import {
   getUserDataAPI,
@@ -59,7 +61,7 @@ import {
   showSuccessMessage,
 } from "../../components/Toast/ShowMessage";
 import { FileUpload } from "primereact/fileupload";
-
+let itemData = null;
 const HomePage = () => {
   const toastRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -216,7 +218,6 @@ const HomePage = () => {
             className="fontSize-sm"
             target="_blank"
             href={item.url}
-
           >
             Click Here For More Information
           </a>
@@ -269,12 +270,15 @@ const HomePage = () => {
         )}
 
         <InfoIcon
-          onClick={() => setVisible(true)}
+          onClick={() => {
+            itemData = item;
+            setVisible(true);
+          }}
           className="infobtn"
           color="info"
         />
         <Dialog
-          header={item.title}
+          header={itemData?.title}
           visible={visible}
           style={{ width: "50vw" }}
           onHide={() => {
@@ -284,10 +288,15 @@ const HomePage = () => {
           className="dialogHeader dialogContent"
         >
           <div style={{ padding: "0.5rem 0" }}>
-            <Typography style={{ fontWeight: 600, marginBottom: "0.4rem" }}>
-              {item.fromdate} - {item.toDate}
+            <Typography
+              style={{ fontWeight: 600, marginBottom: "0.4rem" }}
+              className="fontSize-sm"
+            >
+              {itemData?.fromdate} - {itemData?.toDate}
             </Typography>
-            <Typography>{item.notification}</Typography>
+            <Typography className="fontSize-sm">
+              {itemData?.notification}
+            </Typography>
           </div>
         </Dialog>
       </>
@@ -1073,7 +1082,7 @@ const HomePage = () => {
             </div>
           </div>
           <Dialog
-            header="YOUR FEEDBACK FORM"
+            header="YOUR FEEDBACK"
             visible={feedbackDialogVisible}
             style={{ width: "30vw" }}
             onHide={() => {
@@ -1084,7 +1093,7 @@ const HomePage = () => {
           >
             <div style={{ display: "grid" }}>
               <form onSubmit={handelFeedBackSubmit}>
-                <input
+                {/* <input
                   type="text"
                   id="feedText"
                   value={feedback}
@@ -1097,6 +1106,13 @@ const HomePage = () => {
                     width: "100%",
                     marginTop: "0.5rem",
                   }}
+                /> */}
+
+                <InputTextarea
+                  style={{ width: "100%", marginTop: "0.5rem", }}
+                  value={feedback}
+                  placeholder="Enter Your Feedback"
+                  onChange={(e) => setFeedback(e.target.value)}
                 />
                 <br />
                 <button
@@ -1110,7 +1126,7 @@ const HomePage = () => {
                     cursor: "pointer",
                     fontWeight: "bold",
                     fontSize: "14px",
-                    marginTop: "10px",
+                    marginTop: "5px",
                   }}
                 >
                   Submit
@@ -1182,7 +1198,7 @@ const HomePage = () => {
               <Button
                 variant="contained"
                 size="small"
-                sx={{boxShadow:"none"}}
+                sx={{ boxShadow: "none" }}
                 onClick={handleAvatarChange}
               >
                 Submit

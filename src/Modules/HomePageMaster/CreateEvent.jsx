@@ -105,7 +105,7 @@ const CreateEvent = ({
 
   //Input style for the form fields
   const inputStyle = {
-    border: "1px solid #eae0e0",
+   // border: "1px solid #eae0e0",
     borderRadius: "5px",
     fontSize: "14px",
     padding: "8px",
@@ -130,6 +130,7 @@ const CreateEvent = ({
         <div style={{ display: "grid", gap: "10px" }}>
           <input
             style={inputStyle}
+            className="inputFieldStyle"
             type="text"
             {...register("title", { required: "Title is required" })}
             placeholder="Title"
@@ -142,6 +143,7 @@ const CreateEvent = ({
 
           <input
             style={inputStyle}
+             className="inputFieldStyle"
             type="text"
             {...register("notification", {
               required: "Notification is required",
@@ -155,6 +157,7 @@ const CreateEvent = ({
           )}
           <input
             style={inputStyle}
+             className="inputFieldStyle"
             type="date"
             {...register("fromdate", { required: "From Date is required" })}
             onFocus={(e) => (e.target.type = "date")}
@@ -169,6 +172,7 @@ const CreateEvent = ({
           )}
           <input
             style={inputStyle}
+             className="inputFieldStyle"
             type="date"
             {...register("toDate", { required: "To Date is required" })}
             onFocus={(e) => (e.target.type = "date")}
@@ -183,6 +187,7 @@ const CreateEvent = ({
           )}
           <input
             style={inputStyle}
+             className="inputFieldStyle"
             type="text"
             {...register("url")}
             placeholder="URL"
@@ -190,6 +195,7 @@ const CreateEvent = ({
           {!selectRowEventData && (
             <input
               type="file"
+              className="fileInputStyle"
               accept="image/*"
               {...register("eventImage", { required: "Image is required" })}
             />

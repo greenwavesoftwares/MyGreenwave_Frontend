@@ -13,9 +13,11 @@ const host = import.meta.env.VITE_END_POINT;
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import axios from "axios";
 
-const userDetails = getUserData()?.userDetails;
-const token = `Bearer ${getUserData()?.token}`;
+// const userDetails = getUserData()?.userDetails;
+// const token = `Bearer ${getUserData()?.token}`;
 export const getDraftData = async () => {
+ // const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     const response = await axios.get(`${host}claims/tour-claims/drafts`, {
       headers: {
@@ -39,6 +41,7 @@ export const getDraftData = async () => {
 };
 
 export const handleSaveToDraft = (payload) => {
+  
   const myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/json");
   myHeaders.append("Authorization", "Bearer YOUR_TOKEN_HERE");
@@ -85,6 +88,8 @@ export const formateDate = (value) => {
 };
 
 export const getTravelsDetails = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   // const myHeaders = new Headers();
   // myHeaders.append("Authorization", token);
 
@@ -114,6 +119,8 @@ export const getTravelsDetails = async () => {
 };
 
 export const getTourClaimList = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     let traveldetails = await getTravelsDetails();
 
@@ -154,6 +161,8 @@ export const getTourClaimList = async () => {
 };
 
 export const getTravelDropDown = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     let response = await axios.get(`${host}traveldesk/ongoing-travels`, {
       headers: {
@@ -188,6 +197,8 @@ export const getTravelDropDown = async () => {
 };
 
 export const getTravelDropDown2 = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -238,6 +249,8 @@ export const getTravelDropDown2 = async () => {
 };
 
 export const getTravelMode = async (travel_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -271,6 +284,8 @@ export const getTravelMode = async (travel_id) => {
 };
 
 export const getTourClaimFormDetails = async (id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     let response = await axios.get(`${host}traveldesk/travels/${id}`, {
       headers: {
@@ -290,6 +305,8 @@ export const getTourClaimFormDetails = async (id) => {
 };
 
 export const getAdvance = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   // const myHeaders = new Headers();
   // myHeaders.append("Authorization", token);
 
@@ -313,6 +330,8 @@ export const getAdvance = async () => {
 };
 
 export const uploadSupportingDocuments = async (file, claim_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     const formData = new FormData();
     formData.append("file", file);
@@ -334,6 +353,8 @@ export const uploadSupportingDocuments = async (file, claim_id) => {
 };
 
 export const deleteDraftList = async (claim_id, status) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -380,6 +401,8 @@ export const deleteDraftList = async (claim_id, status) => {
 };
 
 export const applyClaim = async (claim_id, status) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -422,6 +445,8 @@ export const applyClaim = async (claim_id, status) => {
 };
 
 export const downloadTourClaimSupportingDocument = async (claim_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -485,6 +510,8 @@ export const downloadTourClaimSupportingDocument = async (claim_id) => {
 };
 
 export const downloadOtherClaimSupportingDocument = async (claim_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -602,6 +629,8 @@ export const downloadOtherClaimSupportingDocument = async (claim_id) => {
 // };
 
 export const downloadTourClaimExpanseDocument = async (claim_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -655,6 +684,8 @@ export const downloadTourClaimExpanseDocument = async (claim_id) => {
 };
 
 export const getTourClaimTableDraftData = async (claim_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -690,6 +721,8 @@ export const getTourClaimTableDraftData = async (claim_id) => {
 };
 
 export const getlatestclaimtodate = async (travel_id) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   const result = [];
 
   const tourClaimList = await getTourClaimList();
@@ -723,6 +756,8 @@ export const getlatestclaimtodate = async (travel_id) => {
 };
 
 export const savetodraft = async (tourclaimformData, tourClaimTableData) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     console.log("tourclaimformData", tourclaimformData);
     console.log("tourClaimTableData", tourClaimTableData);
@@ -815,6 +850,8 @@ export const updateDraftdata = async (
   tourClaimTableData,
   claim_id
 ) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     let total_expense = 0;
     let tabledata = [];
@@ -994,6 +1031,8 @@ export const ApplyOtherClaim = async (
   claimAmount,
   claimDetails
 ) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token); // ensure token is defined
@@ -1038,6 +1077,8 @@ export const ApplyOtherClaim = async (
 };
 
 export const getOtherClaims = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     let response = await axios.get(`${host}claims/other-claims`, { headers: {
       Authorization: token
@@ -1051,6 +1092,8 @@ export const getOtherClaims = async () => {
 };
 
 export const getLoanDetails = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1081,6 +1124,8 @@ export const getLoanDetails = async () => {
 };
 
 export const applyLoan = async (formData) => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     const raw = {
       amount: formData.loanAmount,
@@ -1115,6 +1160,8 @@ export const applyLoan = async (formData) => {
 //Admin part
 
 export const getApprovedTourClaims = async () => {
+  const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1183,6 +1230,8 @@ export const getApprovedTourClaims = async () => {
 };
 
 export const getAppliedTourClaims = async () => {
+  //const userDetails = getUserData()?.userDetails;
+const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1246,6 +1295,7 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
   userId,
   claim_id
 ) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     const myHeaders = new Headers();
     myHeaders.append("Authorization", token);
@@ -1324,6 +1374,7 @@ export const tourClaimSendForApproval = async (
   reason,
   settlement_amount
 ) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1369,6 +1420,7 @@ export const tourClaimSendForApproval = async (
 };
 
 export const getReviewedTourClaims = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1410,6 +1462,7 @@ export const getReviewedTourClaims = async () => {
 
 export const getApprovedHRTourClaims = async () => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
    
 
     let approvedresponse = await axios.get(
@@ -1437,6 +1490,7 @@ export const getApprovedHRTourClaims = async () => {
 
 export const ApprovedTourClaim = async (claim_id, reason) => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
 
@@ -1489,6 +1543,7 @@ export const ApprovedTourClaim = async (claim_id, reason) => {
 
 export const RejectTourClaim = async (claim_id, reason) => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
 
@@ -1541,6 +1596,7 @@ export const RejectTourClaim = async (claim_id, reason) => {
 
 export const getloanclaimsapplied = async () => {
   try {
+    const token = `Bearer ${getUserData()?.token}`;
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
 
@@ -1583,6 +1639,7 @@ export const getloanclaimsapplied = async () => {
 };
 
 export const getloanclaimsapproveandreject = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     let message;
     let approveddata = [];
@@ -1652,6 +1709,7 @@ export const getloanclaimsapproveandreject = async () => {
 };
 
 export const rejectLoanClaim = async (claim_id, remarks) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1695,6 +1753,7 @@ export const rejectLoanClaim = async (claim_id, remarks) => {
 };
 
 export const approveLoanClaim = async (claim_id, remarks) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1738,6 +1797,7 @@ export const approveLoanClaim = async (claim_id, remarks) => {
 };
 
 export const approveMiscellanousClaim = async (claim_id, remarks) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1788,6 +1848,7 @@ export const approveMiscellanousClaim = async (claim_id, remarks) => {
 };
 
 export const rejectMiscellanousClaim = async (claim_id, remarks) => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     console.log(claim_id, remarks);
     // const myHeaders = new Headers();
@@ -1839,6 +1900,7 @@ export const rejectMiscellanousClaim = async (claim_id, remarks) => {
 };
 
 export const getAppliedMiscellanousClaimAccount = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     // const myHeaders = new Headers();
     // myHeaders.append("Authorization", token);
@@ -1881,6 +1943,7 @@ export const getAppliedMiscellanousClaimAccount = async () => {
 };
 
 export const getApprovedAndRejectMiscellanousClaim = async () => {
+  const token = `Bearer ${getUserData()?.token}`;
   try {
     let message;
     let approveddata = [];

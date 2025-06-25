@@ -143,6 +143,7 @@ const ApprovedTable = () => {
         !row.claimUnderProcess &&
         row.status === "Approved"
       ) {
+        console.log('row.claimUnderProcess', row.claimUnderProcess)
         return (
           <>
             <IconButton
@@ -178,9 +179,11 @@ const ApprovedTable = () => {
             <EditIcon />
           </IconButton>
         );
-      } else if (row.claimUnderProcess) {
-        return <h3>Pending Unsettled Claim</h3>;
+      } 
+      else if (row.claimUnderProcess) {
+        return <h3>Pending Unsettled Claim {}</h3>;
       } else {
+
       }
     };
 
@@ -396,7 +399,7 @@ const ApprovedTable = () => {
         />
       );
     }
-    return row.advanceGiven;
+    return row.advance;
   };
 
   // const updateTravelRequisitionStatus = async (rowData, statusName) => {
@@ -492,16 +495,18 @@ const ApprovedTable = () => {
   );
 
    const handlerowexpand =async(data)=>{
-      console.log("data -> ",data)
-      console.log('travelId',  Object.keys(data)[0])
-      // return;
-      const travelId = Object.keys(data)[0]
-    let response= await getExpandableData(travelId)
-        setExpandedRows(response.data)
-        console.log('response', response)
+     
+      const travelId = (Object.keys(data)[1] === undefined ? Object.keys(data)[0] :Object.keys(data)[1])
+      let response= await getExpandableData(travelId)
+      if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
+        setExpandedRows([]);
+      } else {
+        setExpandedRows(response.data);
+      }
+
     }
   
-
+ 
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -509,8 +514,11 @@ const ApprovedTable = () => {
         <ExpandableDataTableComponent
           data={approvedAndSettledTravelData}
           expandedRows={expandedRows}
-          onRowToggle={(e) =>  handlerowexpand(e.data)}
-          //</div> rowExpansionMode="single"
+          onRowToggle={(e) =>  {
+            console.log("Toggle click : ",e)
+            handlerowexpand(e.data)}}
+          //</div> 
+           
           rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           //</> showGridlines
           className="text-xs"
@@ -575,7 +583,8 @@ const ApprovedTable = () => {
               sortable
               filter
             /> */}
-          <CustomColumn expander style={{ width: "3rem" }} />
+          {/* <CustomColumn expander style={{ width: "3rem" }} /> */}
+          <CustomColumn expander style={{ width: '5rem' }} />
           {/* 
           <CustomColumn
             field="travelId"
