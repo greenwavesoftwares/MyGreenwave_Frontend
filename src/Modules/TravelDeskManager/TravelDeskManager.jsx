@@ -118,10 +118,15 @@ export default function TravelDeskManager() {
     }
   };
 
-  const updateTravelInfo = () => {
-      const hasPendingInExpanded = expandedRows?.some(row => row.status?.toLowerCase() === "pending");
+  const updateTravelInfo = (expandedRows) => {
+    // const hasPendingInExpanded = expandedRows?.some(row => row.status?.toLowerCase() === "pending");
+    // console.log("FormData ", formData.travelId, formData.status, hasPendingInExpanded);
+    const hasPendingInExpanded = expandedRows?.some(row => row.status?.toLowerCase() === "pending");
+    // debugger;
     const updatedTravelData = travelData?.map((item) => {
       if (item.travelId === formData.travelId && !hasPendingInExpanded) {
+
+        console.log('The object which is being updated : ', item);
         return {
           ...item,
           managerActionRequiredFlag: false, // Update the status in the travel data
@@ -130,6 +135,9 @@ export default function TravelDeskManager() {
       return item;
     });
 
+     
+
+    console.log('Updated Travel Data : ', updatedTravelData);
     return updatedTravelData;
   };
 
@@ -165,7 +173,7 @@ export default function TravelDeskManager() {
         // setTravelData(updatedPendingData);
         // await fetchTravelData(); // Refresh the travel data after approval
 
-        setTravelData(updateTravelInfo); // Update the travel data with the new status
+        
 
         const newExpanedRows = expandedRows?.map((row) => {
           if (row.requisionId === formData.requisionId) {
@@ -176,6 +184,8 @@ export default function TravelDeskManager() {
           }
           return row;
         });
+        const updatedTravelData = updateTravelInfo(newExpanedRows); // Update the travel data with the new status
+        setTravelData(updatedTravelData); // Update the travel data with the new status
         setExpandedRows(newExpanedRows); // Update the expanded rows state
 
         //  await handlerowexpand();
