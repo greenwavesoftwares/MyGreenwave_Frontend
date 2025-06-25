@@ -199,7 +199,7 @@ try{
           if (row.requisionId === formData.requisionId) {
             return {
               ...row,
-              status: "ManagerReviewed", // Update the status in the expanded row
+              status: "Rejected", // Update the status in the expanded row
             };
           }
           return row; 
@@ -211,7 +211,7 @@ try{
     }
   }
   catch (error) {
-      console.error("Error approving travel:", error);
+      console.error("Error rejecting travel:", error);
       showInfoMessage(
         toastRef,
         "Error",
