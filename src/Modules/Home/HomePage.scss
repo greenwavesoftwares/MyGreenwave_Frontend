@@ -32,12 +32,12 @@
 
 // Dialog Style
 .dialogHeader.p-dialog .p-dialog-header {
-    background-color: var(--card-bg) !important;
+    background-color: var(--dialogBG) !important;
     color: var(--menu-text) !important;
     backdrop-filter: blur(16px);
 }
 .dialogContent.p-dialog .p-dialog-content{
-    background-color: var(--card-bg) !important;
+    background-color: var(--dialogBG) !important;
     backdrop-filter: blur(16px);
 }
 

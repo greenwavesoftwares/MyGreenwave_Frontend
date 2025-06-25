@@ -134,15 +134,17 @@ const formattedDate = `${year}-${month}-${day}`;
   console.log("Update Event Data:", updateEventDataProps);
   return (
     <div className="container mx-auto px-4">
-      <div className="md:w-11/12 lg:w-11/12 xl:w-11/12 2xl:w-11/12  mx-auto">
-        <div className="card mt-4 py-2 px-3">
-          <div className="card">
+      <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+        <div className=" mt-4 py-2 px-3">
+          <div className="">
             <TabView className="tabStyle">
               <TabPanel header="Events" leftIcon="pi pi-calendar mr-2">
                 <DataTable
                   size="small"
                   stripedRows
-                  className="dataTableHeader tableBorder dataTableBody dataTableBodyPadding"
+                  // paginator
+                  // rows={10}
+                  className="dataTableHeader tableBorder dataTableBody dataTableBodyPadding dataTablePaginator "
                   value={eventsData}
                 >
                   <Column field="title" header="Title"></Column>

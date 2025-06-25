@@ -5,9 +5,8 @@ $baseHeaderFontSize: 0.85rem;
 $borderColor: #edebeb;
 $dialogContentPadding: 0.2rem 0.9rem 0.7rem 0.9rem;
 $dataTableHeaderFontSize: 0.8rem;
-$noPadding:0;
-$primeReactButton:0.2rem 0.6rem;
-
+$noPadding: 0;
+$primeReactButton: 0.2rem 0.6rem;
 
 body {
   background-color: var(--bg-main);
@@ -16,22 +15,77 @@ body {
 .MuiDivider-root {
   background-color: var(--divider-color);
 }
-.p-inputtext {
-    padding: 0.65rem 0.65rem !important;
-     background: var(--card-bg) !important;
-      border: 1px solid var(--divider-color) !important;
-      font-size: 0.85rem !important;
-       color: var(--fontColor) !important;
+// .p-inputtext {
+//   padding: 0.65rem 0.65rem !important;
+//   background: var(--card-bg) !important;
+//   border: 1px solid var(--divider-color) !important;
+//   font-size: 0.85rem !important;
+//   color: var(--fontColor) !important;
+// }
+.inputFieldStyle{
+  padding: 0.65rem 0.65rem !important;
+  background: var(--dialogBG) !important;
+  border: 1px solid var(--divider-color) !important;
+  font-size: 0.85rem !important;
+  color: var(--fontColor) !important;
+}
+.inputFieldStyle::placeholder {
+  color: var(--fontColor) !important;
+  opacity: 0.75 !important; // Adjust opacity for better visibility
+}
+.fileInputStyle {
+  padding: 0.45rem 0.45rem !important;
+  background: var(--card-bg) !important;
+  //border: 1px solid var(--divider-color) !important;
+  border-radius: 5px;
+  font-size: 0.85rem !important;
+  color: var(--fontColor) !important;
 }
 
 
+
+
+
+
+
 //Dropdown styles
-.p-dropdown{
-  background: var(--card-bg) !important;
-  border: 1px solid var(--divider-color) !important;
+.p-dropdown {
+  // background: var(--card-bg) !important;
+  // border: 1px solid var(--divider-color) !important;
 }
 .p-dropdown .p-dropdown-label {
   color: var(--fontColor) !important;
   font-size: 0.85rem !important;
   //border: 1px solid var(--divider-color) !important;
+}
+
+//MUI Tab styles
+.p-tabview .p-tabview-nav {
+  background-color: var(--tabBGColor) !important;
+  color: var(--menu-text) !important;
+  font-size: 0.85rem !important;
+  border-bottom: 1px solid var(--divider-color) !important;
+}
+.p-tabview .p-tabview-panels {
+  background-color: var(--tabBGColor) !important;
+  color: var(--menu-text) !important;
+  font-size: 0.85rem !important;
+}
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  background-color: var(--tabActive) !important;
+  color: var(--menu-text) !important;
+  font-size: 0.85rem !important;
+}
+.p-tabview
+  .p-tabview-nav
+  li:not(.p-highlight):not(.p-disabled):hover
+  .p-tabview-nav-link {
+  background-color: var(--menu-selected) !important;
+  color: var(--menu-text) !important;
+  font-size: 0.85rem !important;
+}
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  background-color: var(--tabBGColor) !important;
+  color: var(--menu-text) !important;
+  font-size: 0.85rem !important;
 }
