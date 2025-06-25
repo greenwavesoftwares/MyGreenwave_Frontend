@@ -7,7 +7,7 @@ import {
 } from "../../components/DataTable/DataTableComponent";
 import CustomDialog from "../../components/Dialog/DialogComponent";
 import CustomButton from "../../components/Button/Button";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; 
 import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
 //Call Api
 import {
@@ -18,7 +18,7 @@ import {
   uploadDocumentsByReqId,
   downloadDocumentsByReqId,
   getOngoingTravelDataAccount,
-  getExpandableData,
+  getExpandableData
 } from "./TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { FilterMatchMode } from "primereact/api";
@@ -48,7 +48,6 @@ const ApprovedTable = () => {
   const [editRowId, setEditRowId] = useState(null);
   const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
     useState([]);
-  const [advanceToggle, setAdvanceToggle] = useState(false);
   const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
   const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -106,7 +105,7 @@ const ApprovedTable = () => {
         if (responseData.status) {
           // const response =
           //   await getApprovedAndSettledAndCompleteRequestedData();
-          const response = await getOngoingTravelDataAccount();
+          const response=await getOngoingTravelDataAccount()
           setApprovedAndSettledTravelData(response.data);
           setEditRowId(null);
           toast.current?.show({
@@ -131,39 +130,38 @@ const ApprovedTable = () => {
     };
 
     const handleCancelAdvance = (row) => {
+      setEditRowId(null);
       setNewAdvanceAmount(row.advance);
-      setAdvanceToggle(true);
     };
 
     const setAdvanceActions = (row) => {
-      console.log("editRowId", editRowId);
-      console.log("row.requisionId", row.requisionId);
-      console.log("row.claimUnderProcess", row.claimUnderProcess);
+      console.log('editRowId', editRowId)
+      console.log('row.requisionId', row.requisionId)
+      console.log('row.claimUnderProcess', row.claimUnderProcess)
       if (
+        // editRowId === row.requisionId &&
         !row.claimUnderProcess &&
-        row.status === "Approved" &&
-        advanceToggle
+        row.status === "Approved"
       ) {
+        console.log('row.claimUnderProcess', row.claimUnderProcess)
         return (
           <>
-            <>
-              <IconButton
-                aria-label="Save"
-                size="small"
-                color="success"
-                onClick={() => handleSaveAdvance(row)}
-              >
-                <SaveIcon />
-              </IconButton>
-              <IconButton
-                aria-label="Cancel"
-                size="small"
-                color="error"
-                onClick={() => handleCancelAdvance(row)}
-              >
-                <CancelIcon />
-              </IconButton>
-            </>
+            <IconButton
+              aria-label="Save"
+              size="small"
+              color="success"
+              onClick={() => handleSaveAdvance(row)}
+            >
+              <SaveIcon />
+            </IconButton>
+            <IconButton
+              aria-label="Cancel"
+              size="small"
+              color="error"
+              onClick={() => handleCancelAdvance(row)}
+            >
+              <CancelIcon />
+            </IconButton>
           </>
         );
       }
@@ -174,16 +172,18 @@ const ApprovedTable = () => {
             aria-label="Edit"
             label="View"
             onClick={() => {
-              setAdvanceToggle(true);
+              setEditRowId(row.requisionId);
               setNewAdvanceAmount(row.advance);
             }}
           >
             <EditIcon />
           </IconButton>
         );
-      } else if (row.claimUnderProcess) {
-        return <h3>Pending Unsettled Claim</h3>;
+      } 
+      else if (row.claimUnderProcess) {
+        return <h3>Pending Unsettled Claim {}</h3>;
       } else {
+
       }
     };
 
@@ -326,7 +326,7 @@ const ApprovedTable = () => {
 
         // const approvedandsettledresponse =
         //   await getApprovedAndSettledAndCompleteRequestedData();
-        const response = await getOngoingTravelDataAccount();
+        const response=await getOngoingTravelDataAccount()
 
         if (!response.status) {
           toast.current?.show({
@@ -390,7 +390,7 @@ const ApprovedTable = () => {
   //   renderHeaderForApprovedAndSettledTravelData();
 
   const advanceColumnBody = (row) => {
-    if (advanceToggle) {
+    if (editRowId === row.requisionId) {
       return (
         <InputText
           size="small"
@@ -440,8 +440,8 @@ const ApprovedTable = () => {
       "CompleteRequested"
     );
     if (responseData.status) {
-      // let response = await getApprovedAndSettledAndCompleteRequestedData();
-      let response = await getOngoingTravelDataAccount();
+     // let response = await getApprovedAndSettledAndCompleteRequestedData();
+     let response= await getOngoingTravelDataAccount()
       setApprovedAndSettledTravelData(response.data);
       // setEditRowId(null);
       toast.current?.show({
@@ -464,7 +464,7 @@ const ApprovedTable = () => {
     return (
       <CustomButton
         icon="pi pi-check"
-        style={rowData.travelCompleteFlag === false ? { color: "#708090" } : {}}
+          style={rowData.travelCompleteFlag === false ? { color: '#708090' }:{}}
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
           completeTravel(rowData.expandableData[0], "CompleteRequested");
@@ -494,16 +494,19 @@ const ApprovedTable = () => {
     </div>
   );
 
-  const handlerowexpand = async (data) => {
-    console.log("data -> ", data);
-    console.log("travelId", Object.keys(data)[0]);
-    // return;
-    const travelId = Object.keys(data)[0];
-    let response = await getExpandableData(travelId);
-    setExpandedRows(response.data);
-    console.log("response", response);
-  };
+   const handlerowexpand =async(data)=>{
+     
+      const travelId = (Object.keys(data)[1] === undefined ? Object.keys(data)[0] :Object.keys(data)[1])
+      let response= await getExpandableData(travelId)
+      if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
+        setExpandedRows([]);
+      } else {
+        setExpandedRows(response.data);
+      }
 
+    }
+  
+ 
   return (
     <>
       <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
@@ -511,8 +514,11 @@ const ApprovedTable = () => {
         <ExpandableDataTableComponent
           data={approvedAndSettledTravelData}
           expandedRows={expandedRows}
-          onRowToggle={(e) => handlerowexpand(e.data)}
-          //</div> rowExpansionMode="single"
+          onRowToggle={(e) =>  {
+            console.log("Toggle click : ",e)
+            handlerowexpand(e.data)}}
+          //</div> 
+           
           rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           //</> showGridlines
           className="text-xs"
@@ -530,6 +536,8 @@ const ApprovedTable = () => {
               "No data found"
             )
           }
+
+
           settlementActionRequiredFlag
           // rowsPerPageOptions={
           //   approvedAndSettledTravelData.length > 50
@@ -575,7 +583,8 @@ const ApprovedTable = () => {
               sortable
               filter
             /> */}
-          <CustomColumn expander style={{ width: "3rem" }} />
+          {/* <CustomColumn expander style={{ width: "3rem" }} /> */}
+          <CustomColumn expander style={{ width: '5rem' }} />
           {/* 
           <CustomColumn
             field="travelId"
@@ -593,18 +602,18 @@ const ApprovedTable = () => {
             sortable={true}
             filter={true}
             body={(rowData) => (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {rowData.settlementActionRequiredFlag && (
-                  <FiberManualRecordIcon
-                    fontSize="small"
-                    style={{ fontSize: ".8rem" }}
-                    color="warning" // or use a specific color code
-                    // style={{ color: '#fbc02d' }} // yellow for "pending"
-                  />
-                )}
-                {rowData.userName}
-              </div>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {rowData.settlementActionRequiredFlag && (
+                <FiberManualRecordIcon
+                  fontSize="small"
+                  style={{ fontSize: ".8rem" }}
+                  color="warning" // or use a specific color code
+                  // style={{ color: '#fbc02d' }} // yellow for "pending"
+                />
+              )}
+              {rowData.userName}
+            </div>
+          )}
           />
           <CustomColumn
             field="unsettledAmount"
