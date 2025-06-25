@@ -137,10 +137,26 @@ export default function TravelDeskManager() {
         );
 
         // setFormData({});
-        const updatedPendingData = travelData.filter(
-          (item) => item.requisionId !== formData.requisionId
+        // const updatedPendingData = travelData.filter(
+        //   (item) => item.requisionId !== formData.requisionId
+        // );
+        // setTravelData(updatedPendingData);
+        await fetchTravelData(); // Refresh the travel data after approval
+
+        const newExpanedRows = expandedRows?.map((row) => {
+          if (row.requisionId === formData.requisionId) {
+            return {
+              ...row,
+              status: "ManagerReviewed", // Update the status in the expanded row
+            };
+          }
+          return row; 
+        }
         );
-        setTravelData(updatedPendingData);
+        setExpandedRows(newExpanedRows); // Update the expanded rows state
+        
+      //  await handlerowexpand();
+        setFormData({});
         setVisible(false);
       }
     } catch (error) {
@@ -155,7 +171,7 @@ export default function TravelDeskManager() {
 
   const handleRejectTravel = async () => {
     console.log("handleRejectTravel() called");
-
+try{
     const updatedForm = {
       ...formData,
       status: "Rejected",
@@ -173,11 +189,34 @@ export default function TravelDeskManager() {
       showInfoMessage(toastRef, "Success", "Travel rejected successfully !");
 
       // setFormData({});
-      const updatedPendingData = travelData.filter(
-        (item) => item.requisionId !== formData.requisionId
-      );
-      setTravelData(updatedPendingData);
+      // const updatedPendingData = travelData.filter(
+      //   (item) => item.requisionId !== formData.requisionId
+      // );
+      // setTravelData(updatedPendingData);
+      await fetchTravelData(); // Refresh the travel data after approval
+      //  await handlerowexpand();
+       const newExpanedRows = expandedRows?.map((row) => {
+          if (row.requisionId === formData.requisionId) {
+            return {
+              ...row,
+              status: "ManagerReviewed", // Update the status in the expanded row
+            };
+          }
+          return row; 
+        }
+        );
+        setExpandedRows(newExpanedRows); // Update the expanded rows state
+      setFormData({});
       setVisible(false);
+    }
+  }
+  catch (error) {
+      console.error("Error approving travel:", error);
+      showInfoMessage(
+        toastRef,
+        "Error",
+        "Failed to reject travel. Please try again."
+      );
     }
   };
 
@@ -357,7 +396,7 @@ export default function TravelDeskManager() {
         value={travelData}
         expandedRows={expandedRows}
         onRowToggle={(e) => handlerowexpand(e.data)}
-        rowExpansionTemplate={(row) => rowExpansionTemplate(expandedRows)}
+        rowExpansionTemplate={() => rowExpansionTemplate(expandedRows)}
         paginator
         rows={10}
         dataKey="travelId"
