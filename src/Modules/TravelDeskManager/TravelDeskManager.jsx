@@ -29,7 +29,6 @@ import {
 import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // or any other icon
 
-
 const renderStatusChip = (row) => {
   const status = row?.status || "";
   let color = "default";
@@ -121,12 +120,13 @@ export default function TravelDeskManager() {
   const updateTravelInfo = (expandedRows) => {
     // const hasPendingInExpanded = expandedRows?.some(row => row.status?.toLowerCase() === "pending");
     // console.log("FormData ", formData.travelId, formData.status, hasPendingInExpanded);
-    const hasPendingInExpanded = expandedRows?.some(row => row.status?.toLowerCase() === "pending");
+    const hasPendingInExpanded = expandedRows?.some(
+      (row) => row.status?.toLowerCase() === "pending"
+    );
     // debugger;
     const updatedTravelData = travelData?.map((item) => {
       if (item.travelId === formData.travelId && !hasPendingInExpanded) {
-
-        console.log('The object which is being updated : ', item);
+        console.log("The object which is being updated : ", item);
         return {
           ...item,
           managerActionRequiredFlag: false, // Update the status in the travel data
@@ -135,9 +135,7 @@ export default function TravelDeskManager() {
       return item;
     });
 
-     
-
-    console.log('Updated Travel Data : ', updatedTravelData);
+    console.log("Updated Travel Data : ", updatedTravelData);
     return updatedTravelData;
   };
 
@@ -172,8 +170,6 @@ export default function TravelDeskManager() {
         // );
         // setTravelData(updatedPendingData);
         // await fetchTravelData(); // Refresh the travel data after approval
-
-        
 
         const newExpanedRows = expandedRows?.map((row) => {
           if (row.requisionId === formData.requisionId) {
@@ -407,7 +403,7 @@ export default function TravelDeskManager() {
   //     pending: foundPendingData ? true : false,
   //   };
   // });
- const handlerowexpand = async (data) => {
+  const handlerowexpand = async (data) => {
     console.log("data -> ", data);
     console.log("travelId", Object.keys(data)[0]);
     // return;
