@@ -29,28 +29,36 @@ import {
 import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // or any other icon
 
+
 const renderStatusChip = (row) => {
-  const status = row?.status;
+  const status = row?.status || "";
   let color = "default";
 
-  switch (status?.toLowerCase()) {
+  switch (status.toLowerCase()) {
     case "approved":
     case "completed":
+    case "settled":
       color = "success";
       break;
+
+    case "completerequested":
+    case "managerreviewed":
+      color = "info";
+      break;
+
+    case "rejected":
+    case "cancelled":
     case "pending":
       color = "error";
       break;
-    case "rejected":
-    case "cancelled":
-      color = "error";
-      break;
+
     default:
       color = "info";
   }
 
   return <Chip label={status} color={color} size="small" />;
 };
+
 
 export default function TravelDeskManager() {
   const [travelData, setTravelData] = useState(null); //  DataTable data
