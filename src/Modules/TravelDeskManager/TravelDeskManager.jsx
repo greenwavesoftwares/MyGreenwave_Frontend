@@ -29,6 +29,7 @@ import {
 import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // or any other icon
 
+
 const renderStatusChip = (row) => {
   const status = row?.status || "";
   let color = "default";
@@ -118,8 +119,9 @@ export default function TravelDeskManager() {
   };
 
   const updateTravelInfo = () => {
+      const hasPendingInExpanded = expandedRows?.some(row => row.status?.toLowerCase() === "pending");
     const updatedTravelData = travelData?.map((item) => {
-      if (item.requisionId === formData.requisionId) {
+      if (item.travelId === formData.travelId && !hasPendingInExpanded) {
         return {
           ...item,
           managerActionRequiredFlag: false, // Update the status in the travel data
@@ -163,7 +165,7 @@ export default function TravelDeskManager() {
         // setTravelData(updatedPendingData);
         // await fetchTravelData(); // Refresh the travel data after approval
 
-        setTravelData(updateTravelInfo()); // Update the travel data with the new status
+        setTravelData(updateTravelInfo); // Update the travel data with the new status
 
         const newExpanedRows = expandedRows?.map((row) => {
           if (row.requisionId === formData.requisionId) {
@@ -217,7 +219,7 @@ export default function TravelDeskManager() {
         // await fetchTravelData(); // Refresh the travel data after approval
         //  await handlerowexpand();
 
-        setTravelData(updateTravelInfo());
+        setTravelData(updateTravelInfo);
         const newExpanedRows = expandedRows?.map((row) => {
           if (row.requisionId === formData.requisionId) {
             return {
@@ -395,17 +397,14 @@ export default function TravelDeskManager() {
   //     pending: foundPendingData ? true : false,
   //   };
   // });
-  const handlerowexpand = async (data) => {
-    const travelId =
-      Object.keys(data)[1] === undefined
-        ? Object.keys(data)[0]
-        : Object.keys(data)[1];
+ const handlerowexpand = async (data) => {
+    console.log("data -> ", data);
+    console.log("travelId", Object.keys(data)[0]);
+    // return;
+    const travelId = Object.keys(data)[0];
     let response = await getExpandableData(travelId);
-    if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
-      setExpandedRows([]);
-    } else {
-      setExpandedRows(response.data);
-    }
+    setExpandedRows(response.data);
+    console.log("response", response);
   };
 
   // const handlerowexpand = async (data) => {
