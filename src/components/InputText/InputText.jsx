@@ -8,7 +8,12 @@ const CustomInputText = ({
   size = "small",
   className,
   id,
-  name
+  name,
+
+  type,
+
+  required = true,
+  disabled = false,
 }) => {
   const [sizeClassName, setSizeClassName] = useState("");
   useEffect(() => {
@@ -26,14 +31,15 @@ const CustomInputText = ({
   }, [size]);
   return (
     <InputText
-
-     name={name}
-             
+      name={name}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
       className={`${sizeClassName} ${className}`}
       id={id}
+      type={type}
+      required={required}
+      disabled={disabled}
     />
   );
 };

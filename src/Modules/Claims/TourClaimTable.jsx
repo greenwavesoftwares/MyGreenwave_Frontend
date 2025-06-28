@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import CustomButton from "../../components/Button/Button";
+import { CustomeCalender } from "../../components/Calender/CustomeCalender";
 
 import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
@@ -25,6 +26,7 @@ import {
 const cellStyle = { padding: "8px 12px" };
 
 const initialFormState = {
+ // id: Date.now(),
   Date: "",
   Lodging: "",
   Breakfast: "",
@@ -53,8 +55,11 @@ const TourClaimTable = ({
   settourclaimformData,
   setDraftData,
   draftData,
+  setFormErrors,
+  formErrors
 }) => {
-  const [editingIndex, setEditingIndex] = useState(null);
+  // const [editingIndex, setEditingIndex] = useState(null);
+  const [editingRows, setEditingRows] = useState({});
   const toastRef = useRef(null);
 
   const calculateTotal = (entry) => {
@@ -78,6 +83,32 @@ const TourClaimTable = ({
     }
     return { hasIssue: false };
   };
+   const validateForm = () => {
+    const requiredFields = [
+      "travelType",
+    "destination",
+    "purpose",
+    "projectName",
+    "onAccount",
+   // "travelfromDate",
+    "claimFromDate",
+    "claimToDate",
+      //"advanceRequested",
+    ];
+
+    const errors = {};
+
+    requiredFields.forEach((field) => {
+      if (!tourclaimformData[field] || tourclaimformData[field].toString().trim() === "") {
+        errors[field] = true;
+      }
+    });
+
+    setFormErrors(errors); // highlight those with errors
+
+    return Object.keys(errors).length === 0; // valid if no errors
+  };
+
 
   const handleChange = (e, rowIndex) => {
     const { name, value } = e.target;
@@ -103,18 +134,51 @@ const TourClaimTable = ({
     setEditingIndex(index);
   };
 
-  const handleDelete = (index) => {
-    const updated = tourClaimTableData.filter((_, i) => i !== index);
-    settourClaimTableData(updated);
-    setEditingIndex(null);
+  
+   const deleteRow = (rowData) => {
+    settourClaimTableData(tourClaimTableData.filter((item) => item.Date !== rowData.Date));
   };
+  // const deleteRow = (index) => {
+
+  //   const updated = tourClaimTableData.filter((_, i) => i !== index);
+  //   settourClaimTableData(updated);
+  //   setEditingIndex(null);
+  // };
 
   const handleAddRow = () => {
+      // Check if upper form has errors
+      // const requiredFields = ["purpose", "projectName", "city", "localityArea", "typeOfTravel", "fromDate", "tentativeToDate"];
+      // const upperFormIncomplete = requiredFields.some((field) => formErrors[field]);
+    
+      // if (upperFormIncomplete) {
+      //   showWarningMessage(toastRef,"Please complete requisition form before adding accommodation.");
+      //   return;
+      // }
+    
+  
+      if(!tourclaimformData.destination || !tourclaimformData.purpose || !tourclaimformData.projectName  || !tourclaimformData.projectName
+      || !tourclaimformData.claimFromDate || !tourclaimformData.claimToDate)
+      {
+        showWarningMessage(toastRef,"Please complete claim details form before adding expense.");
+        return;
+      }
+    const isIncomplete = tourClaimTableData.some(
+      (row) => !row.Date
+    );
+
+    if (isIncomplete) {
+      showWarningMessage(toastRef, "Please complete all required fields.");
+      return;
+    }
+
     settourClaimTableData([
       ...tourClaimTableData,
       { ...initialFormState, Total: 0 },
     ]);
-    setEditingIndex(tourClaimTableData.length);
+
+    setEditingRows((prev) => ({ ...prev, [initialFormState.Date]: true }));
+   // setEditingIndex(tourClaimTableData.length);
+   
   };
 
   const onFileSelect = (event) => {
@@ -194,6 +258,19 @@ const TourClaimTable = ({
 
   const handleSaveToDraft = async () => {
     try {
+      console.log('formErrors', formErrors)
+       if (!validateForm()) {
+        //const firstKey = Object.keys(formErrors)[0];
+        if (toastRef?.current) {
+          showErrorMessage(
+            toastRef,
+            "Error",
+            `Please fill in all required fields.`
+          );
+        }
+
+        return;
+      }
       const response = await savetodraft(tourclaimformData, tourClaimTableData);
       //   if (response?.success) {
       if (!response.status) {
@@ -214,6 +291,18 @@ const TourClaimTable = ({
 
   const handleUpdate = async () => {
     try {
+       if (!validateForm()) {
+        //const firstKey = Object.keys(formErrors)[0];
+        if (toastRef?.current) {
+          showErrorMessage(
+            toastRef,
+            "Error",
+            `Please fill in all required fields.`
+          );
+        }
+
+        return;
+      }
       const response = await updateDraftdata(
         tourclaimformData,
         tourClaimTableData,
@@ -233,85 +322,85 @@ const TourClaimTable = ({
       console.log(error);
     }
   };
-  const renderCell = (rowData, field, rowIndex) => {
-    if (editingIndex === rowIndex) {
-      if (field === "Date") {
-        return (
-          <Calendar
-            value={rowData["Date"] ? new Date(rowData["Date"]) : null}
-            onChange={(e) => handleDateChange(e, rowIndex)}
-            dateFormat="dd-mm-yy"
-            showIcon
-            className="p-inputtext-sm w-full"
-            minDate={
-              tourclaimformData.claimFromDate
-                ? new Date(tourclaimformData.claimFromDate)
-                : null
-            }
-            maxDate={
-              tourclaimformData.claimToDate
-                ? new Date(tourclaimformData.claimToDate)
-                : null
-            }
-          />
-        );
-      } else if (field == "Remarks") {
-        return (
-          <InputText
-            name={field}
-            value={rowData[field] || ""}
-            onChange={(e) => handleChange(e, rowIndex)}
-            className="p-inputtext-sm w-full"
-          />
-        );
-      } else if (field == "Total") {
-        return (
-          <InputText
-            name={field}
-            value={rowData[field] || ""}
-            onChange={(e) => handleChange(e, rowIndex)}
-            className="p-inputtext-sm w-full"
-            disabled
-          />
-        );
-      }
+  // const renderCell = (rowData, field, rowIndex) => {
+  //   if (editingIndex === rowIndex) {
+  //     if (field === "Date") {
+  //       return (
+  //         <Calendar
+  //           value={rowData["Date"] ? new Date(rowData["Date"]) : null}
+  //           onChange={(e) => handleDateChange(e, rowIndex)}
+  //           dateFormat="dd-mm-yy"
+  //           showIcon
+  //           className="p-inputtext-sm w-full"
+  //           minDate={
+  //             tourclaimformData.claimFromDate
+  //               ? new Date(tourclaimformData.claimFromDate)
+  //               : null
+  //           }
+  //           maxDate={
+  //             tourclaimformData.claimToDate
+  //               ? new Date(tourclaimformData.claimToDate)
+  //               : null
+  //           }
+  //         />
+  //       );
+  //     } else if (field == "Remarks") {
+  //       return (
+  //         <InputText
+  //           name={field}
+  //           value={rowData[field] || ""}
+  //           onChange={(e) => handleChange(e, rowIndex)}
+  //           className="p-inputtext-sm w-full"
+  //         />
+  //       );
+  //     } else if (field == "Total") {
+  //       return (
+  //         <InputText
+  //           name={field}
+  //           value={rowData[field] || ""}
+  //           onChange={(e) => handleChange(e, rowIndex)}
+  //           className="p-inputtext-sm w-full"
+  //           disabled
+  //         />
+  //       );
+  //     }
 
-      return (
-        <InputText
-          name={field}
-          value={rowData[field] || ""}
-          onChange={(e) => handleChange(e, rowIndex)}
-          onKeyPress={(e) => {
-            const key = e.key;
-            const currentValue = rowData[field] || "";
+  //     return (
+  //       <InputText
+  //         name={field}
+  //         value={rowData[field] || ""}
+  //         onChange={(e) => handleChange(e, rowIndex)}
+  //         onKeyPress={(e) => {
+  //           const key = e.key;
+  //           const currentValue = rowData[field] || "";
 
-            // Allow digits and a single dot
-            if (!/[\d.]/.test(key)) {
-              e.preventDefault();
-            }
+  //           // Allow digits and a single dot
+  //           if (!/[\d.]/.test(key)) {
+  //             e.preventDefault();
+  //           }
 
-            // Prevent more than one dot
-            if (key === "." && currentValue.includes(".")) {
-              e.preventDefault();
-            }
-          }}
-          onPaste={(e) => {
-            const paste = e.clipboardData.getData("text");
-            // Allow only valid float numbers
-            if (!/^\d*\.?\d*$/.test(paste)) {
-              e.preventDefault();
-            }
-          }}
-          className="p-inputtext-sm w-full"
-        />
-      );
-    }
-    return <span>{rowData[field]}</span>;
-  };
+  //           // Prevent more than one dot
+  //           if (key === "." && currentValue.includes(".")) {
+  //             e.preventDefault();
+  //           }
+  //         }}
+  //         onPaste={(e) => {
+  //           const paste = e.clipboardData.getData("text");
+  //           // Allow only valid float numbers
+  //           if (!/^\d*\.?\d*$/.test(paste)) {
+  //             e.preventDefault();
+  //           }
+  //         }}
+  //         className="p-inputtext-sm w-full"
+  //       />
+  //     );
+  //   }
+  //   return <span>{rowData[field]}</span>;
+  // };
 
   const actionBodyTemplate = (row, { rowIndex }) => (
     <div className="flex gap-2">
-      {editingIndex === rowIndex ? (
+      {/* {editingIndex === rowIndex ? (
         <CustomButton
           icon="pi pi-check"
           className="p-button-sm p-button-success"
@@ -340,11 +429,12 @@ const TourClaimTable = ({
           className="p-button-sm p-button-text p-button-info"
           onClick={() => openEditMode(rowIndex)}
         />
-      )}
+      )} */}
       <CustomButton
         icon="pi pi-trash"
         className="p-button-sm p-button-text p-button-danger"
-        onClick={() => handleDelete(rowIndex)}
+       // onClick={() => handleDelete(rowIndex)}
+         onClick={() => deleteRow(row)}
       />
     </div>
   );
@@ -357,6 +447,66 @@ const TourClaimTable = ({
       console.log(error);
     }
   };
+  const allowEdit = (rowData) => {
+    return rowData.name !== "Blue Band";
+  };
+
+  const onRowEditComplete = (e) => {
+    let _tourClaimTableData = [...tourClaimTableData];
+    let { newData, index } = e;
+     newData.Total = calculateTotal(newData);
+    //calculateTotal(newData)
+    if(!newData.Date)
+    {
+      
+       showWarningMessage(
+        toastRef,
+        "warn",
+        "Date Cannot be Empty"
+      );
+      return
+    }
+
+    _tourClaimTableData[index] = newData;
+
+    settourClaimTableData(_tourClaimTableData);
+  };
+
+  const textEditor = (options) => {
+    return (
+      <InputText
+        type="number"
+        value={options.value}
+        onChange={(e) => options.editorCallback(e.target.value)}
+        className="p-inputtext-sm w-full text-center"
+        //className="text-xs  w-full"
+      />
+    );
+  };
+  const dateEditor = (options) => {
+    console.log('options', options)
+    return(
+    <CustomeCalender
+      value={options.value}
+      onChange={(e) => options.editorCallback(e.value)}
+      
+              className="p-inputtext-sm w-full"
+             // style={{ minWidth: "105px" }}
+                minDate={
+             new Date(tourclaimformData.claimFromDate)
+                
+            }
+            maxDate={
+              new Date(tourclaimformData.claimToDate)
+               
+            }
+     // className="text-xs p-1 w-full"
+     
+     // minDate={new Date(formFields.fromDate)}
+    />
+          )
+        };
+ 
 
   return (
     <>
@@ -393,10 +543,16 @@ const TourClaimTable = ({
         showGridlines
         scrollable
         scrollHeight="250px"
+        editingRows={editingRows}
+        editMode="row"
+        dataKey="Date"
+        onRowEditChange={(e) => setEditingRows(e.data)}
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        onRowEditComplete={onRowEditComplete}
+       
       >
-        {fields.map((field) => (
+        {/* {fields.map((field) => (
           <Column
             key={field}
             header={field}
@@ -412,7 +568,125 @@ const TourClaimTable = ({
               width: field === "Date" ? "100px" : undefined,
             }}
           />
-        ))}
+        ))} */}
+        {/* <Column field="Date" header="Date" editor={(options) => textEditor(options)} style={{ width: '10%' }}/> */}
+        <Column
+                  field="Date"
+                  header="Date"
+                  editor={dateEditor}
+                  body={(row) =>
+                    row.Date ? new Date(row.Date).toLocaleDateString() : ""
+                  }
+                />
+        {/* <Column
+          field="Date"
+          header="Date"
+          editor={dateEditor}
+          // editor={(options) => (
+          //   <Calendar
+          //     value={
+          //       options.value ? new Date(options.value) : null
+          //     }
+          //     onChange={(e) => handleDateChange(e, options.rowIndex)}
+          //    // onChange={(e) => options.editorCallback(e.target.value)}s
+          //     dateFormat="dd-mm-yy"
+          //     className="p-inputtext-sm w-full"
+          //     style={{ minWidth: "105px" }}
+          //       minDate={
+          //     tourclaimformData.claimFromDate
+          //       ? new Date(tourclaimformData.claimFromDate)
+          //       : null
+          //   }
+          //   maxDate={
+          //     tourclaimformData.claimToDate
+          //       ? new Date(tourclaimformData.claimToDate)
+          //       : null
+          //   }
+          //   />
+          // )}
+        /> */}
+        <Column
+          field="Lodging"
+          header="Lodging"
+          editor={(options) => textEditor(options)}
+        
+        />
+        <Column
+          field="Breakfast"
+          header="Breakfast"
+          editor={(options) => textEditor(options)}
+          
+        />
+        <Column
+          field="Lunch"
+          header="Lunch"
+          editor={(options) => textEditor(options)}
+        
+        />
+        <Column
+          field="Snacks"
+          header="Snacks"
+          editor={(options) => textEditor(options)}
+       
+        />
+        <Column
+          field="Dinner"
+          header="Dinner"
+          editor={(options) => textEditor(options)}
+        
+        />
+        <Column
+          field="Tea & Water"
+          header="Tea & Water"
+          editor={(options) => textEditor(options)}
+        />
+        <Column
+          field="Airfare, Bus, Train, Taxi Rental"
+          header="Airfare, Bus, Train, Taxi Rental"
+          editor={(options) => textEditor(options)}
+        
+        />
+        <Column
+          field="Auto, Cab"
+          header="Auto, Cab"
+          editor={(options) => textEditor(options)}
+         
+        />
+        <Column
+          field="Parking, Toll, Fuel"
+          header="Parking, Toll, Fuel"
+          editor={(options) => textEditor(options)}
+         
+        />
+        <Column
+          field="Incidentals"
+          header="Incidentals"
+          editor={(options) => textEditor(options)}
+        
+        />
+        <Column
+          field="Other Business Expenses"
+          header="Other Business Expenses"
+          editor={(options) => textEditor(options)}
+         
+        />
+        <Column
+          field="Total"
+          header="Total"
+          editor={(options) => textEditor(options)}
+         
+        />
+        <Column
+          field="Remarks"
+          header="Remarks"
+          editor={(options) => textEditor(options)}
+          
+        />
+        <Column
+          rowEditor={allowEdit}
+          header="Edit"
+          style={{ width: "105px", textAlign: "center" }}
+        />
         <Column
           header="Action"
           body={actionBodyTemplate}

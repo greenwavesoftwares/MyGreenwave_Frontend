@@ -98,12 +98,16 @@ export const getMyFormTravelData_New = async () => {
       },
     });
 
-  
+ // travelCompleteFlag
+ const sortedData = response.data.sort((a, b) => {
+  return (b.travelCompleteFlag === true) - (a.travelCompleteFlag === true);
+  // or simply: return b.travelCompleteFlag - a.travelCompleteFlag;
+});
 
     return {
       status: true,
       message: "Successfully loaded",
-      data: response.data,
+      data:sortedData
     };
   } catch (error) {
     return {

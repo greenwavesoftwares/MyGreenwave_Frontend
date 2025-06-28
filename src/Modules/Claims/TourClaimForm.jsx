@@ -9,6 +9,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 //import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+
 import {
   getTourClaimFormDetails,
   getAdvance,
@@ -26,7 +27,8 @@ const TourClaimForm = ({
   travelModeOptions,
   travelTypeOptions,
     selectedtravelMode,
-    setselectedtravelMode
+    setselectedtravelMode,
+    formErrors, setFormErrors
 }) => {
 
   
@@ -39,7 +41,15 @@ const TourClaimForm = ({
   
 
   const fetchTourClaimFormDetails = async (id) => {
-    console.log('id', id)
+      setFormErrors({"travelType":false,
+    "destination":false,
+    "purpose":false,
+    "projectName":false,
+    "onAccount":false,
+   // "travelfromDate",
+    "claimFromDate":false,
+    "claimToDate":false})
+   
     try {
       if (id === "Long-Term-Local-Conveyance") {
         settourclaimformData((prev) => ({
@@ -55,6 +65,15 @@ const TourClaimForm = ({
           claimFromDate: "",
           claimToDate: "",
         }));
+
+         setFormErrors({"travelType":false,
+    "destination":false,
+    "purpose":false,
+    "projectName":false,
+    "onAccount":false,
+   // "travelfromDate",
+    "claimFromDate":false,
+    "claimToDate":false})
       } else {
         //const data = await getTourClaimFormDetails(id);
       const responseData=await getTravelDetailsFromTravelId2(id)
@@ -87,7 +106,31 @@ const TourClaimForm = ({
     }
   };
 
- 
+  // const validateForm = () => {
+  //   const requiredFields = [
+  //     "travelType",
+  //   "destination",
+  //   "purpose",
+  //   "projectName",
+  //   "onAccount",
+  //   "travelfromDate",
+  //   "claimFromDate",
+  //   "claimToDate",
+  //     //"advanceRequested",
+  //   ];
+
+  //   const errors = {};
+
+  //   requiredFields.forEach((field) => {
+  //     if (!tourclaimformData[field] || tourclaimformData[field].toString().trim() === "") {
+  //       errors[field] = true;
+  //     }
+  //   });
+
+  //   setFormErrors(errors); // highlight those with errors
+
+  //   return Object.keys(errors).length === 0; // valid if no errors
+  // };
 
   useEffect(() => {
     const fetchAdvanceBalence = async () => {     
@@ -103,7 +146,31 @@ const TourClaimForm = ({
     fetchAdvanceBalence();
   }, []);
 
- 
+  const handleInputWithValidation = (field, value) => {
+   
+
+    if (field === "claimFromDate") {
+      setFormErrors((prev) => ({
+        ...prev,
+        fromDate: !value ? true : false,
+      }));
+    } else if (field === "claimToDate") {
+      setFormErrors((prev) => ({
+        ...prev,
+        tentativeToDate: !value ? true : false,
+      }));
+    } else if (field === "travelType") {
+      setFormErrors((prev) => ({
+        ...prev,
+        typeOfTravel: value.trim() === "" ? true : false,
+      }));
+    } else {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: value.trim() === "" ? true : false,
+      }));
+    }
+  };
 
   return (
     <div className="p-4">
@@ -137,7 +204,7 @@ const TourClaimForm = ({
                 />:
                   <Dropdown
                     inputId="Select-Travel"
-                    className="w-62 "
+                   // className="w-62 "
                    value={selectedtravelMode?selectedtravelMode.value:''}
                     options={travelModeOptions}
                    
@@ -148,6 +215,7 @@ const TourClaimForm = ({
                     }}
                     placeholder="Select a Mode"
                     disabled={editableMode === true }
+                  //  className={`"w-62 "${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                   />
 }
                  
@@ -161,15 +229,17 @@ const TourClaimForm = ({
                 </label>
                 <Dropdown
                   inputId="Type-of-Travel"
-                  className="w-62 text-sm"
+                 // className="w-62 text-sm"
                   value={tourclaimformData.travelType}
                   options={travelTypeOptions}
-                  onChange={(e) => handleChange("travelType", e.value)}
+                  onChange={(e) => {handleChange("travelType", e.value),  handleInputWithValidation("travelType", e.value)}}
                   placeholder="Select a Type"
                   disabled={
                     (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
+                  className={`w-62 text-sm ${formErrors.travelType ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  // className={`"w-62 text-sm"${formErrors.travelType ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
               <div>
@@ -182,13 +252,15 @@ const TourClaimForm = ({
 
                 <InputText
                   inputId="Destination"
-                  className="w-62 text-sm"
+                 // className="w-62 text-sm"
                   value={tourclaimformData.destination}
-                  onChange={(e) =>handleChange("destination", e.target.value)}
+                  onChange={(e) =>{handleChange("destination", e.target.value), handleInputWithValidation("destination", e.target.value)}}
                   disabled={
                     (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
+                  className={`w-62 text-sm ${formErrors.destination ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  // className={`"w-62 text-sm"${formErrors.destination ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
 
@@ -202,13 +274,15 @@ const TourClaimForm = ({
 
                 <InputText
                   inputId="Purpose-of-Trip"
-                  className="w-62 text-sm"
+                 // className="w-62 text-sm"
                   value={tourclaimformData.purpose}
-                  onChange={(e) => handleChange("purpose", e.target.value)}
+                  onChange={(e) => {handleChange("purpose", e.target.value), handleInputWithValidation("purpose", e.target.value)}}
                   disabled={
                     (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
+                  className={`w-62 text-sm ${formErrors.purpose ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                 //  className={`"w-62 text-sm"${formErrors.purpose ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
               <div>
@@ -221,13 +295,15 @@ const TourClaimForm = ({
 
                 <InputText
                   inputId="Project-Name"
-                  className="w-62"
+                 // className="w-62"
                   value={tourclaimformData.projectName}
-                  onChange={(e) =>  handleChange("projectName", e.target.value)}
+                  onChange={(e) => { handleChange("projectName", e.target.value), handleInputWithValidation("projectName", e.target.value)}}
                  disabled={
                     (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
+                  className={`w-62 text-sm ${formErrors.projectName ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  // className={`"w-62 text-sm"${formErrors.projectName ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
               <div>
@@ -239,9 +315,11 @@ const TourClaimForm = ({
                 </label>
                 <InputText
                   inputId="On-Account"
-                  className="w-62"
+                  //className="w-62"
                   value={tourclaimformData.onAccount}
-                  onChange={(e) => handleChange("onAccount", e.target.value)}
+                  onChange={(e) => {handleChange("onAccount", e.target.value), handleInputWithValidation("onAccount", e.target.value)}}
+                  className={`w-62 text-sm ${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  // className={`"w-62 text-sm"${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
 
@@ -254,7 +332,7 @@ const TourClaimForm = ({
                 </label>
                 <InputText
                   inputId="travelfromDate"
-                  className="w-62"
+                  //className="w-62"
                   value={
                     tourclaimformData.travelfromDate
                       ? new Date(
@@ -262,8 +340,9 @@ const TourClaimForm = ({
                         ).toLocaleDateString()
                       : "No Date Selected"
                   }
-                  onChange={(e) =>  handleChange("travelfromDate", e.target.value)}
+                  onChange={(e) => {handleChange("travelfromDate", e.target.value)}}
                   disabled
+                //   className={`"w-62 text-sm"${formErrors.travelfromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
 
@@ -275,13 +354,15 @@ const TourClaimForm = ({
                     inputId="claimFromDate"
                     showIcon
                      dateFormat="dd-mm-yy"
-                    className="w-62"
+                  //  className="w-62"
                     value={new Date(tourclaimformData.claimFromDate)}
-                    onChange={(e) =>handleChange("claimFromDate", e.value)}
+                    onChange={(e) =>{handleChange("claimFromDate", e.value), handleInputWithValidation("claimFromDate", e.value)}}
                     disabled={
                     (selectedtravelMode?selectedtravelMode.value:'') !==
                     "Long-Term-Local-Conveyance"
                   }
+                  className={`w-62 text-sm ${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  // className={`"w-62 text-sm"${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                   />
                 ) : (
                   <Calendar
@@ -315,14 +396,16 @@ const TourClaimForm = ({
                   inputId="claimToDate"
                   showIcon
                    dateFormat="dd-mm-yy"
-                  className="w-62"
+                //  className="w-62"
                   value={new Date(tourclaimformData.claimToDate)}
-                  onChange={(e) =>  handleChange("claimToDate", e.target.value)}
+                  onChange={(e) =>  {handleChange("claimToDate", e.target.value), handleInputWithValidation("claimToDate", e.value)}}
                     minDate={
                     tourclaimformData.claimFromDate
                       ? new Date(tourclaimformData.claimFromDate)
                       : null
                   }
+                  className={`w-62 text-sm ${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  // className={`"w-62 text-sm"${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
             </div>

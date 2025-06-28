@@ -40,6 +40,7 @@ export const ExpandableDataTableComponent = ({
   onRowToggle,
   expandedRows,
   rowExpansionTemplate,
+  
 }) => {
   return (
     <DataTable
@@ -59,6 +60,40 @@ export const ExpandableDataTableComponent = ({
     </DataTable>
   );
 };
+
+export const CustomeEditableDataTable=({ref,
+          value,
+          editMode,
+          dataKey,
+          onRowEditComplete,
+          editingRows,
+          onRowEditChange,
+          header,
+         className,
+           textSize,
+            tableStyle,
+          emptyMessage,
+          children
+})=>{
+return(
+   <DataTable
+          ref={ref}
+          value={value}
+          editMode={editMode}
+          dataKey={dataKey}
+          onRowEditComplete={onRowEditComplete}
+          editingRows={editingRows}
+          onRowEditChange={onRowEditChange}
+          header={header}
+        className={className}
+           textSize={textSize}
+            tableStyle={tableStyle}
+          emptyMessage={emptyMessage}
+          showGridlines
+        >
+           {children}
+        </DataTable>
+)}
 
 export const CustomColumn = ({
   field,
@@ -81,3 +116,27 @@ export const CustomColumn = ({
     />
   );
 };
+
+
+export const CustomEditableColumn = ({
+ field,
+          header,
+          editor=false,
+          body,
+          headerStyle,
+          bodyStyle
+}) => {
+  return (
+    <Column
+      field={field}
+      header={header}
+      editor={editor}
+     // headerStyle={headerStyle}
+    //  bodyStyle={bodyStyle}
+     // sortable={sortable}
+     // filter={filter}
+      body={body} // optional body renderer if needed
+    />
+  );
+};
+

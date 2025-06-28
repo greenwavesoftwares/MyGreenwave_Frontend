@@ -12,3 +12,17 @@ export const Dropdown = ({claimOptions,claimType,setClaimType,placehonder,classN
   )
 }
 
+export const CustomDropDown =({inputId,placeholder,panelClassName,dropdownIcon,value,options,onChange,className})=>{
+  return(
+                         <Dropdown
+                              inputId={inputId}
+                               className={className}
+                              panelClassName={panelClassName}
+                              dropdownIcon={dropdownIcon}
+                              value={value}
+                              options={options}
+                              onChange={onChange}
+                              placeholder={placeholder}
+                            />
+  )
+}

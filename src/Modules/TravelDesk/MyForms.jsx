@@ -1,23 +1,54 @@
-import React from "react";
+import React,{useState,useEffect} from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Chip, Grid, IconButton } from "@mui/material";
+import { Chip} from "@mui/material";
 //Call Api
-import { getMyFormParticularRequisitionId,getExpandableData } from "./TravelDeskAPI";
+import { getMyFormParticularRequisitionId,getExpandableData,getMyFormTravelData_New } from "./TravelDeskAPI";
+// import {
+//   getMyFormTravelData_New,
+//   getMyFormTravelData,
+//   getTravelDropDown,
+//   createRequisition,
+// } from "../TravelDesk/TravelDeskAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Dialog } from "primereact/dialog";
-import CheckIcon from "@mui/icons-material/Check";
-import { useState } from "react";
+//import CheckIcon from "@mui/icons-material/Check";
+//import { useState } from "react";
 import {Button } from "primereact/button"
 import RequisitionFormView from "./RequisitionFormView";
 
-const MyForm = ({ myFormTableData }) => {
+const MyForm = () => {
+   const [myFormTableData, setMyFormTableData] = useState([]);
   const [expandedRows, setExpandedRows] = useState(null);
   console.log("table data", myFormTableData);
   //Dialog visible
   const [visible, setVisible] = useState(false);
   //
   const [rowData, setRowData] = useState({});
+
+  //My Form Api Call
+   
+    useEffect(() => {
+      const myFormApi = async () => {
+      try {
+        // const { token } = getUserData();
+        //await getMyFormTravelData()
+        const response = await getMyFormTravelData_New();
+        console.log(1213, response);
+        if (!response.status) {
+          showErrorMessage("error", "Error", response.message);
+        } else {
+          setMyFormTableData(response.data);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+  
+     // fetchDropdownList();
+      //MY Form api function call
+      myFormApi();
+    }, []);
 
   const handelShowPreviousData = async (requisionId) => {
     console.log("clickrequisionId", requisionId);
@@ -143,6 +174,10 @@ const MyForm = ({ myFormTableData }) => {
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
          dataKey="travelId"
+        rowClassName={(rowData) => {
+          if (rowData[0].travelCompleteFlag) return "bg-red-50";
+          //if (!rowData[0].travelCompleteFlag) return "bg-green-50";
+        }}
         paginator
         rows={10}
       >

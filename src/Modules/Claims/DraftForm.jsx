@@ -164,6 +164,7 @@ const toastRef = useRef(null);
         Total: row.total,
         Remarks: row.remarks,
       }));
+      console.log('formattedRows', formattedRows)
 
       settourClaimTableData(formattedRows);
       seteditableMode(true);

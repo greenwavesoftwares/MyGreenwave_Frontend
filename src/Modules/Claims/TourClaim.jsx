@@ -13,6 +13,7 @@ const TourClaim = () => {
  
   const [editableMode, seteditableMode] = useState(false); // true by default
   const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
+  const [formErrors, setFormErrors] = useState({});
   const [draftData, setDraftData] = useState([]);
   const [travelModeOptions, setTravelModeOptions] = useState([]);
    const [selectedtravelMode,setselectedtravelMode]=useState(null)
@@ -180,6 +181,7 @@ const TourClaim = () => {
                     travelModeOptions={travelModeOptions}
                     selectedtravelMode={selectedtravelMode}
                     setselectedtravelMode={setselectedtravelMode}
+                    formErrors={formErrors} setFormErrors={setFormErrors}
                   />
                  
                   <TourClaimTable
@@ -193,6 +195,7 @@ const TourClaim = () => {
                     settourclaimformData={settourclaimformData}
                     tourclaimformData={tourclaimformData}
                     setDraftData={setDraftData}
+                   formErrors={formErrors} setFormErrors={setFormErrors}
                   />
                 </>
               ) : (

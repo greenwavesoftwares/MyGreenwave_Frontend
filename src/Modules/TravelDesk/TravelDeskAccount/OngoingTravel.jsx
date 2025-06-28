@@ -175,8 +175,10 @@ const OngoingTravel = () => {
             "Approved"
           );
           if (responseData.status) {
-            let response = await getOngoingTravelDataAccount();
-            setongoingtravelData(response.data);
+            // let response = await getOngoingTravelDataAccount();
+            // setongoingtravelData(response.data);
+              let response = await getExpandableData(rowData.travelId);
+                setExpandedRows(response.data);
             // setreviewedtourclaimData(response.data);
             toast.current.show({
               severity: "success",
@@ -207,8 +209,11 @@ const OngoingTravel = () => {
             "Rejected"
           ); //await RejectTourClaim(rowData.claim_id, "Rejected");
           if (response.status) {
-            let response = await getOngoingTravelDataAccount();
-            setongoingtravelData(response.data);
+              let response = await getExpandableData(rowData.travelId);
+                        setExpandedRows(response.data);
+            // let response = await getOngoingTravelDataAccount();
+            // setongoingtravelData(response.data);
+            
             toast.current.show({
               severity: "success",
               summary: "success",
@@ -246,7 +251,7 @@ const OngoingTravel = () => {
               Waiting for Manager Review
             </span>
           ) : (
-            <span className="text-gray-500 italic">Action Taken</span>
+            <span className="text-gray-500 italic">{rowData.status}</span>
           )}
         </div>
       );
