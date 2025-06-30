@@ -44,7 +44,7 @@
 
 //Table Body
 .dataTableBody.p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-row-odd  {
-  background-color: var(--tableOddRow) !important;
+  background-color: var(--tableOddRow);
   color: var(--fontColor) !important;
    border: 1px solid var(--tableOuterBorder) !important;
 }
