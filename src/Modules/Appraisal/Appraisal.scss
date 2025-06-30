@@ -53,10 +53,12 @@
   color: var(--fontColor) !important;
 }
 .dataTableBody.p-datatable .p-datatable-tbody > tr{
-  background: none !important;
+  background: none ;
   color: var(--fontColor) !important;
 }
-
+.bgcyan-100{
+  background-color: var(--tableHighlight) !important;
+}
 
 
 
@@ -64,6 +66,7 @@
   font-size: base.$dataTableHeaderFontSize;
   background: none !important;
   border: 1px solid var(--card-border) !important;
+ color: var(--fontColor) !important;
 }
 .dataTableBody.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
   font-size: base.$dataTableHeaderFontSize;

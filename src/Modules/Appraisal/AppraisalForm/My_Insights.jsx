@@ -5,8 +5,13 @@ import { Button as MuiButton } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 
-const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
-  isApprover, }) => {
+const MyInsights = ({
+  appraiserPreviousSaveFormDat,
+  myInsights_Data,
+  isReviewer,
+  isApprover,
+  trackMyInsights
+}) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
@@ -46,6 +51,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
+    trackMyInsights(true)
   };
 
   return (
@@ -64,6 +70,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
+                className="inputFieldStyle inputSectionWidth"
                 value={rowData.my_ideas}
                 onChange={(e) =>
                   handleInputChange(e.target.value, "my_ideas", rowIndex)
@@ -81,6 +88,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.my_contribution_plans}
+                className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -101,6 +109,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
@@ -122,6 +131,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
@@ -140,12 +150,26 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <Button
-                icon="pi pi-check"
-                size="small"
-                text
-                onClick={handleSaveRow}
-              />
+              <div style={{ display: "flex" }}>
+                <Button
+                  icon="pi pi-check"
+                  size="small"
+                  text
+                  onClick={handleSaveRow}
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  style={{ color: "red" }}
+                  type="button"
+                  onClick={(e) => {
+                    //e.preventDefault();
+                    setEditingRowIndex(null);
+                  }}
+                  // onClick={handleSaveRow}
+                />
+              </div>
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -173,6 +197,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
+                  trackMyInsights(true)
                 }}
               />
             );
@@ -199,6 +224,7 @@ const MyInsights = ({ appraiserPreviousSaveFormDat, myInsights_Data, isReviewer,
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
+            trackMyInsights(true)
           }}
         >
           Add New Row

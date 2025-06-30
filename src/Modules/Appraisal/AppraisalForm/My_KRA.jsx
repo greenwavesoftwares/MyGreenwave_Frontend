@@ -6,13 +6,19 @@ import { Chip, Button as MuiButton } from "@mui/material";
 import { InputText } from "primereact/inputtext";
 import { MultiSelect } from "primereact/multiselect";
 
-const MyKRA = ({ appraiserPreviousSaveFormDat, myKRA_Data,trainingData, isReviewer,
-  isApprover,}) => {
+const MyKRA = ({
+  appraiserPreviousSaveFormDat,
+  myKRA_Data,
+  trainingData,
+  isReviewer,
+  isApprover,
+  trackMyKRA
+}) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Set Training Data
-const [appraisalTraining, setAppraisalTraining] = useState([]);
+  const [appraisalTraining, setAppraisalTraining] = useState([]);
   //Set only training data
   const [trainingDataOnly, setTrainingDataOnly] = useState([]);
 
@@ -54,6 +60,7 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
+    trackMyKRA(true);
   };
 
   //training data set
@@ -68,7 +75,6 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
         header="My KRA"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
-        
       >
         <Column
           field="my_next12month_KRA"
@@ -77,6 +83,7 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.my_next12month_KRA}
+                className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -104,7 +111,13 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
                 display="chip"
               />
             ) : (
-              <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
                 {rowData.appraisalTraining?.map((item, index) => (
                   <Chip
                     size="small"
@@ -125,6 +138,7 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
@@ -146,6 +160,7 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
@@ -197,12 +212,12 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
+                  trackMyKRA(true);
                 }}
               />
             );
           }}
         />
-       
       </DataTable>
       <div
         style={{
@@ -224,6 +239,7 @@ const [appraisalTraining, setAppraisalTraining] = useState([]);
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
+            trackMyKRA(true);
           }}
         >
           Add New Row

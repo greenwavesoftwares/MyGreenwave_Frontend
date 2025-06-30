@@ -12,6 +12,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CircleIcon from '@mui/icons-material/Circle';
 // Style Import
 import "./Appraisal.scss";
 //Import PUT API
@@ -22,7 +23,10 @@ import { useForm } from "react-hook-form";
 import { use } from "react";
 //Import Form Table
 import PerformanceScorecardDateTable from "./AppraisalForm/PerformanceScorecard";
-import { showErrorMessage, showSuccessMessage } from "../../components/Toast/ShowMessage";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "../../components/Toast/ShowMessage";
 import { Toast } from "primereact/toast";
 import CompetencyScorecard from "./AppraisalForm/CompetencyScorecard";
 import FutureGoals from "./AppraisalForm/FutureGoals";
@@ -40,14 +44,35 @@ import SchoolIcon from "@mui/icons-material/School";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AdsClickIcon from "@mui/icons-material/AdsClick";
 import { useLocation, useNavigate } from "react-router-dom";
+import CalculatePercentage from "./CalculatePercentage";
 
-function AppraisalDialog({ appraiserForm, trainingData }) {
+
+function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,currentFormId }) {
   //For Toast
   const toastRef = useRef(null);
+  //Change Value Track
+  const [trackFutureGoals,setTrackFutureGoals]=useState(false)
+  const [trackPerformance,setTrackPerformance]=useState(false)
+  const [trackMyKRA,setTrackMyKRA]=useState(false)
+  const [trackCompetencyScorecard,setTrackCompetencyScorecard]=useState(false)
+  const [trackFutureComptency,setTrackFutureComptency]=useState(false)
+  const [trackMyInsights,setTrackMyInsights]=useState(false)
+
+  //Submit From Loader
+  const [loader, setLoader] = useState(false);
+  
+
+
+  //For Personal Details Compare Check
+  const [comparePersonalData,setComparePersonalData]=useState(false)
+  //Compare Form Data 
+  const [updateFormDataTrack,setUpdateFormDataTrack]=useState(null);
   const [expanded, setExpanded] = useState([]);
   //const [expandAll, setExpandAll] = useState(false);
   // State for form data
   const [expandButtonText, setExpandButtonText] = useState("expand all");
+
+  
 
   // For performanceScorecardData
   const [performanceScorecardData, setPerformanceScorecardData] = useState([]);
@@ -138,9 +163,8 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     setMyInsights(updatedData);
   };
 
-  
-//For Confirmation Reviewer and Approver
-   //const [reviewer, setReviewer] = useState(false);
+  //For Confirmation Reviewer and Approver
+  //const [reviewer, setReviewer] = useState(false);
   // useEffect(() => {
   //   setReviewer(appraiserForm?.personaldetails.reviewed);
   // }, [appraiserForm,setValue]);
@@ -150,19 +174,20 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
   //   setApprover(appraiserForm?.personaldetails.approved);
   // }, [appraiserForm]); ///[appraiserForm] last change
 
-   //console.log("reviewer_Click", reviewer);
+  //console.log("reviewer_Click", reviewer);
   // console.log(
   //   "reviewer_data",
   //   appraiserForm?.personaldetails.reviewed,
   //   reviewer
   // );
-  
 
   //Use React Hooks Form
-  const { register, handleSubmit, reset, setValue } = useForm();
+  const { register, handleSubmit, reset, setValue, getValues, watch } =
+    useForm();
 
   //Make All Update Data
   const personaldetailsSubmit = async (data) => {
+    setLoader(true)
     console.log("object", data);
     const generatepersonaldetails = {
       personaldetails: data,
@@ -174,9 +199,11 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
       myinsights: myInsights,
       lastyeargoals: appraiserForm?.lastyeargoals,
       confirmation: { reviewed: data.reviewed, approved: data.approved },
-      appraisalDate:appraiserForm?.appraisalDate
+      appraisalDate: appraiserForm?.appraisalDate,
     };
     console.log("AppraisalForm_Save_Data:", generatepersonaldetails);
+    //
+    
 
     try {
       const localStorageAuth = getUserData();
@@ -189,6 +216,9 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
       console.log("Appraisal Form Data:", response);
       if (response.status === 201) {
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
+        setLoader(false);
+        appraisalFormVisible(false)
+        currentFormId(null)
       } else {
         showErrorMessage(toastRef, "Error", "Form Submission Failed");
       }
@@ -199,75 +229,119 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
     }
   };
 
+  //React Hook Form On Change Watch Value
+  const [
+    current_base_salary,
+    proposed_base_salary,
+    current_assued_bonus,
+    proposed_assued_bonus,
+    current_performance_bonus,
+    proposed_performance_bonus,
+    current_total_ctc,
+    proposed_total_ctc
+    
+  ] = watch([
+    "current_base_salary",
+    "proposed_base_salary",
+    "current_assued_bonus",
+    "proposed_assued_bonus",
+    "current_performance_bonus",
+    "proposed_performance_bonus",
+    "current_total_ctc",
+    "proposed_total_ctc"
+    
+  ]);
+
+  //Base Salary
+  const currentBaseSalary_WatchValue = current_base_salary;
+  const proposedBaseSalary_WatchValue = proposed_base_salary;
+  //Proposed Salary
+  const proposedAssuedBonus_WatchValue = proposed_assued_bonus;
+  const currentAssuedBonus_WatchValue = current_assued_bonus;
+  //Performance Salary
+  const currentPerformanceBonus_WatchValue = current_performance_bonus;
+  const proposedPerformanceBonus_WatchValue = proposed_performance_bonus;
+  //Total CTC
+  const currentTotalCTC_WatchValue = current_total_ctc;
+  const proposedTotalCTC_WatchValue = proposed_total_ctc;
+
+  // console.log(
+  //   "current_base_salary",
+  //   currentBaseSalary_WatchValue,
+  //   proposedBaseSalary_WatchValue
+  // );
+
   //Set Api Value : Personal Information already
   useEffect(() => {
     if (appraiserForm) {
-  setValue("formId", appraiserForm?.personaldetails.formId);
-  setValue("empId", appraiserForm?.personaldetails.empId);
-  setValue("empName", appraiserForm?.personaldetails.empName);
-  setValue("empCode", appraiserForm?.personaldetails.empCode);
-  setValue("position", appraiserForm?.personaldetails.position);
-  setValue("education", appraiserForm?.personaldetails.education);
-  setValue("yoe_gw", appraiserForm?.personaldetails.yoe_gw);
-  setValue("yoe_ngw", appraiserForm?.personaldetails.yoe_ngw);
-  setValue("yoe_total", appraiserForm?.personaldetails.yoe_total);
-  setValue(
-    "why_do_i_come_to_office",
-    appraiserForm?.personaldetails.why_do_i_come_to_office
-  );
-  setValue(
-    "current_base_salary",
-    appraiserForm?.personaldetails.current_base_salary
-  );
-  setValue(
-    "current_assued_bonus",
-    appraiserForm?.personaldetails.current_assued_bonus
-  );
-  setValue(
-    "current_performance_bonus",
-    appraiserForm?.personaldetails.current_performance_bonus
-  );
-  setValue(
-    "current_total_ctc",
-    appraiserForm?.personaldetails.current_total_ctc
-  );
-  setValue(
-    "proposed_base_salary",
-    appraiserForm?.personaldetails.proposed_base_salary
-  );
-  setValue(
-    "proposed_assued_bonus",
-    appraiserForm?.personaldetails.proposed_assued_bonus
-  );
-  setValue(
-    "proposed_performance_bonus",
-    appraiserForm?.personaldetails.proposed_performance_bonus
-  );
-  setValue(
-    "proposed_total_ctc",
-    appraiserForm?.personaldetails.proposed_total_ctc
-  );
-  //Apt Call Value set
-  setValue("my_signature", appraiserForm?.personaldetails.my_signature);
-  setValue(
-    "appraiser_signature",
-    appraiserForm?.personaldetails.appraiser_signature
-  );
-  setValue(
-    "reviewer_signature",
-    appraiserForm?.personaldetails.reviewer_signature
-  );
-  setValue("lastUpdateBy", appraiserForm?.personaldetails.lastUpdateBy);
-  setValue("updateDate", appraiserForm?.personaldetails.updateDate);
-  setValue("reviewer", appraiserForm?.personaldetails.reviewer);
-  setValue("approver", appraiserForm?.personaldetails.approver);
-  setValue("reviewed", appraiserForm?.personaldetails.reviewed);
-  setValue("approved", appraiserForm?.personaldetails.approved);
-  setValue("doj", appraiserForm?.personaldetails.doj);
+      setValue("formId", appraiserForm?.personaldetails.formId);
+      setValue("empId", appraiserForm?.personaldetails.empId);
+      setValue("empName", appraiserForm?.personaldetails.empName);
+      setValue("empCode", appraiserForm?.personaldetails.empCode);
+      setValue("position", appraiserForm?.personaldetails.position);
+      setValue("education", appraiserForm?.personaldetails.education);
+      setValue("yoe_gw", appraiserForm?.personaldetails.yoe_gw);
+      setValue("yoe_ngw", appraiserForm?.personaldetails.yoe_ngw);
+      setValue(
+        "yoe_total",
+        appraiserForm?.personaldetails.yoe_gw +
+          appraiserForm?.personaldetails.yoe_ngw
+      );
+      setValue(
+        "why_do_i_come_to_office",
+        appraiserForm?.personaldetails.why_do_i_come_to_office
+      );
+      setValue(
+        "current_base_salary",
+        appraiserForm?.personaldetails.current_base_salary
+      );
+      setValue(
+        "current_assued_bonus",
+        appraiserForm?.personaldetails.current_assued_bonus
+      );
+      setValue(
+        "current_performance_bonus",
+        appraiserForm?.personaldetails.current_performance_bonus
+      );
+      setValue(
+        "current_total_ctc",
+        appraiserForm?.personaldetails.current_total_ctc
+      );
+      setValue(
+        "proposed_base_salary",
+        appraiserForm?.personaldetails.proposed_base_salary
+      );
+      setValue(
+        "proposed_assued_bonus",
+        appraiserForm?.personaldetails.proposed_assued_bonus
+      );
+      setValue(
+        "proposed_performance_bonus",
+        appraiserForm?.personaldetails.proposed_performance_bonus
+      );
+      setValue(
+        "proposed_total_ctc",
+        appraiserForm?.personaldetails.proposed_total_ctc
+      );
+      //Apt Call Value set
+      setValue("my_signature", appraiserForm?.personaldetails.my_signature);
+      setValue(
+        "appraiser_signature",
+        appraiserForm?.personaldetails.appraiser_signature
+      );
+      setValue(
+        "reviewer_signature",
+        appraiserForm?.personaldetails.reviewer_signature
+      );
+      setValue("lastUpdateBy", appraiserForm?.personaldetails.lastUpdateBy);
+      setValue("updateDate", appraiserForm?.personaldetails.updateDate);
+      setValue("reviewer", appraiserForm?.personaldetails.reviewer);
+      setValue("approver", appraiserForm?.personaldetails.approver);
+      setValue("reviewed", appraiserForm?.personaldetails.reviewed);
+      setValue("approved", appraiserForm?.personaldetails.approved);
+      setValue("doj", appraiserForm?.personaldetails.doj);
     }
-}, [appraiserForm, setValue]);
-
-
+  }, [appraiserForm, setValue]);
 
   console.log("appraiserFormFromInnerSection", appraiserForm);
 
@@ -326,30 +400,94 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
 
   //IS Form Disable or Enable Function
   const navigate = useNavigate();
-  const isFormDisabled=()=>{
-    //For User 
-    if((appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved) && (appraiserForm?.personaldetails.empId.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase())){
-      return true
+  const isFormDisabled = () => {
+    //For User
+    if (
+      (appraiserForm?.personaldetails.reviewed ||
+        appraiserForm?.personaldetails.approved) &&
+      appraiserForm?.personaldetails.empId.toLowerCase() ===
+        getUserData()?.userDetails.userId.toLowerCase()
+    ) {
+      return true;
     }
     //For Reviewer Section
-     else if((appraiserForm?.personaldetails.reviewed || appraiserForm?.personaldetails.approved ) && (appraiserForm?.personaldetails.reviewer.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
-      return true
-     }
-     else if(appraiserForm?.personaldetails.approved && (appraiserForm?.personaldetails.approver.toLowerCase() === getUserData()?.userDetails.userId.toLowerCase()) ){
-      return true
-     }
- 
-    else{
-      return false
+    else if (
+      (appraiserForm?.personaldetails.reviewed ||
+        appraiserForm?.personaldetails.approved) &&
+      appraiserForm?.personaldetails.reviewer.toLowerCase() ===
+        getUserData()?.userDetails.userId.toLowerCase()
+    ) {
+      return true;
+    } else if (
+      appraiserForm?.personaldetails.approved &&
+      appraiserForm?.personaldetails.approver.toLowerCase() ===
+        getUserData()?.userDetails.userId.toLowerCase()
+    ) {
+      return true;
+    } else {
+      return false;
     }
-    
+  };
 
-  }
-
-  //Find appraisal-tracker end point 
+  //Find appraisal-tracker end point
   const location = useLocation();
   // Check if current path is `/appraisal-tracker`
-  const isTrackerPage = location.pathname === '/AppraisalTracker';
+  const isTrackerPage = location.pathname === "/AppraisalTracker";
+
+
+
+
+  //Compare Previous and Current Change 
+  const savePrevious_PersonalDetails = 
+  [
+    appraiserForm?.personaldetails.position,
+    appraiserForm?.personaldetails.education,
+    appraiserForm?.personaldetails.yoe_gw,
+    appraiserForm?.personaldetails.yoe_ngw,
+    appraiserForm?.personaldetails.why_do_i_come_to_office,
+    appraiserForm?.personaldetails.current_base_salary,
+    appraiserForm?.personaldetails.proposed_base_salary,
+    appraiserForm?.personaldetails.current_assued_bonus,
+    appraiserForm?.personaldetails.proposed_assued_bonus,
+    appraiserForm?.personaldetails.current_performance_bonus,
+    appraiserForm?.personaldetails.proposed_performance_bonus,
+    appraiserForm?.personaldetails.current_total_ctc,
+    appraiserForm?.personaldetails.proposed_total_ctc
+  ]
+  const onChange_PersonalDetails=
+    watch([
+    "position",
+    "education",
+    "yoe_gw",
+    "yoe_ngw",
+    "why_do_i_come_to_office",
+    "current_base_salary",
+    "proposed_base_salary",
+    "current_assued_bonus",
+    "proposed_assued_bonus",
+    "current_performance_bonus",
+    "proposed_performance_bonus",
+    "current_total_ctc",
+    "proposed_total_ctc"
+  ])
+  
+  //console.log("onChange_PersonalDetails",savePrevious_PersonalDetails, onChange_PersonalDetails);
+  const compareData = (previous, current) => {
+  const isEqual = JSON.stringify(previous) === JSON.stringify(current);
+//console.log("Comparison result:", !isEqual);
+  setComparePersonalData(!isEqual)
+  return isEqual;
+};
+  useEffect(()=>{
+    compareData(savePrevious_PersonalDetails,onChange_PersonalDetails)
+  },[onChange_PersonalDetails])
+
+
+
+  //Compare For My Goal Data
+  //const myGoal_PreviousData=appraiserForm.futuregoals;
+  //console.log('myGoal_PreviousData',FutureGoalsData);
+  //console.log("trackMyKRA",trackMyKRA);
 
   return (
     <>
@@ -379,10 +517,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 className="accordionStyle"
               >
                 <AccordionSummary
-                  expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
+                  expandIcon={
+                    <>
+                    
+                    <ExpandMoreIcon className="ExpandMoreIconStyle" />
+                    
+                    </>
+                  }
                   aria-controls="panel1-content"
                   id="panel1-header"
-                 
                 >
                   <Typography
                     component="span"
@@ -393,6 +536,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                       className="accordionIconBGStyle"
                     />
                     Personal Details
+                    {comparePersonalData ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
@@ -482,7 +626,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           <InputText
                             id="yoe_gw"
                             type="number"
-                            {...register("yoe_gw")}
+                            {...register("yoe_gw", {
+                              onChange: (e) => {
+                                const gw = parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "yoe_total",
+                                  gw + parseFloat(getValues("yoe_ngw")) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Year of Experience(gw)"
                           />
@@ -500,7 +652,15 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           <InputText
                             id="yoe_ngw"
                             type="number"
-                            {...register("yoe_ngw")}
+                            {...register("yoe_ngw", {
+                              onChange: (e) => {
+                                const ngw = parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "yoe_total",
+                                  ngw + parseFloat(getValues("yoe_gw")) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Year of Experience(non-gw)"
                           />
@@ -517,6 +677,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           </label>
                           <InputText
                             id="yoe_total"
+                            disabled
                             className="p-inputtext-sm"
                             {...register("yoe_total")}
                             placeholder="yoe_total"
@@ -552,7 +713,22 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           <InputText
                             id="current_base_salary"
                             type="number"
-                            {...register("current_base_salary")}
+                            {...register("current_base_salary", {
+                              onChange: (e) => {
+                                const baseSalary =
+                                  parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "current_total_ctc",
+                                  baseSalary +
+                                    parseFloat(
+                                      getValues("current_assued_bonus")
+                                    ) +
+                                    parseFloat(
+                                      getValues("current_performance_bonus")
+                                    ) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Current Base Salary"
                           />
@@ -570,7 +746,22 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           <InputText
                             id="current_assued_bonus"
                             type="number"
-                            {...register("current_assued_bonus")}
+                            {...register("current_assued_bonus", {
+                              onChange: (e) => {
+                                const assuredBonus =
+                                  parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "current_total_ctc",
+                                  assuredBonus +
+                                    parseFloat(
+                                      getValues("current_base_salary")
+                                    ) +
+                                    parseFloat(
+                                      getValues("current_performance_bonus")
+                                    ) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Current Assured Bonus"
                           />
@@ -588,7 +779,22 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           <InputText
                             id="current_performance_bonus"
                             type="number"
-                            {...register("current_performance_bonus")}
+                            {...register("current_performance_bonus", {
+                              onChange: (e) => {
+                                const performanceBonus =
+                                  parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "current_total_ctc",
+                                  performanceBonus +
+                                    parseFloat(
+                                      getValues("current_base_salary")
+                                    ) +
+                                    parseFloat(
+                                      getValues("current_assued_bonus")
+                                    ) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Current Performance Bonus"
                           />
@@ -605,6 +811,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                           </label>
                           <InputText
                             id="current_total_ctc"
+                            disabled
                             type="number"
                             {...register("current_total_ctc")}
                             className="p-inputtext-sm"
@@ -620,11 +827,30 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                             htmlFor="proposed_base_salary"
                           >
                             Proposed Base Salary
+                            <CalculatePercentage
+                              current={currentBaseSalary_WatchValue}
+                              proposed={proposedBaseSalary_WatchValue}
+                            />
                           </label>
                           <InputText
                             id="proposed_base_salary"
                             type="number"
-                            {...register("proposed_base_salary")}
+                            {...register("proposed_base_salary", {
+                              onChange: (e) => {
+                                const baseSalary =
+                                  parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "proposed_total_ctc",
+                                  baseSalary +
+                                    parseFloat(
+                                      getValues("proposed_assued_bonus")
+                                    ) +
+                                    parseFloat(
+                                      getValues("proposed_performance_bonus")
+                                    ) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Proposed Base Salary"
                           />
@@ -637,12 +863,31 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                             style={{ fontSize: "12px", marginLeft: "5px" }}
                             htmlFor="proposed_assued_bonus"
                           >
-                            Proposed Assured Bonus
+                            Proposed Assured Bonus{" "}
+                            <CalculatePercentage
+                              current={currentAssuedBonus_WatchValue}
+                              proposed={proposedAssuedBonus_WatchValue}
+                            />
                           </label>
                           <InputText
                             id="proposed_assued_bonus"
                             type="number"
-                            {...register("proposed_assued_bonus")}
+                            {...register("proposed_assued_bonus", {
+                              onChange: (e) => {
+                                const assuredBonus =
+                                  parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "proposed_total_ctc",
+                                  assuredBonus +
+                                    parseFloat(
+                                      getValues("proposed_base_salary")
+                                    ) +
+                                    parseFloat(
+                                      getValues("proposed_performance_bonus")
+                                    ) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Proposed Assured Bonus"
                           />
@@ -655,12 +900,31 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                             style={{ fontSize: "12px", marginLeft: "5px" }}
                             htmlFor="proposed_performance_bonus"
                           >
-                            Proposed Performance Bonus
+                            Proposed Performance Bonus 
+                             <CalculatePercentage
+                              current={currentPerformanceBonus_WatchValue}
+                              proposed={proposedPerformanceBonus_WatchValue}
+                            />
                           </label>
                           <InputText
                             id="proposed_performance_bonus"
                             type="number"
-                            {...register("proposed_performance_bonus")}
+                            {...register("proposed_performance_bonus", {
+                              onChange: (e) => {
+                                const performanceBonus =
+                                  parseFloat(e.target.value) || 0;
+                                setValue(
+                                  "proposed_total_ctc",
+                                  performanceBonus +
+                                    parseFloat(
+                                      getValues("proposed_base_salary")
+                                    ) +
+                                    parseFloat(
+                                      getValues("proposed_assued_bonus")
+                                    ) || 0
+                                );
+                              },
+                            })}
                             className="p-inputtext-sm"
                             placeholder="Proposed Performance Bonus"
                           />
@@ -674,9 +938,14 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                             htmlFor="proposed_total_ctc"
                           >
                             Proposed Total CTC
+                            <CalculatePercentage
+                              current={currentTotalCTC_WatchValue}
+                              proposed={proposedTotalCTC_WatchValue}
+                            />
                           </label>
                           <InputText
                             id="proposed_total_ctc"
+                            disabled
                             type="number"
                             {...register("proposed_total_ctc")}
                             className="p-inputtext-sm"
@@ -695,10 +964,9 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               className="accordionNoSpace accordionStyle"
               expanded={expanded.includes("panel2")}
               onChange={handleAccordionChange("panel2")}
-              
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon  className="ExpandMoreIconStyle"/>}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle" />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -711,6 +979,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     className="accordionIconBGStyle"
                   />
                   My Goals
+                 {trackFutureGoals ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -723,6 +992,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  trackFutureGoals={setTrackFutureGoals}
                 />
               </AccordionDetails>
             </Accordion>
@@ -734,7 +1004,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               onChange={handleAccordionChange("panel3")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle" />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -746,7 +1016,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     fontSize="small"
                     className="accordionIconBGStyle"
                   />
-                  My KRA
+                  My KRA  {trackPerformance || trackMyKRA ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -758,6 +1028,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  trackPerformance={setTrackPerformance}
                 />
                 <MyKRA
                   appraiserPreviousSaveFormDat={appraiserForm?.mykra}
@@ -765,6 +1036,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  trackMyKRA={setTrackMyKRA}
                 />
               </AccordionDetails>
             </Accordion>
@@ -776,7 +1048,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               onChange={handleAccordionChange("panel4")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle" />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -788,7 +1060,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     fontSize="small"
                     className="accordionIconBGStyle"
                   />
-                  My Training
+                  My Training {trackCompetencyScorecard || trackFutureComptency ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -800,6 +1072,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  trackCompetencyScorecard={setTrackCompetencyScorecard}
                 />
                 <FutureComptency
                   appraiserPreviousSaveFormDat={appraiserForm?.futurecomptency}
@@ -807,6 +1080,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  trackFutureComptency={setTrackFutureComptency}
                 />
               </AccordionDetails>
             </Accordion>
@@ -818,7 +1092,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               onChange={handleAccordionChange("panel5")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle" />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -830,7 +1104,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     fontSize="small"
                     className="accordionIconBGStyle"
                   />
-                  My Insights
+                  My Insights {trackMyInsights ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -839,6 +1113,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                   myInsights_Data={myInsights_Upadte}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  trackMyInsights={setTrackMyInsights}
                 />
               </AccordionDetails>
             </Accordion>
@@ -850,7 +1125,7 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               onChange={handleAccordionChange("panel6")}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle"/>}
+                expandIcon={<ExpandMoreIcon className="ExpandMoreIconStyle" />}
                 aria-controls="panel1-content"
                 id="panel1-header"
               >
@@ -865,7 +1140,11 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
               <AccordionDetails>
                 <div className="flex justify-center items-center mb-1 column-gap-4">
                   <h1 className="text-sm">Reviewer</h1>
-                  <input type="checkbox" disabled={isReviewer()} {...register("reviewed")}/>
+                  <input
+                    type="checkbox"
+                    disabled={isReviewer()}
+                    {...register("reviewed")}
+                  />
                   {/* <Checkbox
                     //checked={reviewer}
                     checked={appraiserForm?.personaldetails.reviewed}
@@ -889,8 +1168,12 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                     // }}
                   /> */}
                   <h1 className="text-sm">Approver</h1>
-                  
-                   <input type="checkbox" disabled={isApprover()} {...register("approved")}/>
+
+                  <input
+                    type="checkbox"
+                    disabled={isApprover()}
+                    {...register("approved")}
+                  />
                   {/* <Checkbox
                     checked={approver}
                     disabled={isApprover()}
@@ -902,18 +1185,19 @@ function AppraisalDialog({ appraiserForm, trainingData }) {
                 </div>
               </AccordionDetails>
             </Accordion>
-            {!isTrackerPage &&
-            <MuiButton
-              variant="contained"
-              size="small"
-              disabled={
-                isFormDisabled() 
-              }
-              type="submit"
-              className="mt-2"
-            >
-              Submit Form
-            </MuiButton>}
+            {!isTrackerPage && (
+              <MuiButton
+                variant="contained"
+                size="small"
+                disabled={isFormDisabled()}
+                loading={loader}
+                loadingPosition="end"
+                type="submit"
+                className="mt-2"
+              >
+                Submit Form
+              </MuiButton>
+            )}
           </form>
 
           <Toast ref={toastRef} />

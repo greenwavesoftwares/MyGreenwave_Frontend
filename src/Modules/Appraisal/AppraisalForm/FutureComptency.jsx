@@ -14,6 +14,7 @@ const FutureComptency = ({
   trainingData,
   isReviewer,
   isApprover,
+  trackFutureComptency,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -62,6 +63,7 @@ const FutureComptency = ({
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
+    trackFutureComptency(true);
   };
 
   return (
@@ -97,9 +99,7 @@ const FutureComptency = ({
               <Dropdown
                 options={training}
                 value={rowData.goals}
-                onChange={(e) =>
-                  handleInputChange(e.value, "goals", rowIndex)
-                }
+                onChange={(e) => handleInputChange(e.value, "goals", rowIndex)}
                 placeholder="Select Training"
               />
             ) : (
@@ -129,9 +129,9 @@ const FutureComptency = ({
                   rowData.relevance === "H" || rowData.relevance === "High"
                     ? "error"
                     : rowData.relevance === "M" ||
-                      rowData.relevance === "Medium"
-                    ? "warning"
-                    : "primary"
+                        rowData.relevance === "Medium"
+                      ? "warning"
+                      : "primary"
                 }
               />
             )
@@ -144,6 +144,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <Calendar
                 dateFormat="yy-mm-dd"
+                style={{ width: "10rem" }}
                 value={
                   rowData.target_date ? new Date(rowData.target_date) : null
                 }
@@ -158,11 +159,11 @@ const FutureComptency = ({
                 showIcon
               />
             ) : (
-              formatDate(rowData.target_date) ?? ""
+              (formatDate(rowData.target_date) ?? "")
             )
           }
         />
-        
+
         <Column
           field="reviewers_comment"
           header="Reviewer's Comment"
@@ -170,6 +171,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
@@ -191,6 +193,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
@@ -209,12 +212,26 @@ const FutureComptency = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <Button
-                icon="pi pi-check"
-                size="small"
-                text
-                onClick={handleSaveRow}
-              />
+              <div style={{ display: "flex" }}>
+                <Button
+                  icon="pi pi-check"
+                  size="small"
+                  text
+                  onClick={handleSaveRow}
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  style={{ color: "red" }}
+                  type="button"
+                  onClick={(e) => {
+                    //e.preventDefault();
+                    setEditingRowIndex(null);
+                  }}
+                  // onClick={handleSaveRow}
+                />
+              </div>
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -242,6 +259,7 @@ const FutureComptency = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
+                  trackFutureComptency(true);
                 }}
               />
             );
@@ -270,6 +288,7 @@ const FutureComptency = ({
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
+            trackFutureComptency(true);
           }}
         >
           Add New Row

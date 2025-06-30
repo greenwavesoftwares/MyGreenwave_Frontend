@@ -12,6 +12,7 @@ const FutureGoals = ({
   trainingData,
   isReviewer,
   isApprover,
+  trackFutureGoals
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -23,9 +24,9 @@ const FutureGoals = ({
   const goalTypeData = ["Personal", "Professional"];
 
   //selectedRowData send to parent component
-  // useEffect(() => {
-  //   FutureGoalsData(selectedRowData);
-  // }, [selectedRowData]);
+  useEffect(() => {
+    FutureGoalsData(selectedRowData);
+  }, [selectedRowData]);
 
   //Set Training Data
   useEffect(() => {
@@ -61,8 +62,10 @@ const FutureGoals = ({
   const handleSaveRow = () => {
     setEditingRowIndex(null);
     FutureGoalsData(selectedRowData);
+    trackFutureGoals(true);
   };
   console.log("trainingData_InnerSection", trainingData);
+  console.log("FutureGoals_Save_Date",FutureGoalsData)
 
   return (
     <>
@@ -77,10 +80,12 @@ const FutureGoals = ({
         <Column
           field="future_personal_KRA_goals"
           header="My Aspirations (2 Professional and 2 Personal Goals)"
+            style={{width:"16rem"}}
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.future_personal_KRA_goals}
+                className="inputFieldStyle"
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -108,7 +113,7 @@ const FutureGoals = ({
                 placeholder="Select Level"
               />
             ) : (
-             <Chip style={{textTransform:'capitalize'}} size="small" label={rowData.goalType ?? ""}/> 
+             <Chip color="primary" style={{textTransform:'capitalize'}} size="small" label={rowData.goalType ?? ""}/> 
             )
           }
         ></Column>
@@ -130,7 +135,7 @@ const FutureGoals = ({
                 {rowData.appraisalTraining?.map((item, index) => (
                   <Chip
                     size="small"
-                    color="primary"
+                    color="success"
                     key={index}
                     label={item}
                     style={{ marginRight: "0.2rem", marginBottom: "0.2rem" }}
@@ -143,12 +148,14 @@ const FutureGoals = ({
 
         <Column
           field="reviewers_comment"
+          className="inputSectionWidth"
           header="Reviewer's Comment"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
                 disabled={isReviewer}
+                className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -165,11 +172,13 @@ const FutureGoals = ({
         <Column
           field="appraisers_comments"
           header="Appraiser's Comments"
+          className="inputSectionWidth"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
                 disabled={isApprover}
+                className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -187,6 +196,7 @@ const FutureGoals = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
+              <div style={{display:"flex"}}>
               <Button
                 icon="pi pi-check"
                 size="small"
@@ -200,6 +210,22 @@ const FutureGoals = ({
                // onClick={handleSaveRow}
                
               />
+              <Button
+                icon="pi pi-times"
+                size="small"
+                text
+                style={{color:"red"}}
+                type="button"
+                onClick={(e) =>{
+                  //e.preventDefault();
+                  setEditingRowIndex(null)
+
+                }}
+               // onClick={handleSaveRow}
+               
+              />
+              </div>
+              
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -227,6 +253,7 @@ const FutureGoals = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
+                  trackFutureGoals(true);
                 }}
               />
             );
@@ -256,6 +283,7 @@ const FutureGoals = ({
               appraisers_comments: "",
             };
            setSelectedRowData([...selectedRowData, blankRow]);
+           trackFutureGoals(true);
           }}
         >
           Add New Row

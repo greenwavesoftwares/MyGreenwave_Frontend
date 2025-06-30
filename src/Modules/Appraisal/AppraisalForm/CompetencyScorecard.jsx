@@ -14,6 +14,7 @@ const CompetencyScorecard = ({
   isReviewer,
   isApprover,
   trainingData,
+  trackCompetencyScorecard
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -62,6 +63,7 @@ const CompetencyScorecard = ({
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
+    trackCompetencyScorecard(true)
   };
   //Check Previous Year Data
   const checkedPreviousYearData = (ele) => {
@@ -78,11 +80,13 @@ const CompetencyScorecard = ({
         stripedRows
         header="Competency Scorecard"
         showGridlines
-        value={selectedRowData}
+        value={selectedRowData.sort((a, b) => {
+          if (a.previous === true) return -1;
+        })}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
           if (rowData.some((ele) => ele.previous === true)) {
-            return "bg-cyan-100";
+            return "bgcyan-100";
           }
         }}
       >
@@ -128,9 +132,9 @@ const CompetencyScorecard = ({
                   rowData.relevance === "H" || rowData.relevance === "High"
                     ? "error"
                     : rowData.relevance === "M" ||
-                      rowData.relevance === "Medium"
-                    ? "warning"
-                    : "primary"
+                        rowData.relevance === "Medium"
+                      ? "warning"
+                      : "primary"
                 }
               />
             )
@@ -150,7 +154,7 @@ const CompetencyScorecard = ({
                 placeholder="Select Level"
               />
             ) : (
-              rowData.level_of_fullfillment ?? ""
+              (rowData.level_of_fullfillment ?? "")
             )
           }
         ></Column>
@@ -176,7 +180,7 @@ const CompetencyScorecard = ({
                 showIcon
               />
             ) : (
-              formatDate(rowData.target_date) ?? ""
+              (formatDate(rowData.target_date) ?? "")
             )
           }
         />
@@ -188,6 +192,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.reviewers_comment}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
                 onChange={(e) =>
                   handleInputChange(
@@ -209,6 +214,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
@@ -227,12 +233,26 @@ const CompetencyScorecard = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <Button
-                icon="pi pi-check"
-                size="small"
-                text
-                onClick={handleSaveRow}
-              />
+              <div style={{ display: "flex" }}>
+                <Button
+                  icon="pi pi-check"
+                  size="small"
+                  text
+                  onClick={handleSaveRow}
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  style={{ color: "red" }}
+                  type="button"
+                  onClick={(e) => {
+                    //e.preventDefault();
+                    setEditingRowIndex(null);
+                  }}
+                  // onClick={handleSaveRow}
+                />
+              </div>
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -261,6 +281,7 @@ const CompetencyScorecard = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
+                  trackCompetencyScorecard(true)
                 }}
               />
             );
@@ -285,11 +306,12 @@ const CompetencyScorecard = ({
               personal_goals: "",
               relevance: null,
               level_of_fullfillment: "",
-              target_date:"",
+              target_date: "",
               reviewers_comment: "",
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
+            trackCompetencyScorecard(true)
           }}
         >
           Add New Row

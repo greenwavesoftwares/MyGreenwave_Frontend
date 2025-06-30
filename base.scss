@@ -41,6 +41,9 @@ body {
   font-size: 0.85rem !important;
   color: var(--fontColor) !important;
 }
+.inputSectionWidth{
+  width: 12rem !important;
+}
 
 
 
@@ -49,7 +52,7 @@ body {
 
 
 //Dropdown styles
-.p-dropdown {
+.dropdownStyle .p-dropdown {
   // background: var(--card-bg) !important;
   // border: 1px solid var(--divider-color) !important;
 }
@@ -65,6 +68,11 @@ body {
   color: var(--menu-text) !important;
   font-size: 0.85rem !important;
   border-bottom: 1px solid var(--divider-color) !important;
+}
+.p-tabview-nav-content{
+  background-color: var(--tabBGColor) !important;
+  color: var(--menu-text) !important;
+  font-size: 0.85rem !important;
 }
 .p-tabview .p-tabview-panels {
   background-color: var(--tabBGColor) !important;
@@ -89,3 +97,5 @@ body {
   color: var(--menu-text) !important;
   font-size: 0.85rem !important;
 }
+
+

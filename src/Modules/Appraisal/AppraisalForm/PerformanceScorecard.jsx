@@ -16,6 +16,7 @@ const PerformanceScorecardDateTable = ({
   isReviewer,
   isApprover,
   trainingData,
+  trackPerformance
 }) => {
   console.log("ReviewerAndApprover_Status", isReviewer, isApprover);
   //Set Level Full Fulfillment Data Dropdown
@@ -27,7 +28,7 @@ const PerformanceScorecardDateTable = ({
   //Set Training Data
   const [appraisalTraining, setAppraisalTraining] = useState([]);
   //Set only training data
- // const [trainingDataOnly, setTrainingDataOnly] = useState([]);
+  // const [trainingDataOnly, setTrainingDataOnly] = useState([]);
 
   //set Training Data
   useEffect(() => {
@@ -97,6 +98,7 @@ const PerformanceScorecardDateTable = ({
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
+    trackPerformance(true);
   };
 
   //Check Previous Year Data
@@ -113,14 +115,16 @@ const PerformanceScorecardDateTable = ({
 
       <DataTable
         size="small"
-        value={selectedRowData}
+        value={selectedRowData.sort((a, b) => {
+          if (a.previous === true) return -1;
+        })}
         stripedRows
         header="Performance Scorecard"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
           if (rowData.some((ele) => ele.previous === true)) {
-            return "bg-cyan-100";
+            return "bgcyan-100";
           }
         }}
       >
@@ -131,6 +135,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.my_last_year_KRA}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={checkedPreviousYearData(rowData)}
                 onChange={(e) =>
                   handleInputChange(
@@ -159,7 +164,7 @@ const PerformanceScorecardDateTable = ({
                 placeholder="Select Level"
               />
             ) : (
-              rowData.level_of_fullfillment ?? ""
+              (rowData.level_of_fullfillment ?? "")
             )
           }
         />
@@ -205,6 +210,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.remarks}
+                className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(e.target.value, "remarks", rowIndex)
                 }
@@ -220,6 +226,7 @@ const PerformanceScorecardDateTable = ({
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
+                className="inputFieldStyle inputSectionWidth"
                 value={rowData.reviewers_comment}
                 disabled={isReviewer}
                 onChange={(e) =>
@@ -243,6 +250,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.appraisers_comments}
+                className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
                 onChange={(e) =>
                   handleInputChange(
@@ -261,12 +269,26 @@ const PerformanceScorecardDateTable = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <Button
-                icon="pi pi-check"
-                size="small"
-                text
-                onClick={handleSaveRow}
-              />
+              <div style={{ display: "flex" }}>
+                <Button
+                  icon="pi pi-check"
+                  size="small"
+                  text
+                  onClick={handleSaveRow}
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  style={{ color: "red" }}
+                  type="button"
+                  onClick={(e) => {
+                    //e.preventDefault();
+                    setEditingRowIndex(null);
+                  }}
+                  // onClick={handleSaveRow}
+                />
+              </div>
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -297,6 +319,7 @@ const PerformanceScorecardDateTable = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
+                  trackFutureGoals(true)
                 }}
               />
             );
@@ -324,6 +347,7 @@ const PerformanceScorecardDateTable = ({
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
+            trackPerformance(true);
           }}
         >
           Add New Row

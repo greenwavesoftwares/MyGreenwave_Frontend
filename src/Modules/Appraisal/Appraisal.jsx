@@ -37,6 +37,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 function Appraisal() {
   //For Navigation
@@ -64,8 +65,13 @@ function Appraisal() {
   const [appraiserForm, setAppraiserForm] = useState();
   const [appraisalList, setAppraisalList] = useState();
 
+    //Handel Submit Dialog Close
+  const [submitFormDataDialogClose,setSubmitFormDataDialogClose]=useState(false)
+
   //Set Appraisal Form ID
   const [appraisalFormId, setAppraisalFormId] = useState(null);
+    //Set Form id for Show Icon
+    const [currentFormId, setCurrentFormId] = useState(null);
 
   //token
   const getAuthToken = getUserData()?.token;
@@ -116,7 +122,7 @@ function Appraisal() {
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
         if (error.message === "unauthorized") {
-          navigate("/login"); // 👈 Redirect to login on 401
+          navigate("/login"); //  Redirect to login on 401
         } else {
           console.error("Unexpected error:", error);
         }
@@ -169,6 +175,7 @@ function Appraisal() {
     if (appraisalFormData?.status == 200) {
       //For Appraisal Form
       setAppraisalFormVisible(true);
+      setCurrentFormId(formId);
       showSuccessMessage(toastRef, "Success", "Form Fetched Successfully");
     } else {
       showErrorMessage(
@@ -216,6 +223,8 @@ function Appraisal() {
             <AppraisalDialog
               appraiserForm={appraiserForm}
               trainingData={trainingData}
+              appraisalFormVisible={setAppraisalFormVisible}
+              currentFormId={setCurrentFormId}
             />
           </div>
         )}
@@ -241,13 +250,24 @@ function Appraisal() {
               )
             }
           >
-            <Column field="empName" header="Emp Name"></Column>
+            <Column field="empName" header="Emp Name" body={(rowData)=>{
+              return(
+              <div className="flex items-center gap-2" style={{justifyContent:"center"}}>
+                {rowData.formId === currentFormId ? <CheckCircleIcon color="success"/> :""}
+                <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
+                  {rowData.empName}
+                </Typography>
+              </div>
+              );
+            }}></Column>
             <Column
               body={(rowData) => {
                 return (
+                  <>
                   <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
                     {formatDate(rowData.appraisalDate)}
                   </Typography>
+                  </>
                 );
               }}
               header="Appraisal Date"
@@ -300,6 +320,11 @@ function Appraisal() {
                     size="small"
                     variant="contained"
                     sx={{ boxShadow: "none" }}
+                    disabled={
+  
+                      rowData.formId === currentFormId  
+                      }
+                    startIcon={ rowData.formId === currentFormId ? <CheckCircleIcon /> :<VisibilityIcon />}
                     loading={appraisalFormLoading === rowData.formId}
                     loadingPosition="end"
                     onClick={() =>
@@ -310,7 +335,7 @@ function Appraisal() {
                       )
                     }
                   >
-                    Show Form
+                    View
                   </Button>
                 );
               }}

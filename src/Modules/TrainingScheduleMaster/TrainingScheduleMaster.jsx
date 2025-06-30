@@ -40,8 +40,8 @@ import { ConfirmDialog } from "primereact/confirmdialog";
 import { InputText } from "primereact/inputtext";
 import { FileUpload } from "primereact/fileupload";
 import DeleteIcon from "@mui/icons-material/Delete";
-import BackupIcon from '@mui/icons-material/Backup';
-import AddIcon from '@mui/icons-material/Add';
+import BackupIcon from "@mui/icons-material/Backup";
+import AddIcon from "@mui/icons-material/Add";
 const TrainingScheduleMaster = () => {
   //For Toast
   const toastRef = useRef(null);
@@ -83,6 +83,9 @@ const TrainingScheduleMaster = () => {
   const [fileUploadRow, setFileUploadRow] = useState(null);
   const [fileUploadName, setFileUploadName] = useState(null);
   const fileUploadRef = useRef(null);
+
+  //Global Filter for table
+  const [globalFilter, setGlobalFilter] = useState("");
 
   //Call User List
   useEffect(() => {
@@ -137,7 +140,12 @@ const TrainingScheduleMaster = () => {
       isCompleted: false,
       isCertificateAvailable: false,
     };
-    if(!newScheduleFormData.assignedUserId || !newScheduleFormData.fromDate || !newScheduleFormData.toDate || !newScheduleFormData.trainingName) {
+    if (
+      !newScheduleFormData.assignedUserId ||
+      !newScheduleFormData.fromDate ||
+      !newScheduleFormData.toDate ||
+      !newScheduleFormData.trainingName
+    ) {
       alert("Please fill all fields before saving.");
       return;
     }
@@ -297,6 +305,7 @@ const TrainingScheduleMaster = () => {
               emptyMessage={
                 loader ? <LinearProgress color="inherit" /> : "No Data Found"
               }
+              globalFilter={globalFilter}
               header={
                 <>
                   <div
@@ -309,16 +318,24 @@ const TrainingScheduleMaster = () => {
                     <Typography className="text-sm">
                       Training Schedules
                     </Typography>
-                    <Button
-                      sx={{ boxShadow: "none" }}
-                      variant="contained"
-                      size="small"
-                      startIcon={<AddIcon />}
-                      onClick={() => setVisible(true)}
-                    >
-                      {" "}
-                      Add New
-                    </Button>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <InputText
+                        type="search"
+                        className=" inputFieldStyle"
+                        onInput={(e) => setGlobalFilter(e.target.value)}
+                        placeholder="Keyword Search"
+                      />
+                      <Button
+                        sx={{ boxShadow: "none" }}
+                        variant="contained"
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => setVisible(true)}
+                      >
+                        {" "}
+                        Add New
+                      </Button>
+                    </div>
                   </div>
                 </>
               }
@@ -405,13 +422,13 @@ const TrainingScheduleMaster = () => {
                         <IconButton
                           size="small"
                           aria-label="ModeEditIcon"
-                         // color="default"
+                          // color="default"
                           onClick={
                             // e.preventDefault();
                             handelSaveForm
                           }
                         >
-                          <CheckIcon className="menu-icon"/>
+                          <CheckIcon className="menu-icon" />
                         </IconButton>
                       ) : (
                         <IconButton
@@ -423,7 +440,7 @@ const TrainingScheduleMaster = () => {
                             handleEditRow(rowData, rowIndex);
                           }}
                         >
-                          <ModeEditIcon className="menu-icon"/>
+                          <ModeEditIcon className="menu-icon" />
                         </IconButton>
                       )}
                     </>
@@ -512,7 +529,7 @@ const TrainingScheduleMaster = () => {
               options={allUser}
               optionLabel="userName"
               placeholder="Select a User"
-              className="w-full"
+              className="w-full dropdownStyle"
             />
             <Dropdown
               value={trainingData}
@@ -579,16 +596,20 @@ const TrainingScheduleMaster = () => {
             ""
           ) : (
             <>
-            <div style={{display:"flex",alignItems:"center"}}>
-              <Chip
-                size="medium"
-                color="info"
-                variant="outlined"
-                label={fileUploadName}
-              />
-              <IconButton variant="contained" color="error" onClick={handleRemoveAndReupload}>
-                <DeleteIcon />
-              </IconButton>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <Chip
+                  size="medium"
+                  color="info"
+                  variant="outlined"
+                  label={fileUploadName}
+                />
+                <IconButton
+                  variant="contained"
+                  color="error"
+                  onClick={handleRemoveAndReupload}
+                >
+                  <DeleteIcon />
+                </IconButton>
               </div>
             </>
           )}

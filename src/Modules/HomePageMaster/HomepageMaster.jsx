@@ -5,7 +5,7 @@ import { getUserData } from "../Login/Encrypt";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import "../Appraisal/Appraisal.scss";
-import { Button, Chip, Fab, IconButton } from "@mui/material";
+import { Button, Chip, Fab, IconButton, LinearProgress } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CreateIcon from "@mui/icons-material/Create";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
@@ -32,19 +32,29 @@ const HomepageMaster = () => {
   const [createNotificationDialog, setCreateNotificationDialog] =useState(false);
   //Create New Notification Dialog Close
   const [createNotificationDialogProps, setCreateNotificationDialogProps] =useState(null);
+  //Loader
+  const [loading, setLoading] = useState(false);
 
   // Function to fetch events and notices
   const getEventsAndNoticesFn = async () => {
     try {
       const { token } = getUserData();
+      setLoading(true);
       const response = await getEventsAndNotices(token);
       console.log("Events and Notices:", response.data);
       //Set Event Data
-      setEventsData(response?.data.eventsList);
+      const rawEventData=response?.data.eventsList;
+      const sortEventData=rawEventData.sort((a,b)=>{
+        if( a.toDate >= formattedDate) return -1;
+      })
+      setEventsData(sortEventData);
       //Set Notification DAta
       setNotificationsData(response?.data.notificationList);
     } catch (error) {
       console.log(error);
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -144,11 +154,16 @@ const formattedDate = `${year}-${month}-${day}`;
                   stripedRows
                   // paginator
                   // rows={10}
+                  emptyMessage={
+                    loading
+                      ? <LinearProgress />
+                      : "No events found. Please create a new event."
+                  }
                   className="dataTableHeader tableBorder dataTableBody dataTableBodyPadding dataTablePaginator "
                   value={eventsData}
                 >
-                  <Column field="title" header="Title"></Column>
-                  <Column field="notification" header="Event"></Column>
+                  <Column field="title"  style={{ width: "10rem" }} header="Title"></Column>
+                  <Column field="notification" style={{ width: "18rem" }} header="Event"></Column>
                   <Column
                     style={{ width: "7rem" }}
                     field="fromdate"
@@ -189,7 +204,7 @@ const formattedDate = `${year}-${month}-${day}`;
                           aria-label="CreateIcon"
                         >
                           <CreateIcon
-                            sx={{ color: "#64b5f6", fontSize: "1.2rem" }}
+                            sx={{ color: "#5ab1f7", fontSize: "1.2rem" }}
                           />
                         </IconButton>
                       );
@@ -212,7 +227,7 @@ const formattedDate = `${year}-${month}-${day}`;
                           aria-label="DeleteIcon"
                         >
                           <DeleteIcon
-                            sx={{ color: "#ff8a80", fontSize: "1.2rem" }}
+                            sx={{ color: "#f56458", fontSize: "1.2rem" }}
                           />
                         </IconButton>
                       );
@@ -235,11 +250,11 @@ const formattedDate = `${year}-${month}-${day}`;
                   className="dataTableHeader tableBorder dataTableBody dataTableBodyPadding"
                 >
                   <Column
-                    style={{ width: "10rem" }}
+                    style={{ width: "7rem" }}
                     field="title"
                     header="Title"
                   ></Column>
-                  <Column field="notification" header="Notification"></Column>
+                  <Column field="notification" style={{ width: "15rem" }} header="Notification"></Column>
                   <Column
                     style={{ width: "7rem" }}
                     field="fromdate"
@@ -280,7 +295,7 @@ const formattedDate = `${year}-${month}-${day}`;
                           aria-label="CreateIcon"
                         >
                           <CreateIcon
-                            sx={{ color: "#64b5f6", fontSize: "1.2rem" }}
+                            sx={{ color: "#5ab1f7", fontSize: "1.2rem" }}
                           />
                         </IconButton>
                       );
@@ -303,7 +318,7 @@ const formattedDate = `${year}-${month}-${day}`;
                           aria-label="DeleteIcon"
                         >
                           <DeleteIcon
-                            sx={{ color: "#ff8a80", fontSize: "1.2rem" }}
+                             sx={{ color: "#f56458", fontSize: "1.2rem" }}
                           />
                         </IconButton>
                       );
