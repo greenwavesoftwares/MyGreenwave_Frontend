@@ -83,10 +83,11 @@ const UserLog = ({
       <DialogComponent
         header={"User Logs"}
         visible={dialogVisible}
-        className="user-log-dialog"
+        className="dialogHeader dialogContent"
         contentClassName="user-log-dialog-content"
         headerClassName="user-log-dialog-header"
         onHide={onHide}
+        style={{width:"70rem"}}
       >
         <Grid container>
           <Grid size={12}>
@@ -94,7 +95,7 @@ const UserLog = ({
               value={logList}
               paginator
               rows={10}
-              rowsPerPageOptions={[5, 10, 25, 50]}
+              //rowsPerPageOptions={[5, 10, 25, 50]}
               tableStyle={{ width: "100%", tableLayout: "fixed" }}
               expandedRows={expandedRows}
               rowExpansionTemplate={rowExpansionTemplate}
@@ -104,6 +105,7 @@ const UserLog = ({
               dataKey="timestamp"
               // tableClassName=""
               paginatorClassName="table-paginator-info"
+               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
               
               
             >

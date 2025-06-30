@@ -249,7 +249,7 @@ const AppraisalTracker = () => {
       <span className="p-input-icon-left">
         <InputText
           type="search"
-          className="p-inputtext-sm"
+          className="p-inputtext-sm inputFieldStyle"
           onInput={(e) => setGlobalFilter(e.target.value)}
           placeholder="Keyword Search"
           style={{ padding: "0.45625rem 0.45625rem" }}
@@ -261,7 +261,7 @@ const AppraisalTracker = () => {
     <>
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="card mt-3 py-2 px-3 bg-white shadow rounded">
+          <div className="cardStyle mt-3 py-2 px-3 bg-white shadow rounded">
             <div className="flex justify-between items-center">
               <p>Appraisal Tracker</p>
 
@@ -300,7 +300,7 @@ const AppraisalTracker = () => {
             </Backdrop>
           )}
 
-          <div className="card mt-2  bg-white shadow rounded">
+          <div className="cardStyle mt-2  bg-white shadow rounded">
             <DataTable
               size="small"
               paginator
@@ -314,7 +314,7 @@ const AppraisalTracker = () => {
                   "No Data Found"
                 )
               }
-              rowsPerPageOptions={[10, 15, 20, 25]}
+             // rowsPerPageOptions={[10, 15, 20, 25]}
               stripedRows
               globalFilter={globalFilter}
               // header={
@@ -342,7 +342,7 @@ const AppraisalTracker = () => {
                       color="info"
                       sx={{ padding: "4px" }}
                     >
-                      {rowData.formId === currentFormId ? <CheckCircleIcon color="success"/> :<VisibilityIcon />}
+                      {rowData.formId === currentFormId ? <CheckCircleIcon style={{color:"#00bb00"}}/> :<VisibilityIcon />}
                     </IconButton>
                   );
                 }}
@@ -386,7 +386,7 @@ const AppraisalTracker = () => {
                         )
                       }
                     >
-                     {rowData.formId === excelDownloadFormId ? <CircularProgress />: <DownloadIcon />}
+                     {rowData.formId === excelDownloadFormId ? <CircularProgress />: <DownloadIcon style={{color:"#00bb00"}}/>}
                     </IconButton>
                   );
                 }}
@@ -421,14 +421,14 @@ const AppraisalTracker = () => {
         className="dialogHeader dialogContent"
         header="Add Appraiser Details"
         visible={dialogVisible}
-        style={{ width: "30vw" }}
+        style={{ width: "25rem" }}
         onHide={() => {
           if (!dialogVisible) return;
           setDialogVisible(false);
         }}
       >
         <div>
-          <div className="bg-white rounded">
+          <div className=" rounded">
             <form onSubmit={handleSubmit}>
               <div className="flex-auto">
                 <label htmlFor="buttondisplay" className="font-bold text-sm ">
@@ -443,7 +443,7 @@ const AppraisalTracker = () => {
                   options={appraisalData?.employeeidlist}//
                   optionLabel="userName"
                   placeholder="Employee Name"
-                  className="w-full p-inputtext-sm"
+                  className="w-full p-inputtext-sm dropDownStyle"
                 />
               </div>
 
@@ -456,7 +456,7 @@ const AppraisalTracker = () => {
                   value={date}
                   onChange={(e) => setDate(e.value)}
                   showIcon
-                  className="w-full p-inputtext-sm"
+                  className="w-full p-inputtext-sm calendarStyle"
                   placeholder="Appraisal Date"
                   dateFormat="yy-mm-dd"
                 />
@@ -474,7 +474,7 @@ const AppraisalTracker = () => {
                   options={appraisalData?.reviewerlist}
                   optionLabel="userName"
                   placeholder="Reviewer"
-                  className="w-full p-inputtext-sm"
+                  className="w-full p-inputtext-sm dropDownStyle"
                   size="small"
                 />
               </div>
@@ -485,13 +485,13 @@ const AppraisalTracker = () => {
                 <Dropdown
                   value={appraiserName}
                   required
-                  filter
+                  //filter
                   id="buttondisplay"
                   onChange={(e) => setAppraiserName(e.value)}
                   options={appraisalData?.appraiserlist}
                   optionLabel="userName"
                   placeholder="Appraiser (Hr Dept)"
-                  className="w-full p-inputtext-sm"
+                  className="w-full p-inputtext-sm dropDownStyle"
                 />
               </div>
 
@@ -510,7 +510,7 @@ const AppraisalTracker = () => {
 
       {/* Force Approved Confirm Dialog */}
       <ConfirmDialog
-        className="dialogHeader dialogContent acceptButton rejectButton"
+        className="dialogHeader dialogContent acceptButton rejectButton dialogContentFont dialogFooter footerButtonStyle"
         group="declarative"
         visible={confirmDialog}
         onHide={() => setConfirmDialog(false)}

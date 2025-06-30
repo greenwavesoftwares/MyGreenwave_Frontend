@@ -15,14 +15,22 @@ body {
 .MuiDivider-root {
   background-color: var(--divider-color);
 }
-// .p-inputtext {
-//   padding: 0.65rem 0.65rem !important;
-//   background: var(--card-bg) !important;
-//   border: 1px solid var(--divider-color) !important;
-//   font-size: 0.85rem !important;
-//   color: var(--fontColor) !important;
-// }
-.inputFieldStyle{
+
+
+
+
+// --------------------------------------Font---------------------------------------//
+.defaultFont{
+  color: var(--fontColor) !important;
+}
+
+
+.defaultBorder{
+  border: 1px solid var(--borderColor) !important;
+}
+
+//-------------------------------------Input Section Style------------------------//
+.inputFieldStyle {
   padding: 0.65rem 0.65rem !important;
   background: var(--dialogBG) !important;
   border: 1px solid var(--divider-color) !important;
@@ -41,35 +49,130 @@ body {
   font-size: 0.85rem !important;
   color: var(--fontColor) !important;
 }
-.inputSectionWidth{
+.inputSectionWidth {
   width: 12rem !important;
 }
 
-
-
-
-
-
-
-//Dropdown styles
-.dropdownStyle .p-dropdown {
-  // background: var(--card-bg) !important;
-  // border: 1px solid var(--divider-color) !important;
-}
+//---------------------------------- Dropdown Styles-----------------------------------//
 .p-dropdown .p-dropdown-label {
   color: var(--fontColor) !important;
   font-size: 0.85rem !important;
   //border: 1px solid var(--divider-color) !important;
 }
+.dropDownStyle.p-dropdown {
+  background: var(--card-bg);
+  color: var(--fontColor);
+  border: 1px solid var(--card-border);
+}
+.dropDownStyle::placeholder {
+  color: var(--fontColor);
+  opacity: 0.75;
+}
+.p-dropdown-panel {
+  background: var(--dropdownBG);
+  color: var(--fontColor);
+}
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  color: var(--fontColor);
+  font-size: 0.85rem;
+}
+.p-dropdown-panel
+  .p-dropdown-items
+  .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus {
+  background-color: var(--hoverText);
+}
+.p-dropdown-panel .p-dropdown-header {
+  background: var(--dropdownBG-Header);
+  border-bottom: 1px solid var(--divider-color);
+}
+.p-dropdown-filter {
+  background: var(--dialogBG);
+  padding: 0.5rem;
+  border: 1px solid var(--divider-color);
+  color: var(--fontColor);
+}
 
-//MUI Tab styles
+//--------------------------------------📆 Calender Style-------------------------------------///
+.calendarStyle.p-calendar-w-btn-right .p-inputtext {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 0.65rem 0.65rem;
+  color: var(--fontColor);
+}
+.calendarStyle.p-calendar-w-btn-right .p-inputtext::placeholder {
+  color: var(--fontColor);
+}
+.p-datepicker:not(.p-datepicker-inline) {
+  background: var(--dropdownBG);
+  color: var(--fontColor);
+  font-size: 0.85rem;
+}
+.p-datepicker:not(.p-datepicker-inline) .p-datepicker-header {
+  background: var(--dropdownBG);
+  color: var(--fontColor);
+  font-size: 0.85rem;
+  padding: 0;
+  border-bottom: 1px solid var(--divider-color);
+}
+.p-datepicker .p-datepicker-header .p-datepicker-title .p-datepicker-year,
+.p-datepicker .p-datepicker-header .p-datepicker-title .p-datepicker-month {
+  color: var(--fontColor);
+}
+.p-datepicker table td > span {
+  font-size: 0.9rem;
+}
+.p-datepicker table th > span {
+  font-size: 0.9rem;
+}
+.p-datepicker table td.p-datepicker-today > span {
+  background-color: var(--dropdownBG-Header);
+  color: var(--fontColor);
+}
+.p-datepicker:not(.p-disabled)
+  table
+  td
+  span:not(.p-highlight):not(.p-disabled):hover {
+  background-color: var(--dropdownBG-Header);
+  color: var(--fontColor);
+}
+.p-datepicker .p-yearpicker .p-yearpicker-year.p-highlight {
+  background-color: var(--dropdownBG-Header);
+  color: var(--fontColor);
+}
+.p-datepicker:not(.p-disabled)
+  .p-yearpicker
+  .p-yearpicker-year:not(.p-disabled):not(.p-highlight):hover {
+  background-color: var(--dropdownBG-Header);
+  color: var(--fontColor);
+}
+.p-datepicker:not(.p-disabled)
+  .p-monthpicker
+  .p-monthpicker-month:not(.p-disabled):not(.p-highlight):hover {
+  background-color: var(--dropdownBG-Header);
+  color: var(--fontColor);
+}
+
+//-------------------------------------Dialog Style-----------------------------------------//
+.dialogContentFont.p-dialog .p-dialog-content {
+  color: var(--fontColor);
+  font-size: 0.85rem;
+}
+.dialogFooter.p-dialog .p-dialog-footer {
+  background-color: var(--dialogBG);
+  backdrop-filter: blur(16px);
+}
+.footerButtonStyle.p-dialog .p-dialog-footer button {
+  padding: 0.4rem 0.8rem;
+}
+
+//--------------------------------------MUI Tab styles-------------------------------------//
 .p-tabview .p-tabview-nav {
   background-color: var(--tabBGColor) !important;
   color: var(--menu-text) !important;
   font-size: 0.85rem !important;
   border-bottom: 1px solid var(--divider-color) !important;
 }
-.p-tabview-nav-content{
+.p-tabview-nav-content {
   background-color: var(--tabBGColor) !important;
   color: var(--menu-text) !important;
   font-size: 0.85rem !important;
@@ -98,4 +201,26 @@ body {
   font-size: 0.85rem !important;
 }
 
+//-------------------------------Scroll Bar---------------------------------////
+/* Target the entire scrollbar */
+::-webkit-scrollbar {
+  width: 8px; /* vertical scrollbar */
+  height: 8px; /* horizontal scrollbar */
+}
 
+/* Background of the scrollbar track */
+::-webkit-scrollbar-track {
+  background: none;
+  border-radius: 10px;
+}
+
+/* Scrollbar thumb (the draggable part) */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+/* On hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

@@ -9,10 +9,12 @@
   --chip-color: white;
    --FontAwesomeIcon: #e7e9eb;
   --ExpandMoreIconStyle: #aeaac7;
+  --borderColor:#a1949436;
 
 // Card styles
    --card-bg :#e5dfdf17;
     --card-border: #f3eaea00;
+    --cardBGTwo:#e5dfdf17;
 
     
   //Typography styles
@@ -37,4 +39,11 @@
 
    //Input styles
   --inputFieldBorder: #e0e0e0;
+
+
+
+  //Dropdown Style
+  --dropdownBG: #202430;
+   --hoverText: #95bff33b;
+    --dropdownBG-Header: #2f333f;
 }
