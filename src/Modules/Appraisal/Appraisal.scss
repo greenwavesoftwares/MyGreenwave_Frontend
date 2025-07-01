@@ -89,6 +89,11 @@
 }
 
 //Date Table Pagination
+.dataTablePaginator .p-paginator{
+   padding: 0.2rem !important;
+  background: none !important;
+  border: none !important;
+}
 .dataTablePaginator.p-datatable.p-datatable-gridlines .p-paginator-bottom  {
   padding: 0.2rem !important;
   background: none !important;

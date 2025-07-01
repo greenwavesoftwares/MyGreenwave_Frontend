@@ -214,6 +214,12 @@ const TrainingScheduleMaster = () => {
 
   //Save Form and To Date
   const handelSaveForm = async () => {
+
+    if (formatDate(fromDateUpdate || getRowData.fromDate) > formatDate(toDateUpdate || getRowData.toDate)) {
+      alert("From Date cannot be greater than To Date.");
+      return;
+    }
+
     const upDateData = {
       ...getRowData,
       fromDate: formatDate(fromDateUpdate || getRowData.fromDate),
@@ -360,6 +366,7 @@ const TrainingScheduleMaster = () => {
                       value={fromDateUpdate || new Date(rowData.fromDate)}
                       onChange={(e) => setFromDateUpdate(e.value)}
                       dateFormat="yy-mm-dd"
+                      className="calendarStyle"
                     />
                   ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
@@ -382,6 +389,7 @@ const TrainingScheduleMaster = () => {
                       value={toDateUpdate || new Date(rowData.toDate)}
                       onChange={(e) => setToDateUpdate(e.value)}
                       dateFormat="yy-mm-dd"
+                       className="calendarStyle inputFieldStyle"
                     />
                   ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
@@ -529,7 +537,7 @@ const TrainingScheduleMaster = () => {
               options={allUser}
               optionLabel="userName"
               placeholder="Select a User"
-              className="w-full dropdownStyle"
+              className="w-full dropdownStyle dropDownStyle"
             />
             <Dropdown
               value={trainingData}
@@ -540,7 +548,7 @@ const TrainingScheduleMaster = () => {
               disabled={trainingDropdown}
               options={trainingList}
               placeholder="Select a Training"
-              className="w-full"
+              className="w-full dropDownStyle"
             />
             <Calendar
               id="formDate_Btn"
@@ -549,7 +557,7 @@ const TrainingScheduleMaster = () => {
                 setFromDate(e.value);
               }}
               showIcon
-              className="w-full p-inputtext-sm"
+              className="w-full p-inputtext-sm calendarStyle"
               placeholder="Form Date"
               dateFormat="yy-mm-dd"
             />
@@ -560,7 +568,7 @@ const TrainingScheduleMaster = () => {
                 setToDate(e.value);
               }}
               showIcon
-              className="w-full p-inputtext-sm"
+              className="w-full p-inputtext-sm calendarStyle"
               placeholder="To Date"
               dateFormat="yy-mm-dd"
             />
@@ -641,7 +649,7 @@ const TrainingScheduleMaster = () => {
 
       <ConfirmDialog
         group="declarative"
-        className="dialogHeader dialogContent dialogFooter acceptButton"
+        className="dialogHeader dialogContent dialogFooter acceptButton "
         acceptClassName="acceptButton"
         rejectClassName="rejectButton"
         visible={confirmDialogVisible}

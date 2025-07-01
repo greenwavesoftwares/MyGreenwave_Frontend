@@ -8,7 +8,7 @@ import { getUserData } from "../../Login/Encrypt";
 import {
   showErrorMessage,
   showSuccessMessage,
-  showInfoMessage
+  showInfoMessage,
 } from "../../../components/Toast/ShowMessage";
 import Toast from "../../../components/Toast/Toast";
 
@@ -30,16 +30,15 @@ const AppraisalsReview = () => {
   const [reviewerList, setReviewerList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [appraisalFormLoading, setAppraisalFormLoading] = useState(null);
-   //Filter For Data Table
-    const [globalFilter, setGlobalFilter] = useState("");
+  //Filter For Data Table
+  const [globalFilter, setGlobalFilter] = useState("");
 
   //State for Appraisal Form Data
   const [appraisalFormData, setAppraisalFormData] = useState({});
   //Set Appraisal Form Data Visible
   const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
-// State to trigger data fetching
+  // State to trigger data fetching
   const [clickFormId, setClickFormId] = useState("");
-
 
   //Call Reviewer API
   useEffect(() => {
@@ -63,12 +62,14 @@ const AppraisalsReview = () => {
     fetchReviewerData();
   }, []);
 
-
-  
-
   //Handle Show Form
-  const handleShowForm = async (formId, previousYearFormId, empId,appraisalDate) => {
-    console.log("Click_formId", formId);
+  const handleShowForm = async (
+    formId,
+    previousYearFormId,
+    empId,
+    appraisalDate
+  ) => {
+    //console.log("Click_formId", formId);
     const localStorageAuth = getUserData();
     const authToken = localStorageAuth?.token;
     setAppraisalFormVisible(false);
@@ -81,7 +82,7 @@ const AppraisalsReview = () => {
         empId,
         appraisalDate
       );
-      if (response?.status === 200) { 
+      if (response?.status === 200) {
         setAppraisalFormData(response?.data);
         showInfoMessage(toastRef, `${empId}`, "Form Fetched Successfully");
         setAppraisalFormVisible(true);
@@ -98,7 +99,6 @@ const AppraisalsReview = () => {
   };
   //console.log("appraisalFormData", appraisalFormData);
   //console.log("clickFormId", clickFormId);
-
 
   //Data Table Header
   const tableHeader = (
@@ -128,7 +128,11 @@ const AppraisalsReview = () => {
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto mt-4">
           {appraisalFormVisible && (
-            <AppraisalDialog appraiserForm={appraisalFormData} />
+            <AppraisalDialog
+              appraiserForm={appraisalFormData}
+              //Close Appraisal Form
+              appraisalFormVisible={setAppraisalFormVisible}
+            />
           )}
           <div className="cardStyle mt-2 bg-white shadow rounded">
             <DataTable
@@ -138,15 +142,12 @@ const AppraisalsReview = () => {
               rows={12}
               rowClassName={(rowData) => {
                 if (rowData.some((ele) => ele.formId === clickFormId)) {
-                  return "bg-cyan-100";
+                  return "bgcyan-100";
                 }
               }}
               owsPerPageOptions={[10, 15, 20, 25]}
               stripedRows
-              header={
-                tableHeader
-                
-              }
+              header={tableHeader}
               value={reviewerList}
               showGridlines
               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
@@ -160,7 +161,34 @@ const AppraisalsReview = () => {
                 )
               }
             >
-              <Column field="empName" header="Employee Name"></Column>
+              {/* <Column field="empName" header="Employee Name"></Column> */}
+              <Column
+                field="empName"
+                header="Emp Name"
+                body={(rowData) => {
+                  return (
+                    <div
+                      className="flex items-center gap-2"
+                      style={{ justifyContent: "center" }}
+                    >
+                      {rowData.formId === clickFormId ? (
+                        <CheckCircleIcon
+                          color="success"
+                          sx={{ fontSize: "1rem", color: "#4bad50" }}
+                        />
+                      ) : (
+                        ""
+                      )}
+                      <Typography
+                        variant="body2"
+                        style={{ fontSize: "0.8rem" }}
+                      >
+                        {rowData.empName}
+                      </Typography>
+                    </div>
+                  );
+                }}
+              ></Column>
               <Column
                 header="Appraisal Date"
                 body={(rowData) => formatDate(rowData.appraisalDate)}
@@ -171,38 +199,38 @@ const AppraisalsReview = () => {
               <Column
                 body={(rowData) => {
                   return (
-                     <Chip
-                    label={
-                      rowData.approved
-                        ? "Approved"
-                        : rowData.reviewed
-                        ? "Reviewed"
-                        : rowData.active
-                        ? "Active"
-                        : "Inactive"
-                    }
-                    color={
-                      rowData.approved
-                        ? "info"
-                        : rowData.reviewed
-                        ? "warning"
-                        : rowData.active
-                        ? "success"
-                        : "error"
-                    }
-                    icon={
-                      rowData.approved ? (
-                        <VerifiedIcon />
-                      ) : rowData.reviewed ? (
-                        <VisibilityIcon />
-                      ) : rowData.active ? (
-                        <CheckCircleIcon />
-                      ) : (
-                        <CancelIcon />
-                      )
-                    }
-                    size="small"
-                  />
+                    <Chip
+                      label={
+                        rowData.approved
+                          ? "Approved"
+                          : rowData.reviewed
+                            ? "Reviewed"
+                            : rowData.active
+                              ? "Active"
+                              : "Inactive"
+                      }
+                      color={
+                        rowData.approved
+                          ? "info"
+                          : rowData.reviewed
+                            ? "warning"
+                            : rowData.active
+                              ? "success"
+                              : "error"
+                      }
+                      icon={
+                        rowData.approved ? (
+                          <VerifiedIcon />
+                        ) : rowData.reviewed ? (
+                          <VisibilityIcon />
+                        ) : rowData.active ? (
+                          <CheckCircleIcon />
+                        ) : (
+                          <CancelIcon />
+                        )
+                      }
+                      size="small"
+                    />
                   );
                 }}
                 header="Status"
@@ -213,22 +241,21 @@ const AppraisalsReview = () => {
                     <Button
                       size="small"
                       variant="contained"
+                      startIcon={<VisibilityIcon />}
                       //sx={{borderRadius: "1rem",boxShadow: "none"}}
                       loading={appraisalFormLoading === rowData.formId}
                       loadingPosition="start"
-                      onClick={(e) =>{
-                        e.preventDefault()
+                      onClick={(e) => {
+                        e.preventDefault();
                         handleShowForm(
                           rowData.formId,
                           rowData.previousYearFormId,
                           rowData.empId,
                           rowData.appraisalDate
-                        )
-
-                      }
-                      }
+                        );
+                      }}
                     >
-                      Show Form
+                      View
                     </Button>
                   );
                 }}

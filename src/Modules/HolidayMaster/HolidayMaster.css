@@ -1,5 +1,5 @@
 .holidayDialog{
-    width: 35vw;
+    width:25rem;
 }
 @media (max-width: 1024px) {
     .holidayDialog{
@@ -12,9 +12,9 @@
     }
 }
 .holidayCell{
-    padding-top: 0.7rem;
-    padding-bottom: 0.7rem;
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #e0e0e0;
+    /* border-bottom: 1px solid #e0e0e0; */
 }

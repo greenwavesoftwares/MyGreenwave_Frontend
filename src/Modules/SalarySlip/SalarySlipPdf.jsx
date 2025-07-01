@@ -385,6 +385,8 @@ const SalarySlipPdf = ({ salaryData }) => {
         icon="pi pi-file-pdf" // PDF icon from PrimeIcons
         className="p-button-danger" // Red color like PDF style
         onClick={generatePdf}
+        rounded
+        size="small"
       />
     </div>
   );

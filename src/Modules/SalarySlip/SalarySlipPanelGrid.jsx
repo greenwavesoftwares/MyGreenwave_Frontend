@@ -4,7 +4,8 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "../../components/Grid/Grid";
 import { Image } from "primereact/image";
-
+import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
+import SoftSign from "../../assets/Images/softSign.jpg"
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fefefe",
   ...theme.typography.body2,
@@ -50,9 +51,9 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                     {/* <div className="card flex justify-content-center"> */}
                     <Image
                       className="inline-flex"
-                      src="src\assets\Images\GreenwaveLogo.png"
+                      src={GreenwaveLogo}
                       alt="Image"
-                      width="50"
+                      width="45"
                     />
                     {/* </div> */}
                   </div>
@@ -60,7 +61,7 @@ export default function SalarySlipPanelGrid({ salaryData }) {
               </Grid>
               <Grid size={9}>
                 <Item
-                  sx={{ height: "60px", fontSize: "30px", fontWeight: "bold" }}
+                  sx={{ height: "60px", fontSize: "1.5rem", fontWeight: "bold" }}
                 >
                   Greenwave Solutions Pvt. Ltd.
                 </Item>
@@ -313,7 +314,7 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                     {/* <div className="card flex justify-content-center"> */}
                     <Image
                       className="inline-flex"
-                      src="src\assets\Images\softSign.jpg"
+                      src={SoftSign}
                       alt="Image"
                       width="50"
                     />

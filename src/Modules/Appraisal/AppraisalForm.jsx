@@ -219,6 +219,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
         setLoader(false);
         appraisalFormVisible(false)
         currentFormId(null)
+        //alert("Form Submitted Successfully")
       } else {
         showErrorMessage(toastRef, "Error", "Form Submission Failed");
       }

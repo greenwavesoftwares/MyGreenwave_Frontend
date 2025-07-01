@@ -15,6 +15,10 @@ body {
 .MuiDivider-root {
   background-color: var(--divider-color);
 }
+.salarySlip-HeaderBG{
+  background-color: var(--salarySlipHeaderBG);
+  color: var(--salarySlipHeaderFontColor);
+}
 
 // --------------------------------------Font---------------------------------------//
 .defaultFont {
@@ -56,6 +60,11 @@ body {
   //border: 1px solid var(--divider-color) !important;
 }
 .dropDownStyle.p-dropdown {
+  background: var(--card-bg);
+  color: var(--fontColor);
+  border: 1px solid var(--card-border);
+}
+.dropDownStyle .p-dropdown {
   background: var(--card-bg);
   color: var(--fontColor);
   border: 1px solid var(--card-border);
@@ -211,6 +220,9 @@ body {
 .footerButtonStyle.p-dialog .p-dialog-footer button {
   padding: 0.4rem 0.8rem;
 }
+.dialogContent.p-dialog .p-dialog-content{
+  color: var(--fontColor);
+}
 
 //--------------------------------------MUI Tab styles-------------------------------------//
 .p-tabview .p-tabview-nav {
@@ -247,6 +259,26 @@ body {
   color: var(--menu-text) !important;
   font-size: 0.85rem !important;
 }
+
+
+
+//-------------------------------------Speed Dial Style-------------------------------------///
+.speedDialStyle .p-speeddial-button.p-button.p-button-icon-only{
+  width: 3rem;
+  height: 3rem;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 //-------------------------------Scroll Bar---------------------------------////
 /* Target the entire scrollbar */

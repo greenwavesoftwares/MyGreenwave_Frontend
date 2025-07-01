@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Chip, Typography } from "@mui/material";
+import { Box, Chip, Typography } from "@mui/material";
 import { Button as MuiButton } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
@@ -26,6 +26,8 @@ const TrainingScheduleMaster = () => {
   const [trainingList, setTrainingList] = useState([]);
   const [loader, setLoader] = useState(true);
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+   //Filter For Data Table
+    const [globalFilter, setGlobalFilter] = useState("");
 
   const departmentData = ["Software", "Automation"];
 
@@ -104,16 +106,41 @@ const TrainingScheduleMaster = () => {
     }
   };
 
+  //Data Table Header
+  const tableHeader = (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        margin: "0rem 0.5rem",
+      }}
+    >
+      <h4 className="mx-0 my-1">Training Details</h4>
+      <span className="p-input-icon-left">
+        {/* <InputText
+          type="search"
+          className="p-inputtext-sm inputFieldStyle"
+          onInput={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Keyword Search"
+          style={{ padding: "0.45625rem 0.45625rem" }}
+        /> */}
+      </span>
+    </Box>
+  );
+
   return (
     <div className="container mx-auto px-4">
       <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-        <div className="card mt-4 bg-white shadow rounded">
+        <div className="cardStyle mt-4 bg-white shadow rounded">
           <DataTable
             size="small"
             emptyMessage={
               loader ? <LinearProgress color="inherit" /> : "No Data Found"
             }
-            header={<Typography className="text-sm">Training Details</Typography>}
+            //header={<Typography className="text-sm">Training Details</Typography>}
+            header={tableHeader}
+            globalFilter={globalFilter}
             value={trainingList}
             showGridlines
             stripedRows
@@ -125,6 +152,7 @@ const TrainingScheduleMaster = () => {
                 editingRowIndex === rowIndex ? (
                   <InputText
                     value={rowData.trainingName}
+                    className="p-inputtext-sm inputFieldStyle"
                     required
                     onChange={(e) =>
                       handleInputChange(e.target.value, "trainingName", rowIndex)
@@ -141,6 +169,7 @@ const TrainingScheduleMaster = () => {
                 editingRowIndex === rowIndex ? (
                   <Dropdown
                     options={departmentData}
+                    className="dropDownStyle"
                     required
                     value={rowData.department}
                     onChange={(e) =>
@@ -167,6 +196,7 @@ const TrainingScheduleMaster = () => {
                 editingRowIndex === rowIndex ? (
                   <InputText
                     value={rowData.category}
+                    className="p-inputtext-sm inputFieldStyle"
                     required
                     onChange={(e) =>
                       handleInputChange(e.target.value, "category", rowIndex)
@@ -192,7 +222,7 @@ const TrainingScheduleMaster = () => {
                     icon="pi pi-pencil"
                     size="small"
                     type="button"
-                    style={{width:"1.5rem", height: "1.5rem"}}
+                    style={{width:"2rem", height: "2rem"}}
                     text
                     onClick={() => handleEditRow(rowData, rowIndex)}
                   />
@@ -206,7 +236,7 @@ const TrainingScheduleMaster = () => {
                   severity="danger"
                   size="small"
                   icon="pi pi-trash"
-                  style={{width:"1.5rem", height: "1.5rem"}}
+                  style={{width:"2rem", height: "2rem"}}
                   rounded
                   text
                   onClick={() => handleDeleteRow(rowData)}
