@@ -176,3 +176,6 @@ header, footer {
   scrollbar-width: none;
 }
 
+.padding-0.p-datatable .p-datatable-tbody > tr > td{
+  padding: 2px !important;
+}

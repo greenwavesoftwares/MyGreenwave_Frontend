@@ -51,6 +51,7 @@ const ApprovedTourClaimTable = () => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
         setviewtabledata(data.tourClaimRecords);
+        console.log('data', data)
 
         setShowViewDialog(true);
       } catch (error) {

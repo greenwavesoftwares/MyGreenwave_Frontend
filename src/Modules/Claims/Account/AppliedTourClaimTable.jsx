@@ -26,6 +26,7 @@ import CustomDialog from "../../../components/Dialog/DialogComponent"
 import {
   showSuccessMessage,
   showErrorMessage,
+  showWarningMessage,
 } from "../../../components/Toast/ShowMessage";
 
 
@@ -109,7 +110,7 @@ const AppliedTourClaimTable = () => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
         setviewtabledata(data.tourClaimRecords);
-
+         console.log('data', data)
         setShowViewDialog(true);
       } catch (error) {
          showErrorMessage(toastRef, "error", "Failed to load table");
@@ -192,6 +193,10 @@ const AppliedTourClaimTable = () => {
     };
 
     const handleSendForApprovalClick = async () => {
+     if (!reason || !settlementAmount) {
+      showWarningMessage(toastRef, "warn", "Fill the settlement amount and reason");
+      return;
+    }
       let response = await tourClaimSendForApproval(
         rowData.claim_id,
         reason,
@@ -384,7 +389,8 @@ const AppliedTourClaimTable = () => {
         
       >
         <DataTableComponent
-          value={viewtabledata}
+          data={viewtabledata}
+           
           showGridlines
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           paginator={false}

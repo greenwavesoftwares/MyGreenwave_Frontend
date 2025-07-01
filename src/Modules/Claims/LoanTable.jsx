@@ -47,6 +47,7 @@ const LoanTable = () => {
           "No data found"
         )
       }
+       rows={10}
     >
       <CustomColumn
         field="claimDate"

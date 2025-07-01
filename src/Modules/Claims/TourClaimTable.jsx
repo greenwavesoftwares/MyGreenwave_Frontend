@@ -62,12 +62,26 @@ const TourClaimTable = ({
   const [editingRows, setEditingRows] = useState({});
   const toastRef = useRef(null);
 
+  // const calculateTotal = (entry) => {
+  //   const keys = Object.keys(initialFormState).filter(
+  //     (k) => k !== "Date" && k !== "Remarks"
+  //   );
+  //   return keys.reduce((sum, key) => sum + (parseFloat(entry[key]) || 0), 0);
+  // };
+
   const calculateTotal = (entry) => {
-    const keys = Object.keys(initialFormState).filter(
-      (k) => k !== "Date" && k !== "Remarks"
-    );
-    return keys.reduce((sum, key) => sum + (parseFloat(entry[key]) || 0), 0);
-  };
+  const keys = Object.keys(initialFormState).filter(
+    (k) => k !== "Date" && k !== "Remarks" && k !== "Total"
+  );
+
+  let sum = 0;
+
+  sum = keys.reduce((acc, key) => {
+    return acc + (parseFloat(entry[key]) || 0);
+  }, 0);
+
+  return sum;
+};
 
   const hasDuplicateDatesOrZeroTotal = (data) => {
     const seen = new Set();
@@ -79,7 +93,7 @@ const TourClaimTable = ({
         return { hasIssue: true, reason: "Duplicate date found" };
       seen.add(date);
       // if (total === 0)
-      //   return { hasIssue: true, reason: "Total amount is zero" };
+      //   return { hasIssue: true, reason: "Total amount cann't be zero" };
     }
     return { hasIssue: false };
   };
@@ -454,7 +468,9 @@ const TourClaimTable = ({
   const onRowEditComplete = (e) => {
     let _tourClaimTableData = [...tourClaimTableData];
     let { newData, index } = e;
-     newData.Total = calculateTotal(newData);
+    
+    newData.Total = calculateTotal(newData);
+    newData.Date = formateDate(newData.Date); 
     //calculateTotal(newData)
     if(!newData.Date)
     {
@@ -466,19 +482,35 @@ const TourClaimTable = ({
       );
       return
     }
+    
 
     _tourClaimTableData[index] = newData;
+    
 
     settourClaimTableData(_tourClaimTableData);
   };
 
   const textEditor = (options) => {
+       console.log('texteditoroptions', options)
     return (
       <InputText
         type="number"
         value={options.value}
         onChange={(e) => options.editorCallback(e.target.value)}
-        className="p-inputtext-sm w-full text-center"
+        className="p-inputtext-sm w-full"
+        //className="text-xs  w-full"
+      />
+    );
+  };
+
+   const textEditor2 = (options) => {
+       console.log('texteditoroptions', options)
+    return (
+      <InputText
+        type="text"
+        value={options.value}
+        onChange={(e) => options.editorCallback(e.target.value)}
+        className="p-inputtext-sm w-full"
         //className="text-xs  w-full"
       />
     );
@@ -547,7 +579,7 @@ const TourClaimTable = ({
         editMode="row"
         dataKey="Date"
         onRowEditChange={(e) => setEditingRows(e.data)}
-        className="text-xs"
+        className="text-xs padding-0"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         onRowEditComplete={onRowEditComplete}
        
@@ -679,7 +711,7 @@ const TourClaimTable = ({
         <Column
           field="Remarks"
           header="Remarks"
-          editor={(options) => textEditor(options)}
+          editor={(options) => textEditor2(options)}
           
         />
         <Column
@@ -703,7 +735,9 @@ const TourClaimTable = ({
               icon="pi pi-save"
               className="p-button-sm"
               onClick={() => {
-                const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
+                
+              const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData)
+              console.log('result', result)
                 if (result.hasIssue) {
                   showWarningMessage(toastRef, "warn", result.reason);
                   // toast.current?.show({
@@ -711,7 +745,8 @@ const TourClaimTable = ({
                   //   summary: "Validation Warning",
                   //   detail: result.reason,
                   // });
-                } else {
+                  return;
+                }
                   handleUpdate();
                   showSuccessMessage(
                     toastRef,
@@ -719,7 +754,7 @@ const TourClaimTable = ({
                     "Tour claim updated!"
                   );
                 }
-              }}
+              }
             />
             <CustomButton
               label="Home"

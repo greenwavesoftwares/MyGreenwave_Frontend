@@ -13,6 +13,9 @@ import CustomButton from "../../components/Button/Button";
 import CustomInputText from "../../components/InputText/InputText";
 import { showWarningMessage } from "../../components/Toast/ShowMessage";
 import {CustomeEditableDataTable,CustomEditableColumn} from "../../components/DataTable/DataTableComponent"
+import {
+  formateDate 
+} from "../../Modules/Claims/claimServices";
 
 import "primereact/resources/themes/saga-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -113,7 +116,7 @@ const AccommodationTable = ({ //disableAddRow,
 
   if (isOverlap) {
     showWarningMessage(toast, "This date range overlaps with another accommodation.");
-    setEditingRows((prev) => ({ ...prev, [newData.id]: true }));
+   setEditingRows((prev) => ({ ...prev, [newData.id]: true }));
     return;
   }
 

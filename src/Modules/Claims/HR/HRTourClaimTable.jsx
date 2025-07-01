@@ -112,6 +112,7 @@ const HRTourClaimTable = () => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
         setviewtabledata(data.tourClaimRecords);
+        console.log('data', data)
 
         setShowViewDialog(true);
       } catch (error) {
@@ -374,10 +375,12 @@ const HRTourClaimTable = () => {
         
       >
         <DataTableComponent
-          value={viewtabledata}
-          showGridlines 
-        className="text-xs"
-        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          data={viewtabledata}
+           
+          showGridlines
+          tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          paginator={false}
+         
         >
           <CustomColumn
             field="date"

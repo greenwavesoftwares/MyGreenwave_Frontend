@@ -11,6 +11,9 @@ import CustomToast from "../../components/Toast/Toast";
 import { CustomeCalender } from "../../components/Calender/CustomeCalender";
 
 import CustomInputText from "../../components/InputText/InputText";
+import {
+  formateDate 
+} from "../../Modules/Claims/claimServices";
 
 import { InputNumber } from "primereact/inputnumber";
 //import { Calendar } from "primereact/calendar";
@@ -115,8 +118,8 @@ const RequisitionForm = () => {
           localityArea: response.data.localityArea,
           typeOfTravel: response.data.typeOfTravel,
           advanceRequested: response.data.advanceRequested,
-          fromDate: response.data.fromDate,
-          tentativeToDate: response.data.tentativeToDate,
+          fromDate: formateDate(response.data.fromDate),
+          tentativeToDate: formateDate(response.data.tentativeToDate),
         });
       }
     } else {
@@ -491,10 +494,15 @@ const RequisitionForm = () => {
                         <CustomeCalender
                           value={new Date(formFields.fromDate)}
                           onChange={(e) =>
-                            handleInputWithValidation("fromDate", e.value)
+                            handleInputWithValidation("fromDate", formateDate(e.value))
                           }
                           maxDate={
-                            new Date(formFields.tentativeToDate) || undefined
+                            new Date(formFields.tentativeToDate) 
+                          }
+
+                          minDate={
+                            //new Date(formFields.fromDate) || 
+                            new Date() 
                           }
                           // locale="es"
                           disabled={!isEditable}
@@ -518,11 +526,11 @@ const RequisitionForm = () => {
                           onChange={(e) =>
                             handleInputWithValidation(
                               "tentativeToDate",
-                              e.value
+                              formateDate(e.value)
                             )
                           }
                           disabled={!isEditable}
-                          minDate={new Date(formFields.fromDate) || undefined} // prevent selecting before fromDate
+                          minDate={new Date(formFields.fromDate) } // prevent selecting before fromDate
                           dateFormat="dd/mm/yy"
                           className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                         />

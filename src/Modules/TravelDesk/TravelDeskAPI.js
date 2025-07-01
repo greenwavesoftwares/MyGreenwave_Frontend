@@ -942,6 +942,7 @@ export const getTravelDropDown = async () => {
 
 export const createRequisition = async (payload) => {
   try {
+    console.log('payload', payload)
     const token = `Bearer ${getUserData()?.token}`;
     const response = await axios.post(`${host}traveldesk/travels`, payload, {
       headers: {

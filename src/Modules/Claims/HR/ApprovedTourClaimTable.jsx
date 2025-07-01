@@ -215,7 +215,8 @@ const ApprovedTourClaimTable = () => {
         <CustomColumn
           field="name"
           header="Name"
-         
+         sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
@@ -224,8 +225,8 @@ const ApprovedTourClaimTable = () => {
         <CustomColumn
           body={datebody}
           header="Claim Duration"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
@@ -235,8 +236,8 @@ const ApprovedTourClaimTable = () => {
         <CustomColumn
           body={tourDetailsBody}
           header="Tour Details"
-          sortable
-          filter
+            sortable={true}
+          filter={true}
           style={{width:'300px'}}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
@@ -246,8 +247,8 @@ const ApprovedTourClaimTable = () => {
         <CustomColumn
           field="account"
           header="On Account"
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
@@ -255,16 +256,16 @@ const ApprovedTourClaimTable = () => {
         <CustomColumn
           header="Claim Calculation"
           body={claimCalculationBody}
-          sortable
-          filter
+         sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
         <CustomColumn
           header="Status"
         field='status'
-          sortable
-          filter
+          sortable={true}
+          filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
@@ -292,16 +293,14 @@ const ApprovedTourClaimTable = () => {
           body={downloadExpense}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
-          sortable={true}
-          filter={true}
+        
         />
 
         <CustomColumn
           field="supportingDocuments"
           header="Supporting Documents"
           body={downloadSupportingDocument}
-          sortable={true}
-          filter={true}
+        
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
@@ -315,9 +314,11 @@ const ApprovedTourClaimTable = () => {
       >
         <DataTableComponent
           data={viewtabledata}
-           className="text-xs"
-        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-          rows={10}
+           
+          showGridlines
+          tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          paginator={false}
+         
          // tableStyle={{ minWidth: "50rem" }}
         >
           <CustomColumn

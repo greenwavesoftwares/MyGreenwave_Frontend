@@ -31,6 +31,11 @@ const LoanApplicationForm = () => {
   };
 
   const handleClickApply = async () => {
+    if(!formData.loanAmount ||  !formData.emiAmount|| !formData.purpose || !formData.loanTenure || !formData.requirementDate)
+    {
+        showWarningMessage(toastRef,"warn", "First fill all required fields" )
+        return
+    }
     const response = await applyLoan(formData);
     if (response.status) {
 
