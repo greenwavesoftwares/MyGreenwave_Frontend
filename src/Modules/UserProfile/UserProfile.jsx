@@ -302,7 +302,7 @@ export default function UserProfile() {
                                 </div>
 
                                 {/* Last Modified By */}
-                                <div className="mt-4">
+                                <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Last Modified By
                                   </label>
