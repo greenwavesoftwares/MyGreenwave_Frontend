@@ -1,4 +1,4 @@
-import { Button, Chip, LinearProgress, Typography } from "@mui/material";
+import { Box, Button, Chip, LinearProgress, Typography } from "@mui/material";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useRef, useState } from "react";
@@ -21,6 +21,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { InputText } from "primereact/inputtext";
 
 const AppraisalsReview = () => {
   //For Toast
@@ -29,6 +30,8 @@ const AppraisalsReview = () => {
   const [reviewerList, setReviewerList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [appraisalFormLoading, setAppraisalFormLoading] = useState(null);
+   //Filter For Data Table
+    const [globalFilter, setGlobalFilter] = useState("");
 
   //State for Appraisal Form Data
   const [appraisalFormData, setAppraisalFormData] = useState({});
@@ -96,6 +99,30 @@ const AppraisalsReview = () => {
   //console.log("appraisalFormData", appraisalFormData);
   //console.log("clickFormId", clickFormId);
 
+
+  //Data Table Header
+  const tableHeader = (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        margin: "0rem 0.5rem",
+      }}
+    >
+      <h4 className="mx-0 my-1">Appraisal Reviewer</h4>
+      <span className="p-input-icon-left">
+        <InputText
+          type="search"
+          className="p-inputtext-sm inputFieldStyle"
+          onInput={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Keyword Search"
+          style={{ padding: "0.45625rem 0.45625rem" }}
+        />
+      </span>
+    </Box>
+  );
+
   return (
     <>
       <div className="container mx-auto px-4">
@@ -103,11 +130,12 @@ const AppraisalsReview = () => {
           {appraisalFormVisible && (
             <AppraisalDialog appraiserForm={appraisalFormData} />
           )}
-          <div className="card mt-2 bg-white shadow rounded">
+          <div className="cardStyle mt-2 bg-white shadow rounded">
             <DataTable
               size="small"
               paginator
-              rows={10}
+              globalFilter={globalFilter}
+              rows={12}
               rowClassName={(rowData) => {
                 if (rowData.some((ele) => ele.formId === clickFormId)) {
                   return "bg-cyan-100";
@@ -116,11 +144,12 @@ const AppraisalsReview = () => {
               owsPerPageOptions={[10, 15, 20, 25]}
               stripedRows
               header={
-                <Typography className="text-sm">Appraisal Reviewer</Typography>
+                tableHeader
+                
               }
               value={reviewerList}
               showGridlines
-              className="dataTableHeader dataTableBody dataTableBodyPadding"
+              className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
               emptyMessage={
                 loading ? (
                   <>

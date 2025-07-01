@@ -103,6 +103,7 @@ const MyKRA = ({
             editingRowIndex === rowIndex ? (
               <MultiSelect
                 options={appraisalTraining}
+                className="multiselectDropdownStyle"
                 value={rowData.appraisalTraining}
                 onChange={(e) =>
                   handleInputChange(e.value, "appraisalTraining", rowIndex)

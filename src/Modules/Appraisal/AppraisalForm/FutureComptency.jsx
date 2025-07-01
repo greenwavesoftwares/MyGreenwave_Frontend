@@ -98,6 +98,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={training}
+                className="dropDownStyle"
                 value={rowData.goals}
                 onChange={(e) => handleInputChange(e.value, "goals", rowIndex)}
                 placeholder="Select Training"
@@ -114,6 +115,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={relevanceData}
+                className="dropDownStyle"
                 value={rowData.relevance}
                 onChange={(e) =>
                   handleInputChange(e.value, "relevance", rowIndex)
@@ -144,6 +146,7 @@ const FutureComptency = ({
             editingRowIndex === rowIndex ? (
               <Calendar
                 dateFormat="yy-mm-dd"
+                className="calendarStyle"
                 style={{ width: "10rem" }}
                 value={
                   rowData.target_date ? new Date(rowData.target_date) : null

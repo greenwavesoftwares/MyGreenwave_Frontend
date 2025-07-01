@@ -555,7 +555,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                             id="empName"
                             disabled
                             variant="filled"
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Employee Name"
                           />
                         </div>
@@ -574,7 +574,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                             type="number"
                             variant="filled"
                             disabled
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             {...register("empCode")}
                             placeholder="Employee ID"
                           />
@@ -592,7 +592,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                           <InputText
                             id="position"
                             {...register("position")}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             //placeholder="Position"
                           />
                         </div>
@@ -609,7 +609,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                           <InputText
                             id="education"
                             {...register("education")}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             //placeholder="Education"
                           />
                         </div>
@@ -635,7 +635,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Year of Experience(gw)"
                           />
                         </div>
@@ -661,7 +661,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Year of Experience(non-gw)"
                           />
                         </div>
@@ -678,7 +678,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                           <InputText
                             id="yoe_total"
                             disabled
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             {...register("yoe_total")}
                             placeholder="yoe_total"
                           />
@@ -696,7 +696,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                           <InputText
                             id="why_do_i_come_to_office"
                             {...register("why_do_i_come_to_office")}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             //placeholder="Why do I come to office?"
                           />
                         </div>
@@ -729,7 +729,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Current Base Salary"
                           />
                         </div>
@@ -762,7 +762,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Current Assured Bonus"
                           />
                         </div>
@@ -795,7 +795,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Current Performance Bonus"
                           />
                         </div>
@@ -814,7 +814,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                             disabled
                             type="number"
                             {...register("current_total_ctc")}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Current Total CTC"
                           />
                         </div>
@@ -851,7 +851,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Proposed Base Salary"
                           />
                         </div>
@@ -888,7 +888,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Proposed Assured Bonus"
                           />
                         </div>
@@ -925,7 +925,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                                 );
                               },
                             })}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Proposed Performance Bonus"
                           />
                         </div>
@@ -948,7 +948,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                             disabled
                             type="number"
                             {...register("proposed_total_ctc")}
-                            className="p-inputtext-sm"
+                            className="p-inputtext-sm inputFieldStyle"
                             placeholder="Proposed Total CTC"
                           />
                         </div>

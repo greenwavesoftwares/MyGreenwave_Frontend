@@ -80,9 +80,7 @@ const CompetencyScorecard = ({
         stripedRows
         header="Competency Scorecard"
         showGridlines
-        value={selectedRowData.sort((a, b) => {
-          if (a.previous === true) return -1;
-        })}
+        value={selectedRowData}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
           if (rowData.some((ele) => ele.previous === true)) {
@@ -97,6 +95,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={training}
+                className="dropDownStyle"
                 disabled={checkedPreviousYearData(rowData)}
                 value={rowData.personal_goals}
                 onChange={(e) =>
@@ -116,6 +115,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={relevanceData}
+                className="dropDownStyle"
                 disabled={checkedPreviousYearData(rowData)}
                 value={rowData.relevance}
                 onChange={(e) =>
@@ -147,6 +147,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={LevelFullfillmentData}
+                className="dropDownStyle"
                 value={rowData.level_of_fullfillment}
                 onChange={(e) =>
                   handleInputChange(e.value, "level_of_fullfillment", rowIndex)
@@ -165,6 +166,7 @@ const CompetencyScorecard = ({
             editingRowIndex === rowIndex ? (
               <Calendar
                 dateFormat="yy-mm-dd"
+                className="calendarStyle"
                 disabled={checkedPreviousYearData(rowData)}
                 value={
                   rowData.target_date ? new Date(rowData.target_date) : null

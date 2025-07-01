@@ -106,6 +106,7 @@ const FutureGoals = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={goalTypeData}
+                className="dropDownStyle"
                 value={rowData.goalType}
                 onChange={(e) =>
                   handleInputChange(e.value, "goalType", rowIndex)
@@ -123,6 +124,7 @@ const FutureGoals = ({
             editingRowIndex === rowIndex ? (
               <MultiSelect
                 options={appraisalTraining}
+                className="multiselectDropdownStyle"
                 value={rowData.appraisalTraining}
                 onChange={(e) =>
                   handleInputChange(e.value, "appraisalTraining", rowIndex)

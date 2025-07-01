@@ -115,9 +115,7 @@ const PerformanceScorecardDateTable = ({
 
       <DataTable
         size="small"
-        value={selectedRowData.sort((a, b) => {
-          if (a.previous === true) return -1;
-        })}
+        value={selectedRowData}
         stripedRows
         header="Performance Scorecard"
         showGridlines
@@ -157,6 +155,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <Dropdown
                 options={LevelFullfillmentData}
+                className="dropDownStyle"
                 value={rowData.level_of_fullfillment}
                 onChange={(e) =>
                   handleInputChange(e.value, "level_of_fullfillment", rowIndex)
@@ -174,6 +173,7 @@ const PerformanceScorecardDateTable = ({
             editingRowIndex === rowIndex ? (
               <MultiSelect
                 options={appraisalTraining}
+                className="multiselectDropdownStyle"
                 value={rowData.appraisalTraining}
                 disabled={checkedPreviousYearData(rowData)}
                 onChange={(e) =>
