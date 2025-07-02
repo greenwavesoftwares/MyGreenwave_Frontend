@@ -87,7 +87,6 @@ const TourClaimForm = ({
       console.log('data', data)
 
       const dates = await getlatestclaimtodate(id);
-
         settourclaimformData((prev) => ({
           ...prev,
           advance: advance,

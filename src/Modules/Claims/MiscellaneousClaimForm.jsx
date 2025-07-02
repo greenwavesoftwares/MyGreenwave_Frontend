@@ -1,4 +1,4 @@
-import  { useRef, useState } from "react";
+import { useRef, useState } from "react";
 //import { InputText } from "primereact/inputtext";
 import { CustomeFileUpload } from "../../components/FileUpload/CustomeFileUpload";
 //import { Button } from "primereact/button";
@@ -14,7 +14,7 @@ import {
   showErrorMessage,
   showWarningMessage,
 } from "../../components/Toast/ShowMessage";
-import CustomInputText from "../../components/InputText/InputText"
+import CustomInputText from "../../components/InputText/InputText";
 
 const MiscellaneousClaimForm = () => {
   const toastRef = useRef(null);
@@ -27,7 +27,10 @@ const MiscellaneousClaimForm = () => {
   const claimOptions = [
     { label: "Client Engagement", value: "Client Engagement" },
     { label: "Medical Insurance", value: "Medical Insurance" },
-    { label: "Local Conveyance Without Account", value: "Local Conveyance Without Account" },
+    {
+      label: "Local Conveyance Without Account",
+      value: "Local Conveyance Without Account",
+    },
     { label: "Staff Welfare", value: "Staff Welfare" },
     { label: "Food", value: "Food Claim" },
   ];
@@ -37,29 +40,30 @@ const MiscellaneousClaimForm = () => {
   const onUpload = async (event) => {
     if (event.files && event.files.length > 0) {
       setFile(event.files[0]);
-        showSuccessMessage(toastRef,"success","File Uploaded")
-     
+      showSuccessMessage(toastRef, "success", "File Uploaded");
     }
   };
 
   const handleOnClick = async () => {
     if (!claimType || !claimAmount || !claimDetails || !file) {
-      showWarningMessage(toastRef,"warn", "Please fill all fields and upload a file.",)
-     
+      showWarningMessage(
+        toastRef,
+        "warn",
+        "Please fill all fields and upload a file."
+      );
       return;
     }
 
     try {
-      const data = await ApplyOtherClaim(file, claimType, claimAmount, claimDetails);
+      const data = await ApplyOtherClaim(
+        file,
+        claimType,
+        claimAmount,
+        claimDetails
+      );
 
       if (data.status === true) {
-        showSuccessMessage(
-          toastRef,
-          "success",
-         data.message,
-        );
-    
-      
+        showSuccessMessage(toastRef, "success", data.message);
 
         setFile(null);
         setClaimAmount("");
@@ -67,12 +71,7 @@ const MiscellaneousClaimForm = () => {
         fileUploadRef.current?.clear();
       }
     } catch (error) {
-        showErrorMessage(
-                toastRef,
-               "error",
-               error?.message || "Upload failed"
-              );
-     
+      showErrorMessage(toastRef, "error", error?.message || "Upload failed");
     }
   };
 
@@ -87,7 +86,9 @@ const MiscellaneousClaimForm = () => {
         <div className="space-y-6">
           {/* Claim Type */}
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">Claim Type</label>
+            <label className="w-1/3 text-sm font-medium text-gray-700">
+              Claim Type
+            </label>
             <div className="w-2/3">
               <Dropdown
                 claimOptions={claimOptions}
@@ -100,7 +101,9 @@ const MiscellaneousClaimForm = () => {
 
           {/* Employee Code */}
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">Employee Code</label>
+            <label className="w-1/3 text-sm font-medium text-gray-700">
+              Employee Code
+            </label>
             <div className="w-2/3">
               <div className="bg-gray-100 shadow-sm rounded-md px-4 py-2  flex items-center text-gray-700">
                 {userDetails?.employeeId || "N/A"}
@@ -110,21 +113,30 @@ const MiscellaneousClaimForm = () => {
 
           {/* Claim Amount */}
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">Claim Amount (INR)</label>
+            <label className="w-1/3 text-sm font-medium text-gray-700">
+              Claim Amount (INR)
+            </label>
             <div className="w-2/3">
               <CustomInputText
                 className="w-full  rounded-md shadow-sm"
                 value={claimAmount}
-                onChange={(e) => setClaimAmount(e.target.value)
-                  
-                }
+                // onChange={(e) => setClaimAmount(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*\.?\d*$/.test(value)) {
+                    // allows only digits and optional decimal
+                    setClaimAmount(value);
+                  }
+                }}
               />
             </div>
           </div>
 
           {/* Claim Details */}
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">Details of the Claim</label>
+            <label className="w-1/3 text-sm font-medium text-gray-700">
+              Details of the Claim
+            </label>
             <div className="w-2/3">
               <CustomInputText
                 className="w-full  rounded-md shadow-sm"
@@ -136,7 +148,9 @@ const MiscellaneousClaimForm = () => {
 
           {/* File Upload */}
           <div className="flex items-center">
-            <label className="w-1/3 text-sm font-medium text-gray-700">Upload File</label>
+            <label className="w-1/3 text-sm font-medium text-gray-700">
+              Upload File
+            </label>
             <div className="w-2/3">
               <CustomeFileUpload
                 ref={fileUploadRef}

@@ -22,9 +22,27 @@ const LoanApplicationForm = () => {
     requirementDate: null,
   });
 
+  // const handleInputChange = (e) => {
+  //   setFormData({ ...formData, [e.target.name]: e.target.value });
+  // };
+
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const { name, value } = e.target;
+
+  if (name === "loanAmount") {
+    // Allow only numbers and prevent negative values
+    if (value === "" || (/^\d+(\.\d{0,2})?$/.test(value) && parseFloat(value) >= 0)) {
+      setFormData({ ...formData, [name]: value });
+    }
+  } else if (name === "loanTenure") {
+    // Allow only whole numbers greater than 0
+    if (value === "" || (/^\d+$/.test(value) && parseInt(value, 10) > 0)) {
+      setFormData({ ...formData, [name]: value });
+    }
+  } else {
+    setFormData({ ...formData, [name]: value });
+  }
+};
 
   const handleDateChange = (e) => {
     setFormData({ ...formData, requirementDate: e.value });
@@ -148,7 +166,7 @@ const LoanApplicationForm = () => {
               value={formData.requirementDate}
               onChange={handleDateChange}
               showIcon
-              dateFormat="yy-mm-dd"
+              dateFormat="dd/mm/yy"
               className="w-2/3 h-10 rounded-md shadow-sm"
             />
           </div>

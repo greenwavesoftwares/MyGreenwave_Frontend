@@ -9,6 +9,7 @@ import CustomToast from "../../../components/Toast/Toast";
 import {
   showSuccessMessage,
   showErrorMessage,
+  showWarningMessage
 } from "../../../components/Toast/ShowMessage";
 import CustomButton from "../../../components/Button/Button";
 import {
@@ -25,6 +26,11 @@ const HRLoanApplicationTable = () => {
   const actionbody = (rowData) => {
     const handleRejectClick = async (claim_id, remarks) => {
       try {
+            if(!claim_id || !remarks)
+                  {
+                    showWarningMessage(toastRef,'Warning','First Fill Remarks')
+                    return
+                  }
         let response = await rejectLoanClaim(claim_id, remarks);
         if (response.status) {
           setloanData(response.data);
@@ -39,6 +45,11 @@ const HRLoanApplicationTable = () => {
 
     const handleApproveClick = async (claim_id, remarks) => {
       try {
+          if(!claim_id || !remarks)
+                {
+                  showWarningMessage(toastRef,'Warning','First Fill Remarks')
+                  return
+                }
         let response = await approveLoanClaim(claim_id, remarks);
         if (response.status) {
           setloanData(response.data);

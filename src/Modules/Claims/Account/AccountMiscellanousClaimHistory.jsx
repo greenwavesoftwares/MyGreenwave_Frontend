@@ -46,6 +46,8 @@ const AccountMiscellanousClaimHistory = () => {
            handleDownloadFile(rowData.claim_id);
          }}
          tooltip={`${rowData.filename}`}
+          style={!rowData.filename ? { color: '#708090' }:{}}
+          disabled={rowData.filename?false:true}
        />
      );
    };

@@ -10,6 +10,7 @@ const cellStyle = { padding: "8px 12px" };
 import {
   showSuccessMessage,
   showErrorMessage,
+  showWarningMessage,
 } from "../../../components/Toast/ShowMessage";
 
 import CustomButton from "../../../components/Button/Button";
@@ -46,6 +47,8 @@ const AccountMiscellanousClaimApprover = () => {
           handleDownloadFile(rowData.claim_id);
         }}
         tooltip={`${rowData.filename}`}
+         style={!rowData.filename ? { color: '#708090' }:{}}
+          disabled={rowData.filename?false:true}
       />
     );
   };
@@ -53,8 +56,14 @@ const AccountMiscellanousClaimApprover = () => {
   const actionbody = (rowData) => {
     const [remarks, setRemarks] = useState();
 
+
     const handleRejectClick = async (claim_id, remarks) => {
       try {
+         if(!claim_id || !remarks)
+        {
+          showWarningMessage(toastRef,'Warning','First Fill Remarks')
+          return
+        }
         let response = await rejectMiscellanousClaim(claim_id, remarks);
         if (response.status) {
           setmiscellanousData(response.data);
@@ -71,6 +80,11 @@ const AccountMiscellanousClaimApprover = () => {
 
     const handleApproveClick = async (claim_id, remarks) => {
       try {
+        if(!claim_id || !remarks)
+        {
+          showWarningMessage(toastRef,'Warning','First Fill Remarks')
+          return
+        }
         let response = await approveMiscellanousClaim(claim_id, remarks);
         if (response.status) {
           setmiscellanousData(response.data);
