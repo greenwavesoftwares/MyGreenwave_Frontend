@@ -8,7 +8,9 @@ import ReferralForm from "./ReferralForm";
  const Referral  = () => {
   return (
    
-    <div className='max-w-[85rem] mx-auto p-4 min-h-screen '>
+    <div className="container mx-auto px-4">
+          <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+            <div className="card mt-4 py-2 px-3">
         <TabView >
            <TabPanel header="New Form">
             <ReferralForm/>
@@ -18,6 +20,8 @@ import ReferralForm from "./ReferralForm";
             </TabPanel> 
             
         </TabView>
+    </div>
+    </div>
     </div>
 
    
