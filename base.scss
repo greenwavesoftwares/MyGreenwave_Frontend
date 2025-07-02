@@ -28,6 +28,9 @@ body {
 .defaultBorder {
   border: 1px solid var(--borderColor) !important;
 }
+.defaultFontSize-sm{
+  font-size: 0.78rem;
+}
 
 //-------------------------------------Input Section Style------------------------//
 .inputFieldStyle {
@@ -272,7 +275,48 @@ body {
 
 
 
+//---------------------------------------Stepper Style---------------------------------------//
+// .hideStepperNumber .p-stepper-number{
+//   display: none !important;
+// }
+.activeStepperStyle{
+  //background-color: #1976d2;
+  color: #2196f3;
+}
+.activeStepperIconStyle{
+  background-color: #2196f3;
+  color: white;
+}
+.inActiveStepperIconStyle{
+  border: 1px solid #9c9ea9;
+}
+.stepperContentStyle{
+ box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px;
+ border-radius: 1rem !important;
+ background-color: var(--card-bg);
+}
+.stepperStyle{
+  display: grid;
+  row-gap: 0.25rem;
+  justify-items: center;
+}
+.stepperStyle .p-stepper .p-stepper-header .p-stepper-action .p-stepper-title {
+margin-left: 0;
+}
+.p-stepper .p-stepper-header .p-stepper-action{
+  background: none !important;
+}
+.p-stepper .p-stepper-panels{
+  background:none;
+  margin: 0.5rem 1rem;
+}
+.p-stepper .p-stepper-header .p-stepper-action .p-stepper-number {
+  
+    min-width: 1.7rem;
+    height: 1.7rem;
 
+    font-size: 1rem;
+}
 
 
 
