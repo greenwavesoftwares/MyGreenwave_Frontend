@@ -401,6 +401,17 @@ const toastRef = useRef(null);
     );
   };
 
+  const datebody = (rowData) => {
+    return (
+      <div className="flex flex-col justify-center items-center">
+        <span > {rowData.from_date}</span>
+        <span > to </span>
+        <span > {rowData.to_date} </span>
+      </div>
+    );
+  };
+
+
   return (
     <div>
       <Toast ref={toastRef} />
@@ -414,8 +425,9 @@ const toastRef = useRef(null);
         >
           
           <CustomColumn
-            field="to_date"
-            header="To"
+            header="Claim Duration"
+          
+            body={datebody}
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
             sortable={true}

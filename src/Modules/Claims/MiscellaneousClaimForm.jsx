@@ -25,11 +25,11 @@ const MiscellaneousClaimForm = () => {
   const [claimDetails, setClaimDetails] = useState("");
 
   const claimOptions = [
-    { label: "Client Entertainment Claim", value: "Client Entertainment Claim" },
-    { label: "Medical Insurance Claim", value: "Medical Insurance Claim" },
-    { label: "Local Conveyance Claim", value: "Local Conveyance Claim" },
-    { label: "Staff Welfare Claim", value: "Staff Welfare Claim" },
-    { label: "Food Claim", value: "Food Claim" },
+    { label: "Client Engagement", value: "Client Engagement" },
+    { label: "Medical Insurance", value: "Medical Insurance" },
+    { label: "Local Conveyance Without Account", value: "Local Conveyance Without Account" },
+    { label: "Staff Welfare", value: "Staff Welfare" },
+    { label: "Food", value: "Food Claim" },
   ];
 
   const placeholder = "Select Claim Type";
@@ -115,7 +115,9 @@ const MiscellaneousClaimForm = () => {
               <CustomInputText
                 className="w-full  rounded-md shadow-sm"
                 value={claimAmount}
-                onChange={(e) => setClaimAmount(e.target.value)}
+                onChange={(e) => setClaimAmount(e.target.value)
+                  
+                }
               />
             </div>
           </div>

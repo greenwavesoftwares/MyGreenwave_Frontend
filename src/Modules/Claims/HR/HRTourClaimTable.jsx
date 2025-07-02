@@ -262,6 +262,7 @@ const HRTourClaimTable = () => {
         );
           
         }
+        console.log('result.data', result.data)
         setreviewedtourclaimData(result.data);
       } catch (error) {
         console.error("Error fetching claims:", error);
@@ -328,6 +329,8 @@ const HRTourClaimTable = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
+        
+        {/* settlement_amount */}
 
         <CustomColumn
           field="Expense"

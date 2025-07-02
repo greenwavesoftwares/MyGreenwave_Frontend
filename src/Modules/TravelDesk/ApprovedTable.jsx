@@ -466,13 +466,16 @@ const ApprovedTable = () => {
   };
 
   const checkBody = (rowData) => {
+    console.log('rowData', rowData)
     return (
       <CustomButton
         icon="pi pi-check"
         style={rowData.travelCompleteFlag === false ? { color: "#708090" } : {}}
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
-          completeTravel(rowData.expandableData[0], "CompleteRequested");
+          // completeTravel(rowData.expandableData[0]);
+          console.log('rowData', rowData)
+          console.log('rowData.expandableData[0]', rowData.expandableData[0])
         }}
         tooltip="Complete Travel"
         disabled={rowData.travelCompleteFlag === false}

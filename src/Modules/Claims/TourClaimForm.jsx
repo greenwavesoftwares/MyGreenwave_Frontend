@@ -62,8 +62,8 @@ const TourClaimForm = ({
           destination: "",
           onAccount: "",
           travelfromDate: "",
-          claimFromDate: "",
-          claimToDate: "",
+          claimFromDate:new Date(),
+          claimToDate: new Date(),
         }));
 
          setFormErrors({"travelType":false,
@@ -76,6 +76,7 @@ const TourClaimForm = ({
     "claimToDate":false})
       } else {
         //const data = await getTourClaimFormDetails(id);
+      console.log("id is",id)
       const responseData=await getTravelDetailsFromTravelId2(id)
       // console.log('data.typeOfTravel.',data.typeOfTravel)
       // console.log('data.porpus.',data.purpose)
@@ -363,6 +364,7 @@ const TourClaimForm = ({
                   }
                   className={`w-62 text-sm ${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                   // className={`"w-62 text-sm"${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                   maxDate={new Date()}
                   />
                 ) : (
                   <Calendar
@@ -372,6 +374,7 @@ const TourClaimForm = ({
                     className="w-62"
                     value={new Date(tourclaimformData.claimFromDate)}
                     disabled
+                     maxDate={new Date()}
                   />
                 )}
               </div>
@@ -396,7 +399,7 @@ const TourClaimForm = ({
                   inputId="claimToDate"
                   showIcon
                    dateFormat="dd-mm-yy"
-                //  className="w-62"
+                  //  className="w-62"
                   value={new Date(tourclaimformData.claimToDate)}
                   onChange={(e) =>  {handleChange("claimToDate", e.target.value), handleInputWithValidation("claimToDate", e.value)}}
                     minDate={
@@ -404,6 +407,8 @@ const TourClaimForm = ({
                       ? new Date(tourclaimformData.claimFromDate)
                       : null
                   }
+                 // minDate={new Date()}
+                  maxDate={new Date()}
                   className={`w-62 text-sm ${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                   // className={`"w-62 text-sm"${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />

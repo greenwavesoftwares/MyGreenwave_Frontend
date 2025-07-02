@@ -234,21 +234,49 @@ const TourClaimTable = ({
         const formattedRow = { ...initialFormState };
         let isValid = true;
 
+        // for (const key of Object.keys(initialFormState)) {
+        //   const value = row[key];
+        //   if (key === "Date") {
+        //     const parsedDate = formateDate(value);
+        //     if (!parsedDate || existingDates.has(parsedDate)) {
+        //       isValid = false;
+        //       break;
+        //     }
+        //     formattedRow[key] = parsedDate;
+        //     existingDates.add(parsedDate);
+        //   } else {
+        //     const num = parseFloat(value);
+        //     formattedRow[key] = !isNaN(num) ? num : 0;
+        //   }
+        // }
         for (const key of Object.keys(initialFormState)) {
-          const value = row[key];
-          if (key === "Date") {
-            const parsedDate = formateDate(value);
-            if (!parsedDate || existingDates.has(parsedDate)) {
-              isValid = false;
-              break;
-            }
-            formattedRow[key] = parsedDate;
-            existingDates.add(parsedDate);
-          } else {
-            const num = parseFloat(value);
-            formattedRow[key] = !isNaN(num) ? num : 0;
-          }
-        }
+  const value = row[key];
+
+  if (key === "Date") {
+    const parsedDate = formateDate(value);
+    const dateObj = new Date(parsedDate);
+    const minDate = new Date(tourclaimformData.claimFromDate);
+    const maxDate = new Date(tourclaimformData.claimToDate);
+
+    // Reject if date is missing, invalid, duplicate, or out of range
+    if (
+      !parsedDate ||
+      existingDates.has(parsedDate) ||
+      isNaN(dateObj) ||
+      dateObj < minDate ||
+      dateObj > maxDate
+    ) {
+      isValid = false;
+      break;
+    }
+
+    formattedRow[key] = parsedDate;
+    existingDates.add(parsedDate);
+  } else {
+    const num = parseFloat(value);
+    formattedRow[key] = !isNaN(num) ? num : 0;
+  }
+}
 
         if (isValid) {
           formattedRow["Total"] = calculateTotal(formattedRow);
@@ -492,11 +520,20 @@ const TourClaimTable = ({
 
   const textEditor = (options) => {
        console.log('texteditoroptions', options)
+        const handleChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only non-negative numbers with optional decimals
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      options.editorCallback(value);
+    }
+  };
     return (
       <InputText
-        type="number"
+        type="text"
         value={options.value}
-        onChange={(e) => options.editorCallback(e.target.value)}
+           onChange={handleChange}
+       // onChange={(e) => options.editorCallback(e.target.value)}
         className="p-inputtext-sm w-full"
         //className="text-xs  w-full"
       />
@@ -538,8 +575,21 @@ const TourClaimTable = ({
     />
           )
         };
- 
+        const calculateColumnTotals = () => {
+  const totals = {};
 
+  Object.keys(initialFormState).forEach((key) => {
+    if (key !== "Date" && key !== "Remarks") {
+      totals[key] = tourClaimTableData.reduce((sum, row) => {
+        return sum + (parseFloat(row[key]) || 0);
+      }, 0);
+    }
+  });
+
+  return totals;
+};
+ 
+const columnTotals = calculateColumnTotals();
   return (
     <>
       <Toast ref={toastRef} />
@@ -582,7 +632,7 @@ const TourClaimTable = ({
         className="text-xs padding-0"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         onRowEditComplete={onRowEditComplete}
-       
+        footerColumnGroup={null} 
       >
         {/* {fields.map((field) => (
           <Column
@@ -609,6 +659,7 @@ const TourClaimTable = ({
                   body={(row) =>
                     row.Date ? new Date(row.Date).toLocaleDateString() : ""
                   }
+                  footer="Total"
                 />
         {/* <Column
           field="Date"
@@ -641,72 +692,77 @@ const TourClaimTable = ({
           field="Lodging"
           header="Lodging"
           editor={(options) => textEditor(options)}
+          footer={columnTotals["Lodging"]?.toFixed(2)}
         
         />
         <Column
           field="Breakfast"
           header="Breakfast"
           editor={(options) => textEditor(options)}
+          footer={columnTotals["Breakfast"]?.toFixed(2)}
           
         />
         <Column
           field="Lunch"
           header="Lunch"
           editor={(options) => textEditor(options)}
+          footer={columnTotals["Lunch"]?.toFixed(2)}
         
         />
         <Column
           field="Snacks"
           header="Snacks"
           editor={(options) => textEditor(options)}
-       
+            footer={columnTotals["Snacks"]?.toFixed(2)}
         />
         <Column
           field="Dinner"
           header="Dinner"
           editor={(options) => textEditor(options)}
-        
+          footer={columnTotals["Dinner"]?.toFixed(2)}
         />
         <Column
           field="Tea & Water"
           header="Tea & Water"
           editor={(options) => textEditor(options)}
+          footer={columnTotals["Tea & Water"]?.toFixed(2)}
         />
         <Column
           field="Airfare, Bus, Train, Taxi Rental"
           header="Airfare, Bus, Train, Taxi Rental"
           editor={(options) => textEditor(options)}
-        
+          footer={columnTotals["Airfare, Bus, Train, Taxi Rental"]?.toFixed(2)}
         />
         <Column
           field="Auto, Cab"
           header="Auto, Cab"
           editor={(options) => textEditor(options)}
-         
+           footer={columnTotals["Auto, Cab"]?.toFixed(2)}
         />
         <Column
           field="Parking, Toll, Fuel"
           header="Parking, Toll, Fuel"
           editor={(options) => textEditor(options)}
-         
+           footer={columnTotals["Parking, Toll, Fuel"]?.toFixed(2)}
         />
         <Column
           field="Incidentals"
           header="Incidentals"
           editor={(options) => textEditor(options)}
-        
+          footer={columnTotals["Incidentals"]?.toFixed(2)}
         />
         <Column
           field="Other Business Expenses"
           header="Other Business Expenses"
           editor={(options) => textEditor(options)}
-         
+           footer={columnTotals["Other Business Expenses"]?.toFixed(2)}
         />
         <Column
           field="Total"
           header="Total"
-          editor={(options) => textEditor(options)}
-         
+         // editor={(options) => textEditor(options)}
+           footer={columnTotals["Total"]?.toFixed(2)}
+          // disabled={true}
         />
         <Column
           field="Remarks"

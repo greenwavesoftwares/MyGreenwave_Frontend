@@ -100,7 +100,7 @@ const dateEditor = (options) => (
     onChange={(e) => options.editorCallback(e.value)}
    
     className="text-xs p-1 w-full"
-   
+       dateFormat="dd/mm/yy"
     minDate={new Date(formFields.fromDate)}
   />
 );
@@ -174,6 +174,7 @@ const actionTemplate = (rowData) => (
           field="fromDate"
           header="From Date"
           editor={dateEditor}
+          
           body={(row) =>
             row.fromDate ? new Date(row.fromDate).toLocaleDateString() : ""
           }
