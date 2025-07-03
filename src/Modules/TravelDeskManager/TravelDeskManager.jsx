@@ -156,7 +156,7 @@ export default function TravelDeskManager() {
 
   //Any travel that is pending can see the details and approve or reject
   const handleApproveTravel = async () => {
-    console.log("handleApproveTravel() called");
+    console.log("handleApproveTravel() called",);
     try {
       const updatedForm = {
         ...formData,

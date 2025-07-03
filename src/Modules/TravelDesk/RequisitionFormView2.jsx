@@ -39,9 +39,9 @@ const RequisitionFormView2 = ({
     //   showWarningMessage(toastRef,"Mode and From Date are required.");
     //   return;
     // }
-    // const updated = [...formData];
-    //  updated.transportModes[index] = newData;
-    // setFormData(updated);
+    const updated = rowData;
+     updated.transportModes[index] = newData;
+    setFormData(updated);
     rowData.transportModes[index] = newData;
   };
 
@@ -51,9 +51,9 @@ const RequisitionFormView2 = ({
     //   showWarningMessage(toastRef,"Mode and From Date are required.");
     //   return;
     // }
-    // const updated = [...rowData.accommodations];
-    // updated[index] = newData;
-    // setFormData(updated);
+    const updated = rowData;
+    updated.accommodations[index] = newData;
+    setFormData(updated);
     rowData.accommodations[index] = newData;
   };
 
@@ -188,7 +188,7 @@ const RequisitionFormView2 = ({
             <Column field="comment" header="Comment"></Column>
             {/* <Column field="manager_remark" header="Manager Remarks"></Column> */}
             <Column
-              field=""
+              field="manager_remark"
               header="Manager Remark"
               editor={textEditor}
             ></Column>

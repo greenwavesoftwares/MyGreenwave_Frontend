@@ -5,6 +5,7 @@ import { giveReferral } from "./ReferralService";
 import { Toast } from "primereact/toast";
 import { Stepper } from "primereact/stepper";
 import { StepperPanel } from "primereact/stepperpanel";
+import { validate as validateEmail } from 'email-validator';
 
 const ReferralForm = () => {
   const toast = useRef();
@@ -27,7 +28,7 @@ const ReferralForm = () => {
   // Generic handler for text/select inputs
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setReferralformData((prev) => ({ ...prev, [id]: value }));
+    setReferralformData((prev) => ({ ...prev, [id]: value}));
   };
 
   // File input handler
@@ -42,6 +43,38 @@ const ReferralForm = () => {
 
   // Submit handler
   const handleSubmit = async () => {
+    if(
+    !referralformData.experience ||
+    !referralformData.name ||
+    !referralformData.email ||
+    !referralformData.number ||
+    !referralformData.education ||
+    !referralformData.role ||
+    !referralformData.totalExpYear ||
+    !referralformData.releventExpYear ||
+    !referralformData.technology ||
+    !referralformData.department ||
+    !referralformData.file
+  ){
+       toast.current.show({
+        severity: "warn",
+        summary: "Warning",
+        detail: "Please Fill All Required Field",
+      });
+      return
+  }
+
+  if(!validateEmail(referralformData.email))
+  {
+     toast.current.show({
+        severity: "warn",
+        summary: "Warning",
+        detail: "not a valid email",
+      });
+      return
+  }
+    
+    
     const response = await giveReferral(referralformData);
     if (!response.status) {
       toast.current.show({
