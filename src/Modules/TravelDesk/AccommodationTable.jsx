@@ -80,7 +80,9 @@ const AccommodationTable = ({ //disableAddRow,
   };
 
  const onRowEditComplete = (e) => {
+  console.log("Event : ",e)
   const { newData, index } = e;
+  console.log('newData', newData)
 
   // Validation: required fields
   if (!newData.type || !newData.numberOfRooms || !newData.checkIn || !newData.checkOut) {
@@ -120,16 +122,16 @@ const AccommodationTable = ({ //disableAddRow,
     return;
   }
 
-  // ✅ Passed validation
+  // Passed validation
   const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
   newData.numberOfNights = nights;
-
+console.log("after",newData)
   const updated = [...accommodations];
   updated[index] = newData;
 
   setAccommodations(updated);
 
-  // ✅ Exit edit mode
+  //  Exit edit mode
   const updatedEditingRows = { ...editingRows };
   delete updatedEditingRows[newData.id];
   setEditingRows(updatedEditingRows);
@@ -173,33 +175,102 @@ const isDateOverlapping = (currentRowId, date, field) => {
 const calendarEditor = (options, field) => {
   const rowId = options.rowData?.id;
 
+
   return (
     <CustomeCalender
       value={options.value}
       onChange={(e) => options.editorCallback(e.value)}
       showIcon
-      dateFormat="dd-mm-yy"
+      dateFormat="dd/mm/yy"
       className="text-xs p-1 w-full"
       panelClassName="text-xs"
       inputClassName="text-xs"
       minDate={new Date(formFields.fromDate)}
+      maxDate={new Date(formFields.tentativeToDate)}
       //disabledDate={(date) => isDateOverlapping(rowId, date, field)}
     />
   );
 };
 
 
-const inputNumberEditor = (options) => (
-  <CustomInputText
-    type="number"
-    value={options.value}
-    onChange={(e) => options.editorCallback(e.target.value)}
-    placeholder="Enter number"
-    className="text-xs  w-full"
-    style={{ fontSize: '0.9rem' }}
-  />
-);
+// const inputNumberEditor = (options) => (
+//   //<InputNumber value={value2} onValueChange={(e) => setValue2(e.value)} useGrouping={false} />
+//   <CustomInputText
+//     type="number"
+//     value={options.value}
+//     onChange={(e) => {options.editorCallback(e.target.value),  if(/^\d*$/.test(value)) {
+//       options.editorCallback(value)};
+//     }}
+//     placeholder="Enter number"
+//     className="text-xs  w-full"
+//     style={{ fontSize: '0.9rem' }}
+//   />
+// );
 
+// const calendarEditor = (options, field) => {
+//   const rowData = options.rowData;
+//   const rowId = rowData?.id;
+
+//   const handleDateChange = (e) => {
+//     const newDate = e.value;
+//     const updatedRow = { ...rowData, [field]: newDate };
+
+//     const checkInDate = new Date(updatedRow.checkIn);
+//     const checkOutDate = new Date(updatedRow.checkOut);
+
+//     let nights = "";
+//     if (updatedRow.checkIn && updatedRow.checkOut) {
+//       const diffInTime = checkOutDate.getTime() - checkInDate.getTime();
+//       const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
+//       nights = diffInDays > 0 ? diffInDays : "";
+//     }
+    
+//     console.log('nights',nights)
+//   // setEditingRows(updatedEditingRows);
+  
+//   console.log("All rows ",accommodations)
+   
+//     updatedRow.numberOfNights = nights;
+//     console.log('updatedRow', updatedRow)
+
+//     options.editorCallback(updatedRow[field]); // notify DataTable of the field change
+//      // options.editorCallback(updatedRow['numberOfNights']); 
+//   };
+
+//   return (
+//     <CustomeCalender
+//       value={options.value}
+//       onChange={handleDateChange}
+//       showIcon
+//       dateFormat="dd/mm/yy"
+//       className="text-xs p-1 w-full"
+//       panelClassName="text-xs"
+//       inputClassName="text-xs"
+//       minDate={new Date(formFields.fromDate)}
+//     />
+//   );
+// };
+
+
+const inputNumberEditor = (options) => {
+  const handleChange = (e) => {
+    const value = e.target.value;
+    // Allow only digits (no negative signs, no decimals)
+    if (/^\d*$/.test(value)) {
+      options.editorCallback(value);
+    }
+  };
+
+  return (
+    <CustomInputText
+      value={options.value}
+      onChange={handleChange}
+      placeholder="Enter number"
+      className="text-xs w-full"
+      style={{ fontSize: '0.9rem' }}
+    />
+  );
+};
 const textEditor = (options) => (
   <CustomInputText
     value={options.value}
@@ -288,7 +359,8 @@ const textEditor = (options) => (
         <CustomEditableColumn
           field="numberOfNights"
           header="No. of Nights"
-          body={(row) => row.numberOfNights}
+          body={(row) => 
+            row.numberOfNights}
         />
         <CustomEditableColumn
           field="comment"

@@ -57,8 +57,8 @@ const TourClaim = () => {
     projectName: "",
     onAccount: "",
     travelfromDate: "",
-    claimFromDate: "",
-    claimToDate: "",
+    claimFromDate: new Date(),
+    claimToDate:new Date(),
     filename: "",
     file_type: "",
   });
@@ -142,8 +142,8 @@ const TourClaim = () => {
                           projectName: "",
                           onAccount: "",
                           travelfromDate: "",
-                          claimFromDate: "",
-                          claimToDate: "",
+                          claimFromDate: new Date(),
+                          claimToDate: new Date(),
                           filename: "",
                           file_type: "",
                         });

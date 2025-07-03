@@ -131,6 +131,7 @@ const token = `Bearer ${getUserData()?.token}`;
     });
 
     const data = response.data;
+    console.log('response.data 1234', response.data)
 
     const groupedMap = {};
 
@@ -141,10 +142,11 @@ const token = `Bearer ${getUserData()?.token}`;
         (claim) => claim.travel_id === item.travelId
       );
       formattedResult.push({
+        //travel_id:item.travelId,
         fromDate: item.fromDate,
         tentativeToDate: item.tentativeToDate,
         actualToDate: item.actualToDate,
-        travel_id: item.requisionId,
+        travel_id: item.travelId,
         destination: item.city,
         purpose: item.purpose,
         project: item.projectName,
@@ -152,6 +154,8 @@ const token = `Bearer ${getUserData()?.token}`;
         expandabledata: matchingClaims,
       });
     });
+
+    
 
     return formattedResult;
   } catch (error) {
@@ -726,9 +730,12 @@ const token = `Bearer ${getUserData()?.token}`;
   const result = [];
 
   const tourClaimList = await getTourClaimList();
+ // console.log('travel_id', travel_id)
+ // console.log('tourList', tourClaimList)
   const filteredClaims = tourClaimList.filter(
     (row) => row.travel_id === travel_id
   );
+  //console.log('', )
 
   let latestToDate = null;
   if (filteredClaims.length > 0) {
@@ -741,15 +748,17 @@ const token = `Bearer ${getUserData()?.token}`;
       }
     });
   }
+  console.log('latestToDate ',   latestToDate )
 
   //const data = await getTourClaimFormDetails(travel_id);
   let response = await getTravelDetailsFromTravelId2(travel_id);
   let data = response.data;
   result.push({
-    travelfromdate: data.fromDate,
-    claimformdate: latestToDate ? latestToDate : data.fromDate,
-    claimtodate:
-      data.tentativeToDate > new Date() ? data.tentativeToDate : new Date(),
+    travelfromdate: data?.fromDate,
+    claimformdate: latestToDate ? latestToDate : data?.fromDate,
+    claimtodate:new Date()
+    //data.tentativeToDate
+      //data.tentativeToDate > new Date() ? data.tentativeToDate : new Date(),
   });
 
   return result;
@@ -1948,14 +1957,14 @@ export const getApprovedAndRejectMiscellanousClaim = async () => {
     let message;
     let approveddata = [];
     let rejecteddata = [];
-    // const myHeaders = new Headers();
-    // myHeaders.append("Authorization", token);
+     const myHeaders = new Headers();
+    myHeaders.append("Authorization", token);
 
-    // const requestOptions = {
-    //   method: "GET",
-    //   headers: myHeaders,
-    //   redirect: "follow",
-    // };
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+      redirect: "follow",
+    };
 
     let rejectedresponse = await axios.get(
       `${host}claims/other-claims-by-status/rejected`,

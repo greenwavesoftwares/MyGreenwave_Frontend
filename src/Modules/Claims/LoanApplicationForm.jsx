@@ -22,18 +22,37 @@ const LoanApplicationForm = () => {
     requirementDate: null,
   });
 
+  // const handleInputChange = (e) => {
+  //   setFormData({ ...formData, [e.target.name]: e.target.value });
+  // };
+
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const { name, value } = e.target;
+
+  if (name === "loanAmount") {
+    // Allow only numbers and prevent negative values
+    if (value === "" || (/^\d+(\.\d{0,2})?$/.test(value) && parseFloat(value) >= 0)) {
+      setFormData({ ...formData, [name]: value });
+    }
+  } else if (name === "loanTenure") {
+    // Allow only whole numbers greater than 0
+    if (value === "" || (/^\d+$/.test(value) && parseInt(value, 10) > 0)) {
+      setFormData({ ...formData, [name]: value });
+    }
+  } else {
+    setFormData({ ...formData, [name]: value });
+  }
+};
 
   const handleDateChange = (e) => {
     setFormData({ ...formData, requirementDate: e.value });
   };
 
   const handleClickApply = async () => {
-    if(!formData.loanAmount ||  !formData.emiAmount|| !formData.purpose || !formData.loanTenure || !formData.requirementDate)
+    if(!formData.loanAmount || !formData.purpose || !formData.loanTenure || !formData.requirementDate)
     {
-        showWarningMessage(toastRef,"warn", "First fill all required fields" )
+      console.log('fromData', formData)
+        showWarningMessage(toastRef,"warn", `First fill all required fields ` )
         return
     }
     const response = await applyLoan(formData);
@@ -147,7 +166,7 @@ const LoanApplicationForm = () => {
               value={formData.requirementDate}
               onChange={handleDateChange}
               showIcon
-              dateFormat="yy-mm-dd"
+              dateFormat="dd/mm/yy"
               className="w-2/3 h-10 rounded-md shadow-sm"
             />
           </div>

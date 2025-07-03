@@ -62,7 +62,7 @@ const MyTourClaims = () => {
     <div className="flex flex-col items-end justify-center space-y-1">
       <div>
         <span className="font-semibold text-gray-700">Expense:</span> ₹
-        {rowData["total_expensevance"]}
+        {rowData["total_expense"]}
       </div>
       <div>
         <span className="font-semibold text-gray-700">Advance:</span> ₹
@@ -125,7 +125,7 @@ const MyTourClaims = () => {
       <div className="flex flex-col justify-center items-center">
         <span > {rowData.from_date}</span>
         <span > to </span>
-        <span > {rowData.from_date} </span>
+        <span > {rowData.to_date} </span>
       </div>
     );
   };
@@ -213,6 +213,13 @@ const MyTourClaims = () => {
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
+         <CustomColumn
+          header="Claim Id"
+         
+        field="claim_id"
+          headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
+        />
+        
         <CustomColumn
           header="Claim Duration"
           body={datebody}
@@ -283,7 +290,7 @@ const MyTourClaims = () => {
         setLoader(true)
         const data = await getTourClaimList();
         setTourClaims(data);
-        console.log(data);
+        console.log('Data :-' ,data);
       } catch (error) {
         console.error("Error fetching tour claim list:", error);
       }
@@ -316,6 +323,15 @@ const MyTourClaims = () => {
         }
       >
         <Column expander style={{ width: "3rem" }} />
+         <CustomColumn
+          field="travel_id"
+          header="travel_id"
+          sortable={true}
+          filter={true}
+          headerStyle={cellStyle}
+          bodyStyle={cellStyle}
+        />
+
         <CustomColumn
           field="fromDate"
           header="From Date"
@@ -386,6 +402,8 @@ const MyTourClaims = () => {
           className="text-xs"
            tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
+           <CustomColumn field="travel_id" header="travel_id"  headerStyle={{...cellStyle,minWidth:"100px"}}
+          bodyStyle={cellStyle} />
           <CustomColumn field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
           bodyStyle={cellStyle} />
           <CustomColumn field="lodging" header="Lodging"   headerStyle={cellStyle}

@@ -11,9 +11,7 @@ import CustomToast from "../../components/Toast/Toast";
 import { CustomeCalender } from "../../components/Calender/CustomeCalender";
 
 import CustomInputText from "../../components/InputText/InputText";
-import {
-  formateDate 
-} from "../../Modules/Claims/claimServices";
+import { formateDate } from "../../Modules/Claims/claimServices";
 
 import { InputNumber } from "primereact/inputnumber";
 //import { Calendar } from "primereact/calendar";
@@ -35,10 +33,12 @@ import {
 import MyForm from "./MyForms";
 import { getTravelDetailsFromTravelId2 } from "./TravelDeskAPI";
 //import {getTravelDropDown} from '../Claims/claimServices'
+import { getAdvance } from "../../Modules/Claims/claimServices";
 
 const RequisitionForm = () => {
   const minfromDate = new Date();
   const [travelModeOptions, setTravelModeOptions] = useState([]);
+  const [advance,setAdvance]=useState();
   const [selectedtravelMode, setselectedtravelMode] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isEditable, setIsEditable] = useState(true); // Default: true for "New Travel"
@@ -70,8 +70,8 @@ const RequisitionForm = () => {
     localityArea: "",
     typeOfTravel: "",
     advanceRequested: "",
-    fromDate: "",
-    tentativeToDate: "",
+    fromDate: new Date(),
+    tentativeToDate: new Date(),
   });
 
   const [transportModes, setTransportModes] = useState([]);
@@ -106,8 +106,8 @@ const RequisitionForm = () => {
           localityArea: "",
           typeOfTravel: "",
           advanceRequested: "",
-          fromDate: "",
-          tentativeToDate: "",
+          fromDate: new Date(),
+          tentativeToDate: new Date(),
         });
       } else {
         setFormFields({
@@ -132,14 +132,15 @@ const RequisitionForm = () => {
         localityArea: "",
         typeOfTravel: "",
         advanceRequested: "",
-        fromDate: "",
-        tentativeToDate: "",
+        fromDate: new Date(),
+        tentativeToDate: new Date(),
       });
     }
   };
 
   useEffect(() => {
     const userData = getUserData();
+   
 
     const today = new Date().toISOString().slice(0, 10);
     if (userData?.userDetails) {
@@ -154,6 +155,8 @@ const RequisitionForm = () => {
     }
     const fetchDropdownList = async () => {
       try {
+            const advanceblance = await getAdvance();
+            setAdvance(advanceblance);
         const travelModeData = await getTravelDropDown();
         if (travelModeData.status) setTravelModeOptions(travelModeData.data);
       } catch (error) {
@@ -198,12 +201,51 @@ const RequisitionForm = () => {
     const token = userData.token;
     try {
       // ✅ Filter finalized rows
-    //   const finalizedTransportModes = transportModes.filter(
-    //     (row) => !row.isEditable
-    //   );
-    //   const finalizedAccommodations = accommodations.filter(
-    //     (row) => !row.isEditable
-    //   );
+      //   const finalizedTransportModes = transportModes.filter(
+      //     (row) => !row.isEditable
+      //   );
+      //   const finalizedAccommodations = accommodations.filter(
+      //     (row) => !row.isEditable
+      //   );
+
+       // Validate transportModes: check for incomplete rows
+  const incompleteTransportRows = transportModes.filter((row) => {
+    return (
+      !row?.mode || row.mode?.trim() === ""|| 
+    !row?.fromDate || row.fromDate.toString().trim() === "" 
+     
+    );
+  });
+
+  if (incompleteTransportRows.length > 0) {
+    showWarningMessage(
+      toastRef,
+      "Warning",
+      "Please complete all Transport Mode entries or remove incomplete rows."
+    );
+    return;
+  }
+
+  const incompleteAccommodationsRows = accommodations.filter((row) => {
+    return (
+      !row?.type || row.type?.trim() === "" || 
+      !row?.numberOfRooms || row.numberOfRooms?.trim() === "" ||
+       !row?.checkIn || row.checkIn?.toString().trim() === "" || 
+      !row?.checkOut || row.checkOut?.toString().trim() === "" ||
+      !row?.numberOfNights || row.numberOfNights == null
+    );
+  });
+
+  if (incompleteAccommodationsRows.length > 0) {
+    showWarningMessage(
+      toastRef,
+      "Warning",
+      "Please complete all Accomodation entries or remove incomplete rows."
+    );
+    return;
+  }
+
+
 
       const payload = {
         // ...userInfo,           // includes name, department, employeeCode, etc.
@@ -229,19 +271,19 @@ const RequisitionForm = () => {
         return;
       }
 
-    //   if (formFields.fromDate > formFields.tentativeToDate) {
-    //     if (toastRef?.current) {
-    //       showErrorMessage(
-    //         "error",
-    //         "Error",
-    //         "From Date cannot be later than Tentative To Date."
-    //       );
-    //     }
+      //   if (formFields.fromDate > formFields.tentativeToDate) {
+      //     if (toastRef?.current) {
+      //       showErrorMessage(
+      //         "error",
+      //         "Error",
+      //         "From Date cannot be later than Tentative To Date."
+      //       );
+      //     }
 
-    //     return;
-    //   }
+      //     return;
+      //   }
       console.log("payload", payload);
-      console.log('submit is called',payload)
+      console.log("submit is called", payload);
       let response = await createRequisition(payload);
 
       if (response.status) {
@@ -258,8 +300,8 @@ const RequisitionForm = () => {
           localityArea: "",
           typeOfTravel: "",
           advanceRequested: "",
-          fromDate: "",
-          tentativeToDate: "",
+          fromDate: new Date(),
+          tentativeToDate: new Date(),
         });
 
         const today = new Date().toISOString().slice(0, 10);
@@ -313,288 +355,287 @@ const RequisitionForm = () => {
       <CustomToast ref={toastRef} />
 
       <div className="p-4 min-h-screen bg-gray-100">
-   
-          <div className="max-w-6xl mx-auto">
-          
-              <div className="space-y-12">
-                <div>
-                  <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
-                    Travel Requisition Form
-                  </h2>
+        <div className="max-w-6xl mx-auto">
+          <div className="space-y-12">
+            <div>
+              <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
+                Available Advance - {advance}
+              </h2>
 
-                  <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="travel-type"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Type Mode
-                      </label>
-                      <div className="mt-2 relative">
-                        <Dropdown
-                          inputId="Select-Mode"
-                          //  className="w-52 h-10 text-sm shadow-sm mb-2"
-                          panelClassName="text-sm"
-                          dropdownIcon="pi pi-chevron-down"
-                          value={
-                            selectedtravelMode ? selectedtravelMode.value : ""
-                          }
-                          options={travelModeOptions}
-                          onChange={(e) => {
-                            handlesetFormData(e.value);
-                            setselectedtravelMode(e);
-                          }}
-                          placeholder="Select a Mode"
-                        />
-                      </div>
-                    </div>
+              <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="travel-type"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Type Mode
+                  </label>
+                  <div className="mt-2 relative">
+                    <Dropdown
+                      inputId="Select-Mode"
+                      //  className="w-52 h-10 text-sm shadow-sm mb-2"
+                      panelClassName="text-sm"
+                      dropdownIcon="pi pi-chevron-down"
+                      value={selectedtravelMode ? selectedtravelMode.value : ""}
+                      options={travelModeOptions}
+                      onChange={(e) => {
+                        handlesetFormData(e.value);
+                        setselectedtravelMode(e);
+                      }}
+                      placeholder="Select a Mode"
+                    />
+                  </div>
+                </div>
 
-                    {/* Purpose field */}
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="purpose"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Purpose
-                      </label>
-                      <div className="mt-2">
-                        <CustomInputText
-                          id="purpose"
-                          name="purpose"
-                          type="text"
-                          value={formFields.purpose}
-                          onChange={(e) =>
-                            handleInputWithValidation("purpose", e.target.value)
-                          }
-                          autoComplete="off"
-                          required
-                          disabled={!isEditable}
-                          className={` 
+                {/* Purpose field */}
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="purpose"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Purpose
+                  </label>
+                  <div className="mt-2">
+                    <CustomInputText
+                      id="purpose"
+                      name="purpose"
+                      type="text"
+                      value={formFields.purpose}
+                      onChange={(e) =>
+                        handleInputWithValidation("purpose", e.target.value)
+                      }
+                      autoComplete="off"
+                      required
+                      disabled={!isEditable}
+                      className={` 
                             ${formErrors.purpose ? "ring-2 ring-red-500 focus:ring-red-500" : ""} `}
-                        />
-                      </div>
-                    </div>
+                    />
+                  </div>
+                </div>
 
-                    <div className="sm:col-span-5 ">
-                      <label
-                        htmlFor="projectName"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Project Name
-                      </label>
-                      <div className="mt-2">
-                        <CustomInputText
-                          id="projectName"
-                          name="projectName"
-                          type="text"
-                          value={formFields.projectName}
-                          onChange={(e) =>
-                            handleInputWithValidation(
-                              "projectName",
-                              e.target.value
-                            )
-                          }
-                          autoComplete="off"
-                          disabled={!isEditable}
-                          className={`
+                <div className="sm:col-span-5 ">
+                  <label
+                    htmlFor="projectName"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Project Name
+                  </label>
+                  <div className="mt-2">
+                    <CustomInputText
+                      id="projectName"
+                      name="projectName"
+                      type="text"
+                      value={formFields.projectName}
+                      onChange={(e) =>
+                        handleInputWithValidation("projectName", e.target.value)
+                      }
+                      autoComplete="off"
+                      disabled={!isEditable}
+                      className={`
                                     ${formErrors.projectName ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
                                 `}
-                                 />
-                      </div>
-                    </div>
+                    />
+                  </div>
+                </div>
 
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="city"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        City
-                      </label>
-                      <div className="mt-2">
-                        <CustomInputText
-                          id="city"
-                          name="city"
-                          type="text"
-                          value={formFields.city}
-                          onChange={(e) =>
-                            handleInputWithValidation("city", e.target.value)
-                          }
-                          autoComplete="off"
-                          disabled={!isEditable}
-                          className={`
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="city"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    City
+                  </label>
+                  <div className="mt-2">
+                    <CustomInputText
+                      id="city"
+                      name="city"
+                      type="text"
+                      value={formFields.city}
+                      onChange={(e) =>
+                        handleInputWithValidation("city", e.target.value)
+                      }
+                      autoComplete="off"
+                      disabled={!isEditable}
+                      className={`
                             ${formErrors.city ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
                         `}
-                        />
-                      </div>
-                    </div>
+                    />
+                  </div>
+                </div>
 
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="locality"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Locality/Area
-                      </label>
-                      <div className="mt-2">
-                        <CustomInputText
-                          id="localityArea"
-                          name="localityArea"
-                          type="text"
-                          value={formFields.localityArea}
-                          onChange={(e) =>
-                            handleInputWithValidation(
-                              "localityArea",
-                              e.target.value
-                            )
-                          }
-                          autoComplete="off"
-                          disabled={!isEditable}
-                          className={`
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="locality"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Locality/Area
+                  </label>
+                  <div className="mt-2">
+                    <CustomInputText
+                      id="localityArea"
+                      name="localityArea"
+                      type="text"
+                      value={formFields.localityArea}
+                      onChange={(e) =>
+                        handleInputWithValidation(
+                          "localityArea",
+                          e.target.value
+                        )
+                      }
+                      autoComplete="off"
+                      disabled={!isEditable}
+                      className={`
                         ${formErrors.localityArea ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
                     `}
-                        />
-                      </div>
-                    </div>
+                    />
+                  </div>
+                </div>
 
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="travel-type"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Type of Travel
-                      </label>
-                      <div className="mt-2 relative">
-                        <Dropdown
-                          inputId="Select-Travel"
-                          panelClassName="text-sm"
-                          dropdownIcon="pi pi-chevron-down"
-                          value={formFields.typeOfTravel}
-                          options={typeOfTravelOptions}
-                          onChange={(e) =>
-                            handleInputWithValidation("typeOfTravel", e.value)
-                          }
-                          placeholder="Select One"
-                          disabled={!isEditable}
-                          className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                        />
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="travel-type"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Type of Travel
+                  </label>
+                  <div className="mt-2 relative">
+                    <Dropdown
+                      inputId="Select-Travel"
+                      panelClassName="text-sm"
+                      dropdownIcon="pi pi-chevron-down"
+                      value={formFields.typeOfTravel}
+                      options={typeOfTravelOptions}
+                      onChange={(e) =>
+                        handleInputWithValidation("typeOfTravel", e.value)
+                      }
+                      placeholder="Select One"
+                      disabled={!isEditable}
+                      className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                    />
 
-                        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1"></div>
-                      </div>
-                    </div>
+                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1"></div>
+                  </div>
+                </div>
 
-                    {/* From Date field */}
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="fromDate"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        From Date
-                      </label>
-                      <div className="mt-2">
-                        <CustomeCalender
-                          value={new Date(formFields.fromDate)}
-                          onChange={(e) =>
-                            handleInputWithValidation("fromDate", formateDate(e.value))
-                          }
-                          maxDate={
-                            new Date(formFields.tentativeToDate) 
-                          }
+                {/* From Date field */}
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="fromDate"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    From Date
+                  </label>
+                  <div className="mt-2">
+                    <CustomeCalender
+                      value={new Date(formFields.fromDate)}
+                      onChange={(e) =>
+                        handleInputWithValidation(
+                          "fromDate",
+                          formateDate(e.value)
+                        )
+                      }
+                      maxDate={(() => {
+                        const date = new Date(formFields.tentativeToDate);
+                        const today = new Date();
+                        return date.getDate() === today.getDate() &&
+                          date.getMonth() === today.getMonth() &&
+                          date.getFullYear() === today.getFullYear()
+                          ? undefined
+                          : date;
+                      })()}
+                      minDate={
+                        //new Date(formFields.fromDate) ||
+                        new Date()
+                      }
+                      // locale="es"
+                      disabled={!isEditable}
+                      dateFormat="dd/mm/yy"
+                      className={`${formErrors.fromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                    />
+                  </div>
+                </div>
 
-                          minDate={
-                            //new Date(formFields.fromDate) || 
-                            new Date() 
-                          }
-                          // locale="es"
-                          disabled={!isEditable}
-                          dateFormat="dd/mm/yy"
-                          className={`${formErrors.fromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                        />
-                      </div>
-                    </div>
+                {/* Tentative To Date field */}
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="tentativeToDate"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Tentative To Date
+                  </label>
+                  <div className="mt-2">
+                    <CustomeCalender
+                      value={new Date(formFields.tentativeToDate)}
+                      onChange={(e) =>
+                        handleInputWithValidation(
+                          "tentativeToDate",
+                          formateDate(e.value)
+                        )
+                      }
+                      disabled={!isEditable}
+                      minDate={new Date(formFields.fromDate)} // prevent selecting before fromDate
+                      dateFormat="dd/mm/yy"
+                      className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                    />
+                  </div>
+                </div>
 
-                    {/* Tentative To Date field */}
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="tentativeToDate"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Tentative To Date
-                      </label>
-                      <div className="mt-2">
-                        <CustomeCalender
-                          value={new Date(formFields.tentativeToDate)}
-                          onChange={(e) =>
-                            handleInputWithValidation(
-                              "tentativeToDate",
-                              formateDate(e.value)
-                            )
-                          }
-                          disabled={!isEditable}
-                          minDate={new Date(formFields.fromDate) } // prevent selecting before fromDate
-                          dateFormat="dd/mm/yy"
-                          className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                        />
-                      </div>
-                    </div>
+                {/* Advanced Amount field */}
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="advanced-amount"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Advanced Amount
+                  </label>
+                  <div className="mt-2">
+                    <InputNumber
+                      value={formFields.advanceRequested || 0}
+                      name="advanceRequested"
+                      onChange={(e) => {
+                        {
+                          console.log(" Event : ", e, " value : ", e.value);
+                          const value = e.value;
 
-                    {/* Advanced Amount field */}
-                    <div className="sm:col-span-5">
-                      <label
-                        htmlFor="advanced-amount"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Advanced Amount
-                      </label>
-                      <div className="mt-2">
-                        <InputNumber
-                          value={formFields.advanceRequested || 0}
-                          name="advanceRequested"
-                          onChange={(e) => {
-                            {
-                              console.log(" Event : ", e, " value : ", e.value);
-                              const value = e.value;
-
-                              console.log(
-                                "My advanceRequested : ",
-                                formErrors.advanceRequested
-                              );
-                              setFormFields((prev) => ({
-                                ...prev,
-                                advanceRequested: value,
-                              }));
-                            }
-                          }}
-                          mode="decimal"
-                          min={0}
-                        />
-                      </div>
-                    </div>
+                          console.log(
+                            "My advanceRequested : ",
+                            formErrors.advanceRequested
+                          );
+                          setFormFields((prev) => ({
+                            ...prev,
+                            advanceRequested: value,
+                          }));
+                        }
+                      }}
+                      mode="decimal"
+                      min={0}
+                    />
                   </div>
                 </div>
               </div>
-              <div className="pt-5">
-                <ModeOfTransportTable
-                  transportModes={transportModes}
-                  setTransportModes={setTransportModes}
-                  formFields={formFields}
-                  formErrors={formErrors}
-                />
-              </div>
-              <div>
-                <AccommodationTable
-                  accommodations={accommodations}
-                  setAccommodations={setAccommodations}
-                   formFields={formFields}
-                   formErrors={formErrors}
-                />
-              </div>
-              <div className="card flex justify-content-center h-10 px-4 text-lg">
-                <CustomButton label="Submit" onClick={handleSubmit} />
-              </div>
-           
-         </div>
-       
-     </div> 
+            </div>
+          </div>
+          <div className="pt-5">
+            <ModeOfTransportTable
+              transportModes={transportModes}
+              setTransportModes={setTransportModes}
+              formFields={formFields}
+              formErrors={formErrors}
+            />
+          </div>
+          <div>
+            <AccommodationTable
+              accommodations={accommodations}
+              setAccommodations={setAccommodations}
+              formFields={formFields}
+              formErrors={formErrors}
+            />
+          </div>
+          <div className="card flex justify-content-center h-10 px-4 text-lg">
+            <CustomButton label="Submit" onClick={handleSubmit} />
+          </div>
+        </div>
+      </div>
     </>
   );
 };

@@ -3,11 +3,11 @@ import { DataTable } from "primereact/datatable";
 import { getUserReferredData,downloadResume } from "./ReferralService";
 import { Column } from "primereact/column";
 import {Button} from "primereact/button"
-const cellStyle = { padding: "8px 12px" };
+const cellStyle = {  };
 
 const ReferralTable = () => {
   const [referralData, setreferralData] = useState();
-  const [loading, setLoading] = useState();
+  const [loading, setLoading] = useState(true);
 
 
    const downloadResumeFile = (rowData) => {
@@ -65,8 +65,10 @@ const ReferralTable = () => {
       showGridlines
       paginator
       rows={10}
-      showGridlinesclassName="text-xs"
-      tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+      size="small"
+      //showGridlinesclassName="text-xs"
+      tableStyle={{ minWidth: "100%" }}
+       className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
     >
       
        <Column
