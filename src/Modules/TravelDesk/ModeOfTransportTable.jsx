@@ -21,7 +21,6 @@ const ModeOfTransportTable = ({transportModes, setTransportModes,formFields,form
 
   //const [transportModes, setTransportModes] = useState([]);
   const [editingRows, setEditingRows] = useState({});
-
   const modeOptions = [
     { label: "Train", value: "Train" },
     { label: "Flight", value: "Flight" },
@@ -127,7 +126,7 @@ const actionTemplate = (rowData) => (
     {/* Left: Title */}
     <div>
       <h5 className="text-gray-500 text-lg font-semibold">
-        Mode of Transport
+        Transportation Request
       </h5>
     </div>
 
@@ -169,12 +168,11 @@ const actionTemplate = (rowData) => (
         emptyMessage="No transport data added."
         showGridlines
       >
-        <CustomEditableColumn field="mode" header="Mode" editor={modeEditor} />
+        <CustomEditableColumn field="mode" header="Transport Mode" editor={modeEditor} />
         <CustomEditableColumn
           field="fromDate"
-          header="From Date"
+          header="Travel Date"
           editor={dateEditor}
-          
           body={(row) =>
             row.fromDate ? new Date(row.fromDate).toLocaleDateString() : ""
           }

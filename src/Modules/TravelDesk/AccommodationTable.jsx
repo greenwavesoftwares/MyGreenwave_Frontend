@@ -295,7 +295,7 @@ const textEditor = (options) => (
     {/* Left Side: Heading */}
     <div className="flex items-center">
       <h5 className="text-gray-500 text-lg font-semibold">
-        Reservation of Accommodation
+      Accommodation Request
       </h5>
     </div>
 

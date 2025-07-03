@@ -38,7 +38,7 @@ import { getAdvance } from "../../Modules/Claims/claimServices";
 const RequisitionForm = () => {
   const minfromDate = new Date();
   const [travelModeOptions, setTravelModeOptions] = useState([]);
-  const [advance,setAdvance]=useState();
+  const [advance, setAdvance] = useState();
   const [selectedtravelMode, setselectedtravelMode] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isEditable, setIsEditable] = useState(true); // Default: true for "New Travel"
@@ -140,7 +140,6 @@ const RequisitionForm = () => {
 
   useEffect(() => {
     const userData = getUserData();
-   
 
     const today = new Date().toISOString().slice(0, 10);
     if (userData?.userDetails) {
@@ -155,8 +154,8 @@ const RequisitionForm = () => {
     }
     const fetchDropdownList = async () => {
       try {
-            const advanceblance = await getAdvance();
-            setAdvance(advanceblance);
+        const advanceblance = await getAdvance();
+        setAdvance(advanceblance);
         const travelModeData = await getTravelDropDown();
         if (travelModeData.status) setTravelModeOptions(travelModeData.data);
       } catch (error) {
@@ -208,44 +207,48 @@ const RequisitionForm = () => {
       //     (row) => !row.isEditable
       //   );
 
-       // Validate transportModes: check for incomplete rows
-  const incompleteTransportRows = transportModes.filter((row) => {
-    return (
-      !row?.mode || row.mode?.trim() === ""|| 
-    !row?.fromDate || row.fromDate.toString().trim() === "" 
-     
-    );
-  });
+      // Validate transportModes: check for incomplete rows
+      const incompleteTransportRows = transportModes.filter((row) => {
+        return (
+          !row?.mode ||
+          row.mode?.trim() === "" ||
+          !row?.fromDate ||
+          row.fromDate.toString().trim() === ""
+        );
+      });
 
-  if (incompleteTransportRows.length > 0) {
-    showWarningMessage(
-      toastRef,
-      "Warning",
-      "Please complete all Transport Mode entries or remove incomplete rows."
-    );
-    return;
-  }
+      if (incompleteTransportRows.length > 0) {
+        showWarningMessage(
+          toastRef,
+          "Warning",
+          "Please complete all Transport Mode entries or remove incomplete rows."
+        );
+        return;
+      }
 
-  const incompleteAccommodationsRows = accommodations.filter((row) => {
-    return (
-      !row?.type || row.type?.trim() === "" || 
-      !row?.numberOfRooms || row.numberOfRooms?.trim() === "" ||
-       !row?.checkIn || row.checkIn?.toString().trim() === "" || 
-      !row?.checkOut || row.checkOut?.toString().trim() === "" ||
-      !row?.numberOfNights || row.numberOfNights == null
-    );
-  });
+      const incompleteAccommodationsRows = accommodations.filter((row) => {
+        return (
+          !row?.type ||
+          row.type?.trim() === "" ||
+          !row?.numberOfRooms ||
+          row.numberOfRooms?.trim() === "" ||
+          !row?.checkIn ||
+          row.checkIn?.toString().trim() === "" ||
+          !row?.checkOut ||
+          row.checkOut?.toString().trim() === "" ||
+          !row?.numberOfNights ||
+          row.numberOfNights == null
+        );
+      });
 
-  if (incompleteAccommodationsRows.length > 0) {
-    showWarningMessage(
-      toastRef,
-      "Warning",
-      "Please complete all Accomodation entries or remove incomplete rows."
-    );
-    return;
-  }
-
-
+      if (incompleteAccommodationsRows.length > 0) {
+        showWarningMessage(
+          toastRef,
+          "Warning",
+          "Please complete all Accomodation entries or remove incomplete rows."
+        );
+        return;
+      }
 
       const payload = {
         // ...userInfo,           // includes name, department, employeeCode, etc.
@@ -358,17 +361,17 @@ const RequisitionForm = () => {
         <div className="max-w-6xl mx-auto">
           <div className="space-y-12">
             <div>
-              <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
+              {/* <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
                 Available Advance - {advance}
-              </h2>
-
+              </h2> */}
+              {/* select travel */}
               <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div className="sm:col-span-5">
                   <label
                     htmlFor="travel-type"
                     className="block text-sm font-medium leading-6 text-gray-900"
                   >
-                    Type Mode
+                    Select Travel
                   </label>
                   <div className="mt-2 relative">
                     <Dropdown
@@ -382,37 +385,39 @@ const RequisitionForm = () => {
                         handlesetFormData(e.value);
                         setselectedtravelMode(e);
                       }}
-                      placeholder="Select a Mode"
+                      placeholder="Select One"
                     />
                   </div>
                 </div>
 
-                {/* Purpose field */}
+                {/* type of travel */}
                 <div className="sm:col-span-5">
                   <label
-                    htmlFor="purpose"
+                    htmlFor="travel-type"
                     className="block text-sm font-medium leading-6 text-gray-900"
                   >
-                    Purpose
+                    Type of Travel
                   </label>
-                  <div className="mt-2">
-                    <CustomInputText
-                      id="purpose"
-                      name="purpose"
-                      type="text"
-                      value={formFields.purpose}
+                  <div className="mt-2 relative">
+                    <Dropdown
+                      inputId="Select-Travel"
+                      panelClassName="text-sm"
+                      dropdownIcon="pi pi-chevron-down"
+                      value={formFields.typeOfTravel}
+                      options={typeOfTravelOptions}
                       onChange={(e) =>
-                        handleInputWithValidation("purpose", e.target.value)
+                        handleInputWithValidation("typeOfTravel", e.value)
                       }
-                      autoComplete="off"
-                      required
+                      placeholder="Select One"
                       disabled={!isEditable}
-                      className={` 
-                            ${formErrors.purpose ? "ring-2 ring-red-500 focus:ring-red-500" : ""} `}
+                      className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                     />
+
+                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1"></div>
                   </div>
                 </div>
 
+                {/* projectName */}
                 <div className="sm:col-span-5 ">
                   <label
                     htmlFor="projectName"
@@ -438,82 +443,59 @@ const RequisitionForm = () => {
                   </div>
                 </div>
 
+                {/* Purpose field */}
                 <div className="sm:col-span-5">
                   <label
-                    htmlFor="city"
+                    htmlFor="purpose"
                     className="block text-sm font-medium leading-6 text-gray-900"
                   >
-                    City
+                    Description
                   </label>
                   <div className="mt-2">
                     <CustomInputText
-                      id="city"
-                      name="city"
+                      id="purpose"
+                      name="purpose"
                       type="text"
-                      value={formFields.city}
+                      value={formFields.purpose}
                       onChange={(e) =>
-                        handleInputWithValidation("city", e.target.value)
+                        handleInputWithValidation("purpose", e.target.value)
                       }
                       autoComplete="off"
+                      required
                       disabled={!isEditable}
-                      className={`
-                            ${formErrors.city ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
-                        `}
+                      className={` 
+                            ${formErrors.purpose ? "ring-2 ring-red-500 focus:ring-red-500" : ""} `}
                     />
                   </div>
                 </div>
 
+                {/* onAccount */}
                 <div className="sm:col-span-5">
                   <label
                     htmlFor="locality"
                     className="block text-sm font-medium leading-6 text-gray-900"
                   >
-                    Locality/Area
+                    On Account
                   </label>
                   <div className="mt-2">
                     <CustomInputText
-                      id="localityArea"
-                      name="localityArea"
+                      id="onAccount"
+                      name="onAccount"
                       type="text"
-                      value={formFields.localityArea}
+                      value={""}
                       onChange={(e) =>
-                        handleInputWithValidation(
-                          "localityArea",
-                          e.target.value
-                        )
+                        // handleInputWithValidation(
+                        //   "localityArea",
+                        //   e.target.value
+                        // )
+                        e.target.value
                       }
                       autoComplete="off"
                       disabled={!isEditable}
-                      className={`
-                        ${formErrors.localityArea ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
-                    `}
+                      //   className={`
+                      //     ${formErrors.localityArea ? "ring-2 ring-red-500 focus:ring-red-500" : ""}
+                      // `}
                     />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-5">
-                  <label
-                    htmlFor="travel-type"
-                    className="block text-sm font-medium leading-6 text-gray-900"
-                  >
-                    Type of Travel
-                  </label>
-                  <div className="mt-2 relative">
-                    <Dropdown
-                      inputId="Select-Travel"
-                      panelClassName="text-sm"
-                      dropdownIcon="pi pi-chevron-down"
-                      value={formFields.typeOfTravel}
-                      options={typeOfTravelOptions}
-                      onChange={(e) =>
-                        handleInputWithValidation("typeOfTravel", e.value)
-                      }
-                      placeholder="Select One"
-                      disabled={!isEditable}
-                      className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                    />
-
-                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1"></div>
                   </div>
                 </div>
 
@@ -580,13 +562,69 @@ const RequisitionForm = () => {
                   </div>
                 </div>
 
-                {/* Advanced Amount field */}
+                {/* city */}
                 <div className="sm:col-span-5">
                   <label
-                    htmlFor="advanced-amount"
+                    htmlFor="city"
                     className="block text-sm font-medium leading-6 text-gray-900"
                   >
-                    Advanced Amount
+                    City
+                  </label>
+                  <div className="mt-2">
+                    <CustomInputText
+                      id="city"
+                      name="city"
+                      type="text"
+                      value={formFields.city}
+                      onChange={(e) =>
+                        handleInputWithValidation("city", e.target.value)
+                      }
+                      autoComplete="off"
+                      disabled={!isEditable}
+                      className={`
+                            ${formErrors.city ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
+                        `}
+                    />
+                  </div>
+                </div>
+
+                {/* Locality/Area */}
+
+                <div className="sm:col-span-5">
+                  <label
+                    htmlFor="locality"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Locality/Area
+                  </label>
+                  <div className="mt-2">
+                    <CustomInputText
+                      id="localityArea"
+                      name="localityArea"
+                      type="text"
+                      value={formFields.localityArea}
+                      onChange={(e) =>
+                        handleInputWithValidation(
+                          "localityArea",
+                          e.target.value
+                        )
+                      }
+                      autoComplete="off"
+                      disabled={!isEditable}
+                      className={`
+                        ${formErrors.localityArea ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
+                    `}
+                    />
+                  </div>
+                </div>
+
+                {/* Advance available */}
+                <div className="sm:col-span-5">
+                  <label
+                    // htmlFor="advanced-amount"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Advance Request
                   </label>
                   <div className="mt-2">
                     <InputNumber
@@ -611,6 +649,21 @@ const RequisitionForm = () => {
                       min={0}
                     />
                   </div>
+                </div>
+
+                {/* Available */}
+
+                <div
+                  style={{
+                    display: "grid !important",
+
+                    justifyItems: "center",
+                    alignContent: "center",
+                    marginTop: "29px",
+                  }}
+                //  / className="flex justify-center text-center sm:col-span-5"
+                >
+                  Available - {advance}
                 </div>
               </div>
             </div>

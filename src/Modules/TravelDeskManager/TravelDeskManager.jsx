@@ -30,6 +30,7 @@ import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // or any other icon
 import { TabPanel, TabView } from "primereact/tabview";
 import { SelectButton } from "primereact/selectbutton";
+import RequisitionFormView2 from "../TravelDesk/RequisitionFormView2";
 
 const renderStatusChip = (row) => {
   const status = row?.status || "";
@@ -521,7 +522,7 @@ export default function TravelDeskManager() {
       >
         {/* Dialog content */}
         <Grid container spacing={2}>
-          <RequisitionFormView
+          <RequisitionFormView2
             rowData={formData}
             handleApproveTravel={handleApproveTravel}
             handleRejectTravel={handleRejectTravel}
