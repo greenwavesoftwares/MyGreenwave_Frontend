@@ -29,6 +29,8 @@ const PerformanceScorecardDateTable = ({
   const [appraisalTraining, setAppraisalTraining] = useState([]);
   //Set only training data
   // const [trainingDataOnly, setTrainingDataOnly] = useState([]);
+   //Store Temp Data
+    const [originalRowData, setOriginalRowData] = useState(null);
 
   //set Training Data
   useEffect(() => {
@@ -87,6 +89,7 @@ const PerformanceScorecardDateTable = ({
   //Edit Section
   const handleEditRow = (rowData, rowIndex) => {
     console.log("editRowData", rowData, rowIndex);
+     setOriginalRowData({ ...rowData });
     setEditingRowIndex(rowIndex);
   };
   //Update
@@ -282,11 +285,15 @@ const PerformanceScorecardDateTable = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                  onClick={(e) => {
-                    //e.preventDefault();
+                  onClick={() => {
+                    if (originalRowData && editingRowIndex !== null) {
+                      const updatedData = [...selectedRowData];
+                      updatedData[editingRowIndex] = originalRowData; // restore original
+                      setSelectedRowData(updatedData);
+                    }
                     setEditingRowIndex(null);
+                    setOriginalRowData(null);
                   }}
-                  // onClick={handleSaveRow}
                 />
               </div>
             ) : (

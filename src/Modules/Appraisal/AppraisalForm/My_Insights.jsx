@@ -15,6 +15,8 @@ const MyInsights = ({
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+     //Store Temp Data
+      const [originalRowData, setOriginalRowData] = useState(null);
 
   //console.log("myInsight_reviewer", isReviewer,isApprover);
 
@@ -40,6 +42,7 @@ const MyInsights = ({
   //Edit Row
   const handleEditRow = (rowData, rowIndex) => {
     console.log("editRowData", rowData, rowIndex);
+    setOriginalRowData({ ...rowData });
     setEditingRowIndex(rowIndex);
   };
   //Update
@@ -163,11 +166,15 @@ const MyInsights = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                  onClick={(e) => {
-                    //e.preventDefault();
+                   onClick={() => {
+                    if (originalRowData && editingRowIndex !== null) {
+                      const updatedData = [...selectedRowData];
+                      updatedData[editingRowIndex] = originalRowData; // restore original
+                      setSelectedRowData(updatedData);
+                    }
                     setEditingRowIndex(null);
+                    setOriginalRowData(null);
                   }}
-                  // onClick={handleSaveRow}
                 />
               </div>
             ) : (

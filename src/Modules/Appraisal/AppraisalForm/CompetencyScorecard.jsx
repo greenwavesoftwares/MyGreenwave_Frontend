@@ -21,6 +21,8 @@ const CompetencyScorecard = ({
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Set Training Data
   const [training, setTraining] = useState([]);
+  //Store Temp Data
+    const [originalRowData, setOriginalRowData] = useState(null);
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -52,6 +54,7 @@ const CompetencyScorecard = ({
   //Edit Row
   const handleEditRow = (rowData, rowIndex) => {
     console.log("editRowData", rowData, rowIndex);
+    setOriginalRowData({ ...rowData });
     setEditingRowIndex(rowIndex);
   };
   //Update
@@ -126,7 +129,7 @@ const CompetencyScorecard = ({
             ) : (
               <Chip
                 size="small"
-                label={rowData.relevance ?? ""}
+                label={rowData.relevance ?? "NA"}
                 //variant="outlined"
                 color={
                   rowData.relevance === "H" || rowData.relevance === "High"
@@ -248,11 +251,15 @@ const CompetencyScorecard = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                  onClick={(e) => {
-                    //e.preventDefault();
+                   onClick={() => {
+                    if (originalRowData && editingRowIndex !== null) {
+                      const updatedData = [...selectedRowData];
+                      updatedData[editingRowIndex] = originalRowData; // restore original
+                      setSelectedRowData(updatedData);
+                    }
                     setEditingRowIndex(null);
+                    setOriginalRowData(null);
                   }}
-                  // onClick={handleSaveRow}
                 />
               </div>
             ) : (
@@ -308,7 +315,7 @@ const CompetencyScorecard = ({
               personal_goals: "",
               relevance: null,
               level_of_fullfillment: "",
-              target_date: "",
+              target_date: formatDate(new Date().toISOString()),
               reviewers_comment: "",
               appraisers_comments: "",
             };

@@ -21,6 +21,9 @@ const FutureComptency = ({
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Set Training Data
   const [training, setTraining] = useState([]);
+   //Store Temp Data
+    const [originalRowData, setOriginalRowData] = useState(null);
+  
 
   //Set Dropdown Data
   const relevanceData = ["High", "Medium", "Low"];
@@ -52,6 +55,7 @@ const FutureComptency = ({
   //Edit Row
   const handleEditRow = (rowData, rowIndex) => {
     console.log("editRowData", rowData, rowIndex);
+    setOriginalRowData({ ...rowData });
     setEditingRowIndex(rowIndex);
   };
   //Update
@@ -65,6 +69,9 @@ const FutureComptency = ({
     setEditingRowIndex(null);
     trackFutureComptency(true);
   };
+
+  //const getDate=new Date();
+  console.log("currentDate",formatDate(new Date().toISOString()));
 
   return (
     <>
@@ -104,7 +111,7 @@ const FutureComptency = ({
                 placeholder="Select Training"
               />
             ) : (
-              <Chip size="small" color="primary" label={rowData?.goals} />
+             rowData?.goals
             )
           }
         />
@@ -125,7 +132,7 @@ const FutureComptency = ({
             ) : (
               <Chip
                 size="small"
-                label={rowData.relevance ?? ""}
+                label={rowData.relevance ?? "NA"}
                 //variant="outlined"
                 color={
                   rowData.relevance === "H" || rowData.relevance === "High"
@@ -228,11 +235,15 @@ const FutureComptency = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                  onClick={(e) => {
-                    //e.preventDefault();
+                   onClick={() => {
+                    if (originalRowData && editingRowIndex !== null) {
+                      const updatedData = [...selectedRowData];
+                      updatedData[editingRowIndex] = originalRowData; // restore original
+                      setSelectedRowData(updatedData);
+                    }
                     setEditingRowIndex(null);
+                    setOriginalRowData(null);
                   }}
-                  // onClick={handleSaveRow}
                 />
               </div>
             ) : (
@@ -285,7 +296,7 @@ const FutureComptency = ({
             const blankRow = {
               goals: "",
               relevance: null,
-              target_date: null,
+              target_date: formatDate(new Date().toISOString()),
               //training: "",
               reviewers_comment: "",
               appraisers_comments: "",

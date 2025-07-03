@@ -12,13 +12,15 @@ const FutureGoals = ({
   trainingData,
   isReviewer,
   isApprover,
-  trackFutureGoals
+  trackFutureGoals,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Training Data
   const [appraisalTraining, setAppraisalTraining] = useState([]);
+  //Store Temp Data
+  const [originalRowData, setOriginalRowData] = useState(null);
 
   //Set Dropdown Data
   const goalTypeData = ["Personal", "Professional"];
@@ -31,7 +33,7 @@ const FutureGoals = ({
   //Set Training Data
   useEffect(() => {
     setAppraisalTraining(trainingData);
-  },[trainingData])
+  }, [trainingData]);
 
   //set Api Data : Future Goals already saved data
   useEffect(() => {
@@ -50,6 +52,7 @@ const FutureGoals = ({
   //Edit Row
   const handleEditRow = (rowData, rowIndex) => {
     console.log("editRowData", rowData, rowIndex);
+    setOriginalRowData({ ...rowData });
     setEditingRowIndex(rowIndex);
   };
   //Update
@@ -65,7 +68,7 @@ const FutureGoals = ({
     trackFutureGoals(true);
   };
   console.log("trainingData_InnerSection", trainingData);
-  console.log("FutureGoals_Save_Date",FutureGoalsData)
+  console.log("FutureGoals_Save_Date", selectedRowData);
 
   return (
     <>
@@ -80,7 +83,7 @@ const FutureGoals = ({
         <Column
           field="future_personal_KRA_goals"
           header="My Aspirations (2 Professional and 2 Personal Goals)"
-            style={{width:"16rem"}}
+          style={{ width: "16rem" }}
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
               <InputText
@@ -114,7 +117,12 @@ const FutureGoals = ({
                 placeholder="Select Level"
               />
             ) : (
-             <Chip color="primary" style={{textTransform:'capitalize'}} size="small" label={rowData.goalType ?? ""}/> 
+              <Chip
+                color="primary"
+                style={{ textTransform: "capitalize" }}
+                size="small"
+                label={rowData.goalType ?? ""}
+              />
             )
           }
         ></Column>
@@ -122,18 +130,38 @@ const FutureGoals = ({
           header="Training"
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex ? (
-              <MultiSelect
-                options={appraisalTraining}
-                className="multiselectDropdownStyle"
-                value={rowData.appraisalTraining}
-                onChange={(e) =>
-                  handleInputChange(e.value, "appraisalTraining", rowIndex)
-                }
-                placeholder="Select Training"
-                display="chip"
-              />
+              rowData.goalType === "Professional" ? (
+                <MultiSelect
+                  options={appraisalTraining}
+                  className="multiselectDropdownStyle"
+                  value={rowData.appraisalTraining}
+                  onChange={(e) =>
+                    handleInputChange(e.value, "appraisalTraining", rowIndex)
+                  }
+                  placeholder="Select Training"
+                  display="chip"
+                />
+              ) : (
+                <InputText
+                  className="inputFieldStyle inputSectionWidth"
+                  value={rowData.appraisalTraining}
+                  onChange={(e) =>
+                    handleInputChange(
+                      [e.target.value],
+                      "appraisalTraining",
+                      rowIndex
+                    )
+                  }
+                />
+              )
             ) : (
-              <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
                 {rowData.appraisalTraining?.map((item, index) => (
                   <Chip
                     size="small"
@@ -198,36 +226,35 @@ const FutureGoals = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <div style={{display:"flex"}}>
-              <Button
-                icon="pi pi-check"
-                size="small"
-                text
-                type="button"
-                onClick={(e) =>{
-                  //e.preventDefault();
-                  handleSaveRow()
-
-                }}
-               // onClick={handleSaveRow}
-               
-              />
-              <Button
-                icon="pi pi-times"
-                size="small"
-                text
-                style={{color:"red"}}
-                type="button"
-                onClick={(e) =>{
-                  //e.preventDefault();
-                  setEditingRowIndex(null)
-
-                }}
-               // onClick={handleSaveRow}
-               
-              />
+              <div style={{ display: "flex" }}>
+                <Button
+                  icon="pi pi-check"
+                  size="small"
+                  text
+                  type="button"
+                  onClick={(e) => {
+                    //e.preventDefault();
+                    handleSaveRow();
+                  }}
+                  // onClick={handleSaveRow}
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  style={{ color: "red" }}
+                  type="button"
+                  onClick={() => {
+                    if (originalRowData && editingRowIndex !== null) {
+                      const updatedData = [...selectedRowData];
+                      updatedData[editingRowIndex] = originalRowData; // restore original
+                      setSelectedRowData(updatedData);
+                    }
+                    setEditingRowIndex(null);
+                    setOriginalRowData(null);
+                  }}
+                />
               </div>
-              
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -284,8 +311,8 @@ const FutureGoals = ({
               reviewers_comment: "",
               appraisers_comments: "",
             };
-           setSelectedRowData([...selectedRowData, blankRow]);
-           trackFutureGoals(true);
+            setSelectedRowData([...selectedRowData, blankRow]);
+            trackFutureGoals(true);
           }}
         >
           Add New Row

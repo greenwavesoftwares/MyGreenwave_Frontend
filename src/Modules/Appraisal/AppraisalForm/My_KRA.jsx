@@ -21,6 +21,8 @@ const MyKRA = ({
   const [appraisalTraining, setAppraisalTraining] = useState([]);
   //Set only training data
   const [trainingDataOnly, setTrainingDataOnly] = useState([]);
+  //Store Temp Data
+    const [originalRowData, setOriginalRowData] = useState(null);
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -49,6 +51,7 @@ const MyKRA = ({
   //Edit Row
   const handleEditRow = (rowData, rowIndex) => {
     console.log("editRowData", rowData, rowIndex);
+    setOriginalRowData({ ...rowData });
     setEditingRowIndex(rowIndex);
   };
   //Update
@@ -180,12 +183,31 @@ const MyKRA = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
+              <div style={{ display: "flex" }}>
               <Button
                 icon="pi pi-check"
                 size="small"
+                 type="button"
                 text
                 onClick={handleSaveRow}
               />
+              <Button
+                                icon="pi pi-times"
+                                size="small"
+                                text
+                                style={{ color: "red" }}
+                                type="button"
+                                onClick={() => {
+                                  if (originalRowData && editingRowIndex !== null) {
+                                    const updatedData = [...selectedRowData];
+                                    updatedData[editingRowIndex] = originalRowData; // restore original
+                                    setSelectedRowData(updatedData);
+                                  }
+                                  setEditingRowIndex(null);
+                                  setOriginalRowData(null);
+                                }}
+                              />
+                              </div>
             ) : (
               <Button
                 icon="pi pi-pencil"
