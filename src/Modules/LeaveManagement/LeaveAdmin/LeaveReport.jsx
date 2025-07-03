@@ -64,6 +64,7 @@ const LeaveReport = ({ tableStructure, statusBodyTemplate }) => {
       sortField="fromDate"
       sortOrder={-1}
       size="small"
+       className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
     >
       <Column field="userName" header="Name" className="w-[25rem]" />
       <Column field="employeeId" header="Emp ID" className="w-[10rem]" />

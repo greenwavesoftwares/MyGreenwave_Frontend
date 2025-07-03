@@ -92,18 +92,11 @@ const LeaveAdmin = () => {
   };
   return (
     <>
-      <Container maxWidth="lg">
-        <Grid
-          container
-          spacing={1}
-          marginTop={2}
-          sx={{
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Grid size={12}>
-            <Card>
+    <div className="container mx-auto px-4">
+          <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+            <div className="mt-3  shadow rounded">
+      
+            <>
               <TabView>
                 <TabPanel header="Leave Requests">
                   <LeaveRequestTable
@@ -136,10 +129,11 @@ const LeaveAdmin = () => {
                   />
                 </TabPanel>
               </TabView>
-            </Card>
-          </Grid>
-        </Grid>
-      </Container>
+            </>
+          
+      </div>
+      </div>
+      </div>
     </>
   );
 };

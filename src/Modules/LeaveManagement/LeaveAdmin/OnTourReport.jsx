@@ -62,6 +62,7 @@ const OnTourReport = ({ tableStructure }) => {
       sortField="fromDate"
       sortOrder={-1}
       size="small"
+       className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
     >
       <Column field="userName" header="Name" className="w-[15rem]"></Column>
       <Column field="employeeId" header="Emp ID" className="w-[10rem]" />

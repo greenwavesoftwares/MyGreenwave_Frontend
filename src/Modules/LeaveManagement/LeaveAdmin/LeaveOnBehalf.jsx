@@ -76,6 +76,7 @@ const LeaveOnBehalf = ({
         sortField="fromDate"
         sortOrder={-1}
         size="small"
+         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
       >
         <Column field="userName" header="Name" className="w-[14vw]" />
         <Column
@@ -93,7 +94,7 @@ const LeaveOnBehalf = ({
       <CustomDialog
         header="Add Leave"
         visible={leaveVisible}
-        className="w-[35rem]"
+        className="w-[35rem] dialogHeader dialogContent"
         onHide={() => setLeaveVisible(false)}
       >
         <Grid container rowSpacing={1.5}>
@@ -112,7 +113,7 @@ const LeaveOnBehalf = ({
               optionLabel="userName"
               optionValue="userId"
               placeholder="Select User"
-              className="w-full"
+              className="w-full dropDownStyle"
               filter
             />
           </Grid>
@@ -129,7 +130,7 @@ const LeaveOnBehalf = ({
               }
               options={["CL", "PL", "Medical"]}
               placeholder="Select Type"
-              className="w-full"
+              className="w-full dropDownStyle"
               filter
             />
           </Grid>
@@ -149,8 +150,9 @@ const LeaveOnBehalf = ({
               disabledDays={[0, 6]}
               showIcon
               dateFormat="dd/mm/yy"
-              inputClassName="w-full"
+              inputClassName="w-full calendarStyleInput inputFieldStyle"
               invalid={!leaveValidation.dates}
+              className="calendarStyle inputFieldStyle"
             />
           </Grid>
           <Grid size={6}>Reason</Grid>
@@ -166,7 +168,7 @@ const LeaveOnBehalf = ({
                   reason: e.target.value,
                 }));
               }}
-              className="w-full"
+              className="w-full inputFieldStyle"
               invalid={!leaveValidation.reason}
             />
           </Grid>

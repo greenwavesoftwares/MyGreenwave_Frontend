@@ -6,10 +6,10 @@ import CustomInputText from "../InputText/InputText";
 
 const GlobalFilterHeader = ({ start = {}, table, setTable }) => {
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center" >
       {start}
-      <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
+      <IconField iconPosition="left" >
+        {/* <InputIcon className="pi pi-search" /> */}
         <CustomInputText
           value={table.filterText}
           onChange={(e) => {
@@ -28,6 +28,7 @@ const GlobalFilterHeader = ({ start = {}, table, setTable }) => {
             }));
           }}
           placeholder="Search"
+          className="inputFieldStyle"
         />
       </IconField>
     </div>

@@ -158,6 +158,12 @@ body {
   padding: 0.65rem 0.65rem;
   color: var(--fontColor);
 }
+.calendarStyleInput .p-calendar .p-inputtext{
+   background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  padding: 0.65rem 0.65rem;
+  color: var(--fontColor);
+}
 .calendarStyle.p-calendar-w-btn-right .p-inputtext::placeholder {
   color: var(--fontColor);
 }
@@ -319,9 +325,13 @@ margin-left: 0;
 }
 
 
-
-
-
+//-------------------------------Full Calender-------------------------------//
+.fc-theme-standard td, .fc-theme-standard th{
+  border-color: var(--divider-color);
+}
+.fc-theme-standard .fc-scrollgrid{
+  border-color: var(--divider-color);
+}
 
 
 //-------------------------------Scroll Bar---------------------------------////

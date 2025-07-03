@@ -98,6 +98,7 @@ const LeaveRequestTable = ({
         sortField="fromDate"
         sortOrder={-1}
         size="small"
+         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
       >
         <Column field="userName" header="Name" className="w-[14vw]"></Column>
         <Column

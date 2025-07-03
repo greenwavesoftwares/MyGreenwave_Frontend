@@ -24,7 +24,7 @@ const UserLeaveInfo = ({
             }}
             options={years}
             placeholder="Select a Year"
-            className="w-full"
+            className="w-full dropDownStyle"
           />
         </div>
       }
@@ -40,6 +40,7 @@ const UserLeaveInfo = ({
         sortField="fromDate"
         sortOrder={-1}
         size="small"
+         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
       >
         <Column
           field="fromDate"
@@ -128,6 +129,7 @@ const UserLeaveInfo = ({
       onRowToggle={(e) => {
         setExpandedRows(e.data);
       }}
+       className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
     >
       <Column
         expander={(row) => {
