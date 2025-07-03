@@ -28,6 +28,8 @@ import {
 } from "../../components/Toast/ShowMessage";
 import RequisitionFormView from "../TravelDesk/RequisitionFormView";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord"; // or any other icon
+import { TabPanel, TabView } from "primereact/tabview";
+import { SelectButton } from "primereact/selectbutton";
 
 const renderStatusChip = (row) => {
   const status = row?.status || "";
@@ -58,12 +60,24 @@ const renderStatusChip = (row) => {
   return <Chip label={status} color={color} size="small" />;
 };
 
+
+const RenderPendingIcon = () => (
+<FiberManualRecordIcon
+                  fontSize="small"
+                  style={{ fontSize: ".8rem" }}
+                  color="warning" // or use a specific color code
+                  // style={{ color: '#fbc02d' }} // yellow for "pending"
+                />)
+
+const tabs=["Pending", "History"];
+
 export default function TravelDeskManager() {
   const [travelData, setTravelData] = useState(null); //  DataTable data
   const [formData, setFormData] = useState({}); //form data for storing the managers remarks
   const [visible, setVisible] = useState(false); //Dialog visibility
   const [globalFilter, setGlobalFilter] = useState(null); // Global filter for DataTable
   const [expandedRows, setExpandedRows] = useState(null); //for expanded rows in DataTable
+  const [activeTab, setActiveTab] = useState(tabs[0]); //for active tab in DataTable
 
   const PENDING_STATUS = "Pending";
   const { token, userDetails } = getUserData();
@@ -291,12 +305,16 @@ export default function TravelDeskManager() {
 
   const renderHeader = () => {
     return (
+      <div className="flex justify-between items-center">
       <InputText
         type="search"
         className="p-inputtext-sm"
         onInput={(e) => setGlobalFilter(e.target.value)}
         placeholder="Search.."
       />
+
+       <SelectButton  value={activeTab} onChange={(e) => setActiveTab(e.value)} options={tabs}  allowEmpty={false}/>
+       </div>
     );
   };
 
@@ -324,6 +342,7 @@ export default function TravelDeskManager() {
           variant="contained"
           icon="pi pi-download"
           size="small"
+          disabled={!rowData?.file_name}
           onClick={async () => {
             console.log("Download ticket clicked for row:", rowData);
             const { status, message } = await downloadDocumentsByReqId(
@@ -422,16 +441,21 @@ export default function TravelDeskManager() {
   //   setExpandedRows(response.data);
   //   console.log("response", response);
   // };
+
+  const updatedTravelData = activeTab === tabs[0]
+    ? travelData?.filter((item) => item?.managerActionRequiredFlag)?? []
+    : travelData?.filter((item) => !item?.managerActionRequiredFlag) ?? []; 
   return (
     // <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100"></div>
     <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100">
       {/* DataTable */}
       <CustomToast ref={toastRef} />
+       {/* <SelectButton value={activeTab} onChange={(e) => setActiveTab(e.value)} options={tabs} /> */}
       <DataTable
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         showGridlines
-        value={travelData}
+        value={updatedTravelData}
         expandedRows={expandedRows}
         onRowToggle={(e) => handlerowexpand(e.data)}
         rowExpansionTemplate={() => rowExpansionTemplate(expandedRows)}
@@ -456,12 +480,7 @@ export default function TravelDeskManager() {
           body={(rowData) => (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {rowData.managerActionRequiredFlag && (
-                <FiberManualRecordIcon
-                  fontSize="small"
-                  style={{ fontSize: ".8rem" }}
-                  color="warning" // or use a specific color code
-                  // style={{ color: '#fbc02d' }} // yellow for "pending"
-                />
+               <RenderPendingIcon />
               )}
               {rowData.userName}
             </div>
