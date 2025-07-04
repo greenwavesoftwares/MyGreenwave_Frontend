@@ -129,6 +129,7 @@ const RequisitionFormView = ({
             <Column field="checkIn" header="Check In"></Column>
             <Column field="checkOut" header="Check Out"></Column>
             <Column field="comment" header="Comment"></Column>
+             <Column field="manager_remark" header="Manager Remark"></Column>
           </DataTable>
         </Grid>
 

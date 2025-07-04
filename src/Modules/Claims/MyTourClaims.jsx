@@ -14,8 +14,13 @@ import { FileUpload } from "primereact/fileupload";
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { ProgressBar } from "primereact/progressbar";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import {ExpandableDataTableComponent,CustomColumn,DataTableComponent} from "../../components/DataTable/DataTableComponent";
 import CustomButton from "../../components/Button/Button";
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
+
+
 
 //import ViewTable from "./ViewTable";
 const cellStyle = {
@@ -32,6 +37,47 @@ const MyTourClaims = () => {
   const [expandedRows, setExpandedRows] = useState(null);
   const [tourClaims, setTourClaims] = useState([]);
   const toast = useRef(null);
+
+ 
+
+  const [globalFilterValue, setGlobalFilterValue] =
+      useState("");
+    const [globalFilterRows, setGlobalFilterRows] = useState({
+      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      actualToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      project: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      purpose: { value: null, matchMode: FilterMatchMode.CONTAINS },
+   
+      destination: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      type: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    });
+  
+    const onGlobalFilterChange = (e) => {
+      const value = e.target.value;
+      let _globalFilterRows = { ...globalFilterRows };
+  
+      _globalFilterRows["global"].value = value;
+  
+      setGlobalFilterRows(_globalFilterRows);
+      setGlobalFilterValue(value);
+    };
+  
+    const renderHeaderForGlobalSearch = () => {
+      return (
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <InputText
+            value={globalFilterValue}
+            onChange={onGlobalFilterChange}
+            placeholder="Keyword Search"
+            className="w-full sm:w-auto"
+          />
+        </div>
+      );
+    };
+  
+     const dataTableHeader = renderHeaderForGlobalSearch();
 
   const handleDownloadFile = async () => {
     try {
@@ -321,6 +367,17 @@ const MyTourClaims = () => {
               "No data found"
           )
         }
+         header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "fromDate",
+          "tentativeToDate",
+          "actualToDate",
+          "project",
+          "purpose",
+          "destination",
+          "type",
+        ]}
       >
         <Column expander style={{ width: "3rem" }} />
          <CustomColumn

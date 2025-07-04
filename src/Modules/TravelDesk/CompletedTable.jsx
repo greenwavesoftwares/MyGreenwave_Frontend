@@ -43,31 +43,55 @@ const CompletedTable = () => {
   const [approvedAndSettledTravelData, setApprovedAndSettledTravelData] =
     useState([]);
   const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
-  // const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
-  //   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  //   date: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  //   userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  //   empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  //   projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  //   unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  //   advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  // });
-  // const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
-  //   useState("");
-  // const [
-  //   approvedAndSettledGlobalFilterValue,
-  //   setApprovedAndSettledGlobalFilterValue,
-  // ] = useState("");
+ 
   const [rowData, setRowData] = useState({});
+
+  const [globalFilterValue, setGlobalFilterValue] =
+      useState("");
+    const [globalFilterRows, setGlobalFilterRows] = useState({
+      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      localityArea: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      'Travel Details': { value: null, matchMode: FilterMatchMode.CONTAINS },
+      empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      city: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      typeOfTravel: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      purpose: { value: null, matchMode: FilterMatchMode.CONTAINS },
+
+    });
+  
+    const onGlobalFilterChange = (e) => {
+      const value = e.target.value;
+      let _globalFilterRows = { ...globalFilterRows };
+  
+      _globalFilterRows["global"].value = value;
+  
+      setGlobalFilterRows(_globalFilterRows);
+      setGlobalFilterValue(value);
+    };
+  
+    const renderHeaderForGlobalSearch = () => {
+      return (
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <InputText
+            value={globalFilterValue}
+            onChange={onGlobalFilterChange}
+            placeholder="Keyword Search"
+            className="w-full sm:w-auto"
+          />
+        </div>
+      );
+    };
+  
+     const dataTableHeader = renderHeaderForGlobalSearch();
 
   const rowExpansionTemplate = (rowData) => {
     const supportingDocumentBody = (rowData) => {
-      // const [fileUploaded, setFileUploaded] = useState(
-      //   rowData.filename ? true : false
-      // );
-      // const [togglefileUpload, settogglefileUpload] = useState(
-      //   rowData.filename ? false : true
-      // );
+     
       const handleDownloadFile = async (requisionId) => {
         try {
           let d = await downloadDocumentsByReqId(requisionId);
@@ -372,36 +396,24 @@ const CompletedTable = () => {
               "No data found"
             )
           }
-          // rowsPerPageOptions={
-          //   approvedAndSettledTravelData.length > 50
-          //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
-          //     : approvedAndSettledTravelData.length > 25 &&
-          //       approvedAndSettledTravelData.length < 50
-          //     ? [5, 10, 25, approvedAndSettledTravelData.length]
-          //     : approvedAndSettledTravelData.length > 10 &&
-          //       approvedAndSettledTravelData.length < 25
-          //     ? [5, 10, approvedAndSettledTravelData.length]
-          //     : approvedAndSettledTravelData.length > 5 &&
-          //       approvedAndSettledTravelData.length < 10
-          //     ? [5, approvedAndSettledTravelData.length]
-          //     : [5]
-          // }
-          //paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-          //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
           dataKey="travelId"
-          //filters={approvedAndSettledFilters}
-          // globalFilterFields={[
-          //   "date",
-          //   "userName",
-          //   "empCode",
-          //   "projectName",
-          //   "unsettledAmount",
-          //   "advanceRequested",
-          // ]}
-          //  header={approvedAndSettledTravelDataHeader}
-          //  emptyMessage="No data found."
-          // removableSort
-          // sortMode="multiple"
+           header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "userName",
+          "unsettledAmount",
+          "fromDate",
+          "tentativeToDate",
+          "empCode",
+          "Travel Details",
+          "localityArea",
+          "purpose",
+          "projectName",
+          "city",
+          "typeOfTravel"
+        ]}
+         
+         
         >
           {/* <Column
               field="date"

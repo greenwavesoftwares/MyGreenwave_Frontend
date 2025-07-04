@@ -12,6 +12,9 @@ export const DataTableComponent = ({
   className,
   dataKey,
   paginator = true,
+   header,
+   filters,
+  globalFilterFields
 }) => {
   return (
     <DataTable
@@ -23,6 +26,9 @@ export const DataTableComponent = ({
       tableStyle={tableStyle}
       emptyMessage={emptyMessage}
       dataKey={dataKey}
+       header={header}
+        filters={filters}
+        globalFilterFields={globalFilterFields}
     >
       {children}
     </DataTable>
@@ -40,6 +46,9 @@ export const ExpandableDataTableComponent = ({
   onRowToggle,
   expandedRows,
   rowExpansionTemplate,
+  header,
+  filters,
+  globalFilterFields
   
 }) => {
   return (
@@ -55,6 +64,9 @@ export const ExpandableDataTableComponent = ({
       paginator
       rows={rows}
       emptyMessage={emptyMessage}
+       header={header}
+        filters={filters}
+        globalFilterFields={globalFilterFields}
     >
       {children}
     </DataTable>

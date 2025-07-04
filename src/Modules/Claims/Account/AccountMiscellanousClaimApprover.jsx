@@ -20,12 +20,54 @@ import {
   DataTableComponent,
 } from "../../../components/DataTable/DataTableComponent";
 import { ProgressBarComponent } from "../../../components/ProgressBar/ProgressBarComponent";
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
+
 
 const AccountMiscellanousClaimApprover = () => {
   const toastRef = useRef(null);
 
   const [loader, setLoader] = useState(false);
   const [miscellanousData, setmiscellanousData] = useState();
+
+ const [globalFilterValue, setGlobalFilterValue] =
+        useState("");
+      const [globalFilterRows, setGlobalFilterRows] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        name: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        designation: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        type: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        claim_date: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        amount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        status: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        reason: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      });
+    
+      const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _globalFilterRows = { ...globalFilterRows };
+    
+        _globalFilterRows["global"].value = value;
+    
+        setGlobalFilterRows(_globalFilterRows);
+        setGlobalFilterValue(value);
+      };
+    
+      const renderHeaderForGlobalSearch = () => {
+        return (
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <InputText
+              value={globalFilterValue}
+              onChange={onGlobalFilterChange}
+              placeholder="Keyword Search"
+              className="w-full sm:w-auto"
+            />
+          </div>
+        );
+      };
+    
+       const dataTableHeader = renderHeaderForGlobalSearch();
+
 
   const downloadSupportingDocument = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
@@ -170,6 +212,17 @@ const AccountMiscellanousClaimApprover = () => {
         }
        
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "name",
+          "designation",
+          "type",
+          "claim_date",
+          "amount",
+          "status",
+          "reason"
+        ]}
       >
         {/* <Column field="claim_id" header="claim_id" sortable filter /> */}
         <CustomColumn field="name" header="Name" sortable={true} filter={true} />

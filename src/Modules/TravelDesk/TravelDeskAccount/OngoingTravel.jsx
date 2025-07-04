@@ -46,21 +46,45 @@ const OngoingTravel = () => {
   const [editRowId, setEditRowId] = useState(null);
   const [ongoingtravelData, setongoingtravelData] = useState([]);
   const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
-  const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    date: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  });
-  const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
-    useState("");
-  const [
-    approvedAndSettledGlobalFilterValue,
-    setApprovedAndSettledGlobalFilterValue,
-  ] = useState("");
+ 
+   const [globalFilterValue, setGlobalFilterValue] =
+      useState("");
+    const [globalFilterRows, setGlobalFilterRows] = useState({
+      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      localityArea: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      'Travel Details': { value: null, matchMode: FilterMatchMode.CONTAINS },
+      empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+   
+      userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    });
+  
+    const onGlobalFilterChange = (e) => {
+      const value = e.target.value;
+      let _globalFilterRows = { ...globalFilterRows };
+  
+      _globalFilterRows["global"].value = value;
+  
+      setGlobalFilterRows(_globalFilterRows);
+      setGlobalFilterValue(value);
+    };
+  
+    const renderHeaderForGlobalSearch = () => {
+      return (
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <InputText
+            value={globalFilterValue}
+            onChange={onGlobalFilterChange}
+            placeholder="Keyword Search"
+            className="w-full sm:w-auto"
+          />
+        </div>
+      );
+    };
+  
+     const dataTableHeader = renderHeaderForGlobalSearch();
 
   const [rowData, setRowData] = useState({});
 
@@ -519,6 +543,17 @@ const OngoingTravel = () => {
               "No data found"
             )
           }
+        header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "userName",
+          "unsettledAmount",
+          "fromDate",
+          "tentativeToDate",
+          "empCode",
+          "Travel Details",
+          "localityArea",
+        ]}
         >
           <CustomColumn expander style={{ width: "3rem" }} />
 

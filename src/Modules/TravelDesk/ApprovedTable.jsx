@@ -9,6 +9,7 @@ import CustomDialog from "../../components/Dialog/DialogComponent";
 import CustomButton from "../../components/Button/Button";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
+
 //Call Api
 import {
   getAdvanceDetails,
@@ -32,7 +33,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 const cellStyle = { padding: "12px 16px" };
 import { FileUpload } from "primereact/fileupload";
-//import { Button } from "primereact/button";
+
 
 import {
   hideLoading,
@@ -50,21 +51,45 @@ const ApprovedTable = () => {
     useState([]);
   const [advanceToggle, setAdvanceToggle] = useState(false);
   const [newAdvanceAmount, setNewAdvanceAmount] = useState(0.0);
-  const [approvedAndSettledFilters, setApprovedAndSettledFilters] = useState({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    date: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    advanceRequested: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  });
-  const [completedGlobalFilterValue, setCompletedGlobalFilterValue] =
+
+ const [globalFilterValue, setGlobalFilterValue] =
     useState("");
-  const [
-    approvedAndSettledGlobalFilterValue,
-    setApprovedAndSettledGlobalFilterValue,
-  ] = useState("");
+  const [globalFilterRows, setGlobalFilterRows] = useState({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    localityArea: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    'Travel Details': { value: null, matchMode: FilterMatchMode.CONTAINS },
+    empCode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+ 
+    userName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    unsettledAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  });
+
+  const onGlobalFilterChange = (e) => {
+    const value = e.target.value;
+    let _globalFilterRows = { ...globalFilterRows };
+
+    _globalFilterRows["global"].value = value;
+
+    setGlobalFilterRows(_globalFilterRows);
+    setGlobalFilterValue(value);
+  };
+
+  const renderHeaderForGlobalSearch = () => {
+    return (
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <InputText
+          value={globalFilterValue}
+          onChange={onGlobalFilterChange}
+          placeholder="Keyword Search"
+          className="w-full sm:w-auto"
+        />
+      </div>
+    );
+  };
+
+   const dataTableHeader = renderHeaderForGlobalSearch();
   // function mergeTravelData(mergedData, dummydataJson) {
   //     const dataMap = new Map();
 
@@ -280,6 +305,8 @@ const ApprovedTable = () => {
             "No data found"
           )
         }
+       
+      
       >
         {/* <CustomColumn field="requisionId" header="Requisition ID" /> */}
         <CustomColumn field="date" header="Date" />
@@ -539,41 +566,20 @@ const ApprovedTable = () => {
             )
           }
           settlementActionRequiredFlag
-          // rowsPerPageOptions={
-          //   approvedAndSettledTravelData.length > 50
-          //     ? [5, 10, 25, 50, approvedAndSettledTravelData.length]
-          //     : approvedAndSettledTravelData.length > 25 &&
-          //       approvedAndSettledTravelData.length < 50
-          //     ? [5, 10, 25, approvedAndSettledTravelData.length]
-          //     : approvedAndSettledTravelData.length > 10 &&
-          //       approvedAndSettledTravelData.length < 25
-          //     ? [5, 10, approvedAndSettledTravelData.length]
-          //     : approvedAndSettledTravelData.length > 5 &&
-          //       approvedAndSettledTravelData.length < 10
-          //     ? [5, approvedAndSettledTravelData.length]
-          //     : [5]
-          // }
-          // paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-          //  currentPageReportTemplate="{first} to {last} of {totalRecords}"
+         
           dataKey="travelId"
-          // filters={approvedAndSettledFilters}
-          // globalFilterFields={[
-          //   "date",
-          //   "userName",
-          //   "empCode",
-          //   "projectName",
-          //   "unsettledAmount",
-          //   "advanceRequested",
-          // ]}
-          //   header={approvedAndSettledTravelDataHeader}
-          // emptyMessage="No data found."
-          //  removableSort
-          //  sortMode="multiple"
-
-          //   rowClassName={(rowData) => {
-          //   if (rowData[0].status == "Applied") return "bg-cyan-50";
-          //   if (rowData[0].status == "Reviewing") return "bg-green-50";
-          // }}
+           header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "userName",
+          "unsettledAmount",
+          "fromDate",
+          "tentativeToDate",
+          "empCode",
+          "Travel Details",
+          "localityArea",
+        ]}
+         
         >
           {/* <CustomColumn
               field="date"

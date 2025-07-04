@@ -14,12 +14,55 @@ import {
   showWarningMessage,
 } from "../../components/Toast/ShowMessage";
 
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from 'primereact/inputtext';
 
 
 const MiscellaneousClaimTable = () => {
     const toastRef = useRef(null);
   const [data, setData] = useState([]);
   const [loader, setLoader] = useState(false);
+
+ 
+
+  const [globalFilterValue, setGlobalFilterValue] =
+        useState("");
+      const [globalFilterRows, setGlobalFilterRows] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        type: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        claim_date: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        amount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        reason: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        status: { value: null, matchMode: FilterMatchMode.CONTAINS },
+     
+        approver_remarks: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        approver: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      });
+    
+      const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _globalFilterRows = { ...globalFilterRows };
+    
+        _globalFilterRows["global"].value = value;
+    
+        setGlobalFilterRows(_globalFilterRows);
+        setGlobalFilterValue(value);
+      };
+    
+      const renderHeaderForGlobalSearch = () => {
+        return (
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <InputText
+              value={globalFilterValue}
+              onChange={onGlobalFilterChange}
+              placeholder="Keyword Search"
+              className="w-full sm:w-auto"
+            />
+          </div>
+        );
+      };
+    
+       const dataTableHeader = renderHeaderForGlobalSearch();
    
   const downloadSupportingDocument = (rowData) => {
       const handleDownloadFile = async (claim_id) => {
@@ -97,6 +140,17 @@ const MiscellaneousClaimTable = () => {
               "No data found"
           )
         }
+        header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "type",
+          "claim_date",
+          "amount",
+          "reason",
+          "status",
+          "approver_remarks",
+          "approver",
+        ]}
         >
           <CustomColumn field="type" header="Claim Type" sortable filter  />
           <CustomColumn field="claim_date" header="Application Date" sortable filter  />

@@ -28,6 +28,9 @@ import {
   showErrorMessage,
   showWarningMessage,
 } from "../../../components/Toast/ShowMessage";
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
+
 
 
 const AppliedTourClaimTable = () => {
@@ -38,6 +41,45 @@ const AppliedTourClaimTable = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
   //const [reviewData, setreviewData] = useState([]);
+
+   const [globalFilterValue, setGlobalFilterValue] =
+        useState(""); 
+      const [globalFilterRows, setGlobalFilterRows] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        name: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Claim Duration': { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Tour Details': { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Claim Calculation': { value: null, matchMode: FilterMatchMode.CONTAINS },
+        status: { value: null, matchMode: FilterMatchMode.CONTAINS },
+     
+        Expense: { value: null, matchMode: FilterMatchMode.CONTAINS },
+       
+      });
+    
+      const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _globalFilterRows = { ...globalFilterRows };
+    
+        _globalFilterRows["global"].value = value;
+    
+        setGlobalFilterRows(_globalFilterRows);
+        setGlobalFilterValue(value);
+      };
+    
+      const renderHeaderForGlobalSearch = () => {
+        return (
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <InputText
+              value={globalFilterValue}
+              onChange={onGlobalFilterChange}
+              placeholder="Keyword Search"
+              className="w-full sm:w-auto"
+            />
+          </div>
+        );
+      };
+    
+       const dataTableHeader = renderHeaderForGlobalSearch();
 
   const datebody = (rowData) => {
     return (
@@ -307,6 +349,18 @@ const AppliedTourClaimTable = () => {
           if (rowData[0].status == "Applied") return "bg-cyan-50";
           if (rowData[0].status == "Reviewing") return "bg-green-50";
         }}
+
+         header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "name",
+          "Claim Duration",
+          "Tour Details",
+          "Claim Calculation",
+          "Expense",
+          "status",
+          
+        ]}
       >
         <CustomColumn
           field="name"

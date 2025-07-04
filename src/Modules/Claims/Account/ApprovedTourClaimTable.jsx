@@ -28,6 +28,10 @@ import {
 //import { Button } from "primereact/button";
 //import { Toast } from "primereact/toast";
 import { ProgressBar } from "primereact/progressbar";
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
+
+
 
 const ApprovedTourClaimTable = () => {
   const toastRef = useRef(null);
@@ -36,6 +40,52 @@ const ApprovedTourClaimTable = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
   const [rowData, setRowData] = useState({});
+
+   const [globalFilterValue, setGlobalFilterValue] =
+        useState(""); 
+        
+        
+        
+       
+      const [globalFilterRows, setGlobalFilterRows] = useState({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        name: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Claim Duration': { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Tour Details': { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Claim Calculation': { value: null, matchMode: FilterMatchMode.CONTAINS },
+        status: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        account: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        'Reviewer Comments': { value: null, matchMode: FilterMatchMode.CONTAINS },
+      
+     
+        Expense: { value: null, matchMode: FilterMatchMode.CONTAINS },
+       
+      });
+    
+      const onGlobalFilterChange = (e) => {
+        const value = e.target.value;
+        let _globalFilterRows = { ...globalFilterRows };
+    
+        _globalFilterRows["global"].value = value;
+    
+        setGlobalFilterRows(_globalFilterRows);
+        setGlobalFilterValue(value);
+      };
+    
+      const renderHeaderForGlobalSearch = () => {
+        return (
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <InputText
+              value={globalFilterValue}
+              onChange={onGlobalFilterChange}
+              placeholder="Keyword Search"
+              className="w-full sm:w-auto"
+            />
+          </div>
+        );
+      };
+    
+       const dataTableHeader = renderHeaderForGlobalSearch();
 
   const downloadExpense = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
@@ -213,6 +263,19 @@ const ApprovedTourClaimTable = () => {
             "No data found"
           )
         }
+         header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "name",
+          "Claim Duration",
+          "Tour Details",
+          "account",
+          "Claim Calculation",
+          "Expense",
+          "status",
+      
+          "Reviewer Comments"
+        ]}
       >
         <CustomColumn
           field="name"

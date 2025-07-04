@@ -1,9 +1,15 @@
-import React,{useState,useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Chip} from "@mui/material";
+import { Chip } from "@mui/material";
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
 //Call Api
-import { getMyFormParticularRequisitionId,getExpandableData,getMyFormTravelData_New } from "./TravelDeskAPI";
+import {
+  getMyFormParticularRequisitionId,
+  getExpandableData,
+  getMyFormTravelData_New,
+} from "./TravelDeskAPI";
 // import {
 //   getMyFormTravelData_New,
 //   getMyFormTravelData,
@@ -14,11 +20,11 @@ import { getUserData } from "../Login/Encrypt";
 import { Dialog } from "primereact/dialog";
 //import CheckIcon from "@mui/icons-material/Check";
 //import { useState } from "react";
-import {Button } from "primereact/button"
+import { Button } from "primereact/button";
 import RequisitionFormView from "./RequisitionFormView";
 
 const MyForm = () => {
-   const [myFormTableData, setMyFormTableData] = useState([]);
+  const [myFormTableData, setMyFormTableData] = useState([]);
   const [expandedRows, setExpandedRows] = useState(null);
   console.log("table data", myFormTableData);
   //Dialog visible
@@ -26,10 +32,23 @@ const MyForm = () => {
   //
   const [rowData, setRowData] = useState({});
 
+  const [globalFilterValue, setGlobalFilterValue] =
+    useState("");
+  const [globalFilterRows, setGlobalFilterRows] = useState({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    purpose: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    projectName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    city: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    localityArea: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    typeOfTravel: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  });
+
   //My Form Api Call
-   
-    useEffect(() => {
-      const myFormApi = async () => {
+
+  useEffect(() => {
+    const myFormApi = async () => {
       try {
         // const { token } = getUserData();
         //await getMyFormTravelData()
@@ -44,11 +63,11 @@ const MyForm = () => {
         console.log(error);
       }
     };
-  
-     // fetchDropdownList();
-      //MY Form api function call
-      myFormApi();
-    }, []);
+
+    // fetchDropdownList();
+    //MY Form api function call
+    myFormApi();
+  }, []);
 
   const handelShowPreviousData = async (requisionId) => {
     console.log("clickrequisionId", requisionId);
@@ -109,7 +128,7 @@ const MyForm = () => {
 
   const completeTravel = async (rowData) => {
     //  let updatedData={...row,advance: newAdvanceAmount}
-    
+
     let response = await updateTravelRequisition(
       rowData,
       rowData.travelId,
@@ -136,32 +155,56 @@ const MyForm = () => {
     }
   };
 
-  const checkBody=(rowData)=>{
-      return(
-    <Button
-      icon="pi pi-check"
-      style={rowData.travelCompleteFlag === false ? { color: '#708090' }:{}}
-      className="p-button-sm p-button-text p-button-success "
+  const checkBody = (rowData) => {
+    return (
+      <Button
+        icon="pi pi-check"
+        style={rowData.travelCompleteFlag === false ? { color: "#708090" } : {}}
+        className="p-button-sm p-button-text p-button-success "
         onClick={() => {
-        completeTravel(rowData.expandableData[0], "CompleteRequested");
+          completeTravel(rowData.expandableData[0], "CompleteRequested");
         }}
         tooltip="Complete Travel"
-      disabled={rowData.travelCompleteFlag === false}
+        disabled={rowData.travelCompleteFlag === false}
       />
-    // <span>Hii</span>
-      )
-      
-  }
+      // <span>Hii</span>
+    );
+  };
 
-  const handlerowexpand =async(data)=>{
-    console.log("data -> ",data)
-    console.log('travelId',  Object.keys(data)[0])
+  const handlerowexpand = async (data) => {
+    console.log("data -> ", data);
+    console.log("travelId", Object.keys(data)[0]);
     // return;
-    const travelId = Object.keys(data)[0]
-  let response= await getExpandableData(travelId)
-      setExpandedRows(response.data)
-      console.log('response', response)
-  }
+    const travelId = Object.keys(data)[0];
+    let response = await getExpandableData(travelId);
+    setExpandedRows(response.data);
+    console.log("response", response);
+  };
+
+  const onGlobalFilterChange = (e) => {
+    const value = e.target.value;
+    let _globalFilterRows = { ...globalFilterRows };
+
+    _globalFilterRows["global"].value = value;
+
+    setGlobalFilterRows(_globalFilterRows);
+    setGlobalFilterValue(value);
+  };
+
+  const renderHeaderForGlobalSearch = () => {
+    return (
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <InputText
+          value={globalFilterValue}
+          onChange={onGlobalFilterChange}
+          placeholder="Keyword Search"
+          className="w-full sm:w-auto"
+        />
+      </div>
+    );
+  };
+
+  const dataTableHeader = renderHeaderForGlobalSearch();
 
   return (
     <>
@@ -173,24 +216,35 @@ const MyForm = () => {
         showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-         dataKey="travelId"
+        dataKey="travelId"
         rowClassName={(rowData) => {
           if (rowData[0].travelCompleteFlag) return "bg-red-50";
           //if (!rowData[0].travelCompleteFlag) return "bg-green-50";
         }}
         paginator
         rows={10}
+        header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "fromDate",
+          "tentativeToDate",
+          "purpose",
+          "projectName",
+          "city",
+          "localityArea",
+          "typeOfTravel",
+        ]}
       >
         <Column expander style={{ width: "3rem" }} />
         <Column field="fromDate" header="From Date"></Column>
         <Column field="tentativeToDate" header="Tentative To Date"></Column>
-        <Column field="purpose" header="Purpose"></Column>
+        <Column field="purpose" header="Description"></Column>
         <Column field="projectName" header="Project Name"></Column>
         <Column field="city" header="City"></Column>
         <Column field="localityArea" header="Locality/Area"></Column>
         <Column field="typeOfTravel" header="Type Of Travel"></Column>
         <Column body={checkBody} header="Complete Travel"></Column>
-       
+
         {/* <Column
   body={(rowData) => {
     return (
@@ -211,18 +265,18 @@ const MyForm = () => {
   style={{ textAlign: "center" }}
 /> */}
       </DataTable>
-       <Dialog
-          header="Requisition Form View"
-          visible={visible}
-          style={{ width: "70rem" }}
-          onHide={() => {
-            if (!visible) return;
-            setVisible(false);
-          }}
-        >
-          <h2>Requisition Form View</h2>
-          <RequisitionFormView rowData={rowData} />
-        </Dialog>
+      <Dialog
+        header="Requisition Form View"
+        visible={visible}
+        style={{ width: "70rem" }}
+        onHide={() => {
+          if (!visible) return;
+          setVisible(false);
+        }}
+      >
+        <h2>Requisition Form View</h2>
+        <RequisitionFormView rowData={rowData} />
+      </Dialog>
 
       {/* <Dialog
         header="Requisition Form View"

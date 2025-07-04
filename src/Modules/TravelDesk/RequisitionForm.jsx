@@ -235,9 +235,8 @@ const RequisitionForm = () => {
           !row?.checkIn ||
           row.checkIn?.toString().trim() === "" ||
           !row?.checkOut ||
-          row.checkOut?.toString().trim() === "" ||
-          !row?.numberOfNights ||
-          row.numberOfNights == null
+          row.checkOut?.toString().trim() === "" 
+        
         );
       });
 
@@ -245,7 +244,7 @@ const RequisitionForm = () => {
         showWarningMessage(
           toastRef,
           "Warning",
-          "Please complete all Accomodation entries or remove incomplete rows."
+          "Please complete all Accommodation entries or remove incomplete rows."
         );
         return;
       }

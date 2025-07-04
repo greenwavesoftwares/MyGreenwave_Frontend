@@ -40,7 +40,7 @@ const RequisitionFormView2 = ({
     //   return;
     // }
     const updated = rowData;
-     updated.transportModes[index] = newData;
+    updated.transportModes[index] = newData;
     setFormData(updated);
     rowData.transportModes[index] = newData;
   };
@@ -196,7 +196,7 @@ const RequisitionFormView2 = ({
           </DataTable>
         </Grid>
 
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        {/* <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
           <span
             style={{
               fontWeight: "bold",
@@ -207,32 +207,41 @@ const RequisitionFormView2 = ({
             Manager Name :{" "}
           </span>
           {rowData.manager_id}
-        </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        </Grid> */}
+        <Grid
+          size={12}
+          sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}
+        >
           {" "}
           {formData?.manager_id === userDetails?.userId &&
           formData?.status === "Pending" ? (
-            <Box display="flex" gap={2} flexDirection="row" marginTop={2}>
+            <Box
+              display="flex"
+              gap={2}
+              flexDirection="row"
+              marginTop={2}
+              alignItems={"center"}
+              justifyContent={"center"}
+            >
               {/* <Grid item xs={6}>
                 Manager Name:{" "}
                 <div style={{ fontWeight: "bold", color: "blue" }}>
                   {formData?.manager_id}
                 </div>
               </Grid> */}
-              <Grid item xs={6}>
-                <FloatLabel>
-                  <InputTextarea
-                    value={formData?.manager_suggestion}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        manager_suggestion: e.target.value,
-                      })
-                    }
-                  />
-                  <label htmlFor="managercomment">Manager Comment</label>
-                </FloatLabel>
-              </Grid>
+              <FloatLabel>
+                <InputTextarea
+                  cols={50}
+                  value={formData?.manager_suggestion}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      manager_suggestion: e.target.value,
+                    })
+                  }
+                />
+                <label htmlFor="managercomment">Manager Comment</label>
+              </FloatLabel>
               {/* Button */}
               <PrimeReactButton
                 raised

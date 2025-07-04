@@ -16,10 +16,56 @@ import {
   showWarningMessage,
 } from  "../../../components/Toast/ShowMessage";
 
+import { FilterMatchMode } from "primereact/api";
+import { InputText } from "primereact/inputtext";
+
 const LoanApplicationTable = () => {
     const toastRef = useRef(null);
    const [loanData,setloanData]=useState();
     const [loader,setLoader]=useState(false);
+         const [globalFilterValue, setGlobalFilterValue] =
+          useState("");
+        const [globalFilterRows, setGlobalFilterRows] = useState({
+          global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          claimDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          requirementDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          amount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          emi: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          emiAmount: { value: null, matchMode: FilterMatchMode.CONTAINS },
+       
+          numberOfEMIsPending: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          numberOfMonthsAfterLastEMI: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          reason: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          loanAmountPending: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          status: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          approverName: { value: null, matchMode: FilterMatchMode.CONTAINS },
+          approver_remarks: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        });
+      
+        const onGlobalFilterChange = (e) => {
+          const value = e.target.value;
+          let _globalFilterRows = { ...globalFilterRows };
+      
+          _globalFilterRows["global"].value = value;
+      
+          setGlobalFilterRows(_globalFilterRows);
+          setGlobalFilterValue(value);
+        };
+      
+        const renderHeaderForGlobalSearch = () => {
+          return (
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+              <InputText
+                value={globalFilterValue}
+                onChange={onGlobalFilterChange}
+                placeholder="Keyword Search"
+                className="w-full sm:w-auto"
+              />
+            </div>
+          );
+        };
+      
+         const dataTableHeader = renderHeaderForGlobalSearch();
     
      useEffect(() => {
        const fetchloandetails = async () => {
@@ -63,6 +109,23 @@ const LoanApplicationTable = () => {
           "No data found"
         )
       }
+        header={dataTableHeader}
+        filters={globalFilterRows}
+        globalFilterFields={[
+          "claimDate",
+          "requirementDate",
+          "amount",
+          "emi",
+          "emiAmount",
+          "numberOfEMIsPending",
+          "loanAmountPending",
+          "numberOfMonthsAfterLastEMI",
+          "reason",
+          "status",
+          "approverName",
+          "approver_remarks"
+
+        ]}
            >
      <Column 
      field="claimDate" 
