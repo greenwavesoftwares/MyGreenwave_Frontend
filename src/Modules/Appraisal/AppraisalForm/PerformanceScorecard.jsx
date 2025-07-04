@@ -349,6 +349,7 @@ const PerformanceScorecardDateTable = ({
             const blankRow = {
               my_last_year_KRA: "",
               level_of_fullfillment: null,
+              appraisalTraining: [],
               remarks: "",
               reviewers_comment: "",
               appraisers_comments: "",

@@ -19,6 +19,9 @@ body {
   background-color: var(--salarySlipHeaderBG);
   color: var(--salarySlipHeaderFontColor);
 }
+.accordionStyle  {
+ box-shadow:1px 1px 2px var(--boxShadowPaper) !important;
+}
 
 // --------------------------------------Font---------------------------------------//
 .defaultFont {
@@ -30,6 +33,9 @@ body {
 }
 .defaultFontSize-sm{
   font-size: 0.78rem;
+}
+.titleTextStyle{
+  color: var(--tittleFontColor) ;
 }
 
 //-------------------------------------Input Section Style------------------------//
@@ -327,12 +333,31 @@ margin-left: 0;
 
 //-------------------------------Full Calender-------------------------------//
 .fc-theme-standard td, .fc-theme-standard th{
-  border-color: var(--divider-color);
+  border-color: var(--calBorder);
 }
 .fc-theme-standard .fc-scrollgrid{
-  border-color: var(--divider-color);
+  border-color: var(--calBorder);
+}
+.fc .fc-toolbar-title{
+  font-size: 1.2rem;
 }
 
+//----------------------------------Icon-----------------------------------//
+.blue-icon{
+  background-color: var(--icon-blue-bg);
+  color: #2563EB;
+  font-size: 1rem;
+}
+.green-icon{
+  background-color: var(--icon-green-bg);
+  color:#00c700;
+   font-size: 1rem;
+}
+.purple-icon{
+  background-color: var(--icon-purple-bg);
+  color: #bb59fd;
+   font-size: 1rem;
+}
 
 //-------------------------------Scroll Bar---------------------------------////
 /* Target the entire scrollbar */

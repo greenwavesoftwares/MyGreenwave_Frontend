@@ -87,7 +87,14 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
         ...item,
       };
     });
-    setPerformanceScorecardData(updatedData);
+    //setPerformanceScorecardData(updatedData);
+   
+    //Nullify the data if it is empty
+    setPerformanceScorecardData(
+      updatedData.filter((ele) => {
+        return ele?.appraisalTraining.length != 0  || ele?.level_of_fullfillment !==null || ele?.my_last_year_KRA !=="";
+      })
+    );
   };
 
   //For Competency Scorecard Data
@@ -103,6 +110,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
       };
     });
     setCompetencyScorecardData(updatedData);
+    console.log("setCompetencyScorecardData",updatedData);
   };
 
   //For Future Goals Data
@@ -116,7 +124,14 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
         ...item,
       };
     });
-    setFutureGoalsData(updatedData);
+    //setFutureGoalsData(updatedData);
+
+    //Nullify the data if it is empty
+    setFutureGoalsData(
+      updatedData.filter((ele) => {
+        return ele?.appraisalTraining.length != 0  || ele?.goalType !==null || ele?.future_personal_KRA_goals!=="";
+      })
+    );
   };
 
   //For Future Comptency Data
@@ -146,7 +161,13 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
         ...item,
       };
     });
-    setMyKRA_Data(updatedData);
+    //setMyKRA_Data(updatedData);
+     //Nullify the data if it is empty
+    setMyKRA_Data(
+      updatedData.filter((ele) => {
+        return  ele?.appraisalTraining.length != 0  || ele?.my_next12month_KRA !=="";
+      })
+    );
   };
 
   //For My Insights Data
@@ -160,7 +181,13 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
         ...item,
       };
     });
-    setMyInsights(updatedData);
+    //Nullify the data if it is empty
+    setMyInsights(
+      updatedData.filter((ele) => {
+        return ele?.my_ideas !== "" || ele?.my_contribution_plans !== "";
+      })
+    );
+    //setMyInsights(updatedData)
   };
 
   //For Confirmation Reviewer and Approver

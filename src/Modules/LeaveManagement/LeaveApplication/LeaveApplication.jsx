@@ -74,12 +74,13 @@ const LeaveApplication = () => {
   const [appVersion, setAppVersion] = useState("1.0");
   const actionBodyTemplate = (row) => {
     return (
-      <div className="flex justify-content-center">
+      <div className="flex justify-content-center gap-1">
         <CustomButton
           icon="pi pi-pencil"
           rounded
           outlined
           severity="warning"
+           style={{width:'2rem',height:"2rem",border:"none"}}
           disabled={row.status !== "Pending" && row.status !== "Editing"}
           onClick={() => {
             setLeaveData(onSelectRowEdit(row));
@@ -91,6 +92,7 @@ const LeaveApplication = () => {
           rounded
           outlined
           severity="danger"
+          style={{width:'2rem',height:"2rem",border:"none"}}
           disabled={row.status !== "Pending" && row.status !== "Editing"}
           onClick={() => {
             showConfirm(
@@ -265,7 +267,7 @@ const LeaveApplication = () => {
           {appVersion === "1.2" && (
             <>
               <Grid size={{ md: 3, sm: 6, xs: 12 }}>
-                <Card style={{ borderRadius: "25px" }}>
+                <div className="cardStyle">
                   <Grid container rowGap={1}>
                     <Grid size={12}>Year :</Grid>
                     <Grid size={12}>
@@ -280,7 +282,7 @@ const LeaveApplication = () => {
                       />
                     </Grid>
                   </Grid>
-                </Card>
+                </div>
               </Grid>
               <Grid size={{ md: 3, sm: 6, xs: 12 }}>
                 <LeaveBalanceCard
@@ -395,7 +397,7 @@ const LeaveApplication = () => {
           {(appVersion === "1.0" || appVersion === "1.1") && (
             <>
               <Grid size={{ md: 3.3, xs: 12 }}>
-                <Card className="h-full">
+                <div className="h-full cardStyle p-3">
                   <Grid container rowGap={1.5}>
                     <Grid size={12}>Year :</Grid>
                     <Grid size={12}>
@@ -406,7 +408,7 @@ const LeaveApplication = () => {
                         }}
                         options={years}
                         placeholder="Select a Year"
-                        className="w-full"
+                        className="w-full dropDownStyle"
                       />
                     </Grid>
                     <Grid size={11}>Approved Leaves :</Grid>
@@ -426,7 +428,7 @@ const LeaveApplication = () => {
                       <Grid size={1}>{leaveInfo.cardData?.prevPL}</Grid>
                     )}
                   </Grid>
-                </Card>
+                </div>
               </Grid>
               <Grid size={{ md: 8.7, xs: 12 }}>
                 {appVersion === "1.1" ? (
@@ -499,7 +501,7 @@ const LeaveApplication = () => {
                     ))}
                   </Grid>
                 ) : (
-                  <Card className="h-full">
+                  <div className="h-full cardStyle p-3">
                     <Chart
                       className={
                         selectedYear == getCurrentYear()
@@ -510,7 +512,7 @@ const LeaveApplication = () => {
                       data={chartData?.yearlyChart?.data}
                       options={chartData?.yearlyChart?.options}
                     />
-                  </Card>
+                  </div>
                 )}
               </Grid>
             </>
@@ -602,7 +604,7 @@ const LeaveApplication = () => {
             </Card>
           </Grid> */}
           <Grid size={{ md: 6, xs: 12 }}>
-            <Card className="h-full">
+            <div className="cardStyle p-3">
               <Tooltip ref={tooltipRef} target="#selectedEvent" mouseTrack />
               <Calender
                 initialView="dayGridMonth"
@@ -615,17 +617,17 @@ const LeaveApplication = () => {
                   tooltipRef.current.updateTargetEvents("#selectedEvent");
                 }}
               />
-            </Card>
+            </div>
           </Grid>
           <Grid size={{ md: 6, xs: 12 }} className="h-full">
-            <Card className="h-full">
+             <div className="cardStyle px-3">
               <DataTable
                 value={leaveTable.table}
                 filters={leaveTable.filterStructure}
                 globalFilterFields={["fromDate", "type", "reason", "status"]}
                 header={leaveHeader}
                 paginator
-                rows={5}
+                rows={8}
                 rowsPerPageOptions={
                   leaveTable.table?.length > 50
                     ? [5, 10, 25, 50, leaveTable.table?.length]
@@ -642,10 +644,11 @@ const LeaveApplication = () => {
                 sortField="fromDate"
                 sortOrder={-1}
                 size="small"
-                className="text-sm"
+                className="text-sm dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator dropDownStyle"
                 rowClassName={() =>
                   "hover:bg-gray-100 transition-all duration-200"
                 }
+                
               >
                 <Column
                   field="fromDate"
@@ -685,12 +688,12 @@ const LeaveApplication = () => {
                   body={actionBodyTemplate}
                 ></Column>
               </DataTable>
-            </Card>
+            </div>
           </Grid>
         </Grid>
       </Container>
       <SpeedDial
-        style={{ right: "2rem", bottom: "2rem", position: "fixed" }}
+        style={{ right: "1rem", bottom: "2rem", position: "fixed" }}
         model={appliedLeaveTypes}
       />
       <DialogComponent
@@ -700,10 +703,10 @@ const LeaveApplication = () => {
             : "Apply For " + getTypeName(leaveData.type) + " Leave"
         }
         visible={leaveVisible}
-        className="w-[25rem]"
+        className="w-[25rem] dialogHeader dialogContent"
         onHide={hideleaveDialog}
       >
-        <Grid container rowSpacing={1.5}>
+        <Grid container rowSpacing={1.5} className="mt-2">
           <Grid size={6}>Date</Grid>
           <Grid size={6}>
             <DatePicker
@@ -739,7 +742,7 @@ const LeaveApplication = () => {
                   reason: e.target.value,
                 }));
               }}
-              className="w-full"
+              className="w-full inputFieldStyle"
               invalid={!leaveValidation.reason}
             />
           </Grid>

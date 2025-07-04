@@ -37,7 +37,10 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import InsertInvitationIcon from "@mui/icons-material/InsertInvitation";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 
 function Appraisal() {
   //For Navigation
@@ -65,13 +68,14 @@ function Appraisal() {
   const [appraiserForm, setAppraiserForm] = useState();
   const [appraisalList, setAppraisalList] = useState();
 
-    //Handel Submit Dialog Close
-  const [submitFormDataDialogClose,setSubmitFormDataDialogClose]=useState(false)
+  //Handel Submit Dialog Close
+  const [submitFormDataDialogClose, setSubmitFormDataDialogClose] =
+    useState(false);
 
   //Set Appraisal Form ID
   const [appraisalFormId, setAppraisalFormId] = useState(null);
-    //Set Form id for Show Icon
-    const [currentFormId, setCurrentFormId] = useState(null);
+  //Set Form id for Show Icon
+  const [currentFormId, setCurrentFormId] = useState(null);
 
   //token
   const getAuthToken = getUserData()?.token;
@@ -81,7 +85,8 @@ function Appraisal() {
   const [appraisalFormID, setApraisalFormID] = useState("NA");
 
   //Set Previous And Next Appraisal Date
-  const [previousAndNextAppraisalDate, setPreviousAndNextAppraisalDate] = useState({});
+  const [previousAndNextAppraisalDate, setPreviousAndNextAppraisalDate] =
+    useState({});
 
   //temp data
   //const empList = [{ userName: "test1" }, { userName: "test2" }, { userName: "test3" }];
@@ -115,10 +120,12 @@ function Appraisal() {
         setTrainingData(trainingData?.data);
 
         //Previous And Next Appraisal Date
-        const dateOfJoin= formatDate(localStorageAuth?.userDetails.doj)
-        const responsePreviousAndNextAppraisalDates = await getPreviousAndNextAppraisalDate(authToken, dateOfJoin);
-        setPreviousAndNextAppraisalDate(responsePreviousAndNextAppraisalDates?.data);
-
+        const dateOfJoin = formatDate(localStorageAuth?.userDetails.doj);
+        const responsePreviousAndNextAppraisalDates =
+          await getPreviousAndNextAppraisalDate(authToken, dateOfJoin);
+        setPreviousAndNextAppraisalDate(
+          responsePreviousAndNextAppraisalDates?.data
+        );
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
         if (error.message === "unauthorized") {
@@ -191,14 +198,59 @@ function Appraisal() {
       {/* Appraisal Header */}
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="cardStyle mt-4 py-2 px-3 bg-white shadow rounded">
+          <div className="cardStyle mt-4 py-2.5 px-4 bg-white shadow rounded">
             <div className="flex justify-between items-center">
-              {/* Appraisal Dates */}
-              <div className="flex items-center gap-4">
-                <p className="text-sm">Last Appraisal</p>
-                <Chip label={previousAndNextAppraisalDate.appraisalTable?.lastAppraisalDate ?? "NA"} color="primary" size="small" />
-                <p className="text-sm">Next Appraisal</p>
-                <Chip label={previousAndNextAppraisalDate.appraisalTable?.nextAppraisalDate ?? "NA"} color="primary" size="small" />
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg blue-icon">
+                      <EmojiEventsIcon />
+                    </div>
+                    <div>
+                      <h1 className="text-1xl font-bold text-gray-900">
+                        Appraisal
+                      </h1>
+                      <p
+                        className=" titleTextStyle"
+                        style={{ fontSize: "0.8rem" }}
+                      >
+                        Track and manage performance evaluations
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1  rounded-lg  green-icon">
+                      <InsertInvitationIcon />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium  uppercase  titleTextStyle">
+                        Last Appraisal
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {previousAndNextAppraisalDate.appraisalTable
+                          ?.lastAppraisalDate ?? "NA"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="p-1 rounded-lg purple-icon">
+                      <TrendingUpIcon />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium  uppercase  titleTextStyle">
+                        Next Appraisal
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {previousAndNextAppraisalDate.appraisalTable
+                          ?.nextAppraisalDate ?? "NA"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Appraisal Form Buttons */}
@@ -250,23 +302,34 @@ function Appraisal() {
               )
             }
           >
-            <Column field="empName" header="Emp Name" body={(rowData)=>{
-              return(
-              <div className="flex items-center gap-2" style={{justifyContent:"center"}}>
-                {rowData.formId === currentFormId ? <CheckCircleIcon color="success"/> :""}
-                <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
-                  {rowData.empName}
-                </Typography>
-              </div>
-              );
-            }}></Column>
+            <Column
+              field="empName"
+              header="Emp Name"
+              body={(rowData) => {
+                return (
+                  <div
+                    className="flex items-center gap-2"
+                    style={{ justifyContent: "center" }}
+                  >
+                    {rowData.formId === currentFormId ? (
+                      <CheckCircleIcon color="success" />
+                    ) : (
+                      ""
+                    )}
+                    <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
+                      {rowData.empName}
+                    </Typography>
+                  </div>
+                );
+              }}
+            ></Column>
             <Column
               body={(rowData) => {
                 return (
                   <>
-                  <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
-                    {formatDate(rowData.appraisalDate)}
-                  </Typography>
+                    <Typography variant="body2" style={{ fontSize: "0.8rem" }}>
+                      {formatDate(rowData.appraisalDate)}
+                    </Typography>
                   </>
                 );
               }}
@@ -282,19 +345,19 @@ function Appraisal() {
                       rowData.approved
                         ? "Approved"
                         : rowData.reviewed
-                        ? "Reviewed"
-                        : rowData.active
-                        ? "Active"
-                        : "Inactive"
+                          ? "Reviewed"
+                          : rowData.active
+                            ? "Active"
+                            : "Inactive"
                     }
                     color={
                       rowData.approved
                         ? "primary"
                         : rowData.reviewed
-                        ? "warning"
-                        : rowData.active
-                        ? "success"
-                        : "error"
+                          ? "warning"
+                          : rowData.active
+                            ? "success"
+                            : "error"
                     }
                     icon={
                       rowData.approved ? (
@@ -320,11 +383,14 @@ function Appraisal() {
                     size="small"
                     variant="contained"
                     sx={{ boxShadow: "none" }}
-                    disabled={
-  
-                      rowData.formId === currentFormId  
-                      }
-                    startIcon={ rowData.formId === currentFormId ? <CheckCircleIcon /> :<VisibilityIcon />}
+                    disabled={rowData.formId === currentFormId}
+                    startIcon={
+                      rowData.formId === currentFormId ? (
+                        <CheckCircleIcon />
+                      ) : (
+                        <VisibilityIcon />
+                      )
+                    }
                     loading={appraisalFormLoading === rowData.formId}
                     loadingPosition="end"
                     onClick={() =>
