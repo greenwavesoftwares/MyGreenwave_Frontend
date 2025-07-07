@@ -1,72 +1,68 @@
 .light {
-  --bg-main: #F4F7FF;
-  --bg-drawer: #FFFFFF;
+  --bg-main: #f4f7ff;
+  --bg-drawer: #ffffff;
   --menu-selected: #e0e0e0;
   --menu-text: #263238;
   --avatar-bg: #4097ff;
   --divider-color: #e0e0e0;
   --chip-border: #263238;
   --chip-color: #263238;
-  --FontAwesomeIcon: #6E7880;
+  --FontAwesomeIcon: #6e7880;
   --ExpandMoreIconStyle: #e3e9ef;
-  --borderColor:#f7e9e9a8;
-  --boxShadowPaper:#f1efef;
-  --tittleFontColor:#6b7280;
+  --borderColor: #f7e9e9a8;
+  --boxShadowPaper: #f1efef;
+  --tittleFontColor: #6b7280;
 
   //Icon BG Color
-  --icon-blue-bg: #DBEAFE;
-  --icon-green-bg:#dcfce7;
-  --icon-purple-bg:#f3e8ff;
+  --icon-blue-bg: #dbeafe;
+  --icon-green-bg: #dcfce7;
+  --icon-purple-bg: #f3e8ff;
 
-
-// Card styles
+  // Card styles
   --card-bg: #fffefec9;
-  --card-border: #dfd9d98a;
-  --cardBGTwo:#f9fafb;
-
+  --card-border: #dfd9d942;
+  --cardBGTwo: #f9fafb;
 
   //Typography styles
   --fontColor: #263238;
 
-
   //Table styles
-  --tableOuterBorder:  #e5dfe2;
-  --tableBG:#998b8b17;
-  --tableOddRow:#e3dde03b;
-   --tablePaginator-active: #dcdbe34a;
-   --tableHighlight:#cbcbf5;
+  --tableOuterBorder: #dfd9d961;
+  --tableBG: #998b8b17;
+  --tableOddRow: #f7f7f7;
+  --tablePaginator-active: #dcdbe34a;
+  --tableHighlight: #cbcbf5;
 
-
-
-    //Dialog styles
-  --headerBottomBorder:#c3bdbdde;
+  //Dialog styles
+  --headerBottomBorder: #c3bdbdde;
   --dialogBG: #ffff;
 
-
-
-
-   //MUI Tab styles
-  --tabBGColor: #FFFFFF;
+  //MUI Tab styles
+  --tabBGColor: #ffffff;
   --tabActive: #ffffff;
 
-  
-   //Calender Style
-  --calBorder:#d7d3d3;
-
-
+  //Calender Style
+  --calBorder: #d7d3d3;
 
   //Input styles
   --inputFieldBorder: #e0e0e0;
 
-
-
-   //Dropdown Style
+  //Dropdown Style
   --dropdownBG: #ffff;
-  --hoverText:#95bff359;
-   --dropdownBG-Header: #f1f1f1;
+  --hoverText: #95bff359;
+  --dropdownBG-Header: #f1f1f1;
 
-   //Salary Slip Header
-   --salarySlipHeaderBG:#e3f2fd;
-   --salarySlipHeaderFontColor:#1976d2;
+  //Salary Slip Header
+  --salarySlipHeaderBG: #e3f2fd;
+  --salarySlipHeaderFontColor: #1976d2;
 
+  //Chip Style
+  --blueBG: #dbeafe;
+  --blueFontColor: #1e40af;
+  --greenBG: green;
+  --greenFontColor: blue;
+  --greenBorder: #7ff37f;
+  --redBG: #ff4d4d;
+  --redFontColor: #b30000;
+  --redBorder: #fda0a0;
 }

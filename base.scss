@@ -15,12 +15,12 @@ body {
 .MuiDivider-root {
   background-color: var(--divider-color);
 }
-.salarySlip-HeaderBG{
+.salarySlip-HeaderBG {
   background-color: var(--salarySlipHeaderBG);
   color: var(--salarySlipHeaderFontColor);
 }
-.accordionStyle  {
- box-shadow:1px 1px 2px var(--boxShadowPaper) !important;
+.accordionStyle {
+  box-shadow: 1px 1px 2px var(--boxShadowPaper) !important;
 }
 
 // --------------------------------------Font---------------------------------------//
@@ -31,11 +31,11 @@ body {
 .defaultBorder {
   border: 1px solid var(--borderColor) !important;
 }
-.defaultFontSize-sm{
+.defaultFontSize-sm {
   font-size: 0.78rem;
 }
-.titleTextStyle{
-  color: var(--tittleFontColor) ;
+.titleTextStyle {
+  color: var(--tittleFontColor);
 }
 
 //-------------------------------------Input Section Style------------------------//
@@ -79,11 +79,11 @@ body {
   border: 1px solid var(--card-border);
 }
 .dropDownStyle.p-dropdown .p-dropdown-trigger {
-    color: #ffffff;
-    width: 3rem;
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-    background: #1976d2;
+  color: #ffffff;
+  width: 3rem;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: #1976d2;
 }
 .dropDownStyle::placeholder {
   color: var(--fontColor);
@@ -114,7 +114,6 @@ body {
   color: var(--fontColor);
 }
 
-
 //---------------------------Multi Select Dropdown Style-------------------------------///
 .multiselectDropdownStyle.p-multiselect {
   background: var(--card-bg);
@@ -134,28 +133,21 @@ body {
   .p-multiselect-item:not(.p-highlight):not(.p-disabled).p-focus {
   background-color: var(--hoverText);
 }
-.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight{
-   background-color: var(--hoverText);
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+  background-color: var(--hoverText);
 }
-.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight{
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
   background-color: var(--hoverText);
   color: var(--fontColor);
 }
-.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled).p-focus{
-   color: var(--fontColor);
+.p-multiselect-panel
+  .p-multiselect-items
+  .p-multiselect-item:not(.p-highlight):not(.p-disabled).p-focus {
+  color: var(--fontColor);
 }
-.p-multiselect .p-multiselect-label.p-placeholder{
-   color: var(--fontColor);
+.p-multiselect .p-multiselect-label.p-placeholder {
+  color: var(--fontColor);
 }
-
-
-
-
-
-
-
-
-
 
 //--------------------------------------📆 Calender Style-------------------------------------///
 .calendarStyle.p-calendar-w-btn-right .p-inputtext {
@@ -164,8 +156,8 @@ body {
   padding: 0.65rem 0.65rem;
   color: var(--fontColor);
 }
-.calendarStyleInput .p-calendar .p-inputtext{
-   background: var(--card-bg);
+.calendarStyleInput .p-calendar .p-inputtext {
+  background: var(--card-bg);
   border: 1px solid var(--card-border);
   padding: 0.65rem 0.65rem;
   color: var(--fontColor);
@@ -235,7 +227,7 @@ body {
 .footerButtonStyle.p-dialog .p-dialog-footer button {
   padding: 0.4rem 0.8rem;
 }
-.dialogContent.p-dialog .p-dialog-content{
+.dialogContent.p-dialog .p-dialog-content {
   color: var(--fontColor);
 }
 
@@ -275,88 +267,176 @@ body {
   font-size: 0.85rem !important;
 }
 
+//---------------------------------------Tab Styles-----------------------------------------//
+.tabMenuStyle.p-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link {
+  padding: 0.7rem;
+}
+.tabMenuStyle.p-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link {
+  font-size: 0.8rem;
+}
+.tabMenuStyle.p-tabmenu .p-tabmenu-nav {
+  background: none !important;
+}
+.tabMenuStyle.p-tabmenu
+  .p-tabmenu-nav
+  .p-tabmenuitem.p-highlight
+  .p-menuitem-link {
+  background: none !important;
+}
+.tabMenuStyle.p-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link {
+  background: none !important;
+}
 
+//----------------------------------------Grid-------------------------------------------//
+.my-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .my-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 
 //-------------------------------------Speed Dial Style-------------------------------------///
-.speedDialStyle .p-speeddial-button.p-button.p-button-icon-only{
+.speedDialStyle .p-speeddial-button.p-button.p-button-icon-only {
   width: 3rem;
   height: 3rem;
 }
 
+//---------------------------------------Chip Style-------------------------------------------//
+.infoChipStyle.MuiChip-root {
+  background: var(--blueBG);
+  color: var(--blueFontColor);
+}
+.infoChipStyle.MuiChip-root .MuiChip-icon {
+  color: var(--blueFontColor);
+  opacity: 0.75;
+}
 
+.activeChipStyle.MuiChip-root {
+  background: none;
+  border: 1px solid var(--greenBorder);
+  color: (--greenBG);
+}
+.activeChipStyle.MuiChip-root .MuiChip-icon {
+  color: var(--greenBG);
+  border-color: var(--greenBorder);
+}
+.activeChipStyle .MuiChip-label {
+  color: var(--greenBG);
+}
 
-
+.inActiveChipStyle.MuiChip-root {
+  background: none;
+  border: 1px solid var(--redBorder);
+  color: var(--redBG);
+}
+.inActiveChipStyle.MuiChip-root .MuiChip-icon {
+  color: var(--redBG);
+  border-color: var(--redBorder);
+}
+.inActiveChipStyle .MuiChip-label {
+  color: var(--redBG);
+}
 
 //---------------------------------------Stepper Style---------------------------------------//
 // .hideStepperNumber .p-stepper-number{
 //   display: none !important;
 // }
-.activeStepperStyle{
+.activeStepperStyle {
   //background-color: #1976d2;
   color: #2196f3;
 }
-.activeStepperIconStyle{
+.activeStepperIconStyle {
   background-color: #2196f3;
   color: white;
 }
-.inActiveStepperIconStyle{
+.inActiveStepperIconStyle {
   border: 1px solid #9c9ea9;
 }
-.stepperContentStyle{
- box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px;
- border-radius: 1rem !important;
- background-color: var(--card-bg);
+.stepperContentStyle {
+  box-shadow:
+    rgba(0, 0, 0, 0.1) 0px 0px 5px 0px,
+    rgba(0, 0, 0, 0.1) 0px 0px 1px 0px;
+  border-radius: 1rem !important;
+  background-color: var(--card-bg);
 }
-.stepperStyle{
+.stepperStyle {
   display: grid;
   row-gap: 0.25rem;
   justify-items: center;
 }
 .stepperStyle .p-stepper .p-stepper-header .p-stepper-action .p-stepper-title {
-margin-left: 0;
+  margin-left: 0;
 }
-.p-stepper .p-stepper-header .p-stepper-action{
+.p-stepper .p-stepper-header .p-stepper-action {
   background: none !important;
 }
-.p-stepper .p-stepper-panels{
-  background:none;
+.p-stepper .p-stepper-panels {
+  background: none;
   margin: 0.5rem 1rem;
 }
 .p-stepper .p-stepper-header .p-stepper-action .p-stepper-number {
-  
-    min-width: 1.7rem;
-    height: 1.7rem;
+  min-width: 1.7rem;
+  height: 1.7rem;
 
-    font-size: 1rem;
+  font-size: 1rem;
 }
-
 
 //-------------------------------Full Calender-------------------------------//
-.fc-theme-standard td, .fc-theme-standard th{
+.fc-theme-standard td,
+.fc-theme-standard th {
   border-color: var(--calBorder);
 }
-.fc-theme-standard .fc-scrollgrid{
+.fc-theme-standard .fc-scrollgrid {
   border-color: var(--calBorder);
 }
-.fc .fc-toolbar-title{
+.fc .fc-toolbar-title {
   font-size: 1.2rem;
 }
 
 //----------------------------------Icon-----------------------------------//
-.blue-icon{
+.blue-icon {
   background-color: var(--icon-blue-bg);
-  color: #2563EB;
+  color: #2563eb;
   font-size: 1rem;
 }
-.green-icon{
-  background-color: var(--icon-green-bg);
-  color:#00c700;
-   font-size: 1rem;
+.blue-BG {
+  background-color: #2563eb;
+  font-size: 1rem;
 }
-.purple-icon{
+.blue-icon-noBG {
+  color: #5f8ef5;
+  font-size: 1rem;
+}
+.green-icon {
+  background-color: var(--icon-green-bg);
+  color: #00c700;
+  font-size: 1rem;
+}
+.green-icon-noBG {
+  color: #5dcb5d;
+  font-size: 1rem;
+}
+.green-BG {
+  background-color: #22c55e;
+  font-size: 1rem;
+}
+.red-BG {
+  background-color: #eb5050;
+  font-size: 1rem;
+}
+.red-icon-noBG {
+  color: #f07a7b;
+  font-size: 1rem;
+}
+.purple-icon {
   background-color: var(--icon-purple-bg);
   color: #bb59fd;
-   font-size: 1rem;
+  font-size: 1rem;
 }
 
 //-------------------------------Scroll Bar---------------------------------////

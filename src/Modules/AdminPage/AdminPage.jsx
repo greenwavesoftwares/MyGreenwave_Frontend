@@ -21,7 +21,10 @@ import UserInfo from "./UserInfo/UserInfo";
 import ResetPassword from "./ResetPassword/ResetPassword";
 import UserLog from "./UserLog/UserLog";
 import GlobalFilterHeader from "../../components/Table/GlobalFilterHeader";
-
+import MapsHomeWorkIcon from "@mui/icons-material/MapsHomeWork";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 const AdminPage = () => {
   //Table structure and Validations for admin page
   const tableStructure = () => ({
@@ -101,7 +104,7 @@ const AdminPage = () => {
 
   const itemRenderer = (item, itemIndex, userCount, severity) => (
     <a
-      className="p-menuitem-link flex align-items-center gap-2 bg-gray-50"
+      className="p-menuitem-link flex align-items-center gap-2"
       onClick={() => {
         itemIndex === 0
           ? setAdminTable((prev) => ({
@@ -115,10 +118,10 @@ const AdminPage = () => {
         setActiveIndex(itemIndex);
       }}
     >
-      <Badge severity={severity} />
+      {/* <Badge severity={severity} /> */}
       <span className="font-bold p-overlay-badge">
         {item.name}
-        <Badge value={userCount} severity={severity} />
+        {/* <Badge value={userCount} severity={severity} /> */}
       </span>
     </a>
   );
@@ -141,6 +144,7 @@ const AdminPage = () => {
           model={adminHeaderMenuItems}
           activeIndex={activeIndex}
           onTabChange={(e) => setActiveIndex(e.index)}
+          className="tabMenuStyle"
         />
       }
       table={adminTable}
@@ -173,112 +177,294 @@ const AdminPage = () => {
       },
     }));
   }, [adminTable]);
+  //console.log("totalActiveGroup",(adminInfo.userGroup?.filter((ele)=> ele.active === true))?.length);
 
+  
   return (
     <>
-      <Container size="lg" className="mt-5">
-        <SpeedDial
-          radius={80}
-          style={{ right: "2rem", bottom: "2rem", position: "fixed" }}
-          showIcon="pi pi-user-plus"
-          hideIcon="pi pi-user-plus"
-          onClick={() => {
-            setUserInfoVisible(true);
-            setEditMode(false);
-            setUserInfo(userDataStructure);
-          }}
-        />
-        <DataTable
-          value={adminTable.table}
-          paginator
-          rows={10}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          header={adminHeader}
-          selectionMode="single"
-          onRowSelect={(row) => {
-            setUserInfoVisible(true);
-            setEditMode(true);
-            setUserInfo(row.data);
-          }}
-          dataKey="userId"
-          filters={adminTable.filterStructure}
-          globalFilterFields={["userName", "userId", "phoneNumber"]}
-        >
-          <Column
-            header="User Name"
-            style={{ width: "25%" }}
-            body={(rowData) => (
-              <div className="userNameCell">
-                <Avatar
-                  label={rowData.initial.initialName}
-                  style={{
-                    backgroundColor: rowData.initial.initialColor,
-                    color: "#FFFFFF",
-                  }}
-                  size="large"
-                  shape="circle"
-                  className="mr-3"
-                />
-                <span>
-                  <b>{rowData.userName}</b>
-                  <br />
-                  {rowData.userId}
-                </span>
+      <div className="container mx-auto px-4">
+        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+          <div className=" ">
+            <div className="cardStyle mt-4 py-2.5 px-4 bg-white shadow rounded">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg blue-icon">
+                      <MapsHomeWorkIcon />
+                    </div>
+                    <div>
+                      <h1 className="text-1xl font-bold text-gray-900">
+                        Admin Page
+                      </h1>
+                      <p
+                        className=" titleTextStyle"
+                        style={{ fontSize: "0.8rem" }}
+                      >
+                        Manage users, permissions, and access controls
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-8">
+                  <div className="flex items-center ">
+                    <Button
+                      rounded
+                      icon="pi pi-plus"
+                      size="small"
+                      style={{ padding: "0.35rem 0.7rem", columnGap: "0.3rem" }}
+                      onClick={() => {
+                        setUserInfoVisible(true);
+                        setEditMode(false);
+                        setUserInfo(userDataStructure);
+                      }}
+                    >
+                      Add User
+                    </Button>
+
+                    <div></div>
+                  </div>
+                </div>
               </div>
-            )}
-          ></Column>
-          <Column
-            field="phoneNumber"
-            header="Phone Number"
-            style={{ width: "15%" }}
-          ></Column>
-          <Column
-            header="User Group"
-            style={{ width: "25%" }}
-            body={(rowData) => (
-              <div>
-                {rowData.groupNames.map((groupName, index) => (
-                  <span key={index}>
-                    <Chip label={groupName} className="mr-2 mb-2" />
-                  </span>
-                ))}
+            </div>
+            <div className=" mt-1 py-2.5 ">
+              <div className="my-grid">
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div
+                          className="green-BG rounded-full mr-3"
+                          style={{ width: "0.7rem", height: "0.7rem" }}
+                        ></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">
+                          Active Users
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <PersonOutlineOutlinedIcon className=" mr-2 green-icon-noBG" />
+                      <span
+                        className=" font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {adminInfo?.userCount?.active ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div
+                          className="red-BG rounded-full mr-3"
+                          style={{ width: "0.7rem", height: "0.7rem" }}
+                        ></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">
+                          Inactive Users
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <PersonOffOutlinedIcon className=" mr-2 red-icon-noBG" />
+                      <span
+                        className="font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {adminInfo?.userCount?.inActive ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div
+                          className="blue-BG rounded-full mr-3"
+                          style={{ width: "0.7rem", height: "0.7rem" }}
+                        ></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">
+                          User Groups
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <GroupOutlinedIcon className=" mr-2 blue-icon-noBG" />
+                      <span
+                        className=" font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {adminInfo.userGroup?.filter(
+                          (ele) => ele.active === true
+                        )?.length ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          ></Column>
-          <Column
-            header="Reset Password"
-            style={{ width: "20%" }}
-            body={(rowData) => (
-              <Button
-                icon="pi pi-key"
-                rounded
-                severity="warning"
-                aria-label="Bookmark"
+            </div>
+            <div className="mt-1 mb-4 cardStyle">
+              {/* <SpeedDial
+                radius={80}
+                style={{ right: "2rem", bottom: "2rem", position: "fixed" }}
+                showIcon="pi pi-user-plus"
+                hideIcon="pi pi-user-plus"
                 onClick={() => {
-                  setResetPasswordVisible(true);
-                  setUserInfo(rowData);
+                  setUserInfoVisible(true);
+                  setEditMode(false);
+                  setUserInfo(userDataStructure);
                 }}
-              />
-            )}
-          ></Column>
-          <Column
-            header="Logs"
-            style={{ width: "15%" }}
-            body={(row) => (
-              <Button
-                icon="pi pi-file"
-                rounded
-                severity="info"
-                aria-label="Bookmark"
-                onClick={() => {
-                  setUserLogVisible(true);
-                  setUserInfo(row);
+              /> */}
+              <DataTable
+                value={adminTable.table}
+                paginator
+                rows={10}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                header={adminHeader}
+                size="small"
+                className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator dropDownStyle"
+                selectionMode="single"
+                onRowSelect={(row) => {
+                  setUserInfoVisible(true);
+                  setEditMode(true);
+                  setUserInfo(row.data);
                 }}
-              />
-            )}
-          ></Column>
-        </DataTable>
-      </Container>
+                stripedRows
+                dataKey="userId"
+                filters={adminTable.filterStructure}
+                globalFilterFields={["userName", "userId", "phoneNumber"]}
+              >
+                <Column
+                  header="User Name"
+                  //style={{ width: "25%" }}
+                  body={(rowData) => (
+                    <div className="userNameCell">
+                      <Avatar
+                        label={rowData.initial.initialName}
+                        style={{
+                          backgroundColor: rowData.initial.initialColor,
+                          color: "#FFFFFF",
+                          width: "1.8rem",
+                          height: "1.8rem",
+                          fontSize: "0.85rem",
+                        }}
+                        size="normal"
+                        shape="circle"
+                        className="mr-3"
+                      />
+                      <span>
+                        <b style={{ fontSize: "0.75rem" }}>
+                          {rowData.userName}
+                        </b>
+                        <br />
+                        <div
+                          className="titleTextStyle"
+                          style={{ fontSize: "0.72rem" }}
+                        >
+                          {rowData.userId}
+                        </div>
+                      </span>
+                    </div>
+                  )}
+                ></Column>
+                <Column
+                  field="phoneNumber"
+                  header="Phone Number"
+                  style={{ width: "12rem" }}
+                ></Column>
+                <Column
+                  header="User Group"
+                  //style={{ width: "25%" }}
+                  body={(rowData) => (
+                    <div>
+                      {rowData.groupNames.map((groupName, index) => (
+                        <span key={index}>
+                          <Chip
+                            label={groupName}
+                            icon={<GroupOutlinedIcon />}
+                            size="small"
+                            variant=""
+                            className="mr-1 mb-1 infoChipStyle"
+                          />
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                ></Column>
+                <Column
+                  header="Status"
+                  style={{ width: "10rem" }}
+                  body={(rowData) => (
+                    <>
+                      <Chip
+                        label={rowData.active ? "Active" : "Inactive"}
+                       // color={rowData.active ? "success" : "error"}
+                        icon={
+                          rowData.active ? (
+                            <PersonOutlineOutlinedIcon />
+                          ) : (
+                            <PersonOffOutlinedIcon />
+                          )
+                        }
+                        size="small"
+                        //variant="outlined"
+                        className={`mr-2 mb-2 ${rowData.active? "activeChipStyle":"inActiveChipStyle"}`}
+                      />
+                    </>
+                  )}
+                ></Column>
+                <Column
+                  header="Reset Password"
+                  style={{ width: "9rem" }}
+                  body={(rowData) => (
+                    <Button
+                      icon="pi pi-key"
+                      rounded
+                      severity="warning"
+                      size="small"
+                      text
+                      aria-label="Bookmark"
+                      style={{ width: "2rem", height: "2rem" }}
+                      onClick={() => {
+                        setResetPasswordVisible(true);
+                        setUserInfo(rowData);
+                      }}
+                    />
+                  )}
+                ></Column>
+                <Column
+                  header="Logs"
+                  style={{ width: "9rem" }}
+                  body={(row) => (
+                    <Button
+                      icon="pi pi-file"
+                      rounded
+                      severity="info"
+                      style={{ width: "2rem", height: "2rem" }}
+                      text
+                      aria-label="Bookmark"
+                      onClick={() => {
+                        setUserLogVisible(true);
+                        setUserInfo(row);
+                      }}
+                    />
+                  )}
+                ></Column>
+              </DataTable>
+            </div>
+          </div>
+        </div>
+      </div>
       <UserInfo
         editMode={editMode}
         userInfo={userInfo}
