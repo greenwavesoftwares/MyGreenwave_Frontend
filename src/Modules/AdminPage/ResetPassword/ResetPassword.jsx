@@ -42,16 +42,17 @@ const ResetPassword = ({ userInfo = {}, onHide, dialogVisible = false }) => {
         header="Reset Password"
         visible={dialogVisible}
         onHide={onHide}
-        className="resetPasswordDialog"
+        className="resetPasswordDialog dialogHeader dialogContent"
       >
         <Grid container>
           <Grid size={5} className="resetPasswordCell">
-            <span className="font-bold">Enter New Password</span>
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Enter New Password</span>
           </Grid>
           <Grid size={7} className="resetPasswordCell">
             <div className="card flex justify-content-center">
               <Password
                 value={resetPassword.newPassword}
+                className="passwordFieldStyle"
                 toggleMask
                 invalid={!resetPasswordValidation.newPassword}
                 onChange={(e) =>
@@ -64,12 +65,13 @@ const ResetPassword = ({ userInfo = {}, onHide, dialogVisible = false }) => {
             </div>
           </Grid>
           <Grid size={5} className="resetPasswordCell">
-            <span className="font-bold">Confirm Password</span>
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Confirm Password</span>
           </Grid>
           <Grid size={7} className="resetPasswordCell">
             <div className="card flex justify-content-center">
               <Password
                 value={resetPassword.confirmPassword}
+                className="passwordFieldStyle"
                 toggleMask
                 invalid={!resetPasswordValidation.confirmPassword}
                 onChange={(e) =>
@@ -87,7 +89,8 @@ const ResetPassword = ({ userInfo = {}, onHide, dialogVisible = false }) => {
               icon="pi pi-key"
               severity="success"
               aria-label="Bookmark"
-              className="mt-3 mr-2"
+              size="small"
+              className="mt-2 mr-2"
               onClick={async () => {
                 setNewPassword(
                   resetPassword,

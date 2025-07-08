@@ -231,7 +231,7 @@ const MyForm = () => {
         onRowToggle={(e) => handlerowexpand(e.data)}
         rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
         showGridlines
-        className="text-xs"
+        //className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         dataKey="travelId"
         rowClassName={(rowData) => {
@@ -251,6 +251,7 @@ const MyForm = () => {
           "localityArea",
           "typeOfTravel",
         ]}
+        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
       >
         <Column expander style={{ width: "3rem" }} />
         <Column field="fromDate" header="From Date"></Column>

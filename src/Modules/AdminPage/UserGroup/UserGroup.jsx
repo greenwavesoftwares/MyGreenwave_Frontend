@@ -52,9 +52,10 @@ const UserGroup = ({
     <div className="flex justify-content-between align-items-center">
       <span>User Groups</span>
       <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
+        
         <InputText
           value={userGroupTable.filterText}
+          className="inputFieldStyle"
           onChange={(e) => {
             const value = e.target.value;
             let _filters = userGroupTable.filterStructure;
@@ -91,15 +92,15 @@ const UserGroup = ({
         header="Add User Group"
         visible={dialogVisible}
         onHide={onHide}
-        className="userGroupDialog"
+        className="userGroupDialog dialogHeader dialogContent"
       >
         <Grid container>
-          <Grid size={2} className="userGroupCell">
-            <span className="font-bold">Group ID</span>
+          <Grid size={6} className="userGroupCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Group ID</span>
           </Grid>
-          <Grid size={4} className="userGroupCell">
+          <Grid size={6} className="userGroupCell">
             <InputText
-              className="w-full mr-1"
+              className="w-full mr-1 inputFieldStyle"
               invalid={!userGroupValidation.groupId}
               value={userGroupData.groupId}
               onChange={(e) =>
@@ -110,13 +111,13 @@ const UserGroup = ({
               }
             />
           </Grid>
-          <Grid size={2} className="userGroupCell">
-            <span className="font-bold">Group Name</span>
+          <Grid size={6} className="userGroupCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Group Name</span>
           </Grid>
-          <Grid size={4} className="userGroupCell">
+          <Grid size={6} className="userGroupCell">
             <InputText
               invalid={!userGroupValidation.groupName}
-              className="w-full"
+              className="w-full inputFieldStyle"
               value={userGroupData.groupName}
               onChange={(e) =>
                 setUserGroupData((prev) => ({
@@ -126,10 +127,10 @@ const UserGroup = ({
               }
             />
           </Grid>
-          <Grid size={2} className="userGroupCell">
-            <span className="font-bold">Manager</span>
+          <Grid size={6} className="userGroupCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Manager</span>
           </Grid>
-          <Grid size={4} className="userGroupCell">
+          <Grid size={6} className="userGroupCell">
             <Dropdown
               value={userGroupData.groupManager}
               invalid={!userGroupValidation.groupManager}
@@ -144,15 +145,16 @@ const UserGroup = ({
               optionLabel="userName"
               optionValue="userId"
               placeholder="Select Manager"
-              className="w-full mr-1"
+              className="w-full mr-1 dropDownStyle"
             />
           </Grid>
-          <Grid size={2} className="userGroupCell">
-            <span className="font-bold">Phone</span>
+          <Grid size={6} className="userGroupCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Phone</span>
           </Grid>
-          <Grid size={4} className="userGroupCell">
+          <Grid size={6} className="userGroupCell">
             <InputNumber
               inputClassName="w-full"
+              className="w-full NumberFieldStyle"
               mode="decimal"
               min={0}
               maxLength={10}
@@ -169,10 +171,10 @@ const UserGroup = ({
               }
             />
           </Grid>
-          <Grid size={2} className="userGroupCell">
-            <span className="font-bold">Active</span>
+          <Grid size={6} className="userGroupCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Active</span>
           </Grid>
-          <Grid size={4} className="userGroupCell">
+          <Grid size={6} className="userGroupCell">
             <Checkbox
               checked={userGroupData.active}
               onChange={(e) =>
@@ -180,12 +182,13 @@ const UserGroup = ({
               }
             />
           </Grid>
-          <Grid size={6} className="userGroupCell flex justify-content-center">
+          <Grid size={12} className="py-2">
             <Button
               label="Add Group"
               icon="pi pi-plus"
               severity="info"
               aria-label="Bookmark"
+              size="small"
               onClick={async () => {
                 await addUserGroup(
                   userGroupData,
@@ -224,6 +227,8 @@ const UserGroup = ({
                   userGroupList
                 )
               }
+               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
+              size="small"
             >
               <Column header="Edit" rowEditor></Column>
               <Column

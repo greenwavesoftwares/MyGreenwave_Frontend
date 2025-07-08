@@ -80,9 +80,10 @@ const UserInfo = ({
         header={editMode ? "Edit User Profile" : "Add User"}
         visible={dialogVisible}
         onHide={onHide}
-        className="userDialog"
+        className="userDialog dialogHeader dialogContent"
+
       >
-        <TabView>
+        <TabView className="tabStyle">
           <TabPanel header="General Information">
             <Grid container>
               <Grid size={6} className="userCell">
@@ -95,6 +96,7 @@ const UserInfo = ({
                   <InputText
                     value={userData.userId}
                     invalid={!userDataValidation.userId}
+                    className="inputFieldStyle"
                     onChange={(e) =>
                       setUserData((prev) => ({
                         ...prev,
@@ -114,6 +116,7 @@ const UserInfo = ({
                   <InputText
                     value={userData.employeeId}
                     invalid={!userDataValidation.employeeId}
+                    className="inputFieldStyle"
                     onChange={(e) =>
                       setUserData((prev) => ({
                         ...prev,
@@ -130,6 +133,7 @@ const UserInfo = ({
                 <InputText
                   value={userData.userName}
                   invalid={!userDataValidation.userName}
+                  className="inputFieldStyle"
                   onChange={(e) =>
                     setUserData((prev) => ({
                       ...prev,
@@ -181,6 +185,7 @@ const UserInfo = ({
                   minFractionDigits={0}
                   maxFractionDigits={0}
                   value={userData.phoneNumber}
+                  className="NumberFieldStyle"
                   useGrouping={false}
                   invalid={!userDataValidation.phoneNumber}
                   onValueChange={(e) =>
@@ -206,7 +211,7 @@ const UserInfo = ({
                   }
                   options={designationList}
                   placeholder="Select Designation"
-                  className="w-full"
+                  className="w-full dropDownStyle"
                   filter
                 />
               </Grid>
@@ -239,7 +244,8 @@ const UserInfo = ({
                   optionLabel="userName"
                   optionValue="userId"
                   placeholder="Select Manager"
-                  className="w-full"
+                  className="w-full dropDownStyle mr-8"
+                  //style={{width:"1rem"}}
                 />
               </Grid>
 
@@ -262,7 +268,7 @@ const UserInfo = ({
                   optionLabel="groupName"
                   optionValue="groupId"
                   placeholder="Select User Group"
-                  className="w-full"
+                  className="w-full multiselectDropdownStyle multiSelectFontStyle"
                 />
               </Grid>
               <Grid size={1.5} className="userCell">
@@ -293,7 +299,7 @@ const UserInfo = ({
                   optionLabel="deptName"
                   optionValue="deptId"
                   placeholder="Select Department"
-                  className="w-full"
+                  className="w-full dropDownStyle"
                 />
               </Grid>
               <Grid size={1.5} className="userCell">
@@ -314,13 +320,14 @@ const UserInfo = ({
                   checked={userData.active}
                   onLabel="Active"
                   offLabel="Inactive"
+                   onIcon="pi pi-check" offIcon="pi pi-times" 
                   onChange={(e) =>
                     setUserData((prev) => ({
                       ...prev,
                       active: e.value,
                     }))
                   }
-                  className="w-8rem"
+                  className="w-6rem toggleButton"
                 />
               </Grid>
               <Grid size={6} className="userCell">
@@ -331,13 +338,14 @@ const UserInfo = ({
               <Grid size={6} className="userCell">
                 <ToggleButton
                   checked={userData.firstLoginRequired}
+                   onIcon="pi pi-lock" offIcon="pi pi-lock-open" 
                   onChange={(e) =>
                     setUserData((prev) => ({
                       ...prev,
                       firstLoginRequired: e.value,
                     }))
                   }
-                  className="w-8rem"
+                   className="w-6rem toggleButton"
                 />
               </Grid>
               <Grid size={6} className="userCell">
@@ -361,6 +369,7 @@ const UserInfo = ({
                       passwordExpiryDuraton: e.value,
                     }))
                   }
+                  className="NumberFieldStyle"
                 />
               </Grid>
               {editMode && (
@@ -385,7 +394,7 @@ const UserInfo = ({
               )}
             </Grid>
           </TabPanel>
-          <TabPanel header="Page Allocation">
+          <TabPanel header="Page Allocation" >
             <Grid container>
               <Grid size={{ lg: 6, md: 12 }} className="userCell">
                 <div className="flex flex-col gap-3">
@@ -403,8 +412,8 @@ const UserInfo = ({
                     itemTemplate={allocatedPagesTemplate}
                     options={pageList}
                     invalid={!userDataValidation.allotedPages}
-                    className="w-full"
-                    listClassName="max-h-[16rem]"
+                    className="w-full listBoxStyle"
+                    listClassName="max-h-[16rem] "
                     multiple
                     filter
                   />
@@ -423,7 +432,7 @@ const UserInfo = ({
                       }))
                     }
                     options={userData.allotedPages}
-                    className="w-full"
+                     className="w-full listBoxStyle"
                     listClassName="max-h-[16rem]"
                     filter
                   />
@@ -437,7 +446,8 @@ const UserInfo = ({
           icon={"pi " + (editMode ? "pi-user" : "pi-user-plus")}
           severity="success"
           aria-label="Bookmark"
-          className="mt-3 mr-2"
+          size="small"
+          className="mt-2 mr-2"
           onClick={async () => {
             await addOrEditUser(
               editMode,

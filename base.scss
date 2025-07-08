@@ -46,6 +46,20 @@ body {
   font-size: 0.85rem !important;
   color: var(--fontColor) !important;
 }
+.NumberFieldStyle .p-inputtext{
+   padding: 0.65rem 0.65rem !important;
+  background: var(--dialogBG) !important;
+  border: 1px solid var(--divider-color) !important;
+  font-size: 0.85rem !important;
+  color: var(--fontColor) !important;
+}
+.passwordFieldStyle .p-inputtext{
+   padding: 0.65rem 0.65rem !important;
+  background: var(--dialogBG) !important;
+  border: 1px solid var(--divider-color) !important;
+  font-size: 0.85rem !important;
+  color: var(--fontColor) !important;
+}
 .inputFieldStyle::placeholder {
   color: var(--fontColor) !important;
   opacity: 0.75 !important; // Adjust opacity for better visibility
@@ -60,6 +74,13 @@ body {
 }
 .inputSectionWidth {
   width: 12rem !important;
+}
+
+
+//----------------------------------Toggle Button Style--------------------------------//
+.toggleButton.p-button{
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
 }
 
 //---------------------------------- Dropdown Styles-----------------------------------//
@@ -114,6 +135,36 @@ body {
   color: var(--fontColor);
 }
 
+
+//------------------------------------List Bos Style---------------------------------//
+.listBoxStyle.p-listbox .p-listbox-header{
+    background: var(--dropdownBG-Header);
+  border-bottom: 1px solid var(--divider-color);
+}
+.listBoxStyle.p-listbox{
+ background: var(--dropdownBG);
+  color: var(--fontColor);
+   border: 1px solid var(--divider-color);
+}
+.listBoxStyle.p-listbox .p-listbox-list .p-listbox-item{
+   color: var(--fontColor);
+}
+.listBoxStyle.p-listbox .p-listbox-list .p-listbox-item.p-highlight{
+  background-color: var(--hoverText);
+}
+.listBoxStyle.p-listbox:not(.p-disabled) .p-listbox-item:not(.p-highlight):not(.p-disabled):hover{
+   background-color: var(--hoverText);
+}
+.listBoxStyle.p-listbox .p-listbox-header .p-listbox-filter {
+   background: var(--dialogBG);
+  padding: 0.5rem;
+  border: 1px solid var(--divider-color);
+  color: var(--fontColor);
+}
+.listBoxStyle.p-listbox .p-listbox-list .p-listbox-empty-message{
+   color: var(--fontColor);
+}
+
 //---------------------------Multi Select Dropdown Style-------------------------------///
 .multiselectDropdownStyle.p-multiselect {
   background: var(--card-bg);
@@ -146,6 +197,12 @@ body {
   color: var(--fontColor);
 }
 .p-multiselect .p-multiselect-label.p-placeholder {
+  color: var(--fontColor);
+}
+.multiSelectFontStyle .p-multiselect-label-container {
+font-size: 0.85rem;
+}
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item{
   color: var(--fontColor);
 }
 
@@ -232,6 +289,9 @@ body {
 }
 
 //--------------------------------------MUI Tab styles-------------------------------------//
+.tabStyle.p-tabview .p-tabview-panels{
+  padding: 0rem 0.5rem;
+}
 .p-tabview .p-tabview-nav {
   background-color: var(--tabBGColor) !important;
   color: var(--menu-text) !important;

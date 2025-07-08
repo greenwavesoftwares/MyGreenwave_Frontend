@@ -164,6 +164,8 @@ const HRApprovalPage = () => {
            showGridlines
            paginator
            rows={10}
+           size="small"
+            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
            showGridlinesclassName="text-xs"
            tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
          >

@@ -69,6 +69,13 @@
  color: var(--fontColor) !important;
      padding: 0.7rem 0.7rem;
 }
+.dataTableHeaderForLessPadding.p-datatable.p-datatable-sm .p-datatable-header{
+  font-size: base.$dataTableHeaderFontSize;
+  background: none !important;
+  border: 1px solid var(--card-border) !important;
+ color: var(--fontColor) !important;
+     padding: 0.5rem 0.5rem;
+}
 .dataTableBody.p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
   font-size: base.$dataTableHeaderFontSize;
   padding: base.$noPadding !important;
@@ -143,7 +150,7 @@
 
 //Prime React Tab Styles
 .tabStyle.p-tabview .p-tabview-panels{
-  padding: 0.5rem !important;
+  padding: 0.5rem ;
 }
 
 

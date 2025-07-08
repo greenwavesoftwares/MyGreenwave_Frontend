@@ -90,6 +90,7 @@ export const CustomeEditableDataTable=({ref,
 return(
    <DataTable
           ref={ref}
+          size="small"
           value={value}
           editMode={editMode}
           dataKey={dataKey}

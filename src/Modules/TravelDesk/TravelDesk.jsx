@@ -5,7 +5,9 @@ import RequisitionForm from "./RequisitionForm";
 const TravelDesk = () => {
  
   return (
-    <div className="max-w-[85rem] mx-auto p-6 min-h-screen bg-gray-100">
+    <div className="container mx-auto px-4">
+      <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+        <div className="cardStyle mt-4 bg-white shadow rounded">
       <TabView>
         <TabPanel header="Requisition Form">
    <RequisitionForm/>
@@ -15,6 +17,8 @@ const TravelDesk = () => {
         </TabPanel>
       </TabView>
     </div>
+     </div>
+      </div>
   );
 };
 

@@ -41,11 +41,13 @@ const Designation = ({ onHide, dialogVisible = false, designationList }) => {
   }, [dialogVisible, designationList]);
 
   const designationHeader = (
-    <div className="flex justify-content-end">
+    <div className="flex justify-content-between align-items-center">
+      <p>List of Designation</p>
       <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
+        
         <InputText
           value={designationTable.filterText}
+          className="inputFieldStyle"
           onChange={(e) => {
             const value = e.target.value;
             let _filters = designationTable.filterStructure;
@@ -67,25 +69,26 @@ const Designation = ({ onHide, dialogVisible = false, designationList }) => {
         header="Add Designation"
         visible={dialogVisible}
         onHide={onHide}
-        className="designationDialog"
+        className="designationDialog dialogHeader dialogContent"
       >
         <Grid container>
-          <Grid size={6} className="designationCell">
-            <span className="font-bold">Designation</span>
+          <Grid size={12} className="px-1 py-1">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Designation</span>
           </Grid>
-          <Grid size={4.5} className="designationCell">
+          <Grid size={12} className="px-1 py-1">
             <InputText
               invalid={!designationValidation}
-              className="w-full mr-1"
+              className="w-full mr-1 inputFieldStyle"
               value={newDesignation}
               onChange={(e) => setNewDesignation(e.target.value)}
             />
           </Grid>
-          <Grid size={1.5} className="designationCell">
+          <Grid size={12} className="px-1 py-2">
             <Button
               label="Add"
               icon="pi pi-plus"
               severity="info"
+              size="small"
               aria-label="Bookmark"
               onClick={async () =>
                 await addDesignation(
@@ -104,6 +107,8 @@ const Designation = ({ onHide, dialogVisible = false, designationList }) => {
               filters={designationTable.filterStructure}
               globalFilterFields={["designation"]}
               header={designationHeader}
+               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dropDownStyle"
+              size="small"
             >
               <Column field="designation" header="Designation"></Column>
             </DataTable>
