@@ -252,12 +252,16 @@ const MyTourClaims = () => {
 
   const rowExpansionTemplate = (rowData) => (
    
-      <DataTable
-        value={rowData.expandabledata}
-        showGridlines
-        
+      <DataTableComponent
+       rows={10}
+            textSize="text-xs"
+            tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+            emptyMessage="No data found"
+         
+        data={rowData.expandabledata}
+        showGridlines  
         className="text-xs"
-        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        //tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
          <CustomColumn
           header="Claim Id"
@@ -326,7 +330,7 @@ const MyTourClaims = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-      </DataTable>
+      </DataTableComponent>
   
   );
 

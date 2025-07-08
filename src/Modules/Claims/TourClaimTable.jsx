@@ -26,7 +26,7 @@ import {
 const cellStyle = { padding: "8px 12px" };
 
 const initialFormState = {
- // id: Date.now(),
+  // id: Date.now(),
   Date: "",
   Lodging: "",
   Breakfast: "",
@@ -56,11 +56,12 @@ const TourClaimTable = ({
   setDraftData,
   draftData,
   setFormErrors,
-  formErrors
+  formErrors,
 }) => {
   // const [editingIndex, setEditingIndex] = useState(null);
   const [editingRows, setEditingRows] = useState({});
   const toastRef = useRef(null);
+  const [fileUploaded, setFileUploaded] = useState(false);
 
   // const calculateTotal = (entry) => {
   //   const keys = Object.keys(initialFormState).filter(
@@ -70,18 +71,18 @@ const TourClaimTable = ({
   // };
 
   const calculateTotal = (entry) => {
-  const keys = Object.keys(initialFormState).filter(
-    (k) => k !== "Date" && k !== "Remarks" && k !== "Total"
-  );
+    const keys = Object.keys(initialFormState).filter(
+      (k) => k !== "Date" && k !== "Remarks" && k !== "Total"
+    );
 
-  let sum = 0;
+    let sum = 0;
 
-  sum = keys.reduce((acc, key) => {
-    return acc + (parseFloat(entry[key]) || 0);
-  }, 0);
+    sum = keys.reduce((acc, key) => {
+      return acc + (parseFloat(entry[key]) || 0);
+    }, 0);
 
-  return sum;
-};
+    return sum;
+  };
 
   const hasDuplicateDatesOrZeroTotal = (data) => {
     const seen = new Set();
@@ -97,23 +98,26 @@ const TourClaimTable = ({
     }
     return { hasIssue: false };
   };
-   const validateForm = () => {
+  const validateForm = () => {
     const requiredFields = [
       "travelType",
-    "destination",
-    "purpose",
-    "projectName",
-    "onAccount",
-   // "travelfromDate",
-    "claimFromDate",
-    "claimToDate",
+      "destination",
+      "purpose",
+      "projectName",
+      "onAccount",
+      // "travelfromDate",
+      "claimFromDate",
+      "claimToDate",
       //"advanceRequested",
     ];
 
     const errors = {};
 
     requiredFields.forEach((field) => {
-      if (!tourclaimformData[field] || tourclaimformData[field].toString().trim() === "") {
+      if (
+        !tourclaimformData[field] ||
+        tourclaimformData[field].toString().trim() === ""
+      ) {
         errors[field] = true;
       }
     });
@@ -122,7 +126,6 @@ const TourClaimTable = ({
 
     return Object.keys(errors).length === 0; // valid if no errors
   };
-
 
   const handleChange = (e, rowIndex) => {
     const { name, value } = e.target;
@@ -148,9 +151,10 @@ const TourClaimTable = ({
     setEditingIndex(index);
   };
 
-  
-   const deleteRow = (rowData) => {
-    settourClaimTableData(tourClaimTableData.filter((item) => item.Date !== rowData.Date));
+  const deleteRow = (rowData) => {
+    settourClaimTableData(
+      tourClaimTableData.filter((item) => item.Date !== rowData.Date)
+    );
   };
   // const deleteRow = (index) => {
 
@@ -160,25 +164,30 @@ const TourClaimTable = ({
   // };
 
   const handleAddRow = () => {
-      // Check if upper form has errors
-      // const requiredFields = ["purpose", "projectName", "city", "localityArea", "typeOfTravel", "fromDate", "tentativeToDate"];
-      // const upperFormIncomplete = requiredFields.some((field) => formErrors[field]);
-    
-      // if (upperFormIncomplete) {
-      //   showWarningMessage(toastRef,"Please complete requisition form before adding accommodation.");
-      //   return;
-      // }
-    
-  
-      if(!tourclaimformData.destination || !tourclaimformData.purpose || !tourclaimformData.projectName  || !tourclaimformData.projectName
-      || !tourclaimformData.claimFromDate || !tourclaimformData.claimToDate)
-      {
-        showWarningMessage(toastRef,"Please complete claim details form before adding expense.");
-        return;
-      }
-    const isIncomplete = tourClaimTableData.some(
-      (row) => !row.Date
-    );
+    // Check if upper form has errors
+    // const requiredFields = ["purpose", "projectName", "city", "localityArea", "typeOfTravel", "fromDate", "tentativeToDate"];
+    // const upperFormIncomplete = requiredFields.some((field) => formErrors[field]);
+
+    // if (upperFormIncomplete) {
+    //   showWarningMessage(toastRef,"Please complete requisition form before adding accommodation.");
+    //   return;
+    // }
+
+    if (
+      !tourclaimformData.destination ||
+      !tourclaimformData.purpose ||
+      !tourclaimformData.projectName ||
+      !tourclaimformData.projectName ||
+      !tourclaimformData.claimFromDate ||
+      !tourclaimformData.claimToDate
+    ) {
+      showWarningMessage(
+        toastRef,
+        "Please complete claim details form before adding expense."
+      );
+      return;
+    }
+    const isIncomplete = tourClaimTableData.some((row) => !row.Date);
 
     if (isIncomplete) {
       showWarningMessage(toastRef, "Please complete all required fields.");
@@ -191,8 +200,7 @@ const TourClaimTable = ({
     ]);
 
     setEditingRows((prev) => ({ ...prev, [initialFormState.Date]: true }));
-   // setEditingIndex(tourClaimTableData.length);
-   
+    // setEditingIndex(tourClaimTableData.length);
   };
 
   const onFileSelect = (event) => {
@@ -250,33 +258,33 @@ const TourClaimTable = ({
         //   }
         // }
         for (const key of Object.keys(initialFormState)) {
-  const value = row[key];
+          const value = row[key];
 
-  if (key === "Date") {
-    const parsedDate = formateDate(value);
-    const dateObj = new Date(parsedDate);
-    const minDate = new Date(tourclaimformData.claimFromDate);
-    const maxDate = new Date(tourclaimformData.claimToDate);
+          if (key === "Date") {
+            const parsedDate = formateDate(value);
+            const dateObj = new Date(parsedDate);
+            const minDate = new Date(tourclaimformData.claimFromDate);
+            const maxDate = new Date(tourclaimformData.claimToDate);
 
-    // Reject if date is missing, invalid, duplicate, or out of range
-    if (
-      !parsedDate ||
-      existingDates.has(parsedDate) ||
-      isNaN(dateObj) ||
-      dateObj < minDate ||
-      dateObj > maxDate
-    ) {
-      isValid = false;
-      break;
-    }
+            // Reject if date is missing, invalid, duplicate, or out of range
+            if (
+              !parsedDate ||
+              existingDates.has(parsedDate) ||
+              isNaN(dateObj) ||
+              dateObj < minDate ||
+              dateObj > maxDate
+            ) {
+              isValid = false;
+              break;
+            }
 
-    formattedRow[key] = parsedDate;
-    existingDates.add(parsedDate);
-  } else {
-    const num = parseFloat(value);
-    formattedRow[key] = !isNaN(num) ? num : 0;
-  }
-}
+            formattedRow[key] = parsedDate;
+            existingDates.add(parsedDate);
+          } else {
+            const num = parseFloat(value);
+            formattedRow[key] = !isNaN(num) ? num : 0;
+          }
+        }
 
         if (isValid) {
           formattedRow["Total"] = calculateTotal(formattedRow);
@@ -287,6 +295,7 @@ const TourClaimTable = ({
       });
 
       settourClaimTableData((prev) => [...prev, ...validatedData]);
+      setFileUploaded(true);
 
       showSuccessMessage(
         toastRef,
@@ -300,8 +309,8 @@ const TourClaimTable = ({
 
   const handleSaveToDraft = async () => {
     try {
-      console.log('formErrors', formErrors)
-       if (!validateForm()) {
+      console.log("formErrors", formErrors);
+      if (!validateForm()) {
         //const firstKey = Object.keys(formErrors)[0];
         if (toastRef?.current) {
           showErrorMessage(
@@ -333,7 +342,7 @@ const TourClaimTable = ({
 
   const handleUpdate = async () => {
     try {
-       if (!validateForm()) {
+      if (!validateForm()) {
         //const firstKey = Object.keys(formErrors)[0];
         if (toastRef?.current) {
           showErrorMessage(
@@ -475,8 +484,8 @@ const TourClaimTable = ({
       <CustomButton
         icon="pi pi-trash"
         className="p-button-sm p-button-text p-button-danger"
-       // onClick={() => handleDelete(rowIndex)}
-         onClick={() => deleteRow(row)}
+        // onClick={() => handleDelete(rowIndex)}
+        onClick={() => deleteRow(row)}
       />
     </div>
   );
@@ -496,52 +505,44 @@ const TourClaimTable = ({
   const onRowEditComplete = (e) => {
     let _tourClaimTableData = [...tourClaimTableData];
     let { newData, index } = e;
-    
+
     newData.Total = calculateTotal(newData);
-    newData.Date = formateDate(newData.Date); 
+    newData.Date = formateDate(newData.Date);
     //calculateTotal(newData)
-    if(!newData.Date)
-    {
-      
-       showWarningMessage(
-        toastRef,
-        "warn",
-        "Date Cannot be Empty"
-      );
-      return
+    if (!newData.Date) {
+      showWarningMessage(toastRef, "warn", "Date Cannot be Empty");
+      return;
     }
-    
 
     _tourClaimTableData[index] = newData;
-    
 
     settourClaimTableData(_tourClaimTableData);
   };
 
   const textEditor = (options) => {
-       console.log('texteditoroptions', options)
-        const handleChange = (e) => {
-    const value = e.target.value;
+    console.log("texteditoroptions", options);
+    const handleChange = (e) => {
+      const value = e.target.value;
 
-    // Allow only non-negative numbers with optional decimals
-    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-      options.editorCallback(value);
-    }
-  };
+      // Allow only non-negative numbers with optional decimals
+      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+        options.editorCallback(value);
+      }
+    };
     return (
       <InputText
         type="text"
         value={options.value}
-           onChange={handleChange}
-       // onChange={(e) => options.editorCallback(e.target.value)}
+        onChange={handleChange}
+        // onChange={(e) => options.editorCallback(e.target.value)}
         className="p-inputtext-sm w-full"
         //className="text-xs  w-full"
       />
     );
   };
 
-   const textEditor2 = (options) => {
-       console.log('texteditoroptions', options)
+  const textEditor2 = (options) => {
+    console.log("texteditoroptions", options);
     return (
       <InputText
         type="text"
@@ -553,48 +554,42 @@ const TourClaimTable = ({
     );
   };
   const dateEditor = (options) => {
-    console.log('options', options)
-    return(
-    <CustomeCalender
-      value={options.value}
-      onChange={(e) => options.editorCallback(e.value)}
-      
-              className="p-inputtext-sm w-full"
-             // style={{ minWidth: "105px" }}
-                minDate={
-             new Date(tourclaimformData.claimFromDate)
-                
-            }
-            maxDate={
-              new Date(tourclaimformData.claimToDate)
-               
-            }
-     // className="text-xs p-1 w-full"
-     
-     // minDate={new Date(formFields.fromDate)}
-    />
-          )
-        };
-        const calculateColumnTotals = () => {
-  const totals = {};
+    console.log("options", options);
+    return (
+      <CustomeCalender
+        value={options.value}
+        onChange={(e) => options.editorCallback(e.value)}
+        className="p-inputtext-sm w-full"
+        // style={{ minWidth: "105px" }}
+        minDate={new Date(tourclaimformData.claimFromDate)}
+        maxDate={new Date(tourclaimformData.claimToDate)}
+        // className="text-xs p-1 w-full"
 
-  Object.keys(initialFormState).forEach((key) => {
-    if (key !== "Date" && key !== "Remarks") {
-      totals[key] = tourClaimTableData.reduce((sum, row) => {
-        return sum + (parseFloat(row[key]) || 0);
-      }, 0);
-    }
-  });
+        // minDate={new Date(formFields.fromDate)}
+      />
+    );
+  };
+  const calculateColumnTotals = () => {
+    const totals = {};
 
-  return totals;
-};
- 
-const columnTotals = calculateColumnTotals();
+    Object.keys(initialFormState).forEach((key) => {
+      if (key !== "Date" && key !== "Remarks") {
+        totals[key] = tourClaimTableData.reduce((sum, row) => {
+          return sum + (parseFloat(row[key]) || 0);
+        }, 0);
+      }
+    });
+
+    return totals;
+  };
+
+  const columnTotals = calculateColumnTotals();
   return (
     <>
       <Toast ref={toastRef} />
       <div className="flex justify-end mb-2 gap-2">
-        <FileUpload
+        {/* {fileUploaded?( */}
+        {/* <FileUpload
           mode="basic"
           name="file"
           accept=".xls,.xlsx"
@@ -602,7 +597,45 @@ const columnTotals = calculateColumnTotals();
           uploadHandler={onFileSelect}
           maxFileSize={1000000}
           chooseLabel="Upload"
-        />
+        /> */}
+        {/* ): <CustomButton
+              icon="pi pi-times"
+              className="p-button-sm p-button-text p-button-danger"
+              onClick={() => {
+                setFileUploaded(false);
+              }}
+              tooltip="ReUpload"
+            />} */}
+        {!fileUploaded ? (
+          <FileUpload
+            mode="basic"
+            name="file"
+            accept=".xls,.xlsx"
+            customUpload
+            uploadHandler={(e) => {
+              onFileSelect(e);
+              setFileUploaded(true);
+            }}
+            maxFileSize={1000000}
+            chooseLabel="Upload"
+          />
+        ) : (
+          <div className="flex align-items-center gap-2">
+            <span className="text-green-600 font-medium">
+              File uploaded successfully
+            </span>
+            <Button
+              icon="pi pi-refresh"
+              className="p-button-sm p-button-text p-button-warning"
+              onClick={() => {
+                setFileUploaded(false);
+              }}
+              tooltip="Re-upload"
+              tooltipOptions={{ position: "top" }}
+            />
+          </div>
+        )}
+
         <CustomButton
           // label="Add Row"
           icon="pi pi-plus"
@@ -632,7 +665,7 @@ const columnTotals = calculateColumnTotals();
         className="text-xs padding-0"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         onRowEditComplete={onRowEditComplete}
-        footerColumnGroup={null} 
+        footerColumnGroup={null}
       >
         {/* {fields.map((field) => (
           <Column
@@ -653,14 +686,14 @@ const columnTotals = calculateColumnTotals();
         ))} */}
         {/* <Column field="Date" header="Date" editor={(options) => textEditor(options)} style={{ width: '10%' }}/> */}
         <Column
-                  field="Date"
-                  header="Date"
-                  editor={dateEditor}
-                  body={(row) =>
-                    row.Date ? new Date(row.Date).toLocaleDateString() : ""
-                  }
-                  footer="Total"
-                />
+          field="Date"
+          header="Date"
+          editor={dateEditor}
+          body={(row) =>
+            row.Date ? new Date(row.Date).toLocaleDateString() : ""
+          }
+          footer="Total"
+        />
         {/* <Column
           field="Date"
           header="Date"
@@ -693,27 +726,24 @@ const columnTotals = calculateColumnTotals();
           header="Lodging"
           editor={(options) => textEditor(options)}
           footer={columnTotals["Lodging"]?.toFixed(2)}
-        
         />
         <Column
           field="Breakfast"
           header="Breakfast"
           editor={(options) => textEditor(options)}
           footer={columnTotals["Breakfast"]?.toFixed(2)}
-          
         />
         <Column
           field="Lunch"
           header="Lunch"
           editor={(options) => textEditor(options)}
           footer={columnTotals["Lunch"]?.toFixed(2)}
-        
         />
         <Column
           field="Snacks"
           header="Snacks"
           editor={(options) => textEditor(options)}
-            footer={columnTotals["Snacks"]?.toFixed(2)}
+          footer={columnTotals["Snacks"]?.toFixed(2)}
         />
         <Column
           field="Dinner"
@@ -737,13 +767,13 @@ const columnTotals = calculateColumnTotals();
           field="Auto, Cab"
           header="Auto, Cab"
           editor={(options) => textEditor(options)}
-           footer={columnTotals["Auto, Cab"]?.toFixed(2)}
+          footer={columnTotals["Auto, Cab"]?.toFixed(2)}
         />
         <Column
           field="Parking, Toll, Fuel"
           header="Parking, Toll, Fuel"
           editor={(options) => textEditor(options)}
-           footer={columnTotals["Parking, Toll, Fuel"]?.toFixed(2)}
+          footer={columnTotals["Parking, Toll, Fuel"]?.toFixed(2)}
         />
         <Column
           field="Incidentals"
@@ -755,20 +785,19 @@ const columnTotals = calculateColumnTotals();
           field="Other Business Expenses"
           header="Other Business Expenses"
           editor={(options) => textEditor(options)}
-           footer={columnTotals["Other Business Expenses"]?.toFixed(2)}
+          footer={columnTotals["Other Business Expenses"]?.toFixed(2)}
         />
         <Column
           field="Total"
           header="Total"
-         // editor={(options) => textEditor(options)}
-           footer={columnTotals["Total"]?.toFixed(2)}
+          // editor={(options) => textEditor(options)}
+          footer={columnTotals["Total"]?.toFixed(2)}
           // disabled={true}
         />
         <Column
           field="Remarks"
           header="Remarks"
           editor={(options) => textEditor2(options)}
-          
         />
         <Column
           rowEditor={allowEdit}
@@ -791,9 +820,8 @@ const columnTotals = calculateColumnTotals();
               icon="pi pi-save"
               className="p-button-sm"
               onClick={() => {
-                
-              const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData)
-              console.log('result', result)
+                const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
+                console.log("result", result);
                 if (result.hasIssue) {
                   showWarningMessage(toastRef, "warn", result.reason);
                   // toast.current?.show({
@@ -803,14 +831,9 @@ const columnTotals = calculateColumnTotals();
                   // });
                   return;
                 }
-                  handleUpdate();
-                  showSuccessMessage(
-                    toastRef,
-                    "success",
-                    "Tour claim updated!"
-                  );
-                }
-              }
+                handleUpdate();
+                showSuccessMessage(toastRef, "success", "Tour claim updated!");
+              }}
             />
             <CustomButton
               label="Home"

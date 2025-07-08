@@ -149,7 +149,7 @@ const RequisitionFormView2 = ({
         </Grid>
         <Grid size={12} sx={{ border: "1px solid #ccc" }}>
           <DataTable
-            header="Mode of Transport"
+            header="Transportation Request"
             value={rowData.transportModes}
             editMode="row"
             dataKey="mode"
@@ -172,7 +172,7 @@ const RequisitionFormView2 = ({
 
         <Grid size={12} sx={{ border: "1px solid #ccc" }}>
           <DataTable
-            header="Reservation of Accommodation"
+            header="Accommodation Request"
             value={rowData.accommodations}
             editMode="row"
             dataKey="type"

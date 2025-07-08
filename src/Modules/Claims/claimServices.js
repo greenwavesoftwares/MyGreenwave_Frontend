@@ -123,6 +123,7 @@ export const getTourClaimList = async () => {
 const token = `Bearer ${getUserData()?.token}`;
   try {
     let traveldetails = await getTravelsDetails();
+    console.log("travelDetails",traveldetails)
 
     const response = await axios.get(`${host}claims/tour-claims`, {
       headers: {

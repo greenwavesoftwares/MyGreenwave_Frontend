@@ -175,7 +175,6 @@ const isDateOverlapping = (currentRowId, date, field) => {
 const calendarEditor = (options, field) => {
   const rowId = options.rowData?.id;
 
-
   return (
     <CustomeCalender
       value={options.value}

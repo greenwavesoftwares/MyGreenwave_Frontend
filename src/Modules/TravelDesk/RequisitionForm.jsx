@@ -67,6 +67,7 @@ const RequisitionForm = () => {
     purpose: "",
     projectName: "",
     city: "",
+    onAccount: "",
     localityArea: "",
     typeOfTravel: "",
     advanceRequested: "",
@@ -93,6 +94,7 @@ const RequisitionForm = () => {
         advanceRequested: false,
         fromDate: false,
         tentativeToDate: false,
+        onAccount: false,
       });
 
       if (!response.status) {
@@ -103,6 +105,7 @@ const RequisitionForm = () => {
           purpose: "",
           projectName: "",
           city: "",
+          onAccount: "",
           localityArea: "",
           typeOfTravel: "",
           advanceRequested: "",
@@ -116,6 +119,7 @@ const RequisitionForm = () => {
           projectName: response.data.projectName,
           city: response.data.city,
           localityArea: response.data.localityArea,
+          onAccount: response.data.onAccount,
           typeOfTravel: response.data.typeOfTravel,
           advanceRequested: response.data.advanceRequested,
           fromDate: formateDate(response.data.fromDate),
@@ -129,6 +133,7 @@ const RequisitionForm = () => {
         purpose: "",
         projectName: "",
         city: "",
+        onAccount: "",
         localityArea: "",
         typeOfTravel: "",
         advanceRequested: "",
@@ -176,6 +181,7 @@ const RequisitionForm = () => {
       "typeOfTravel",
       "fromDate",
       "tentativeToDate",
+      "onAccount",
       //"advanceRequested",
     ];
 
@@ -199,7 +205,7 @@ const RequisitionForm = () => {
 
     const token = userData.token;
     try {
-      // ✅ Filter finalized rows
+      // Filter finalized rows
       //   const finalizedTransportModes = transportModes.filter(
       //     (row) => !row.isEditable
       //   );
@@ -235,8 +241,7 @@ const RequisitionForm = () => {
           !row?.checkIn ||
           row.checkIn?.toString().trim() === "" ||
           !row?.checkOut ||
-          row.checkOut?.toString().trim() === "" 
-        
+          row.checkOut?.toString().trim() === ""
         );
       });
 
@@ -245,6 +250,42 @@ const RequisitionForm = () => {
           toastRef,
           "Warning",
           "Please complete all Accommodation entries or remove incomplete rows."
+        );
+        return;
+      }
+
+      //  Transport mode validation
+      const invalidTransportRows = transportModes.filter((row) => {
+        const from = new Date(row.fromDate);
+        const fromDate = new Date(formFields.fromDate);
+        const toDate = new Date(formFields.tentativeToDate);
+        return from < fromDate || from > toDate;
+      });
+
+      if (invalidTransportRows.length > 0) {
+        showWarningMessage(
+          toastRef,
+          "Warning",
+          "Transport Mode dates must be within From Date and Tentative To Date."
+        );
+        return;
+      }
+
+      // Accommodation date validation
+      const invalidAccommodationRows = accommodations.filter((row) => {
+        const checkIn = new Date(row.checkIn);
+        const checkOut = new Date(row.checkOut);
+        const fromDate = new Date(formFields.fromDate);
+        const toDate = new Date(formFields.tentativeToDate);
+
+        return checkIn < fromDate || checkOut > toDate || checkOut < checkIn;
+      });
+
+      if (invalidAccommodationRows.length > 0) {
+        showWarningMessage(
+          toastRef,
+          "Warning",
+          "Accommodation dates must be within From Date and Tentative To Date, and Check-Out must be after Check-In."
         );
         return;
       }
@@ -299,6 +340,7 @@ const RequisitionForm = () => {
           purpose: "",
           projectName: "",
           city: "",
+          onAccount: "",
           localityArea: "",
           typeOfTravel: "",
           advanceRequested: "",
@@ -481,19 +523,15 @@ const RequisitionForm = () => {
                       id="onAccount"
                       name="onAccount"
                       type="text"
-                      value={""}
+                      value={formFields.onAccount}
                       onChange={(e) =>
-                        // handleInputWithValidation(
-                        //   "localityArea",
-                        //   e.target.value
-                        // )
-                        e.target.value
+                        handleInputWithValidation("onAccount", e.target.value)
                       }
                       autoComplete="off"
                       disabled={!isEditable}
-                      //   className={`
-                      //     ${formErrors.localityArea ? "ring-2 ring-red-500 focus:ring-red-500" : ""}
-                      // `}
+                      className={`
+                          ${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}
+                      `}
                     />
                   </div>
                 </div>
@@ -626,7 +664,7 @@ const RequisitionForm = () => {
                     Advance Request
                   </label>
                   <div className="mt-2">
-                    <InputNumber
+                    {/* <InputNumber
                       value={formFields.advanceRequested || 0}
                       name="advanceRequested"
                       onChange={(e) => {
@@ -644,8 +682,27 @@ const RequisitionForm = () => {
                           }));
                         }
                       }}
-                      mode="decimal"
+                      step={1}
+                    
                       min={0}
+                    /> */}
+                    <InputNumber
+                      value={formFields.advanceRequested || 0}
+                      name="advanceRequested"
+                      onValueChange={(e) => {
+                        const value = e?.value;
+
+                        if (Number.isInteger(value) && value >= 0) {
+                          setFormFields((prev) => ({
+                            ...prev,
+                            advanceRequested: value,
+                          }));
+                        }
+                      }}
+                      step={1}
+                      min={0}
+                      mode="decimal"
+                      maxFractionDigits={0}
                     />
                   </div>
                 </div>
@@ -660,7 +717,7 @@ const RequisitionForm = () => {
                     alignContent: "center",
                     marginTop: "29px",
                   }}
-                //  / className="flex justify-center text-center sm:col-span-5"
+                  //  / className="flex justify-center text-center sm:col-span-5"
                 >
                   Available - {advance}
                 </div>

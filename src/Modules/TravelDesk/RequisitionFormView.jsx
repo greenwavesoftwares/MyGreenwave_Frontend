@@ -110,7 +110,7 @@ const RequisitionFormView = ({
           <span>{rowData.advance}</span>
         </Grid>
         <Grid size={12} sx={{ border: "1px solid #ccc" }}>
-          <DataTable header="Mode of Transport" value={rowData.transportModes}>
+          <DataTable header="Transportation Request" value={rowData.transportModes}>
             <Column field="mode" header="Mode"></Column>
             <Column field="fromDate" header="From Date"></Column>
             <Column field="comment" header="Comment"></Column>
@@ -120,7 +120,7 @@ const RequisitionFormView = ({
 
         <Grid size={12} sx={{ border: "1px solid #ccc" }}>
           <DataTable
-            header="Reservation of Accommodation"
+            header="Accommodation Request"
             value={rowData.accommodations}
           >
             <Column field="type" header="Type"></Column>

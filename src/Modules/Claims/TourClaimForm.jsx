@@ -95,7 +95,7 @@ const TourClaimForm = ({
           purpose: data.purpose,       
           travelType: data.typeOfTravel,
           destination: data.city,
-          onAccount: "",
+          onAccount: data.onAccount,
           travelfromDate: dates[0].travelfromdate,
           claimFromDate: dates[0].claimformdate,
           claimToDate: dates[0].claimtodate,
@@ -316,10 +316,14 @@ const TourClaimForm = ({
                 <InputText
                   inputId="On-Account"
                   //className="w-62"
+                  disabled={
+                    (selectedtravelMode?selectedtravelMode.value:'') !==
+                    "Long-Term-Local-Conveyance"
+                  }
                   value={tourclaimformData.onAccount}
                   onChange={(e) => {handleChange("onAccount", e.target.value), handleInputWithValidation("onAccount", e.target.value)}}
                   className={`w-62 text-sm ${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                  // className={`"w-62 text-sm"${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                  //className={`"w-62 text-sm"${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                 />
               </div>
 

@@ -4,6 +4,8 @@ import { Column } from "primereact/column";
 import { Chip } from "@mui/material";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
+import { Tooltip } from 'primereact/tooltip';
+import {Tooltip as Muitooltip} from "@mui/material";
 //Call Api
 import {
   getMyFormParticularRequisitionId,
@@ -87,7 +89,22 @@ const MyForm = () => {
       className="text-xs"
       tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
     >
-      <Column field="date" header="Date"></Column>
+      {/* <Column
+      header="S.No"
+      body={(_, { rowIndex }) => rowIndex + 1}
+      style={{ width: '3rem' }}
+    /> */}
+
+      <Column
+        header="S.NO"
+       body={(rowData, { rowIndex }) => (
+    <Muitooltip title={rowData.requisionId} placement="top">
+      <span>{rowIndex + 1}</span>
+    </Muitooltip>
+  )}
+        style={{ width: '3rem' }}
+      />
+      <Column field="date" header="Application Date"></Column>
       <Column field="advanceRequested" header="Advance Requested"></Column>
       <Column field="advance" header="Advance Given"></Column>
       <Column
@@ -239,7 +256,12 @@ const MyForm = () => {
         <Column field="fromDate" header="From Date"></Column>
         <Column field="tentativeToDate" header="Tentative To Date"></Column>
         <Column field="purpose" header="Description"></Column>
-        <Column field="projectName" header="Project Name"></Column>
+        <Column  header="Project Name"
+         body={(rowData) => (
+    <Muitooltip title={rowData.travelId} placement="top">
+      <span>{rowData.projectName}</span>
+    </Muitooltip>
+  )}></Column>
         <Column field="city" header="City"></Column>
         <Column field="localityArea" header="Locality/Area"></Column>
         <Column field="typeOfTravel" header="Type Of Travel"></Column>
