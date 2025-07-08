@@ -19,7 +19,7 @@ import {ExpandableDataTableComponent,CustomColumn,DataTableComponent} from "../.
 import CustomButton from "../../components/Button/Button";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
-
+import {Tooltip as Muitooltip} from "@mui/material";
 
 
 //import ViewTable from "./ViewTable";
@@ -263,12 +263,21 @@ const MyTourClaims = () => {
         className="text-xs"
         //tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       >
-         <CustomColumn
+    <Column
+        header="S.NO"
+       body={(rowData, { rowIndex }) => (
+    <Muitooltip title={rowData.claim_id} placement="top">
+      <span>{rowIndex + 1}</span>
+    </Muitooltip>
+  )}
+        style={{ width: '3rem' }}
+      />
+         {/* <CustomColumn
           header="Claim Id"
          
         field="claim_id"
           headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
-        />
+        /> */}
         
         <CustomColumn
           header="Claim Duration"
@@ -384,14 +393,14 @@ const MyTourClaims = () => {
         ]}
       >
         <Column expander style={{ width: "3rem" }} />
-         <CustomColumn
+         {/* <CustomColumn
           field="travel_id"
           header="travel_id"
           sortable={true}
           filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
-        />
+        /> */}
 
         <CustomColumn
           field="fromDate"
@@ -417,14 +426,20 @@ const MyTourClaims = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <CustomColumn
+        {/* <CustomColumn
           field="project"
           header="Project"
           sortable={true}
           filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
-        />
+        /> */}
+         <Column  header="Project Name"
+                 body={(rowData) => (
+            <Muitooltip title={rowData.travel_id} placement="top">
+              <span>{rowData.project}</span>
+            </Muitooltip>
+          )}></Column>
         <CustomColumn
           field="purpose"
           header="Purpose"

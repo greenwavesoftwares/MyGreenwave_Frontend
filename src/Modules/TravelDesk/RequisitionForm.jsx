@@ -259,7 +259,8 @@ const RequisitionForm = () => {
         const from = new Date(row.fromDate);
         const fromDate = new Date(formFields.fromDate);
         const toDate = new Date(formFields.tentativeToDate);
-        return from < fromDate || from > toDate;
+       // return from < fromDate || from > toDate;
+       return from < fromDate
       });
 
       if (invalidTransportRows.length > 0) {

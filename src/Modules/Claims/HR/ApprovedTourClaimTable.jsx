@@ -140,6 +140,8 @@ const ApprovedTourClaimTable = () => {
     return (
       <CustomButton
         icon="pi pi-download"
+            style={!rowData.filename ? { color: "#708090" } : {}}
+        disabled={rowData.filename? false:true}
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
           handleDownloadFile(rowData.claim_id);

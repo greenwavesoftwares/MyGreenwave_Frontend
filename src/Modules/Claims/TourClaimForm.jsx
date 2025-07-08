@@ -17,6 +17,7 @@ import {
   
 } from "./claimServices";
 import {getTravelDetailsFromTravelId2} from "../TravelDesk/TravelDeskAPI"
+import {formateDate} from "./claimServices"
 
 const TourClaimForm = ({
   tourclaimformData,
@@ -339,9 +340,9 @@ const TourClaimForm = ({
                   //className="w-62"
                   value={
                     tourclaimformData.travelfromDate
-                      ? new Date(
+                      ? formateDate(
                           tourclaimformData.travelfromDate
-                        ).toLocaleDateString()
+                        )
                       : "No Date Selected"
                   }
                   onChange={(e) => {handleChange("travelfromDate", e.target.value)}}
@@ -357,7 +358,7 @@ const TourClaimForm = ({
                   <Calendar
                     inputId="claimFromDate"
                     showIcon
-                     dateFormat="dd-mm-yy"
+                     dateFormat="yy-mm-dd"
                   //  className="w-62"
                     value={new Date(tourclaimformData.claimFromDate)}
                     onChange={(e) =>{handleChange("claimFromDate", e.value), handleInputWithValidation("claimFromDate", e.value)}}
@@ -373,7 +374,7 @@ const TourClaimForm = ({
                   <Calendar
                     inputId="claimFromDate"
                     showIcon
-                     dateFormat="dd-mm-yy"
+                     dateFormat="yy-mm-dd"
                     className="w-62"
                     value={new Date(tourclaimformData.claimFromDate)}
                     disabled
@@ -401,7 +402,7 @@ const TourClaimForm = ({
                 <Calendar
                   inputId="claimToDate"
                   showIcon
-                   dateFormat="dd-mm-yy"
+                  dateFormat="yy-mm-dd"
                   //  className="w-62"
                   value={new Date(tourclaimformData.claimToDate)}
                   onChange={(e) =>  {handleChange("claimToDate", e.target.value), handleInputWithValidation("claimToDate", e.value)}}

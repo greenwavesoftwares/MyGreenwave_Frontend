@@ -690,7 +690,7 @@ const TourClaimTable = ({
           header="Date"
           editor={dateEditor}
           body={(row) =>
-            row.Date ? new Date(row.Date).toLocaleDateString() : ""
+            row.Date ? formateDate(row.Date) : ""
           }
           footer="Total"
         />

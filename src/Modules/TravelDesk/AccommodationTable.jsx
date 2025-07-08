@@ -180,7 +180,7 @@ const calendarEditor = (options, field) => {
       value={options.value}
       onChange={(e) => options.editorCallback(e.value)}
       showIcon
-      dateFormat="dd/mm/yy"
+      dateFormat="yy-mm-dd"
       className="text-xs p-1 w-full"
       panelClassName="text-xs"
       inputClassName="text-xs"
@@ -347,13 +347,13 @@ const textEditor = (options) => (
         field="checkIn"
         header="Check-In Date"
         editor={(options) => calendarEditor(options, "checkIn")}
-        body={(row) => row.checkIn ? new Date(row.checkIn).toLocaleDateString() : ""}
+        body={(row) => row.checkIn ? formateDate(row.checkIn) : ""}
       />
         <CustomEditableColumn
           field="checkOut"
           header="Check-Out Date"
           editor={(options) => calendarEditor(options, "checkOut")}
-          body={(row) => row.checkOut ? new Date(row.checkOut).toLocaleDateString() : ""}
+          body={(row) => row.checkOut ? formateDate(row.checkOut) : ""}
         />
         <CustomEditableColumn
           field="numberOfNights"

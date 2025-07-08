@@ -14,6 +14,7 @@ import "primereact/resources/themes/saga-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import {CustomeEditableDataTable,CustomEditableColumn} from "../../components/DataTable/DataTableComponent"
+import { formateDate } from "../Claims/claimServices";
 
 const ModeOfTransportTable = ({transportModes, setTransportModes,formFields,formErrors}) => {
   const toastRef = useRef(null);
@@ -99,7 +100,7 @@ const dateEditor = (options) => (
     onChange={(e) => options.editorCallback(e.value)}
    
     className="text-xs p-1 w-full"
-       dateFormat="dd/mm/yy"
+       dateFormat="yy-mm-dd"
     minDate={new Date(formFields.fromDate)}
   />
 );
@@ -174,7 +175,7 @@ const actionTemplate = (rowData) => (
           header="Travel Date"
           editor={dateEditor}
           body={(row) =>
-            row.fromDate ? new Date(row.fromDate).toLocaleDateString() : ""
+            row.fromDate ? formateDate(row.fromDate) : ""
           }
         />
         <CustomEditableColumn field="comment" header="Comment" editor={textEditor} />
