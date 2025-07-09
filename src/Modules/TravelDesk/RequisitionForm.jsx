@@ -42,6 +42,13 @@ import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+
+
 const RequisitionForm = () => {
   const minfromDate = new Date();
   const [travelModeOptions, setTravelModeOptions] = useState([]);
@@ -49,6 +56,7 @@ const RequisitionForm = () => {
   const [selectedtravelMode, setselectedtravelMode] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isEditable, setIsEditable] = useState(true); // Default: true for "New Travel"
+  const [isAccordionExpanded, setIsAccordionExpanded] = useState(true);
 
   const [formErrors, setFormErrors] = useState({});
   const [userInfo, setUserInfo] = useState({
@@ -409,6 +417,20 @@ const RequisitionForm = () => {
 
       <div className="min-h-screen bg-gray-100">
         <div className="max-w-6xl mx-auto">
+          <Accordion 
+          expanded={isAccordionExpanded}
+  onChange={(event, expanded) => setIsAccordionExpanded(expanded)}>
+           <AccordionSummary
+          expandIcon={<ArrowDropDownIcon />}
+          aria-controls="panel2-content"
+          id="panel2-header"
+        >
+
+        {!isAccordionExpanded && formFields.projectName &&  (
+  <Typography component="span" className="ml-2">{`Project: ${formFields.projectName} FromDate: ${formateDate(formFields.fromDate)} ToDate: ${formateDate(formFields.tentativeToDate)} City: ${formFields.city}`}</Typography>
+)}
+        </AccordionSummary>
+         <AccordionDetails>
           <div className="space-y-12">
             <div>
               {/* <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
@@ -419,7 +441,7 @@ const RequisitionForm = () => {
                 {/* Travel Selection Section */}
                 <div className="cardBG rounded-xl p-4 mb-3 defaultBorder">
                   <div
-                    className=" mb-3"
+                    className="mb-3"
                     style={{ display: "flex", alignItems: "center" }}
                   >
                     <TextSnippetOutlinedIcon
@@ -883,6 +905,8 @@ const RequisitionForm = () => {
               </div>
             </div>
           </div>
+          </AccordionDetails>
+          </Accordion>
           <div className="pt-3">
             <ModeOfTransportTable
               transportModes={transportModes}
