@@ -21,12 +21,12 @@ const RequisitionFormView = ({
   const { userDetails } = getUserData();
   return (
     <>
-      <Grid container spacing={2}>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+      <Grid container spacing={2} className="mt-2">
+        <Grid size={6} sx={{ borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -34,11 +34,11 @@ const RequisitionFormView = ({
           </span>
           <span>{rowData.purpose}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -46,11 +46,11 @@ const RequisitionFormView = ({
           </span>
           <span>{rowData.projectName}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -58,11 +58,11 @@ const RequisitionFormView = ({
           </span>
           <span>{rowData.city}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -70,11 +70,11 @@ const RequisitionFormView = ({
           </span>
           <span>{rowData.localityArea}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -82,11 +82,11 @@ const RequisitionFormView = ({
           </span>
           <span>{rowData.typeOfTravel}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -96,12 +96,13 @@ const RequisitionFormView = ({
         </Grid>
         <Grid
           size={12}
-          sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}
+          sx={{  borderRadius: 2, p: 1 }}
+          className="defaultBorder"
         >
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -109,8 +110,13 @@ const RequisitionFormView = ({
           </span>
           <span>{rowData.advance}</span>
         </Grid>
-        <Grid size={12} sx={{ border: "1px solid #ccc" }}>
-          <DataTable header="Transportation Request" value={rowData.transportModes}>
+        <Grid size={12}>
+          <DataTable
+            header="Transportation Request"
+            size="small"
+            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
+            value={rowData.transportModes}
+          >
             <Column field="mode" header="Mode"></Column>
             <Column field="fromDate" header="From Date"></Column>
             <Column field="comment" header="Comment"></Column>
@@ -118,10 +124,12 @@ const RequisitionFormView = ({
           </DataTable>
         </Grid>
 
-        <Grid size={12} sx={{ border: "1px solid #ccc" }}>
+        <Grid size={12} >
           <DataTable
             header="Accommodation Request"
             value={rowData.accommodations}
+            size="small"
+            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
           >
             <Column field="type" header="Type"></Column>
             <Column field="numberOfRooms" header="Number Of Rooms"></Column>
@@ -129,15 +137,15 @@ const RequisitionFormView = ({
             <Column field="checkIn" header="Check In"></Column>
             <Column field="checkOut" header="Check Out"></Column>
             <Column field="comment" header="Comment"></Column>
-             <Column field="manager_remark" header="Manager Remark"></Column>
+            <Column field="manager_remark" header="Manager Remark"></Column>
           </DataTable>
         </Grid>
 
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           <span
             style={{
               fontWeight: "bold",
-              fontSize: "1.1rem",
+              fontSize: "0.85rem",
               marginRight: "4px",
             }}
           >
@@ -145,7 +153,7 @@ const RequisitionFormView = ({
           </span>
           {rowData.manager_id}
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 1 }} className="defaultBorder">
           {" "}
           {formData?.manager_id === userDetails?.userId &&
           formData?.status === "Pending" ? (
@@ -191,7 +199,7 @@ const RequisitionFormView = ({
               />
             </Box>
           ) : (
-            <div>Manager Comment : {rowData.manager_suggestion}</div>
+            <div style={{fontSize:"0.85rem",fontWeight:"bold"}}>Manager Comment : {rowData.manager_suggestion}</div>
           )}
         </Grid>
       </Grid>

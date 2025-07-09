@@ -112,7 +112,7 @@ const MyForm = () => {
           return (
             <Chip
               label={rowData.status}
-              size="medium"
+              size="small"
               color={
                 rowData.status.toLowerCase() === "approved" ||
                 rowData.status.toLowerCase() === "completed"
@@ -129,6 +129,10 @@ const MyForm = () => {
           return (
             <Button
               variant="contained"
+              size="small"
+              
+              icon="pi pi-eye mr-2"
+              style={{padding:"0.4rem 0.8rem"}}
               onClick={(e) => {
                 handelShowPreviousData(rowData.requisionId);
               }}
@@ -215,7 +219,7 @@ const MyForm = () => {
           value={globalFilterValue}
           onChange={onGlobalFilterChange}
           placeholder="Keyword Search"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto inputFieldStyle"
         />
       </div>
     );
@@ -251,7 +255,8 @@ const MyForm = () => {
           "localityArea",
           "typeOfTravel",
         ]}
-        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
+        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
+        size="small"
       >
         <Column expander style={{ width: "3rem" }} />
         <Column field="fromDate" header="From Date"></Column>
@@ -296,8 +301,9 @@ const MyForm = () => {
           if (!visible) return;
           setVisible(false);
         }}
+        className="dialogHeader dialogContent"
       >
-        <h2>Requisition Form View</h2>
+        {/* <h2>Requisition Form View</h2> */}
         <RequisitionFormView rowData={rowData} />
       </Dialog>
 
