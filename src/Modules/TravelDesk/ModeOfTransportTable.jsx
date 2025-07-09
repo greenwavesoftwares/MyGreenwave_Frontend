@@ -124,8 +124,8 @@ const ModeOfTransportTable = ({
 
   const dateEditor = (options) => (
     <CustomeCalender
-      value={options.value}
-      onChange={(e) => options.editorCallback(e.value)}
+      value={(options.value ? new Date(options.value) : '')}
+      onChange={(e) => options.editorCallback(formateDate(e.value))}
       className="text-xs p-1 w-full"
       dateFormat="yy-mm-dd"
       minDate={new Date(formFields.fromDate)}
@@ -216,7 +216,7 @@ const ModeOfTransportTable = ({
           field="fromDate"
           header="Travel Date"
           editor={dateEditor}
-          body={(row) => (row.fromDate ? formateDate(row.fromDate) : "")}
+         // body={(row) => (row.fromDate ? formateDate(row.fromDate) : "")}
         />
         <CustomEditableColumn
           field="comment"

@@ -335,6 +335,7 @@ const RequisitionForm = () => {
       //   }
       console.log("payload", payload);
       console.log("submit is called", payload);
+    
       let response = await createRequisition(payload);
 
       if (response.status) {

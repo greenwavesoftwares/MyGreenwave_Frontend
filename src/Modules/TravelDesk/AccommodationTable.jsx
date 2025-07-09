@@ -217,8 +217,8 @@ const AccommodationTable = ({
 
     return (
       <CustomeCalender
-        value={options.value}
-        onChange={(e) => options.editorCallback(e.value)}
+        value={(options.value ? new Date(options.value) : '')}
+        onChange={(e) => options.editorCallback(formateDate(e.value))}
         showIcon
         dateFormat="yy-mm-dd"
         className="text-xs p-1 w-full"

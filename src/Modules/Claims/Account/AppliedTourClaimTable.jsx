@@ -271,7 +271,7 @@ const AppliedTourClaimTable = () => {
               type="number"
               value={settlementAmount}
               onChange={(e) => setSettlementAmount(e.target.value)}
-              placeholder="Settlement Amount"
+              placeholder="Approval Amount"
               className="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
             />
 
