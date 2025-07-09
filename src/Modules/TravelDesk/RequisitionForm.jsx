@@ -263,11 +263,11 @@ const RequisitionForm = () => {
 
       //  Transport mode validation
       const invalidTransportRows = transportModes.filter((row) => {
-        const from = new Date(row.fromDate);
-        const fromDate = new Date(formFields.fromDate);
+       // const from = new Date(row.fromDate);
+       // const fromDate = new Date(formFields.fromDate);
         const toDate = new Date(formFields.tentativeToDate);
         // return from < fromDate || from > toDate;
-        return from < fromDate;
+        return row.fromDate < formFields.fromDate;
       });
 
       if (invalidTransportRows.length > 0) {
@@ -281,12 +281,12 @@ const RequisitionForm = () => {
 
       // Accommodation date validation
       const invalidAccommodationRows = accommodations.filter((row) => {
-        const checkIn = new Date(row.checkIn);
-        const checkOut = new Date(row.checkOut);
-        const fromDate = new Date(formFields.fromDate);
-        const toDate = new Date(formFields.tentativeToDate);
+        // const checkIn = new Date(row.checkIn);
+        // const checkOut = new Date(row.checkOut);
+        // const fromDate = new Date(formFields.fromDate);
+        // const toDate = new Date(formFields.tentativeToDate);
 
-        return checkIn < fromDate || checkOut > toDate || checkOut < checkIn;
+        return row.checkIn < formFields.fromDate || row.checkOut > formFields.tentativeToDate || row.checkOut < row.checkIn;
       });
 
       if (invalidAccommodationRows.length > 0) {
@@ -664,7 +664,7 @@ const RequisitionForm = () => {
                         </label>
                         <div className="mt-2">
                           <CustomeCalender
-                            value={new Date(formFields.fromDate)}
+                            value={formFields.fromDate?new Date(formFields.fromDate):''}
                             onChange={(e) =>
                               handleInputWithValidation(
                                 "fromDate",
@@ -703,7 +703,7 @@ const RequisitionForm = () => {
                         </label>
                         <div className="mt-2">
                           <CustomeCalender
-                            value={new Date(formFields.tentativeToDate)}
+                            value={formFields.tentativeToDate?new Date(formFields.tentativeToDate):''}
                             onChange={(e) =>
                               handleInputWithValidation(
                                 "tentativeToDate",
@@ -711,7 +711,7 @@ const RequisitionForm = () => {
                               )
                             }
                             disabled={!isEditable}
-                            minDate={new Date(formFields.fromDate)} // prevent selecting before fromDate
+                            minDate={new Date(formFields.fromDate)} 
                             dateFormat="dd/mm/yy"
                             className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full calendarStyle`}
                           />
