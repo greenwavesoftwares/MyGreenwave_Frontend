@@ -41,7 +41,7 @@ const DraftForm = ({
   setTravelModeOptions,
   setselectedtravelMode,
 }) => {
-  const cellStyle = { padding: "12px 16px" };
+  const cellStyle = {  };
 const toastRef = useRef(null);
   const [rowData, setRowData] = useState({});
 
@@ -425,9 +425,10 @@ const toastRef = useRef(null);
         <DataTableComponent
           data={draftData}
           rows={10}
-          textSize="text-xs"
+          //textSize="text-xs"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           emptyMessage="No data found"
+          className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
         >
           
           <CustomColumn
@@ -500,6 +501,7 @@ const toastRef = useRef(null);
             textSize="text-xs"
             tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
             emptyMessage="No data found"
+            className={"dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"}
           >
             {/* </DataTableComponent> */}
             {/* <DataTable

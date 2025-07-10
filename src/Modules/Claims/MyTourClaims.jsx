@@ -71,7 +71,7 @@ const MyTourClaims = () => {
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
             placeholder="Keyword Search"
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto inputFieldStyle"
           />
         </div>
       );
@@ -365,7 +365,7 @@ const MyTourClaims = () => {
   }, []);
 
   return (
-    <div className="overflow-x-auto p-4">
+    <div className="overflow-x-auto defaultBorder">
       <ExpandableDataTableComponent
         data={tourClaims}
         expandedRows={expandedRows}

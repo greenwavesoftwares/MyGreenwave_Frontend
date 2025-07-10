@@ -18,7 +18,7 @@ const CustomDialog = ({
         visible={visible}
         style={style}
         onHide={onHide}
-        className={className}
+      className={`${className} dialogHeader dialogContent`}
         contentClassName={contentClassName}
         headerClassName={headerClassName}
       >

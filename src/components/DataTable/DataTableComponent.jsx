@@ -29,6 +29,7 @@ export const DataTableComponent = ({
        header={header}
         filters={filters}
         globalFilterFields={globalFilterFields}
+        size="small"
     >
       {children}
     </DataTable>

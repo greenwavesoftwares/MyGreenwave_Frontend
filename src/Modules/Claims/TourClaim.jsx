@@ -117,10 +117,10 @@ const TourClaim = () => {
           <Toast ref={toast} />
           <TabView>
             <TabPanel header="New Claim">
-              <div>
+              <div className="defaultBorder">
                 {draftData.length > 0 && !toggleNewClaim && !editableMode && (
                   <div>
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center p-2 ">
                       <h2 className="text-md font-semibold text-gray-700">
                         📝 My Drafts
                       </h2>
@@ -149,6 +149,9 @@ const TourClaim = () => {
                           });
                           settourClaimTableData([]);
                         }}
+                        size="small"
+                        rounded
+                        style={{padding: "0.3rem 0.7rem",fontSize:"0.85rem"}}
                       />
                     </div>
 
