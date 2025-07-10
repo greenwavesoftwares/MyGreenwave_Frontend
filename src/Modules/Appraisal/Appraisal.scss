@@ -121,6 +121,15 @@
 
 }
 
+//Data Table Sort Icon
+.p-datatable .p-sortable-column .p-sortable-column-icon{
+  color: var(--tableHeaderIcon) 
+}
+
+//Data Table Filter Icon
+.p-column-filter-menu-button{
+   color: var(--tableHeaderIcon) 
+}
 
 //Accordion Styles
 .accordionNoSpace .MuiAccordionDetails-root{

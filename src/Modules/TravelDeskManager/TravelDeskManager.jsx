@@ -309,12 +309,12 @@ export default function TravelDeskManager() {
       <div className="flex justify-between items-center">
       <InputText
         type="search"
-        className="p-inputtext-sm"
+        className="p-inputtext-sm inputFieldStyle"
         onInput={(e) => setGlobalFilter(e.target.value)}
         placeholder="Search.."
       />
 
-       <SelectButton  value={activeTab} onChange={(e) => setActiveTab(e.value)} options={tabs}  allowEmpty={false}/>
+       <SelectButton className="selectButtonStyle" value={activeTab} onChange={(e) => setActiveTab(e.value)} options={tabs}  allowEmpty={false}/>
        </div>
     );
   };
@@ -448,12 +448,14 @@ export default function TravelDeskManager() {
     : travelData?.filter((item) => !item?.managerActionRequiredFlag) ?? []; 
   return (
     // <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100"></div>
-    <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100">
+    <div className="container mx-auto px-4">
+        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+          <div className="cardStyle mt-4 bg-white shadow rounded">
       {/* DataTable */}
       <CustomToast ref={toastRef} />
        {/* <SelectButton value={activeTab} onChange={(e) => setActiveTab(e.value)} options={tabs} /> */}
       <DataTable
-        className="text-xs"
+         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         showGridlines
         value={updatedTravelData}
@@ -472,6 +474,7 @@ export default function TravelDeskManager() {
         }
         header={renderHeader}
         globalFilter={globalFilter}
+        size="small"
       >
         <Column expander />
         <Column
@@ -531,6 +534,8 @@ export default function TravelDeskManager() {
           />
         </Grid>
       </Dialog>
+    </div>
+    </div>
     </div>
   );
 }

@@ -83,7 +83,7 @@ const ApprovedTable = () => {
           value={globalFilterValue}
           onChange={onGlobalFilterChange}
           placeholder="Keyword Search"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto inputFieldStyle"
         />
       </div>
     );
@@ -330,7 +330,7 @@ const ApprovedTable = () => {
               aria-label="View"
               onClick={() => handelShowRequisitionForm(rowData.requisionId)}
             >
-              <VisibilityIcon />
+              <VisibilityIcon color="info"/>
             </IconButton>
           )}
           header="View"
@@ -512,11 +512,11 @@ const ApprovedTable = () => {
   };
 
   const tourDetailsBody = (rowData) => (
-    <div className="flex flex-col items-start justify-center space-y-1">
+    <div className="p-1">
       <div>
         <span className="font-bold">City:</span> {rowData["city"]}
       </div>
-      <div>
+      <div >
         <span className="font-bold">Purpose:</span> {rowData["purpose"]}
       </div>
       <div>
@@ -541,7 +541,7 @@ const ApprovedTable = () => {
 
   return (
     <>
-      <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
+      <div>
         <Toast ref={toast} />
         <ExpandableDataTableComponent
           data={approvedAndSettledTravelData}
@@ -550,7 +550,7 @@ const ApprovedTable = () => {
           //</div> rowExpansionMode="single"
           rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           //</> showGridlines
-          className="text-xs"
+          className="text-xs defaultBorder"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           // paginator
           //size="small"
@@ -785,8 +785,9 @@ const ApprovedTable = () => {
             if (!visible) return;
             setVisible(false);
           }}
+           className="dialogHeader dialogContent"
         >
-          <h2>Requisition Form View</h2>
+          
           <RequisitionFormView rowData={rowData} />
         </CustomDialog>
       </div>

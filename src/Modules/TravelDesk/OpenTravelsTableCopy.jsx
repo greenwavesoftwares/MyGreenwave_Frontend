@@ -5,7 +5,9 @@ import CompletedTable from "./CompletedTable";
 
 const OpenTravelsTableCopy = () => {
   return (
-    <div className="max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100">
+    <div className="container mx-auto px-4">
+        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+          <div className="cardStyle mt-4 bg-white shadow rounded">
       <TabView>
         <TabPanel header="On Going Travel">
           <ApprovedTable />
@@ -14,6 +16,8 @@ const OpenTravelsTableCopy = () => {
           <CompletedTable />
         </TabPanel>
       </TabView>
+    </div>
+    </div>
     </div>
   );
 };

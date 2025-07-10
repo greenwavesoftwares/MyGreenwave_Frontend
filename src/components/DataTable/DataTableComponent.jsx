@@ -57,8 +57,9 @@ export const ExpandableDataTableComponent = ({
       expandedRows={expandedRows}
       onRowToggle={onRowToggle}
       rowExpansionTemplate={rowExpansionTemplate}
+      size="small"
       showGridlines
-      className={className}
+     className={`${className} dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator`}
       tableStyle={tableStyle}
       dataKey={dataKey}
       paginator

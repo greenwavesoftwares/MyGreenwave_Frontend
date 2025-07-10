@@ -81,7 +81,7 @@ const CompletedTable = () => {
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
             placeholder="Keyword Search"
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto inputFieldStyle"
           />
         </div>
       );
@@ -180,7 +180,7 @@ const CompletedTable = () => {
               aria-label="View"
               onClick={() => handelShowRequisitionForm(rowData.requisionId)}
             >
-              <VisibilityIcon />
+              <VisibilityIcon color="info"/>
             </IconButton>
           )}
           header="View"
@@ -374,7 +374,7 @@ const CompletedTable = () => {
     
   return (
     <>
-      <div className="px-4 mx-auto max-w-[85rem] lg:px-12">
+      <div >
         <Toast ref={toast} />
         <ExpandableDataTableComponent
           data={approvedAndSettledTravelData}
@@ -383,7 +383,7 @@ const CompletedTable = () => {
           //rowExpansionMode="single"rowExpansionTemplate
           rowExpansionTemplate={rowExpansionTemplate(expandedRows)}
           // showGridlines
-          className="text-xs"
+          className="text-xs defaultBorder"
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           rows={10}
           emptyMessage={
@@ -595,8 +595,9 @@ const CompletedTable = () => {
             if (!visible) return;
             setVisible(false);
           }}
+            className="dialogHeader dialogContent"
         >
-          <h2>Requisition Form View</h2>
+          {/* <h2>Requisition Form View</h2> */}
           <RequisitionFormView rowData={rowData} />
         </CustomDialog>
       </div>

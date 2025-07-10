@@ -1,30 +1,34 @@
-import React, { useState, useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TabView, TabPanel } from "primereact/tabview";
 import TourClaimForm from "./TourClaimForm";
 import TourClaimTable from "./TourClaimTable";
 import DraftForm from "./DraftForm";
 import MyTourClaims from "./MyTourClaims";
 import { Button } from "primereact/button";
-import { getDraftData, handleSaveToDraft,getTravelDropDown } from "./claimServices";
+import {
+  getDraftData,
+  handleSaveToDraft,
+  getTravelDropDown,
+} from "./claimServices";
 import { Toast } from "primereact/toast";
 
 const TourClaim = () => {
-  const toast=useRef()
- 
+  const toast = useRef();
+
   const [editableMode, seteditableMode] = useState(false); // true by default
   const [toggleNewClaim, settoggleNewClaim] = useState(false); // controls form+table visibility
   const [formErrors, setFormErrors] = useState({});
   const [draftData, setDraftData] = useState([]);
   const [travelModeOptions, setTravelModeOptions] = useState([]);
-   const [selectedtravelMode,setselectedtravelMode]=useState(null)
+  const [selectedtravelMode, setselectedtravelMode] = useState(null);
   const [travelTypeOptions, settravelTypeOptions] = useState([
-      "Others",
-      "Sales Marketing",
-      "Project",
-      "Service Paid",
-      "Service Fees",
-      "Survey",
-      "Training",
+    "Others",
+    "Sales Marketing",
+    "Project",
+    "Service Paid",
+    "Service Fees",
+    "Survey",
+    "Training",
   ]);
   const [tourClaimTableData, settourClaimTableData] = useState(
     []
@@ -50,7 +54,7 @@ const TourClaim = () => {
     claim_id: "",
     advance: "",
     travel_id: "",
-  
+
     travelType: "",
     destination: "",
     purpose: "",
@@ -58,53 +62,47 @@ const TourClaim = () => {
     onAccount: "",
     travelfromDate: "",
     claimFromDate: new Date(),
-    claimToDate:new Date(),
+    claimToDate: new Date(),
     filename: "",
     file_type: "",
   });
   // const [viewtable,setviewtable]=useState([]);
 
-  useEffect(
-    () => {
-      const fetchDraftData = async () => {
-        try {
-          const response = await getDraftData();
-          if(response.status)
-          {
-             setDraftData(response.data);
-              if (response.data.length == 0) {
-               settoggleNewClaim(true);
+  useEffect(() => {
+    const fetchDraftData = async () => {
+      try {
+        const response = await getDraftData();
+        if (response.status) {
+          setDraftData(response.data);
+          if (response.data.length == 0) {
+            settoggleNewClaim(true);
           }
-          }else
-          {
-             toast.current.show({
-        severity: "error",
-        summary: "Error",
-        detail: response.message,
-      });
-          } 
-        } catch (err) {
-          console.error("Error loading draft data:", err);
-          setDraftData([]); // fallback
+        } else {
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: response.message,
+          });
         }
-      };
+      } catch (err) {
+        console.error("Error loading draft data:", err);
+        setDraftData([]); // fallback
+      }
+    };
 
-        const fetchDropdownList = async () => {
-            try {
-              const travelModeData = await getTravelDropDown();
-            if(travelModeData.status)    
-              setTravelModeOptions(travelModeData.data);
-            } catch (error) {
-              console.error("Error fetching tour claim list:", error);
-            }
-          };
-          fetchDropdownList();
+    const fetchDropdownList = async () => {
+      try {
+        const travelModeData = await getTravelDropDown();
+        if (travelModeData.status) setTravelModeOptions(travelModeData.data);
+      } catch (error) {
+        console.error("Error fetching tour claim list:", error);
+      }
+    };
+    fetchDropdownList();
 
-      fetchDropdownList()
-      fetchDraftData();
-    },
-    []
-  );
+    fetchDropdownList();
+    fetchDraftData();
+  }, []);
 
   const handleSaveToDraft = () => {
     // After saving to draft, hide form and table again
@@ -113,102 +111,106 @@ const TourClaim = () => {
   };
 
   return (
-   <div className='max-w-[85rem] mx-auto p-4 min-h-screen bg-gray-100'>
-     <Toast ref={toast} />
-        <TabView >
-          <TabPanel header="New Claim">
-            <div >
-              {draftData.length > 0 && !toggleNewClaim && !editableMode && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-md font-semibold text-gray-700">
-                      📝 My Drafts
-                    </h2>
-                    <Button
-                      label="Add New Claim"
-                      icon="pi pi-plus"
-                      className="p-button-sm"
-                      onClick={() => {
-                        settoggleNewClaim(true);
-                        seteditableMode(false);
-                        settourclaimformData({
-                          claim_id: "",
-                          advance: "",
-                          travel_id: "",
-                          travelMode: "",
-                          travelType: "",
-                          destination: "",
-                          purpose: "",
-                          projectName: "",
-                          onAccount: "",
-                          travelfromDate: "",
-                          claimFromDate: new Date(),
-                          claimToDate: new Date(),
-                          filename: "",
-                          file_type: "",
-                        });
-                        settourClaimTableData([]);
-                      }}
+    <div className="container mx-auto px-4">
+      <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
+        <div className="mt-3  shadow rounded">
+          <Toast ref={toast} />
+          <TabView>
+            <TabPanel header="New Claim">
+              <div>
+                {draftData.length > 0 && !toggleNewClaim && !editableMode && (
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-md font-semibold text-gray-700">
+                        📝 My Drafts
+                      </h2>
+                      <Button
+                        label="Add New Claim"
+                        icon="pi pi-plus"
+                        className="p-button-sm"
+                        onClick={() => {
+                          settoggleNewClaim(true);
+                          seteditableMode(false);
+                          settourclaimformData({
+                            claim_id: "",
+                            advance: "",
+                            travel_id: "",
+                            travelMode: "",
+                            travelType: "",
+                            destination: "",
+                            purpose: "",
+                            projectName: "",
+                            onAccount: "",
+                            travelfromDate: "",
+                            claimFromDate: new Date(),
+                            claimToDate: new Date(),
+                            filename: "",
+                            file_type: "",
+                          });
+                          settourClaimTableData([]);
+                        }}
+                      />
+                    </div>
+
+                    <DraftForm
+                      draftData={draftData}
+                      setDraftData={setDraftData}
+                      editableMode={editableMode}
+                      seteditableMode={seteditableMode}
+                      tourclaimformData={tourclaimformData}
+                      settourclaimformData={settourclaimformData}
+                      settourClaimTableData={settourClaimTableData}
+                      settoggleNewClaim={settoggleNewClaim}
+                      setTravelModeOptions={setTravelModeOptions}
+                      selectedtravelMode={selectedtravelMode}
+                      setselectedtravelMode={setselectedtravelMode}
                     />
                   </div>
+                )}
+                {editableMode || toggleNewClaim ? (
+                  <>
+                    <TourClaimForm
+                      tourclaimformData={tourclaimformData}
+                      settourclaimformData={settourclaimformData}
+                      onSaveToDraft={handleSaveToDraft}
+                      tourclaimFormLabeData={tourclaimFormLabeData}
+                      editableMode={editableMode}
+                      toggleNewClaim={toggleNewClaim}
+                      travelTypeOptions={travelTypeOptions}
+                      travelModeOptions={travelModeOptions}
+                      selectedtravelMode={selectedtravelMode}
+                      setselectedtravelMode={setselectedtravelMode}
+                      formErrors={formErrors}
+                      setFormErrors={setFormErrors}
+                    />
 
-                  <DraftForm
-                    draftData={draftData}
-                    setDraftData={setDraftData}
-                    editableMode={editableMode}
-                    seteditableMode={seteditableMode}
-                    tourclaimformData={tourclaimformData}
-                    settourclaimformData={settourclaimformData}
-                    settourClaimTableData={settourClaimTableData}
-                    settoggleNewClaim={settoggleNewClaim}
-                    setTravelModeOptions={setTravelModeOptions}
-                    selectedtravelMode={selectedtravelMode}
-                    setselectedtravelMode={setselectedtravelMode}
-                  
-                  />
-                </div>
-              )}
-              {editableMode || toggleNewClaim ? (
-                <>
-                  <TourClaimForm
-                    tourclaimformData={tourclaimformData}
-                    settourclaimformData={settourclaimformData}
-                    onSaveToDraft={handleSaveToDraft}
-                    tourclaimFormLabeData={tourclaimFormLabeData}
-                    editableMode={editableMode}
-                    toggleNewClaim={toggleNewClaim}
-                    travelTypeOptions={travelTypeOptions}
-                    travelModeOptions={travelModeOptions}
-                    selectedtravelMode={selectedtravelMode}
-                    setselectedtravelMode={setselectedtravelMode}
-                    formErrors={formErrors} setFormErrors={setFormErrors}
-                  />
-                 
-                  <TourClaimTable
-                    editableMode={editableMode}
-                    seteditableMode={seteditableMode}
-                    toggleNewClaim={toggleNewClaim}
-                    settoggleNewClaim={settoggleNewClaim}
-                    settourClaimTableData={settourClaimTableData}
-                    tourClaimTableData={tourClaimTableData}
-                    settourclaimFormLabeData={settourclaimFormLabeData}
-                    settourclaimformData={settourclaimformData}
-                    tourclaimformData={tourclaimformData}
-                    setDraftData={setDraftData}
-                   formErrors={formErrors} setFormErrors={setFormErrors}
-                  />
-                </>
-              ) : (
-                ""
-              )}
-            </div>
-          </TabPanel>
-          <TabPanel header="History">           
-                <MyTourClaims/>
-          </TabPanel>
-        </TabView>
+                    <TourClaimTable
+                      editableMode={editableMode}
+                      seteditableMode={seteditableMode}
+                      toggleNewClaim={toggleNewClaim}
+                      settoggleNewClaim={settoggleNewClaim}
+                      settourClaimTableData={settourClaimTableData}
+                      tourClaimTableData={tourClaimTableData}
+                      settourclaimFormLabeData={settourclaimFormLabeData}
+                      settourclaimformData={settourclaimformData}
+                      tourclaimformData={tourclaimformData}
+                      setDraftData={setDraftData}
+                      formErrors={formErrors}
+                      setFormErrors={setFormErrors}
+                    />
+                  </>
+                ) : (
+                  ""
+                )}
+              </div>
+            </TabPanel>
+            <TabPanel header="History">
+              <MyTourClaims />
+            </TabPanel>
+          </TabView>
+        </div>
       </div>
-  
+    </div>
   );
 };
 
