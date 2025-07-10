@@ -535,7 +535,7 @@ const TourClaimTable = ({
         value={options.value}
         onChange={handleChange}
         // onChange={(e) => options.editorCallback(e.target.value)}
-        className="p-inputtext-sm w-full"
+        className="p-inputtext-sm w-full inputFieldStyle"
         //className="text-xs  w-full"
       />
     );
@@ -548,7 +548,7 @@ const TourClaimTable = ({
         type="text"
         value={options.value}
         onChange={(e) => options.editorCallback(e.target.value)}
-        className="p-inputtext-sm w-full"
+        className="p-inputtext-sm w-full inputFieldStyle"
         //className="text-xs  w-full"
       />
     );
@@ -559,7 +559,7 @@ const TourClaimTable = ({
       <CustomeCalender
         value={options.value}
         onChange={(e) => options.editorCallback(e.value)}
-        className="p-inputtext-sm w-full"
+        className="p-inputtext-sm w-full calendarStyle"
         // style={{ minWidth: "105px" }}
         minDate={new Date(tourclaimformData.claimFromDate)}
         maxDate={new Date(tourclaimformData.claimToDate)}
@@ -587,7 +587,7 @@ const TourClaimTable = ({
   return (
     <>
       <Toast ref={toastRef} />
-      <div className="flex justify-end mb-2 gap-2">
+      <div className="flex justify-end mb-2 gap-3 align-items-center">
         {/* {fileUploaded?( */}
         {/* <FileUpload
           mode="basic"
@@ -617,10 +617,11 @@ const TourClaimTable = ({
               setFileUploaded(true);
             }}
             maxFileSize={1000000}
-            chooseLabel="Upload"
+            chooseLabel="Upload Excel"
+            className="selectButtonStyle"
           />
         ) : (
-          <div className="flex align-items-center gap-2">
+          <div className="flex align-items-center gap-2 mt-2">
             <span className="text-green-600 font-medium">
               File uploaded successfully
             </span>
@@ -642,6 +643,9 @@ const TourClaimTable = ({
           className="p-button-sm "
           onClick={handleAddRow}
           tooltip="Add Row"
+          rounded={"true"}
+          //sstyle={{width:"2rem",height:"2rem"}}
+          
         />
         <CustomButton
           icon="pi pi-file-export"
@@ -650,22 +654,27 @@ const TourClaimTable = ({
             handleDownloadFile();
           }}
           tooltip="Export Excel"
+          rounded={"true"}
         />
       </div>
 
+<div >
       <DataTable
         value={tourClaimTableData}
         showGridlines
-        scrollable
-        scrollHeight="250px"
+        // scrollable
+        // scrollHeight="250px"
         editingRows={editingRows}
         editMode="row"
         dataKey="Date"
         onRowEditChange={(e) => setEditingRows(e.data)}
-        className="text-xs padding-0"
-        tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        className=" dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dataTableFooter"
+        tableStyle={{ fontSize: "0.7rem" }}
         onRowEditComplete={onRowEditComplete}
         footerColumnGroup={null}
+       header="Date-wise Details"
+        size="small"
+        stripedRows
       >
         {/* {fields.map((field) => (
           <Column
@@ -693,6 +702,7 @@ const TourClaimTable = ({
             row.Date ? formateDate(row.Date) : ""
           }
           footer="Total"
+          style={{width:"90px"}}
         />
         {/* <Column
           field="Date"
@@ -811,6 +821,7 @@ const TourClaimTable = ({
           bodyStyle={cellStyle}
         />
       </DataTable>
+      </div>
 
       <div className="flex justify-center mt-4">
         {editableMode ? (
@@ -842,14 +853,17 @@ const TourClaimTable = ({
                 seteditableMode(false);
               }}
               className="p-button-sm"
+              s
             />
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <CustomButton
               label="Save to Draft"
               icon="pi pi-save"
               className="p-button-sm"
+              severity={"success"}
+               style={{padding: "0.5rem 0.7rem"}}
               onClick={() => {
                 const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
                 if (result.hasIssue) {
@@ -872,7 +886,9 @@ const TourClaimTable = ({
                 seteditableMode(false);
                 settoggleNewClaim(false);
               }}
-              className="p-button-sm"
+              className="p-button-sm selectButtonStyle"
+              size={"small"}
+              style={{padding: "0.5rem 0.7rem"}}
               // disabled={toggleNewClaim===true}
             />
           </div>

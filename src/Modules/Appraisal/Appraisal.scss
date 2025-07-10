@@ -121,6 +121,19 @@
 
 }
 
+
+//DataTable Footer
+.dataTableFooter.p-datatable .p-datatable-tfoot > tr > td{
+    text-align: center;
+    padding: 1rem 1rem;
+     border: 1px solid var(--tableOuterBorder) !important;
+    border-width: 0 0 1px 0;
+    font-weight: 700;
+    color: var(--fontColor) !important;
+    background: var( --tableFooterBG);
+
+}
+
 //Data Table Sort Icon
 .p-datatable .p-sortable-column .p-sortable-column-icon{
   color: var(--tableHeaderIcon) 
