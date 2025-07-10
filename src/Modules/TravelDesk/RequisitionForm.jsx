@@ -136,7 +136,7 @@ const RequisitionForm = () => {
           localityArea: response.data.localityArea,
           onAccount: response.data.onAccount,
           typeOfTravel: response.data.typeOfTravel,
-          advanceRequested: response.data.advanceRequested,
+          advanceRequested: '',//response.data.advanceRequested,
           fromDate: formateDate(response.data.fromDate),
           tentativeToDate: formateDate(response.data.tentativeToDate),
         });
