@@ -318,7 +318,7 @@ const TourClaimForm = ({
                             ? selectedtravelMode.value
                             : "") !== "Long-Term-Local-Conveyance"
                         }
-                        className={`w-62 text-sm ${formErrors.destination ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full inputFieldStyle`}
+                        className={`w-full text-sm ${formErrors.destination ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full inputFieldStyle`}
                         // className={`"w-62 text-sm"${formErrors.destination ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
                       />
                     </div>
