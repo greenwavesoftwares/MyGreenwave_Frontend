@@ -42,12 +42,11 @@ import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
 
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 const RequisitionForm = () => {
   const minfromDate = new Date();
@@ -136,7 +135,7 @@ const RequisitionForm = () => {
           localityArea: response.data.localityArea,
           onAccount: response.data.onAccount,
           typeOfTravel: response.data.typeOfTravel,
-          advanceRequested: '',//response.data.advanceRequested,
+          advanceRequested: "", //response.data.advanceRequested,
           fromDate: formateDate(response.data.fromDate),
           tentativeToDate: formateDate(response.data.tentativeToDate),
         });
@@ -271,8 +270,8 @@ const RequisitionForm = () => {
 
       //  Transport mode validation
       const invalidTransportRows = transportModes.filter((row) => {
-       // const from = new Date(row.fromDate);
-       // const fromDate = new Date(formFields.fromDate);
+        // const from = new Date(row.fromDate);
+        // const fromDate = new Date(formFields.fromDate);
         const toDate = new Date(formFields.tentativeToDate);
         // return from < fromDate || from > toDate;
         return row.fromDate < formFields.fromDate;
@@ -294,7 +293,11 @@ const RequisitionForm = () => {
         // const fromDate = new Date(formFields.fromDate);
         // const toDate = new Date(formFields.tentativeToDate);
 
-        return row.checkIn < formFields.fromDate || row.checkOut > formFields.tentativeToDate || row.checkOut < row.checkIn;
+        return (
+          row.checkIn < formFields.fromDate ||
+          row.checkOut > formFields.tentativeToDate ||
+          row.checkOut < row.checkIn
+        );
       });
 
       if (invalidAccommodationRows.length > 0) {
@@ -343,7 +346,7 @@ const RequisitionForm = () => {
       //   }
       console.log("payload", payload);
       console.log("submit is called", payload);
-    
+
       let response = await createRequisition(payload);
 
       if (response.status) {
@@ -417,495 +420,417 @@ const RequisitionForm = () => {
 
       <div className="min-h-screen bg-gray-100">
         <div className="max-w-6xl mx-auto">
-          <Accordion 
-          expanded={isAccordionExpanded}
-  onChange={(event, expanded) => setIsAccordionExpanded(expanded)}>
-           <AccordionSummary
-          expandIcon={<ArrowDropDownIcon />}
-          aria-controls="panel2-content"
-          id="panel2-header"
-        >
-
-        {!isAccordionExpanded && formFields.projectName &&  (
-  <Typography component="span" className="ml-2">{`Project: ${formFields.projectName} FromDate: ${formateDate(formFields.fromDate)} ToDate: ${formateDate(formFields.tentativeToDate)} City: ${formFields.city}`}</Typography>
-)}
-        </AccordionSummary>
-         <AccordionDetails>
-          <div className="space-y-12">
-            <div>
-              {/* <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
+          <Accordion
+            expanded={isAccordionExpanded}
+            onChange={(event, expanded) => setIsAccordionExpanded(expanded)}
+            className="accordionStyle"
+          >
+            <AccordionSummary
+              expandIcon={<ArrowDropDownIcon />}
+              aria-controls="panel2-content"
+              id="panel2-header"
+            >
+              {!isAccordionExpanded && formFields.projectName && (
+                <Typography
+                  component="span"
+                  className="ml-2"
+                >{`Project: ${formFields.projectName} FromDate: ${formateDate(formFields.fromDate)} ToDate: ${formateDate(formFields.tentativeToDate)} City: ${formFields.city}`}</Typography>
+              )}
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className="space-y-12">
+                <div>
+                  {/* <h2 className="text-2xl font-semibold leading-7 text-gray-900 mb-5 border-b border-gray-900/12 pb-4">
                 Available Advance - {advance}
               </h2> */}
 
-              <div>
-                {/* Travel Selection Section */}
-                <div className="cardBG rounded-xl p-4 mb-3 defaultBorder">
-                  <div
-                    className="mb-3"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    <TextSnippetOutlinedIcon
-                      style={{
-                        color: "#119ac5",
-                        marginRight: "0.7rem",
-                        fontSize: "1.4rem",
-                      }}
-                    />
-                    <Typography
-                      className=""
-                      style={{
-                        //color: "#4b5563",
-                        fontSize: "0.88rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Travel Selection
-                    </Typography>
-                  </div>
-
-                  <Grid container spacing={6}>
-                    <Grid size={6}>
-                      {/* select travel */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="travel-type"
-                          className="block text-sm font-medium leading-6 text-gray-900"
+                  <div>
+                    {/* Travel Selection Section */}
+                    <div className="cardBG rounded-xl p-4 mb-3 defaultBorder">
+                      <div
+                        className="mb-3"
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <TextSnippetOutlinedIcon
+                          style={{
+                            color: "#119ac5",
+                            marginRight: "0.7rem",
+                            fontSize: "1.4rem",
+                          }}
+                        />
+                        <Typography
+                          className=""
+                          style={{
+                            //color: "#4b5563",
+                            fontSize: "0.88rem",
+                            fontWeight: 600,
+                          }}
                         >
-                          Select Travel
-                        </label>
-                        <div className="mt-2 relative">
-                          <Dropdown
-                            inputId="Select-Mode"
-                            //  className="w-52 h-10 text-sm shadow-sm mb-2"
-                            panelClassName="text-sm"
-                            dropdownIcon="pi pi-chevron-down"
-                            value={
-                              selectedtravelMode ? selectedtravelMode.value : ""
-                            }
-                            options={travelModeOptions}
-                            onChange={(e) => {
-                              handlesetFormData(e.value);
-                              setselectedtravelMode(e);
-                            }}
-                            placeholder="Select One"
-                            className="dropDownStyle w-full"
-                          />
-                        </div>
+                          Travel Selection
+                        </Typography>
                       </div>
-                    </Grid>
-                    <Grid size={6}>
-                      {/* type of travel */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="travel-type"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          Type of Travel
-                        </label>
-                        <div className="mt-2 relative">
-                          <Dropdown
-                            inputId="Select-Travel"
-                            panelClassName="text-sm"
-                            dropdownIcon="pi pi-chevron-down"
-                            value={formFields.typeOfTravel}
-                            options={typeOfTravelOptions}
-                            onChange={(e) =>
-                              handleInputWithValidation("typeOfTravel", e.value)
-                            }
-                            placeholder="Select One"
-                            disabled={!isEditable}
-                            className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}dropDownStyle w-full`}
-                          />
 
-                          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1"></div>
-                        </div>
+                      <Grid container spacing={6}>
+                        <Grid size={6}>
+                          {/* select travel */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="travel-type"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              Select Travel
+                            </label>
+                            <div className="mt-2 relative">
+                              <Dropdown
+                                inputId="Select-Mode"
+                                //  className="w-52 h-10 text-sm shadow-sm mb-2"
+                                panelClassName="text-sm"
+                                dropdownIcon="pi pi-chevron-down"
+                                value={
+                                  selectedtravelMode
+                                    ? selectedtravelMode.value
+                                    : ""
+                                }
+                                options={travelModeOptions}
+                                onChange={(e) => {
+                                  handlesetFormData(e.value);
+                                  setselectedtravelMode(e);
+                                }}
+                                placeholder="Select One"
+                                className="dropDownStyle w-full"
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                        <Grid size={6}>
+                          {/* type of travel */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="travel-type"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              Type of Travel
+                            </label>
+                            <div className="mt-2 relative">
+                              <Dropdown
+                                inputId="Select-Travel"
+                                panelClassName="text-sm"
+                                dropdownIcon="pi pi-chevron-down"
+                                value={formFields.typeOfTravel}
+                                options={typeOfTravelOptions}
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "typeOfTravel",
+                                    e.value
+                                  )
+                                }
+                                placeholder="Select One"
+                                disabled={!isEditable}
+                                className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}dropDownStyle w-full`}
+                              />
+
+                              <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center pr-1"></div>
+                            </div>
+                          </div>
+                        </Grid>
+                      </Grid>
+                    </div>
+                    {/* Project & Purpose Section */}
+                    <div className="cardBG rounded-xl p-4  mb-3 defaultBorder">
+                      <div
+                        className=" mb-3"
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <ApartmentOutlinedIcon
+                          style={{
+                            color: "#119ac5",
+                            marginRight: "0.7rem",
+                            fontSize: "1.4rem",
+                          }}
+                        />
+                        <Typography
+                          className=""
+                          style={{
+                            //color: "#4b5563",
+                            fontSize: "0.88rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Project & Purpose
+                        </Typography>
                       </div>
-                    </Grid>
-                  </Grid>
-                </div>
-                {/* Project & Purpose Section */}
-                <div className="cardBG rounded-xl p-4  mb-3 defaultBorder">
-                  <div
-                    className=" mb-3"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    <ApartmentOutlinedIcon
-                      style={{
-                        color: "#119ac5",
-                        marginRight: "0.7rem",
-                        fontSize: "1.4rem",
-                      }}
-                    />
-                    <Typography
-                      className=""
-                      style={{
-                        //color: "#4b5563",
-                        fontSize: "0.88rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Project & Purpose
-                    </Typography>
-                  </div>
 
-                  <Grid container spacing={6}>
-                    <Grid size={6}>
-                      {/* projectName */}
-                      <div className="sm:col-span-5 ">
-                        <label
-                          htmlFor="projectName"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          Project Name
-                        </label>
-                        <div className="mt-2">
-                          <CustomInputText
-                            id="projectName"
-                            name="projectName"
-                            type="text"
-                            value={formFields.projectName}
-                            onChange={(e) =>
-                              handleInputWithValidation(
-                                "projectName",
-                                e.target.value
-                              )
-                            }
-                            autoComplete="off"
-                            disabled={!isEditable}
-                            className={`
+                      <Grid container spacing={6}>
+                        <Grid size={6}>
+                          {/* projectName */}
+                          <div className="sm:col-span-5 ">
+                            <label
+                              htmlFor="projectName"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              Project Name
+                            </label>
+                            <div className="mt-2">
+                              <CustomInputText
+                                id="projectName"
+                                name="projectName"
+                                type="text"
+                                value={formFields.projectName}
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "projectName",
+                                    e.target.value
+                                  )
+                                }
+                                autoComplete="off"
+                                disabled={!isEditable}
+                                className={`
                                     ${formErrors.projectName ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
                                 w-full inputFieldStyle`}
-                            placeholder={"Enter project name"}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                    <Grid size={6}>
-                      {/* onAccount */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="locality"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          On Account
-                        </label>
-                        <div className="mt-2">
-                          <CustomInputText
-                            id="onAccount"
-                            name="onAccount"
-                            type="text"
-                            value={formFields.onAccount}
-                            onChange={(e) =>
-                              handleInputWithValidation(
-                                "onAccount",
-                                e.target.value
-                              )
-                            }
-                            autoComplete="off"
-                            disabled={!isEditable}
-                            className={`
+                                placeholder={"Enter project name"}
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                        <Grid size={6}>
+                          {/* onAccount */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="locality"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              On Account
+                            </label>
+                            <div className="mt-2">
+                              <CustomInputText
+                                id="onAccount"
+                                name="onAccount"
+                                type="text"
+                                value={formFields.onAccount}
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "onAccount",
+                                    e.target.value
+                                  )
+                                }
+                                autoComplete="off"
+                                disabled={!isEditable}
+                                className={`
                           ${formErrors.onAccount ? "ring-2 ring-red-500 focus:ring-red-500" : ""}
                       w-full inputFieldStyle`}
-                            placeholder={"Enter on account name"}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-</Grid>
-                     <Grid container spacing={2}>
-                    <Grid size={12}>
-                      {/* Purpose field */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="purpose"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          Description
-                        </label>
-                        <div className="mt-2">
-                          <CustomInputText
-                            id="purpose"
-                            name="purpose"
-                            type="text"
-                            value={formFields.purpose}
-                            onChange={(e) =>
-                              handleInputWithValidation(
-                                "purpose",
-                                e.target.value
-                              )
-                            }
-                            autoComplete="off"
-                            required
-                            disabled={!isEditable}
-                            placeholder={
-                              "Enter detailed description of travel purpose"
-                            }
-                            className={` 
+                                placeholder={"Enter on account name"}
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                      </Grid>
+                      <Grid container spacing={2}>
+                        <Grid size={12}>
+                          {/* Purpose field */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="purpose"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              Description
+                            </label>
+                            <div className="mt-2">
+                              <CustomInputText
+                                id="purpose"
+                                name="purpose"
+                                type="text"
+                                value={formFields.purpose}
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "purpose",
+                                    e.target.value
+                                  )
+                                }
+                                autoComplete="off"
+                                required
+                                disabled={!isEditable}
+                                placeholder={
+                                  "Enter detailed description of travel purpose"
+                                }
+                                className={` 
                             ${formErrors.purpose ? "ring-2 ring-red-500 focus:ring-red-500" : ""} w-full inputFieldStyle`}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                  </Grid>
-                </div>
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                      </Grid>
+                    </div>
 
-                {/* Location & Dates Section */}
-                <div className="cardBG rounded-xl p-4 mb-3 defaultBorder">
-                  <div
-                    className=" mb-3"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    <LocationOnOutlinedIcon
-                      style={{
-                        color: "#119ac5",
-                        marginRight: "0.7rem",
-                        fontSize: "1.4rem",
-                      }}
-                    />
-                    <Typography
-                      className=""
-                      style={{
-                        //color: "#4b5563",
-                        fontSize: "0.88rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Location & Dates
-                    </Typography>
-                  </div>
+                    {/* Location & Dates Section */}
+                    <div className="cardBG rounded-xl p-4 mb-3 defaultBorder">
+                      <div
+                        className=" mb-3"
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <LocationOnOutlinedIcon
+                          style={{
+                            color: "#119ac5",
+                            marginRight: "0.7rem",
+                            fontSize: "1.4rem",
+                          }}
+                        />
+                        <Typography
+                          className=""
+                          style={{
+                            //color: "#4b5563",
+                            fontSize: "0.88rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Location & Dates
+                        </Typography>
+                      </div>
 
-                  <Grid container spacing={6}>
-                    <Grid size={6}>
-                      {/* From Date field */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="fromDate"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          From Date
-                        </label>
-                        <div className="mt-2">
-                          <CustomeCalender
-                            value={formFields.fromDate?new Date(formFields.fromDate):''}
-                            onChange={(e) =>
-                              handleInputWithValidation(
-                                "fromDate",
-                                formateDate(e.value)
-                              )
-                            }
-                            maxDate={(() => {
-                              const date = new Date(formFields.tentativeToDate);
-                              const today = new Date();
-                              return date.getDate() === today.getDate() &&
-                                date.getMonth() === today.getMonth() &&
-                                date.getFullYear() === today.getFullYear()
-                                ? undefined
-                                : date;
-                            })()}
-                            minDate={
-                              //new Date(formFields.fromDate) ||
-                              new Date()
-                            }
-                            // locale="es"
-                            disabled={!isEditable}
-                            dateFormat="dd/mm/yy"
-                            className={`${formErrors.fromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full calendarStyle`}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                    <Grid size={6}>
-                      {/* Tentative To Date field */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="tentativeToDate"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          Tentative To Date
-                        </label>
-                        <div className="mt-2">
-                          <CustomeCalender
-                            value={formFields.tentativeToDate?new Date(formFields.tentativeToDate):''}
-                            onChange={(e) =>
-                              handleInputWithValidation(
-                                "tentativeToDate",
-                                formateDate(e.value)
-                              )
-                            }
-                            disabled={!isEditable}
-                            minDate={new Date(formFields.fromDate)} 
-                            dateFormat="dd/mm/yy"
-                            className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full calendarStyle`}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                    </Grid>
-                     <Grid container spacing={6}>
-                    <Grid size={6}>
-                      {/* city */}
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="city"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          City
-                        </label>
-                        <div className="mt-2">
-                          <CustomInputText
-                            id="city"
-                            name="city"
-                            type="text"
-                            value={formFields.city}
-                            onChange={(e) =>
-                              handleInputWithValidation("city", e.target.value)
-                            }
-                            autoComplete="off"
-                            disabled={!isEditable}
-                            className={`
+                      <Grid container spacing={6}>
+                        <Grid size={6}>
+                          {/* From Date field */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="fromDate"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              From Date
+                            </label>
+                            <div className="mt-2">
+                              <CustomeCalender
+                                value={
+                                  formFields.fromDate
+                                    ? new Date(formFields.fromDate)
+                                    : ""
+                                }
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "fromDate",
+                                    formateDate(e.value)
+                                  )
+                                }
+                                maxDate={(() => {
+                                  const date = new Date(
+                                    formFields.tentativeToDate
+                                  );
+                                  const today = new Date();
+                                  return date.getDate() === today.getDate() &&
+                                    date.getMonth() === today.getMonth() &&
+                                    date.getFullYear() === today.getFullYear()
+                                    ? undefined
+                                    : date;
+                                })()}
+                                minDate={
+                                  //new Date(formFields.fromDate) ||
+                                  new Date()
+                                }
+                                // locale="es"
+                                disabled={!isEditable}
+                                dateFormat="dd/mm/yy"
+                                className={`${formErrors.fromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full calendarStyle`}
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                        <Grid size={6}>
+                          {/* Tentative To Date field */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="tentativeToDate"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              Tentative To Date
+                            </label>
+                            <div className="mt-2">
+                              <CustomeCalender
+                                value={
+                                  formFields.tentativeToDate
+                                    ? new Date(formFields.tentativeToDate)
+                                    : ""
+                                }
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "tentativeToDate",
+                                    formateDate(e.value)
+                                  )
+                                }
+                                disabled={!isEditable}
+                                minDate={new Date(formFields.fromDate)}
+                                dateFormat="dd/mm/yy"
+                                className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full calendarStyle`}
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                      </Grid>
+                      <Grid container spacing={6}>
+                        <Grid size={6}>
+                          {/* city */}
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="city"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              City
+                            </label>
+                            <div className="mt-2">
+                              <CustomInputText
+                                id="city"
+                                name="city"
+                                type="text"
+                                value={formFields.city}
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "city",
+                                    e.target.value
+                                  )
+                                }
+                                autoComplete="off"
+                                disabled={!isEditable}
+                                className={`
                             ${formErrors.city ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
                         w-full inputFieldStyle`}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                    <Grid size={6}>
-                      {/* Locality/Area */}
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                        <Grid size={6}>
+                          {/* Locality/Area */}
 
-                      <div className="sm:col-span-5">
-                        <label
-                          htmlFor="locality"
-                          className="block text-sm font-medium leading-6 text-gray-900"
-                        >
-                          Locality/Area
-                        </label>
-                        <div className="mt-2">
-                          <CustomInputText
-                            id="localityArea"
-                            name="localityArea"
-                            type="text"
-                            value={formFields.localityArea}
-                            onChange={(e) =>
-                              handleInputWithValidation(
-                                "localityArea",
-                                e.target.value
-                              )
-                            }
-                            autoComplete="off"
-                            disabled={!isEditable}
-                            className={`
+                          <div className="sm:col-span-5">
+                            <label
+                              htmlFor="locality"
+                              className="block text-sm font-medium leading-6 text-gray-900"
+                            >
+                              Locality/Area
+                            </label>
+                            <div className="mt-2">
+                              <CustomInputText
+                                id="localityArea"
+                                name="localityArea"
+                                type="text"
+                                value={formFields.localityArea}
+                                onChange={(e) =>
+                                  handleInputWithValidation(
+                                    "localityArea",
+                                    e.target.value
+                                  )
+                                }
+                                autoComplete="off"
+                                disabled={!isEditable}
+                                className={`
                         ${formErrors.localityArea ? "ring-2 ring-red-500 focus:ring-red-500" : ""} 
                     w-full inputFieldStyle`}
-                          />
-                        </div>
-                      </div>
-                    </Grid>
-                  </Grid>
-                </div>
-
-                {/* Financial Section */}
-                <div className="cardBG rounded-xl p-4 defaultBorder">
-                  <div
-                    className=" mb-3"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    <CreditCardOutlinedIcon
-                      style={{
-                        color: "#119ac5",
-                        marginRight: "0.7rem",
-                        fontSize: "1.4rem",
-                      }}
-                    />
-                    <Typography
-                      className=""
-                      style={{
-                        //color: "#4b5563",
-                        fontSize: "0.88rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Financial Information
-                    </Typography>
-                  </div>
-                  <Grid container spacing={6}>
-  <Grid size={6}>
-     {/* Advance available */}
-                    <div className="sm:col-span-5">
-                      <label
-                        // htmlFor="advanced-amount"
-                        className="block text-sm font-medium leading-6 text-gray-900"
-                      >
-                        Advance Request
-                      </label>
-                      <div className="mt-2">
-                        {/* <InputNumber
-                      value={formFields.advanceRequested || 0}
-                      name="advanceRequested"
-                      onChange={(e) => {
-                        {
-                          console.log(" Event : ", e, " value : ", e.value);
-                          const value = e.value;
-
-                          console.log(
-                            "My advanceRequested : ",
-                            formErrors.advanceRequested
-                          );
-                          setFormFields((prev) => ({
-                            ...prev,
-                            advanceRequested: value,
-                          }));
-                        }
-                      }}
-                      step={1}
-                    
-                      min={0}
-                    /> */}
-                        <InputNumber
-                          value={formFields.advanceRequested || 0}
-                          name="advanceRequested"
-                          onValueChange={(e) => {
-                            const value = e?.value;
-
-                            if (Number.isInteger(value) && value >= 0) {
-                              setFormFields((prev) => ({
-                                ...prev,
-                                advanceRequested: value,
-                              }));
-                            }
-                          }}
-                          step={1}
-                          min={0}
-                          mode="decimal"
-                          maxFractionDigits={0}
-                          className="w-full NumberFieldStyle"
-                        />
-                      </div>
+                              />
+                            </div>
+                          </div>
+                        </Grid>
+                      </Grid>
                     </div>
-  </Grid>
-    </Grid>
-                 
-                   
-
-                    {/* Available */}
-
-                    {/* <div
-                      style={{
-                        display: "grid !important",
-
-                        justifyItems: "center",
-                        alignContent: "center",
-                        marginTop: "29px",
-                      }}
-                      //  / className="flex justify-center text-center sm:col-span-5"
-                    >
-                      Available - {advance}
-                    </div> */}
-                 
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          </AccordionDetails>
+            </AccordionDetails>
           </Accordion>
           <div className="pt-3">
             <ModeOfTransportTable
@@ -923,28 +848,93 @@ const RequisitionForm = () => {
               formErrors={formErrors}
             />
           </div>
-          {/* Available Advance Alert */}
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg px-4 py-2 mb-4 ">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <PaymentIcon className="text-emerald-600" />
-              </div>
-              <div className="ml-3">
-                <h3
-                  className="font-semibold text-emerald-800"
-                  style={{ fontSize: "1rem" }}
-                >
-                  Available Advance
-                </h3>
-                <p
-                  className=" font-bold text-emerald-900"
-                  style={{ fontSize: "1.2rem" }}
-                >
-                  ₹{advance ?? 0}
-                </p>
-              </div>
+          {/* Financial Section */}
+          <div className="cardBG rounded-xl p-4 defaultBorder mb-3">
+            <div
+              className=" mb-3"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <CreditCardOutlinedIcon
+                style={{
+                  color: "#119ac5",
+                  marginRight: "0.7rem",
+                  fontSize: "1.4rem",
+                }}
+              />
+              <Typography
+                className=""
+                style={{
+                  //color: "#4b5563",
+                  fontSize: "0.88rem",
+                  fontWeight: 600,
+                }}
+              >
+                Financial Information
+              </Typography>
             </div>
+            <Grid container spacing={6}>
+              <Grid size={6}>
+                {/* Advance available */}
+                <div className="sm:col-span-5">
+                  <label
+                    // htmlFor="advanced-amount"
+                    className="block text-sm font-medium leading-6 text-gray-900"
+                  >
+                    Advance Request
+                  </label>
+                  <div className="mt-2">
+                    <InputNumber
+                      value={formFields.advanceRequested || 0}
+                      name="advanceRequested"
+                      onValueChange={(e) => {
+                        const value = e?.value;
+
+                        if (Number.isInteger(value) && value >= 0) {
+                          setFormFields((prev) => ({
+                            ...prev,
+                            advanceRequested: value,
+                          }));
+                        }
+                      }}
+                      step={1}
+                      min={0}
+                      mode="decimal"
+                      maxFractionDigits={0}
+                      className="w-full NumberFieldStyle"
+                    />
+                  </div>
+                </div>
+              </Grid>
+              <Grid size={6}>
+                {/* Available Advance Alert */}
+                <div
+                  className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg px-4 py-2 "
+                  style={{ marginTop: "1.9rem" }}
+                >
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <PaymentIcon className="text-emerald-600" />
+                    </div>
+                    <div className="ml-3 flex">
+                      <h3
+                        className="font-semibold text-emerald-800"
+                        style={{ fontSize: "1rem" }}
+                      >
+                        Available Advance
+                      </h3>
+                      <p
+                        className=" font-bold text-emerald-900 ml-2"
+                        style={{ fontSize: "1rem" }}
+                      >
+                        ₹{advance ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Grid>
+            </Grid>
           </div>
+
           <div className="card flex justify-content-center h-10 px-4 text-lg">
             <CustomButton label="Submit" onClick={handleSubmit} />
           </div>
