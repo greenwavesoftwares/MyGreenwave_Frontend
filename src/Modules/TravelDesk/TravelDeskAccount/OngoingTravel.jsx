@@ -275,7 +275,7 @@ const OngoingTravel = () => {
               Waiting for Manager Review
             </span>
           ) : (
-            <span className="text-gray-500 italic">{rowData.status}</span>
+            <span className="text-gray-500 italic">{rowData.status==='Settled'?'Advance Allocted':''}</span>
           )}
         </div>
       );

@@ -202,10 +202,16 @@ const toastRef = useRef(null);
   const claimCalculationBody = (rowData) => (
     <div className="text-xs space-y-1 flex flex-col justify-center">
       <div>
-        <span className="font-bold">Expense:</span> ₹{rowData["total_expense"]}
+        <span className="font-semibold text-gray-700">Advance:</span> ₹
+        {rowData["advance"]}
       </div>
-      <div>
-        <span className="font-bold">Advance:</span> ₹{rowData["advance"]}
+       <div>
+        <span className="font-semibold text-gray-700">Expense:</span> ₹
+        {rowData["total_expense"]}
+      </div>
+         <div>
+        <span className="font-semibold text-gray-700">Claim Approved:</span> ₹
+        {rowData["approvedAmount"]}
       </div>
       <hr />
       {rowData["dueAmount"] ? (

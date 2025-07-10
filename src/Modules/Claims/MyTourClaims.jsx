@@ -105,14 +105,19 @@ const MyTourClaims = () => {
   );
 
   const claimCalculationBody = (rowData) => (
+   // approvedAmount
     <div className="flex flex-col items-end justify-center space-y-1">
+       <div>
+        <span className="font-semibold text-gray-700">Advance:</span> ₹
+        {rowData["advance"]}
+      </div>
       <div>
         <span className="font-semibold text-gray-700">Expense:</span> ₹
         {rowData["total_expense"]}
       </div>
       <div>
-        <span className="font-semibold text-gray-700">Advance:</span> ₹
-        {rowData["advance"]}
+        <span className="font-semibold text-gray-700">Claim Approved:</span> ₹
+        {rowData["approvedAmount"]}
       </div>
       <hr className="w-2/3 border-gray-300" />
       {rowData["dueAmount"] > 0 ? (
