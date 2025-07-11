@@ -79,7 +79,7 @@ const ApprovedTourClaimTable = () => {
               value={globalFilterValue}
               onChange={onGlobalFilterChange}
               placeholder="Keyword Search"
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto inputFieldStyle"
             />
           </div>
         );
@@ -256,7 +256,7 @@ const ApprovedTourClaimTable = () => {
         //  paginator
         rows={10}
         //  showGridlines
-        className="text-xs"
+        className="text-xs defaultBorder"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         emptyMessage={
           loader ? (

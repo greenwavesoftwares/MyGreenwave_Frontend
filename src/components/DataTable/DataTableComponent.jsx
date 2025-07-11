@@ -22,7 +22,7 @@ export const DataTableComponent = ({
       showGridlines
       paginator={paginator}
       rows={rows}
-      className={className}
+      className={`${className} dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator`}
       tableStyle={tableStyle}
       emptyMessage={emptyMessage}
       dataKey={dataKey}

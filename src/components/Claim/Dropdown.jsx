@@ -8,7 +8,7 @@ const Dropdown = ({ claimOptions, claimType, setClaimType,placehonder }) => {
       options={claimOptions}
       onChange={(e) => setClaimType(e.value)}
       placeholder={placehonder}
-      className="w-62"
+      className="w-full dropDownStyle"
     />
   );
 };

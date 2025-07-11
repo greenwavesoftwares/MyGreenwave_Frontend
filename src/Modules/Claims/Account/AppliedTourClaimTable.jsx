@@ -73,7 +73,7 @@ const AppliedTourClaimTable = () => {
               value={globalFilterValue}
               onChange={onGlobalFilterChange}
               placeholder="Keyword Search"
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto inputFieldStyle"
             />
           </div>
         );
@@ -331,8 +331,9 @@ const AppliedTourClaimTable = () => {
         paginator
         rows={10}
         showGridlines
-        className="text-xs"
-       
+         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
+
+       size="small"
        emptyMessage={
           loader ? (
             <ProgressBarComponent
@@ -344,11 +345,11 @@ const AppliedTourClaimTable = () => {
           )
         }
        
-        tableStyle={{
-          minWidth: "100%",
-          fontSize: "0.7rem",
-          backgroundColor: "#e6f0ff",
-        }}
+        // tableStyle={{
+        //   minWidth: "100%",
+        //   fontSize: "0.7rem",
+        //   backgroundColor: "#e6f0ff",
+        // }}
         rowClassName={(rowData) => {
           if (rowData[0].status == "Applied") return "bg-cyan-50";
           if (rowData[0].status == "Reviewing") return "bg-green-50";

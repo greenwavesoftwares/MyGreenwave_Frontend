@@ -38,8 +38,10 @@ const LoanTable = () => {
     <DataTableComponent
       data={loanData}
       showGridlines
-      className="text-xs"
-      tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+      className={
+          "dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
+        }
+      //tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
       emptyMessage={
         loader ? (
           <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
