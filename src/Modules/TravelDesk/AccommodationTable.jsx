@@ -186,7 +186,7 @@ const AccommodationTable = ({
       options={typeOptions}
       onChange={(e) => options.editorCallback(e.value)}
       placeholder="Select Type"
-      className="text-xs p-1 w-full"
+      className="text-xs dropDownStyle w-full"
       panelClassName="text-xs"
     />
   );
@@ -221,7 +221,7 @@ const AccommodationTable = ({
         onChange={(e) => options.editorCallback(formateDate(e.value))}
         showIcon
         dateFormat="yy-mm-dd"
-        className="text-xs p-1 w-full"
+        className="text-xs calendarStyle w-full"
         panelClassName="text-xs"
         inputClassName="text-xs"
         minDate={new Date(formFields.fromDate)}
@@ -303,7 +303,7 @@ const AccommodationTable = ({
         value={options.value}
         onChange={handleChange}
         placeholder="Enter number"
-        className="text-xs w-full"
+        className="text-xs w-full inputFieldStyle"
         style={{ fontSize: "0.9rem" }}
       />
     );
@@ -313,7 +313,7 @@ const AccommodationTable = ({
       value={options.value}
       onChange={(e) => options.editorCallback(e.target.value)}
       placeholder="Enter comment"
-      className="text-xs  w-full"
+      className="text-xs inputFieldStyle  w-full"
       style={{ fontSize: "0.9rem" }}
     />
   );
@@ -323,6 +323,7 @@ const AccommodationTable = ({
       icon="pi pi-trash"
       className="p-button-rounded p-button-danger"
       onClick={() => deleteRow(rowData)}
+       style={{ padding: "0.25rem 0.7rem", width: "2rem", height: "2rem" }}
     />
   );
 

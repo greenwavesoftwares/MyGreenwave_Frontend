@@ -117,8 +117,8 @@ const ModeOfTransportTable = ({
       options={modeOptions}
       onChange={(e) => options.editorCallback(e.value)}
       placeholder="Select Mode"
-      className="text-xs p-1 w-full"
-      panelClassName="text-xs"
+      className="w-full dropDownStyle"
+      panelClassName="text-xs "
     />
   );
 
@@ -126,7 +126,7 @@ const ModeOfTransportTable = ({
     <CustomeCalender
       value={(options.value ? new Date(options.value) : '')}
       onChange={(e) => options.editorCallback(formateDate(e.value))}
-      className="text-xs p-1 w-full"
+      className="text-xs  w-full calendarStyle"
       dateFormat="yy-mm-dd"
       minDate={new Date(formFields.fromDate)}
     />
@@ -136,16 +136,16 @@ const ModeOfTransportTable = ({
     <CustomInputText
       value={options.value}
       onChange={(e) => options.editorCallback(e.target.value)}
-      className="text-xs  w-full"
+      className="text-xs  w-full inputFieldStyle"
     />
   );
 
   const actionTemplate = (rowData) => (
     <CustomButton
       icon="pi pi-trash"
-      className="p-button-rounded p-button-danger p-button-sm"
+      className="p-button-rounded p-button-danger p-button-sm selectButtonStyle"
       onClick={() => deleteRow(rowData)}
-      //style={{ fontSize: '0.7rem', padding: '0.3rem' }}
+      style={{ fontSize: '0.7rem', padding: '0.3rem',width:"2rem",height:"2rem" }}
     />
   );
 

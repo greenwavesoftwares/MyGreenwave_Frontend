@@ -7,12 +7,13 @@ import { Image } from "primereact/image";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import SoftSign from "../../assets/Images/softSign.jpg"
 const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: "#fefefe",
+  //backgroundColor: "#fefefe",
   ...theme.typography.body2,
   padding: theme.spacing(1),
+  borderRadius:0,
   textAlign: "center",
   color: theme.palette.text.secondary,
-  border: "1px solid #ccc", // Added border
+  border: "1px solid #dfd7d7", // Added border
   ...theme.applyStyles("dark", {
     backgroundColor: "#1A2027",
     border: "1px solid #444", // Dark mode border
@@ -20,7 +21,7 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const OuterItem = styled(Paper)(({ theme }) => ({
-  backgroundColor: "#e0e2e2 ",
+  //backgroundColor: "#e0e2e2 ",
   ...theme.typography.body2,
   padding: theme.spacing(1),
   textAlign: "center",
@@ -45,8 +46,8 @@ export default function SalarySlipPanelGrid({ salaryData }) {
               rowSpacing={0}
               columnSpacing={{ xs: 0, sm: 0, md: 0 }}
             >
-              <Grid size={3}>
-                <Item sx={{ height: "60px" }}>
+              <Grid size={3} >
+                <Item sx={{ height: "60px" }} >
                   <div>
                     {/* <div className="card flex justify-content-center"> */}
                     <Image
@@ -59,9 +60,9 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                   </div>
                 </Item>
               </Grid>
-              <Grid size={9}>
-                <Item
-                  sx={{ height: "60px", fontSize: "1.5rem", fontWeight: "bold" }}
+              <Grid size={9}  >
+                <Item 
+                  sx={{ height: "60px", fontSize: "1.5rem", fontWeight: "bold",display:"grid",alignItems:"center"}}
                 >
                   Greenwave Solutions Pvt. Ltd.
                 </Item>

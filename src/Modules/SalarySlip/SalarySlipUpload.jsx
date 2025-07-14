@@ -127,12 +127,12 @@ export default function SalarySlipUpload() {
           <Toast ref={toast} />
 
           <div
-            className="p-3 mb-3"
+            className="p-2 mb-3 salarySlip-HeaderBG"
             style={{
-              background: "#e3f2fd",
+             
               borderLeft: "5px solid #64b5f6",
               borderRadius: "10px",
-              color: "#0d47a1",
+              
               fontWeight: "600",
               fontSize: "1rem",
               boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
@@ -160,12 +160,13 @@ export default function SalarySlipUpload() {
                 <img
                   src={GreenwaveLogo}
                   alt="Upload Icon"
-                  style={{ width: "40px", height: "40px" }}
+                  style={{ width: "30px", height: "30px", marginLeft:"0.5rem" }}
                 />
                 <div
                   style={{
-                    fontSize: "1.5 rem",
+                   fontSize: "0.85rem",
                     fontWeight: "bold",
+                     marginLeft:"0.5rem"
                   }}
                 >
                   Upload Salary Slip & Form 16
@@ -189,6 +190,7 @@ export default function SalarySlipUpload() {
                   mode="basic"
                   chooseLabel="Choose Form 16"
                   uploadLabel="Upload"
+                  className="fileUpload-btn-Style"
                 />
                 <FileUpload
                   ref={fileUploadRef}
@@ -200,6 +202,7 @@ export default function SalarySlipUpload() {
                   mode="basic"
                   chooseLabel="Choose Excel File"
                   uploadLabel="Upload"
+                   className="fileUpload-btn-Style"
                 />
               </div>
             </div>

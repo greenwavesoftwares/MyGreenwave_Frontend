@@ -383,8 +383,17 @@ const SalarySlipPdf = ({ salaryData }) => {
       <Button
         label=""
         icon="pi pi-file-pdf" // PDF icon from PrimeIcons
-        className="p-button-danger" // Red color like PDF style
+        className="p-button-danger selectButtonStyle" // Red color like PDF style
         onClick={generatePdf}
+        //text
+        //style={{width:"2rem",height:"2rem",fontSize:"2rem"}}
+        style={{
+          padding: "0.5rem 0.7rem",
+          fontSize: "0.85rem",
+          width: "2rem",
+          height: "2rem",
+          margin: "0 0.5rem",
+        }}
         rounded
         size="small"
       />
