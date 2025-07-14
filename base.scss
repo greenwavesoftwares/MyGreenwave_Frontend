@@ -23,6 +23,12 @@ body {
   box-shadow: 1px 1px 2px var(--boxShadowPaper) !important;
 }
 
+
+//-----------------------------------MuiSwitch-thumb------------------------------//
+.bgStyle .MuiSwitch-thumb{
+  background: var(--MuiSwitchThumbBG) !important;
+}
+
 // --------------------------------------Font---------------------------------------//
 .defaultFont {
   color: var(--fontColor) !important;
@@ -147,6 +153,14 @@ body {
   border: 1px solid var(--divider-color);
   color: var(--fontColor);
 }
+
+//--------------------------------Mui Grid Item Style---------------------------------//
+.salarySlipGridItemStyle{
+  background-color: var(--card-bg) !important;
+  border: 1px solid gray !important;
+  border-radius: 0 !important;
+}
+
 
 
 //------------------------------------List Bos Style---------------------------------//

@@ -27,7 +27,7 @@ const MaterialUISwitch = styled(Switch)(({ theme }) => ({
     },
   },
   "& .MuiSwitch-thumb": {
-    backgroundColor: "#001e3c",
+   // ...bgStyle,
     width: 26,
     height: 26,
     "&::before": {
@@ -79,6 +79,7 @@ const ThemeToggle = () => {
           checked={theme === "dark"}
           onChange={toggleTheme}
           name="themeSwitch"
+          className="bgStyle"
         />
       }
       // label={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
