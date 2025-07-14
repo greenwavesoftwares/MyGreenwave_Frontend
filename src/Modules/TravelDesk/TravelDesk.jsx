@@ -10,7 +10,7 @@ const TravelDesk = () => {
         <div className="cardStyle mt-4 bg-white shadow rounded">
       <TabView>
         <TabPanel header="Requisition Form">
-   <RequisitionForm/>
+   <   RequisitionForm/>
         </TabPanel>
         <TabPanel header="My Forms">
           <MyForm/>

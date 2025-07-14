@@ -118,7 +118,7 @@ const HRTourClaimTable = () => {
         {rowData["total_expense"]}
       </div>
       <div>
-        <span className="font-semibold text-gray-700">Advance:</span> ₹
+        <span className="font-semibold text-gray-700" >Advance:</span> ₹
         {rowData["advance"]}
       </div>
       <hr className="w-2/3 border-gray-300" />

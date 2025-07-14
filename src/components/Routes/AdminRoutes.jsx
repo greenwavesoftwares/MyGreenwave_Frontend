@@ -16,9 +16,9 @@ import TravelDeskManager from "../../Modules/TravelDeskManager/TravelDeskManager
 import AccountMiscellanousClaim from "../../Modules/Claims/Account/AccountMiscellanousClaim";
 import HRReferralPage from "../../Modules/Referrals/HRReferralPage";
 import HomepageMaster from "../../Modules/HomePageMaster/HomepageMaster";
-import TravelDeskBooking from "../../Modules/TravelDesk/TravelDeskBooking";
+
 import AccountMain from "../../Modules/TravelDesk/TravelDeskAccount/AccountMain";
-import OpenTravelsTableCopy from "../../Modules/TravelDesk/OpenTravelsTableCopy";
+import OpenTravelsTable from "../../Modules/TravelDesk/OpenTravelsTable";
 import React from "react";
 
 function AdminRoutes() {
@@ -36,7 +36,7 @@ function AdminRoutes() {
       {/* Travel desk */}
       <Route path="travel-desk" element={<Outlet />}>
         <Route path="manager" element={<TravelDeskManager />} />
-        <Route path="overview" element={<OpenTravelsTableCopy />} />
+        <Route path="overview" element={<OpenTravelsTable />} />
         {/* <Route path="booking" element={<TravelDeskBooking />} /> */}
         <Route path="booking" element={<AccountMain />} />
       </Route>

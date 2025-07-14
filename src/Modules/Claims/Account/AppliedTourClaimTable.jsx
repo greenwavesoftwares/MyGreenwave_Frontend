@@ -274,8 +274,14 @@ const AppliedTourClaimTable = () => {
               id="settlementAmount"
               type="number"
               value={settlementAmount}
-              onChange={(e) => setSettlementAmount(e.target.value)}
-              placeholder="Approval Amount"
+              //onChange={(e) => setSettlementAmount(e.target.value)}
+               onChange={(e) => {
+              const value = Number(e.target.value);
+              if (value <= rowData.total_expense && value >= 0) {
+                setSettlementAmount(value);
+              }
+            }}
+            placeholder="Approval Amount"
               className="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
             />
 
