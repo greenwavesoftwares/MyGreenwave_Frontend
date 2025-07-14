@@ -754,8 +754,8 @@ const RequisitionForm = () => {
                                     formateDate(e.value)
                                   )
                                 }
-                                disabled={!isEditable}
-                                minDate={new Date(formFields.fromDate)}
+                              //  disabled={!isEditable}
+                               minDate={new Date(formFields.fromDate)}
                                 dateFormat="dd/mm/yy"
                                 className={`${formErrors.tentativeToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}w-full calendarStyle`}
                               />
