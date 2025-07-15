@@ -1,5 +1,6 @@
 import { Button } from "primereact/button";
 import React from "react";
+import 'primeicons/primeicons.css';
 
 const CustomButton = ({
   icon,

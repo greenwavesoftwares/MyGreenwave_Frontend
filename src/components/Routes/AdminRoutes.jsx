@@ -60,7 +60,7 @@ function AdminRoutes() {
       </Route>
 
       {/* Salary Slip */}
-      <Route path="salary-slip" element={<SalarySlipUpload />} />
+      <Route path="salary-slip" element={<SalarySlipUpload/>} />
 
       {/* Training */}
       <Route path="training" element={<Outlet />}>
