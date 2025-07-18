@@ -587,7 +587,7 @@ const TourClaimTable = ({
   return (
     <>
       <Toast ref={toastRef} />
-      <div className="flex justify-end mb-2 gap-3 align-items-center">
+      <div className="flex justify-end mb-2 gap-3 align-items-center  mr-2">
         {/* {fileUploaded?( */}
         {/* <FileUpload
           mode="basic"
@@ -644,7 +644,8 @@ const TourClaimTable = ({
           onClick={handleAddRow}
           tooltip="Add Row"
           rounded={"true"}
-          //sstyle={{width:"2rem",height:"2rem"}}
+           size="small"
+          style={{width:"1rem",height:"2.1rem"}}
           
         />
         <CustomButton
@@ -655,6 +656,8 @@ const TourClaimTable = ({
           }}
           tooltip="Export Excel"
           rounded={"true"}
+          severity={"success"}
+          style={{width:"1rem",height:"2.1rem"}}
         />
       </div>
 
@@ -823,7 +826,7 @@ const TourClaimTable = ({
       </DataTable>
       </div>
 
-      <div className="flex justify-center mt-4">
+      <div className="flex justify-center mt-3 mb-3">
         {editableMode ? (
           <div className="flex gap-2">
             <CustomButton

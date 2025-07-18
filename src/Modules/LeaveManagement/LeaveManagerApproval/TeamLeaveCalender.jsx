@@ -51,7 +51,7 @@ const TeamLeaveCalender = ({ teamLeaveCalender }) => {
             key={index}
             template={() => {
               return (
-                <div className={`py-1 text-50 text-xs truncate`}>
+                <div className={`py-1 text-50 text-xs truncate `}>
                   {user.userName}
                 </div>
               );
@@ -104,9 +104,11 @@ const TeamLeaveCalender = ({ teamLeaveCalender }) => {
         ref={overlayRef}
         showCloseIcon
         onHide={() => overlayRef.current?.hide()}
+        className="overlayPanelStyle"
       >
         <div className="p-2 min-w-[250px] max-h-[300px] overflow-y-auto">
           {selectedTeamLeave.map((user, index) => (
+            
             <>
               <Tooltip
                 target={"#leave_" + user.leaveId}
@@ -119,10 +121,10 @@ const TeamLeaveCalender = ({ teamLeaveCalender }) => {
               </Tooltip>
               <div
                 key={index}
-                className="p-2 border-b border-[#e0e0e0] flex flex-col gap-1"
+                className="p-2 border-b borderColor flex flex-col gap-1"
               >
-                <div className="font-bold text-[#333]">{user.userName}</div>
-                <div className="flex flex-wrap text-[0.85rem] gap-2">
+                <div className="font-bold text-[#333] defaultFont">{user.userName}</div>
+                <div className="flex flex-wrap text-[0.85rem] gap-2 defaultFont">
                   <span>
                     <strong>Date:</strong> {user.fromDate}
                   </span>
@@ -130,13 +132,13 @@ const TeamLeaveCalender = ({ teamLeaveCalender }) => {
                     <strong>Type:</strong> {user.type}
                   </span>
                 </div>
-                <div className="text-[0.85rem] text-[#555]">
+                <div className="text-[0.85rem] text-[#555] defaultFont">
                   <strong>Reason:</strong> {user.reason}
                 </div>
                 <div>
                   <span
                     id={"leave_" + user.leaveId}
-                    className={`${user.statusColor} px-[6px] py-[2px] text-50 rounded text-xs `}
+                    className={`${user.statusColor} px-[6px] py-[2px] rounded text-xs `}
                     data-pr-position="mouse"
                   >
                     {user.status}

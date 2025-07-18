@@ -1,16 +1,22 @@
 .tableHeader.p-datatable .p-column-header-content {
-    justify-content: flex-start !important;
-} 
-.leaveDialog{
-    width: 35vw;
+  justify-content: flex-start !important;
+}
+
+/* Reviewed BG Color */
+.bg-lime-400 {
+  background-color:  #9ae600;
+}
+
+.leaveDialog {
+  width: 35vw;
 }
 @media (max-width: 1024px) {
-    .leaveDialog{
-        width: 60vw;
-    }
+  .leaveDialog {
+    width: 60vw;
+  }
 }
 @media (max-width: 650px) {
-    .leaveDialog{
-        width: 90vw;
-    }
+  .leaveDialog {
+    width: 90vw;
+  }
 }

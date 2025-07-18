@@ -1,0 +1,25 @@
+.bgColor {
+  background: linear-gradient(
+    91deg,
+    hsla(18, 76%, 85%, 0.42) 0%,
+    hsla(203, 69%, 84%, 0.42) 100%
+  );
+}
+.glassCardStyle{
+background: rgba(255, 255, 255, 0.29);
+border-radius: 16px;
+box-shadow: 0 4px 30px rgba(0, 0, 0, 0.041);
+backdrop-filter: blur(5px);
+-webkit-backdrop-filter: blur(5px);
+border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+
+.InputFiledStyle .MuiInputBase-root{
+    padding: 0.18rem 0.5rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+}
+.InputFiledStyle .MuiOutlinedInput-notchedOutline{
+  border-color:#315da38a;
+}

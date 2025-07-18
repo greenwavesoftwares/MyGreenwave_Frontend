@@ -43,6 +43,9 @@ body {
 .titleTextStyle {
   color: var(--tittleFontColor);
 }
+.borderColor {
+  border-color: var(--borderColor);
+}
 
 //-------------------------------------Input Section Style------------------------//
 .inputFieldStyle {
@@ -315,6 +318,23 @@ font-size: 0.85rem;
 .dialogContent.p-dialog .p-dialog-content {
   color: var(--fontColor);
 }
+
+
+
+//--------------------------------------Overlay Panel Style---------------------------------//
+.overlayPanelStyle.p-overlaypanel{
+  background-color: var(--dialogBG);
+  color: var(--fontColor);
+  padding: 0;
+  backdrop-filter: blur(32px);
+}
+.overlayPanelStyle.p-overlaypanel .p-overlaypanel-content{
+  padding: 0.5rem;
+  color: var(--fontColor);
+  font-size: 0.85rem;
+}
+
+
 
 //--------------------------------------MUI Tab styles-------------------------------------//
 .tabStyle.p-tabview .p-tabview-panels{
