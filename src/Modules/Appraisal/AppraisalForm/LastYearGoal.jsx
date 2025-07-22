@@ -17,22 +17,35 @@ const LastYearGoal = ({ appraiserPreviousSaveFormData }) => {
       >
         <Column
           field="future_personal_KRA_goals"
-          style={{width:"16rem"}}
+          style={{ width: "16rem" }}
           header="My Aspirations (2 Professional and 2 Personal Goals)"
         ></Column>
-        <Column  header="Personal/Professional"
-        body={(rowData)=>{
-          return(
-             <Chip color="info" style={{textTransform:'capitalize'}} size="small" label={rowData.goalType ?? ""}/> 
-          )
-        }}
+        <Column
+          header="Personal/Professional"
+          body={(rowData) => {
+            return (
+              <Chip
+                //color="info"
+                color={rowData.goalType?.toLowerCase()==="professional"?"secondary":"primary"}
+                style={{ textTransform: "capitalize" }}
+                size="small"
+                label={rowData.goalType ?? ""}
+              />
+            );
+          }}
         ></Column>
         <Column
           header="Training"
           body={(rowData) => {
             return (
-              <div style={{ display: "flex", flexWrap: "wrap",justifyContent:'center' }}>
-                {rowData.training?.map((item, index) => {
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                {rowData.appraisalTraining?.map((item, index) => {
                   return (
                     <Chip
                       size="small"
@@ -47,9 +60,13 @@ const LastYearGoal = ({ appraiserPreviousSaveFormData }) => {
             );
           }}
         ></Column>
-        <Column className="inputSectionWidth" field="reviewers_comment" header="Reviewer's Comment"></Column>
         <Column
-        className="inputSectionWidth"
+          className="inputSectionWidth"
+          field="reviewers_comment"
+          header="Reviewer's Comment"
+        ></Column>
+        <Column
+          className="inputSectionWidth"
           field="appraisers_comments"
           header="Appraiser's Comments"
         ></Column>
