@@ -332,6 +332,41 @@ font-size: 0.85rem;
 }
 
 
+//---------------------------------DataTable Filter Dialog Style-----------------------------//
+.p-column-filter-menu-button:hover{
+  background-color: var(--dropdownBG-Header);
+}
+.p-column-filter-overlay{
+  background-color: var(--dialogBG);
+  color: var(--fontColor);
+  padding: 0.5rem;
+  backdrop-filter: blur(16px);
+}
+.p-column-filter.p-inputtext{
+    padding: 0.65rem 0.65rem !important;
+  background: var(--dialogBG) !important;
+  border: 1px solid var(--divider-color) !important;
+  font-size: 0.85rem !important;
+  color: var(--fontColor) !important;
+}
+.p-column-filter-matchmode-dropdown.p-dropdown{
+ background: var(--card-bg);
+  color: var(--fontColor);
+  border: 1px solid var(--card-border);
+}
+.p-column-filter-matchmode-dropdown.p-dropdown .p-dropdown-trigger {
+  color: #ffffff;
+  width: 3rem;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: #1976d2;
+}
+.p-column-filter-overlay-menu .p-column-filter-buttonbar{
+  padding: 0.5rem 1rem 1rem 1rem;
+}
+.p-column-filter-overlay-menu .p-column-filter-constraint{
+   padding: 1rem 1rem 0.5rem 1rem;
+}
 
 //--------------------------------------Overlay Panel Style---------------------------------//
 .overlayPanelStyle.p-overlaypanel{
