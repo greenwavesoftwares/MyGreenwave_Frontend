@@ -161,7 +161,7 @@ function Appraisal() {
 
   //Show Appraisal Form
   const handleShowForm = async (formId, previousYearFormId, appraisalDate) => {
-    console.log("Form ID", formId);
+    //console.log(`View_Form_Id ${formId},previousYearFormId${previousYearFormId},appraisalDate${appraisalDate}`);
     setApraisalFormID(formId);
     setAppraisalFormLoading(formId);
     const localStorageAuth = getUserData();
@@ -174,7 +174,7 @@ function Appraisal() {
       authToken,
       appraisalDate
     );
-    console.log("appraisalFormData", appraisalFormData);
+    console.log("appraisalForm_apiData", appraisalFormData?.data);
     setAppraisalFormLoading(null);
 
     //For Appraisal Form
@@ -192,6 +192,8 @@ function Appraisal() {
       );
     }
   };
+
+  console.log("appraisal_SelectFormData", appraiserForm);
 
   return (
     <>
