@@ -68,7 +68,7 @@ const PerformanceScorecardDateTable = ({
 
   //Set Api Data : Performance Scorecard already saved data
   useEffect(() => {
-    if (appraiserPreviousSaveFormData?.length > 0) {
+    if (appraiserPreviousSaveFormData?.length >= 0) {
       setSelectedRowData(appraiserPreviousSaveFormData);
     }
   }, [appraiserPreviousSaveFormData]);

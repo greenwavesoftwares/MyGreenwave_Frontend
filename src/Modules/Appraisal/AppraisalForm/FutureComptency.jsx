@@ -40,7 +40,7 @@ const FutureComptency = ({
 
   //set Api Data : Future Comptency already saved data
   useEffect(() => {
-    if (appraiserPreviousSaveFormDat?.length > 0) {
+    if (appraiserPreviousSaveFormDat?.length >= 0) {
       setSelectedRowData(appraiserPreviousSaveFormDat);
     }
   }, [appraiserPreviousSaveFormDat]);

@@ -10,15 +10,16 @@ const MyInsights = ({
   myInsights_Data,
   isReviewer,
   isApprover,
-  trackMyInsights
+  trackMyInsights,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
-     //Store Temp Data
-      const [originalRowData, setOriginalRowData] = useState(null);
+  //Store Temp Data
+  const [originalRowData, setOriginalRowData] = useState(null);
 
   //console.log("myInsight_reviewer", isReviewer,isApprover);
+  console.log("selectForm_myInsights_Form",appraiserPreviousSaveFormDat);
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -27,7 +28,7 @@ const MyInsights = ({
 
   //set Api Data : My Insight already saved data
   useEffect(() => {
-    if (appraiserPreviousSaveFormDat?.length > 0) {
+    if (appraiserPreviousSaveFormDat?.length >= 0) {
       setSelectedRowData(appraiserPreviousSaveFormDat);
     }
   }, [appraiserPreviousSaveFormDat]);
@@ -54,7 +55,7 @@ const MyInsights = ({
   //Save Row
   const handleSaveRow = () => {
     setEditingRowIndex(null);
-    trackMyInsights(true)
+    trackMyInsights(true);
   };
 
   return (
@@ -166,7 +167,7 @@ const MyInsights = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                   onClick={() => {
+                  onClick={() => {
                     if (originalRowData && editingRowIndex !== null) {
                       const updatedData = [...selectedRowData];
                       updatedData[editingRowIndex] = originalRowData; // restore original
@@ -204,7 +205,7 @@ const MyInsights = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
-                  trackMyInsights(true)
+                  trackMyInsights(true);
                 }}
               />
             );
@@ -231,7 +232,7 @@ const MyInsights = ({
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
-            trackMyInsights(true)
+            trackMyInsights(true);
           }}
         >
           Add New Row

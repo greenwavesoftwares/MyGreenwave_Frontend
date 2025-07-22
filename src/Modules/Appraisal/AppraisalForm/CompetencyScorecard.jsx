@@ -36,7 +36,7 @@ const CompetencyScorecard = ({
 
   //Set Api Data : Competency Scorecard already saved data
   useEffect(() => {
-    if (appraiserPreviousSaveFormDat?.length > 0) {
+    if (appraiserPreviousSaveFormDat?.length >= 0) {
       setSelectedRowData(appraiserPreviousSaveFormDat);
     }
   }, [appraiserPreviousSaveFormDat]);

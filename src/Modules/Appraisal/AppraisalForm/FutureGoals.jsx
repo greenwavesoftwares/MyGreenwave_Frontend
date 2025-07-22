@@ -37,7 +37,7 @@ const FutureGoals = ({
 
   //set Api Data : Future Goals already saved data
   useEffect(() => {
-    if (appraiserPreviousSaveFormDat?.length > 0) {
+    if (appraiserPreviousSaveFormDat?.length >= 0) {
       setSelectedRowData(appraiserPreviousSaveFormDat);
     }
   }, [appraiserPreviousSaveFormDat]);
@@ -118,7 +118,7 @@ const FutureGoals = ({
               />
             ) : (
               <Chip
-                color="primary"
+                color={rowData.goalType?.toLowerCase()==="professional"?"secondary":"primary"}
                 style={{ textTransform: "capitalize" }}
                 size="small"
                 label={rowData.goalType ?? ""}
@@ -168,6 +168,7 @@ const FutureGoals = ({
                     color="success"
                     key={index}
                     label={item}
+                    
                     style={{ marginRight: "0.2rem", marginBottom: "0.2rem" }}
                   />
                 ))}
