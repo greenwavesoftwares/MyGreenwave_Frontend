@@ -1,5 +1,5 @@
 .userDialog{
-    width: 50vw;
+    width: 50rem;
 }
 @media (max-width: 1024px) {
     .userDialog{
@@ -11,10 +11,13 @@
         width: 90vw;
     }
 }
+.text-sm2{
+    font-size: 0.78rem; /* Adjusted for better readability */
+}
 .userCell{
-    padding-top: 0.7rem;
-    padding-bottom: 0.7rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--divider-color);
+    /* border-bottom: 1px solid var(--divider-color); */
 }

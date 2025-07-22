@@ -178,6 +178,7 @@ body {
 }
 .listBoxStyle.p-listbox .p-listbox-list .p-listbox-item{
    color: var(--fontColor);
+   font-size: 0.9rem;
 }
 .listBoxStyle.p-listbox .p-listbox-list .p-listbox-item.p-highlight{
   background-color: var(--hoverText);
@@ -193,6 +194,10 @@ body {
 }
 .listBoxStyle.p-listbox .p-listbox-list .p-listbox-empty-message{
    color: var(--fontColor);
+}
+//Box Icon Style
+.listBoxStyle .MuiSvgIcon-root{
+ font-size: 1.2rem;
 }
 
 //---------------------------Multi Select Dropdown Style-------------------------------///
@@ -228,6 +233,13 @@ body {
 }
 .p-multiselect .p-multiselect-label.p-placeholder {
   color: var(--fontColor);
+}
+.p-multiselect .p-multiselect-trigger{
+  color: #ffffff;
+  width: 3rem;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: #1976d2;
 }
 .multiSelectFontStyle .p-multiselect-label-container {
 font-size: 0.85rem;
@@ -373,6 +385,17 @@ font-size: 0.85rem;
   background-color: var(--tabBGColor) !important;
   color: var(--menu-text) !important;
   font-size: 0.85rem !important;
+}
+
+//--------------------------------------MUI Tab Style Transparent BG----------------------------------//
+.tabStyle_No_BG.p-tabview .p-tabview-nav {
+  background-color: transparent !important;
+}
+.tabStyle_No_BG.p-tabview .p-tabview-panels {
+  background-color: transparent !important ;
+}
+.tabStyle_No_BG.p-tabview-nav-content {
+  background-color: transparent !important;
 }
 
 //---------------------------------------Tab Styles-----------------------------------------//
@@ -545,6 +568,15 @@ font-size: 0.85rem;
   background-color: var(--icon-purple-bg);
   color: #bb59fd;
   font-size: 1rem;
+}
+
+
+//Calendar Wrapper Style
+
+@media (min-width: 1280px) {
+    .calendar-wrapper {
+        max-width: 100%;
+    }
 }
 
 //-------------------------------Scroll Bar---------------------------------////

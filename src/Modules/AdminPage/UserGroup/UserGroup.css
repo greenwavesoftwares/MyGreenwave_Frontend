@@ -12,9 +12,12 @@
     }
 }
 .userGroupCell{
-    padding-top: 0.7rem;
-    padding-bottom: 0.7rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
     display: flex;
     align-items: center;
       border-bottom: 1px solid var(--divider-color);
+}
+.fullBorder{
+    border: 1px solid var(--divider-color);
 }

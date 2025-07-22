@@ -44,11 +44,12 @@ const Department = ({
   const [departmentTable, setDepartmentTable] = useState(tableStructure);
   const departmentHeader = (
     <div className="flex justify-content-between align-items-center">
-      <span>User Groups</span>
+      <span>User Department</span>
       <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
+        {/* <InputIcon className="pi pi-search" /> */}
         <InputText
           value={departmentTable.filterText}
+          className="inputFieldStyle"
           onChange={(e) => {
             const value = e.target.value;
             let _filters = departmentTable.filterStructure;
@@ -88,12 +89,13 @@ const Department = ({
         className="departmentDialog"
       >
         <Grid container>
-          <Grid size={2} className="departmentCell">
-            <span className="font-bold">Department ID</span>
+          <Grid size={6} className="departmentCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Department ID</span>
           </Grid>
-          <Grid size={4} className="departmentCell">
+          <Grid size={6} className="departmentCell">
             <InputText
-              className="w-full mr-1"
+              className="w-full inputFieldStyle mr-2"
+              size={"small"}
               invalid={!departmentValidation.deptId}
               value={departmentData.deptId}
               onChange={(e) =>
@@ -104,13 +106,13 @@ const Department = ({
               }
             />
           </Grid>
-          <Grid size={2} className="departmentCell">
-            <span className="font-bold">Department Name</span>
+          <Grid size={6} className="departmentCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Department Name</span>
           </Grid>
-          <Grid size={4} className="departmentCell">
+          <Grid size={6} className="departmentCell">
             <InputText
               invalid={!departmentValidation.deptName}
-              className="w-full"
+              className="w-full inputFieldStyle mr-2"
               value={departmentData.deptName}
               onChange={(e) =>
                 setDepartmentData((prev) => ({
@@ -120,10 +122,10 @@ const Department = ({
               }
             />
           </Grid>
-          <Grid size={2} className="departmentCell">
-            <span className="font-bold">Manager</span>
+          <Grid size={6} className="departmentCell">
+            <span className="font-bold" style={{fontSize:"0.85rem"}}>Manager</span>
           </Grid>
-          <Grid size={4} className="departmentCell">
+          <Grid size={6} className="departmentCell">
             <Dropdown
               value={departmentData.deptManager}
               invalid={!departmentValidation.deptManager}
@@ -138,12 +140,13 @@ const Department = ({
               optionLabel="userName"
               optionValue="userId"
               placeholder="Select Manager"
-              className="w-full mr-1"
+              className="w-full mr-1 dropDownStyle"
             />
           </Grid>
-          <Grid size={6} className="departmentCell flex justify-content-center">
+            <Grid size={12} className="py-2 px-2">
             <Button
-              label="Add Group"
+              label="Add Department"
+              size="small"
               icon="pi pi-plus"
               severity="info"
               aria-label="Bookmark"
@@ -178,6 +181,8 @@ const Department = ({
                   departmentList
                 )
               }
+              className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dropDownStyle"
+              size="small"
             >
               <Column header="Edit" rowEditor></Column>
               <Column field="deptId" header="Id"></Column>
@@ -186,7 +191,7 @@ const Department = ({
                 header="Name"
                 editor={(options) => (
                   <InputText
-                    className="w-full"
+                    className="w-full inputFieldStyle"
                     type="text"
                     value={options.value}
                     onChange={(e) => options.editorCallback(e.target.value)}

@@ -94,13 +94,13 @@ const UserGroup = ({
         onHide={onHide}
         className="userGroupDialog dialogHeader dialogContent"
       >
-        <Grid container>
-          <Grid size={6} className="userGroupCell">
-            <span className="font-bold" style={{fontSize:"0.85rem"}}>Group ID</span>
+        <Grid container className="fullBorder">
+          <Grid size={6} className="userGroupCell " >
+            <span className="font-bold ml-4" style={{fontSize:"0.85rem"}}>Group ID</span>
           </Grid>
           <Grid size={6} className="userGroupCell">
             <InputText
-              className="w-full mr-1 inputFieldStyle"
+              className="w-full mr-2 inputFieldStyle"
               invalid={!userGroupValidation.groupId}
               value={userGroupData.groupId}
               onChange={(e) =>
@@ -112,12 +112,12 @@ const UserGroup = ({
             />
           </Grid>
           <Grid size={6} className="userGroupCell">
-            <span className="font-bold" style={{fontSize:"0.85rem"}}>Group Name</span>
+            <span className="font-bold ml-4" style={{fontSize:"0.85rem"}}>Group Name</span>
           </Grid>
           <Grid size={6} className="userGroupCell">
             <InputText
               invalid={!userGroupValidation.groupName}
-              className="w-full inputFieldStyle"
+              className="w-full inputFieldStyle mr-2"
               value={userGroupData.groupName}
               onChange={(e) =>
                 setUserGroupData((prev) => ({
@@ -128,7 +128,7 @@ const UserGroup = ({
             />
           </Grid>
           <Grid size={6} className="userGroupCell">
-            <span className="font-bold" style={{fontSize:"0.85rem"}}>Manager</span>
+            <span className="font-bold ml-4" style={{fontSize:"0.85rem"}}>Manager</span>
           </Grid>
           <Grid size={6} className="userGroupCell">
             <Dropdown
@@ -145,16 +145,16 @@ const UserGroup = ({
               optionLabel="userName"
               optionValue="userId"
               placeholder="Select Manager"
-              className="w-full mr-1 dropDownStyle"
+              className="w-full mr-1 dropDownStyle mr-2"
             />
           </Grid>
           <Grid size={6} className="userGroupCell">
-            <span className="font-bold" style={{fontSize:"0.85rem"}}>Phone</span>
+            <span className="font-bold ml-4" style={{fontSize:"0.85rem"}}>Phone</span>
           </Grid>
           <Grid size={6} className="userGroupCell">
             <InputNumber
               inputClassName="w-full"
-              className="w-full NumberFieldStyle"
+              className="w-full NumberFieldStyle mr-2"
               mode="decimal"
               min={0}
               maxLength={10}
@@ -172,7 +172,7 @@ const UserGroup = ({
             />
           </Grid>
           <Grid size={6} className="userGroupCell">
-            <span className="font-bold" style={{fontSize:"0.85rem"}}>Active</span>
+            <span className="font-bold ml-4" style={{fontSize:"0.85rem"}}>Active</span>
           </Grid>
           <Grid size={6} className="userGroupCell">
             <Checkbox
@@ -182,12 +182,13 @@ const UserGroup = ({
               }
             />
           </Grid>
-          <Grid size={12} className="py-2">
+          <Grid size={12} className="py-2 px-2">
             <Button
               label="Add Group"
               icon="pi pi-plus"
               severity="info"
               aria-label="Bookmark"
+              className="selectButtonStyle"
               size="small"
               onClick={async () => {
                 await addUserGroup(
@@ -227,7 +228,7 @@ const UserGroup = ({
                   userGroupList
                 )
               }
-               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
+               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dropDownStyle"
               size="small"
             >
               <Column header="Edit" rowEditor></Column>
@@ -241,7 +242,7 @@ const UserGroup = ({
                 header="Name"
                 editor={(options) => (
                   <InputText
-                    className="w-full"
+                    className="w-full inputFieldStyle"
                     type="text"
                     value={options.value}
                     onChange={(e) => options.editorCallback(e.target.value)}
@@ -277,7 +278,7 @@ const UserGroup = ({
                 editor={(options) => (
                   <InputNumber
                     mode="decimal"
-                    inputClassName="w-full"
+                    inputClassName="w-full inputFieldStyle"
                     min={0}
                     maxLength={10}
                     minFractionDigits={0}
