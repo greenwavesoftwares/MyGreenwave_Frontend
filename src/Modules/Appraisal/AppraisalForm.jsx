@@ -62,6 +62,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
   const [loader, setLoader] = useState(false);
   
 
+  console.log("select_appraiserForm", appraiserForm.myinsights);
 
   //For Personal Details Compare Check
   const [comparePersonalData,setComparePersonalData]=useState(false)
@@ -172,6 +173,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
 
   //For My Insights Data
   const [myInsights, setMyInsights] = useState([]);
+  console.log("myInsights_CurrentData", myInsights);
   const myInsights_Upadte = (ele) => {
     const updatedData = ele.map((item) => {
       return {
