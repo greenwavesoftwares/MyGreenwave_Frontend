@@ -465,7 +465,7 @@ const TrainingScheduleMaster = () => {
                 </div>
               </div>
             </div>
-
+ <div className="mt-1 mb-4 cardStyle">
             <DataTable
               paginator
               rows={10}
@@ -484,7 +484,7 @@ const TrainingScheduleMaster = () => {
                       alignItems: "center",
                     }}
                   >
-                    <Typography className="text-sm">
+                    <Typography className="text-sm font-bold">
                       Training Schedules
                     </Typography>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -502,7 +502,7 @@ const TrainingScheduleMaster = () => {
               showGridlines
               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
             >
-              <Column header="User Id" field="assignedUserId"></Column>
+              <Column sortable header="User Id" field="assignedUserId"></Column>
 
               <Column
                 header="Form Date"
@@ -558,6 +558,7 @@ const TrainingScheduleMaster = () => {
               />
               <Column
                 header="Status"
+                
                 body={(rowData) => {
                   return (
                     <Chip
@@ -655,6 +656,7 @@ const TrainingScheduleMaster = () => {
                 }}
               ></Column>
             </DataTable>
+            </div>
           </div>
         </div>
       </div>
