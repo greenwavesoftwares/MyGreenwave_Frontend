@@ -39,9 +39,16 @@ import CheckIcon from "@mui/icons-material/Check";
 import { ConfirmDialog } from "primereact/confirmdialog";
 import { InputText } from "primereact/inputtext";
 import { FileUpload } from "primereact/fileupload";
+//Icon Import
 import DeleteIcon from "@mui/icons-material/Delete";
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import BackupIcon from "@mui/icons-material/Backup";
 import AddIcon from "@mui/icons-material/Add";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import HourglassBottomOutlinedIcon from '@mui/icons-material/HourglassBottomOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
+
 const TrainingScheduleMaster = () => {
   //For Toast
   const toastRef = useRef(null);
@@ -214,8 +221,10 @@ const TrainingScheduleMaster = () => {
 
   //Save Form and To Date
   const handelSaveForm = async () => {
-
-    if (formatDate(fromDateUpdate || getRowData.fromDate) > formatDate(toDateUpdate || getRowData.toDate)) {
+    if (
+      formatDate(fromDateUpdate || getRowData.fromDate) >
+      formatDate(toDateUpdate || getRowData.toDate)
+    ) {
       alert("From Date cannot be greater than To Date.");
       return;
     }
@@ -298,11 +307,165 @@ const TrainingScheduleMaster = () => {
     }
   };
 
+  //Filter Completed Training
+  const completedTraining = allTrainingData.filter((ele) => {
+    return ele.status.toLowerCase() === "completed";
+  });
+
+  //Filter Pending Training
+  const pendingTraining = allTrainingData.filter((ele) => {
+    return ele.status.toLowerCase() === "not completed";
+  });
+
+  //Certificate Available
+  const certificateAvailable = allTrainingData.filter((ele) => {
+    return ele.isCertificateAvailable === true;
+  })
+
+  
+
   return (
     <>
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className="cardStyle mt-4 bg-white shadow rounded">
+          <div className=" mt-4">
+            <div className="cardStyle mb-1 py-2.5 px-4 bg-white shadow rounded">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg blue-icon">
+                      <AutoStoriesIcon />
+                    </div>
+                    <div>
+                      <h1 className="text-1xl font-bold text-gray-900">
+                        Training Schedule Master
+                      </h1>
+                      <p
+                        className=" titleTextStyle"
+                        style={{ fontSize: "0.8rem" }}
+                      >
+                        Manage and track employee training schedules
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <Button
+                      sx={{ boxShadow: "none" }}
+                      variant="contained"
+                      size="small"
+                      
+                      style={{
+                        padding: "0.35rem 0.7rem",
+                        backgroundColor: "#3b82f6",
+                        borderRadius: "2rem",
+                      }}
+                      startIcon={
+                        <AddIcon style={{ marginRight: "0px !important" }} />
+                      }
+                      onClick={() => setVisible(true)}
+                    >
+                      {" "}
+                      Add New
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className=" mt-1 py-2.5 ">
+              <div className="my-grid-new">
+                {/* Total Training */}
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="flex align-items-center">
+                        <SchoolOutlinedIcon className=" mr-2 blue-icon-noBG" />
+                        <p className="text-sm font-medium text-gray-600">
+                          Total Trainings
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span
+                        className=" font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {allTrainingData?.length ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Completed Training */}
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="flex items-center">
+                        <div className="flex align-items-center">
+                          <CheckCircleOutlineOutlinedIcon className=" mr-2 green-icon-noBG" />
+                          <p className="text-sm font-medium text-gray-600">
+                            Completed
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span
+                        className=" font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {completedTraining?.length ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pending Training */}
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                        <div className="flex align-items-center">
+                          <HourglassBottomOutlinedIcon className=" mr-2 yellow-icon-noBG" />
+                          <p className="text-sm font-medium text-gray-600">
+                            Pending
+                          </p>
+                        </div>
+                      </div>
+                    <div className="flex items-center">
+                     
+                      <span
+                        className=" font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {pendingTraining?.length ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* With Certificates */}
+                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center">
+                      <div className="flex align-items-center">
+                        <VerifiedOutlinedIcon className=" mr-2 green-icon-noBG" />
+                        <p className="text-sm font-medium text-gray-600">
+                          With Certificates
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      {/* <PersonOutlineOutlinedIcon className=" mr-2 green-icon-noBG" /> */}
+                      <span
+                        className=" font-bold text-gray-900"
+                        style={{ fontSize: "1.2rem" }}
+                      >
+                        {certificateAvailable?.length ?? "NA"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <DataTable
               paginator
               rows={10}
@@ -331,16 +494,6 @@ const TrainingScheduleMaster = () => {
                         onInput={(e) => setGlobalFilter(e.target.value)}
                         placeholder="Keyword Search"
                       />
-                      <Button
-                        sx={{ boxShadow: "none" }}
-                        variant="contained"
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => setVisible(true)}
-                      >
-                        {" "}
-                        Add New
-                      </Button>
                     </div>
                   </div>
                 </>
@@ -389,7 +542,7 @@ const TrainingScheduleMaster = () => {
                       value={toDateUpdate || new Date(rowData.toDate)}
                       onChange={(e) => setToDateUpdate(e.value)}
                       dateFormat="yy-mm-dd"
-                       className="calendarStyle inputFieldStyle"
+                      className="calendarStyle"
                     />
                   ) : (
                     <Typography sx={{ fontSize: "0.8rem" }}>
