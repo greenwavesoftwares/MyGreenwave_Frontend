@@ -314,6 +314,13 @@ font-size: 0.85rem;
   background-color: var(--dropdownBG-Header);
   color: var(--fontColor);
 }
+.calendarStyle .p-inputtext{
+  padding: 0.65rem 0.65rem !important;
+  background: var(--dialogBG) !important;
+  border: 1px solid var(--divider-color) !important;
+  font-size: 0.85rem !important;
+  color: var(--fontColor) !important;
+}
 
 //-------------------------------------Dialog Style-----------------------------------------//
 .dialogContentFont.p-dialog .p-dialog-content {
@@ -466,6 +473,18 @@ font-size: 0.85rem;
   }
 }
 
+.my-grid-new {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .my-grid-new {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 //-------------------------------------Speed Dial Style-------------------------------------///
 .speedDialStyle .p-speeddial-button.p-button.p-button-icon-only {
   width: 3rem;
@@ -587,6 +606,11 @@ font-size: 0.85rem;
   color: #5dcb5d;
   font-size: 1rem;
 }
+.yellow-icon-noBG {
+  color: #cbc45d;
+  font-size: 1rem;
+}
+
 .green-BG {
   background-color: #22c55e;
   font-size: 1rem;
