@@ -37,6 +37,8 @@ const AppraisalsApprover = () => {
   const [clickFormId, setClickFormId] = useState("");
   //Filter For Data Table
   const [globalFilter, setGlobalFilter] = useState("");
+   //Check Form Update Status
+  const [formSubmitStatus, setFormSubmitStatus] = useState(false);
 
   //Call Approver API Data
   useEffect(() => {
@@ -52,11 +54,12 @@ const AppraisalsApprover = () => {
         //Set Approver List
         setApproverList(response?.data.appraisalsList);
       } catch (error) {
+         setLoading(false);
         console.error("Error fetching approver data:", error);
       }
     };
     fetchApproverData();
-  }, []);
+  }, [formSubmitStatus]);
 
   //Handle Show Form
   const handleShowForm = async (
@@ -116,6 +119,9 @@ const AppraisalsApprover = () => {
     </Box>
   );
 
+  
+  
+
   return (
     <>
       <div className="container mx-auto px-4">
@@ -125,6 +131,7 @@ const AppraisalsApprover = () => {
               appraiserForm={appraisalFormData}
               //Close Appraisal Form
               appraisalFormVisible={setAppraisalFormVisible}
+              formSubmitStatus={setFormSubmitStatus}
             />
           )}
           <div className="cardStyle mt-2  bg-white shadow rounded">

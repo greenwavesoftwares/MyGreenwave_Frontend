@@ -43,7 +43,7 @@ const appraiserFormApi = async (appraiserFromData, getAuthToken) => {
 
 //Save Appraisal Form API
 const appraisalPutApi = async (appraisalFormData,getAuthToken) => {
-  //console.log("putAPIURl",`${endPoint}appraisal/submitappraisalform`,getAuthToken,appraisalFormData);
+  console.log("appraisalFormData_api_body_sendData",appraisalFormData);
   try {
     const response = await axios.put(`${endPoint}appraisal/submitappraisalform`, appraisalFormData,
       {
@@ -53,7 +53,7 @@ const appraisalPutApi = async (appraisalFormData,getAuthToken) => {
       }
     );
    // console.log("putAPIURl",`${endPoint}appraisal/submitAppraisalform`);
-    //console.log("appraisalFrom_put_api", response);
+    console.log("appraisalFrom_put_api_raw_response", response);
     return response;
   } catch (error) {
     console.log(error);

@@ -106,7 +106,7 @@ const AppraisalTracker = () => {
       setAppraisalData(responseData);
 
       //Set DataTable Data
-      if (response.status === 200) {
+      if (response?.status === 200) {
         setLoader(false);
         setAllAppraisalList(response?.data.appraisalsList);
       }

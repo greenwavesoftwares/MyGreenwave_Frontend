@@ -39,6 +39,8 @@ const AppraisalsReview = () => {
   const [appraisalFormVisible, setAppraisalFormVisible] = useState(false);
   // State to trigger data fetching
   const [clickFormId, setClickFormId] = useState("");
+  //Check Form Update Status
+    const [formSubmitStatus, setFormSubmitStatus] = useState(false);
 
   //Call Reviewer API
   useEffect(() => {
@@ -60,7 +62,7 @@ const AppraisalsReview = () => {
       }
     };
     fetchReviewerData();
-  }, []);
+  }, [formSubmitStatus]);
 
   //Handle Show Form
   const handleShowForm = async (
@@ -132,6 +134,7 @@ const AppraisalsReview = () => {
               appraiserForm={appraisalFormData}
               //Close Appraisal Form
               appraisalFormVisible={setAppraisalFormVisible}
+              formSubmitStatus={setFormSubmitStatus}
             />
           )}
           <div className="cardStyle mt-2 bg-white shadow rounded">

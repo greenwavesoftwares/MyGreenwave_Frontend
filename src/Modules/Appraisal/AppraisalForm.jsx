@@ -12,7 +12,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import CircleIcon from '@mui/icons-material/Circle';
+import CircleIcon from "@mui/icons-material/Circle";
 // Style Import
 import "./Appraisal.scss";
 //Import PUT API
@@ -46,34 +46,38 @@ import AdsClickIcon from "@mui/icons-material/AdsClick";
 import { useLocation, useNavigate } from "react-router-dom";
 import CalculatePercentage from "./CalculatePercentage";
 
-
-function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,currentFormId }) {
+function AppraisalDialog({
+  appraiserForm,
+  trainingData,
+  appraisalFormVisible,
+  currentFormId,
+  formSubmitStatus
+}) {
   //For Toast
   const toastRef = useRef(null);
   //Change Value Track
-  const [trackFutureGoals,setTrackFutureGoals]=useState(false)
-  const [trackPerformance,setTrackPerformance]=useState(false)
-  const [trackMyKRA,setTrackMyKRA]=useState(false)
-  const [trackCompetencyScorecard,setTrackCompetencyScorecard]=useState(false)
-  const [trackFutureComptency,setTrackFutureComptency]=useState(false)
-  const [trackMyInsights,setTrackMyInsights]=useState(false)
+  const [trackFutureGoals, setTrackFutureGoals] = useState(false);
+  const [trackPerformance, setTrackPerformance] = useState(false);
+  const [trackMyKRA, setTrackMyKRA] = useState(false);
+  const [trackCompetencyScorecard, setTrackCompetencyScorecard] =
+    useState(false);
+  const [trackFutureComptency, setTrackFutureComptency] = useState(false);
+  const [trackMyInsights, setTrackMyInsights] = useState(false);
 
   //Submit From Loader
   const [loader, setLoader] = useState(false);
-  
 
   console.log("select_appraiserForm", appraiserForm.myinsights);
 
   //For Personal Details Compare Check
-  const [comparePersonalData,setComparePersonalData]=useState(false)
-  //Compare Form Data 
-  const [updateFormDataTrack,setUpdateFormDataTrack]=useState(null);
+  const [comparePersonalData, setComparePersonalData] = useState(false);
+  //Compare Form Data
+  const [updateFormDataTrack, setUpdateFormDataTrack] = useState(null);
   const [expanded, setExpanded] = useState([]);
   //const [expandAll, setExpandAll] = useState(false);
   // State for form data
   const [expandButtonText, setExpandButtonText] = useState("expand all");
-
-  
+ 
 
   // For performanceScorecardData
   const [performanceScorecardData, setPerformanceScorecardData] = useState([]);
@@ -89,11 +93,15 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
       };
     });
     //setPerformanceScorecardData(updatedData);
-   
+
     //Nullify the data if it is empty
     setPerformanceScorecardData(
       updatedData.filter((ele) => {
-        return ele?.appraisalTraining.length != 0  || ele?.level_of_fullfillment !==null || ele?.my_last_year_KRA !=="";
+        return (
+          ele?.appraisalTraining.length != 0 ||
+          ele?.level_of_fullfillment !== null ||
+          ele?.my_last_year_KRA !== ""
+        );
       })
     );
   };
@@ -111,7 +119,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
       };
     });
     setCompetencyScorecardData(updatedData);
-    console.log("setCompetencyScorecardData",updatedData);
+    console.log("setCompetencyScorecardData", updatedData);
   };
 
   //For Future Goals Data
@@ -130,7 +138,11 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
     //Nullify the data if it is empty
     setFutureGoalsData(
       updatedData.filter((ele) => {
-        return ele?.appraisalTraining.length != 0  || ele?.goalType !==null || ele?.future_personal_KRA_goals!=="";
+        return (
+          ele?.appraisalTraining.length != 0 ||
+          ele?.goalType !== null ||
+          ele?.future_personal_KRA_goals !== ""
+        );
       })
     );
   };
@@ -163,10 +175,12 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
       };
     });
     //setMyKRA_Data(updatedData);
-     //Nullify the data if it is empty
+    //Nullify the data if it is empty
     setMyKRA_Data(
       updatedData.filter((ele) => {
-        return  ele?.appraisalTraining.length != 0  || ele?.my_next12month_KRA !=="";
+        return (
+          ele?.appraisalTraining.length != 0 || ele?.my_next12month_KRA !== ""
+        );
       })
     );
   };
@@ -216,7 +230,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
 
   //Make All Update Data
   const personaldetailsSubmit = async (data) => {
-    setLoader(true)
+    setLoader(true);
     console.log("object", data);
     const generatepersonaldetails = {
       personaldetails: data,
@@ -231,8 +245,6 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
       appraisalDate: appraiserForm?.appraisalDate,
     };
     console.log("AppraisalForm_Save_Data:", generatepersonaldetails);
-    //
-    
 
     try {
       const localStorageAuth = getUserData();
@@ -242,20 +254,26 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
         generatepersonaldetails,
         authToken
       );
-      console.log("Appraisal Form Data:", response);
-      if (response.status === 201) {
+      console.log("Appraisal_Form_Data", response);
+      if (response?.status === 201) {
         showSuccessMessage(toastRef, "Success", "Form Submitted Successfully");
         setLoader(false);
-        appraisalFormVisible(false)
-        currentFormId(null)
+        appraisalFormVisible(false);
+        currentFormId(null);
+        
         //alert("Form Submitted Successfully")
       } else {
         showErrorMessage(toastRef, "Error", "Form Submission Failed");
+        //setLoader(false);
       }
+
       //From Reset
       // reset();
     } catch (error) {
       console.error("personaldetails_api_Error:", error);
+    } finally {
+      setLoader(false);
+      formSubmitStatus(true)
     }
   };
 
@@ -268,8 +286,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
     current_performance_bonus,
     proposed_performance_bonus,
     current_total_ctc,
-    proposed_total_ctc
-    
+    proposed_total_ctc,
   ] = watch([
     "current_base_salary",
     "proposed_base_salary",
@@ -278,8 +295,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
     "current_performance_bonus",
     "proposed_performance_bonus",
     "current_total_ctc",
-    "proposed_total_ctc"
-    
+    "proposed_total_ctc",
   ]);
 
   //Base Salary
@@ -464,12 +480,8 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
   // Check if current path is `/appraisal-tracker`
   const isTrackerPage = location.pathname === "/AppraisalTracker";
 
-
-
-
-  //Compare Previous and Current Change 
-  const savePrevious_PersonalDetails = 
-  [
+  //Compare Previous and Current Change
+  const savePrevious_PersonalDetails = [
     appraiserForm?.personaldetails.position,
     appraiserForm?.personaldetails.education,
     appraiserForm?.personaldetails.yoe_gw,
@@ -482,10 +494,9 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
     appraiserForm?.personaldetails.current_performance_bonus,
     appraiserForm?.personaldetails.proposed_performance_bonus,
     appraiserForm?.personaldetails.current_total_ctc,
-    appraiserForm?.personaldetails.proposed_total_ctc
-  ]
-  const onChange_PersonalDetails=
-    watch([
+    appraiserForm?.personaldetails.proposed_total_ctc,
+  ];
+  const onChange_PersonalDetails = watch([
     "position",
     "education",
     "yoe_gw",
@@ -498,21 +509,19 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
     "current_performance_bonus",
     "proposed_performance_bonus",
     "current_total_ctc",
-    "proposed_total_ctc"
-  ])
-  
+    "proposed_total_ctc",
+  ]);
+
   //console.log("onChange_PersonalDetails",savePrevious_PersonalDetails, onChange_PersonalDetails);
   const compareData = (previous, current) => {
-  const isEqual = JSON.stringify(previous) === JSON.stringify(current);
-//console.log("Comparison result:", !isEqual);
-  setComparePersonalData(!isEqual)
-  return isEqual;
-};
-  useEffect(()=>{
-    compareData(savePrevious_PersonalDetails,onChange_PersonalDetails)
-  },[onChange_PersonalDetails])
-
-
+    const isEqual = JSON.stringify(previous) === JSON.stringify(current);
+    //console.log("Comparison result:", !isEqual);
+    setComparePersonalData(!isEqual);
+    return isEqual;
+  };
+  useEffect(() => {
+    compareData(savePrevious_PersonalDetails, onChange_PersonalDetails);
+  }, [onChange_PersonalDetails]);
 
   //Compare For My Goal Data
   //const myGoal_PreviousData=appraiserForm.futuregoals;
@@ -549,9 +558,7 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                 <AccordionSummary
                   expandIcon={
                     <>
-                    
-                    <ExpandMoreIcon className="ExpandMoreIconStyle" />
-                    
+                      <ExpandMoreIcon className="ExpandMoreIconStyle" />
                     </>
                   }
                   aria-controls="panel1-content"
@@ -566,7 +573,14 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                       className="accordionIconBGStyle"
                     />
                     Personal Details
-                    {comparePersonalData ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
+                    {comparePersonalData ? (
+                      <CircleIcon
+                        color="warning"
+                        sx={{ fontSize: "0.62rem" }}
+                      />
+                    ) : (
+                      ""
+                    )}
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
@@ -930,8 +944,8 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                             style={{ fontSize: "12px", marginLeft: "5px" }}
                             htmlFor="proposed_performance_bonus"
                           >
-                            Proposed Performance Bonus 
-                             <CalculatePercentage
+                            Proposed Performance Bonus
+                            <CalculatePercentage
                               current={currentPerformanceBonus_WatchValue}
                               proposed={proposedPerformanceBonus_WatchValue}
                             />
@@ -1009,7 +1023,11 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                     className="accordionIconBGStyle"
                   />
                   My Goals
-                 {trackFutureGoals ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
+                  {trackFutureGoals ? (
+                    <CircleIcon color="warning" sx={{ fontSize: "0.62rem" }} />
+                  ) : (
+                    ""
+                  )}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -1046,7 +1064,12 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                     fontSize="small"
                     className="accordionIconBGStyle"
                   />
-                  My KRA  {trackPerformance || trackMyKRA ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
+                  My KRA{" "}
+                  {trackPerformance || trackMyKRA ? (
+                    <CircleIcon color="warning" sx={{ fontSize: "0.62rem" }} />
+                  ) : (
+                    ""
+                  )}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -1090,7 +1113,12 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                     fontSize="small"
                     className="accordionIconBGStyle"
                   />
-                  My Training {trackCompetencyScorecard || trackFutureComptency ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
+                  My Training{" "}
+                  {trackCompetencyScorecard || trackFutureComptency ? (
+                    <CircleIcon color="warning" sx={{ fontSize: "0.62rem" }} />
+                  ) : (
+                    ""
+                  )}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -1134,7 +1162,12 @@ function AppraisalDialog({ appraiserForm, trainingData,appraisalFormVisible,curr
                     fontSize="small"
                     className="accordionIconBGStyle"
                   />
-                  My Insights {trackMyInsights ?<CircleIcon color="warning" sx={{fontSize:"0.62rem"}}/>: ""}
+                  My Insights{" "}
+                  {trackMyInsights ? (
+                    <CircleIcon color="warning" sx={{ fontSize: "0.62rem" }} />
+                  ) : (
+                    ""
+                  )}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
