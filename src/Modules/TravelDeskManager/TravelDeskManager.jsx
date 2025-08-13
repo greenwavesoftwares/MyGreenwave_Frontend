@@ -424,13 +424,21 @@ export default function TravelDeskManager() {
   //   };
   // });
   const handlerowexpand = async (data) => {
-    console.log("data -> ", data);
-    console.log("travelId", Object.keys(data)[0]);
-    // return;
-    const travelId = Object.keys(data)[0];
-    let response = await getExpandableData(travelId);
-    setExpandedRows(response.data);
-    console.log("response", response);
+    // console.log("data -> ", data);
+    // console.log("travelId", Object.keys(data)[0]);
+    // // return;
+    // const travelId = Object.keys(data)[0];
+    // let response = await getExpandableData(travelId);
+    // setExpandedRows(response.data);
+    // console.log("response", response);
+     const travelId = (Object.keys(data)[1] === undefined ? Object.keys(data)[0] :Object.keys(data)[1])
+       let response= await getExpandableData(travelId)
+       if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
+         setExpandedRows([]);
+       } else {
+         setExpandedRows(response.data);
+       }
+ 
   };
 
   // const handlerowexpand = async (data) => {

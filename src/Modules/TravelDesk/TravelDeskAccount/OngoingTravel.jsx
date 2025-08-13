@@ -156,6 +156,7 @@ const OngoingTravel = () => {
               uploadHandler={onFileSelect}
               maxFileSize={1000000}
               chooseLabel="Upload"
+              disabled={rowData.status=='Pending'}
             />
           ) : null}
 

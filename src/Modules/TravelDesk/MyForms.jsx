@@ -6,11 +6,13 @@ import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
 import { Tooltip } from 'primereact/tooltip';
 import {Tooltip as Muitooltip} from "@mui/material";
+import CustomButton from "../../components/Button/Button";
 //Call Api
 import {
   getMyFormParticularRequisitionId,
   getExpandableData,
   getMyFormTravelData_New,
+  downloadDocumentsByReqId
 } from "./TravelDeskAPI";
 // import {
 //   getMyFormTravelData_New,
@@ -141,9 +143,33 @@ const MyForm = () => {
             </Button>
           );
         }}
+
         header="View"
       ></Column>
-      <Column field="" header="Download ticket"></Column>
+      <Column body={(rowData)=>{
+         const handleDownloadFile = async (requisionId) => {
+                try {
+                  let d = await downloadDocumentsByReqId(requisionId);
+                } catch (error) {
+                  toast.current?.show({
+                    severity: "error",
+                    summary: "error",
+                    detail: "Something Wrong.",
+                  });
+                }
+              };
+        return (
+                          <CustomButton
+                      icon="pi pi-download"
+                      className="p-button-sm p-button-text p-button-success"
+                      onClick={() => {
+                        handleDownloadFile(rowData.requisionId);
+                      }}
+                      tooltip={`${rowData.file_name}`}
+                    />)}} header="Download ticket"
+                    
+                  //disabled={!`${rowData.file_name}`}
+                    ></Column>
     </DataTable>
   );
 
@@ -193,13 +219,21 @@ const MyForm = () => {
   };
 
   const handlerowexpand = async (data) => {
-    console.log("data -> ", data);
-    console.log("travelId", Object.keys(data)[0]);
-    // return;
-    const travelId = Object.keys(data)[0];
-    let response = await getExpandableData(travelId);
-    setExpandedRows(response.data);
-    console.log("response", response);
+    // console.log("data -> ", data);
+    // console.log("travelId", Object.keys(data)[0]);
+    // // return;
+    // const travelId = Object.keys(data)[0];
+    // let response = await getExpandableData(travelId);
+    // setExpandedRows(response.data);
+    // console.log("response", response);
+     const travelId = (Object.keys(data)[1] === undefined ? Object.keys(data)[0] :Object.keys(data)[1])
+       let response= await getExpandableData(travelId)
+       if (JSON.stringify(response.data) === JSON.stringify(expandedRows)) {
+         setExpandedRows([]);
+       } else {
+         setExpandedRows(response.data);
+       }
+ 
   };
 
   const onGlobalFilterChange = (e) => {
@@ -271,7 +305,12 @@ const MyForm = () => {
         <Column field="city" header="City"></Column>
         <Column field="localityArea" header="Locality/Area"></Column>
         <Column field="typeOfTravel" header="Type Of Travel"></Column>
+        
+        <Column field="advanceRequested" header="Total Advance Requested"></Column>
+        <Column field="advanceGiven" header="Total Advance Given"></Column>
         <Column body={checkBody} header="Complete Travel"></Column>
+
+
 
         {/* <Column
   body={(rowData) => {
