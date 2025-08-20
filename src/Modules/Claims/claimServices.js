@@ -122,7 +122,18 @@ export const getTourClaimList = async () => {
   const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
   try {
+    
     let traveldetails = await getTravelsDetails();
+
+    // Remove duplicate travelId
+      let uniqueTravels = Object.values(
+        traveldetails.reduce((acc, curr) => {
+          acc[curr.travelId] = curr; // overwrite if duplicate
+          return acc;
+        }, {})
+      );
+
+    console.log(uniqueTravels);
     console.log("travelDetails",traveldetails)
 
     const response = await axios.get(`${host}claims/tour-claims`, {
@@ -138,12 +149,16 @@ const token = `Bearer ${getUserData()?.token}`;
 
     let formattedResult = [];
 
-    traveldetails.forEach((item) => {
+    let InLocalStationData=data.filter((claim)=>claim.travel_id=='Long-Term-Local-Conveyance')
+    console.log('InLocalStationData', InLocalStationData)
+
+    uniqueTravels.forEach((item) => {
       const matchingClaims = data.filter(
         (claim) => claim.travel_id === item.travelId
       );
       formattedResult.push({
         //travel_id:item.travelId,
+       
         fromDate: item.fromDate,
         tentativeToDate: item.tentativeToDate,
         actualToDate: item.actualToDate,
@@ -156,7 +171,24 @@ const token = `Bearer ${getUserData()?.token}`;
       });
     });
 
-    
+    InLocalStationData.forEach((item)=>{
+      formattedResult.push({
+        //travel_id:item.travelId,
+       // claim_id:item.claim_id,
+        fromDate: item.from_date,
+        tentativeToDate: item.to_date,
+        actualToDate: item.to_date,
+        travel_id: item.travel_id,
+        destination: item.destination,
+        purpose: item.purpose,
+        project: item.project,
+        type: item.type,
+        expandabledata: [item],
+      });
+    });
+   
+
+    console.log('formatedResult', formattedResult)
 
     return formattedResult;
   } catch (error) {
@@ -1324,6 +1356,13 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
     }}
     );
 
+    const getreviewedResponse = await axios.get(
+      `${host}claims/tour-claims-user-and-status/reviewed/${userId}`,
+       { headers: {
+      Authorization: token
+    }}
+    );
+
     // if (!getResponse.ok) {
     //   const message = await getResponse.text();
     //   return {
@@ -1334,8 +1373,9 @@ export const CheckForAnyTourClaimsInStatusReviewing = async (
     // }
 
     const reviewClaims =  getResponse.data;
+    const reviewedclaims=getreviewedResponse.data;
 
-    if (reviewClaims.length > 0) {
+    if (reviewClaims.length || reviewedclaims.length > 0) {
       return {
         status: false,
         message: "Previous claim is under review",
@@ -1396,6 +1436,8 @@ export const tourClaimSendForApproval = async (
     //   redirect: "follow",
     // };
 
+    console.log(claim_id,reason,settlement_amount)
+
     let response = await axios.put(
       `${host}claims/tour-claims/review/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
       null,
@@ -1404,6 +1446,8 @@ export const tourClaimSendForApproval = async (
       'Content-Type': 'application/json'
     },}
     );
+
+    console.log('response', response)
     // if (!response.ok) {
     //   const message = await response.text();
     //   return {

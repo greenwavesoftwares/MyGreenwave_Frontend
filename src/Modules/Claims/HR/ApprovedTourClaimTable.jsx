@@ -154,7 +154,7 @@ const ApprovedTourClaimTable = () => {
   const claimCalculationBody = (rowData) => (
     <div className="flex flex-col items-end justify-center  space-y-1">
       <div>
-        <span className="font-semibold text-gray-700">Expense:</span> ₹
+        <span className="font-semibold text-gray-700">Expenditure Claimed:</span> ₹
         {rowData["total_expense"]}
       </div>
       <div>

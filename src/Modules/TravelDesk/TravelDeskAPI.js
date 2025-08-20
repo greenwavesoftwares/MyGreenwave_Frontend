@@ -153,6 +153,23 @@ const getMyFormParticularRequisitionId = async (token, requisionId) => {
         },
       }
     );
+
+    
+    //sort accommodations by checkIn date
+    if (Array.isArray(response.data.accommodations)) {
+     response.data.accommodations.sort((a, b) => {
+        return new Date(a.checkIn) - new Date(b.checkIn);
+      });
+    }
+
+    // sort transportModes by fromDate
+    if (Array.isArray(response.data.transportModes)) {
+      response.data.transportModes.sort((a, b) => {
+        return new Date(a.fromDate) - new Date(b.fromDate);
+      });
+    }
+    console.log('data34343',response.data)
+   
     return response;
   } catch (error) {
     console.log(error);

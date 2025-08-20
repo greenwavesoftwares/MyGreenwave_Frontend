@@ -206,7 +206,7 @@ const toastRef = useRef(null);
         {rowData["advance"]}
       </div>
        <div>
-        <span className="font-semibold text-gray-700">Expense:</span> ₹
+        <span className="font-semibold text-gray-700">Expenditure Claimed:</span> ₹
         {rowData["total_expense"]}
       </div>
          <div>

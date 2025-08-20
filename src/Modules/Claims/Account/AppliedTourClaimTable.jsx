@@ -121,7 +121,7 @@ const AppliedTourClaimTable = () => {
         {rowData["advance"]}
       </div>
        <div>
-        <span className="font-semibold text-gray-700">Expense:</span> ₹
+        <span className="font-semibold text-gray-700">Expenditure Claimed:</span> ₹
         {rowData["total_expense"]}
       </div>
          <div>
@@ -373,6 +373,14 @@ const AppliedTourClaimTable = () => {
           
         ]}
       >
+         <CustomColumn
+          field="claim_id"
+          header="claim_id"
+          sortable
+          filter
+          headerStyle={cellStyle}
+          bodyStyle={cellStyle}
+        />
         <CustomColumn
           field="name"
           header="Name"

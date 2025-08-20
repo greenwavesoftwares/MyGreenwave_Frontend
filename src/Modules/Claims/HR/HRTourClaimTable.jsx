@@ -111,15 +111,43 @@ const HRTourClaimTable = () => {
       </div>
     </div>
   );
+  // const claimCalculationBody = (rowData) => (
+  //   <div className="flex flex-col items-end justify-center  space-y-1">
+  //     <div>
+  //       <span className="font-semibold text-gray-700">Expense:</span> ₹
+  //       {rowData["total_expense"]}
+  //     </div>
+  //     <div>
+  //       <span className="font-semibold text-gray-700" >Advance:</span> ₹
+  //       {rowData["advance"]}
+  //     </div>
+  //     <hr className="w-2/3 border-gray-300" />
+  //     {rowData["dueAmount"] > 0 ? (
+  //       <div>
+  //         <span className="font-semibold text-yellow-700">Due:</span> ₹
+  //         {rowData["dueAmount"]}
+  //       </div>
+  //     ) : (
+  //       <div>
+  //         <span className="font-semibold text-green-700">Claim:</span> ₹
+  //         {rowData["amountToBeClaimed"]}
+  //       </div>
+  //     )}
+  //   </div>
+  // );
   const claimCalculationBody = (rowData) => (
     <div className="flex flex-col items-end justify-center  space-y-1">
       <div>
-        <span className="font-semibold text-gray-700">Expense:</span> ₹
+        <span className="font-semibold text-gray-700">Advance:</span> ₹
+        {rowData["advance"]}
+      </div>
+       <div>
+        <span className="font-semibold text-gray-700">Expenditure Claimed:</span> ₹
         {rowData["total_expense"]}
       </div>
-      <div>
-        <span className="font-semibold text-gray-700" >Advance:</span> ₹
-        {rowData["advance"]}
+         <div>
+        <span className="font-semibold text-gray-700">Claim Approved:</span> ₹
+        {rowData["approvedAmount"]}
       </div>
       <hr className="w-2/3 border-gray-300" />
       {rowData["dueAmount"] > 0 ? (
@@ -135,6 +163,7 @@ const HRTourClaimTable = () => {
       )}
     </div>
   );
+  
   const downloadExpense = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
       try {

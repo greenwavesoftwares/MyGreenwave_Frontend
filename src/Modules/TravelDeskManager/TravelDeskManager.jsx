@@ -32,6 +32,8 @@ import { TabPanel, TabView } from "primereact/tabview";
 import { SelectButton } from "primereact/selectbutton";
 import RequisitionFormView2 from "./RequisitionFormView2";
 
+import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
+
 const renderStatusChip = (row) => {
   const status = row?.status || "";
   let color = "default";
@@ -58,7 +60,7 @@ const renderStatusChip = (row) => {
       color = "info";
   }
 
-  return <Chip label={status} color={color} size="small" />;
+  return <Chip label={status==='ManagerReviewed'?'Manager Reviewed':status} color={color} size="small" />;
 };
 
 
@@ -79,6 +81,7 @@ export default function TravelDeskManager() {
   const [globalFilter, setGlobalFilter] = useState(null); // Global filter for DataTable
   const [expandedRows, setExpandedRows] = useState(null); //for expanded rows in DataTable
   const [activeTab, setActiveTab] = useState(tabs[0]); //for active tab in DataTable
+    const [loader, setLoader] = useState(false);
 
   const PENDING_STATUS = "Pending";
   const { token, userDetails } = getUserData();
@@ -91,6 +94,7 @@ export default function TravelDeskManager() {
 
   const fetchTravelData = async () => {
     try {
+         setLoader(true);
       const response = await getManagerwiseongoingtravels(); //await getTravelsByStatus(token, PENDING_STATUS);
       console.log("response.data", response.data);
 
@@ -123,8 +127,10 @@ export default function TravelDeskManager() {
       // console.log("Updated Pending Data:", updatedPendingData);
       if (response.status) {
         setTravelData(response.data);
+           setLoader(false);
       } else {
         showInfoMessage(toastRef, "Error", response.message);
+           setLoader(false);
       }
     } catch (error) {
       console.error("Error fetching travel data:", error);
@@ -474,12 +480,22 @@ export default function TravelDeskManager() {
         rows={10}
         dataKey="travelId"
         emptyMessage={
-          travelData?.length === 0 ? (
-            "No data found"
-          ) : (
-            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
-          )
-        }
+                    loader ? (
+                      <ProgressBarComponent
+                        mode="indeterminate"
+                        style={{ height: "6px" }}
+                      />
+                    ) : (
+                      "No data found"
+                    )
+                  }
+        // emptyMessage={
+        //   travelData?.length === 0 ? (
+        //     "No data found"
+        //   ) : (
+        //     <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+        //   )
+        // }
         header={renderHeader}
         globalFilter={globalFilter}
         size="small"
