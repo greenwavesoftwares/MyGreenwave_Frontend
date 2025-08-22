@@ -9,7 +9,9 @@ const CustomDialog = ({
   children,
   className,
   contentClassName,
-  headerClassName
+  headerClassName,
+  maskClassName,
+  maximizable,
 }) => {
   return (
     <>
@@ -18,9 +20,11 @@ const CustomDialog = ({
         visible={visible}
         style={style}
         onHide={onHide}
-      className={`${className} dialogHeader dialogContent`}
+        className={`${className} dialogHeader dialogContent`}
         contentClassName={contentClassName}
         headerClassName={headerClassName}
+        maskClassName={maskClassName}
+        maximizable={maximizable}
       >
         {children}
       </Dialog>

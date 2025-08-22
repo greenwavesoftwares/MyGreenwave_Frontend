@@ -1,4 +1,4 @@
-import { Paper, Badge, Tooltip } from "@mui/material";
+import { Paper, Badge, Tooltip, Grid } from "@mui/material";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 
@@ -98,9 +98,9 @@ const UserDetailsTable = ({
         if (isChips && Array.isArray(val)) {
           //checks whether the value is an array or not, and whether the values are to be displayed in chips or not
           return (
-            <div className="table-cell-allottedpages-info">
+            <div className="table-cell-allottedpages-info" style={{marginLeft:"auto"}}>
               {val.map((page, i) => (
-                <Chip key={i} label={page} size="small" />
+                <Chip key={i} label={page} size="small"  color={"primary"}/>
               ))}
             </div>
           );
@@ -111,12 +111,25 @@ const UserDetailsTable = ({
       return {
         //checks whether the field is highlighted or not, if so display it in warning color else display it in default color
         field: (
-          <Chip
+          <>
+            {/* <Chip
             label={label}
             className="ellipsis-text"
+            //color="primary"
             color={isHighLighted(key) ? "warning" : "default"}
             size="small"
-          />
+          /> */}
+            <p
+              style={{
+                color: isHighLighted(key) ? "orange" : "",
+               // fontWeight: "600",
+                fontSize: "0.9rem",
+                padding:"0.3rem"
+              }}
+            >
+              {label}
+            </p>
+          </>
         ),
         oldData: (
           <div className="info-modified-wrap">
@@ -142,7 +155,8 @@ const UserDetailsTable = ({
                   variant="dot"
                   style={{ cursor: "pointer" }}
                   className="table-cell-info-badge"
-                  anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                  //anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                  sx={{}}
                 />
               </Tooltip>
             )}
@@ -154,41 +168,45 @@ const UserDetailsTable = ({
   );
 
   return (
-    <Paper className="paper-div-info" elevation={2}>
-      <DataTable
-        value={tableData}
-        className="p-datatable-s "
-        scrollable //the datatable is scrollable
-        scrollHeight="400px" //the maximum height of the datatable
-        showGridlines //show gridlines between cells
-      >
-        <Column
-          header={<Typography>Field</Typography>}
-          body={(rowData) => (
-            <Typography variant="body2">{rowData.field}</Typography>
-          )}
-          headerClassName="table-header-info"
-          className="user-logs-datatable-columns"      
-        />
-        <Column
-          header={<Typography>Old Data</Typography>}
-          body={(rowData) => (
-            <Typography variant="body2">{rowData.oldData}</Typography>
-          )}
-          headerClassName="table-header-info"
-          className="user-logs-datatable-columns"   
-        />
-        <Column
-          header={<Typography>New Data</Typography>}
-          body={(rowData) => (
-            <Typography variant="body2">{rowData.newData}</Typography>
-          )}
-          
-          headerClassName="table-header-info"
-          className="user-logs-datatable-columns"   
-        />
-      </DataTable>
-    </Paper>
+    <Grid container>
+      <Grid size={12}>
+        <Paper className="paper-div-info" elevation={2}>
+          <DataTable
+            value={tableData}
+            className="p-datatable-s "
+            //scrollable //the datatable is scrollable
+            //scrollHeight="900px" //the maximum height of the datatable
+            showGridlines //show gridlines between cells
+          >
+            <Column
+            style={{width:"250px"}}
+              header={<Typography>Field</Typography>}
+              body={(rowData) => (
+                <Typography variant="body2">{rowData.field}</Typography>
+              )}
+              headerClassName="table-header-info"
+              className="user-logs-datatable-columns"
+            />
+            <Column
+              header={<Typography>Old Data</Typography>}
+              body={(rowData) => (
+                <Typography variant="body2">{rowData.oldData}</Typography>
+              )}
+              headerClassName="table-header-info"
+              className="user-logs-datatable-columns"
+            />
+            <Column
+              header={<Typography>New Data</Typography>}
+              body={(rowData) => (
+                <Typography variant="body2">{rowData.newData}</Typography>
+              )}
+              headerClassName="table-header-info"
+              className="user-logs-datatable-columns"
+            />
+          </DataTable>
+        </Paper>
+      </Grid>
+    </Grid>
   );
 };
 

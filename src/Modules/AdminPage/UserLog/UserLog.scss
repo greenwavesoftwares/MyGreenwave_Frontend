@@ -3,9 +3,18 @@
     color:var(--menu-text) !important;
     
 }
+.maximizableDialogStyle.p-dialog-mask.p-component-overlay{
+    z-index: 1200 !important;
+}
 .table-header-info{
-    background-color: var(--bg-drawer)!important;
-    color:var(--menu-text) !important;
+    // background-color: var(--bg-drawer)!important;
+    // color:var(--menu-text) !important;
+     
+  background: none !important;
+  border: 1px solid var(--card-border) !important;
+ color: var(--fontColor) !important;
+     padding: 0.7rem 0.7rem;
+        border: 1px solid var(--divider-color)!important;
 }
 .table-paginator-info{
     background-color: var(--bg-drawer)!important;

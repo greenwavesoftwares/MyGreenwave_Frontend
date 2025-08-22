@@ -86,26 +86,30 @@ const UserLog = ({
         className="dialogHeader dialogContent"
         contentClassName="user-log-dialog-content"
         headerClassName="user-log-dialog-header"
+        maskClassName="maximizableDialogStyle"
         onHide={onHide}
-        style={{width:"70rem"}}
+        style={{width:"80rem"}}
+        maximizable
       >
         <Grid container>
-          <Grid size={12}>
+          <Grid size={12} >
             <DataTable
               value={logList}
               paginator
               rows={10}
               //rowsPerPageOptions={[5, 10, 25, 50]}
-              tableStyle={{ width: "100%", tableLayout: "fixed" }}
+              //tableStyle={{ width: "100%", tableLayout: "fixed" }}
               expandedRows={expandedRows}
               rowExpansionTemplate={rowExpansionTemplate}
               onRowToggle={(e) => setExpandedRows(e.data)}
-              scrollable
-              scrollHeight="400px"
+              //scrollable
+              //scrollHeight="400px"
               dataKey="timestamp"
+              size="small"
+              stripedRows
               // tableClassName=""
               paginatorClassName="table-paginator-info"
-               className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
+              className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
               
               
             >
@@ -122,9 +126,7 @@ const UserLog = ({
               
               <Column
                 field="transactionId"
-                header={() => (
-                  <Typography variant="subtitle2">Transaction Id</Typography>
-                )}
+                header="Transaction Id"
                 body={(rowData) => (
                   <Typography variant="body2">
                     {rowData.transactionId}
@@ -155,13 +157,14 @@ const UserLog = ({
               />
               <Column
                 field="data"
+                style={{width:"200px"}}
                 header={() => (
                   <Typography variant="subtitle2">
                     Information Modified
                   </Typography>
                 )}
                 body={(rowData) => (
-                  <Typography variant="body2">{rowData.data}</Typography>
+                  <Typography style={{maxWidth:"200px",margin:"auto"}} variant="body2">{rowData.data}</Typography>
                 )}
                 headerClassName="table-header-info"
                 className="whitespace-nowrap overflow-hidden info-modified-wrap user-logs-datatable-columns user-logs-datatable-columns-information"
