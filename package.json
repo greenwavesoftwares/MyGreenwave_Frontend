@@ -3,8 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  
-
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -38,6 +36,7 @@
     "email-validator": "^2.0.4",
     "file-saver": "^2.0.5",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.540.0",
     "mygreenwave_frontend": "file:",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",

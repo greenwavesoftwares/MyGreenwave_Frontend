@@ -11,6 +11,36 @@ import {
   Chip,
   Fab,
 } from "@mui/material";
+import {
+  User,
+  Calendar,
+  FileText,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  MapPin,
+  Award,
+  CreditCard,
+  Info,
+  Building2,
+  Mail,
+  Phone,
+  Briefcase,
+  GraduationCap,
+  Target,
+  DollarSign,
+  PieChart,
+  BarChart3,
+  Users,
+  Settings,
+  Bell,
+  Download,
+  ExternalLink,
+  ChevronRight,
+  Activity,
+  Shield,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import "./HomePage.css";
 import "./HomePage.scss";
@@ -35,7 +65,7 @@ import CommentIcon from "@mui/icons-material/Comment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import { InputTextarea } from "primereact/inputtextarea";
-
+import BrushIcon from "@mui/icons-material/Brush";
 //Api
 import {
   getUserDataAPI,
@@ -189,44 +219,48 @@ const HomePage = () => {
   //Notification Template
   const itemNotificationTemplate = (item) => {
     return (
-      <PrimeReactCard
-        className="primeReactCardStyle"
-        style={{ boxShadow: "none" }}
-        title={
+      <>
+        <PrimeReactCard
+          className="primeReactCardStyle"
+          style={{ boxShadow: "none" }}
+          title={
+            <>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  {item.title}
+                </h3>
+                <div
+                  className="text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-2xl"
+                  style={{ fontSize: "12px" }}
+                >
+                  <Clock className="inline mr-2" style={{ width: "14px" }} />
+                  {`${item.fromdate} - ${item.toDate}`}
+                </div>
+              </div>
+            </>
+          }
+          footer={
+            <a
+              style={{ fontWeight: "bold", fontSize: "0.8rem" }}
+              className="fontSize-sm"
+              target="_blank"
+              href={item.url}
+            >
+              Click Here For More Information
+            </a>
+          }
+        >
           <Typography
-            sx={{
-              fontSize: "1rem !important",
-              fontWeight: 700,
-              color: "#3be4b4",
-              textTransform: "capitalize",
-            }}
+            className="fontSize-sm bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl px-3 py-2 border border-purple-50"
+            sx={{ marginBottom: "0.2rem" }}
           >
-            {item.title}
+            {item.notification}
           </Typography>
-        }
-        subTitle={
-          <Typography
-            className="fontSize-sm"
-            sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
-          >
-            {`${item.fromdate} - ${item.toDate}`}
-          </Typography>
-        }
-        footer={
-          <a
-            style={{ fontWeight: "bold", fontSize: "0.8rem" }}
-            className="fontSize-sm"
-            target="_blank"
-            href={item.url}
-          >
-            Click Here For More Information
-          </a>
-        }
-      >
-        <Typography className="fontSize-sm" sx={{ marginBottom: "0.2rem" }}>
-          {item.notification}
-        </Typography>
-      </PrimeReactCard>
+        </PrimeReactCard>
+      </>
       // <div style={{ display: "grid", justifyContent: "start" }}>
       //   <Typography
       //     sx={{
@@ -497,206 +531,250 @@ const HomePage = () => {
       ) : (
         <div className="container mx-auto px-4">
           <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-            <div className="card mt-4 py-2 px-3">
+            <div>
+              <div className="cardStyle mt-4 mb-2 py-2.5 px-4 bg-white shadow rounded">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg blue-icon">
+                        <BrushIcon />
+                      </div>
+                      <div>
+                        <h1 className="text-1xl font-bold text-gray-900">
+                          My Canvas
+                        </h1>
+                        <p
+                          className=" titleTextStyle"
+                          style={{ fontSize: "0.8rem" }}
+                        >
+                          Your performance and work updates in one place
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-medium  uppercase  titleTextStyle">
+                          On Tour
+                        </p>
+
+                        <Switch
+                          size="small"
+                          checked={onTourSwitch}
+                          onChange={handleChangeOnTour}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <Grid container spacing={2}>
                 <Grid size={3}>
-                  <Grid
-                    size={12}
-                    container
-                    direction="row"
-                    sx={{
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <StyledBadge
-                      overlap="circular"
-                      anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                      badgeContent={
-                        <>
-                          <label htmlFor="avatar-upload">
-                            <IconButton
-                              size="small"
-                              component="span"
-                              onClick={() => {
-                                setFileUploadDialog(true);
+                  {/* Profile Section */}
+                  <Card className="cardNew BorderRadius cardStyle">
+                    <div className="lg:col-span-1">
+                      <div className="backdrop-blur-sm rounded-xl p-2  hover:shadow-xl transition-all duration-300">
+                        {/* Profile Avatar */}
+                        <div className="flex flex-col items-center text-center">
+                          <Grid
+                            size={12}
+                            container
+                            direction="row"
+                            sx={{
+                              justifyContent: "center",
+                              alignItems: "center",
+                              marginBottom: "0.5rem",
+                            }}
+                            className="mt-2"
+                          >
+                            <StyledBadge
+                              overlap="circular"
+                              anchorOrigin={{
+                                vertical: "top",
+                                horizontal: "right",
                               }}
+                              badgeContent={
+                                <>
+                                  <label htmlFor="avatar-upload">
+                                    <IconButton
+                                      size="small"
+                                      component="span"
+                                      onClick={() => {
+                                        setFileUploadDialog(true);
+                                      }}
+                                    >
+                                      <EditIcon
+                                        fontSize="small"
+                                        sx={{
+                                          color: "white",
+                                          fontSize: "0.9rem",
+                                        }}
+                                      />
+                                    </IconButton>
+                                  </label>
+                                </>
+                              }
                             >
-                              <EditIcon
-                                fontSize="small"
-                                sx={{ color: "white", fontSize: "0.9rem" }}
-                              />
-                            </IconButton>
-                          </label>
-                        </>
-                      }
-                    >
-                      <Avatar
-                        sx={{
-                          width: 140,
-                          height: 140,
-                          //background: "#F2F2FE",
-                          //border: "4px solid #fff",
-                        }}
-                        src={userProfileImage}
-                        className="userProfileImageStyle"
-                      >
-                        {/* <Image
+                              <Avatar
+                                sx={{
+                                  width: 115,
+                                  height: 115,
+                                  //background: "#F2F2FE",
+                                  //border: "4px solid #fff",
+                                }}
+                                src={userProfileImage}
+                                className="userProfileImageStyle w-28 h-28 bg-gradient-to-br from-yellow-400 via-purple-500 to-blue-500 rounded-full flex items-center justify-center"
+                              >
+                                {/* <Image
                           src={userProfileImage}
                           alt="Image"
                           style={{ height: "100%" ,background:"red"}}
                         /> */}
-                      </Avatar>
-                    </StyledBadge>
-                  </Grid>
-                  <Grid>
-                    <Grid size={12}>
-                      {/* <Card
+                              </Avatar>
+                            </StyledBadge>
+                          </Grid>
+
+                          <Grid>
+                            <Grid size={12}>
+                              {/* <Card
                       className="cardNew BorderRadius cardStyle" 
                         sx={{
                           padding: "0.9rem",
                           //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
                         }}
                       >  */}
-                      <Grid container>
-                        {/* Employee Name */}
-                        <Grid size={12}>
-                          <div style={{ textAlign: "center" }}>
-                            <Typography
-                              id="userName"
-                              style={{ color: "#29343D", fontSize: "1.1rem" }}
-                              className="userNameStyle"
-                            >
-                              {userProfile?.userName}
-                            </Typography>
-                          </div>
-                        </Grid>
+                              <Grid container>
+                                {/* Employee Name */}
+                                <Grid size={12}>
+                                  <div style={{ textAlign: "center" }}>
+                                    <Typography
+                                      id="userName"
+                                      style={{
+                                        color: "#29343D",
+                                        fontSize: "1rem",
+                                      }}
+                                      className="userNameStyle text-xl font-bold text-slate-800 mb-1"
+                                    >
+                                      {userProfile?.userName}
+                                    </Typography>
+                                  </div>
+                                </Grid>
 
-                        {/* Designation */}
-                        <Grid size={12}>
-                          <div style={{ textAlign: "center" }}>
-                            <Typography
-                              id="designation"
-                              className="fontSize-sm"
-                              sx={{ color: "#645e5e" }}
-                            >
-                              {userProfile?.designation}
-                            </Typography>
-                          </div>
-                        </Grid>
+                                {/* Designation */}
+                                <Grid size={12}>
+                                  <p className="text-slate-500 font-semibold flex items-center fontSize-sm justify-center ">
+                                    {userProfile?.designation}
+                                  </p>
+                                </Grid>
 
-                        {/* Department */}
+                                {/* Department */}
 
-                        <Grid
-                          size={12}
-                          sx={{
-                            padding: "0.3rem",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "center",
-                              marginTop: "0.3rem",
-                              columnGap: "1rem",
-                            }}
-                          >
-                            <Typography
-                              id="department"
-                              className="fontSize-sm"
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                color: "#645e5e",
-                              }}
-                            >
-                              <Tooltip title="Department" placement="top">
-                                <WorkIcon
-                                  fontSize="small"
-                                  className="departmentIconStyle"
-                                />
-                              </Tooltip>
-                              {userProfile?.department}
-                            </Typography>
+                                <Grid
+                                  size={12}
+                                  sx={{
+                                    padding: "0.3rem",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "center",
+                                      // marginTop: "0.3rem",
+                                      columnGap: "1rem",
+                                    }}
+                                  >
+                                    <Typography
+                                      id="department"
+                                      className="fontSize-sm"
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        color: "#645e5e",
+                                      }}
+                                    >
+                                      <Tooltip
+                                        title="Department"
+                                        placement="top"
+                                      >
+                                        <WorkIcon
+                                          fontSize="small"
+                                          className="departmentIconStyle"
+                                        />
+                                      </Tooltip>
+                                      {userProfile?.department}
+                                    </Typography>
 
-                            <Typography
-                              id="manager"
-                              className="fontSize-sm"
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                color: "#645e5e",
-                              }}
-                            >
-                              <Tooltip title="Manager Name" placement="top">
-                                <SupervisorAccountIcon
-                                  fontSize="small"
-                                  className="managerIconStyle"
-                                />
-                              </Tooltip>
-                              {emailToName(userProfile?.manager)}
-                            </Typography>
-                          </div>
-                        </Grid>
-                      </Grid>
-                      {/* </Card>  */}
-                    </Grid>
-                  </Grid>
-                  <Grid sx={{ marginTop: "0.5rem" }}>
-                    <Grid size={12}>
-                      <Card
-                        className="cardNew BorderRadius cardStyle"
-                        sx={{
-                          padding: "0.9rem",
-                          //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
-                        }}
-                      >
-                        <Grid container direction="column" spacing={1}>
-                          {/*Last Appraisal Date */}
-                          <Grid size={12}>
-                            <div className="NewCard">
+                                    <Typography
+                                      id="manager"
+                                      className="fontSize-sm"
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        color: "#645e5e",
+                                      }}
+                                    >
+                                      <Tooltip
+                                        title="Manager Name"
+                                        placement="top"
+                                      >
+                                        <SupervisorAccountIcon
+                                          fontSize="small"
+                                          className="managerIconStyle"
+                                        />
+                                      </Tooltip>
+                                      {emailToName(userProfile?.manager)}
+                                    </Typography>
+                                  </div>
+                                </Grid>
+                              </Grid>
+                              {/* </Card>  */}
+                            </Grid>
+                          </Grid>
+                        </div>
+
+                        {/* Key Dates */}
+                        <div className="space-y-4 mt-2">
+                          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-slate-50 to-slate-50 rounded-xl border border-slate-50">
+                            <div className="flex items-center">
+                              {/* <Clock className="w-4 h-4 text-slate-500" /> */}
                               <Typography
                                 className="fontSize-sm"
                                 sx={{ m: 0, fontWeight: 500 }}
                               >
-                                Last Appraisal Date
+                                Last Appraisal
                               </Typography>
-
-                              <Tag
-                                style={{ background: "#8399a2" }}
-                                //severity="success"
-                                className="TagStyle"
-                                value={appraisalData.lastAppraisalDate ?? "NA"}
-                                rounded
-                              ></Tag>
                             </div>
-                          </Grid>
-
-                          {/* Next Appraisal Date */}
-                          <Grid>
-                            <div className="NewCard">
-                              <Typography
-                                className="fontSize-sm"
-                                sx={{ m: 0, fontWeight: 500 }}
-                              >
-                                Next Appraisal Date
-                              </Typography>
-                              <Tag
-                                style={{ background: "#8399a2" }}
-                                //severity="success"
-                                className="TagStyle"
-                                value={appraisalData.nextAppraisalDate ?? "NA"}
-                                rounded
-                              ></Tag>
+                            <Tag
+                              style={{ background: "#8399a2" }}
+                              //severity="success"
+                              className="TagStyle"
+                              value={appraisalData.lastAppraisalDate ?? "NA"}
+                              rounded
+                            ></Tag>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-blue-50 to-blue-50 rounded-xl border border-blue-50">
+                            <div className="flex items-center gap-2">
+                              {/* <Target className="w-4 h-4 text-blue-500" /> */}
+                              <span className="text-sm font-medium text-slate-600">
+                                Next Appraisal
+                              </span>
                             </div>
-                          </Grid>
-                        </Grid>
-                      </Card>
-                    </Grid>
-                  </Grid>
+                            <Tag
+                              style={{ background: "#8399a2" }}
+                              //severity="success"
+                              className="TagStyle"
+                              value={appraisalData.nextAppraisalDate ?? "NA"}
+                              rounded
+                            ></Tag>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
 
                   <Grid sx={{ marginTop: "0.5rem" }}>
                     <Grid size={12}>
@@ -814,6 +892,7 @@ const HomePage = () => {
                       </Card>
                     </Grid>
                   </Grid>
+                  {/* </Grid> */}
                 </Grid>
                 <Grid size={9}>
                   <Grid>
@@ -859,7 +938,7 @@ const HomePage = () => {
                                       alignItems: "center",
                                     }}
                                   >
-                                    <Typography
+                                    {/* <Typography
                                       sx={{
                                         m: "0.2rem 0.5rem",
                                         fontWeight: 500,
@@ -872,7 +951,7 @@ const HomePage = () => {
                                       size="small"
                                       checked={onTourSwitch}
                                       onChange={handleChangeOnTour}
-                                    />
+                                    /> */}
 
                                     <div
                                       style={{
@@ -1109,7 +1188,7 @@ const HomePage = () => {
                 /> */}
 
                 <InputTextarea
-                  style={{ width: "100%", marginTop: "0.5rem", }}
+                  style={{ width: "100%", marginTop: "0.5rem" }}
                   value={feedback}
                   placeholder="Enter Your Feedback"
                   onChange={(e) => setFeedback(e.target.value)}
