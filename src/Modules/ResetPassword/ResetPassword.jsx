@@ -66,6 +66,7 @@ export default function ResetPassword({
               <Grid size={5} className="currentPasswordCell">
                 <div className="card flex justify-content-center">
                   <Password
+                  className="NumberFieldStyle"
                     value={currentPasswordDetails.currentPassword}
                     toggleMask //Whether to show an icon to display the password as plain text.
                     feedback={false}

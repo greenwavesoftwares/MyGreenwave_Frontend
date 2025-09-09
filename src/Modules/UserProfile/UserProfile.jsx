@@ -241,10 +241,9 @@ export default function UserProfile() {
                                 size={"small"}
                                 key={pageIndex}
                                 label={allotedPage}
-                                className="chip-info"
+                                className="infoChipStyle"
                                 style={{
                                   margin: "0.3rem",
-                                  color: "#1e40af !important",
                                 }}
                               />
                             )
