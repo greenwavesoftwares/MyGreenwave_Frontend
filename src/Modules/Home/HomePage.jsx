@@ -233,7 +233,7 @@ const HomePage = () => {
                   {item.title}
                 </h3>
                 <div
-                  className="text-slate-500 font-semibold bg-slate-100 px-3 py-1 rounded-2xl"
+                  className="font-semibold px-3 py-1 rounded-2xl notificationTextBGColor"
                   style={{ fontSize: "12px" }}
                 >
                   <Clock className="inline mr-2" style={{ width: "14px" }} />
@@ -245,7 +245,7 @@ const HomePage = () => {
           footer={
             <a
               style={{ fontWeight: "bold", fontSize: "0.8rem" }}
-              className="fontSize-sm"
+              className="fontSize-sm ml-2"
               target="_blank"
               href={item.url}
             >
@@ -254,42 +254,14 @@ const HomePage = () => {
           }
         >
           <Typography
-            className="fontSize-sm bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl px-3 py-2 border border-purple-50"
+            className="fontSize-sm bg-gradient-to-r rounded-xl px-3 py-2 notificationTextBGColor"
             sx={{ marginBottom: "0.2rem" }}
           >
             {item.notification}
           </Typography>
         </PrimeReactCard>
       </>
-      // <div style={{ display: "grid", justifyContent: "start" }}>
-      //   <Typography
-      //     sx={{
-      //       fontSize: "1rem !important",
-      //       fontWeight: 700,
-      //       color: "#3be4b4",
-      //       textTransform: "capitalize",
-      //     }}
-      //   >
-      //     {item.title}
-      //   </Typography>
-      //   <Typography
-      //     className="fontSize-sm"
-      //     sx={{ fontWeight: 600, marginBottom: "0.2rem" }}
-      //   >
-      //     {`${item.fromdate} - ${item.toDate}`}
-      //   </Typography>
-      //   <Typography className="fontSize-sm" sx={{ marginBottom: "0.2rem" }}>
-      //     {item.notification}
-      //   </Typography>
-      //   <a
-      //     style={{ fontWeight: "bold" }}
-      //     className=""
-      //     target="_blank"
-      //     href={item.url}
-      //   >
-      //     Click Here For More Information
-      //   </a>
-      // </div>
+     
     );
   };
 
@@ -738,7 +710,7 @@ const HomePage = () => {
 
                         {/* Key Dates */}
                         <div className="space-y-4 mt-2">
-                          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-slate-50 to-slate-50 rounded-xl border border-slate-50">
+                          <div className="flex justify-between items-center p-2 rounded-xl appraisalBGColor">
                             <div className="flex items-center">
                               {/* <Clock className="w-4 h-4 text-slate-500" /> */}
                               <Typography
@@ -756,7 +728,7 @@ const HomePage = () => {
                               rounded
                             ></Tag>
                           </div>
-                          <div className="flex justify-between items-center p-2 bg-gradient-to-r from-blue-50 to-blue-50 rounded-xl border border-blue-50">
+                          <div className="flex justify-between items-center p-2 mb-2  rounded-xl  nextAppraisalBG">
                             <div className="flex items-center gap-2">
                               {/* <Target className="w-4 h-4 text-blue-500" /> */}
                               <span className="text-sm font-medium text-slate-600">
@@ -881,7 +853,7 @@ const HomePage = () => {
                                 severity="success"
                                 className="TagStyle"
                                 value={
-                                  tourClaims?.travelReqUnderProcessStatus ??
+                                  tourClaims?.travelReqUnderProcessStatus ||
                                   "NA"
                                 }
                                 rounded
@@ -991,7 +963,7 @@ const HomePage = () => {
                                   // showThumbnailNavigators={false}
                                   circular
                                   autoPlay
-                                  transitionInterval={5 * 1000}
+                                  transitionInterval={8 * 1000}
                                   showIndicators
                                   //showIndicatorsOnItem
                                   // showItemNavigatorsOnHover
@@ -1189,6 +1161,7 @@ const HomePage = () => {
 
                 <InputTextarea
                   style={{ width: "100%", marginTop: "0.5rem" }}
+                  className="inputFieldStyle"
                   value={feedback}
                   placeholder="Enter Your Feedback"
                   onChange={(e) => setFeedback(e.target.value)}

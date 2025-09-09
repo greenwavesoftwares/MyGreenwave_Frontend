@@ -16,6 +16,18 @@
 .primeReactCardStyle.p-card .p-card-footer {
     padding: 0.2rem 0 0 0;
 }
+.notificationTextBGColor{
+    background-color: var(--notificationCard-bg);
+    color: var(--menu-text);
+}
+.appraisalBGColor{
+    background-color: var(--appraisalBG);
+    color: var(--menu-text);
+}
+.nextAppraisalBG{
+    background-color: var(--nextAppraisalBGColor);
+    color: var(--menu-text);
+}
 
 
 // Typography Style

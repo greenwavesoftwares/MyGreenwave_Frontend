@@ -1,84 +1,78 @@
 .dark {
   --bg-main: #1e1e2f;
-  --bg-drawer: #2A2E3F;
+  --bg-drawer: #2a2e3f;
   --menu-selected: #37474f;
   --menu-text: #eceff1;
   --avatar-bg: #4097ff;
   --divider-color: #ffffff30;
   --chip-border: white;
   --chip-color: white;
-   --FontAwesomeIcon: #e7e9eb;
+  --FontAwesomeIcon: #e7e9eb;
   --ExpandMoreIconStyle: #aeaac7;
-  --borderColor:#a1949436;
-   --boxShadowPaper:#595962f2;
-     --tittleFontColor:#969ca9;
+  --borderColor: #a1949436;
+  --boxShadowPaper: #595962f2;
+  --tittleFontColor: #d7d8db;
 
-    //Icon BG Color
+  //Icon BG Color
   --icon-blue-bg: #dbeafe91;
-  --icon-green-bg:#96ebb338;
-  --icon-purple-bg:#b88ee53d;
+  --icon-green-bg: #96ebb338;
+  --icon-purple-bg: #b88ee53d;
 
+  // Card styles
+  --card-bg: #e5dfdf17;
+  --card-border: #f3eaea00;
+  --cardBGTwo: #e5dfdf17;
 
-// Card styles
-   --card-bg :#e5dfdf17;
-    --card-border: #f3eaea00;
-    --cardBGTwo:#e5dfdf17;
-
-    
   //Typography styles
   --fontColor: #eceff1;
 
   //Table styles
-  --tableOuterBorder:  #454458;
-  --tableBG:#998b8b17;
+  --tableOuterBorder: #454458;
+  --tableBG: #998b8b17;
   --tableOddRow: #5b5a664a;
   --tablePaginator-active: #5b5a664a;
-  --tableHighlight:#606083;
-    --tableHeaderIcon:#c5c5c5d9;
-      --tableFooterBG:#525774;
+  --tableHighlight: #606083;
+  --tableHeaderIcon: #c5c5c5d9;
+  --tableFooterBG: #525774;
 
   //Dialog styles
-  --headerBottomBorder:#ffffff30;
+  --headerBottomBorder: #ffffff30;
   --dialogBG: #20243080;
 
-
   //MUI Tab styles
-  --tabBGColor: #2A2E3F;
+  --tabBGColor: #2a2e3f;
   --tabActive: #3d4254;
 
-
   //Calender Style
-  --calBorder:#5a5959;
+  --calBorder: #5a5959;
 
-
-   //Input styles
+  //Input styles
   --inputFieldBorder: #e0e0e0;
-
-
 
   //Dropdown Style
   --dropdownBG: #202430;
-   --hoverText: #95bff33b;
-    --dropdownBG-Header: #2f333f;
+  --hoverText: #95bff33b;
+  --dropdownBG-Header: #2f333f;
 
+  //Salary Slip Header
+  --salarySlipHeaderBG: #d3c5c51c;
+  --salarySlipHeaderFontColor: #eceff1;
 
-
-     //Salary Slip Header
-   --salarySlipHeaderBG: #d3c5c51c;
-   --salarySlipHeaderFontColor:#eceff1;
-
-
-     //Chip Style
-   --blueBG:#4e4d5c;
-   --blueFontColor:#ffffff;
-     --greenBG: #19cd19;
+  //Chip Style
+  --blueBG: #4e4d5c;
+  --blueFontColor: #ffffff;
+  --greenBG: #19cd19;
   --greenFontColor: blue;
-  --greenBorder:#4eeb4e70;
-    --redBG: #ff4d4d;
+  --greenBorder: #4eeb4e70;
+  --redBG: #ff4d4d;
   --redFontColor: #b30000;
   --redBorder: #ff4d4d;
 
-
   //Menu Thumb Style
-  --MuiSwitchThumbBG:#001e3c;
+  --MuiSwitchThumbBG: #001e3c;
+
+  //Home Page Notification Card
+  --notificationCard-bg: #e5dfdf17;
+  --appraisalBG:#e5dfdf17;
+  --nextAppraisalBGColor:#e5dfdf17;
 }
