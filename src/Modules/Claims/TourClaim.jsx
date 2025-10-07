@@ -198,6 +198,7 @@ const TourClaim = () => {
                       settourclaimformData={settourclaimformData}
                       tourclaimformData={tourclaimformData}
                       setDraftData={setDraftData}
+                       draftData={draftData}
                       formErrors={formErrors}
                       setFormErrors={setFormErrors}
                     />

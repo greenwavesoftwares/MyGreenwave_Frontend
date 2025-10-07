@@ -310,6 +310,7 @@ const TourClaimTable = ({
   const handleSaveToDraft = async () => {
     try {
       console.log("formErrors", formErrors);
+      console.log('draftdata',draftData)
       if (!validateForm()) {
         //const firstKey = Object.keys(formErrors)[0];
         if (toastRef?.current) {
@@ -892,6 +893,8 @@ const TourClaimTable = ({
               className="p-button-sm selectButtonStyle"
               size={"small"}
               style={{padding: "0.5rem 0.7rem"}}
+              disabled={draftData?.length=== 0}
+
               // disabled={toggleNewClaim===true}
             />
           </div>
