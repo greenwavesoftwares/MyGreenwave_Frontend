@@ -560,7 +560,7 @@ const TourClaimTable = ({
       <CustomeCalender
         value={options.value}
         onChange={(e) => options.editorCallback(e.value)}
-        className="p-inputtext-sm w-full calendarStyle"
+        //className="p-inputtext-sm w-full calendarStyle"
         // style={{ minWidth: "105px" }}
         minDate={new Date(tourclaimformData.claimFromDate)}
         maxDate={new Date(tourclaimformData.claimToDate)}
@@ -676,7 +676,7 @@ const TourClaimTable = ({
         tableStyle={{ fontSize: "0.7rem" }}
         onRowEditComplete={onRowEditComplete}
         footerColumnGroup={null}
-       header="Date-wise Details"
+         header="Date-wise Details"
         size="small"
         stripedRows
       >
@@ -706,7 +706,7 @@ const TourClaimTable = ({
             row.Date ? formateDate(row.Date) : ""
           }
           footer="Total"
-          style={{width:"90px"}}
+          style={{width:"115px"}}
         />
         {/* <Column
           field="Date"

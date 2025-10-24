@@ -1256,6 +1256,8 @@ const token = `Bearer ${getUserData()?.token}`;
     let CancelledData =  CancelledResponse.data;
     let finaldata = [...ReviewedData, ...CancelledData, ...ApprovedData];
 
+     finaldata.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
+
     return {
       status: true,
       message: "Approved TourClaim Details.",
@@ -1499,6 +1501,8 @@ export const getReviewedTourClaims = async () => {
     //   };
     // }
     let revieweddata =  reviewedresponse.data;
+    revieweddata.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
+    console.log('revieweddata',revieweddata)
     return {
       status: true,
       message: "applied TourClaim Details.",
@@ -1527,6 +1531,7 @@ export const getApprovedHRTourClaims = async () => {
     );
    
     let approveddata = approvedresponse.data;
+     approveddata.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
     return {
       status: true,
       message: "approved TourClaim Details.",

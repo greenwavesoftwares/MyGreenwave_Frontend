@@ -198,7 +198,7 @@ const ApprovedTourClaimTable = () => {
       <div className="flex flex-col justify-center items-center">
         <span className=" text-center"> {rowData.from_date}</span>
         <span className="text-center"> to </span>
-        <span className=" text-center"> {rowData.from_date} </span>
+        <span className=" text-center"> {rowData.to_date} </span>
       </div>
     );
   };
@@ -241,6 +241,23 @@ const ApprovedTourClaimTable = () => {
 
     fetchapprovedtourclaim();
   }, [setapprovedtourclaimData]);
+  
+  const totals = Array.isArray(viewtabledata)
+  ? {
+      lodging: viewtabledata.reduce((s, r) => s + (Number(r.lodging) || 0), 0),
+      breakfast: viewtabledata.reduce((s, r) => s + (Number(r.breakfast) || 0), 0),
+      lunch: viewtabledata.reduce((s, r) => s + (Number(r.lunch) || 0), 0),
+      snacks: viewtabledata.reduce((s, r) => s + (Number(r.snacks) || 0), 0),
+      dinner: viewtabledata.reduce((s, r) => s + (Number(r.dinner) || 0), 0),
+      teaWater: viewtabledata.reduce((s, r) => s + (Number(r.teaWater) || 0), 0),
+      longTravel: viewtabledata.reduce((s, r) => s + (Number(r.longTravel) || 0), 0),
+      shortTravel: viewtabledata.reduce((s, r) => s + (Number(r.shortTravel) || 0), 0),
+      tollTax: viewtabledata.reduce((s, r) => s + (Number(r.tollTax) || 0), 0),
+      incidentals: viewtabledata.reduce((s, r) => s + (Number(r.incidentals) || 0), 0),
+      other: viewtabledata.reduce((s, r) => s + (Number(r.other) || 0), 0),
+      total: viewtabledata.reduce((s, r) => s + (Number(r.total) || 0), 0),
+    }
+  : {};
   return (
     <div>
       <CustomToast ref={toastRef} />
@@ -371,97 +388,110 @@ const ApprovedTourClaimTable = () => {
       >
         <DataTableComponent
           data={viewtabledata}
-           
           showGridlines
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           paginator={false}
          
          // tableStyle={{ minWidth: "50rem" }}
         >
-          <CustomColumn
-            field="date"
-            header="Date"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="lodging"
-            header="Lodging"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="breakfast"
-            header="Breakfast"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="lunch"
-            header="Lunch"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="snacks"
-            header="Snacks"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="dinner"
-            header="Dinner"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="teaWater"
-            header="Tea & Water"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="longTravel"
-            header="Airfare, Bus, Train, Taxi Rental"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="shortTravel"
-            header="Auto, Cab"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="tollTax"
-            header="Parking, Toll, Fuel"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="incidentals"
-            header="Incidentals"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="other"
-            header="Other Business Expenses"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="total"
-            header="Total"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
-          <CustomColumn
-            field="remarks"
-            header="Remarks"
-            headerStyle={cellStyle}
-            bodyStyle={cellStyle}
-          />
+         <CustomColumn
+                     field="date"
+                     header="Date"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                     footer='Total'
+                   />
+                   <CustomColumn
+                     field="lodging"
+                     header="Lodging"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                     footer={totals.lodging?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="breakfast"
+                     header="Breakfast"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                     footer={totals.breakfast?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="lunch"
+                     header="Lunch"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.lunch?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="snacks"
+                     header="Snacks"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.snacks?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="dinner"
+                     header="Dinner"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.dinner?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="teaWater"
+                     header="Tea & Water"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.teaWater?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="longTravel"
+                     header="Airfare, Bus, Train, Taxi Rental"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.longTravel?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="shortTravel"
+                     header="Auto, Cab"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.shortTravel?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="tollTax"
+                     header="Parking, Toll, Fuel"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.tollTax?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="incidentals"
+                     header="Incidentals"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.incidentals?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="other"
+                     header="Other Business Expenses"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.other?.toFixed(2)}
+                   />
+                   <CustomColumn
+                     field="total"
+                     header="Total"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                      footer={totals.total?.toFixed(2)}
+                   />
+                   
+                   <CustomColumn
+                     field="remarks"
+                     header="Remarks"
+                     headerStyle={cellStyle}
+                     bodyStyle={cellStyle}
+                   />
         </DataTableComponent>
       </Dialog>
     </div>

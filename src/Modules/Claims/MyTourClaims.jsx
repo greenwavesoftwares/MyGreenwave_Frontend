@@ -15,12 +15,15 @@ import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { ProgressBar } from "primereact/progressbar";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import {ExpandableDataTableComponent,CustomColumn,DataTableComponent} from "../../components/DataTable/DataTableComponent";
+import {
+  ExpandableDataTableComponent,
+  CustomColumn,
+  DataTableComponent,
+} from "../../components/DataTable/DataTableComponent";
 import CustomButton from "../../components/Button/Button";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
-import {Tooltip as Muitooltip} from "@mui/material";
-
+import { Tooltip as Muitooltip } from "@mui/material";
 
 //import ViewTable from "./ViewTable";
 const cellStyle = {
@@ -30,7 +33,7 @@ const cellStyle = {
 };
 
 const MyTourClaims = () => {
-  const [loader,setLoader]=useState(false)
+  const [loader, setLoader] = useState(false);
   const [rowData, setRowData] = useState({});
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
@@ -38,46 +41,43 @@ const MyTourClaims = () => {
   const [tourClaims, setTourClaims] = useState([]);
   const toast = useRef(null);
 
- 
+  const [globalFilterValue, setGlobalFilterValue] = useState("");
+  const [globalFilterRows, setGlobalFilterRows] = useState({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    actualToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    project: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    purpose: { value: null, matchMode: FilterMatchMode.CONTAINS },
 
-  const [globalFilterValue, setGlobalFilterValue] =
-      useState("");
-    const [globalFilterRows, setGlobalFilterRows] = useState({
-      global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      fromDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      actualToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      tentativeToDate: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      project: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      purpose: { value: null, matchMode: FilterMatchMode.CONTAINS },
-   
-      destination: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      type: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    });
-  
-    const onGlobalFilterChange = (e) => {
-      const value = e.target.value;
-      let _globalFilterRows = { ...globalFilterRows };
-  
-      _globalFilterRows["global"].value = value;
-  
-      setGlobalFilterRows(_globalFilterRows);
-      setGlobalFilterValue(value);
-    };
-  
-    const renderHeaderForGlobalSearch = () => {
-      return (
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <InputText
-            value={globalFilterValue}
-            onChange={onGlobalFilterChange}
-            placeholder="Keyword Search"
-            className="w-full sm:w-auto inputFieldStyle"
-          />
-        </div>
-      );
-    };
-  
-     const dataTableHeader = renderHeaderForGlobalSearch();
+    destination: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    type: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  });
+
+  const onGlobalFilterChange = (e) => {
+    const value = e.target.value;
+    let _globalFilterRows = { ...globalFilterRows };
+
+    _globalFilterRows["global"].value = value;
+
+    setGlobalFilterRows(_globalFilterRows);
+    setGlobalFilterValue(value);
+  };
+
+  const renderHeaderForGlobalSearch = () => {
+    return (
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <InputText
+          value={globalFilterValue}
+          onChange={onGlobalFilterChange}
+          placeholder="Keyword Search"
+          className="w-full sm:w-auto inputFieldStyle"
+        />
+      </div>
+    );
+  };
+
+  const dataTableHeader = renderHeaderForGlobalSearch();
 
   const handleDownloadFile = async () => {
     try {
@@ -105,15 +105,17 @@ const MyTourClaims = () => {
   );
 
   const claimCalculationBody = (rowData) => (
-   // approvedAmount
+    // approvedAmount
     <div className="flex flex-col items-end justify-center space-y-1">
-       <div>
+      <div>
         <span className="font-semibold text-gray-700">Advance:</span> ₹
         {rowData["advance"]}
       </div>
       <div>
-        <span className="font-semibold text-gray-700">Expenditure Claimed:</span> ₹
-        {rowData["total_expense"]}
+        <span className="font-semibold text-gray-700">
+          Expenditure Claimed:
+        </span>{" "}
+        ₹{rowData["total_expense"]}
       </div>
       <div>
         <span className="font-semibold text-gray-700">Claim Approved:</span> ₹
@@ -158,8 +160,8 @@ const MyTourClaims = () => {
       status === "approved"
         ? "success"
         : status === "settled"
-        ? "info"
-        : "warning";
+          ? "info"
+          : "warning";
     return (
       <div className="flex justify-center">
         <Tag
@@ -174,9 +176,9 @@ const MyTourClaims = () => {
   const datebody = (rowData) => {
     return (
       <div className="flex flex-col justify-center items-center">
-        <span > {rowData.from_date}</span>
-        <span > to </span>
-        <span > {rowData.to_date} </span>
+        <span> {rowData.from_date}</span>
+        <span> to </span>
+        <span> {rowData.to_date} </span>
       </div>
     );
   };
@@ -198,7 +200,7 @@ const MyTourClaims = () => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
         setviewtabledata(data.tourClaimRecords);
-         setShowViewDialog(true);
+        setShowViewDialog(true);
       } catch (error) {
         toast.current.show({
           severity: "error",
@@ -256,113 +258,148 @@ const MyTourClaims = () => {
   };
 
   const rowExpansionTemplate = (rowData) => (
-   
-      <DataTableComponent
-       rows={10}
-            textSize="text-xs"
-            tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-            emptyMessage="No data found"
-         
-        data={rowData.expandabledata}
-        showGridlines  
-        className="text-xs"
-        //tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
-      >
-    <Column
+    <DataTableComponent
+      rows={10}
+      textSize="text-xs"
+      tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+      emptyMessage="No data found"
+      data={rowData.expandabledata}
+      showGridlines
+      className="text-xs"
+      //tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+    >
+      <Column
         header="S.NO"
-       body={(rowData, { rowIndex }) => (
-    <Muitooltip title={rowData.claim_id} placement="top">
-      <span>{rowIndex + 1}</span>
-    </Muitooltip>
-  )}
-        style={{ width: '3rem' }}
+        body={(rowData, { rowIndex }) => (
+          <Muitooltip title={rowData.claim_id} placement="top">
+            <span>{rowIndex + 1}</span>
+          </Muitooltip>
+        )}
+        style={{ width: "3rem" }}
       />
-         {/* <CustomColumn
+      {/* <CustomColumn
           header="Claim Id"
          
         field="claim_id"
           headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
         /> */}
-        
-        <CustomColumn
-          header="Claim Duration"
-          body={datebody}
-          headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
-        />
-       
-        <CustomColumn
-          header="Claim Calculation"
-          body={claimCalculationBody}
-          headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
-          bodyStyle={{
-            ...cellStyle,
-            width: "200px",
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          }}
-        />
-        <CustomColumn
-          header="Approver - Remarks"
-          body={approverBody}
-          headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
-          bodyStyle={{
-            ...cellStyle,
-            width: "200px",
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          }}
-        />
-        <CustomColumn
-          header="Reviewer - Remarks"
-          body={reviewerBody}
-          headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
-          bodyStyle={{
-            ...cellStyle,
-            width: "200px",
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          }}
-        />
-        <CustomColumn
-          field="status"
-          header="Status"
-          body={statusBody}
-          headerStyle={cellStyle}
-          bodyStyle={cellStyle}
-        />
-        <CustomColumn
-          field="Expense"
-          header="Expense"
-          body={downloadExpense}
-          headerStyle={cellStyle}
-          bodyStyle={cellStyle}
-        />
-        <CustomColumn
-          field="downloadSupportingDocument"
-          header="Supporting Document"
-          body={downloadSupportingDocument}
-          headerStyle={cellStyle}
-          bodyStyle={cellStyle}
-        />
-      </DataTableComponent>
-  
+
+      <CustomColumn
+        header="Claim Duration"
+        body={datebody}
+        headerStyle={{ ...cellStyle, width: "120px", whiteSpace: "normal" }}
+      />
+
+      <CustomColumn
+        header="Claim Calculation"
+        body={claimCalculationBody}
+        headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
+        bodyStyle={{
+          ...cellStyle,
+          width: "200px",
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        }}
+      />
+      <CustomColumn
+        header="Approver - Remarks"
+        body={approverBody}
+        headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
+        bodyStyle={{
+          ...cellStyle,
+          width: "200px",
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        }}
+      />
+      <CustomColumn
+        header="Reviewer - Remarks"
+        body={reviewerBody}
+        headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
+        bodyStyle={{
+          ...cellStyle,
+          width: "200px",
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        }}
+      />
+      <CustomColumn
+        field="status"
+        header="Status"
+        body={statusBody}
+        headerStyle={cellStyle}
+        bodyStyle={cellStyle}
+      />
+      <CustomColumn
+        field="Expense"
+        header="Expense"
+        body={downloadExpense}
+        headerStyle={cellStyle}
+        bodyStyle={cellStyle}
+      />
+      <CustomColumn
+        field="downloadSupportingDocument"
+        header="Supporting Document"
+        body={downloadSupportingDocument}
+        headerStyle={cellStyle}
+        bodyStyle={cellStyle}
+      />
+    </DataTableComponent>
   );
 
   useEffect(() => {
     const fetchTourClaimList = async () => {
       try {
-        setLoader(true)
+        setLoader(true);
         const data = await getTourClaimList();
         setTourClaims(data);
-        console.log('Data :-' ,data);
+        console.log("Data :-", data);
       } catch (error) {
         console.error("Error fetching tour claim list:", error);
       }
-      setLoader(false)
+      setLoader(false);
     };
 
     fetchTourClaimList();
   }, []);
+
+  const totals = Array.isArray(viewtabledata)
+    ? {
+        lodging: viewtabledata.reduce(
+          (s, r) => s + (Number(r.lodging) || 0),
+          0
+        ),
+        breakfast: viewtabledata.reduce(
+          (s, r) => s + (Number(r.breakfast) || 0),
+          0
+        ),
+        lunch: viewtabledata.reduce((s, r) => s + (Number(r.lunch) || 0), 0),
+        snacks: viewtabledata.reduce((s, r) => s + (Number(r.snacks) || 0), 0),
+        dinner: viewtabledata.reduce((s, r) => s + (Number(r.dinner) || 0), 0),
+        teaWater: viewtabledata.reduce(
+          (s, r) => s + (Number(r.teaWater) || 0),
+          0
+        ),
+        longTravel: viewtabledata.reduce(
+          (s, r) => s + (Number(r.longTravel) || 0),
+          0
+        ),
+        shortTravel: viewtabledata.reduce(
+          (s, r) => s + (Number(r.shortTravel) || 0),
+          0
+        ),
+        tollTax: viewtabledata.reduce(
+          (s, r) => s + (Number(r.tollTax) || 0),
+          0
+        ),
+        incidentals: viewtabledata.reduce(
+          (s, r) => s + (Number(r.incidentals) || 0),
+          0
+        ),
+        other: viewtabledata.reduce((s, r) => s + (Number(r.other) || 0), 0),
+        total: viewtabledata.reduce((s, r) => s + (Number(r.total) || 0), 0),
+      }
+    : {};
 
   return (
     <div className="overflow-x-auto defaultBorder">
@@ -371,21 +408,20 @@ const MyTourClaims = () => {
         expandedRows={expandedRows}
         onRowToggle={(e) => setExpandedRows(e.data)}
         rowExpansionTemplate={rowExpansionTemplate}
-          //showGridlines
+        //showGridlines
         className="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         dataKey="travel_id"
-         paginator
+        paginator
         rows={10}
-         emptyMessage={
-          loader? (
-             <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
-           
+        emptyMessage={
+          loader ? (
+            <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
           ) : (
-              "No data found"
+            "No data found"
           )
         }
-         header={dataTableHeader}
+        header={dataTableHeader}
         filters={globalFilterRows}
         globalFilterFields={[
           "fromDate",
@@ -398,7 +434,7 @@ const MyTourClaims = () => {
         ]}
       >
         <Column expander style={{ width: "3rem" }} />
-         {/* <CustomColumn
+        {/* <CustomColumn
           field="travel_id"
           header="travel_id"
           sortable={true}
@@ -439,12 +475,14 @@ const MyTourClaims = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         /> */}
-         <Column  header="Project Name"
-                 body={(rowData) => (
+        <Column
+          header="Project Name"
+          body={(rowData) => (
             <Muitooltip title={rowData.travel_id} placement="top">
               <span>{rowData.project}</span>
             </Muitooltip>
-          )}></Column>
+          )}
+        ></Column>
         <CustomColumn
           field="purpose"
           header="Purpose"
@@ -456,7 +494,7 @@ const MyTourClaims = () => {
         <CustomColumn
           field="destination"
           header="Destination"
-         sortable={true}
+          sortable={true}
           filter={true}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
@@ -479,44 +517,112 @@ const MyTourClaims = () => {
       >
         <DataTable
           value={viewtabledata}
-          showGridlines 
+          showGridlines
           className="text-xs"
-           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         >
-           <CustomColumn field="travel_id" header="travel_id"  headerStyle={{...cellStyle,minWidth:"100px"}}
-          bodyStyle={cellStyle} />
-          <CustomColumn field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
-          bodyStyle={cellStyle} />
-          <CustomColumn field="lodging" header="Lodging"   headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="breakfast" header="Breakfast"   headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="lunch" header="Lunch"   headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="snacks" header="Snacks"   headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="dinner" header="Dinner"  headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="teaWater" header="Tea & Water"   headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
+          {/* <CustomColumn field="travel_id" header="travel_id"  headerStyle={{...cellStyle,minWidth:"100px"}}
+          bodyStyle={cellStyle} /> */}
+          {/* <CustomColumn field="date" header="Date"  headerStyle={{...cellStyle,minWidth:"100px"}}
+          bodyStyle={cellStyle} /> */}
+
+          <CustomColumn
+            field="date"
+            header="Date"
+            headerStyle={{ ...cellStyle, minWidth: "100px" }}
+            bodyStyle={cellStyle}
+            footer="Total"
+          />
+          <CustomColumn
+            field="lodging"
+            header="Lodging"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.lodging?.toFixed(2)}
+          />
+          <CustomColumn
+            field="breakfast"
+            header="Breakfast"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.breakfast?.toFixed(2)}
+          />
+          <CustomColumn
+            field="lunch"
+            header="Lunch"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.lunch?.toFixed(2)}
+          />
+          <CustomColumn
+            field="snacks"
+            header="Snacks"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.snacks?.toFixed(2)}
+          />
+          <CustomColumn
+            field="dinner"
+            header="Dinner"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.dinner?.toFixed(2)}
+          />
+          <CustomColumn
+            field="teaWater"
+            header="Tea & Water"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.teaWater?.toFixed(2)}
+          />
           <CustomColumn
             field="longTravel"
             header="Airfare, Bus, Train, Taxi Rental"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
+            footer={totals.longTravel?.toFixed(2)}
           />
-          <CustomColumn field="shortTravel" header="Auto, Cab"  headerStyle={cellStyle}
-          bodyStyle={cellStyle} />
-          <CustomColumn field="tollTax" header="Parking, Toll, Fuel"  headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="incidentals" header="Incidentals"  headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="other" header="Other Business Expenses"  headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="total" header="Total"  headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
-          <CustomColumn field="remarks" header="Remarks"  headerStyle={cellStyle}
-          bodyStyle={cellStyle}/>
+          <CustomColumn
+            field="shortTravel"
+            header="Auto, Cab"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.shortTravel?.toFixed(2)}
+          />
+          <CustomColumn
+            field="tollTax"
+            header="Parking, Toll, Fuel"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.tollTax?.toFixed(2)}
+          />
+          <CustomColumn
+            field="incidentals"
+            header="Incidentals"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.incidentals?.toFixed(2)}
+          />
+          <CustomColumn
+            field="other"
+            header="Other Business Expenses"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.other?.toFixed(2)}
+          />
+          <CustomColumn
+            field="total"
+            header="Total"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+            footer={totals.total?.toFixed(2)}
+          />
+          <CustomColumn
+            field="remarks"
+            header="Remarks"
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+          />
         </DataTable>
       </Dialog>
     </div>
