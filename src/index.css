@@ -172,6 +172,10 @@ header, footer {
   text-align: center;
   color: white;
 }
+/* Scale down the primereact component size*/
+html {
+    font-size: 14px;
+}
 .css-1lwhjos-MuiPaper-root-MuiDrawer-paper{
   scrollbar-width: none;
 }

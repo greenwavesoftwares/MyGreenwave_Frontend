@@ -218,6 +218,8 @@ export default function MiniDrawer() {
       const hasChildren = Array.isArray(item.items) && item.items.length > 0;
       const isExpanded = expandedItems[key];
       const levelClass = `menu-level-${level}`;
+      const selectedPath =
+        window.location.pathname.split("/").reverse()[0] === fullPath;
 
       return (
         <React.Fragment key={key}>
@@ -243,7 +245,10 @@ export default function MiniDrawer() {
               style={{ textDecoration: "none", color: "inherit" }}
               onClick={(e) => e.preventDefault()}
             >
-              <ListItemButton style={{ width: "100%" }}>
+              <ListItemButton style={{ width: "100%",backgroundColor: selectedPath ? "rgba(64, 151, 255, 0.1)" : "inherit" ,
+
+                borderLeft: selectedPath ? "3px solid #4097FF" : "none"
+              }}>
                 <Tooltip title={open ? "" : item.label} placement="right">
                   <ListItemIcon className="menu-icon">
                     {hasChildren ? (
@@ -260,6 +265,8 @@ export default function MiniDrawer() {
                         <FontAwesomeIcon
                           icon={item.logo.split(" ")}
                           className="menu-icon"
+                          style={{ marginLeft: selectedPath ? "-3px": ""}}
+                          
                         />
                       )
                     )}
@@ -286,8 +293,11 @@ export default function MiniDrawer() {
     });
 
   const handleLogout = () => {
-    localStorage.clear();
-    localStorage.setItem("Theme", "light");
+    Object.keys(localStorage).forEach((key) => {
+      if (key !== "Theme") {
+        localStorage.removeItem(key);
+      }
+    });
   };
 
   const renderLogout = () => (
@@ -332,8 +342,8 @@ export default function MiniDrawer() {
                 </IconButton>
                 <Chip
                   label="My Greenwave"
-                  size="medium"
-                  //style={{ color: "white", backgroundColor: "#4097ff" }}
+                  size="small"
+                  style={{ color: "white", backgroundColor: "#1976D2" }}
                   avatar={
                     <img
                       src={GreenwaveLogo}
