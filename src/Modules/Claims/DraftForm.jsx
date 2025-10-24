@@ -95,6 +95,7 @@ const toastRef = useRef(null);
 
   const handleApplyApproval = async (claim_id, status) => {
     try {
+      console.log()
       let response = await applyClaim(claim_id, status);
       if (!response.status) {
 
@@ -210,7 +211,18 @@ const toastRef = useRef(null);
         icon="pi pi-send"
         label="Apply"
         className="p-button-sm p-button-success p-button-text"
-        onClick={() => handleApplyApproval(rowData.claim_id, "Applied")}
+        onClick={() => {
+          if(totals.total>0)
+          {
+             handleApplyApproval(rowData.claim_id, "Applied")
+          }else{
+            showErrorMessage(
+          toastRef,
+         "error",
+         'claim amount is zero'
+        );
+          }
+         }}
         tooltip="Apply for Approval"
       />
     </div>
