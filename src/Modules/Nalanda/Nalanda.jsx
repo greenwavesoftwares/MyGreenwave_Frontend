@@ -4,6 +4,7 @@ import { getUserData } from "../Login/Encrypt";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import {
+  Box,
   Button,
   Chip,
   LinearProgress,
@@ -25,10 +26,12 @@ const Nalanda = () => {
   //
   const [nalanda, setNalanda] = useState([]);
   //For Card Data Only
-  const [nalandaCardData,setNalandaCardData]=useState([])
+  const [nalandaCardData, setNalandaCardData] = useState([]);
   const [loader, setLoader] = useState(false);
-  //Total Training 
+  //Total Training
   const [totalTraining, setTotalTraining] = useState([]);
+  //Active Card State
+  const [activeCard, setActiveCard] = useState("totalTraining");
 
   //User Token
   const { token } = getUserData();
@@ -41,15 +44,14 @@ const Nalanda = () => {
       //Set Api Data
       setNalanda(response?.data.trainingEventTablelist);
       //Set Data For Card Only
-      setNalandaCardData(response?.data.trainingEventTablelist)
-      //Total Trining 
+      setNalandaCardData(response?.data.trainingEventTablelist);
+      //Total Trining
       setTotalTraining(response?.data.trainingEventTablelist);
       //Set Loader False
       setLoader(false);
     } catch (error) {
       console.error("Error fetching Nalanda data:", error);
-    } 
-    finally{
+    } finally {
       setLoader(false);
     }
   };
@@ -81,26 +83,30 @@ const Nalanda = () => {
     return ele.isCertificateAvailable === true;
   });
 
-
   //Total Training For DataTable Only
-  function getTotalTrainingDataOnly(){
-    return setNalanda(totalTraining)
+  function getTotalTrainingDataOnly() {
+    return setNalanda(totalTraining);
   }
 
-  //Completed Training for DataTable Only 
-  function getCompletedDataOnly(){
-    return setNalanda(completedTraining)
+  //Completed Training for DataTable Only
+  function getCompletedDataOnly() {
+    return setNalanda(completedTraining);
   }
 
   //Pending Training for DataTable Only
-  function getPendingDataOnly(){
-    return setNalanda(pendingTraining)
-    }
+  function getPendingDataOnly() {
+    return setNalanda(pendingTraining);
+  }
 
-   //Available Certificate for DataTable Only
-   function getCertificateAvailableOnly(){
-    return setNalanda(certificateAvailable)
-   }
+  //Available Certificate for DataTable Only
+  function getCertificateAvailableOnly() {
+    return setNalanda(certificateAvailable);
+  }
+
+  //Active Card Handler
+  function handleCardClick(cardId) {
+    setActiveCard(cardId);
+  }
 
   return (
     <>
@@ -132,7 +138,19 @@ const Nalanda = () => {
             <div className=" mt-1 py-2.5 ">
               <div className="my-grid-new">
                 {/* Total Training */}
-                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200" onClick={(e)=> getTotalTrainingDataOnly()}>
+                <Box
+                  sx={{
+                    borderLeft:
+                      activeCard === "totalTraining"
+                        ? "5px solid #1976d2 !important"
+                        : "",
+                  }}
+                  className=" cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                  onClick={(e) => {
+                    getTotalTrainingDataOnly(),
+                      handleCardClick("totalTraining");
+                  }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex align-items-center">
@@ -151,9 +169,21 @@ const Nalanda = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Box>
                 {/* Completed Training */}
-                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200" onClick={(e)=> getCompletedDataOnly()}>
+
+                <Box
+                  sx={{
+                    borderLeft:
+                      activeCard === "completdTraining"
+                        ? "5px solid #4caf50 !important"
+                        : "",
+                  }}
+                  className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                  onClick={(e) => {
+                    getCompletedDataOnly(), handleCardClick("completdTraining");
+                  }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex items-center">
@@ -174,10 +204,21 @@ const Nalanda = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Box>
 
                 {/* Pending Training */}
-                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200" onClick={(e)=> getPendingDataOnly()}>
+                <Box
+                  sx={{
+                    borderLeft:
+                      activeCard === "pendingTraining"
+                        ? "5px solid #cbc45d !important"
+                        : "",
+                  }}
+                  className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                  onClick={(e) => {
+                    getPendingDataOnly(), handleCardClick("pendingTraining");
+                  }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex align-items-center">
@@ -196,9 +237,21 @@ const Nalanda = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Box>
                 {/* With Certificates */}
-                <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200" onClick={(e)=> getCertificateAvailableOnly()}>
+                <Box
+                  sx={{
+                    borderLeft:
+                      activeCard === "withCertificates"
+                        ? "5px solid #5ecb5e !important"
+                        : "",
+                  }}
+                  className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                  onClick={(e) => {
+                    getCertificateAvailableOnly(),
+                      handleCardClick("withCertificates");
+                  }}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex align-items-center">
@@ -218,7 +271,7 @@ const Nalanda = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Box>
               </div>
             </div>
 

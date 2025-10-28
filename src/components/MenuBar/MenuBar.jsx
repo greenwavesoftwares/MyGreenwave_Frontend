@@ -18,6 +18,7 @@ import {
   Popover,
   MenuItem,
   Link,
+  useMediaQuery,
 } from "@mui/material";
 import Typography from "../Typography/Typography";
 import Chip from "../Chip/Chip";
@@ -37,9 +38,11 @@ import { useState, useEffect } from "react";
 import { getMenuInfoDetails } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
+//Hide CSS imports for mobile menu bar
 import "./MenuBar.css";
 import ThemeToggle from "../../../ThemeToggle";
 import "./MenuBar.scss";
+import MobileMenuBar from "./MobileMenuBar";
 
 library.add(fas);
 
@@ -105,6 +108,7 @@ function convertToInitials(name) {
 
 export default function MiniDrawer() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [open, setOpen] = useState(false);
   const [menuInfo, setMenuInfo] = useState(null);
   const [expandedItems, setExpandedItems] = useState({});
@@ -120,6 +124,24 @@ export default function MiniDrawer() {
     setExpandedItems({});
     setPopoverStack([]);
   };
+  // Close popovers when clicking outside
+  const drawerRef = React.useRef(null);
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        open &&
+        drawerRef.current &&
+        !drawerRef.current.contains(event.target)
+      ) {
+        handleDrawerClose();
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleCloseMenu = () => setAnchorEl(null);
@@ -226,6 +248,13 @@ export default function MiniDrawer() {
           <ListItem
             disablePadding
             className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
+            style={{
+              backgroundColor: selectedPath
+                ? "rgba(64, 151, 255, 0.1)"
+                : "inherit",
+
+              borderLeft: selectedPath ? "3px solid #4097FF" : "none",
+            }}
             onClick={(e) => {
               if (hasChildren && open) toggleExpand(key);
               else if (!open && hasChildren) {
@@ -237,7 +266,10 @@ export default function MiniDrawer() {
                     level: level + 1,
                   },
                 ]);
-              } else navigate(fullPath);
+              } else {
+                navigate(fullPath);
+                handleDrawerClose(); // close drawer on navigation
+              }
             }}
           >
             <Link
@@ -245,10 +277,16 @@ export default function MiniDrawer() {
               style={{ textDecoration: "none", color: "inherit" }}
               onClick={(e) => e.preventDefault()}
             >
-              <ListItemButton style={{ width: "100%",backgroundColor: selectedPath ? "rgba(64, 151, 255, 0.1)" : "inherit" ,
+              <ListItemButton
+                style={{
+                  width: "100%",
+                  // backgroundColor: selectedPath
+                  //   ? "rgba(64, 151, 255, 0.1)"
+                  //   : "inherit",
 
-                borderLeft: selectedPath ? "3px solid #4097FF" : "none"
-              }}>
+                  // borderLeft: selectedPath ? "3px solid #4097FF" : "none",
+                }}
+              >
                 <Tooltip title={open ? "" : item.label} placement="right">
                   <ListItemIcon className="menu-icon">
                     {hasChildren ? (
@@ -265,8 +303,7 @@ export default function MiniDrawer() {
                         <FontAwesomeIcon
                           icon={item.logo.split(" ")}
                           className="menu-icon"
-                          style={{ marginLeft: selectedPath ? "-3px": ""}}
-                          
+                          style={{ marginLeft: selectedPath ? "-3px" : "" }}
                         />
                       )
                     )}
@@ -318,108 +355,116 @@ export default function MiniDrawer() {
 
   return (
     <Box className="drawer-root">
-      <StyledDrawer variant="permanent" open={open}>
-        <div className="fixed-drawer">
-          <DrawerHeader>
-            {!open ? (
-              <IconButton onClick={handleDrawerOpen}>
-                <MenuIcon className="menu-icon" />
-              </IconButton>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: "10px",
-                  alignItems: "center",
-                }}
-              >
-                <IconButton onClick={handleDrawerClose}>
-                  <MenuIcon
-                    style={{ paddingLeft: "4px" }}
-                    className="menu-icon"
-                  />
+      {isMobile ? (
+        <MobileMenuBar />
+      ) : (
+        <StyledDrawer ref={drawerRef} variant="permanent" open={open}>
+          <div className="fixed-drawer">
+            <DrawerHeader>
+              {!open ? (
+                <IconButton onClick={handleDrawerOpen}>
+                  <MenuIcon className="menu-icon" />
                 </IconButton>
-                <Chip
-                  label="My Greenwave"
-                  size="small"
-                  style={{ color: "white", backgroundColor: "#1976D2" }}
-                  avatar={
-                    <img
-                      src={GreenwaveLogo}
-                      style={{ width: "1rem", height: "1rem" }}
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "10px",
+                    alignItems: "center",
+                  }}
+                >
+                  <IconButton onClick={handleDrawerClose}>
+                    <MenuIcon
+                      style={{ paddingLeft: "4px" }}
+                      className="menu-icon"
                     />
-                  }
-                />
-              </div>
-            )}
-          </DrawerHeader>
-          <Divider className="divider" />
-        </div>
-        <List>{menuInfo?.items ? renderMenuItems(menuInfo.items) : null}</List>
-
-        <div className="fixed-section">
-          <Divider className="divider" />
-
-          <div
-            style={{ display: "flex", flexDirection: open ? "row" : "column" }}
-          >
-            <ThemeToggle />
-            <ListItemButton
-              onClick={handleMenuClick}
-              className="menu-item username-avatar"
-            >
-              {!open && (
-                <ListItemIcon className="menu-icon">
-                  <Tooltip
-                    title={
-                      <div className="tooltip-content">
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <PersonIcon className="tooltip-icon" />
-                          <Typography className="tooltip-text">
-                            {userName}
-                          </Typography>
-                        </Box>
-                      </div>
+                  </IconButton>
+                  <Chip
+                    label="My Greenwave"
+                    size="small"
+                    style={{ color: "white", backgroundColor: "#1976D2" }}
+                    avatar={
+                      <img
+                        src={GreenwaveLogo}
+                        style={{ width: "1rem", height: "1rem" }}
+                      />
                     }
-                    placement="right"
-                  >
-                    <Avatar className="avatar">
-                      {convertToInitials(userName)}
-                    </Avatar>
-                  </Tooltip>
-                </ListItemIcon>
+                  />
+                </div>
               )}
-              {open && (
-                <ListItemText
-                  className="menu-text"
-                  primary={
-                    <Chip
-                      disabled={!open}
-                      color="primary"
-                      size="small"
-                      label={userName}
-                    />
-                  }
-                />
-              )}
-            </ListItemButton>
+            </DrawerHeader>
+            <Divider className="divider" />
           </div>
-          <Popover
-            open={openMenu}
-            anchorEl={anchorEl}
-            onClose={handleCloseMenu}
-            anchorOrigin={{ vertical: "center", horizontal: "right" }}
-            transformOrigin={{ vertical: "center", horizontal: "left" }}
-            elevation={0}
-            className="popover"
-          >
-            {renderLogout()}
-          </Popover>
-          {/* <FontAwesomeIcon icon={"fa-solid fa-user-tie"}  className="menu-icon"/> */}
-        </div>
-      </StyledDrawer>
+          <List>
+            {menuInfo?.items ? renderMenuItems(menuInfo.items) : null}
+          </List>
 
+          <div className="fixed-section">
+            <Divider className="divider" />
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: open ? "row" : "column",
+              }}
+            >
+              <ThemeToggle />
+              <ListItemButton
+                onClick={handleMenuClick}
+                className="menu-item username-avatar"
+              >
+                {!open && (
+                  <ListItemIcon className="menu-icon">
+                    <Tooltip
+                      title={
+                        <div className="tooltip-content">
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <PersonIcon className="tooltip-icon" />
+                            <Typography className="tooltip-text">
+                              {userName}
+                            </Typography>
+                          </Box>
+                        </div>
+                      }
+                      placement="right"
+                    >
+                      <Avatar className="avatar">
+                        {convertToInitials(userName)}
+                      </Avatar>
+                    </Tooltip>
+                  </ListItemIcon>
+                )}
+                {open && (
+                  <ListItemText
+                    className="menu-text"
+                    primary={
+                      <Chip
+                        disabled={!open}
+                        color="primary"
+                        size="small"
+                        label={userName}
+                      />
+                    }
+                  />
+                )}
+              </ListItemButton>
+            </div>
+            <Popover
+              open={openMenu}
+              anchorEl={anchorEl}
+              onClose={handleCloseMenu}
+              anchorOrigin={{ vertical: "center", horizontal: "right" }}
+              transformOrigin={{ vertical: "center", horizontal: "left" }}
+              elevation={0}
+              className="popover"
+            >
+              {renderLogout()}
+            </Popover>
+            {/* <FontAwesomeIcon icon={"fa-solid fa-user-tie"}  className="menu-icon"/> */}
+          </div>
+        </StyledDrawer>
+      )}
       <Box component="main" className="main-content">
         <Outlet />
       </Box>

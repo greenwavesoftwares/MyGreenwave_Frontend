@@ -1,4 +1,4 @@
-.drawer-root {
+/* .drawer-root {
   display: flex;
   
 }
@@ -69,6 +69,14 @@
   background-color: #4097FF !important;
   color: white !important;
 }
+.avatar-mobile{
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 0.8rem !important;
+  background-color: #4097FF !important;
+  color: white !important;
+}
+
 
 .username-avatar {
    margin-left: 5px !important;

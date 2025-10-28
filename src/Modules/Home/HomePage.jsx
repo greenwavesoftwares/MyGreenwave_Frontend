@@ -10,6 +10,7 @@ import {
   Switch,
   Chip,
   Fab,
+  useMediaQuery,
 } from "@mui/material";
 import {
   User,
@@ -57,7 +58,7 @@ import WorkIcon from "@mui/icons-material/Work";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { Card as PrimeReactCard } from "primereact/card";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
 import EditIcon from "@mui/icons-material/Edit";
 import Toast from "../../components/Toast/Toast";
@@ -89,6 +90,7 @@ import "../Appraisal/Appraisal.scss";
 import {
   showErrorMessage,
   showSuccessMessage,
+  showWarningMessage,
 } from "../../components/Toast/ShowMessage";
 import { FileUpload } from "primereact/fileupload";
 let itemData = null;
@@ -124,6 +126,9 @@ const HomePage = () => {
   const [fileUploadRow, setFileUploadRow] = useState(null);
   const [fileUploadName, setFileUploadName] = useState(null);
   const fileUploadRef = useRef(null);
+  //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   //Call Home Page All
   const getHomePageData = async () => {
@@ -234,9 +239,9 @@ const HomePage = () => {
                 </h3>
                 <div
                   className="font-semibold px-3 py-1 rounded-2xl notificationTextBGColor"
-                  style={{ fontSize: "12px" }}
+                  style={{ fontSize: isMobile ? "9px" :"12px" }}
                 >
-                  <Clock className="inline mr-2" style={{ width: "14px" }} />
+                  <Clock className="inline mr-2" style={{ width:isMobile?"10px": "14px" }} />
                   {`${item.fromdate} - ${item.toDate}`}
                 </div>
               </div>
@@ -386,7 +391,7 @@ const HomePage = () => {
       showSuccessMessage(toastRef, "Confirmed", "Your tour has started");
     } else if (onTourSwitchUpdate.status === 201) {
       setOnTourSwitch(checkValue);
-      showSuccessMessage(toastRef, "Confirmed", "Your tour has ended");
+      showWarningMessage(toastRef, "Confirmed", "Your tour has ended");
     } else if (onTourSwitchUpdate.status === 400) {
       showErrorMessage(
         toastRef,
@@ -543,7 +548,7 @@ const HomePage = () => {
                 </div>
               </div>
               <Grid container spacing={2}>
-                <Grid size={3}>
+                <Grid  size={{ xs: 12, sm: 12, md: 3, lg: 3 }}>
                   {/* Profile Section */}
                   <Card className="cardNew BorderRadius cardStyle">
                     <div className="lg:col-span-1">
@@ -866,7 +871,7 @@ const HomePage = () => {
                   </Grid>
                   {/* </Grid> */}
                 </Grid>
-                <Grid size={9}>
+                <Grid  size={{ xs: 12, sm: 12, md: 9, lg: 9 }}>
                   <Grid>
                     <Grid size={12}>
                       <Card
@@ -884,7 +889,13 @@ const HomePage = () => {
                             <div
                               className="NewCard"
                               style={{
-                                height: "19.8rem",
+                               // height: "20.3rem",
+                               height:{
+                                xs: "100%", // mobile
+                                sm: "100%", // small screens
+                                md: "20.3rem", // medium and up
+                                lg: "20.3rem", // large and up
+                               },
                                 display: "list-item",
                                 justifyContent: "center",
                               }}
@@ -975,8 +986,8 @@ const HomePage = () => {
                         </Grid>
                       </Card>
                     </Grid>
-                    <Grid container spacing={2}>
-                      <Grid size={5}>
+                    <Grid container spacing={{ xs: 1, sm: 1, md: 2, lg: 2 }} >
+                      <Grid   size={{ xs: 12, sm: 12, md: 5, lg: 5 }}>
                         {/* Claims */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid size={12}>
@@ -1101,14 +1112,25 @@ const HomePage = () => {
                           </Grid>
                         </Grid>
                       </Grid>
-                      <Grid size={7}>
-                        <Grid sx={{ marginTop: "0.5rem" }}>
+                      <Grid size={{ xs: 12, sm: 12, md: 7, lg: 7 }}>
+                        <Grid sx={{ marginTop: "0.5rem",marginBottom:{
+                          xs:"1rem",
+                          sm:"1rem",
+                          
+                        } }}>
                           <Grid size={12}>
                             <Card
                               className="cardNew BorderRadius cardStyle"
                               sx={{
                                 //p: 2,
-                                height: "15.5rem",
+                               // height: "16.2rem",
+                               height:{
+                                sx: "100%", // mobile
+                                sm: "100%", // small screens
+                                md: "16.2rem", // medium and up
+                                lg: "16.2rem", // large and up
+                               }
+
                                 //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
                               }}
                             >
@@ -1135,7 +1157,7 @@ const HomePage = () => {
           <Dialog
             header="YOUR FEEDBACK"
             visible={feedbackDialogVisible}
-            style={{ width: "30vw" }}
+            style={{ width: isMobile? "90%":"30vw" }}
             onHide={() => {
               if (!feedbackDialogVisible) return;
               setFeedbackDialogVisible(false);
