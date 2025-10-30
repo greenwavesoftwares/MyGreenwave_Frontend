@@ -1,4 +1,4 @@
-import { Chip, LinearProgress, Typography } from "@mui/material";
+import { Chip, LinearProgress, Typography, useMediaQuery, useTheme } from "@mui/material";
 import Button from "@mui/material/Button";
 import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
@@ -194,6 +194,9 @@ function Appraisal() {
   };
 
   console.log("appraisal_SelectFormData", appraiserForm);
+    //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <>
@@ -203,7 +206,7 @@ function Appraisal() {
           <div className="cardStyle mt-4 py-2.5 px-4 bg-white shadow rounded">
             <div className="flex justify-between items-center">
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-6">
+                <div className={`${isMobile ? "hidden":"flex items-center gap-6"}`}>
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg blue-icon">
                       <EmojiEventsIcon />

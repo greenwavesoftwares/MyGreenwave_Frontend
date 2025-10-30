@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { setNewPassword } from "./ResetPasswordFunction";
 import "./ResetPassword.css";
-import { Container, Grid } from "@mui/material";
+import { Container, Grid, useMediaQuery, useTheme } from "@mui/material";
 import { Button } from "primereact/button";
 import { Password } from "primereact/password";
 import Toast from "../../components/Toast/Toast";
@@ -12,6 +12,10 @@ export default function ResetPassword({
   currentPasswordCheck, //prop containing boolean value to check if to check the current password before resetting the password, or directly reset the password
 }) {
   const toastRef = useRef(null); //reference of the toast showing messages
+  //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const resetPasswordStructure = {
     userId: "",
     newPassword: "",
@@ -59,11 +63,11 @@ export default function ResetPassword({
             // If the current password is not valid then render this component
             <Grid container>
               {/* Grid to hold the label of current password details */}
-              <Grid size={5} className="currentPasswordCell">
+              <Grid size={{xs: 12, sm: 12,md:5, lg: 5}} className={`currentPasswordCell ${isMobile ? "justify-center":""}`}>
                 <span className="font-bold">Enter Current Password</span>
               </Grid>
               {/* Grid to hold the input field of current password details */}
-              <Grid size={5} className="currentPasswordCell">
+              <Grid size={{xs: 12, sm: 12,md:5, lg: 5}} className={`currentPasswordCell ${isMobile ? "justify-center":""}`}>
                 <div className="card flex justify-content-center">
                   <Password
                   className="NumberFieldStyle"
@@ -116,11 +120,11 @@ export default function ResetPassword({
           currentPasswordDetails.isCurrentPasswordValid) && (
           // if one of the above check is true then render the below grid
           <Grid container>
-            <Grid size={5} className="resetPasswordCell">
+            <Grid size={{xs: 12, sm: 12,md:5, lg: 5}} className="resetPasswordCell">
               <span className="font-bold">Enter New Password</span>
             </Grid>
             {/* grid to hold the new password input field */}
-            <Grid size={7} className="resetPasswordCell">
+            <Grid size={{xs: 12, sm: 12,md:7, lg: 7}} className="resetPasswordCell">
               <div className="card flex justify-content-center">
                 <Password
                   value={resetPassword.newPassword}
@@ -136,10 +140,10 @@ export default function ResetPassword({
                 />
               </div>
             </Grid>
-            <Grid size={5} className="resetPasswordCell">
+            <Grid size={{xs: 12, sm: 12,md:5, lg: 5}} className="resetPasswordCell">
               <span className="font-bold">Confirm Password</span>
             </Grid>
-            <Grid size={7} className="resetPasswordCell">
+            <Grid size={{xs: 12, sm: 12,md:7, lg: 7}} className="resetPasswordCell">
               <div className="card flex justify-content-center">
                 <Password
                   value={resetPassword.confirmPassword}

@@ -1,17 +1,20 @@
 import Paper from "@mui/material/Paper";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import { Dropdown } from "primereact/dropdown";
 import React, { useRef, useState } from "react";
-import { Button, Container } from "@mui/material";
+import { Button, Container, useMediaQuery } from "@mui/material";
 import SalarySlipPdf from "./SalarySlipPdf";
 import SalarySlipPanelGrid from "./SalarySlipPanelGrid";
 import { Toast } from "primereact/toast";
 import { fetchSalarySlip } from "./SalarySlipAPI";
 import { form16Download } from "./SalarySlipAPI";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
-import DownloadForOfflineIcon from '@mui/icons-material/DownloadForOffline';
+import DownloadForOfflineIcon from "@mui/icons-material/DownloadForOffline";
 
 export default function SalarySlip() {
+  //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [selection, setSelection] = useState({
     year: "",
     month: "",
@@ -130,10 +133,9 @@ export default function SalarySlip() {
         <div
           className="p-2 mb-3 salarySlip-HeaderBG"
           style={{
-           
             borderLeft: "5px solid #64b5f6",
             borderRadius: "10px",
-            
+
             fontWeight: "600",
             fontSize: "1rem",
             boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
@@ -156,11 +158,11 @@ export default function SalarySlip() {
           >
             <div
               style={{
-                display: "flex",
+                display: isMobile ? "grid": "flex",
                 alignItems: "center",
                 gap: "0.5rem",
                 justifyContent: "space-between",
-                marginLeft:"0.5rem"
+                marginLeft: "0.5rem",
               }}
             >
               <div
@@ -176,7 +178,7 @@ export default function SalarySlip() {
                   style={{
                     fontSize: "0.85rem",
                     fontWeight: "bold",
-                    marginLeft:"0.5rem"
+                    marginLeft: "0.5rem",
                   }}
                 >
                   Download Salary Slip & Form 16
@@ -185,7 +187,7 @@ export default function SalarySlip() {
 
               <div
                 className="rightSection"
-                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+                style={{ display:isMobile?"grid": "flex", alignItems: "center", gap: "0.5rem" }}
               >
                 <div
                   style={{
@@ -217,7 +219,7 @@ export default function SalarySlip() {
                     id="month"
                     value={selection.month}
                     onChange={handleMonthChange}
-                     className="dropDownStyle"
+                    className="dropDownStyle"
                     options={months}
                     disabled={!selection.year}
                     optionLabel="name"
@@ -242,8 +244,8 @@ export default function SalarySlip() {
                       onClick={handleForm16Download}
                       variant="contained"
                       size="medium"
-                      sx={{boxShadow:"none"}}
-                      startIcon={<DownloadForOfflineIcon/>}
+                      sx={{ boxShadow: "none" }}
+                      startIcon={<DownloadForOfflineIcon />}
                       //className="flex items-center gap-2 bg-blue-500 text-white px-5 py-2.5 rounded-xl shadow hover:bg-blue-800 transition duration-300"
                       title="Download Form 16"
                     >

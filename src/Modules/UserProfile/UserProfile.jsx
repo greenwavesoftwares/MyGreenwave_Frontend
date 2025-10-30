@@ -1,4 +1,4 @@
-import { Button, Paper } from "@mui/material";
+import { Button, Paper, useMediaQuery, useTheme } from "@mui/material";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import KeyIcon from "@mui/icons-material/Key";
@@ -29,6 +29,9 @@ export default function UserProfile() {
   const [userDetails, setUserDetails] = useState(null); //state to hold the user details
   const [showLogsDialog, setShowLogsdialog] = useState(false); //state to show logs if true
   const token = getUserData().token; //constant to hold current token
+  //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const fetchData = async () => {
     const details = await getUserDetailsAPI(token);
@@ -162,12 +165,14 @@ export default function UserProfile() {
                       style={{ borderRadius: "1rem 1rem 0rem 0rem" }}
                     >
                       {/* Header Section */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-7 py-5 rounded-sm">
+                      <div className={`bg-gradient-to-r from-blue-50 to-indigo-50 rounded-sm ${isMobile ? 'px-3 py-3' : 'px-7 py-5'}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
+                            {isMobile? "" : (
                             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-semibold shadow-lg">
                               {getInitialsFromEmail(userDetails.userId)}
                             </div>
+                            )}
                             <div style={{ marginLeft: "0.5rem" }}>
                               <p
                                 className="text-2xl font-bold"
@@ -274,9 +279,9 @@ export default function UserProfile() {
                             </Typography>
                           </div>
 
-                          <div className="w-full px-8">
+                          <div className={`w-full ${isMobile ? "px-0":"px-8"}`}>
                             <div
-                              className="grid grid-cols-2 gap-6"
+                              className={`${isMobile ? "":  "grid grid-cols-2 gap-6"}`}
                               style={{ display: "grid" }}
                             >
                               <div className="space-y-4">

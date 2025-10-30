@@ -5,7 +5,7 @@ import DialogComponent from "../../../components/Dialog/DialogComponent";
 import { getUserLogs } from "./UserLogFunction";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
-import { Grid } from "@mui/material";
+import { Grid, useMediaQuery, useTheme } from "@mui/material";
 import UserInformation from "./UserInformation";
 import Toast from "../../../components/Toast/Toast";
 import Typography from "../../../components/Typography/Typography";
@@ -18,6 +18,10 @@ const UserLog = ({
   const [logList, setLogList] = useState([]); //state to manage the list of logs
   const [expandedRows, setExpandedRows] = useState([]); //state to manage the expanded rows of the table
   const toastRef = useRef(null);
+  //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   /**
    *
    * @param {*} newData
@@ -88,7 +92,7 @@ const UserLog = ({
         headerClassName="user-log-dialog-header"
         maskClassName="maximizableDialogStyle"
         onHide={onHide}
-        style={{width:"80rem"}}
+        style={{width:isMobile ? "90%":"80rem"}}
         maximizable
       >
         <Grid container>
