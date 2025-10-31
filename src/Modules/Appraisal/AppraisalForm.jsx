@@ -570,7 +570,7 @@ function AppraisalDialog({
                   >
                     <PersonIcon
                       fontSize="small"
-                      className="accordionIconBGStyle"
+                      className="personalDetailsIcon"
                     />
                     Personal Details
                     {comparePersonalData ? (
@@ -1020,7 +1020,7 @@ function AppraisalDialog({
                 >
                   <AdsClickIcon
                     fontSize="small"
-                    className="accordionIconBGStyle"
+                    className="myGoleIconBGStyle"
                   />
                   My Goals
                   {trackFutureGoals ? (
@@ -1062,7 +1062,7 @@ function AppraisalDialog({
                 >
                   <BarChartIcon
                     fontSize="small"
-                    className="accordionIconBGStyle"
+                    className="myKRAIconBGStyle"
                   />
                   My KRA{" "}
                   {trackPerformance || trackMyKRA ? (
@@ -1111,7 +1111,7 @@ function AppraisalDialog({
                 >
                   <SchoolIcon
                     fontSize="small"
-                    className="accordionIconBGStyle"
+                    className="myTrainingIconBGStyle"
                   />
                   My Training{" "}
                   {trackCompetencyScorecard || trackFutureComptency ? (
@@ -1160,7 +1160,7 @@ function AppraisalDialog({
                 >
                   <InsightsIcon
                     fontSize="small"
-                    className="accordionIconBGStyle"
+                    className="myInsightsIconBGStyle"
                   />
                   My Insights{" "}
                   {trackMyInsights ? (
@@ -1196,7 +1196,7 @@ function AppraisalDialog({
                   component="span"
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
-                  <DoneIcon fontSize="small" className="accordionIconBGStyle" />
+                  <DoneIcon fontSize="small" className="DoneIcon" />
                   Confirmation
                 </Typography>
               </AccordionSummary>
