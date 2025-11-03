@@ -9,6 +9,7 @@ import CustomDialog from "../../components/Dialog/DialogComponent";
 import CustomButton from "../../components/Button/Button";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { ProgressBarComponent } from "../../components/ProgressBar/ProgressBarComponent";
+import { InputNumber } from 'primereact/inputnumber';
 
 //Call Api
 import {
@@ -424,11 +425,14 @@ const ApprovedTable = () => {
   const advanceColumnBody = (row) => {
     if (editRowId===row.requisionId) {
       return (
-        <InputText
-          size="small"
-          value={newAdvanceAmount}
-          onChange={(e) => setNewAdvanceAmount(e.target.value)}
-        />
+        //advanceRequested
+        <InputNumber inputId="minmax" value={newAdvanceAmount} onValueChange={(e) => setNewAdvanceAmount(e.value)} min={0} max={row.advanceRequested} />
+      
+        // <InputText
+        //   size="small"
+        //   value={newAdvanceAmount}
+        //   onChange={(e) => setNewAdvanceAmount(e.target.value)}
+        // />
       );
     }
     return row.advance;

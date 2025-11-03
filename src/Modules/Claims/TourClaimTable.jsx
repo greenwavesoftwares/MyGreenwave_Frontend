@@ -492,13 +492,13 @@ const TourClaimTable = ({
   );
 
   const fields = Object.keys(initialFormState);
-  const handleDownloadFile = async () => {
-    try {
-      let d = await downloadTourClaimExpanseDocument();
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // const handleDownloadFile = async () => {
+  //   try {
+  //     let d = await downloadTourClaimExpanseDocument();
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
   const allowEdit = (rowData) => {
     return rowData.name !== "Blue Band";
   };
@@ -638,7 +638,7 @@ const TourClaimTable = ({
           </div>
         )}
 
-        <CustomButton
+        {/* <CustomButton
           // label="Add Row"
           icon="pi pi-plus"
           className="p-button-sm "
@@ -648,8 +648,8 @@ const TourClaimTable = ({
            size="small"
           style={{width:"1rem",height:"2.1rem"}}
           
-        />
-        <CustomButton
+        /> */}
+        {/* <CustomButton
           icon="pi pi-file-export"
           className="p-button-sm"
           onClick={() => {
@@ -659,7 +659,7 @@ const TourClaimTable = ({
           rounded={"true"}
           severity={"success"}
           style={{width:"1rem",height:"2.1rem"}}
-        />
+        /> */}
       </div>
 
 <div >
@@ -827,7 +827,10 @@ const TourClaimTable = ({
       </DataTable>
       </div>
 
-      <div className="flex justify-center mt-3 mb-3">
+      <div className="flex justify-between items-center mt-3 mb-3">
+        <div>
+
+        </div>
         {editableMode ? (
           <div className="flex gap-2">
             <CustomButton
@@ -899,6 +902,18 @@ const TourClaimTable = ({
             />
           </div>
         )}
+          <CustomButton
+          // label="Add Row"
+          icon="pi pi-plus"
+          className="p-button-sm mr-4"
+          severity="success" 
+          onClick={handleAddRow}
+          tooltip="Add Row"
+          rounded={"true"}
+           size="small"
+          style={{width:"1rem",height:"2.1rem" }}
+          
+        />
       </div>
     </>
   );

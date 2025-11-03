@@ -13,15 +13,17 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 //MUI Icon
 import TextSnippetOutlinedIcon from "@mui/icons-material/TextSnippetOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import {
   getTourClaimFormDetails,
   getAdvance,
   getlatestclaimtodate,
+  downloadTourClaimExpanseDocument,
 } from "./claimServices";
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import { formateDate } from "./claimServices";
 import { Grid } from "@mui/material";
+import CustomButton from "../../components/Button/Button";
 
 const TourClaimForm = ({
   tourclaimformData,
@@ -173,6 +175,13 @@ const TourClaimForm = ({
       }));
     }
   };
+  const handleDownloadFile = async () => {
+    try {
+      let d = await downloadTourClaimExpanseDocument();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="">
@@ -189,11 +198,30 @@ const TourClaimForm = ({
               component="span"
               sx={{ display: "flex", alignItems: "center", gap: 1 }}
             >
-              <CreditCardIcon
-                fontSize="small"
-                //  className="accordionIconBGStyle"
-              />
-              Available Advance - ₹{advance}
+              <div className="flex justify-between items-center">
+                <div>
+                  <CreditCardIcon
+                    fontSize="small"
+                    //  className="accordionIconBGStyle"
+                  />
+                  {/* <div className="flex justify-between"> */}
+                  Available Advance - ₹{advance}
+                </div>
+                
+              </div>
+              <div>
+                  <CustomButton
+                    icon="pi pi-file-export"
+                    className="p-button-sm"
+                    onClick={() => {
+                      handleDownloadFile();
+                    }}
+                    tooltip="Export Excel"
+                    rounded={"true"}
+                    severity={"success"}
+                    style={{ width: "1rem", height: "2.1rem" }}
+                  />
+                </div>
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -469,120 +497,126 @@ const TourClaimForm = ({
                       fontWeight: 600,
                     }}
                   >
-                     Travel Dates
+                    Travel Dates
                   </Typography>
                 </div>
 
                 <Grid container spacing={6}>
                   <Grid size={4}>
                     {/* Travel From Date */}
-                      <div>
-                  <label
-                    htmlFor="fromdate"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Travel From Date 
-                  </label>
-                  <InputText
-                    inputId="travelfromDate"
-                    //className="w-62"
-                    value={
-                      tourclaimformData.travelfromDate
-                        ? formateDate(tourclaimformData.travelfromDate)
-                        : "No Date Selected"
-                    }
-                    onChange={(e) => {
-                      handleChange("travelfromDate", e.target.value);
-                    }}
-                    disabled
-                    className="w-full inputFieldStyle"
-                    //   className={`"w-62 text-sm"${formErrors.travelfromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                  />
-                </div>
+                    <div>
+                      <label
+                        htmlFor="fromdate"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Travel From Date
+                      </label>
+                      <InputText
+                        inputId="travelfromDate"
+                        //className="w-62"
+                        value={
+                          tourclaimformData.travelfromDate
+                            ? formateDate(tourclaimformData.travelfromDate)
+                            : "No Date Selected"
+                        }
+                        onChange={(e) => {
+                          handleChange("travelfromDate", e.target.value);
+                        }}
+                        disabled
+                        className="w-full inputFieldStyle"
+                        //   className={`"w-62 text-sm"${formErrors.travelfromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                      />
+                    </div>
                   </Grid>
                   <Grid size={4}>
                     {/*  Claim From Date */}
-                      <div className="flex flex-col">
-                  <label htmlFor="claimFromDate" className="block text-sm font-medium text-gray-700 mb-1">Claim From Date</label>
+                    <div className="flex flex-col">
+                      <label
+                        htmlFor="claimFromDate"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Claim From Date
+                      </label>
 
-                  {toggleNewClaim ? (
-                    <Calendar
-                      inputId="claimFromDate"
-                      showIcon
-                      dateFormat="yy-mm-dd"
-                      //  className="w-62"
-                      value={new Date(tourclaimformData.claimFromDate)}
-                      onChange={(e) => {
-                        handleChange("claimFromDate", e.value),
-                          handleInputWithValidation("claimFromDate", e.value);
-                      }}
-                      disabled={
-                        (selectedtravelMode ? selectedtravelMode.value : "") !==
-                        "Long-Term-Local-Conveyance"
-                      }
-                      className={`w-full text-sm ${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""} w-full calendarStyle`}
-                      // className={`"w-62 text-sm"${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                      maxDate={new Date()}
-                    />
-                  ) : (
-                    <Calendar
-                      inputId="claimFromDate"
-                      showIcon
-                      dateFormat="yy-mm-dd"
-                      className="w-full calendarStyle"
-                      value={new Date(tourclaimformData.claimFromDate)}
-                      disabled
-                      maxDate={new Date()}
-                    />
-                  )}
-                </div>
+                      {toggleNewClaim ? (
+                        <Calendar
+                          inputId="claimFromDate"
+                          showIcon
+                          dateFormat="yy-mm-dd"
+                          //  className="w-62"
+                          value={new Date(tourclaimformData.claimFromDate)}
+                          onChange={(e) => {
+                            handleChange("claimFromDate", e.value),
+                              handleInputWithValidation(
+                                "claimFromDate",
+                                e.value
+                              );
+                          }}
+                          disabled={
+                            (selectedtravelMode
+                              ? selectedtravelMode.value
+                              : "") !== "Long-Term-Local-Conveyance"
+                          }
+                          className={`w-full text-sm ${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""} w-full calendarStyle`}
+                          // className={`"w-62 text-sm"${formErrors.claimFromDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                          maxDate={new Date()}
+                        />
+                      ) : (
+                        <Calendar
+                          inputId="claimFromDate"
+                          showIcon
+                          dateFormat="yy-mm-dd"
+                          className="w-full calendarStyle"
+                          value={new Date(tourclaimformData.claimFromDate)}
+                          disabled
+                          maxDate={new Date()}
+                        />
+                      )}
+                    </div>
                   </Grid>
                   <Grid size={4}>
                     {/* Claim To Date */}
-<div>
-                  <label
-                    htmlFor="claimToDate"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    <div className="flex  items-center">
-                      <span>
-                        Claim To Date 
-                        {tourclaimFormLabeData.toDate
-                          ? new Date(
-                              tourclaimFormLabeData.toDate
-                            ).toLocaleDateString()
-                          : ""}
-                      </span>
+                    <div>
+                      <label
+                        htmlFor="claimToDate"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        <div className="flex  items-center">
+                          <span>
+                            Claim To Date
+                            {tourclaimFormLabeData.toDate
+                              ? new Date(
+                                  tourclaimFormLabeData.toDate
+                                ).toLocaleDateString()
+                              : ""}
+                          </span>
+                        </div>
+                      </label>
+                      <Calendar
+                        inputId="claimToDate"
+                        showIcon
+                        dateFormat="yy-mm-dd"
+                        //  className="w-62"
+                        value={new Date(tourclaimformData.claimToDate)}
+                        onChange={(e) => {
+                          handleChange("claimToDate", e.target.value),
+                            handleInputWithValidation("claimToDate", e.value);
+                        }}
+                        minDate={
+                          tourclaimformData.claimFromDate
+                            ? new Date(tourclaimformData.claimFromDate)
+                            : null
+                        }
+                        // minDate={new Date()}
+                        maxDate={new Date()}
+                        className={`w-full text-sm ${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""} w-full calendarStyle`}
+                        // className={`"w-62 text-sm"${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
+                      />
                     </div>
-                  </label>
-                  <Calendar
-                    inputId="claimToDate"
-                    showIcon
-                    dateFormat="yy-mm-dd"
-                    //  className="w-62"
-                    value={new Date(tourclaimformData.claimToDate)}
-                    onChange={(e) => {
-                      handleChange("claimToDate", e.target.value),
-                        handleInputWithValidation("claimToDate", e.value);
-                    }}
-                    minDate={
-                      tourclaimformData.claimFromDate
-                        ? new Date(tourclaimformData.claimFromDate)
-                        : null
-                    }
-                    // minDate={new Date()}
-                    maxDate={new Date()}
-                    className={`w-full text-sm ${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""} w-full calendarStyle`}
-                    // className={`"w-62 text-sm"${formErrors.claimToDate ? "ring-2 ring-red-500 focus:ring-red-500" : ""}`}
-                  />
-                </div>
-                    
                   </Grid>
                 </Grid>
               </div>
             </div>
-
-            
           </AccordionDetails>
         </Accordion>
         {/* <div className="flex  items-center ">

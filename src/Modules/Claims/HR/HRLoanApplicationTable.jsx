@@ -24,7 +24,7 @@ const HRLoanApplicationTable = () => {
   const toastRef = useRef(null);
   const [loanData, setloanData] = useState();
   const [loader, setLoader] = useState(false);
-  const [remarks, setRemarks] = useState();
+const [remarks, setRemarks] = useState({});
 
           const [globalFilterValue, setGlobalFilterValue] =
             useState("");
@@ -70,73 +70,6 @@ const HRLoanApplicationTable = () => {
         
            const dataTableHeader = renderHeaderForGlobalSearch();
 
-  const actionbody = (rowData) => {
-    const handleRejectClick = async (claim_id, remarks) => {
-      try {
-            if(!claim_id || !remarks)
-                  {
-                    showWarningMessage(toastRef,'Warning','First Fill Remarks')
-                    return
-                  }
-        let response = await rejectLoanClaim(claim_id, remarks);
-        if (response.status) {
-          setloanData(response.data);
-          showSuccessMessage(toastRef, "success", response.message);
-        } else {
-          showErrorMessage(toastRef, "error", response.message);
-        }
-      } catch (error) {
-        showErrorMessage(toastRef, "error", error?.message);
-      }
-    };
-
-    const handleApproveClick = async (claim_id, remarks) => {
-      try {
-          if(!claim_id || !remarks)
-                {
-                  showWarningMessage(toastRef,'Warning','First Fill Remarks')
-                  return
-                }
-        let response = await approveLoanClaim(claim_id, remarks);
-        if (response.status) {
-          setloanData(response.data);
-          showSuccessMessage(toastRef, "success", response.message);
-        } else {
-          showErrorMessage(toastRef, "error", response.message);
-        }
-      } catch (error) {
-        showErrorMessage(toastRef, "error", error?.message);
-      }
-    };
-
-    return (
-      <div className="flex flex-col gap-y-2 max-w-xs">
-        {" "}
-        {/* limits total width */}
-        <textarea
-          placeholder="remarks"
-          className="border border-md rounded-md p-2 w-full"
-          rows={2}
-          value={remarks}
-          onChange={(e) => setRemarks(e.target.value)}
-        ></textarea>
-        <div className="flex gap-x-1">
-          <CustomButton
-            label="Approve"
-            size="small"
-            severity="success"
-            onClick={() => handleApproveClick(rowData.claimId, remarks)}
-          />
-          <CustomButton
-            label="Reject"
-            size="small"
-            severity="danger"
-            onClick={() => handleRejectClick(rowData.claimId, remarks)}
-          />
-        </div>
-      </div>
-    );
-  };
 
   useEffect(() => {
     const fetchloandetails = async () => {
@@ -157,6 +90,150 @@ const HRLoanApplicationTable = () => {
 
     fetchloandetails();
   }, []);
+
+  
+  // const actionbody = (rowData) => {
+  //   const handleRejectClick = async (claim_id, remarks) => {
+  //     try {
+  //           if(!claim_id || !remarks)
+  //                 {
+  //                   showWarningMessage(toastRef,'Warning','First Fill Remarks')
+  //                   return
+  //                 }
+  //       let response = await rejectLoanClaim(claim_id, remarks);
+  //       if (response.status) {
+  //         setloanData(response.data);
+  //         console.log(loanData)
+  //         showSuccessMessage(toastRef, "success", response.message);
+  //       } else {
+  //         showErrorMessage(toastRef, "error", response.message);
+  //       }
+  //     } catch (error) {
+  //       showErrorMessage(toastRef, "error", error?.message);
+  //     }
+  //   };
+
+  //   const handleApproveClick = async (claim_id, remarks) => {
+  //     try {
+  //         if(!claim_id || !remarks)
+  //               {
+  //                 showWarningMessage(toastRef,'Warning','First Fill Remarks')
+  //                 return
+  //               }
+  //       let response = await approveLoanClaim(claim_id, remarks);
+  //       if (response.status) {
+  //         setloanData(response.data);
+  //         showSuccessMessage(toastRef, "success", response.message);
+  //       } else {
+  //         showErrorMessage(toastRef, "error", response.message);
+  //       }
+  //     } catch (error) {
+  //       showErrorMessage(toastRef, "error", error?.message);
+  //     }
+  //   };
+
+  //   return (
+  //     <div className="flex flex-col gap-y-2 max-w-xs">
+  //       {" "}
+  //       {/* limits total width */}
+  //       <textarea
+  //         placeholder="remarks"
+  //         className="border border-md rounded-md p-2 w-full"
+  //         rows={2}
+  //         value={remarks}
+  //         onChange={(e) => setRemarks(e.target.value)}
+  //       ></textarea>
+  //       <div className="flex gap-x-1">
+  //         <CustomButton
+  //           label="Approve"
+  //           size="small"
+  //           severity="success"
+  //           onClick={() => handleApproveClick(rowData.claimId, remarks)}
+  //         />
+  //         <CustomButton
+  //           label="Reject"
+  //           size="small"
+  //           severity="danger"
+  //           onClick={() => handleRejectClick(rowData.claimId, remarks)}
+  //         />
+  //       </div>
+  //     </div>
+  //   );
+  // };
+ 
+
+  const actionbody = (rowData) => {
+  const handleRejectClick = async (claim_id) => {
+    const remark = remarks[claim_id];
+    if (!claim_id || !remark) {
+      showWarningMessage(toastRef, "Warning", "First Fill Remarks");
+      return;
+    }
+    try {
+      let response = await rejectLoanClaim(claim_id, remark);
+      if (response.status) {
+        setloanData(response.data);
+        showSuccessMessage(toastRef, "success", response.message);
+      } else {
+        showErrorMessage(toastRef, "error", response.message);
+      }
+    } catch (error) {
+      showErrorMessage(toastRef, "error", error?.message);
+    }
+  };
+
+  const handleApproveClick = async (claim_id) => {
+    const remark = remarks[claim_id];
+    if (!claim_id || !remark) {
+      showWarningMessage(toastRef, "Warning", "First Fill Remarks");
+      return;
+    }
+    try {
+      let response = await approveLoanClaim(claim_id, remark);
+      console.log('responsedata',response)
+      if (response.status) {
+        setloanData(response.data);
+        showSuccessMessage(toastRef, "success", response.message);
+      } else {
+        showErrorMessage(toastRef, "error", response.message);
+      }
+    } catch (error) {
+      showErrorMessage(toastRef, "error", error?.message);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-y-2 max-w-xs">
+      <textarea
+        placeholder="remarks"
+        className="border border-md rounded-md p-2 w-full"
+        rows={2}
+        value={remarks[rowData.claimId] || ""}
+        onChange={(e) =>
+          setRemarks((prev) => ({
+            ...prev,
+            [rowData.claimId]: e.target.value,
+          }))
+        }
+      ></textarea>
+      <div className="flex gap-x-1">
+        <CustomButton
+          label="Approve"
+          size="small"
+          severity="success"
+          onClick={() => handleApproveClick(rowData.claimId)}
+        />
+        <CustomButton
+          label="Reject"
+          size="small"
+          severity="danger"
+          onClick={() => handleRejectClick(rowData.claimId)}
+        />
+      </div>
+    </div>
+  );
+};
+ 
   return (
     <div>
       <CustomToast ref={toastRef} />
@@ -177,6 +254,7 @@ const HRLoanApplicationTable = () => {
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
         header={dataTableHeader}
         filters={globalFilterRows}
+         dataKey="claimId"
         globalFilterFields={[
           "name",
           "designation",
@@ -193,6 +271,12 @@ const HRLoanApplicationTable = () => {
 
         ]}
       >
+         <CustomColumn
+          field="claimId"
+          header="claimId"
+          headerStyle={{ ...cellStyle, maxWidth: "107px" }}
+          bodyStyle={{ ...cellStyle, maxWidth: "107px" }}
+        />
         <CustomColumn
           field="name"
           header="Name"

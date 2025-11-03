@@ -1,5 +1,8 @@
 import  { useState, useEffect, useRef } from "react";
 
+import { InputNumber } from 'primereact/inputnumber';
+         
+
 
 const cellStyle = { padding: "8px 12px" };
 import {
@@ -11,7 +14,6 @@ import {
   tourClaimSendForApproval
 } from "../claimServices";
 import { DataTable } from "primereact/datatable";
-
 
 import { ProgressBarComponent } from "../../../components/ProgressBar/ProgressBarComponent";
 import {
@@ -269,8 +271,16 @@ const AppliedTourClaimTable = () => {
     return (
       <div>
         {rowData.status === "Reviewing" ? (
-          <div className="flex flex-col justify-center items-center gap-2 p-2">
-            <input
+          <div className="flex flex-col justify-center items-center gap-2 p-2 ">
+         
+
+          
+             <InputNumber inputId="minmax"  placeholder="Approval Amt" value={settlementAmount} onValueChange={(e) => setSettlementAmount(e.value)} min={0} max={rowData.total_expense}
+              className="w-36"             // wrapper width
+               inputClassName="w-36" 
+              />
+           
+            {/* <input
               id="settlementAmount"
               type="number"
               value={settlementAmount}
@@ -283,7 +293,7 @@ const AppliedTourClaimTable = () => {
             }}
             placeholder="Approval Amount"
               className="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
-            />
+            /> */}
 
             <textarea
               id="reason"

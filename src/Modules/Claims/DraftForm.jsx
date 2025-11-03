@@ -311,12 +311,17 @@ const toastRef = useRef(null);
           file,
           rowData.claim_id
         ); // Adjust this call accordingly
-        
+        if(response=='File uploaded successfully')
+        {
          showSuccessMessage(
           toastRef,
           "success",
           "File Uploaded"
         );
+        }
+       
+        
+         
        
       } catch (error) {
         showErrorMessage(
