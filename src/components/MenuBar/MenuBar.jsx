@@ -341,8 +341,8 @@ export default function MiniDrawer() {
     <Box className={`logout-box`}>
       <MenuItem
         onClick={() => {
-          handleLogout();
-          navigate(`/`);
+          //handleLogout();
+          navigate(`/login`);
         }}
       >
         <ListItemIcon className="menu-icon">
@@ -396,7 +396,7 @@ export default function MiniDrawer() {
             </DrawerHeader>
             <Divider className="divider" />
           </div>
-          <List>
+          <List className="menu-list">
             {menuInfo?.items ? renderMenuItems(menuInfo.items) : null}
           </List>
 

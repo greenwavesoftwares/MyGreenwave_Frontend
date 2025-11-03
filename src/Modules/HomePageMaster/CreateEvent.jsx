@@ -39,6 +39,9 @@ const CreateEvent = ({
         serverUrl: selectRowEventData.serverUrl,
         status: selectRowEventData.status,
       };
+      if(updateEventData.fromdate > updateEventData.toDate) {
+        return showErrorMessage(toastRef, "Error", "To Date must be greater than or equal to From Date");
+      }
       //console.log("Update Event Data:", updateEventData);
       const upDateEvent = await putUpdateEvent(token, updateEventData);
       //console.log("Update Event Response:", upDateEvent);

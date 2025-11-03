@@ -32,8 +32,13 @@
 .submenu-box {
   padding-left: 15px;
 }
-.css-b7dj7n-MuiList-root {
+/* .css-b7dj7n-MuiList-root {
     overflow-y: auto;
+    scrollbar-width: none;
+    height: 100vh;
+} */
+.menu-list{
+  overflow-y: auto;
     scrollbar-width: none;
     height: 100vh;
 }
