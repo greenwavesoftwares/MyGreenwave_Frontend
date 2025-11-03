@@ -199,11 +199,13 @@ export const getManagerwiseongoingtravels=async()=>{
           Authorization: token,
         },
       })
-      console.log('response', response)
+      let finaldata=response.data;
+       finaldata.sort((a, b) => new Date(b.fromDate) - new Date(a.fromDate));
+      console.log('responseongoingtravel', response)
       return{
         status:true,
         message:"data loaded",
-        data:response.data
+        data:finaldata
       }
   }catch(error)
   {
@@ -549,6 +551,10 @@ export const getOngoingTravelDataAccount=async()=>{
         let response=  await axios.get(`${host}traveldesk/all-ongoing-travels`, { headers: {
       Authorization: token
     }})
+     response.data.sort((a, b) => new Date(b.fromDate) - new Date(a.fromDate));
+    //response.data.sort((a,b)=>b.fromDate-a.fromDate)
+
+    console.log('response',response);
 
     return{
       status:true,
@@ -670,6 +676,9 @@ export const getCompleteTravels=async()=>{
          let response=     await axios.get(`${host}traveldesk/completed-travels`, { headers: {
       Authorization: token
     }})
+    response.data.sort((a, b) => new Date(b.fromDate) - new Date(a.fromDate));
+
+    console.log('kdjkdjf',response.data)
 
          return {
           status:true,

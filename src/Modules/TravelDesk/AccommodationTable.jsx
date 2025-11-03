@@ -214,6 +214,27 @@ const AccommodationTable = ({
 
   const calendarEditor = (options, field) => {
     const rowId = options.rowData?.id;
+     console.log('options1',options)
+
+    return (
+      <CustomeCalender
+        value={(options.value ? new Date(options.value) : '')}
+        onChange={(e) => options.editorCallback(formateDate(e.value))}
+        showIcon
+        dateFormat="yy-mm-dd"
+        className="text-xs calendarStyle w-full"
+        panelClassName="text-xs"
+        inputClassName="text-xs"
+        minDate={new Date(formFields.fromDate)}
+        maxDate={new Date(formFields.tentativeToDate)}
+        //disabledDate={(date) => isDateOverlapping(rowId, date, field)}
+      />
+    );
+  };
+
+  const calendarEditor2 = (options, field) => {
+    const rowId = options.rowData?.id;
+    console.log('options2',options)
 
     return (
       <CustomeCalender
@@ -401,7 +422,7 @@ const AccommodationTable = ({
         <CustomEditableColumn
           field="checkOut"
           header="Check-Out Date"
-          editor={(options) => calendarEditor(options, "checkOut")}
+          editor={(options) => calendarEditor2(options, "checkOut")}
           body={(row) => (row.checkOut ? formateDate(row.checkOut) : "")}
         />
         <CustomEditableColumn

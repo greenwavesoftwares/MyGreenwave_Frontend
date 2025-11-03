@@ -132,6 +132,7 @@ const toastRef = useRef(null);
     try {
       const data = await getTourClaimTableDraftData(claim_id);
       const travelDropDown = await getTravelDropDown();
+      console.log('travelDropDown',travelDropDown)
 
       let obj = travelDropDown.data;
       const matchedItem = obj.find((item) => item.value === data.travel_id);
@@ -212,7 +213,7 @@ const toastRef = useRef(null);
         label="Apply"
         className="p-button-sm p-button-success p-button-text"
         onClick={() => {
-          if(totals.total>0)
+          if(rowData.total_expense>0)
           {
              handleApplyApproval(rowData.claim_id, "Applied")
           }else{

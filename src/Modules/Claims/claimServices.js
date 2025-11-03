@@ -24,6 +24,8 @@ const token = `Bearer ${getUserData()?.token}`;
         Authorization: token,
       },
     });
+    console.log(response.data)
+    response?.data.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
 
     return {
       status: true,
@@ -143,6 +145,7 @@ const token = `Bearer ${getUserData()?.token}`;
     });
 
     const data = response.data;
+    
     console.log('response.data 1234', response.data)
 
     const groupedMap = {};
@@ -158,7 +161,6 @@ const token = `Bearer ${getUserData()?.token}`;
       );
       formattedResult.push({
         //travel_id:item.travelId,
-       
         fromDate: item.fromDate,
         tentativeToDate: item.tentativeToDate,
         actualToDate: item.actualToDate,
@@ -189,6 +191,7 @@ const token = `Bearer ${getUserData()?.token}`;
    
 
     console.log('formatedResult', formattedResult)
+       formattedResult.sort((a, b) => new Date(b.fromDate) - new Date(a.fromDate));
 
     return formattedResult;
   } catch (error) {
@@ -269,7 +272,7 @@ const token = `Bearer ${getUserData()?.token}`;
         value,
       })
     );
-
+console.log('formattedOptions',formattedOptions)
     return {
       status: true,
       message: "travels mode",
@@ -747,6 +750,7 @@ const token = `Bearer ${getUserData()?.token}`;
     // }
 
     const data = response.data
+     //data.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
     //console.log("tabledata",data)
     return data;
     // const travelDropDownData = await getTravelDropDown();
@@ -1257,6 +1261,7 @@ const token = `Bearer ${getUserData()?.token}`;
     let finaldata = [...ReviewedData, ...CancelledData, ...ApprovedData];
 
      finaldata.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
+     
 
     return {
       status: true,
@@ -1319,6 +1324,8 @@ const token = `Bearer ${getUserData()?.token}`;
     let reviewingdata =  reviewingresponse.data;
 
     let finaldata = [...reviewingdata, ...applieddata];
+    finaldata.sort((a,b)=>b.from_date-a.from_date)
+    console.log('finaldata',finaldata)
 
     return {
       status: true,
@@ -1438,7 +1445,7 @@ export const tourClaimSendForApproval = async (
     //   redirect: "follow",
     // };
 
-    console.log(claim_id,reason,settlement_amount)
+    console.log('claim_id- ',claim_id,'reason-',reason,'settlement amount-',settlement_amount)
 
     let response = await axios.put(
       `${host}claims/tour-claims/review/${claim_id}/Reviewed?reason=${reason}&settlement_amount=${settlement_amount}`,
@@ -1532,6 +1539,7 @@ export const getApprovedHRTourClaims = async () => {
    
     let approveddata = approvedresponse.data;
      approveddata.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
+     console.log('approvedData',approveddata)
     return {
       status: true,
       message: "approved TourClaim Details.",

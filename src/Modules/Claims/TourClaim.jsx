@@ -93,6 +93,7 @@ const TourClaim = () => {
     const fetchDropdownList = async () => {
       try {
         const travelModeData = await getTravelDropDown();
+        console.log("travelModeData",travelModeData)
         if (travelModeData.status) setTravelModeOptions(travelModeData.data);
       } catch (error) {
         console.error("Error fetching tour claim list:", error);
