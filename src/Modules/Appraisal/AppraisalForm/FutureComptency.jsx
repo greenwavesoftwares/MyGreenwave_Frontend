@@ -15,6 +15,7 @@ const FutureComptency = ({
   isReviewer,
   isApprover,
   trackFutureComptency,
+  appraiserUserName
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -107,6 +108,7 @@ const FutureComptency = ({
                 options={training}
                 className="dropDownStyle"
                 value={rowData.goals}
+                disabled={appraiserUserName}
                 onChange={(e) => handleInputChange(e.value, "goals", rowIndex)}
                 placeholder="Select Training"
               />
@@ -124,6 +126,7 @@ const FutureComptency = ({
                 options={relevanceData}
                 className="dropDownStyle"
                 value={rowData.relevance}
+                 disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.value, "relevance", rowIndex)
                 }
@@ -158,6 +161,7 @@ const FutureComptency = ({
                 value={
                   rowData.target_date ? new Date(rowData.target_date) : null
                 }
+                 disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(
                     formatDate(e.value),
@@ -270,6 +274,7 @@ const FutureComptency = ({
                 icon="pi pi-trash"
                 rounded
                 text
+                 disabled={appraiserUserName}
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
@@ -292,6 +297,7 @@ const FutureComptency = ({
           variant="contained"
           color="success"
           sx={{ boxShadow: "none" }}
+          disabled={appraiserUserName}
           onClick={() => {
             const blankRow = {
               goals: "",

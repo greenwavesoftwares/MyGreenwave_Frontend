@@ -16,7 +16,8 @@ const PerformanceScorecardDateTable = ({
   isReviewer,
   isApprover,
   trainingData,
-  trackPerformance
+  trackPerformance,
+  appraiserUserName
 }) => {
   console.log("ReviewerAndApprover_Status", isReviewer, isApprover);
   //Set Level Full Fulfillment Data Dropdown
@@ -137,7 +138,7 @@ const PerformanceScorecardDateTable = ({
               <InputText
                 value={rowData.my_last_year_KRA}
                 className="inputFieldStyle inputSectionWidth"
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -160,6 +161,7 @@ const PerformanceScorecardDateTable = ({
                 options={LevelFullfillmentData}
                 className="dropDownStyle"
                 value={rowData.level_of_fullfillment}
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.value, "level_of_fullfillment", rowIndex)
                 }
@@ -178,7 +180,7 @@ const PerformanceScorecardDateTable = ({
                 options={appraisalTraining}
                 className="multiselectDropdownStyle"
                 value={rowData.appraisalTraining}
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.value, "appraisalTraining", rowIndex)
                 }
@@ -214,6 +216,7 @@ const PerformanceScorecardDateTable = ({
               <InputText
                 value={rowData.remarks}
                 className="inputFieldStyle inputSectionWidth"
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.target.value, "remarks", rowIndex)
                 }
@@ -319,7 +322,7 @@ const PerformanceScorecardDateTable = ({
                 severity="danger"
                 size="small"
                 type="button"
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 icon="pi pi-trash"
                 rounded
                 text
@@ -345,6 +348,7 @@ const PerformanceScorecardDateTable = ({
           variant="contained"
           color="success"
           sx={{ boxShadow: "none" }}
+          disabled={appraiserUserName}
           onClick={() => {
             const blankRow = {
               my_last_year_KRA: "",

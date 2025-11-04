@@ -14,6 +14,12 @@ const LastYearGoal = ({ appraiserPreviousSaveFormData }) => {
         header="Last Year Goal"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding mb-3"
+        // rowClassName={(rowData) => {
+        //   if (rowData.some((ele) => ele.previous === true)) {
+        //     return "bgcyan-100";
+        //   }
+        // }}
+        rowClassName={() => "bgcyan-100"}
       >
         <Column
           field="future_personal_KRA_goals"

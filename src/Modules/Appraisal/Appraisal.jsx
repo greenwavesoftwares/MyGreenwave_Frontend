@@ -309,7 +309,7 @@ function Appraisal() {
           >
             <Column
               field="empName"
-              header="Emp Name"
+              header="Employee Name"
               body={(rowData) => {
                 return (
                   <div

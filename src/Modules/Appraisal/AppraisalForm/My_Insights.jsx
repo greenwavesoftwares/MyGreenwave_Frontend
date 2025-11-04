@@ -11,6 +11,7 @@ const MyInsights = ({
   isReviewer,
   isApprover,
   trackMyInsights,
+  appraiserUserName
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -76,6 +77,7 @@ const MyInsights = ({
               <InputText
                 className="inputFieldStyle inputSectionWidth"
                 value={rowData.my_ideas}
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.target.value, "my_ideas", rowIndex)
                 }
@@ -92,6 +94,7 @@ const MyInsights = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.my_contribution_plans}
+                disabled={appraiserUserName}
                 className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(
@@ -202,6 +205,7 @@ const MyInsights = ({
                 icon="pi pi-trash"
                 rounded
                 text
+                disabled={appraiserUserName}
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
@@ -224,6 +228,7 @@ const MyInsights = ({
           variant="contained"
           color="success"
           sx={{ boxShadow: "none" }}
+          disabled={appraiserUserName}
           onClick={() => {
             const blankRow = {
               my_ideas: "",

@@ -13,6 +13,7 @@ const FutureGoals = ({
   isReviewer,
   isApprover,
   trackFutureGoals,
+  appraiserUserName
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -89,6 +90,7 @@ const FutureGoals = ({
               <InputText
                 value={rowData.future_personal_KRA_goals}
                 className="inputFieldStyle"
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(
                     e.target.value,
@@ -110,6 +112,7 @@ const FutureGoals = ({
               <Dropdown
                 options={goalTypeData}
                 className="dropDownStyle"
+                disabled={appraiserUserName}
                 value={rowData.goalType}
                 onChange={(e) =>
                   handleInputChange(e.value, "goalType", rowIndex)
@@ -135,6 +138,7 @@ const FutureGoals = ({
                   options={appraisalTraining}
                   className="multiselectDropdownStyle"
                   value={rowData.appraisalTraining}
+                  disabled={appraiserUserName}
                   onChange={(e) =>
                     handleInputChange(e.value, "appraisalTraining", rowIndex)
                   }
@@ -145,6 +149,7 @@ const FutureGoals = ({
                 <InputText
                   className="inputFieldStyle inputSectionWidth"
                   value={rowData.appraisalTraining}
+                  disabled={appraiserUserName}
                   onChange={(e) =>
                     handleInputChange(
                       [e.target.value],
@@ -280,6 +285,7 @@ const FutureGoals = ({
                 icon="pi pi-trash"
                 rounded
                 text
+                disabled={appraiserUserName}
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
@@ -303,6 +309,7 @@ const FutureGoals = ({
           type="button"
           color="success"
           sx={{ boxShadow: "none" }}
+          disabled={appraiserUserName}
           onClick={(e) => {
             e.preventDefault();
             const blankRow = {

@@ -12,7 +12,8 @@ const MyKRA = ({
   trainingData,
   isReviewer,
   isApprover,
-  trackMyKRA
+  trackMyKRA,
+  appraiserUserName
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -86,6 +87,7 @@ const MyKRA = ({
             editingRowIndex === rowIndex ? (
               <InputText
                 value={rowData.my_next12month_KRA}
+                disabled={appraiserUserName}
                 className="inputFieldStyle inputSectionWidth"
                 onChange={(e) =>
                   handleInputChange(
@@ -108,6 +110,7 @@ const MyKRA = ({
                 options={appraisalTraining}
                 className="multiselectDropdownStyle"
                 value={rowData.appraisalTraining}
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.value, "appraisalTraining", rowIndex)
                 }
@@ -232,6 +235,7 @@ const MyKRA = ({
                 icon="pi pi-trash"
                 rounded
                 text
+                disabled={appraiserUserName}
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
@@ -254,6 +258,7 @@ const MyKRA = ({
           variant="contained"
           color="success"
           sx={{ boxShadow: "none" }}
+          disabled={appraiserUserName}
           onClick={() => {
             const blankRow = {
               my_next12month_KRA: "",

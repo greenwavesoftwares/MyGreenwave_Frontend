@@ -444,6 +444,17 @@ function AppraisalDialog({
     }
   };
 
+   const appraiserUserName=()=>{
+    const loginUser = (appraiserForm?.personaldetails.empId).toLowerCase();
+    const userName = getUserData()?.userDetails.userId.toLowerCase();
+    if (loginUser === userName) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+  
+
   //IS Form Disable or Enable Function
   const navigate = useNavigate();
   const isFormDisabled = () => {
@@ -1039,6 +1050,7 @@ function AppraisalDialog({
                   FutureGoalsData={FutureGoalsData_Update}
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
+                  appraiserUserName={appraiserUserName()}
                   isApprover={isApprover()}
                   trackFutureGoals={setTrackFutureGoals}
                 />
@@ -1081,6 +1093,7 @@ function AppraisalDialog({
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  appraiserUserName={appraiserUserName()}
                   trackPerformance={setTrackPerformance}
                 />
                 <MyKRA
@@ -1089,6 +1102,7 @@ function AppraisalDialog({
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  appraiserUserName={appraiserUserName()}
                   trackMyKRA={setTrackMyKRA}
                 />
               </AccordionDetails>
@@ -1130,6 +1144,7 @@ function AppraisalDialog({
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  appraiserUserName={appraiserUserName()}
                   trackCompetencyScorecard={setTrackCompetencyScorecard}
                 />
                 <FutureComptency
@@ -1138,6 +1153,7 @@ function AppraisalDialog({
                   trainingData={trainingData}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  appraiserUserName={appraiserUserName()}
                   trackFutureComptency={setTrackFutureComptency}
                 />
               </AccordionDetails>
@@ -1176,6 +1192,7 @@ function AppraisalDialog({
                   myInsights_Data={myInsights_Upadte}
                   isReviewer={isReviewer()}
                   isApprover={isApprover()}
+                  appraiserUserName={appraiserUserName()}
                   trackMyInsights={setTrackMyInsights}
                 />
               </AccordionDetails>

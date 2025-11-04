@@ -14,7 +14,8 @@ const CompetencyScorecard = ({
   isReviewer,
   isApprover,
   trainingData,
-  trackCompetencyScorecard
+  trackCompetencyScorecard,
+  appraiserUserName
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
@@ -99,7 +100,7 @@ const CompetencyScorecard = ({
               <Dropdown
                 options={training}
                 className="dropDownStyle"
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 value={rowData.personal_goals}
                 onChange={(e) =>
                   handleInputChange(e.value, "personal_goals", rowIndex)
@@ -119,7 +120,7 @@ const CompetencyScorecard = ({
               <Dropdown
                 options={relevanceData}
                 className="dropDownStyle"
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 value={rowData.relevance}
                 onChange={(e) =>
                   handleInputChange(e.value, "relevance", rowIndex)
@@ -151,6 +152,7 @@ const CompetencyScorecard = ({
               <Dropdown
                 options={LevelFullfillmentData}
                 className="dropDownStyle"
+                disabled={appraiserUserName}
                 value={rowData.level_of_fullfillment}
                 onChange={(e) =>
                   handleInputChange(e.value, "level_of_fullfillment", rowIndex)
@@ -170,7 +172,7 @@ const CompetencyScorecard = ({
               <Calendar
                 dateFormat="yy-mm-dd"
                 className="calendarStyle"
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 value={
                   rowData.target_date ? new Date(rowData.target_date) : null
                 }
@@ -283,7 +285,7 @@ const CompetencyScorecard = ({
               <Button
                 severity="danger"
                 size="small"
-                disabled={checkedPreviousYearData(rowData)}
+                disabled={checkedPreviousYearData(rowData) || appraiserUserName}
                 icon="pi pi-trash"
                 rounded
                 text
@@ -310,6 +312,7 @@ const CompetencyScorecard = ({
           variant="contained"
           color="success"
           sx={{ boxShadow: "none" }}
+          disabled={appraiserUserName}
           onClick={() => {
             const blankRow = {
               personal_goals: "",
