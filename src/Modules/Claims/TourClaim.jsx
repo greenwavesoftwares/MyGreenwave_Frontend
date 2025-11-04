@@ -149,6 +149,7 @@ const TourClaim = () => {
                             file_type: "",
                           });
                           settourClaimTableData([]);
+                          setselectedtravelMode(null);
                         }}
                         size="small"
                         rounded

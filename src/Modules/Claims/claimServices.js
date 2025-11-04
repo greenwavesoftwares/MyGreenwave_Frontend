@@ -1322,8 +1322,43 @@ const token = `Bearer ${getUserData()?.token}`;
     // }
     let applieddata =  appliedresponse.data;
     let reviewingdata =  reviewingresponse.data;
+ 
 
     let finaldata = [...reviewingdata, ...applieddata];
+      // Gropping the data according to travel_id
+    //  let uniqueTravels = Object.values(
+    //     finaldata.reduce((acc, curr) => {
+    //       acc[curr.travel_id] = curr; // overwrite if duplicate
+    //       return acc;
+    //     }, {})
+    //   );
+
+    //    uniqueTravels.forEach((item) => {
+    //   const matchingClaims = data.filter(
+    //     (claim) => claim.travel_id === item.travelId
+    //   );
+
+    //   let formattedResult = [];
+
+    //    uniqueTravels.forEach((item)=>{
+
+
+    //        formattedResult.push({
+    //     //travel_id:item.travelId,
+    //     fromDate: item.from_date,
+    //     tentativeToDate: item.tentativeToDate,
+    //     actualToDate: item.actualToDate,
+    //     travel_id: item.travel_id,
+    //     destination: item.city,
+    //     purpose: item.purpose,
+    //     project: item.projectName,
+    //     type: item.typeOfTravel,
+    //     expandabledata: matchingClaims,
+    //   });
+    // });
+    //    })
+      
+    //   console.log("uniqueTravels",uniqueTravels)
     finaldata.sort((a,b)=>b.from_date-a.from_date)
     console.log('finaldata',finaldata)
 

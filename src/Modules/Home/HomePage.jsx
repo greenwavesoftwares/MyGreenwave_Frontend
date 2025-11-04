@@ -147,6 +147,7 @@ const HomePage = () => {
       const trainingResponse = await getTrainingData(token);
       //Next Holiday API Call
       const nextHolidayResponse = await getNextHoliday(token);
+      console.log('nextHolidayResponse',nextHolidayResponse)
       //Event API Call
       const eventResponse = await getEventData(token);
       //Notification API Call
@@ -202,6 +203,7 @@ const HomePage = () => {
   //Call Home Page API
   useEffect(() => {
     getHomePageData();
+    
   }, []);
 
   //Fetch Event Image
@@ -273,6 +275,7 @@ const HomePage = () => {
   //Event Template
   const itemEventTemplate = (item) => {
     setEventImageFileName(item.filename);
+    //console.log("item",item)
 
     return (
       <>

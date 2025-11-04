@@ -133,7 +133,7 @@ const HolidayMaster = () => {
                   <Column field="year" header="Year"></Column>
                   <Column field="holidays" header="Holiday Name"></Column>
                   <Column field="fromDate" header="From Date"></Column>
-                  <Column field="fromDate" header="To Date"></Column>
+                  <Column field="toDate" header="To Date"></Column>
                   <Column
                     header="Type"
                     body={(rowData) => {
@@ -281,6 +281,12 @@ const HolidayMaster = () => {
                         setHolidayTable,
                         setHolidayVisible
                       );
+                       
+                       const data = await getHolidays();
+                      console.log('dataapi',data)
+                      console.log("")
+                      console.log('holidayTable.table',holidayTable.table)
+                       setHolidayTable((prev) => ({ ...prev, table: data.holiday }));
                     }}
                   />
                 </Grid>

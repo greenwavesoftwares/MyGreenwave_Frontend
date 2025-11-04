@@ -38,11 +38,13 @@ const getHolidayDatesAPI = async () => {
 const addHolidaysAPI = async (addholidayData, toastRef) => {
   const userData = getUserData();
   try {
+    console.log('addholidayData',addholidayData)
     const response = await axios.post(`${endPoint}holidays`, addholidayData, {
       headers: {
         Authorization: `Bearer ${userData.token}`,
       },
-    });
+    }); 
+    console.log("response.data",response.data)
     return response.data;
   } catch (error) {
     console.error("Error fetching forminfo with versions:", error);
