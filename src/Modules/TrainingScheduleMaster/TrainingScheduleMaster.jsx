@@ -372,9 +372,8 @@ const TrainingScheduleMaster = () => {
               </div>
             </div>
 
-            <div className=" mt-1 py-2.5 ">
+            {/* <div className=" mt-1 py-2.5 ">
               <div className="my-grid-new">
-                {/* Total Training */}
                 <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -395,7 +394,7 @@ const TrainingScheduleMaster = () => {
                     </div>
                   </div>
                 </div>
-                {/* Completed Training */}
+                
                 <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -419,7 +418,7 @@ const TrainingScheduleMaster = () => {
                   </div>
                 </div>
 
-                {/* Pending Training */}
+                
                 <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -441,7 +440,7 @@ const TrainingScheduleMaster = () => {
                     </div>
                   </div>
                 </div>
-                {/* With Certificates */}
+                
                 <div className="cardStyle rounded-xl shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow duration-200">
                   <div className="flex items-center justify-between">
                      <div className="flex items-center">
@@ -453,7 +452,7 @@ const TrainingScheduleMaster = () => {
                       </div>
                     </div>
                     <div className="flex items-center">
-                      {/* <PersonOutlineOutlinedIcon className=" mr-2 green-icon-noBG" /> */}
+                     
                       <span
                         className=" font-bold text-gray-900"
                         style={{ fontSize: "1.2rem" }}
@@ -464,7 +463,7 @@ const TrainingScheduleMaster = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
  <div className="mt-1 mb-4 cardStyle">
             <DataTable
               paginator
