@@ -18,7 +18,7 @@ import DialogComponent from "../../components/Dialog/DialogComponent";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import RightSideImage from "../../assets/Images/RightSideImage.png";
 import { getUserData } from "./Encrypt";
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 
 const Login = () => {
   const [credential, setCredential] = useState({ username: "", password: "" });
@@ -30,6 +30,23 @@ const Login = () => {
   const showWPDialog = (message) => {
     setWPDialogMessage(message);
     setWPDialogVisible(true);
+  };
+  const loginOnEnterPress = async (e) => {
+    if (e.key === "Enter") {
+      await onLoginClick();
+    }
+  };
+  const onLoginClick = async () => {
+    const loginCheck = await checkCredential(
+      credential,
+      toastRef,
+      showWPDialog
+    );
+    if (loginCheck) {
+      const userData = getUserData();
+      const baseRoute = import.meta.env.VITE_BASE_ROUTE;
+      navigate(`/${baseRoute}/${userData?.userDetails?.espHomepage}`);
+    }
   };
   return (
     <>
@@ -136,7 +153,7 @@ const Login = () => {
           </Grid>
         </Grid>
       </Container> */}
-      
+
       <div className="min-h-screen bg-gray-100 flex">
         {/* Left Section - Login Form */}
         <div className="flex-1 flex items-center justify-center p-1 bgColor">
@@ -152,14 +169,21 @@ const Login = () => {
                 style={{ display: "inline-flex" }}
               />
 
-              <h1 className="text-base font-bold text-gray-900 mb-2 ml-1">Welcome to My Greenwave </h1>
+              <h1 className="text-base font-bold text-gray-900 mb-2 ml-1">
+                Welcome to My Greenwave{" "}
+              </h1>
               {/* <p className="text-gray-600 text-xs">
                 Access your employee services, pay slips, leaves, and more — all in one place.
               </p> */}
             </div>
 
             {/* Form */}
-            <div className="space-y-7">
+            <div
+              className="space-y-7"
+              onKeyDown={async (e) => {
+                await loginOnEnterPress(e);
+              }}
+            >
               {/* Email Field */}
               <TextField
                 fullWidth
@@ -218,22 +242,11 @@ const Login = () => {
                 <Button
                   label="Login"
                   size="small"
-                icon="pi pi-sign-in mr-2"
+                  icon="pi pi-sign-in mr-2"
                   rounded
                   className="text-md px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   onClick={async () => {
-                    const loginCheck = await checkCredential(
-                      credential,
-                      toastRef,
-                      showWPDialog
-                    );
-                    if (loginCheck) {
-                      const userData = getUserData();
-                      const baseRoute = import.meta.env.VITE_BASE_ROUTE;
-                      navigate(
-                        `/${baseRoute}/${userData?.userDetails?.espHomepage}`
-                      );
-                    }
+                    await onLoginClick();
                   }}
                 ></Button>
               </div>
@@ -244,13 +257,11 @@ const Login = () => {
         {/* Right Section - Hero Image */}
         <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400">
-          {/* <div className="absolute inset-0" style={{ backgroundColor: "#E6FDEC" }}> */}
+            {/* <div className="absolute inset-0" style={{ backgroundColor: "#E6FDEC" }}> */}
             {/* Gradient Overlay */}
-           
 
             {/* Main Content */}
             <div className="relative h-full flex flex-col justify-center items-center p-10 text-white">
-             
               <div className="relative z-10 mb-2  p-1 ">
                 <Image
                   src={RightSideImage}
@@ -258,13 +269,11 @@ const Login = () => {
                   height="650"
                   width="450"
                   className=" hidden md:block"
-                  style={{height: "100%", width: "100%", objectFit: "cover"}}
+                  style={{ height: "100%", width: "100%", objectFit: "cover" }}
                 />
               </div>
 
-
               {/* Background Decorative Elements */}
-              
             </div>
           </div>
         </div>
