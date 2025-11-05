@@ -242,7 +242,7 @@ const setChartData = async (leaveData) => {
 };
 const setCalenderData = async (userLeaves, holidays) => {
   let calenderDataList = [];
-  userLeaves.map((row) => {
+  userLeaves?.map((row) => {
     let calenderData = {};
     calenderData.start = row.fromDate;
     calenderData.end =
@@ -255,7 +255,7 @@ const setCalenderData = async (userLeaves, holidays) => {
     calenderDataList.push(calenderData);
   });
 
-  holidays.map((row) => {
+  holidays?.map((row) => {
     let calenderData = {};
     calenderData.start = row.fromDate;
     calenderData.end =
