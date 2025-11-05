@@ -360,11 +360,11 @@ const TourClaimTable = ({
         tourClaimTableData,
         tourclaimformData.claim_id
       );
+      console.log('response',response)
       if (!response.status) {
         showErrorMessage(toastRef, "error", response.message);
       } else {
         showSuccessMessage(toastRef, "success", response.message);
-
         setDraftData(response.data);
         seteditableMode(false);
       }
@@ -850,7 +850,7 @@ const TourClaimTable = ({
                   return;
                 }
                 handleUpdate();
-                showSuccessMessage(toastRef, "success", "Tour claim updated!");
+                //showSuccessMessage(toastRef, "success", "Tour claim updated!");
               }}
             />
             <CustomButton

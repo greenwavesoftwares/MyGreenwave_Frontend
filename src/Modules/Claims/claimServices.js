@@ -896,7 +896,7 @@ export const updateDraftdata = async (
   tourClaimTableData,
   claim_id
 ) => {
-  const userDetails = getUserData()?.userDetails;
+  //const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
   try {
     let total_expense = 0;
@@ -969,15 +969,14 @@ const token = `Bearer ${getUserData()?.token}`;
     //     data: [],
     //   };
     // }
+   // console.log('response',response)
 
     const draftData = await getDraftData();
-
     return draftData;
   } catch (error) {
-    console.log( error);
     return {
       status: false,
-      message: error?.message,
+      message: error?.response.data,
       data: [],
     };
   }
