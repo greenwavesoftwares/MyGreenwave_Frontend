@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Chip, Container } from "@mui/material";
+import { Chip, Container, LinearProgress } from "@mui/material";
 import { TabMenu } from "primereact/tabmenu";
 import { Badge } from "primereact/badge";
 import { onPageLoad } from "./AdminFunction";
@@ -25,6 +25,7 @@ import MapsHomeWorkIcon from "@mui/icons-material/MapsHomeWork";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import { Skeleton } from "primereact/skeleton";
 const AdminPage = () => {
   //Table structure and Validations for admin page
   const tableStructure = () => ({
@@ -101,6 +102,8 @@ const AdminPage = () => {
   const [adminInfo, setAdminInfo] = useState({});
   const [activeIndex, setActiveIndex] = useState(0);
   const [adminTable, setAdminTable] = useState(tableStructure);
+  //Page Loader 
+  const [loader,setLoader]=useState(false)
 
   const itemRenderer = (item, itemIndex, userCount, severity) => (
     <a
@@ -153,8 +156,10 @@ const AdminPage = () => {
   );
   useEffect(() => {
     const init = async () => {
+      setLoader(true)
       const data = await onPageLoad();
       if (data) {
+        setLoader(false)
         setAdminInfo(data);
         setAdminTable((prev) => ({
           ...prev,
@@ -244,15 +249,19 @@ const AdminPage = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      <PersonOutlineOutlinedIcon className=" mr-2 green-icon-noBG" />
-                      <span
-                        className=" font-bold text-gray-900"
-                        style={{ fontSize: "1.2rem" }}
-                      >
-                        {adminInfo?.userCount?.active ?? "NA"}
-                      </span>
-                    </div>
+                    {loader ? (
+                      <Skeleton shape="circle" size="2rem"></Skeleton>
+                    ) : (
+                      <div className="flex items-center">
+                        <PersonOutlineOutlinedIcon className=" mr-2 green-icon-noBG" />
+                        <span
+                          className=" font-bold text-gray-900"
+                          style={{ fontSize: "1.2rem" }}
+                        >
+                          {adminInfo?.userCount?.active ?? "NA"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -271,15 +280,19 @@ const AdminPage = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      <PersonOffOutlinedIcon className=" mr-2 red-icon-noBG" />
-                      <span
-                        className="font-bold text-gray-900"
-                        style={{ fontSize: "1.2rem" }}
-                      >
-                        {adminInfo?.userCount?.inActive ?? "NA"}
-                      </span>
-                    </div>
+                    {loader ? (
+                      <Skeleton shape="circle" size="2rem"></Skeleton>
+                    ) : (
+                      <div className="flex items-center">
+                        <PersonOffOutlinedIcon className=" mr-2 red-icon-noBG" />
+                        <span
+                          className="font-bold text-gray-900"
+                          style={{ fontSize: "1.2rem" }}
+                        >
+                          {adminInfo?.userCount?.inActive ?? "NA"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -298,6 +311,9 @@ const AdminPage = () => {
                         </p>
                       </div>
                     </div>
+                    {loader ? (
+                      <Skeleton shape="circle" size="2rem"></Skeleton>
+                    ) : (
                     <div className="flex items-center">
                       <GroupOutlinedIcon className=" mr-2 blue-icon-noBG" />
                       <span
@@ -309,6 +325,7 @@ const AdminPage = () => {
                         )?.length ?? "NA"}
                       </span>
                     </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -343,6 +360,7 @@ const AdminPage = () => {
                 dataKey="userId"
                 filters={adminTable.filterStructure}
                 globalFilterFields={["userName", "userId", "phoneNumber"]}
+                emptyMessage={ loader ? <LinearProgress color="inherit" /> : "No Data Found" }
               >
                 <Column
                   header="User Name"
@@ -408,7 +426,7 @@ const AdminPage = () => {
                     <>
                       <Chip
                         label={rowData.active ? "Active" : "Inactive"}
-                       // color={rowData.active ? "success" : "error"}
+                        // color={rowData.active ? "success" : "error"}
                         icon={
                           rowData.active ? (
                             <PersonOutlineOutlinedIcon />
@@ -418,7 +436,7 @@ const AdminPage = () => {
                         }
                         size="small"
                         //variant="outlined"
-                        className={`mr-2 mb-2 ${rowData.active? "activeChipStyle":"inActiveChipStyle"}`}
+                        className={`mr-2 mb-2 ${rowData.active ? "activeChipStyle" : "inActiveChipStyle"}`}
                       />
                     </>
                   )}

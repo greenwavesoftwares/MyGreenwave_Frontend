@@ -11,6 +11,7 @@ import {
   Chip,
   Fab,
   useMediaQuery,
+  Skeleton,
 } from "@mui/material";
 import {
   User,
@@ -126,6 +127,8 @@ const HomePage = () => {
   const [fileUploadRow, setFileUploadRow] = useState(null);
   const [fileUploadName, setFileUploadName] = useState(null);
   const fileUploadRef = useRef(null);
+  //Event Image
+  const [eventImageLoader,setEventImageLoader]=useState(false)
   //mobile view
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -211,6 +214,7 @@ const HomePage = () => {
     const fetchEventImage = async () => {
       try {
         if (eventImageFileName) {
+          setEventImageLoader(true)
           const response = await getHomePageEvent(eventImageFileName);
           const imageUrl = URL.createObjectURL(response.data);
           setEventImage(imageUrl);
@@ -277,12 +281,20 @@ const HomePage = () => {
     setEventImageFileName(item.filename);
     //console.log("item",item)
 
+    console.log("eventImage",eventImageFileName);
     return (
       <>
-        {eventImage && (
-          <Image src={eventImage} alt="Image" style={{ height: "100%" }} />
-        )}
-
+      
+      {eventImageLoader && !eventImage ?
+      // <Skeleton animation="wave" height={250} sx={{width:"100%"}}></Skeleton> 
+      <div style={{width:"100%",height:"17rem"}}>
+        <Skeleton animation="wave" height={250} sx={{width:"100%",transform:"none",background:"#9595951c"}}></Skeleton>
+      </div>
+      :
+       
+          <Image src={eventImage} alt="Image" style={{ height: "17.7rem" }} />
+        
+      }
         <InfoIcon
           onClick={() => {
             itemData = item;
@@ -977,7 +989,7 @@ const HomePage = () => {
                                   // showThumbnailNavigators={false}
                                   circular
                                   autoPlay
-                                  transitionInterval={8 * 1000}
+                                  transitionInterval={15 * 1000}
                                   showIndicators
                                   //showIndicatorsOnItem
                                   // showItemNavigatorsOnHover
