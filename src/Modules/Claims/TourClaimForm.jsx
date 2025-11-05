@@ -186,46 +186,56 @@ const TourClaimForm = ({
   return (
     <div className="">
       <div className="mb-2 ">
-        <Accordion defaultExpanded className="accordionStyle">
-          <AccordionSummary
+        <div >
+          {/* <AccordionSummary
             expandIcon={<ArrowDropDownIcon />}
             aria-controls="panel2-content"
             id="panel2-header"
           >
-            {/* <Typography component="span" className="ml-2">Available Advance - {advance}</Typography> */}
-
+            
             <Typography
               component="span"
               sx={{ display: "flex", alignItems: "center", gap: 1 }}
             >
               <div className="flex justify-between items-center">
                 <div>
+                 
+                  Available Advance 
+                  
+                </div>
+              </div>
+              <div>
+                
+              </div>
+            </Typography>
+          </AccordionSummary> */}
+          <div>
+            <div>
+              <div className="flex justify-between items-center cardBG-green px-4 mb-2 h-12 rounded-lg">
+                <div className="flex items-center gap-1">
                   <CreditCardIcon
                     fontSize="small"
                     //  className="accordionIconBGStyle"
                   />
-                  {/* <div className="flex justify-between"> */}
-                  Available Advance - ₹{advance}
+                  <span className=" font-medium">
+                    Available Advance:
+                  </span>
+                  <span className="text-green-600 font-bold">{advance}</span>
                 </div>
-                
+                <CustomButton
+                  icon="pi pi-file-export"
+                  className="p-button-sm"
+                  label={"Export Excel"}
+                  onClick={() => {
+                    handleDownloadFile();
+                  }}
+                  tooltip="Export Excel"
+                  rounded={"true"}
+                  severity={"success"}
+                  style={{ height: "2.1rem" }}
+                />
               </div>
-              <div>
-                  <CustomButton
-                    icon="pi pi-file-export"
-                    className="p-button-sm"
-                    onClick={() => {
-                      handleDownloadFile();
-                    }}
-                    tooltip="Export Excel"
-                    rounded={"true"}
-                    severity={"success"}
-                    style={{ width: "1rem", height: "2.1rem" }}
-                  />
-                </div>
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <div>
+
               {/* Travel Selection Section */}
               <div className="cardBG rounded-xl p-4 mb-3 defaultBorder">
                 <div
@@ -617,8 +627,8 @@ const TourClaimForm = ({
                 </Grid>
               </div>
             </div>
-          </AccordionDetails>
-        </Accordion>
+          </div>
+        </div>
         {/* <div className="flex  items-center ">
           <Button
             label="Tour Claim"

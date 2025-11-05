@@ -118,9 +118,9 @@ const TourClaim = () => {
           <Toast ref={toast} />
           <TabView>
             <TabPanel header="New Claim">
-              <div className="defaultBorder">
+              <div className="">
                 {draftData.length > 0 && !toggleNewClaim && !editableMode && (
-                  <div>
+                  <div className="defaultBorder">
                     <div className="flex justify-between items-center p-2 ">
                       <h2 className="text-md font-semibold text-gray-700">
                         📝 My Drafts
