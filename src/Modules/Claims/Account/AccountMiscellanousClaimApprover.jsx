@@ -154,13 +154,16 @@ const AccountMiscellanousClaimApprover = () => {
           <CustomButton
             label="Approve"
             size="small"
-            className="bg-green-100 text-green-800 hover:bg-green-200 border-none"
+           // className="bg-green-100 text-green-800 hover:bg-green-200 border-none"
+           severity="success"
+           
             onClick={() => handleApproveClick(rowData.claim_id, remarks)}
           />
           <CustomButton
             label="Reject"
             size="small"
-            className="bg-red-100 text-red-800 hover:bg-red-200 border-none"
+           // className="bg-red-100 text-red-800 hover:bg-red-200 border-none"
+           severity="danger"
             onClick={() => handleRejectClick(rowData.claim_id, remarks)}
           />
         </div>

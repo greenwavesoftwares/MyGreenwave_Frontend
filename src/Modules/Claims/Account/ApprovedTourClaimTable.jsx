@@ -398,6 +398,7 @@ const ApprovedTourClaimTable = () => {
           body={claimCalculationBody}
           sortable={true}
           filter={true}
+          style={{ width: "300px" }}
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />

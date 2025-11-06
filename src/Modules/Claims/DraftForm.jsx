@@ -89,7 +89,11 @@ const toastRef = useRef(null);
         seteditableMode(false);
         settourClaimTableData([]);
         settourclaimformData([]);
+        
       }
+      settourClaimTableData([]);
+      setselectedtravelMode(null);
+      settourclaimformData([]);
     }
   };
 
@@ -116,7 +120,12 @@ const toastRef = useRef(null);
           settoggleNewClaim(true);
           seteditableMode(false);
           settourClaimTableData([]);
+          setselectedtravelMode(null);
+          settourclaimformData([]);
         }
+        settourClaimTableData([]);
+        setselectedtravelMode(null);
+        settourclaimformData([]);
       }
     } catch (error) {
       showErrorMessage(
@@ -230,7 +239,7 @@ const toastRef = useRef(null);
   );
 
   const claimCalculationBody = (rowData) => (
-    <div className="text-xs space-y-1 flex flex-col justify-center">
+    <div className="text-xs space-y-1 flex flex-col justify-center items-end">
       <div>
         <span className="font-semibold text-gray-700">Advance:</span> ₹
         {rowData["advance"]}
@@ -503,6 +512,7 @@ const toastRef = useRef(null);
             header="Tour Details"
             body={tourDetailsBody}
             headerStyle={cellStyle}
+            style={{ width: "200px" }}
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
             sortable={true}
             filter={true}
@@ -510,7 +520,8 @@ const toastRef = useRef(null);
           <CustomColumn
             header="Claim Calculation"
             body={claimCalculationBody}
-            headerStyle={cellStyle}
+              headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
+          
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
             sortable={true}
             filter={true}

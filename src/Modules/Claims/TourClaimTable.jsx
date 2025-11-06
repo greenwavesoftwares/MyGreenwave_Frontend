@@ -213,23 +213,23 @@ const TourClaimTable = ({
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-      const headerRowIndex = 15;
+      const headerRowIndex = 0;
       const headers = XLSX.utils.sheet_to_json(worksheet, {
         range: headerRowIndex,
         header: 1,
       })[0];
 
-      settourclaimFormLabeData({
-        destination: worksheet["C12"]?.v || "",
-        purposeOfTrip: worksheet["C13"]?.v || "",
-        projectName: worksheet["J9"]?.v || "",
-        onAccount: worksheet["J10"]?.v || "",
-        fromDate: formateDate(worksheet["J11"]?.v),
-        toDate: formateDate(worksheet["J12"]?.v),
-      });
+      // settourclaimFormLabeData({
+      //   destination: worksheet["C12"]?.v || "",
+      //   purposeOfTrip: worksheet["C13"]?.v || "",
+      //   projectName: worksheet["J9"]?.v || "",
+      //   onAccount: worksheet["J10"]?.v || "",
+      //   fromDate: formateDate(worksheet["J11"]?.v),
+      //   toDate: formateDate(worksheet["J12"]?.v),
+      // });
 
       const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-        range: 15,
+        range: 0,
         header: headers,
         defval: "",
       });
@@ -333,6 +333,8 @@ const TourClaimTable = ({
         setDraftData(response.data);
         seteditableMode(false);
         settoggleNewClaim(false);
+        settourClaimTableData([]);
+        setselectedtravelMode(null);
       }
     } catch (error) {
       showErrorMessage(toastRef, "error", error?.message);
@@ -367,6 +369,8 @@ const TourClaimTable = ({
         showSuccessMessage(toastRef, "success", response.message);
         setDraftData(response.data);
         seteditableMode(false);
+        settourClaimTableData([]);
+        setselectedtravelMode(null);
       }
     } catch (error) {
       showErrorMessage(toastRef, "error", error?.message);
@@ -892,6 +896,9 @@ const TourClaimTable = ({
               onClick={() => {
                 seteditableMode(false);
                 settoggleNewClaim(false);
+                settourClaimTableData([]);
+                setselectedtravelMode(null);
+                
               }}
               className="p-button-sm selectButtonStyle"
               size={"small"}

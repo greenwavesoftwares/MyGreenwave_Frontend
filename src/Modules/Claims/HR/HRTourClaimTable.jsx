@@ -416,7 +416,8 @@ const HRTourClaimTable = () => {
           header="Tour Details"
           sortable={true}
           filter={true}
-          headerStyle={cellStyle}
+          headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
+         
           bodyStyle={cellStyle}
         />
 
@@ -425,7 +426,7 @@ const HRTourClaimTable = () => {
           header="Claim Calculation"
           sortable={true}
           filter={true}
-          headerStyle={cellStyle}
+          headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
           bodyStyle={cellStyle}
         />
         

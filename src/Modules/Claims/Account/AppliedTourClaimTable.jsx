@@ -94,24 +94,25 @@ const AppliedTourClaimTable = () => {
   };
 
   const tourDetailsBody = (rowData) => (
-    <div
-      className="test"
-      style={{ display: "grid", justifyContent: "flex-start" }}
-    >
-      <div className="display-flex">
+    // <div
+    //   className="test "
+    //   style={{ display: "grid", justifyContent: "flex-start" }}
+    // >
+     <div className="flex flex-col items-start   space-y-1">
+      <div >
         <span className="font-semibold">Destination:</span>
         {rowData["destination"]}
       </div>
-      <div className="display-flex">
+      <div >
         <span className="font-semibold">Purpose:</span> {rowData["purpose"]}
       </div>
-      <div className="display-flex">
+      <div >
         <span className="font-semibold">Project:</span> {rowData["project"]}
       </div>
-      <div className="display-flex">
+      <div >
         <span className="font-semibold">Type:</span> {rowData["type"]}
       </div>
-      <div className="display-flex">
+      <div >
         <span className="font-semibold">On Account:</span> {rowData["account"]}
       </div>
     </div>
@@ -274,11 +275,17 @@ const AppliedTourClaimTable = () => {
           <div className="flex flex-col justify-center items-center gap-2 p-2 ">
          
 
-          
-             <InputNumber inputId="minmax"  placeholder="Approval Amt" value={settlementAmount} onValueChange={(e) => setSettlementAmount(e.value)} min={0} max={rowData.total_expense}
-              className="w-36"             // wrapper width
-               inputClassName="w-36" 
-              />
+              
+                <InputNumber
+      inputId="minmax"
+      placeholder="approval amt"
+      value={settlementAmount}
+      onValueChange={(e) => setSettlementAmount(e.value)}
+      min={0}
+      max={rowData.total_expense}
+      className="w-36"
+    inputClassName="w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[#f7fff9] text-gray-700 placeholder-gray-400"
+    />
            
             {/* <input
               id="settlementAmount"
@@ -400,14 +407,14 @@ const AppliedTourClaimTable = () => {
           
         ]}
       >
-         <CustomColumn
+         {/* <CustomColumn
           field="claim_id"
           header="claim_id"
           sortable
           filter
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
-        />
+        /> */}
         <CustomColumn
           field="name"
           header="Name"
@@ -429,8 +436,9 @@ const AppliedTourClaimTable = () => {
         <CustomColumn
           body={tourDetailsBody}
           header="Tour Details"
+          style={{ width: "200px" }}
           sortable
-          filter
+          filter         
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
@@ -438,6 +446,7 @@ const AppliedTourClaimTable = () => {
         <CustomColumn
           body={claimCalculationBody}
           header="Claim Calculation"
+          style={{ width: "200px" }}
           sortable
           filter
           headerStyle={cellStyle}
