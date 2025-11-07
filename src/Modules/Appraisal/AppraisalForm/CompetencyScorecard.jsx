@@ -1,13 +1,14 @@
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import React, { useEffect, useState } from "react";
-import { Chip, Button as MuiButton } from "@mui/material";
+import { Chip, Button as MuiButton, Tooltip } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { formatDate } from "../formatDate";
 import { Calendar } from "primereact/calendar";
-
+import { Tag } from "primereact/tag";
+import CircleIcon from "@mui/icons-material/Circle";
 const CompetencyScorecard = ({
   appraiserPreviousSaveFormDat,
   CompetencyScorecardData,
@@ -82,7 +83,26 @@ const CompetencyScorecard = ({
       <DataTable
         size="small"
         stripedRows
-        header="Competency Scorecard"
+        header={
+          <div className="flex items-center justify-between">
+            <span>Competency Scorecard</span>
+            {/* <div className="flex items-center gap-2">
+              <Chip size="small" label="Complete Training" color="success" icon={
+                <CircleIcon
+                  color="success"
+                  className="iconStyle"
+                />
+              } variant="outlined" />
+              <Chip size="small" label="Incomplete Training" color="error"
+              icon={
+                <CircleIcon
+                  color="error"
+                 className="iconStyle"
+                />
+              } variant="outlined" />
+            </div> */}
+          </div>
+        }
         showGridlines
         value={selectedRowData}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
@@ -108,7 +128,15 @@ const CompetencyScorecard = ({
                 placeholder="Select Training"
               />
             ) : (
-              rowData.personal_goals
+              <>
+                {rowData.personal_goals}
+                <Tooltip title={rowData.trainingStatus?.toLowerCase() ==="completed" ? "Completed Training" : "Incomplete Training"} arrow placement="right">
+                <CircleIcon
+                  color={rowData.trainingStatus ==="Completed" ? "success" : "error"}
+                  sx={{ fontSize: "0.55rem",marginTop:"-12px" }}
+                />
+                </Tooltip>
+              </>
             )
           }
         ></Column>
@@ -253,7 +281,7 @@ const CompetencyScorecard = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                   onClick={() => {
+                  onClick={() => {
                     if (originalRowData && editingRowIndex !== null) {
                       const updatedData = [...selectedRowData];
                       updatedData[editingRowIndex] = originalRowData; // restore original
@@ -292,7 +320,7 @@ const CompetencyScorecard = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
-                  trackCompetencyScorecard(true)
+                  trackCompetencyScorecard(true);
                 }}
               />
             );
@@ -323,7 +351,7 @@ const CompetencyScorecard = ({
               appraisers_comments: "",
             };
             setSelectedRowData([...selectedRowData, blankRow]);
-            trackCompetencyScorecard(true)
+            trackCompetencyScorecard(true);
           }}
         >
           Add New Row
