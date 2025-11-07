@@ -158,7 +158,7 @@ const CompetencyScorecard = ({
             ) : (
               <Chip
                 size="small"
-                label={rowData.relevance ?? "NA"}
+                label={rowData.relevance || "NA"}
                 //variant="outlined"
                 color={
                   rowData.relevance === "H" || rowData.relevance === "High"
