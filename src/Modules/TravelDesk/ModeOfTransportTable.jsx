@@ -129,6 +129,7 @@ const ModeOfTransportTable = ({
       className="text-xs  w-full calendarStyle"
       dateFormat="yy-mm-dd"
       minDate={new Date(formFields.fromDate)}
+      maxDate={new Date(formFields.tentativeToDate)}
     />
   );
 

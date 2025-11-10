@@ -217,17 +217,9 @@ const RequisitionForm = () => {
     console.log("My formFields : ", formFields);
     e.preventDefault();
 
-    const token = userData.token;
+  
     try {
-      // Filter finalized rows
-      //   const finalizedTransportModes = transportModes.filter(
-      //     (row) => !row.isEditable
-      //   );
-      //   const finalizedAccommodations = accommodations.filter(
-      //     (row) => !row.isEditable
-      //   );
-
-      // Validate transportModes: check for incomplete rows
+    
       const incompleteTransportRows = transportModes.filter((row) => {
         return (
           !row?.mode ||
@@ -268,23 +260,20 @@ const RequisitionForm = () => {
         return;
       }
 
-      //  Transport mode validation
-      const invalidTransportRows = transportModes.filter((row) => {
-        // const from = new Date(row.fromDate);
-        // const fromDate = new Date(formFields.fromDate);
-        const toDate = new Date(formFields.tentativeToDate);
-        // return from < fromDate || from > toDate;
-        return row.fromDate < formFields.fromDate;
-      });
+//       //  Transport mode validation
+//       const invalidTransportRows = transportModes.filter((row) => {
+// //const toDate = new Date(formFields.tentativeToDate);
+//         return row.fromDate < formFields.fromDate;
+//       });
 
-      if (invalidTransportRows.length > 0) {
-        showWarningMessage(
-          toastRef,
-          "Warning",
-          "Transport Mode dates must be within From Date and Tentative To Date."
-        );
-        return;
-      }
+//       if (invalidTransportRows.length > 0) {
+//         showWarningMessage(
+//           toastRef,
+//           "Warning",
+//           "Transport Mode dates must be within From Date and Tentative To Date."
+//         );
+//         return;
+//       }
 
       // Accommodation date validation
       const invalidAccommodationRows = accommodations.filter((row) => {

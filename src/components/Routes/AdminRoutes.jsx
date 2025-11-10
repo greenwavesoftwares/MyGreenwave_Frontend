@@ -16,6 +16,7 @@ import TravelDeskManager from "../../Modules/TravelDeskManager/TravelDeskManager
 import AccountMiscellanousClaim from "../../Modules/Claims/Account/AccountMiscellanousClaim";
 import HRReferralPage from "../../Modules/Referrals/HRReferralPage";
 import HomepageMaster from "../../Modules/HomePageMaster/HomepageMaster";
+import HolidayMain from "../../Modules/HolidayMaster/HolidayMain"
 
 import AccountMain from "../../Modules/TravelDesk/TravelDeskAccount/AccountMain";
 import OpenTravelsTable from "../../Modules/TravelDesk/OpenTravelsTable";
@@ -69,7 +70,7 @@ function AdminRoutes() {
       </Route>
 
       {/* Holiday */}
-      <Route path="holiday" element={<HolidayMaster />} />
+      <Route path="holiday" element={<HolidayMain />} />
 
       {/* Home Page */}
       <Route path="event" element={<HomepageMaster />} />

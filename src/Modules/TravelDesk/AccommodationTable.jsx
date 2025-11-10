@@ -159,7 +159,7 @@ const AccommodationTable = ({
         "This date range overlaps with another accommodation."
       );
       setEditingRows((prev) => ({ ...prev, [newData.id]: true }));
-      return;
+     // return;
     }
 
     // Passed validation
