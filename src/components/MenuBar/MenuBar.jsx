@@ -250,7 +250,7 @@ export default function MiniDrawer() {
             className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
             style={{
               backgroundColor: selectedPath
-                ? "rgba(64, 151, 255, 0.1)"
+                ? "#adc9eb6e"
                 : "inherit",
 
               borderLeft: selectedPath ? "3px solid #4097FF" : "none",

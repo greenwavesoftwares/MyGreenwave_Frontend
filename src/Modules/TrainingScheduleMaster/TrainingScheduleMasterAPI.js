@@ -47,7 +47,9 @@ const postAddScheduleData = async (token, data) => {
     );
     return response;
   } catch (error) {
+    console.log("API_Funcation_Error_Section");
     console.log(error);
+    throw error
   }
 };
 

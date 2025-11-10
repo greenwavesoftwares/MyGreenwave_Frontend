@@ -5,6 +5,7 @@ import {
   IconButton,
   LinearProgress,
   Switch,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { Column } from "primereact/column";
@@ -30,6 +31,7 @@ import { formatDate } from "../Appraisal/formatDate";
 import {
   showErrorMessage,
   showSuccessMessage,
+  showWarningMessage,
 } from "../../components/Toast/ShowMessage";
 import { useRef } from "react";
 import { Toast } from "primereact/toast";
@@ -48,7 +50,7 @@ import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import HourglassBottomOutlinedIcon from '@mui/icons-material/HourglassBottomOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
-
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 const TrainingScheduleMaster = () => {
   //For Toast
   const toastRef = useRef(null);
@@ -153,21 +155,25 @@ const TrainingScheduleMaster = () => {
       !newScheduleFormData.toDate ||
       !newScheduleFormData.trainingName
     ) {
-      alert("Please fill all fields before saving.");
-      return;
+      return showWarningMessage(toastRef, "Incomplete Form", "Please complete all required fields before submit");
+    }
+    if(newScheduleFormData.trainingName.length===0){
+      return showWarningMessage(toastRef, "Incomplete Form", "Please select a training before submit");
+    }
+    if(newScheduleFormData.fromDate=== "1970-01-01" || newScheduleFormData.toDate==="1970-01-01"){
+      return showWarningMessage(toastRef, "Invalid Date", "Please select valid dates before submit");
     }
     if (newScheduleFormData.fromDate > newScheduleFormData.toDate) {
-      alert("From Date cannot be greater than To Date.");
-      return;
+     return showWarningMessage(toastRef, "Invalid Date Range", "The 'From Date' cannot be later than the 'To Date'.");
     }
 
     console.log("newScheduleFormData", newScheduleFormData);
     const { token } = getUserData();
     const response = await postAddScheduleData(token, newScheduleFormData);
-    console.log("saveData", response);
+    console.log("Handel_Submit_Training_api_response", response);
     //Form Data Save
     if (response.status === 201) {
-      showSuccessMessage(toastRef, "", "Training Add Successfully");
+      showSuccessMessage(toastRef, `${newScheduleFormData.assignedUserId}`, `${newScheduleFormData.trainingName} training has been added successfully`);
       ////Dialog Visibility OFf
       setVisible(false);
       //setAllTrainingData([...allTrainingData, newScheduleFormData]);
@@ -175,6 +181,8 @@ const TrainingScheduleMaster = () => {
       setSelectedUser(null);
       await listOfUser();
     } else {
+      console.log("Call Else Section");
+      alert("Error in Saving Data");
       showErrorMessage(toastRef, "", "Internal Error");
     }
   };
@@ -556,12 +564,19 @@ const TrainingScheduleMaster = () => {
                 field="trainingName"
               />
               <Column
-                header="Status"
+                header="Training Status"
                 
                 body={(rowData) => {
                   return (
                     <Chip
                       size="small"
+                      //variant="outlined"
+                      icon={rowData.isCertificateAvailable ? 
+                      
+                      <Tooltip title="Certificate Available for Download">
+                      <CloudDownloadIcon  sx={{fontSize:"0.5rem"}}/>
+                      </Tooltip>
+                      : ""}
                       color={
                         rowData.status.toLowerCase() === "completed"
                           ? "success"
@@ -572,6 +587,7 @@ const TrainingScheduleMaster = () => {
                   );
                 }}
               ></Column>
+             
               <Column
                 header="Re-Schedule"
                 body={(rowData, { rowIndex }) => {
@@ -628,7 +644,7 @@ const TrainingScheduleMaster = () => {
                   );
                 }}
               ></Column>
-
+                 
               <Column
                 header="Certificate"
                 body={(rowData) => {
