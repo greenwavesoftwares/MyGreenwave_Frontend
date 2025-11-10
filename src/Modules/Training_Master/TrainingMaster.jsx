@@ -29,7 +29,7 @@ const TrainingScheduleMaster = () => {
    //Filter For Data Table
     const [globalFilter, setGlobalFilter] = useState("");
 
-  const departmentData = ["Software", "Automation"];
+  const departmentData = ["Software", "Automation", "HR","Accounts", "Sales", "Marketing","Factory","We Care"];
 
   useEffect(() => {
     const getTrainingData = async () => {
