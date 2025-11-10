@@ -111,8 +111,8 @@ const MiscellaneousClaimForm = () => {
         </div>
         </div>
 
-        <Grid container spacing={10}>
-          <Grid size={4}>
+        <Grid container spacing={{ xs: 2, sm: 2, md: 10, lg: 10, xl: 10 }}>
+          <Grid item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             {/* Claim Type */}
             <div >
               <label  className="block text-sm font-medium text-gray-700 mb-1">
@@ -143,7 +143,7 @@ const MiscellaneousClaimForm = () => {
               </div>
             </div>
           </Grid> */}
-          <Grid size={4}>
+          <Grid  item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             {/* Claim Amount */}
              <div >
               <label  className="block text-sm font-medium text-gray-700 mb-1">
@@ -165,7 +165,7 @@ const MiscellaneousClaimForm = () => {
               </div>
             </div>
           </Grid>
-          <Grid size={4}>
+          <Grid  item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             {/* Claim Details */}
             <div >
               <label  className="block text-sm font-medium text-gray-700 mb-1">

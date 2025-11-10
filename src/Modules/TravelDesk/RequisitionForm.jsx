@@ -34,7 +34,7 @@ import MyForm from "./MyForms";
 import { getTravelDetailsFromTravelId2 } from "./TravelDeskAPI";
 //import {getTravelDropDown} from '../Claims/claimServices'
 import { getAdvance } from "../../Modules/Claims/claimServices";
-import { Grid, Typography } from "@mui/material";
+import { Grid, Typography, useMediaQuery, useTheme } from "@mui/material";
 
 //MUI Icon
 import TextSnippetOutlinedIcon from "@mui/icons-material/TextSnippetOutlined";
@@ -403,6 +403,10 @@ const RequisitionForm = () => {
     }
   };
 
+   //mobile view
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
     <>
       <CustomToast ref={toastRef} />
@@ -459,10 +463,10 @@ const RequisitionForm = () => {
                         </Typography>
                       </div>
 
-                      <Grid container spacing={6}>
-                        <Grid size={6}>
+                      <Grid container spacing={{ xs: 0, sm: 0, md: 6, lg: 6, xl: 6 }}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* select travel */}
-                          <div className="sm:col-span-5">
+                          <div>
                             <label
                               htmlFor="travel-type"
                               className="block text-sm font-medium leading-6 text-gray-900"
@@ -491,7 +495,7 @@ const RequisitionForm = () => {
                             </div>
                           </div>
                         </Grid>
-                        <Grid size={6}>
+                        <Grid item  size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* type of travel */}
                           <div className="sm:col-span-5">
                             <label
@@ -549,8 +553,8 @@ const RequisitionForm = () => {
                         </Typography>
                       </div>
 
-                      <Grid container spacing={6}>
-                        <Grid size={6}>
+                      <Grid container spacing={{ xs: 0, sm: 0, md: 6, lg: 6, xl: 6 }}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* projectName */}
                           <div className="sm:col-span-5 ">
                             <label
@@ -581,7 +585,7 @@ const RequisitionForm = () => {
                             </div>
                           </div>
                         </Grid>
-                        <Grid size={6}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* onAccount */}
                           <div className="sm:col-span-5">
                             <label
@@ -675,8 +679,8 @@ const RequisitionForm = () => {
                         </Typography>
                       </div>
 
-                      <Grid container spacing={6}>
-                        <Grid size={6}>
+                      <Grid container spacing={{ xs: 0, sm: 0, md: 6, lg: 6, xl: 6 }}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* From Date field */}
                           <div className="sm:col-span-5">
                             <label
@@ -721,7 +725,7 @@ const RequisitionForm = () => {
                             </div>
                           </div>
                         </Grid>
-                        <Grid size={6}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* Tentative To Date field */}
                           <div className="sm:col-span-5">
                             <label
@@ -752,8 +756,8 @@ const RequisitionForm = () => {
                           </div>
                         </Grid>
                       </Grid>
-                      <Grid container spacing={6}>
-                        <Grid size={6}>
+                      <Grid container spacing={{ xs: 0, sm: 0, md: 6, lg: 6, xl: 6 }}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* city */}
                           <div className="sm:col-span-5">
                             <label
@@ -783,7 +787,7 @@ const RequisitionForm = () => {
                             </div>
                           </div>
                         </Grid>
-                        <Grid size={6}>
+                        <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                           {/* Locality/Area */}
 
                           <div className="sm:col-span-5">
@@ -861,8 +865,8 @@ const RequisitionForm = () => {
                 Financial Information
               </Typography>
             </div>
-            <Grid container spacing={6}>
-              <Grid size={6}>
+            <Grid container spacing={{sx:0 ,sm:0, md:6, lg:6, xl:6}}>
+              <Grid size={{ sm:12, md:6, lg:6, xl:6}} className={`${isMobile? "w-full":""}`}>
                 {/* Advance available */}
                 <div className="sm:col-span-5">
                   <label
@@ -894,7 +898,7 @@ const RequisitionForm = () => {
                   </div>
                 </div>
               </Grid>
-              <Grid size={6}>
+              <Grid size={{sm:12, md:6, lg:6, xl:6}}  className={`${isMobile? "w-full":""}`}>
                 {/* Available Advance Alert */}
                 <div
                   className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg px-4 py-2 "

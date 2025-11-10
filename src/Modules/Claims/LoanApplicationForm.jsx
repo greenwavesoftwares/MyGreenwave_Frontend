@@ -108,8 +108,8 @@ const LoanApplicationForm = () => {
           </div>
         </div>
 
-        <Grid container spacing={10}>
-          <Grid size={4}>
+        <Grid container spacing={{ xs: 2, sm: 2, md: 10, lg: 10, xl: 10 }}>
+          <Grid item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             <div>
               <label
                 htmlFor="loanAmount"
@@ -127,7 +127,7 @@ const LoanApplicationForm = () => {
             </div>
           </Grid>
 
-          <Grid size={4}>
+          <Grid item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             <div>
               <label
                 htmlFor="loanTenure"
@@ -144,7 +144,7 @@ const LoanApplicationForm = () => {
               />
             </div>
           </Grid>
-          <Grid size={4}>
+          <Grid item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             <div>
               <label
                 htmlFor="emiAmount"
@@ -162,8 +162,8 @@ const LoanApplicationForm = () => {
             </div>
           </Grid>
         </Grid>
-        <Grid container spacing={10} className="mt-4">
-          <Grid size={4}>
+        <Grid container  spacing={{ xs: 2, sm: 2, md: 10, lg: 10, xl: 10 }} className="mt-4">
+          <Grid item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             <div>
               <label
                 htmlFor="purpose"
@@ -180,7 +180,7 @@ const LoanApplicationForm = () => {
               />
             </div>
           </Grid>
-          <Grid size={4}>
+          <Grid item size={{xs:12,sm:12, md:4, lg:4, xl:4}}>
             <div>
               <label
                 htmlFor="requirementDate"

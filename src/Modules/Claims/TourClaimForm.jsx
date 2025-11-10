@@ -22,7 +22,7 @@ import {
 } from "./claimServices";
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import { formateDate } from "./claimServices";
-import { Grid } from "@mui/material";
+import { Grid, useMediaQuery, useTheme } from "@mui/material";
 import CustomButton from "../../components/Button/Button";
 
 const TourClaimForm = ({
@@ -183,6 +183,9 @@ const TourClaimForm = ({
     }
   };
 
+   //mobile view
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   return (
     <div className="">
       <div className="mb-2 ">
@@ -225,7 +228,7 @@ const TourClaimForm = ({
                 <CustomButton
                   icon="pi pi-file-export"
                   className="p-button-sm"
-                  label={"Export Excel"}
+                  label={isMobile ?"":"Export Excel"}
                   onClick={() => {
                     handleDownloadFile();
                   }}
@@ -261,8 +264,8 @@ const TourClaimForm = ({
                   </Typography>
                 </div>
 
-                <Grid container spacing={6}>
-                  <Grid size={4}>
+                <Grid container spacing={{ xs: 2, sm: 2, md: 6, lg: 6, xl: 6 }}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* Select Travel */}
                     <div>
                       <label
@@ -301,7 +304,7 @@ const TourClaimForm = ({
                       )}
                     </div>
                   </Grid>
-                  <Grid size={4}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* type of travel */}
                     <div>
                       <label
@@ -330,7 +333,7 @@ const TourClaimForm = ({
                       />
                     </div>
                   </Grid>
-                  <Grid size={4}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* Destination */}
                     <div>
                       <label
@@ -389,8 +392,8 @@ const TourClaimForm = ({
                   </Typography>
                 </div>
 
-                <Grid container spacing={6}>
-                  <Grid size={4}>
+                <Grid container spacing={{ xs: 2, sm: 2, md: 6, lg: 6, xl: 6 }}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* Purpose of Trip */}
                     <div>
                       <label
@@ -421,7 +424,7 @@ const TourClaimForm = ({
                       />
                     </div>
                   </Grid>
-                  <Grid size={4}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* Project Name */}
                     <div>
                       <label
@@ -452,7 +455,7 @@ const TourClaimForm = ({
                       />
                     </div>
                   </Grid>
-                  <Grid size={4}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* On Account */}
 
                     <div>
@@ -511,8 +514,8 @@ const TourClaimForm = ({
                   </Typography>
                 </div>
 
-                <Grid container spacing={6}>
-                  <Grid size={4}>
+                <Grid container spacing={{ xs: 2, sm: 2, md: 6, lg: 6, xl: 6 }}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* Travel From Date */}
                     <div>
                       <label
@@ -538,7 +541,7 @@ const TourClaimForm = ({
                       />
                     </div>
                   </Grid>
-                  <Grid size={4}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/*  Claim From Date */}
                     <div className="flex flex-col">
                       <label
@@ -584,7 +587,7 @@ const TourClaimForm = ({
                       )}
                     </div>
                   </Grid>
-                  <Grid size={4}>
+                  <Grid item size={{xs:12,sm:12, md:6, lg:6, xl:6}}>
                     {/* Claim To Date */}
                     <div>
                       <label
