@@ -61,8 +61,7 @@ const TrainingScheduleMaster = () => {
     const { token } = getUserData();
 
     if (!rowData.trainingName || !rowData.department || !rowData.category) {
-      alert("Please fill all fields before saving.");
-      return;
+      return showErrorMessage(toastRef,"","Please fill all fields before saving.")
     }
 
     try {
@@ -76,15 +75,14 @@ const TrainingScheduleMaster = () => {
       }
 
       if (response?.status === 200) {
-        showSuccessMessage(toastRef,"","Training Add Successfully")
+        showSuccessMessage(toastRef, rowData.trainingName,"Training has been added successfully")
         const updatedList = [...trainingList];
         updatedList[rowIndex] = response.data;
         setTrainingList(updatedList);
         setEditingRowIndex(null);
       }
       else{
-        
-        showWarningMessage(toastRef,"","Training Already Present")
+        showWarningMessage(toastRef, "Duplicate Entry", "This training already exists");
         setEditingRowIndex(null)
       }
     } catch (error) {
