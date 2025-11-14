@@ -31,6 +31,8 @@ function AdminRoutes() {
       {/* Leave */}
       <Route path="leave" element={<Outlet />}>
         <Route path="manager" element={<LeaveManagerApproval />} />
+        {/* Holiday */}
+      <Route path="holiday" element={<HolidayMain/>} />
         <Route index element={<LeaveAdmin />} />
       </Route>
 
@@ -69,8 +71,7 @@ function AdminRoutes() {
         <Route path="schedule" element={<TrainingScheduleMaster />} />
       </Route>
 
-      {/* Holiday */}
-      <Route path="holiday" element={<HolidayMain />} />
+      
 
       {/* Home Page */}
       <Route path="event" element={<HomepageMaster />} />

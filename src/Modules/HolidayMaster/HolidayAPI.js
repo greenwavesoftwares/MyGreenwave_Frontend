@@ -71,5 +71,54 @@ const editHolidaysAPI = async (editholidayData, toastRef) => {
     return null;
   }
 };
+const insertLeaveMaster=async(row)=>{
+  try{
+    console.log('row',row)
+    const userData = getUserData();
+   const response = await axios.post(`${endPoint}holidays/holidaymaster`, row,{
+      headers: {
+        Authorization: `Bearer ${userData.token}`,
+      },
+    }); 
+    console.log("response.data",response.data)
+     return {
+      status: true,
+      message: "Applied successfully.",
+      data: response.data,
+    };
+  }catch(error)
+  {
+      return {
+      status: false,
+      message: error.response?.data || error.message  ,
+      data: [],
+    };
+  }
+}
 
-export { getHolidaysAPI, addHolidaysAPI, editHolidaysAPI, getHolidayDatesAPI };
+const getLeaveMaster=async()=>{
+  try{
+    const userData = getUserData();
+
+      const response = await axios.get(`${endPoint}holidays/holidaymaster`, {
+      headers: {
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+    console.log('response',response.data)
+      return {
+      status: true,
+      message: "Applied successfully.",
+      data: response.data,
+    };
+  }catch(error)
+  {
+     return {
+      status: false,
+      message: error.response?.data || error.message  ,
+      data: [],
+    };
+  }
+}
+
+export { getHolidaysAPI, addHolidaysAPI, editHolidaysAPI, getHolidayDatesAPI,insertLeaveMaster,getLeaveMaster };
