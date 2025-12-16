@@ -74,7 +74,9 @@ const LeaveMaster = () => {
       medicalLeave: 0,
       workFromHome: 0,
       paternityLeave: 0,
-      maternityLeave: 0,
+      maternityLeave: 0
+      // prvPLYearLimit:0,
+      // prevPLLimit:0
     };
     setTableData([...tableData, newRow]);
     setEditingRowId(newId);
@@ -164,12 +166,12 @@ const LeaveMaster = () => {
             bodyStyle={{ ...cellStyle }}
           />
           <CustomColumn
-            field="privilegeLeave"
-            header="Privilege Leave"
+            field="paidLeave"
+            header="Paid Leave"
             body={(rowData) =>
               rowData.id === editingRowId
-                ? renderCell(rowData, "privilegeLeave")
-                : rowData.privilegeLeave
+                ? renderCell(rowData, "paidLeave")
+                : rowData.paidLeave
             }
             headerStyle={{ ...cellStyle }}
             bodyStyle={{ ...cellStyle }}
@@ -180,7 +182,7 @@ const LeaveMaster = () => {
             body={(rowData) =>
               rowData.id === editingRowId
                 ? renderCell(rowData, "medicalLeave")
-                : rowData.medical_leave
+                : rowData.medicalLeave
             }
           />
           <CustomColumn
@@ -216,6 +218,28 @@ const LeaveMaster = () => {
             headerStyle={{ ...cellStyle }}
             bodyStyle={{ ...cellStyle }}
           />
+          {/* <CustomColumn
+            field="prevPLLimit"
+            header="Prev PL Limit"
+            body={(rowData) =>
+              rowData.id === editingRowId
+                ? renderCell(rowData, "prevPLLimit")
+                : rowData.paternityLeave
+            }
+            headerStyle={{ ...cellStyle }}
+            bodyStyle={{ ...cellStyle }}
+          />
+           <CustomColumn
+            field="prvPLYearLimit"
+            header="Prev PL Year Limit"
+            body={(rowData) =>
+              rowData.id === editingRowId
+                ? renderCell(rowData, "prvPLYearLimit")
+                : rowData.paternityLeave
+            }
+            headerStyle={{ ...cellStyle }}
+            bodyStyle={{ ...cellStyle }}
+          /> */}
           <CustomColumn
             header="Action"
             body={(rowData) =>
