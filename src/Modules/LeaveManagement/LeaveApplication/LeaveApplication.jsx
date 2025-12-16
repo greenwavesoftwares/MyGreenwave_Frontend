@@ -20,6 +20,7 @@ import {
   deleteLeave,
   getCurrentDate,
   getCurrentYear,
+  getNextYearDate,
   getTypeName,
   getYearList,
   onPageLoad,
@@ -80,7 +81,7 @@ const LeaveApplication = () => {
           rounded
           outlined
           severity="warning"
-           style={{width:'2rem',height:"2rem",border:"none"}}
+          style={{ width: "2rem", height: "2rem", border: "none" }}
           disabled={row.status !== "Pending" && row.status !== "Editing"}
           onClick={() => {
             setLeaveData(onSelectRowEdit(row));
@@ -92,7 +93,7 @@ const LeaveApplication = () => {
           rounded
           outlined
           severity="danger"
-          style={{width:'2rem',height:"2rem",border:"none"}}
+          style={{ width: "2rem", height: "2rem", border: "none" }}
           disabled={row.status !== "Pending" && row.status !== "Editing"}
           onClick={() => {
             showConfirm(
@@ -167,7 +168,7 @@ const LeaveApplication = () => {
   useEffect(() => {
     let yearList = getYearList();
     setYears(yearList);
-    setSelectedYear(yearList[yearList.length - 1]);
+    setSelectedYear(Number(getCurrentYear()));
   }, []);
 
   useEffect(() => {
@@ -620,7 +621,7 @@ const LeaveApplication = () => {
             </div>
           </Grid>
           <Grid size={{ md: 6, xs: 12 }} className="h-full">
-             <div className="cardStyle px-3">
+            <div className="cardStyle px-3">
               <DataTable
                 value={leaveTable.table}
                 filters={leaveTable.filterStructure}
@@ -632,12 +633,12 @@ const LeaveApplication = () => {
                   leaveTable.table?.length > 50
                     ? [5, 10, 25, 50, leaveTable.table?.length]
                     : leaveTable.table?.length > 25
-                    ? [5, 10, 25, leaveTable.table?.length]
-                    : leaveTable.table?.length > 10
-                    ? [5, 10, leaveTable.table?.length]
-                    : leaveTable.table?.length > 5
-                    ? [5, leaveTable.table?.length]
-                    : [5]
+                      ? [5, 10, 25, leaveTable.table?.length]
+                      : leaveTable.table?.length > 10
+                        ? [5, 10, leaveTable.table?.length]
+                        : leaveTable.table?.length > 5
+                          ? [5, leaveTable.table?.length]
+                          : [5]
                 }
                 paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                 currentPageReportTemplate="{first} to {last} of {totalRecords}"
@@ -648,7 +649,6 @@ const LeaveApplication = () => {
                 rowClassName={() =>
                   "hover:bg-gray-100 transition-all duration-200"
                 }
-                
               >
                 <Column
                   field="fromDate"
@@ -727,6 +727,7 @@ const LeaveApplication = () => {
               inputClassName="w-full"
               invalid={!leaveValidation.dates}
               disabledDates={leaveInfo.holidayDates}
+              maxDate={getNextYearDate()}
             />
           </Grid>
           <Grid size={6}>Reason</Grid>

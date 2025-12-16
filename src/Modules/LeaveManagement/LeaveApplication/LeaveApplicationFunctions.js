@@ -466,13 +466,16 @@ const getNextDate = (date) => {
 const getCurrentDate = () => {
   return new Date();
 };
+const getNextYearDate = () => {
+  return new Date(Number(getCurrentYear()) + 1, 11, 31);
+};
 const getCurrentYear = () => {
   return format(new Date(), "yyyy");
 };
 const getYearList = () => {
   let year = 2023;
   const yearList = [];
-  for (let i = year; i <= getCurrentYear(); i++) {
+  for (let i = year; i <= Number(getCurrentYear()) + 1; i++) {
     yearList.push(i);
   }
   return yearList;
@@ -528,9 +531,10 @@ const getActualLeave = (leaveData, holidays) => {
     if (
       tempDate.getDay() !== 0 &&
       tempDate.getDay() !== 6 &&
-      !holidays.includes(tempDate)
-    )
+      !holidays.some((d) => d.getTime() === tempDate.getTime())
+    ) {
       count++;
+    }
     tempDate.setDate(tempDate.getDate() + 1);
   }
   return count;
@@ -563,4 +567,5 @@ export {
   getTypeName,
   getCurrentYear,
   getActualLeave,
+  getNextYearDate,
 };

@@ -18,6 +18,7 @@ const DatePicker = ({
   disabledDates,
   size = "small",
   placeholder = "Select a date",
+  maxDate,
 }) => {
   const [sizeClassName, setSizeClassName] = useState("");
   useEffect(() => {
@@ -51,6 +52,7 @@ const DatePicker = ({
         disabled={disabled}
         inputClassName={`${sizeClassName} ${inputClassName}`}
         disabledDates={disabledDates}
+        maxDate={maxDate}
       />
     </div>
   );

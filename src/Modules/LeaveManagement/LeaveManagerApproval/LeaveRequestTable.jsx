@@ -82,7 +82,7 @@ const LeaveRequestTable = ({
               (row.status == "Pending" ||
                 row.status == "Reviewing" ||
                 row.status == "Reviewed")
-                ? "block"
+                ? "inline-block"
                 : "none",
           }}
           checked={row.isReviewing}
@@ -140,7 +140,7 @@ const LeaveRequestTable = ({
         sortField="fromDate"
         sortOrder={-1}
         size="small"
-        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder"
+        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dropDownStyle"
       >
         <Column field="userName" header="Name" className="w-[14vw]"></Column>
         <Column
