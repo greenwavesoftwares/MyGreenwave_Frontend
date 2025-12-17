@@ -270,7 +270,7 @@ const setCalenderData = async (userLeaves, holidays) => {
 
   return calenderDataList;
 };
-const validateLeave = (
+const validateLeave = async (
   editMode,
   leaveData,
   leaveInfo,
@@ -293,6 +293,7 @@ const validateLeave = (
     }));
 
   if (
+    leaveInfo.tableData?.length > 0 &&
     isLeaveWithinLeaves(
       editMode,
       editMode ? leaveData.leaveId : "",
@@ -317,7 +318,7 @@ const validateLeave = (
     }));
 
   let actualLeave = getActualLeave(leaveData, leaveInfo.holidayDates);
-  let cardData = leaveInfo.cardData;
+  let cardData = await onPageLoadAPI(leaveData.dates[0]?.getFullYear());
   let rowtotalNoOfDays = editMode
     ? leaveInfo.tableData
         .filter((l) => l.leaveId === leaveData.leaveId)
@@ -408,7 +409,13 @@ const applyOrEditLeave = async (
 ) => {
   showLoading();
   if (
-    validateLeave(editMode, leaveData, leaveInfo, setLeaveValidation, toastRef)
+    await validateLeave(
+      editMode,
+      leaveData,
+      leaveInfo,
+      setLeaveValidation,
+      toastRef
+    )
   ) {
     let applyData = {};
     applyData.userId = userDetails.userId;
