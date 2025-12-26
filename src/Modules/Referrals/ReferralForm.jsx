@@ -6,7 +6,10 @@ import { Toast } from "primereact/toast";
 import { Stepper } from "primereact/stepper";
 import { StepperPanel } from "primereact/stepperpanel";
 import { validate as validateEmail } from 'email-validator';
-
+import Person2OutlinedIcon from '@mui/icons-material/Person2Outlined';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 const ReferralForm = () => {
   const toast = useRef();
   const stepperRef = useRef(null);
@@ -287,25 +290,33 @@ const ReferralForm = () => {
         </div>
       </div> */}
 
-      <div className="card flex justify-content-center px-8 py-0">
+      <div className="">
         <Stepper
           ref={stepperRef}
-         
+          // orientation="vertical"
           style={{ flexBasis: "100%" }}
-          className="hideStepperNumber titleStyle"
+          className="hideStepperNumber titleStyle stepperPadding hideStepperNavbar"
         >
           <StepperPanel
             header={
               <span style={{ fontSize: "0.7rem" }}>Personal Information</span>
             }
           >
-            <div className="flex flex-column ">
-              <div
-                className="rounded-lg p-4  stepperContentStyle"
-                style={{ display: "grid", justifyItems: "center" }}
-              >
-                <div className="mb-3 w-1/2">
-                  <label className="block font-bold mb-2 defaultFont defaultFontSize-sm">
+            <div className="flex flex-column">
+              <div className="flex items-center mb-2">
+                <Person2OutlinedIcon className=" mr-2 blue-icon-withBGColor " />
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900">
+                    Personal Information
+                  </h2>
+                  <p className="text-xs defaultFont">
+                    Please provide your basic contact details
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "grid", rowGap: "0.5rem" }}>
+                <div>
+                  <label className="block font-bold mb-1 defaultFont defaultFontSize-sm">
                     Full Name
                   </label>
                   <input
@@ -317,8 +328,8 @@ const ReferralForm = () => {
                     placeholder="Enter Full Name"
                   />
                 </div>
-                <div className="mb-3 w-1/2">
-                  <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1 defaultFont defaultFontSize-sm">
                     Email
                   </label>
                   <input
@@ -331,8 +342,8 @@ const ReferralForm = () => {
                   />
                 </div>
 
-                <div className="mb-2 w-1/2">
-                  <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1 defaultFont defaultFontSize-sm">
                     Phone Number
                   </label>
                   <input
@@ -363,82 +374,92 @@ const ReferralForm = () => {
           </StepperPanel>
 
           <StepperPanel
-           
             header={
-              <span style={{ fontSize: "0.7rem" }}>Professional Information</span>
+              <span style={{ fontSize: "0.7rem" }}>
+                Professional Information
+              </span>
             }
           >
             <div className="flex flex-column ">
               <div className="flex flex-column ">
-                <div className="rounded-xl p-4 stepperContentStyle">
-                  <div style={{ display: "flex", columnGap: "4rem" }}>
-                    <div className="mb-4 w-1/2">
-                      <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
-                        Experience
-                      </label>
-                      <select
-                        id="experience"
-                        value={referralformData.experience}
-                        onChange={handleChange}
-                        className="inputFieldStyle rounded w-full"
-                      >
-                        <option value="">Select Experience type</option>
-                        <option value="Fresher">Fresher</option>
-                        <option value="Experienced">Experienced</option>
-                      </select>
-                    </div>
-                    <div className="mb-4 w-1/2">
-                      <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
-                        Role
-                      </label>
-                      <input
-                        id="role"
-                        type="text"
-                        value={referralformData.role}
-                        onChange={handleChange}
-                        className="inputFieldStyle rounded w-full"
-                        placeholder="Enter Role"
-                      />
-                    </div>
+                <div className="flex items-center mb-2">
+                  <BusinessCenterOutlinedIcon className=" mr-2 blue-icon-withBGColor " />
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">
+                      Professional Information
+                    </h2>
+                    <p className="defaultFont text-xs">
+                      Tell us about your work experience
+                    </p>
                   </div>
-                  <div style={{ display: "flex", columnGap: "4rem" }}>
-                    <div className="mb-4 w-1/2">
-                      <label
-                        className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm
+                </div>
+                <div>
+                  <div className="mb-2 w-full">
+                    <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
+                      Experience
+                    </label>
+                    <select
+                      id="experience"
+                      value={referralformData.experience}
+                      onChange={handleChange}
+                      className="inputFieldStyle rounded w-full"
+                    >
+                      <option value="">Select Experience type</option>
+                      <option value="Fresher">Fresher</option>
+                      <option value="Experienced">Experienced</option>
+                    </select>
+                  </div>
+                  <div className="mb-2 w-full">
+                    <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
+                      Role
+                    </label>
+                    <input
+                      id="role"
+                      type="text"
+                      value={referralformData.role}
+                      onChange={handleChange}
+                      className="inputFieldStyle rounded w-full"
+                      placeholder="Enter Role"
+                    />
+                  </div>
+
+                 <div className="mb-2 w-full">
+                    <label
+                      className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm
 "
-                      >
-                        Technology
-                      </label>
-                      <input
-                        id="technology"
-                        type="text"
-                        value={referralformData.technology}
-                        onChange={handleChange}
-                        className="inputFieldStyle rounded w-full"
-                        placeholder="Enter Technology Name"
-                      />
-                    </div>
-                    <div className="mb-2 w-1/2">
-                      <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
-                        Relevant Experience (Years)
-                      </label>
-                      <select
-                        id="releventExpYear"
-                        value={referralformData.releventExpYear}
-                        onChange={handleChange}
-                        className="inputFieldStyle rounded w-full"
-                      >
-                        <option value="">Select Year</option>
-                        {Array.from({ length: 60 }, (_, i) => (
-                          <option key={i + 1} value={i + 1}>
-                            {i + 1}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    >
+                      Technology
+                    </label>
+                    <input
+                      id="technology"
+                      type="text"
+                      value={referralformData.technology}
+                      onChange={handleChange}
+                      className="inputFieldStyle rounded w-full"
+                      placeholder="Enter Technology Name"
+                    />
                   </div>
-                  <div style={{ display: "flex", columnGap: "4rem" }}>
-                    <div className="mb-2 w-1/2">
+                  <div className="mb-2 w-full">
+                    <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
+                      Relevant Experience (Years)
+                    </label>
+                    <select
+                      id="releventExpYear"
+                      value={referralformData.releventExpYear}
+                      onChange={handleChange}
+                      className="inputFieldStyle rounded w-full"
+                    >
+                      <option value="">Select Year</option>
+                      {Array.from({ length: 60 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="mb-2">
                       <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
                         Working Experience (Years)
                       </label>
@@ -448,7 +469,7 @@ const ReferralForm = () => {
                         value={referralformData.totalExpYear}
                         onChange={handleChange}
                         className="inputFieldStyle rounded"
-                        style={{ width: "92%" }}
+                        style={{ width: "100%" }}
                       >
                         <option value="">Select Year</option>
                         {Array.from({ length: 60 }, (_, i) => (
@@ -491,14 +512,25 @@ const ReferralForm = () => {
           </StepperPanel>
 
           <StepperPanel
-             header={
+            header={
               <span style={{ fontSize: "0.7rem" }}>Educational Background</span>
             }
           >
             <div className="flex flex-column ">
-              <div className="rounded-xl p-4  stepperContentStyle">
-                <div style={{ display: "grid", justifyItems: "center" }}>
-                  <div className="mb-4 w-1/2">
+              <div className="flex items-center mb-2">
+                <SchoolOutlinedIcon className=" mr-2 blue-icon-withBGColor " />
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900">
+                    Educational Background
+                  </h2>
+                  <p className="defaultFont text-xs">
+                    Share your educational qualifications
+                  </p>
+                </div>
+              </div>
+              <div>
+                <div style={{ display: "grid" }}>
+                  <div className="mb-2">
                     <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
                       Highest Education
                     </label>
@@ -511,7 +543,7 @@ const ReferralForm = () => {
                       placeholder="Enter Highest Education"
                     />
                   </div>
-                  <div className="mb-2 w-1/2">
+                  <div className="mb-2">
                     <label className="block text-gray-700 font-bold mb-2 defaultFont defaultFontSize-sm">
                       Department
                     </label>
@@ -556,13 +588,24 @@ const ReferralForm = () => {
           </StepperPanel>
 
           <StepperPanel
-           
-             header={
-              <span style={{ fontSize: "0.7rem" }}>Document Upload</span>
-            }
+            header={<span style={{ fontSize: "0.7rem" }}>Document Upload</span>}
           >
-            <div className="flex flex-column h-12rem">
-              <div className="stepperContentStyle  surface-border border-round surface-ground flex-auto flex justify-content-center align-items-center font-medium">
+            <div className="flex flex-column h-14rem ">
+              <div className="flex items-center mb-2">
+                <UploadFileOutlinedIcon className=" mr-2 blue-icon-withBGColor " />
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900">
+                    Document Upload
+                  </h2>
+                  <p className="defaultFont text-xs">
+                    Upload any relevant documents or certificates
+                  </p>
+                </div>
+              </div>
+              <div
+                className=" border-2 border-dashed surface-border border-round surface-ground flex-auto flex justify-content-center align-items-center font-medium"
+                style={{ borderColor: "#c5c5c5 !importnat" }}
+              >
                 <FileUpload
                   mode="basic"
                   name="file"
@@ -591,7 +634,8 @@ const ReferralForm = () => {
               />
               <Button
                 label="Submit"
-                icon="pi pi-arrow-right"
+                icon="pi pi-save"
+                severity="success"
                 size="small"
                 rounded
                 style={{ padding: "0.4rem 1rem" }}

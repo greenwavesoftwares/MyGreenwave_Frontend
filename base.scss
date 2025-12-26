@@ -570,7 +570,12 @@ font-size: 0.85rem;
 
   font-size: 1rem;
 }
-
+.stepperPadding.p-stepper .p-stepper-panels{
+  padding: 0 !important;
+}
+.hideStepperNavbar.p-stepper .p-stepper-nav{
+  display: none;
+}
 //-------------------------------Full Calender-------------------------------//
 .fc-theme-standard td,
 .fc-theme-standard th {
@@ -588,6 +593,13 @@ font-size: 0.85rem;
   background-color: var(--icon-blue-bg);
   color: #2563eb;
   font-size: 1rem;
+}
+.blue-icon-withBGColor{
+  background-color: var(--icon-blue-bg);
+  font-size: 2rem !important;
+  padding: 3px;
+  color: #6590ef;
+  border-radius: 50%;
 }
 .blue-BG {
   background-color: #2563eb;
