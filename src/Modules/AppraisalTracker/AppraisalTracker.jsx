@@ -456,6 +456,7 @@ const AppraisalTracker = () => {
                   value={date}
                   onChange={(e) => setDate(e.value)}
                   showIcon
+                  required
                   className="w-full p-inputtext-sm calendarStyle"
                   placeholder="Appraisal Date"
                   dateFormat="yy-mm-dd"
