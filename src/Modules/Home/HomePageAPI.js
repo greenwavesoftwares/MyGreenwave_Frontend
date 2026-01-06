@@ -100,7 +100,6 @@ const getHomePageEvent = async (filename) => {
         responseType: "blob",
       }
     );
-    console.log('response',response)
     return response;
   } catch (error) {
     console.log(error);

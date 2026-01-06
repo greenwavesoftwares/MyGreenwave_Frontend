@@ -10,6 +10,12 @@
 .primeReactCardStyle.p-card{
      background-color: transparent !important;
 }
+.primReactCardBody.p-card .p-card-body{
+    padding: 0 !important;
+}
+.primReactCardContentPadding.p-card .p-card-content{
+     padding: 0 !important;
+}
 .primeReactCardStyle.p-card .p-card-content {
     padding: 0.8rem 0;
 }
@@ -89,4 +95,10 @@
     color: #2973CD;
     padding: 5px;
     border-radius: 50%;
+}
+
+
+// Skeleton Color
+.p-skeleton{
+    background-color: var(--bg-primereact-skeleton)  !important;
 }

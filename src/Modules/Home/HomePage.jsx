@@ -68,6 +68,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import FeedbackIcon from "@mui/icons-material/Feedback";
 import { InputTextarea } from "primereact/inputtextarea";
 import BrushIcon from "@mui/icons-material/Brush";
+import defaultEventBanner from "../../assets/Images/EventDefaultBanner.png";
 //Api
 import {
   getUserDataAPI,
@@ -94,6 +95,7 @@ import {
   showWarningMessage,
 } from "../../components/Toast/ShowMessage";
 import { FileUpload } from "primereact/fileupload";
+import HomePageSkeleton from "./HomePageSkeleton";
 let itemData = null;
 const HomePage = () => {
   const toastRef = useRef(null);
@@ -103,7 +105,7 @@ const HomePage = () => {
   const [basicUserInfo, setBasicUserInfo] = useState({});
   const [visible, setVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({});
-  const [loader, setLoader] = useState(false);
+  const [loader, setLoader] = useState(true);
   //Set Appraisal Data
   const [appraisalData, setAppraisalData] = useState({});
   //Set Training Data
@@ -128,7 +130,7 @@ const HomePage = () => {
   const [fileUploadName, setFileUploadName] = useState(null);
   const fileUploadRef = useRef(null);
   //Event Image
-  const [eventImageLoader,setEventImageLoader]=useState(false)
+  const [eventImageLoader, setEventImageLoader] = useState(false);
   //mobile view
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -150,7 +152,6 @@ const HomePage = () => {
       const trainingResponse = await getTrainingData(token);
       //Next Holiday API Call
       const nextHolidayResponse = await getNextHoliday(token);
-      console.log('nextHolidayResponse',nextHolidayResponse)
       //Event API Call
       const eventResponse = await getEventData(token);
       //Notification API Call
@@ -166,8 +167,7 @@ const HomePage = () => {
       const userProfileFileName = employeeId + userName;
       //Call User Profile API
       const getUserProfileImage = await getProfileImage(userProfileFileName);
-      //console.log("userProfileFileName", userProfileFileName);
-      console.log("getUserProfileImage", getUserProfileImage);
+
       if (getUserProfileImage?.status === 200) {
         const blobResponse = URL.createObjectURL(getUserProfileImage?.data);
         //Set User Profile Image
@@ -206,7 +206,6 @@ const HomePage = () => {
   //Call Home Page API
   useEffect(() => {
     getHomePageData();
-    
   }, []);
 
   //Fetch Event Image
@@ -214,12 +213,13 @@ const HomePage = () => {
     const fetchEventImage = async () => {
       try {
         if (eventImageFileName) {
-          setEventImageLoader(true)
+          setEventImageLoader(true);
           const response = await getHomePageEvent(eventImageFileName);
           const imageUrl = URL.createObjectURL(response.data);
           setEventImage(imageUrl);
         }
       } catch (err) {
+        setEventImageLoader(false);
         console.error("Failed to fetch event image:", err);
       }
     };
@@ -245,9 +245,12 @@ const HomePage = () => {
                 </h3>
                 <div
                   className="font-semibold px-3 py-1 rounded-2xl notificationTextBGColor"
-                  style={{ fontSize: isMobile ? "9px" :"12px" }}
+                  style={{ fontSize: isMobile ? "9px" : "12px" }}
                 >
-                  <Clock className="inline mr-2" style={{ width:isMobile?"10px": "14px" }} />
+                  <Clock
+                    className="inline mr-2"
+                    style={{ width: isMobile ? "10px" : "14px" }}
+                  />
                   {`${item.fromdate} - ${item.toDate}`}
                 </div>
               </div>
@@ -272,29 +275,39 @@ const HomePage = () => {
           </Typography>
         </PrimeReactCard>
       </>
-     
     );
   };
 
   //Event Template
   const itemEventTemplate = (item) => {
     setEventImageFileName(item.filename);
-    //console.log("item",item)
-
-    console.log("eventImage",eventImageFileName);
     return (
       <>
-      
-      {eventImageLoader && !eventImage ?
-      // <Skeleton animation="wave" height={250} sx={{width:"100%"}}></Skeleton> 
-      <div style={{width:"100%",height:"17rem"}}>
-        <Skeleton animation="wave" height={250} sx={{width:"100%",transform:"none",background:"#9595951c"}}></Skeleton>
-      </div>
-      :
-       
-          <Image src={eventImage} alt="Image" style={{ height: "17.7rem" }} />
-        
-      }
+        {eventImageLoader && !eventImage ? (
+          <div style={{ width: "100%", height: "17rem" }}>
+            <Skeleton
+              animation="wave"
+              height={250}
+              sx={{ width: "100%", transform: "none", background: "#9595951c" }}
+            ></Skeleton>
+          </div>
+        ) : (
+          <>
+            {!eventImage ? (
+              <Image
+                src={defaultEventBanner}
+                alt="Image"
+                style={{ height: "18.7rem" }}
+              />
+            ) : (
+              <Image
+                src={eventImage}
+                alt="Image"
+                style={{ height: "18.7rem" }}
+              />
+            )}
+          </>
+        )}
         <InfoIcon
           onClick={() => {
             itemData = item;
@@ -329,38 +342,33 @@ const HomePage = () => {
     );
   };
 
-  //Notification Thumbnail Template
-  // const notificationThumbnailTemplate = (item) => {
-  //   return (
-  //     <>
-  //     <h1>sfhsdhfsdg</h1>
-  //     </>
-  //   )
-  // };
+  console.log(
+    "Event_Image_File_Name",
+    eventImageFileName,
+  );
 
   //Event Caption Template
-  const eventCaptionTemplate = (item) => {
-    return (
-      <div className="p-galleria-caption">
-        <div className="p-galleria-caption-content">
-          <Typography
-            sx={{
-              fontSize: "0.9rem !important",
-              //fontWeight: 700,
-              //color: "#3be4b4",
-              textTransform: "capitalize",
-            }}
-          >
-            {item.title} - {`${item.fromdate} - ${item.toDate}`}
-          </Typography>
+  // const eventCaptionTemplate = (item) => {
+  //   return (
+  //     <div className="p-galleria-caption">
+  //       <div className="p-galleria-caption-content">
+  //         <Typography
+  //           sx={{
+  //             fontSize: "0.9rem !important",
+             
+  //             textTransform: "capitalize",
+  //           }}
+  //         >
+  //           {item.title} - {`${item.fromdate} - ${item.toDate}`}
+  //         </Typography>
 
-          <Typography sx={{ fontSize: "0.8rem", marginTop: "0.2rem" }}>
-            {item.notification}
-          </Typography>
-        </div>
-      </div>
-    );
-  };
+  //         <Typography sx={{ fontSize: "0.8rem", marginTop: "0.2rem" }}>
+  //           {item.notification}
+  //         </Typography>
+  //       </div>
+  //     </div>
+  //   );
+  // };
 
   //Email ID to Name
   const emailToName = (email) => {
@@ -423,7 +431,6 @@ const HomePage = () => {
     setOnTourSwitch(nextHolidayData?.onTour ?? false);
   }, [nextHolidayData]);
 
-  console.log("nextHolidayData?.onTour", nextHolidayData?.onTour);
   //Change Profile Picture
   //Upload File
   const onUploadFile = async (event) => {
@@ -450,7 +457,7 @@ const HomePage = () => {
     }
   };
 
-  const handleAvatarChange = async (event) => {
+  const handleAvatarChange = async () => {
     if (!file) {
       console.warn("No file selected.");
       return;
@@ -510,21 +517,12 @@ const HomePage = () => {
   return (
     <>
       {loader ? (
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          <CircularProgress />
-        </Box>
+        <HomePageSkeleton />
       ) : (
         <div className="container mx-auto px-4">
           <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
             <div>
-              <div className="cardStyle mt-4 mb-2 py-2.5 px-4 bg-white shadow rounded">
+              <div className="cardStyle mt-4 mb-2 py-2.5 px-4 shadow rounded">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
@@ -563,7 +561,7 @@ const HomePage = () => {
                 </div>
               </div>
               <Grid container spacing={2}>
-                <Grid  size={{ xs: 12, sm: 12, md: 3, lg: 3 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 3, lg: 3 }}>
                   {/* Profile Section */}
                   <Card className="cardNew BorderRadius cardStyle">
                     <div className="lg:col-span-1">
@@ -886,7 +884,7 @@ const HomePage = () => {
                   </Grid>
                   {/* </Grid> */}
                 </Grid>
-                <Grid  size={{ xs: 12, sm: 12, md: 9, lg: 9 }}>
+                <Grid size={{ xs: 12, sm: 12, md: 9, lg: 9 }}>
                   <Grid>
                     <Grid size={12}>
                       <Card
@@ -904,13 +902,13 @@ const HomePage = () => {
                             <div
                               className="NewCard"
                               style={{
-                               // height: "20.3rem",
-                               height:{
-                                xs: "100%", // mobile
-                                sm: "100%", // small screens
-                                md: "20.3rem", // medium and up
-                                lg: "20.3rem", // large and up
-                               },
+                                // height: "20.3rem",
+                                height: {
+                                  xs: "100%", // mobile
+                                  sm: "100%", // small screens
+                                  md: "20.3rem", // medium and up
+                                  lg: "20.3rem", // large and up
+                                },
                                 display: "list-item",
                                 justifyContent: "center",
                               }}
@@ -981,6 +979,14 @@ const HomePage = () => {
                                 </div>
                               </div>
                               <div className="galleriaContainer-eventSection">
+                                {eventImageFileName===null ?
+                                  <Image
+                                    src={defaultEventBanner}
+                                    alt="Image"
+                                    style={{ height: "18.7rem" }}
+                                  />
+                                  :""
+                                }
                                 <Galleria
                                   value={eventData}
                                   className="EventThumbnailStyle"
@@ -989,10 +995,10 @@ const HomePage = () => {
                                   // showThumbnailNavigators={false}
                                   circular
                                   autoPlay
-                                  transitionInterval={15 * 1000}
+                                  transitionInterval={10 * 1000}
                                   showIndicators
                                   //showIndicatorsOnItem
-                                  // showItemNavigatorsOnHover
+                                  //showItemNavigatorsOnHover
                                   // showItemNavigators
                                 />
                               </div>
@@ -1001,8 +1007,8 @@ const HomePage = () => {
                         </Grid>
                       </Card>
                     </Grid>
-                    <Grid container spacing={{ xs: 1, sm: 1, md: 2, lg: 2 }} >
-                      <Grid   size={{ xs: 12, sm: 12, md: 5, lg: 5 }}>
+                    <Grid container spacing={{ xs: 1, sm: 1, md: 2, lg: 2 }}>
+                      <Grid size={{ xs: 12, sm: 12, md: 5, lg: 5 }}>
                         {/* Claims */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid size={12}>
@@ -1128,23 +1134,27 @@ const HomePage = () => {
                         </Grid>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 12, md: 7, lg: 7 }}>
-                        <Grid sx={{ marginTop: "0.5rem",marginBottom:{
-                          xs:"1rem",
-                          sm:"1rem",
-                          
-                        } }}>
+                        <Grid
+                          sx={{
+                            marginTop: "0.5rem",
+                            marginBottom: {
+                              xs: "1rem",
+                              sm: "1rem",
+                            },
+                          }}
+                        >
                           <Grid size={12}>
                             <Card
                               className="cardNew BorderRadius cardStyle"
                               sx={{
                                 //p: 2,
-                               // height: "16.2rem",
-                               height:{
-                                sx: "100%", // mobile
-                                sm: "100%", // small screens
-                                md: "16.2rem", // medium and up
-                                lg: "16.2rem", // large and up
-                               }
+                                // height: "16.2rem",
+                                height: {
+                                  sx: "100%", // mobile
+                                  sm: "100%", // small screens
+                                  md: "16.2rem", // medium and up
+                                  lg: "16.2rem", // large and up
+                                },
 
                                 //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
                               }}
@@ -1172,7 +1182,7 @@ const HomePage = () => {
           <Dialog
             header="YOUR FEEDBACK"
             visible={feedbackDialogVisible}
-            style={{ width: isMobile? "90%":"30vw" }}
+            style={{ width: isMobile ? "90%" : "30vw" }}
             onHide={() => {
               if (!feedbackDialogVisible) return;
               setFeedbackDialogVisible(false);
