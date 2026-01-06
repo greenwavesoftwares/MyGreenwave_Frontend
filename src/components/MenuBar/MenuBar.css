@@ -11,6 +11,9 @@
 /* .hidden {
   display: none !important;
 } */
+.menu-icon .fa-person-hiking{
+  font-size: 1.28rem !important;
+}
 
 .menu-item {
   min-height: 42px;

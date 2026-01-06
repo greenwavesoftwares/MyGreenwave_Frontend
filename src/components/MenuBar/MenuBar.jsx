@@ -341,7 +341,7 @@ export default function MiniDrawer() {
     <Box className={`logout-box`}>
       <MenuItem
         onClick={() => {
-          //handleLogout();
+          handleLogout();
           navigate(`/login`);
         }}
       >

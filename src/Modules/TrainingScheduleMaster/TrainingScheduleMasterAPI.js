@@ -105,7 +105,8 @@ const fileUpload = async (token, file,eventId,userId) => {
     })
     return response
   }
-  catch{
+  catch(error){
+    console.log("File Uploade Error",error);
 
   }
 }
