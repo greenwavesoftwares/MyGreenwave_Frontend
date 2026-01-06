@@ -19,6 +19,7 @@ import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
 import RightSideImage from "../../assets/Images/RightSideImage.png";
 import { getUserData } from "./Encrypt";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import LoginBGImage from "../../assets/Images/BG_Image.png";
 
 const Login = () => {
   const [credential, setCredential] = useState({ username: "", password: "" });
@@ -51,113 +52,14 @@ const Login = () => {
   return (
     <>
       <Toast ref={toastRef}></Toast>
-      {/* <Container maxWidth="md" className="h-screen grid items-center">
-        <Grid container>
-          <Grid size={{ md: 5, sm: 12 }}>
-            <Card>
-              <div className="w-full bg-white rounded-lg">
-                <div className="text-center mb-5">
-                  <Image
-                    src={GreenwaveLogo}
-                    alt="Image"
-                    height="150"
-                    width="150"
-                    className="mb-3"
-                    style={{ display: "inline-flex" }}
-                  />
-                  <div className="text-gray-600 text-3xl font-medium mb-3">
-                    Welcome
-                  </div>
-                </div>
 
-                <div className="text-center mb-3">
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    variant="outlined"
-                    margin="normal"
-                    size="small"
-                    onChange={(e) =>
-                      setCredential({ ...credential, username: e.target.value })
-                    }
-                    slotProps={{
-                      inputLabel: { shrink: true },
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    variant="outlined"
-                    margin="normal"
-                    size="small"
-                    onChange={(e) =>
-                      setCredential({ ...credential, password: e.target.value })
-                    }
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              size="small"
-                              aria-label="toggle password visibility"
-                              onClick={() => setShowPassword((prev) => !prev)}
-                            >
-                              {showPassword ? (
-                                <Visibility fontSize="small" />
-                              ) : (
-                                <VisibilityOff fontSize="small" />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                      inputLabel: { shrink: true },
-                    }}
-                  />
-
-                 
-                  <Button
-                    label="Login"
-                    className="text-md"
-                    onClick={async () => {
-                      const loginCheck = await checkCredential(
-                        credential,
-                        toastRef,
-                        showWPDialog
-                      );
-                      if (loginCheck) {
-                        const userData = getUserData();
-                        const baseRoute = import.meta.env.VITE_BASE_ROUTE;
-                        navigate(
-                          `/${baseRoute}/${userData?.userDetails?.espHomepage}`
-                        );
-                      }
-                    }}
-                  ></Button>
-                </div>
-              </div>
-            </Card>
-          </Grid>
-          <Grid
-            size={{ md: 7, sm: 0 }}
-            className="grid justify-center items-center"
-          >
-            <Image
-              src={RightSideImage}
-              alt="Image"
-              height="500"
-              width="450"
-              className="mb-3 hidden md:block"
-            />
-          </Grid>
-        </Grid>
-      </Container> */}
-
-      <div className="min-h-screen bg-gray-100 flex">
-        {/* Left Section - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-1 bgColor">
-          <div className="w-full max-w-md   px-5 py-6">
+      <div
+        className="min-h-screen flex bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${LoginBGImage})` }}
+      >
+        {" "}
+         <div className=" md:w-[40%] flex items-center justify-center p-4 bg-white/90">
+          <div className="w-full max-w-md px-5 py-6">
             {/* Logo */}
             <div className="mb-3">
               <Image
@@ -169,12 +71,9 @@ const Login = () => {
                 style={{ display: "inline-flex" }}
               />
 
-              <h1 className="text-base font-bold text-gray-900 mb-2 ml-1">
+              <h1 className="text-base font-bold mb-2 ml-1">
                 Welcome to My Greenwave{" "}
               </h1>
-              {/* <p className="text-gray-600 text-xs">
-                Access your employee services, pay slips, leaves, and more — all in one place.
-              </p> */}
             </div>
 
             {/* Form */}
@@ -253,30 +152,7 @@ const Login = () => {
             </div>
           </div>
         </div>
-
         {/* Right Section - Hero Image */}
-        <div className="flex-1 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400">
-            {/* <div className="absolute inset-0" style={{ backgroundColor: "#E6FDEC" }}> */}
-            {/* Gradient Overlay */}
-
-            {/* Main Content */}
-            <div className="relative h-full flex flex-col justify-center items-center p-10 text-white">
-              <div className="relative z-10 mb-2  p-1 ">
-                <Image
-                  src={RightSideImage}
-                  alt="Image"
-                  height="650"
-                  width="450"
-                  className=" hidden md:block"
-                  style={{ height: "100%", width: "100%", objectFit: "cover" }}
-                />
-              </div>
-
-              {/* Background Decorative Elements */}
-            </div>
-          </div>
-        </div>
       </div>
       <DialogComponent
         header="Warning"
