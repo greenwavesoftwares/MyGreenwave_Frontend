@@ -213,7 +213,9 @@ const TourClaimTable = ({
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-      const headerRowIndex = 0;
+
+       const headerRowIndex = 15;
+      //const headerRowIndex = 0;
       const headers = XLSX.utils.sheet_to_json(worksheet, {
         range: headerRowIndex,
         header: 1,
@@ -229,7 +231,8 @@ const TourClaimTable = ({
       // });
 
       const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-        range: 0,
+         range: 15,
+       // range: 0,
         header: headers,
         defval: "",
       });
