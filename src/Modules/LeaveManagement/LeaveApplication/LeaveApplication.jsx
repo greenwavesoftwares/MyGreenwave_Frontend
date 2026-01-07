@@ -40,6 +40,7 @@ import CustomButton from "../../../components/Button/Button";
 import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
 import YearCarouselPrime from "./YearCarouselPrime";
 import Holiday from "../../Holiday/Holiday";
+import ListOfHoliday from "./ListOfHoliday";
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -73,6 +74,8 @@ const LeaveApplication = () => {
   const [chartData, setChartData] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [appVersion, setAppVersion] = useState("1.0");
+  //Holiday List
+  const[holidayList,setHolidayList]=useState(false)
   const actionBodyTemplate = (row) => {
     return (
       <div className="flex justify-content-center gap-1">
@@ -162,6 +165,11 @@ const LeaveApplication = () => {
       label: "Previous PL",
       icon: "pi pi-history",
       command: () => showleaveDialog("PrevPL", false),
+    },
+    {
+      label: "Holiday List",
+      icon: "pi pi-list-check",
+      command: () => setHolidayList(true),
     },
   ];
 
@@ -765,6 +773,7 @@ const LeaveApplication = () => {
           </Grid>
         </Grid>
       </DialogComponent>
+      <ListOfHoliday visible={holidayList} setHolidayList={setHolidayList}/>
       <Toast ref={toastRef} />
       <ConfirmDialog />
     </>
