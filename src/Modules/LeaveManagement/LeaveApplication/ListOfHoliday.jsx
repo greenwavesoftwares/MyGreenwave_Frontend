@@ -19,11 +19,11 @@ const ListOfHoliday = ({ visible, setHolidayList }) => {
   async function holidayList() {
     try {
       const response = await getHolidaysAPI();
+      const currentYear=new Date().getFullYear()
       //Filter current year data
       const filterCurrentYear = response?.holiday.filter(
-        (ele) => ele.year === 2026
+        (ele) => ele.year === currentYear
       );
-      console.log("List_Api_response", filterCurrentYear);
       setHoliday(filterCurrentYear);
     } catch (error) {
       console.log("Faild to fatch holiday api", error);
