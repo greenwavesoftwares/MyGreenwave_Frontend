@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { getLeaveReportData } from "./LeaveAdminFunctions";
+import { getLeaveReportData,getCurrentMonthRange } from "./LeaveAdminFunctions";
 import DatePicker from "../../../components/DatePicker/DatePicker";
 
 const LeaveReport = ({ tableStructure, statusBodyTemplate }) => {
   const [leaveReportTable, setLeaveReportTable] = useState(tableStructure);
-  const [selectedDates, setSelectedDates] = useState([]);
+  const [selectedDates, setSelectedDates] = useState(getCurrentMonthRange());
   const dateSelectionHeader = (
     <div>
       <div>
@@ -41,6 +41,20 @@ const LeaveReport = ({ tableStructure, statusBodyTemplate }) => {
       setTable={setLeaveReportTable}
     />
   );
+
+   useEffect(() => {
+    console.log(selectedDates)
+    const loadData = async () => {
+      if (selectedDates[0] && selectedDates[1]) {
+        let data = await getLeaveReportData(selectedDates);
+        setLeaveReportTable((prev) => ({
+          ...prev,
+          table: data,
+        }));
+      }
+    };
+    loadData();
+  }, []);
 
   return (
     <DataTable

@@ -133,7 +133,7 @@ const UserLeaveInfo = ({
     >
       <Column
         expander={(row) => {
-          return row[0].leaveList;
+          return row[0]?.leaveList;
         }}
         style={{ width: "5rem" }}
       />

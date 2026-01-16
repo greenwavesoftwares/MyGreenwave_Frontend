@@ -21,6 +21,11 @@ import { getUserIdAndEmpCodes } from "../AdminPage/AdminFunction";
 import { MultiSelect } from "primereact/multiselect";
 import Toast from "../../components/Toast/Toast";
 import { Tag } from "primereact/tag";
+import { Dropdown } from "primereact/dropdown";
+import {
+  getYearList,
+  getCurrentYear,
+} from "../LeaveManagement/LeaveApplication/LeaveApplicationFunctions";
 
 const HolidayMaster = () => {
   const holidayStructure = {
@@ -53,6 +58,9 @@ const HolidayMaster = () => {
   const [holidayTable, setHolidayTable] = useState(tableStructure);
   const [currentDate] = useState(new Date());
   const [allUserList, setAllUserList] = useState([]);
+  const [years, setYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(0);
+  const [holidayFilter, setHolidayFilter] = useState([]);
   const holidayHeader = (
     <div className="flex justify-content-between align-items-center">
       <span>Holidays</span>
@@ -82,6 +90,12 @@ const HolidayMaster = () => {
       setHolidayTable((prev) => ({ ...prev, table: data.holiday }));
       const userList = await getUserIdAndEmpCodes();
       setAllUserList(userList);
+      let yearList = getYearList();
+      setYears(yearList);
+      setSelectedYear(Number(getCurrentYear()));
+      setHolidayFilter(
+        data.holiday.filter((row) => row.year == new Date().getFullYear())
+      );
     };
     init();
   }, []);
@@ -112,18 +126,37 @@ const HolidayMaster = () => {
               onClick={() => showHolidayDialog(false)}
               className="speedDialStyle"
             />
+
+            <Dropdown
+              value={selectedYear}
+              onChange={async (e) => {
+                setSelectedYear(e.value);
+                console.log("holidayTable", holidayTable.table);
+                // setHolidayTable((prev) => ({ ...prev, table:holidayTable.table.filter((row)=>Number(row.year)==Number(e.value))holidayTable.table.filter((row)=>Number(row.year)==Number(e.value))}));
+                setHolidayFilter(
+                  holidayTable.table.filter(
+                    (row) => Number(row.year) == Number(e.value)
+                  )
+                );
+                console.log("holidayTableAfterfilter", holidayTable.table);
+              }}
+              options={years}
+              placeholder="Select a Year"
+              className="w-1/4"
+            />
             <Grid container>
               <Grid size={12}>
                 <DataTable
-                  value={holidayTable.table}
-                  filters={holidayTable.filterStructure}
+                  value={holidayFilter}
+                  //value={holidayTable.table}
+                  //filters={holidayTable.filterStructure}
+                  filters={holidayFilter}
                   globalFilterFields={[
                     "holidays",
                     "fromDate",
                     "fromDate",
                     "type",
                   ]}
-                  header={holidayHeader}
                   paginator
                   size="small"
                   rows={12}
@@ -281,12 +314,20 @@ const HolidayMaster = () => {
                         setHolidayTable,
                         setHolidayVisible
                       );
-                       
-                       const data = await getHolidays();
-                      console.log('dataapi',data)
-                      console.log("")
-                      console.log('holidayTable.table',holidayTable.table)
-                       setHolidayTable((prev) => ({ ...prev, table: data.holiday }));
+
+                      const data = await getHolidays();
+                      console.log("dataapi", data);
+                      console.log("");
+                      console.log("holidayTable.table", holidayTable.table);
+                      setHolidayTable((prev) => ({
+                        ...prev,
+                        table: data.holiday,
+                      }));
+                      setHolidayFilter(
+                        holidayTable.table.filter(
+                          (row) => row.year == selectedYear
+                        )
+                      );
                     }}
                   />
                 </Grid>

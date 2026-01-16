@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Toast from "../../../components/Toast/Toast";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
-import { showConfirm } from "../../../components/ConfirmDialog/showConfirm";
+import { showConfirm } from "../../../components/ConfirmDialog/ShowConfirm";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { approveLeave, rejectLeave } from "./LeaveAdminFunctions";

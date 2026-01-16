@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { getOntourReportData } from "./LeaveAdminFunctions";
+import { getOntourReportData,getCurrentMonthRange } from "./LeaveAdminFunctions";
 import DatePicker from "../../../components/DatePicker/DatePicker";
 
 const OnTourReport = ({ tableStructure }) => {
   const [onTourTable, setOnTourTable] = useState(tableStructure);
-  const [selectedDates, setSelectedDates] = useState([]);
+  const [selectedDates, setSelectedDates] = useState(getCurrentMonthRange());
   const dateSelectionHeader = (
     <div>
       <div>
@@ -41,6 +41,21 @@ const OnTourReport = ({ tableStructure }) => {
       setTable={setOnTourTable}
     />
   );
+
+  useEffect(() => {
+      console.log(selectedDates)
+      const loadData = async () => {
+        if (selectedDates[0] && selectedDates[1]) {
+        let data = await getOntourReportData(selectedDates);
+              setOnTourTable((prev) => ({
+                ...prev,
+                table: data,
+              }));
+            
+        }
+      };
+      loadData();
+    }, []);
 
   return (
     <DataTable
