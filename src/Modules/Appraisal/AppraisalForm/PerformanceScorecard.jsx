@@ -124,11 +124,11 @@ const PerformanceScorecardDateTable = ({
         header="Performance Scorecard"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
-        rowClassName={(rowData) => {
-          if (rowData.some((ele) => ele?.previous === true)) {
-            return "bgcyan-100";
-          }
-        }}
+        // rowClassName={(rowData) => {
+        //   if (rowData.some((ele) => ele?.previous === true)) {
+        //     return "bgcyan-100";
+        //   }
+        // }}
       >
         <Column
           field="my_last_year_KRA"
