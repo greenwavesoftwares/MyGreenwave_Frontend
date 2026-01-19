@@ -125,7 +125,7 @@ const PerformanceScorecardDateTable = ({
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
-          if (rowData.some((ele) => ele.previous === true)) {
+          if (rowData.some((ele) => ele?.previous === true)) {
             return "bgcyan-100";
           }
         }}
