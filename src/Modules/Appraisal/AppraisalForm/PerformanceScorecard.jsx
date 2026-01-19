@@ -124,11 +124,14 @@ const PerformanceScorecardDateTable = ({
         header="Performance Scorecard"
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
-        // rowClassName={(rowData) => {
-        //   if (rowData.some((ele) => ele?.previous === true)) {
-        //     return "bgcyan-100";
-        //   }
-        // }}
+        rowClassName={(rowData) => {
+          if (
+            Array.isArray(rowData.items) &&
+            rowData.items.some((ele) => ele?.previous)
+          ) {
+            return "bgcyan-100";
+          }
+        }}
       >
         <Column
           field="my_last_year_KRA"
@@ -143,7 +146,7 @@ const PerformanceScorecardDateTable = ({
                   handleInputChange(
                     e.target.value,
                     "my_last_year_KRA",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -239,7 +242,7 @@ const PerformanceScorecardDateTable = ({
                   handleInputChange(
                     e.target.value,
                     "reviewers_comment",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -262,7 +265,7 @@ const PerformanceScorecardDateTable = ({
                   handleInputChange(
                     e.target.value,
                     "appraisers_comments",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -329,7 +332,7 @@ const PerformanceScorecardDateTable = ({
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
-                  trackFutureGoals(true)
+                  trackFutureGoals(true);
                 }}
               />
             );

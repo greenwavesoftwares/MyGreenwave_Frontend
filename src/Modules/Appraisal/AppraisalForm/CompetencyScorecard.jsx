@@ -106,8 +106,16 @@ const CompetencyScorecard = ({
         showGridlines
         value={selectedRowData}
         className="dataTableHeader dataTableBody dataTableBodyPadding"
+        // rowClassName={(rowData) => {
+        //   if (rowData.some((ele) => ele.previous === true)) {
+        //     return "bgcyan-100";
+        //   }
+        // }}
         rowClassName={(rowData) => {
-          if (rowData.some((ele) => ele.previous === true)) {
+          if (
+            Array.isArray(rowData.items) &&
+            rowData.items.some((ele) => ele?.previous)
+          ) {
             return "bgcyan-100";
           }
         }}
