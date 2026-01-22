@@ -1603,7 +1603,7 @@ export const ApprovedTourClaim = async (claim_id, reason) => {
     // };
 
     let response = await axios.put(
-      `${host}claims/tour-claims/approval/${claim_id}/approved?reason=${reason}`,
+      `${host}claims/tour-claims/approval/${claim_id}/Approved?reason=${reason}`,
       null,
        { headers: {
       Authorization: token
@@ -1656,7 +1656,7 @@ export const RejectTourClaim = async (claim_id, reason) => {
     // };
 
     let response = await axios.put(
-      `${host}claims/tour-claims/approval/${claim_id}/rejected?reason=${reason}`,
+      `${host}claims/tour-claims/approval/${claim_id}/Rejected?reason=${reason}`,
       null,
        { headers: {
       Authorization: token

@@ -282,9 +282,9 @@ const HRTourClaimTable = () => {
         const response =await RejectTourClaim(rowData.claim_id, "Rejected");
         if (response.status) {
             setreviewedtourclaimData(response.data)
-             showSuccessMessage(
+             showErrorMessage(
                       toastRef,
-                      "success",
+                      "Rejected",
                       response.message ,
                     );
             
