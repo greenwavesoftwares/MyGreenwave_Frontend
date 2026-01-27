@@ -15,8 +15,10 @@ import WrappedRoutes from "./components/Routes/WrappedRoutes";
 import Login from "./Modules/Login/Login";
 import { getUserData } from "./Modules/Login/Encrypt";
 import { useEffect } from "react";
+import Restricted from "./Restricted";
 
 function App() {
+  console.log("rendering app component")
   const userData = getUserData();
   const baseRoute = import.meta.env.VITE_BASE_ROUTE;
   useEffect(() => {
@@ -52,6 +54,9 @@ function App() {
         <Route path={`${baseRoute}`} element={<MenuBar />}>
           {WrappedRoutes()}
         </Route>
+       
+          
+        
       </Route>
 
       {/* For wrong routing go to login */}
