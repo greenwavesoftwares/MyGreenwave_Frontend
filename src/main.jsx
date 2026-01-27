@@ -9,12 +9,14 @@ import { LoadingProvider } from "./components/LoadingScreen/LoadingContext.jsx";
 import LoadingScreen from "./components/LoadingScreen/LoadingScreen.jsx";
 import { BrowserRouter } from "react-router-dom";
 import '../main.scss';
-
+import ErrorBoundary from './ErrorBoundary.jsx'
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
   <BrowserRouter>
     <LoadingProvider>
+      <ErrorBoundary>
       <App />
+      </ErrorBoundary>
       <LoadingScreen />
     </LoadingProvider>
   </BrowserRouter>
