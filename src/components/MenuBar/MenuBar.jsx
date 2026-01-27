@@ -117,7 +117,7 @@ export default function MiniDrawer() {
   const navigate = useNavigate();
   const userDetails = getUserData();
   const userName = userDetails?.userDetails?.userName;
-
+  const BASE_PATH="/mygreenwave"
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => {
     setOpen(false);
@@ -159,6 +159,7 @@ export default function MiniDrawer() {
   };
 
   const renderNestedPopover = (level = 0) => {
+    
     return popoverStack.map((entry, index) => (
       <Popover
         elevation={0}
@@ -180,6 +181,10 @@ export default function MiniDrawer() {
           {entry.items.map((item, i) => {
             const key = `${item.label}-${i}`;
             const selected = window.location.pathname === item.path;
+            const rawPath = item.path || "";
+          const normalizedPath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+          const fullPath = `${BASE_PATH}${normalizedPath}`;
+
             const hasChildren =
               Array.isArray(item.items) && item.items.length > 0;
             const levelClass = `menu-level-${entry.level}`;
@@ -206,7 +211,7 @@ export default function MiniDrawer() {
                   }
                 }}
               >
-                <ListItemButton>
+                <ListItemButton href={!hasChildren && fullPath}>
                   <ListItemIcon
                     className="menu-icon nested-menu-bg"
                     sx={{ minWidth: "40px" }}
@@ -234,7 +239,10 @@ export default function MiniDrawer() {
 
   const renderMenuItems = (items, parentKey = "", level = 0) =>
     items.map((item, index) => {
-      const fullPath = item.path || "";
+      const rawPath = item.path || "";
+      const normalizedPath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+      const fullPath = `${BASE_PATH}${normalizedPath}`;
+
       const key = `${parentKey}${item.label}-${index}`;
       const selected = window.location.pathname === fullPath;
       const hasChildren = Array.isArray(item.items) && item.items.length > 0;
@@ -242,16 +250,14 @@ export default function MiniDrawer() {
       const levelClass = `menu-level-${level}`;
       const selectedPath =
         window.location.pathname.split("/").reverse()[0] === fullPath;
-
+      console.log("Selected path:",fullPath)
       return (
         <React.Fragment key={key}>
           <ListItem
             disablePadding
             className={`menu-item ${levelClass} ${selected ? "selected" : ""}`}
             style={{
-              backgroundColor: selectedPath
-                ? "#adc9eb6e"
-                : "inherit",
+              backgroundColor: selectedPath ? "#adc9eb6e" : "inherit",
 
               borderLeft: selectedPath ? "3px solid #4097FF" : "none",
             }}
@@ -273,9 +279,21 @@ export default function MiniDrawer() {
             }}
           >
             <Link
-              href={item.path}
+              href={!hasChildren ?fullPath : undefined}
               style={{ textDecoration: "none", color: "inherit" }}
-              onClick={(e) => e.preventDefault()}
+              onClick={(e) => {
+                if (hasChildren) return;
+
+                // New tab / middle click → browser handles
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                  return;
+                }
+
+                // Normal click → SPA navigation
+                e.preventDefault();
+                navigate(fullPath);
+                handleDrawerClose();
+              }}
             >
               <ListItemButton
                 style={{
