@@ -1,4 +1,5 @@
 // ... all previous imports stay unchanged
+
 import * as React from "react";
 import {
   Box,
@@ -34,7 +35,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect,useRef } from "react";
 import { getMenuInfoDetails } from "./MenuBarAPI";
 import { getUserData } from "../../Modules/Login/Encrypt";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
@@ -43,6 +44,12 @@ import "./MenuBar.css";
 import ThemeToggle from "../../../ThemeToggle";
 import "./MenuBar.scss";
 import MobileMenuBar from "./MobileMenuBar";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showWarningMessage,
+} from "../Toast/ShowMessage";
+import { Toast } from "primereact/toast";
 
 library.add(fas);
 
@@ -107,6 +114,8 @@ function convertToInitials(name) {
 }
 
 export default function MiniDrawer() {
+  const toastRef = useRef(null);
+  console.log("menu bar")
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [open, setOpen] = useState(false);
@@ -148,8 +157,56 @@ export default function MiniDrawer() {
   const openMenu = Boolean(anchorEl);
 
   useEffect(() => {
-    getMenuInfoDetails().then((menu) => setMenuInfo(menu));
+    fetchMenuDetails();
+    // getMenuInfoDetails().then((menu) => setMenuInfo(menu));
   }, []);
+
+ const fetchMenuDetails = async () => {
+  const menu = await getMenuInfoDetails();
+  setMenuInfo(menu);
+  const hasUseraccess=validatePageAccess(menu);
+  if(!hasUseraccess) {showErrorMessage(
+          toastRef,
+         "error",
+          "you are not authorized to access this page"
+        );
+        navigate("restricted")
+};
+
+}
+
+
+   const validatePageAccess = (menuObj) => {
+  
+  // normalize path (remove leading slash)
+  const path = window.location.pathname;
+  const secondSlashIndex = path.indexOf("/", 1);
+  
+
+const result = path.substring(secondSlashIndex + 1);
+  const normalizedPath = result;
+  console.log('Current path ', normalizedPath)
+
+  const dfs = (node) => {
+    if (!node) return false;
+
+    // check current node path
+    if (node.path && node.path === normalizedPath) {
+      return true;
+    }
+
+    // recurse through children
+    if (Array.isArray(node.items)) {
+      for (const child of node.items) {
+        if (dfs(child)) return true;
+      }
+    }
+
+    return false;
+  };
+
+  return dfs(menuObj);
+};
 
   const toggleExpand = (key) => {
     setExpandedItems((prev) => ({
@@ -355,6 +412,9 @@ export default function MiniDrawer() {
 
   return (
     <Box className="drawer-root">
+      <div >
+       <Toast ref={toastRef} />
+      </div>
       {isMobile ? (
         <MobileMenuBar />
       ) : (

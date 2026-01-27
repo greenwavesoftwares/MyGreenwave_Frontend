@@ -18,6 +18,7 @@ import HomePage from "../../Modules/Home/HomePage";
 // Admin Sub-Routes
 import AdminRoutes from "./AdminRoutes";
 import React from "react";
+import Restricted from "../../Restricted";
 
 function WrappedRoutes() {
   return (
@@ -49,6 +50,7 @@ function WrappedRoutes() {
 
       {/* For wrong routing go to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
+       <Route path="restricted" element={<Restricted/>}/>
     </React.Fragment>
   );
 }
