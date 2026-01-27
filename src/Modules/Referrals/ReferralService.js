@@ -1,9 +1,16 @@
-const host = "http://localhost";
-const port = "8081";
+// const host = "http://localhost";
+// const port = "8081";
 import { getUserData } from "../Login/Encrypt";
 const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
 
+console.log("Bearer Token",token);
+
+//Api Endpoint
+const endPoint = import.meta.env.VITE_END_POINT;
+
+
+//Referral Form Submit
 export const giveReferral = async (referralformData) => {
   try {
     const myHeaders = new Headers();
@@ -30,7 +37,7 @@ export const giveReferral = async (referralformData) => {
     };
 
     let response = await fetch(
-      "http://localhost:8081/referrals",
+      `${endPoint}referrals`,
       requestOptions
     );
     if (!response.ok) {
@@ -57,6 +64,8 @@ export const giveReferral = async (referralformData) => {
   }
 };
 
+
+//Get Referral Data
 export const getUserReferredData = async () => {
   try {
     const myHeaders = new Headers();
@@ -69,7 +78,7 @@ export const getUserReferredData = async () => {
     };
 
     let response = await fetch(
-      "http://localhost:8081/referrals",
+      `${endPoint}referrals`,
       requestOptions
     );
   
@@ -98,6 +107,8 @@ export const getUserReferredData = async () => {
   }
 };
 
+
+//All Referred Data for HR 
 export const getReferredData = async () => {
   try {
     const myHeaders = new Headers();
@@ -110,7 +121,8 @@ export const getReferredData = async () => {
     };
 
     let response = await fetch(
-      "http://localhost:8081/referrals/Referred",
+      `${endPoint}referrals/Referred`,
+      //"http://localhost:8081/referrals/Referred",
       requestOptions
     );
     if (!response.ok) {
@@ -138,6 +150,7 @@ export const getReferredData = async () => {
 };
 
 
+//IMPORTANT Converted Referred Data for HR
 export const getConvertedReferredData = async () => {
   try {
     const myHeaders = new Headers();
@@ -149,11 +162,20 @@ export const getConvertedReferredData = async () => {
       redirect: "follow",
     };
 
+    //fetch both Converted 
     let response = await fetch(
-      "http://localhost:8081/referrals/Converted",
+      `${endPoint}referrals/Converted`,
       requestOptions
     );
-    if (!response.ok) {
+
+    //fetch Rejected
+    let RejectResponse = await fetch(
+      `${endPoint}referrals/Rejected`,
+      requestOptions
+    );
+
+    //if both responses are not ok
+    if (!response.ok && !RejectResponse.ok) {
       let message = await response.text();
       return {
         status: false,
@@ -163,6 +185,12 @@ export const getConvertedReferredData = async () => {
     }
 
     let data = await response.json();
+    let rejectData = await RejectResponse.json();
+
+    data = data.concat(rejectData);
+
+    console.log("referral_date",data,rejectData);
+
     return {
       status: true,
       message: "emp referred data loaded",
@@ -178,6 +206,8 @@ export const getConvertedReferredData = async () => {
 };
 
 
+
+//Reject Referral API
 export const rejectReferral = async (referralId, remarks) => {
   try {
     const myHeaders = new Headers();
@@ -190,7 +220,7 @@ export const rejectReferral = async (referralId, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/referrals/${referralId}/Rejected?reason=${remarks}`,
+      `${endPoint}referrals/${referralId}/Rejected?reason=${remarks}`,
       requestOptions
     );
 
@@ -221,7 +251,7 @@ export const rejectReferral = async (referralId, remarks) => {
 
 
 
-
+//Approve Referral API
 export const approveReferral = async (referralId, remarks) => {
   try {
     const myHeaders = new Headers();
@@ -234,7 +264,7 @@ export const approveReferral = async (referralId, remarks) => {
     };
 
     let response = await fetch(
-      `${host}:${port}/referrals/${referralId}/Converted?reason=${remarks}`,
+      `${endPoint}referrals/${referralId}/Converted?reason=${remarks}`,
       requestOptions
     );
 
@@ -265,7 +295,7 @@ export const approveReferral = async (referralId, remarks) => {
 
 
 
-
+//Download Resume Get API
 export const downloadResume = async (referralId) => {
   try {
     const myHeaders = new Headers();
@@ -278,7 +308,7 @@ export const downloadResume = async (referralId) => {
     };
 
     const response = await fetch(
-    `${host}:${port}/referrals/resume/${referralId}`,
+    `${endPoint}referrals/resume/${referralId}`,
       requestOptions
     );
 

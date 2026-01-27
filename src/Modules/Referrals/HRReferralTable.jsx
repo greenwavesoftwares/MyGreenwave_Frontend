@@ -3,11 +3,13 @@ import { DataTable } from "primereact/datatable";
 import { getConvertedReferredData,downloadResume } from "./ReferralService";
 import { Column } from "primereact/column";
 import {Button} from "primereact/button"
+import { Tag } from "primereact/tag";
+import { LinearProgress } from "@mui/material";
 const cellStyle = { padding: "8px 12px" };
 
 const HRReferralTable = () => {
   const [referralData, setreferralData] = useState();
-  const [loading, setLoading] = useState();
+  const [loading, setLoading] = useState(false);
 
 
    const downloadResumefile = (rowData) => {
@@ -38,6 +40,8 @@ const HRReferralTable = () => {
   useEffect(() => {
     const fetchreferralData = async () => {
       try {
+        //Set Loader
+        setLoading(true)
         const response = await getConvertedReferredData();
         if (!response.status) {
           toast.current.show({
@@ -58,17 +62,18 @@ const HRReferralTable = () => {
     fetchreferralData();
   }, []);
 
+  console.log("Data table Loader",loading);
   return (
         <DataTable
         value={referralData}
-        loading={loading}
         showGridlines
         paginator
-        rows={10}
+        rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
         size="small"
-         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
+        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator dropDownStyle"
         showGridlinesclassName="text-xs"
         tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+        emptyMessage={loading ?  <LinearProgress color="inherit" /> : "No Data Found"}
         >
       <Column
         field="empName"
@@ -152,8 +157,9 @@ const HRReferralTable = () => {
         bodyStyle={{ ...cellStyle}}
       />
       <Column
-        field="status"
+        //field="status"
         header="Status"
+        body={(ele)=> <Tag severity={ele.status === "Converted" ? "success" : 'warning'} value={ele.status}/>}
         
         headerStyle={{ ...cellStyle }}
         bodyStyle={{ ...cellStyle }}

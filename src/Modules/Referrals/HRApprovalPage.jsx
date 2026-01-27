@@ -5,11 +5,12 @@ import { getReferredData,rejectReferral,approveReferral,downloadResume } from ".
 const cellStyle = { padding: "8px 12px" };
 import { Toast } from "primereact/toast";
 import {Button} from "primereact/button"
+import { LinearProgress } from "@mui/material";
 
 const HRApprovalPage = () => {
   const toast = useRef(null);
   const [referredData, setreferredData] = useState();
-  const [loading, setLoading] = useState();
+  const [loading, setLoading] = useState(false);
  
 
   const downloadResumeFile = (rowData) => {
@@ -135,6 +136,8 @@ const HRApprovalPage = () => {
   useEffect(() => {
     const fetchreferredetails = async () => {
       try {
+        //Set data table loader 
+        setLoading(true)
         const result = await getReferredData();
         if (!result.status) {
           toast.current.show({
@@ -160,14 +163,14 @@ const HRApprovalPage = () => {
       <Toast ref={toast} />
       <DataTable
            value={referredData}
-           loading={loading}
            showGridlines
-           paginator
-           rows={10}
-           size="small"
-            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
+            paginator
+            rows={5} rowsPerPageOptions={[5, 10, 25, 50]}
+            size="small"
+            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator dropDownStyle"
            showGridlinesclassName="text-xs"
            tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
+          emptyMessage={loading ?  <LinearProgress color="inherit" /> : "No Data Found"}
          >
           
            <Column
