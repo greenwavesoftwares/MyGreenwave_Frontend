@@ -504,7 +504,7 @@ const ApprovedTable = () => {
         style={rowData.travelCompleteFlag === false ? { color: "#708090" } : {}}
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
-          // completeTravel(rowData.expandableData[0]);
+          completeTravel(rowData.expandableData[0],"CompleteRequested");
           console.log('rowData', rowData)
           console.log('rowData.expandableData[0]', rowData.expandableData[0])
         }}
