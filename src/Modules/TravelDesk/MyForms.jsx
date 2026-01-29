@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Chip } from "@mui/material";
@@ -7,12 +7,14 @@ import { InputText } from "primereact/inputtext";
 import { Tooltip } from 'primereact/tooltip';
 import {Tooltip as Muitooltip} from "@mui/material";
 import CustomButton from "../../components/Button/Button";
+import { Toast } from "primereact/toast";
 //Call Api
 import {
   getMyFormParticularRequisitionId,
   getExpandableData,
   getMyFormTravelData_New,
-  downloadDocumentsByReqId
+  downloadDocumentsByReqId,
+  updateTravelRequisition2
 } from "./TravelDeskAPI";
 // import {
 //   getMyFormTravelData_New,
@@ -28,6 +30,7 @@ import { Button } from "primereact/button";
 import RequisitionFormView from "./RequisitionFormView";
 
 const MyForm = () => {
+    const toast = useRef();
   const [myFormTableData, setMyFormTableData] = useState([]);
   const [expandedRows, setExpandedRows] = useState(null);
   console.log("table data", myFormTableData);
@@ -52,7 +55,14 @@ const MyForm = () => {
   //My Form Api Call
 
   useEffect(() => {
-    const myFormApi = async () => {
+    
+
+    // fetchDropdownList();
+    //MY Form api function call
+    myFormApi();
+  }, []);
+
+  const myFormApi = async () => {
       try {
         // const { token } = getUserData();
         //await getMyFormTravelData()
@@ -67,11 +77,6 @@ const MyForm = () => {
         console.log(error);
       }
     };
-
-    // fetchDropdownList();
-    //MY Form api function call
-    myFormApi();
-  }, []);
 
   const handelShowPreviousData = async (requisionId) => {
     console.log("clickrequisionId", requisionId);
@@ -176,26 +181,32 @@ const MyForm = () => {
   const completeTravel = async (rowData) => {
     //  let updatedData={...row,advance: newAdvanceAmount}
 
-    let response = await updateTravelRequisition(
-      rowData,
+    let response = await updateTravelRequisition2(
+      {...rowData},
       rowData.travelId,
-      "CompleteRequested"
+      "Completed"
     );
 
-    if (response.status != 201) {
-      toast.current?.show({
-        severity: "error",
-        summary: "error",
-        detail: response.data,
-      });
-    } else {
-      let response = await getApprovedAndSettledAndCompleteRequestedData();
-      setApprovedAndSettledTravelData(response.data);
+    if (response.status) {
+      // let response = await getApprovedAndSettledAndCompleteRequestedData();
+      // setApprovedAndSettledTravelData(response.data);
+       myFormApi();
       // setEditRowId(null);
       toast.current?.show({
         severity: "success",
         summary: "Success",
         detail: response.message,
+      });
+      // toast.current?.show({
+      //   severity: "error",
+      //   summary: "error",
+      //   detail: response.data,
+      // });
+    } else {
+      toast.current?.show({
+        severity: "error",
+        summary: "error",
+        detail: response.data,
       });
 
       // Optionally reset newAdvanceAmount
@@ -209,7 +220,7 @@ const MyForm = () => {
         style={rowData.travelCompleteFlag === false ? { color: "#708090" } : {}}
         className="p-button-sm p-button-text p-button-success "
         onClick={() => {
-          completeTravel(rowData.expandableData[0], "CompleteRequested");
+          completeTravel(rowData);
         }}
         tooltip="Complete Travel"
         disabled={rowData.travelCompleteFlag === false}
@@ -263,6 +274,7 @@ const MyForm = () => {
 
   return (
     <>
+     <Toast ref={toast} />
       <DataTable
         value={myFormTableData}
         expandedRows={expandedRows}

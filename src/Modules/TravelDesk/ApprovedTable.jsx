@@ -119,6 +119,7 @@ const ApprovedTable = () => {
   //const rowExpansionTemplate = (rowData) => (
 
   const rowExpansionTemplate = (rowData) => {
+    console.log("internaldata...121",expandedRows)
     const handleSaveAdvance = async (row) => {
       // let updatedExpandableData = null;
       try {
@@ -471,7 +472,7 @@ const ApprovedTable = () => {
   const completeTravel = async (rowData) => {
     //  let updatedData={...row,advance: newAdvanceAmount}
     let responseData = await updateTravelRequisition2(
-      rowData,
+      {...rowData},
       rowData.travelId,
       "CompleteRequested"
     );
@@ -497,16 +498,26 @@ const ApprovedTable = () => {
   };
 
   const checkBody = (rowData) => {
-    console.log('rowData', rowData)
+    console.log('rowData 1213', rowData)
+
+   
+    
     return (
       <CustomButton
         icon="pi pi-check"
         style={rowData.travelCompleteFlag === false ? { color: "#708090" } : {}}
         className="p-button-sm p-button-text p-button-success"
         onClick={() => {
-          completeTravel(rowData.expandableData[0],"CompleteRequested");
+         // console.log("rowData.length",rowData.length)
+          //i want to excess the expanded row data here 
+           console.log("expandedRows",expandedRows)
+           completeTravel(rowData);
+          
+             
+          
+
           console.log('rowData', rowData)
-          console.log('rowData.expandableData[0]', rowData.expandableData[0])
+         // console.log('rowData.expandableData[0]', rowData.expandableData[0])
         }}
         tooltip="Complete Travel"
         disabled={rowData.travelCompleteFlag === false}

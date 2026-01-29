@@ -242,8 +242,8 @@ const AppliedTourClaimTable = () => {
     };
 
     const handleSendForApprovalClick = async () => {
-     if (!reason || !settlementAmount) {
-      showWarningMessage(toastRef, "warn", "Fill the settlement amount and reason");
+     if (!reason.trim() || settlementAmount === null || settlementAmount === undefined) {
+      showWarningMessage(toastRef, "warn",   "Fill the settlement amount and reason");
       return;
     }
       let response = await tourClaimSendForApproval(
