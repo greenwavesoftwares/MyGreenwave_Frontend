@@ -1,6 +1,7 @@
 {
   "short_name": "My Greenwave",
   "name": "My Greenwave",
+  "description": "My Greenwave by Greenwave Solutions Pvt Ltd",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,17 +9,17 @@
       "type": "image/x-icon"
     },
     {
-      "src": "gwLogo.png",
-      "type": "image/png",
+      "src": "gw-logo192.jpg",
+      "type": "image/jpg",
       "sizes": "192x192"
     },
     {
-      "src": "gwLogo.png",
+      "src": "gwlogo512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "/mygreenwave/home",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
