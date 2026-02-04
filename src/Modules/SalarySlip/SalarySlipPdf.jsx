@@ -11,6 +11,7 @@ import {
 import { saveAs } from "file-saver";
 import { Button } from "primereact/button";
 import pdfSoftSign from "../../assets/Images/softSign copy.jpg";
+import GWLogo from "../../assets/Images/GreenwaveLogo.png"
 
 const styles = StyleSheet.create({
   page: {
@@ -118,7 +119,7 @@ const MyDocument = ({ salaryData }) => (
       <View style={styles.headerimg}>
         <View style={styles.logoContainer}>
           <Image
-            src={"src/assets/Images/GreenwaveLogo.png"}
+            src={GWLogo}
             style={styles.logo}
           />
         </View>
