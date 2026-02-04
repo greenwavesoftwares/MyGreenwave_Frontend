@@ -10,6 +10,7 @@ import {
 } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { Button } from "primereact/button";
+import pdfSoftSign from "../../assets/Images/softSign copy.jpg";
 
 const styles = StyleSheet.create({
   page: {
@@ -329,7 +330,7 @@ const MyDocument = ({ salaryData }) => (
       </View>
       <View style={styles.signatureSection}>
         <Image
-          src="src\assets\Images\softSign copy.jpg"
+          src={pdfSoftSign}
           style={styles.signatureImage}
         />
         <Text style={styles.signatureLabel}>Accounts Manager</Text>
