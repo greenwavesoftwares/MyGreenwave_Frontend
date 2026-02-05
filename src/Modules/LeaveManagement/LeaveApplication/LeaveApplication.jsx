@@ -161,11 +161,11 @@ const LeaveApplication = () => {
       icon: "pi pi-plus",
       command: () => showleaveDialog("Medical", false),
     },
-    {
-      label: "Previous PL",
-      icon: "pi pi-history",
-      command: () => showleaveDialog("PrevPL", false),
-    },
+    // {
+    //   label: "Previous PL",
+    //   icon: "pi pi-history",
+    //   command: () => showleaveDialog("PrevPL", false),
+    // },
     {
       label: "Holiday List",
       icon: "pi pi-list-check",

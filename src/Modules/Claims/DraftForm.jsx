@@ -48,6 +48,7 @@ import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 const DraftForm = ({
   draftData,
   setDraftData,
+  refreshDraftData,  
   seteditableMode,
   editableMode,
   settoggleNewClaim,
@@ -327,6 +328,7 @@ const toastRef = useRef(null);
           "success",
           "File Uploaded"
         );
+         await refreshDraftData();
         }
        
         
@@ -353,7 +355,7 @@ const toastRef = useRef(null);
             accept="*/*"
             customUpload
             uploadHandler={onFileSelect}
-            maxFileSize={1000000}
+            maxFileSize={50000000}
             chooseLabel="Upload"
           />
         ) : null}
@@ -626,7 +628,7 @@ const toastRef = useRef(null);
             />
             <CustomColumn
               field="longTravel"
-              header="Airfare, Bus, Train, Taxi Rental"
+              header="Airfare, Bus, Train,Taxi Rental"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
               footer={totals.longTravel?.toFixed(2)}

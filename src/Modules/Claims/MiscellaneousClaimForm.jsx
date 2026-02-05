@@ -7,6 +7,8 @@ import Dropdown from "../../components/Claim/Dropdown";
 import { ApplyOtherClaim } from "./claimServices";
 import { getUserData } from "../Login/Encrypt";
 import CustomButton from "../../components/Button/Button";
+import { FileUpload } from "primereact/fileupload";
+import { Button } from "primereact/button";
 
 const userDetails = getUserData()?.userDetails;
 import {
@@ -22,6 +24,7 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import { Chip, Grid, Typography } from "@mui/material";
 
 const MiscellaneousClaimForm = () => {
+    const [fileUploaded, setFileUploaded] = useState(false);
   const toastRef = useRef(null);
   const fileUploadRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -46,6 +49,7 @@ const MiscellaneousClaimForm = () => {
     if (event.files && event.files.length > 0) {
       setFile(event.files[0]);
       showSuccessMessage(toastRef, "success", "File Uploaded");
+       setFileUploaded(true);
     }
   };
 
@@ -66,6 +70,7 @@ const MiscellaneousClaimForm = () => {
         claimAmount,
         claimDetails
       );
+      console.log(data ,"data....")
 
       if (data.status === true) {
         showSuccessMessage(toastRef, "success", data.message);
@@ -74,6 +79,9 @@ const MiscellaneousClaimForm = () => {
         setClaimAmount("");
         setClaimDetails("");
         fileUploadRef.current?.clear();
+      }else
+      {
+        showErrorMessage(toastRef, "error", data?.message || "Upload failed");
       }
     } catch (error) {
       showErrorMessage(toastRef, "error", error?.message || "Upload failed");
@@ -189,17 +197,35 @@ const MiscellaneousClaimForm = () => {
                 Upload File
               </label> */}
               <div >
-                <CustomeFileUpload
-                  ref={fileUploadRef}
-                  name="file"
-                  customUpload
-                  uploadHandler={onUpload}
-                  mode="basic"
-                  chooseLabel="Choose File"
-                  accept="*/*"
-                  maxFileSize={1000000}
-                  className="p-button-success fileUpload-btn-Style"
-                />
+                 {!fileUploaded ? (
+                          <FileUpload
+                            mode="basic"
+                            name="file"
+                           accept="*/*"
+                            customUpload
+                            uploadHandler={onUpload}
+                            maxFileSize={50000000}
+                            chooseLabel="Upload Document"
+                            className="selectButtonStyle"
+                          />
+                        ) : (
+                          <div className="flex align-items-center gap-2 mt-2">
+                            <span className="text-green-600 font-medium">
+                              File uploaded successfully
+                            </span>
+                            <Button
+                              icon="pi pi-refresh"
+                              className="p-button-sm p-button-text p-button-warning"
+                              onClick={() => {
+                                setFileUploaded(false);
+                              }}
+                              tooltip="Re-upload"
+                              tooltipOptions={{ position: "top" }}
+                            />
+                          </div>
+                        )}
+                
+               
               </div>
             </div>
           </Grid>

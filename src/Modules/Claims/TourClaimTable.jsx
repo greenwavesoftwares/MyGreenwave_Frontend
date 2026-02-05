@@ -72,7 +72,7 @@ const TourClaimTable = ({
 
   const calculateTotal = (entry) => {
     const keys = Object.keys(initialFormState).filter(
-      (k) => k !== "Date" && k !== "Remarks" && k !== "Total"
+      (k) => k !== "Date" && k !== "Remarks" && k !== "Total",
     );
 
     let sum = 0;
@@ -153,7 +153,7 @@ const TourClaimTable = ({
 
   const deleteRow = (rowData) => {
     settourClaimTableData(
-      tourClaimTableData.filter((item) => item.Date !== rowData.Date)
+      tourClaimTableData.filter((item) => item.Date !== rowData.Date),
     );
   };
   // const deleteRow = (index) => {
@@ -183,7 +183,7 @@ const TourClaimTable = ({
     ) {
       showWarningMessage(
         toastRef,
-        "Please complete claim details form before adding expense."
+        "Please complete claim details form before adding expense.",
       );
       return;
     }
@@ -213,8 +213,7 @@ const TourClaimTable = ({
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-
-       const headerRowIndex = 15;
+      const headerRowIndex = 15;
       //const headerRowIndex = 0;
       const headers = XLSX.utils.sheet_to_json(worksheet, {
         range: headerRowIndex,
@@ -231,11 +230,12 @@ const TourClaimTable = ({
       // });
 
       const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-         range: 15,
-       // range: 0,
+        range: 15,
+        // range: 0,
         header: headers,
         defval: "",
       });
+      console.log(" Raw Excel JSON:", jsonData);
 
       const validatedData = [];
       const existingDates = new Set(tourClaimTableData.map((r) => r["Date"]));
@@ -244,6 +244,7 @@ const TourClaimTable = ({
       jsonData.forEach((row) => {
         const formattedRow = { ...initialFormState };
         let isValid = true;
+        console.log("➡ Raw Row:", row);
 
         // for (const key of Object.keys(initialFormState)) {
         //   const value = row[key];
@@ -261,13 +262,36 @@ const TourClaimTable = ({
         //   }
         // }
         for (const key of Object.keys(initialFormState)) {
-          const value = row[key];
+          let excelKey = key;
+
+          // Fix mismatch header coming from Excel
+          if (key === "Airfare, Bus, Train, Taxi Rental") {
+            excelKey = "Airfare, Bus, Train,Taxi Rental";
+          }
+
+          const value = row[excelKey];
 
           if (key === "Date") {
             const parsedDate = formateDate(value);
             const dateObj = new Date(parsedDate);
+            dateObj.setHours(0, 0, 0, 0);
             const minDate = new Date(tourclaimformData.claimFromDate);
+            minDate.setHours(0, 0, 0, 0);
             const maxDate = new Date(tourclaimformData.claimToDate);
+            maxDate.setHours(0, 0, 0, 0);
+            // const parsedDate = formateDate(value);
+            // const dateObj = new Date(parsedDate);
+            // const minDate = new Date(tourclaimformData.claimFromDate);
+            // const maxDate = new Date(tourclaimformData.claimToDate);
+
+            // console.log(
+            //   "dateObj --",
+            //   value,
+            //   "minDate --",
+            //   minDate,
+            //   "maxDate--",
+            //   maxDate,
+            // );
 
             // Reject if date is missing, invalid, duplicate, or out of range
             if (
@@ -297,13 +321,15 @@ const TourClaimTable = ({
         }
       });
 
+      //  console.log("validatedData", validatedData);
+
       settourClaimTableData((prev) => [...prev, ...validatedData]);
       setFileUploaded(true);
 
       showSuccessMessage(
         toastRef,
         "success",
-        `${validatedData.length} row(s) imported.`
+        `${validatedData.length} row(s) imported.`,
       );
     };
 
@@ -313,14 +339,14 @@ const TourClaimTable = ({
   const handleSaveToDraft = async () => {
     try {
       console.log("formErrors", formErrors);
-      console.log('draftdata',draftData)
+      console.log("draftdata", draftData);
       if (!validateForm()) {
         //const firstKey = Object.keys(formErrors)[0];
         if (toastRef?.current) {
           showErrorMessage(
             toastRef,
             "Error",
-            `Please fill in all required fields.`
+            `Please fill in all required fields.`,
           );
         }
 
@@ -354,7 +380,7 @@ const TourClaimTable = ({
           showErrorMessage(
             toastRef,
             "Error",
-            `Please fill in all required fields.`
+            `Please fill in all required fields.`,
           );
         }
 
@@ -363,9 +389,9 @@ const TourClaimTable = ({
       const response = await updateDraftdata(
         tourclaimformData,
         tourClaimTableData,
-        tourclaimformData.claim_id
+        tourclaimformData.claim_id,
       );
-      console.log('response',response)
+      console.log("response", response);
       if (!response.status) {
         showErrorMessage(toastRef, "error", response.message);
       } else {
@@ -514,6 +540,23 @@ const TourClaimTable = ({
     let _tourClaimTableData = [...tourClaimTableData];
     let { newData, index } = e;
 
+     const formattedDate = formateDate(newData.Date);
+
+  if (!formattedDate) {
+    showWarningMessage(toastRef, "warn", "Date cannot be empty");
+    return;
+  }
+
+     //  Duplicate date check (ignore current row)
+  const duplicate = _tourClaimTableData.some(
+    (row, i) => i !== index && row.Date === formattedDate
+  );
+
+  if (duplicate) {
+    showWarningMessage(toastRef, "warn", "Duplicate date not allowed");
+    return;
+  }
+
     newData.Total = calculateTotal(newData);
     newData.Date = formateDate(newData.Date);
     //calculateTotal(newData)
@@ -624,7 +667,7 @@ const TourClaimTable = ({
               onFileSelect(e);
               setFileUploaded(true);
             }}
-            maxFileSize={1000000}
+            maxFileSize={50000000}
             chooseLabel="Upload Excel"
             className="selectButtonStyle"
           />
@@ -669,25 +712,25 @@ const TourClaimTable = ({
         /> */}
       </div>
 
-<div >
-      <DataTable
-        value={tourClaimTableData}
-        showGridlines
-        // scrollable
-        // scrollHeight="250px"
-        editingRows={editingRows}
-        editMode="row"
-        dataKey="Date"
-        onRowEditChange={(e) => setEditingRows(e.data)}
-        className=" dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dataTableFooter"
-        tableStyle={{ fontSize: "0.7rem" }}
-        onRowEditComplete={onRowEditComplete}
-        footerColumnGroup={null}
-         header="Date-wise Details"
-        size="small"
-        stripedRows
-      >
-        {/* {fields.map((field) => (
+      <div>
+        <DataTable
+          value={tourClaimTableData}
+          showGridlines
+          // scrollable
+          // scrollHeight="250px"
+          editingRows={editingRows}
+          editMode="row"
+          dataKey="Date"
+          onRowEditChange={(e) => setEditingRows(e.data)}
+          className=" dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator defaultBorder dataTableFooter"
+          tableStyle={{ fontSize: "0.7rem" }}
+          onRowEditComplete={onRowEditComplete}
+          footerColumnGroup={null}
+          header="Date-wise Details"
+          size="small"
+          stripedRows
+        >
+          {/* {fields.map((field) => (
           <Column
             key={field}
             header={field}
@@ -704,18 +747,16 @@ const TourClaimTable = ({
             }}
           />
         ))} */}
-        {/* <Column field="Date" header="Date" editor={(options) => textEditor(options)} style={{ width: '10%' }}/> */}
-        <Column
-          field="Date"
-          header="Date"
-          editor={dateEditor}
-          body={(row) =>
-            row.Date ? formateDate(row.Date) : ""
-          }
-          footer="Total"
-          style={{width:"115px"}}
-        />
-        {/* <Column
+          {/* <Column field="Date" header="Date" editor={(options) => textEditor(options)} style={{ width: '10%' }}/> */}
+          <Column
+            field="Date"
+            header="Date"
+            editor={dateEditor}
+            body={(row) => (row.Date ? formateDate(row.Date) : "")}
+            footer="Total"
+            style={{ width: "115px" }}
+          />
+          {/* <Column
           field="Date"
           header="Date"
           editor={dateEditor}
@@ -742,102 +783,102 @@ const TourClaimTable = ({
           //   />
           // )}
         /> */}
-        <Column
-          field="Lodging"
-          header="Lodging"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Lodging"]?.toFixed(2)}
-        />
-        <Column
-          field="Breakfast"
-          header="Breakfast"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Breakfast"]?.toFixed(2)}
-        />
-        <Column
-          field="Lunch"
-          header="Lunch"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Lunch"]?.toFixed(2)}
-        />
-        <Column
-          field="Snacks"
-          header="Snacks"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Snacks"]?.toFixed(2)}
-        />
-        <Column
-          field="Dinner"
-          header="Dinner"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Dinner"]?.toFixed(2)}
-        />
-        <Column
-          field="Tea & Water"
-          header="Tea & Water"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Tea & Water"]?.toFixed(2)}
-        />
-        <Column
-          field="Airfare, Bus, Train, Taxi Rental"
-          header="Airfare, Bus, Train, Taxi Rental"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Airfare, Bus, Train, Taxi Rental"]?.toFixed(2)}
-        />
-        <Column
-          field="Auto, Cab"
-          header="Auto, Cab"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Auto, Cab"]?.toFixed(2)}
-        />
-        <Column
-          field="Parking, Toll, Fuel"
-          header="Parking, Toll, Fuel"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Parking, Toll, Fuel"]?.toFixed(2)}
-        />
-        <Column
-          field="Incidentals"
-          header="Incidentals"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Incidentals"]?.toFixed(2)}
-        />
-        <Column
-          field="Other Business Expenses"
-          header="Other Business Expenses"
-          editor={(options) => textEditor(options)}
-          footer={columnTotals["Other Business Expenses"]?.toFixed(2)}
-        />
-        <Column
-          field="Total"
-          header="Total"
-          // editor={(options) => textEditor(options)}
-          footer={columnTotals["Total"]?.toFixed(2)}
-          // disabled={true}
-        />
-        <Column
-          field="Remarks"
-          header="Remarks"
-          editor={(options) => textEditor2(options)}
-        />
-        <Column
-          rowEditor={allowEdit}
-          header="Edit"
-          style={{ width: "105px", textAlign: "center" }}
-        />
-        <Column
-          header="Action"
-          body={actionBodyTemplate}
-          headerStyle={cellStyle}
-          bodyStyle={cellStyle}
-        />
-      </DataTable>
+          <Column
+            field="Lodging"
+            header="Lodging"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Lodging"]?.toFixed(2)}
+          />
+          <Column
+            field="Breakfast"
+            header="Breakfast"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Breakfast"]?.toFixed(2)}
+          />
+          <Column
+            field="Lunch"
+            header="Lunch"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Lunch"]?.toFixed(2)}
+          />
+          <Column
+            field="Snacks"
+            header="Snacks"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Snacks"]?.toFixed(2)}
+          />
+          <Column
+            field="Dinner"
+            header="Dinner"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Dinner"]?.toFixed(2)}
+          />
+          <Column
+            field="Tea & Water"
+            header="Tea & Water"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Tea & Water"]?.toFixed(2)}
+          />
+          <Column
+            field="Airfare, Bus, Train, Taxi Rental"
+            header="Airfare, Bus, Train, Taxi Rental"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Airfare, Bus, Train, Taxi Rental"]?.toFixed(
+              2,
+            )}
+          />
+          <Column
+            field="Auto, Cab"
+            header="Auto, Cab"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Auto, Cab"]?.toFixed(2)}
+          />
+          <Column
+            field="Parking, Toll, Fuel"
+            header="Parking, Toll, Fuel"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Parking, Toll, Fuel"]?.toFixed(2)}
+          />
+          <Column
+            field="Incidentals"
+            header="Incidentals"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Incidentals"]?.toFixed(2)}
+          />
+          <Column
+            field="Other Business Expenses"
+            header="Other Business Expenses"
+            editor={(options) => textEditor(options)}
+            footer={columnTotals["Other Business Expenses"]?.toFixed(2)}
+          />
+          <Column
+            field="Total"
+            header="Total"
+            // editor={(options) => textEditor(options)}
+            footer={columnTotals["Total"]?.toFixed(2)}
+            // disabled={true}
+          />
+          <Column
+            field="Remarks"
+            header="Remarks"
+            editor={(options) => textEditor2(options)}
+          />
+          <Column
+            rowEditor={allowEdit}
+            header="Edit"
+            style={{ width: "105px", textAlign: "center" }}
+          />
+          <Column
+            header="Action"
+            body={actionBodyTemplate}
+            headerStyle={cellStyle}
+            bodyStyle={cellStyle}
+          />
+        </DataTable>
       </div>
 
       <div className="flex justify-between items-center mt-3 mb-3">
-        <div>
-
-        </div>
+        <div></div>
         {editableMode ? (
           <div className="flex gap-2">
             <CustomButton
@@ -877,7 +918,7 @@ const TourClaimTable = ({
               icon="pi pi-save"
               className="p-button-sm"
               severity={"success"}
-               style={{padding: "0.5rem 0.7rem"}}
+              style={{ padding: "0.5rem 0.7rem" }}
               onClick={() => {
                 const result = hasDuplicateDatesOrZeroTotal(tourClaimTableData);
                 if (result.hasIssue) {
@@ -901,28 +942,26 @@ const TourClaimTable = ({
                 settoggleNewClaim(false);
                 settourClaimTableData([]);
                 setselectedtravelMode(null);
-                
               }}
               className="p-button-sm selectButtonStyle"
               size={"small"}
-              style={{padding: "0.5rem 0.7rem"}}
-              disabled={draftData?.length=== 0}
+              style={{ padding: "0.5rem 0.7rem" }}
+              disabled={draftData?.length === 0}
 
               // disabled={toggleNewClaim===true}
             />
           </div>
         )}
-          <CustomButton
+        <CustomButton
           // label="Add Row"
           icon="pi pi-plus"
           className="p-button-sm mr-4"
-          severity="success" 
+          severity="success"
           onClick={handleAddRow}
           tooltip="Add Row"
           rounded={"true"}
-           size="small"
-          style={{width:"1rem",height:"2.1rem" }}
-          
+          size="small"
+          style={{ width: "1rem", height: "2.1rem" }}
         />
       </div>
     </>

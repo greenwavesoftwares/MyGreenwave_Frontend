@@ -32,6 +32,7 @@ import {
 } from "../../../components/Toast/ShowMessage";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
+import { Column } from "primereact/column";
 
 
 
@@ -278,12 +279,12 @@ const AppliedTourClaimTable = () => {
               
                 <InputNumber
       inputId="minmax"
-      placeholder="approval amt"
+      placeholder="Approval Amt."
       value={settlementAmount}
       onValueChange={(e) => setSettlementAmount(e.value)}
       min={0}
       max={rowData.total_expense}
-      className="w-36"
+      className="NumberFieldStyle w-36"
     inputClassName="w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[#f7fff9] text-gray-700 placeholder-gray-400"
     />
            
@@ -306,7 +307,7 @@ const AppliedTourClaimTable = () => {
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="reason"
+              placeholder="Reason"
               rows={3}
               className="flex-1 border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
             />
@@ -390,10 +391,10 @@ const AppliedTourClaimTable = () => {
         //   fontSize: "0.7rem",
         //   backgroundColor: "#e6f0ff",
         // }}
-        rowClassName={(rowData) => {
-          if (rowData[0].status == "Applied") return "bg-cyan-50";
-          if (rowData[0].status == "Reviewing") return "bg-green-50";
-        }}
+        // rowClassName={(rowData) => {
+        //   if (rowData[0].status == "Applied") return "bg-cyan-100";
+        //   if (rowData[0].status == "Reviewing") return "bg-green-100";
+        // }}
 
          header={dataTableHeader}
         filters={globalFilterRows}
@@ -415,7 +416,7 @@ const AppliedTourClaimTable = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         /> */}
-        <CustomColumn
+        <Column
           field="name"
           header="Name"
           sortable
@@ -424,7 +425,7 @@ const AppliedTourClaimTable = () => {
           bodyStyle={cellStyle}
         />
 
-        <CustomColumn
+        <Column
           body={datebody}
           header="Claim Duration"
           sortable
@@ -433,7 +434,7 @@ const AppliedTourClaimTable = () => {
           bodyStyle={cellStyle}
         />
 
-        <CustomColumn
+        <Column
           body={tourDetailsBody}
           header="Tour Details"
           style={{ width: "200px" }}
@@ -443,7 +444,7 @@ const AppliedTourClaimTable = () => {
           bodyStyle={cellStyle}
         />
 
-        <CustomColumn
+        <Column
           body={claimCalculationBody}
           header="Claim Calculation"
           style={{ width: "200px" }}
@@ -453,7 +454,7 @@ const AppliedTourClaimTable = () => {
           bodyStyle={cellStyle}
         />
 
-        <CustomColumn
+        <Column
           field="Expense"
           header="Expense"
           body={downloadExpense}
@@ -463,7 +464,7 @@ const AppliedTourClaimTable = () => {
           filter
         />
 
-        <CustomColumn
+        <Column
           field="supportingDocuments"
           header="Supporting Documents"
           body={downloadSupportingDocument}
@@ -472,7 +473,7 @@ const AppliedTourClaimTable = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-        <CustomColumn
+        <Column
           field="status"
           header="Status"
           sortable
@@ -481,7 +482,7 @@ const AppliedTourClaimTable = () => {
           bodyStyle={cellStyle}
         />
         {/* Action Columns */}
-        <CustomColumn
+        <Column
           body={actionbody}
           header="Approval Action"
           sortable
@@ -504,91 +505,91 @@ const AppliedTourClaimTable = () => {
           tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
           paginator={false}
         >
-          <CustomColumn
+          <Column
             field="date"
             header="Date"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
             footer='Total'
           />
-          <CustomColumn
+          <Column
             field="lodging"
             header="Lodging"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
             footer={totals.lodging?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="breakfast"
             header="Breakfast"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
             footer={totals.breakfast?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="lunch"
             header="Lunch"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.lunch?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="snacks"
             header="Snacks"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.snacks?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="dinner"
             header="Dinner"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.dinner?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="teaWater"
             header="Tea & Water"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.teaWater?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="longTravel"
             header="Airfare, Bus, Train, Taxi Rental"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.longTravel?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="shortTravel"
             header="Auto, Cab"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.shortTravel?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="tollTax"
             header="Parking, Toll, Fuel"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.tollTax?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="incidentals"
             header="Incidentals"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.incidentals?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="other"
             header="Other Business Expenses"
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
              footer={totals.other?.toFixed(2)}
           />
-          <CustomColumn
+          <Column
             field="total"
             header="Total"
             headerStyle={cellStyle}
@@ -596,7 +597,7 @@ const AppliedTourClaimTable = () => {
              footer={totals.total?.toFixed(2)}
           />
           
-          <CustomColumn
+          <Column
             field="remarks"
             header="Remarks"
             headerStyle={cellStyle}

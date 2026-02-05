@@ -67,9 +67,7 @@ const TourClaim = () => {
     file_type: "",
   });
   // const [viewtable,setviewtable]=useState([]);
-
-  useEffect(() => {
-    const fetchDraftData = async () => {
+   const fetchDraftData = async () => {
       try {
         const response = await getDraftData();
         if (response.status) {
@@ -90,6 +88,7 @@ const TourClaim = () => {
       }
     };
 
+    
     const fetchDropdownList = async () => {
       try {
         const travelModeData = await getTravelDropDown();
@@ -99,7 +98,13 @@ const TourClaim = () => {
         console.error("Error fetching tour claim list:", error);
       }
     };
-    fetchDropdownList();
+
+
+  useEffect(() => {
+
+    
+   
+   
 
     fetchDropdownList();
     fetchDraftData();
@@ -160,6 +165,7 @@ const TourClaim = () => {
                     <DraftForm
                       draftData={draftData}
                       setDraftData={setDraftData}
+                      refreshDraftData={fetchDraftData}
                       editableMode={editableMode}
                       seteditableMode={seteditableMode}
                       tourclaimformData={tourclaimformData}
