@@ -79,6 +79,9 @@ const AppraisalTracker = () => {
   const [currentFormId, setCurrentFormId] = useState(null);
   //Set Form id for Excel Download Icon
   const [excelDownloadFormId, setExcelDownloadFormId] = useState(null);
+  //Submit Button Api Call Loader
+  const[isForceApproveClicked,setIsForceApproveClicked]=useState(false)
+  const [forceButtonClickUserId,setForceButtonClickUserId]=useState(null)
   
 
   //Call All Appraisal List API
@@ -150,6 +153,7 @@ const AppraisalTracker = () => {
     } else {
       showErrorMessage(toastRef, "Error", "Form Not Found");
       setAppraisalFormVisible(false);
+      setShowFormLoader(false);
     }
   };
 
@@ -173,6 +177,7 @@ const AppraisalTracker = () => {
       await getAllAppraisal();
     } else {
       showErrorMessage(toastRef, "Error", "Internal Server Error");
+      setExcelDownloadFormId(null); 
     }
   };
 
@@ -222,18 +227,29 @@ const AppraisalTracker = () => {
     };
     //console.log("force_approve",token);
     //console.log("forceApprovePayload", forceApprovePayload);
-    const response = await appraisalForceApproved(token,forceApprovePayload);
-    console.log("force_approve_api_res",response);
-    if (response.status == 201) {
-      showSuccessMessage(toastRef, "Success", "Appraisal Form Approved Successfully");
-      getAllAppraisal();
+    setForceButtonClickUserId(forceApproveSelectRow.formId);
+    //For Submit Button Click API Loader
+    setIsForceApproveClicked(true);
+    try {
+      const response = await appraisalForceApproved(token, forceApprovePayload);
+      console.log("force_approve_api_res", response);
+      if (response.status == 201) {
+        showSuccessMessage(
+          toastRef,
+          "Success",
+          "Appraisal Form Approved Successfully",
+        );
+        getAllAppraisal();
+      }
+    } catch (error) {
+      console.log("Force Approve api call error", error);
+      showErrorMessage(toastRef, "Error", `Internal Server Error ${error.message}`);
+    } finally {
+       //Loader
+      setIsForceApproveClicked(false);
+      setForceButtonClickUserId(null);
     }
-    else{
-      showErrorMessage(toastRef, "Error", "Internal Server Error");
-    }
-
   };
-  console.log("appraisalData", appraisalData);
 
   //Data Table Header
   const tableHeader = (
@@ -400,6 +416,8 @@ const AppraisalTracker = () => {
                     <Button
                       disabled={rowData.approved}
                       sx={{ boxShadow: "none" }}
+                      loading={rowData.formId === forceButtonClickUserId? isForceApproveClicked:""}
+                      loadingPosition="start"
                       size="small"
                       variant="contained"
                       onClick={() => {

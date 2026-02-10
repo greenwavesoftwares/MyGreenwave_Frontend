@@ -1,4 +1,10 @@
-import { Chip, LinearProgress, Typography, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Chip,
+  LinearProgress,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import Button from "@mui/material/Button";
 import { Calendar } from "primereact/calendar";
 import { Dialog } from "primereact/dialog";
@@ -107,7 +113,7 @@ function Appraisal() {
         //List Of Appraisal Data
         const appraisalList_response = await appraisalListApi(
           authToken,
-          employeeName
+          employeeName,
         );
         console.log("appraisalList", appraisalList);
         setAppraisalList(appraisalList_response?.appraisalsList);
@@ -124,7 +130,7 @@ function Appraisal() {
         const responsePreviousAndNextAppraisalDates =
           await getPreviousAndNextAppraisalDate(authToken, dateOfJoin);
         setPreviousAndNextAppraisalDate(
-          responsePreviousAndNextAppraisalDates?.data
+          responsePreviousAndNextAppraisalDates?.data,
         );
       } catch (error) {
         console.error("Error fetching appraisal data:", error);
@@ -172,7 +178,7 @@ function Appraisal() {
       formId,
       previousYearFormId,
       authToken,
-      appraisalDate
+      appraisalDate,
     );
     console.log("appraisalForm_apiData", appraisalFormData?.data);
     setAppraisalFormLoading(null);
@@ -188,13 +194,13 @@ function Appraisal() {
       showErrorMessage(
         toastRef,
         "Error",
-        "Internal Server Error, Please Try Again Later"
+        "Internal Server Error, Please Try Again Later",
       );
     }
   };
 
   console.log("appraisal_SelectFormData", appraiserForm);
-    //mobile view
+  //mobile view
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -206,7 +212,9 @@ function Appraisal() {
           <div className="cardStyle mt-4 py-2.5 px-4 bg-white shadow rounded">
             <div className="flex justify-between items-center">
               <div className="flex items-center justify-between w-full">
-                <div className={`${isMobile ? "hidden":"flex items-center gap-6"}`}>
+                <div
+                  className={`${isMobile ? "hidden" : "flex items-center gap-6"}`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg blue-icon">
                       <EmojiEventsIcon />
@@ -340,8 +348,28 @@ function Appraisal() {
               }}
               header="Appraisal Date"
             ></Column>
-            <Column field="reviewer" header="Reviewer Name"></Column>
-            <Column field="approver" header="Approver Name"></Column>
+            <Column
+              //field="reviewer"
+              header="Reviewer Name"
+              body={(ele) => {
+                return (
+                  <span>
+                    {ele.reviewer.toLowerCase() ?? "NA"}
+                  </span>
+                );
+              }}
+            ></Column>
+            <Column
+             //field="approver"
+              header="Approver Name"
+              body={(ele) => {
+                return (
+                  <span>
+                    {ele.approver.toLowerCase() ?? "NA"}
+                  </span>
+                );
+              }}
+            ></Column>
             <Column
               body={(rowData) => {
                 return (
@@ -402,7 +430,7 @@ function Appraisal() {
                       handleShowForm(
                         rowData.formId,
                         rowData.previousYearFormId,
-                        rowData.appraisalDate
+                        rowData.appraisalDate,
                       )
                     }
                   >
