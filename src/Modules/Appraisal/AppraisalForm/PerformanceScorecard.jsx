@@ -126,8 +126,8 @@ const PerformanceScorecardDateTable = ({
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
           if (
-            Array.isArray(rowData.items) &&
-            rowData.items.some((ele) => ele?.previous)
+            Array.isArray(rowData) &&
+            rowData.some((ele) => ele.previous)
           ) {
             return "bgcyan-100";
           }

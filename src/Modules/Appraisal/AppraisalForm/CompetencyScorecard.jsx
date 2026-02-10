@@ -111,14 +111,12 @@ const CompetencyScorecard = ({
         //     return "bgcyan-100";
         //   }
         // }}
-        rowClassName={(rowData) => {
-          if (
-            Array.isArray(rowData.items) &&
-            rowData.items.some((ele) => ele?.previous)
-          ) {
-            return "bgcyan-100";
-          }
-        }}
+        rowClassName={(rowData) =>
+          Array.isArray(rowData) &&
+          rowData.some((ele) => ele.previous)
+            ? "bgcyan-100"
+            : ""
+        }
       >
         <Column
           field="personal_goals"
@@ -138,11 +136,23 @@ const CompetencyScorecard = ({
             ) : (
               <>
                 {rowData.personal_goals}
-                <Tooltip title={rowData.trainingStatus?.toLowerCase() ==="completed" ? "Completed Training" : "Incomplete Training"} arrow placement="right">
-                <CircleIcon
-                  color={rowData.trainingStatus ==="Completed" ? "success" : "error"}
-                  sx={{ fontSize: "0.55rem",marginTop:"-12px" }}
-                />
+                <Tooltip
+                  title={
+                    rowData.trainingStatus?.toLowerCase() === "completed"
+                      ? "Completed Training"
+                      : "Incomplete Training"
+                  }
+                  arrow
+                  placement="right"
+                >
+                  <CircleIcon
+                    color={
+                      rowData.trainingStatus === "Completed"
+                        ? "success"
+                        : "error"
+                    }
+                    sx={{ fontSize: "0.55rem", marginTop: "-12px" }}
+                  />
                 </Tooltip>
               </>
             )
@@ -216,7 +226,7 @@ const CompetencyScorecard = ({
                   handleInputChange(
                     formatDate(e.value),
                     "target_date",
-                    rowIndex
+                    rowIndex,
                   )
                 }
                 placeholder="Select Date"
@@ -241,7 +251,7 @@ const CompetencyScorecard = ({
                   handleInputChange(
                     e.target.value,
                     "reviewers_comment",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -263,7 +273,7 @@ const CompetencyScorecard = ({
                   handleInputChange(
                     e.target.value,
                     "appraisers_comments",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
