@@ -67,7 +67,7 @@ const LeaveApplication = () => {
   const tooltipRef = useRef(null);
   const [leaveData, setLeaveData] = useState(leaveStructure);
   const [leaveValidation, setLeaveValidation] = useState(
-    leaveValidationStructure
+    leaveValidationStructure,
   );
   const [leaveTable, setLeaveTable] = useState(tableStructure);
   const [cardData, setCardData] = useState({});
@@ -75,7 +75,7 @@ const LeaveApplication = () => {
   const [editMode, setEditMode] = useState(false);
   const [appVersion, setAppVersion] = useState("1.0");
   //Holiday List
-  const[holidayList,setHolidayList]=useState(false)
+  const [holidayList, setHolidayList] = useState(false);
   const actionBodyTemplate = (row) => {
     return (
       <div className="flex justify-content-center gap-1">
@@ -105,7 +105,7 @@ const LeaveApplication = () => {
               async () => {
                 await deleteLeave(row, setLeaveInfo, toastRef);
               },
-              null
+              null,
             );
           }}
         />
@@ -156,11 +156,11 @@ const LeaveApplication = () => {
       icon: "pi pi-briefcase",
       command: () => showleaveDialog("Compensatory", false),
     },
-    {
-      label: "Medical",
-      icon: "pi pi-plus",
-      command: () => showleaveDialog("Medical", false),
-    },
+    // {
+    //   label: "Medical",
+    //   icon: "pi pi-plus",
+    //   command: () => showleaveDialog("Medical", false),
+    // },
     // {
     //   label: "Previous PL",
     //   icon: "pi pi-history",
@@ -479,7 +479,7 @@ const LeaveApplication = () => {
                                       (item.value /
                                         month.value.reduce(
                                           (sum, item) => sum + item.value,
-                                          0
+                                          0,
                                         )) *
                                       100
                                     }%`,
@@ -766,14 +766,14 @@ const LeaveApplication = () => {
                   setLeaveValidation,
                   setLeaveInfo,
                   hideleaveDialog,
-                  toastRef
+                  toastRef,
                 );
               }}
             />
           </Grid>
         </Grid>
       </DialogComponent>
-      <ListOfHoliday visible={holidayList} setHolidayList={setHolidayList}/>
+      <ListOfHoliday visible={holidayList} setHolidayList={setHolidayList} />
       <Toast ref={toastRef} />
       <ConfirmDialog />
     </>
