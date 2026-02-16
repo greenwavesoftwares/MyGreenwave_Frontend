@@ -19,6 +19,8 @@ import HomePage from "../../Modules/Home/HomePage";
 import AdminRoutes from "./AdminRoutes";
 import React from "react";
 import Restricted from "../../Restricted";
+import ClientPage from "../../features/meal booking/pages/ClientPage";
+import MealAdminPage from "../../features/meal booking/pages/MealAdminPage";
 
 function WrappedRoutes() {
   return (
@@ -40,6 +42,8 @@ function WrappedRoutes() {
       <Route path="nalanda" element={<Nalanda />} />
       <Route path="profile" element={<UserProfile />} />
       <Route path="home" element={<HomePage />} />
+       <Route path="meal" element={<ClientPage />} />
+      <Route path="admin-meal" element={<MealAdminPage />} />
 
       {/* Claim section with nested routes */}
       <Route path="claim" element={<Outlet />}>
