@@ -10,6 +10,7 @@ import { Toast } from "primereact/toast";
 import {
   showErrorMessage,
   showSuccessMessage,
+  showWarningMessage,
 } from "../../../../components/Toast/ShowMessage";
 import Button from "@mui/material/Button";
 //For Prevent Re-Render
@@ -53,6 +54,9 @@ function AddNewExpense({
       breakup: ele.breakup,
       details: ele.details,
     };
+    if(ele.expense <=0 ){
+      return showWarningMessage(toastRef,"Waring","The expense value must be greater than zero")
+    }
     try {
       const response = await addNewExpense(token, data);
       if (response.status === 200) {
@@ -119,7 +123,8 @@ function AddNewExpense({
                   {...field}
                   dateFormat="yy-mm-dd"
                   showIcon
-                  placeholder="Select date"
+                  placeholder="Select Date"
+                  className="calendarStyle w-full"
                 />
               )}
             />
@@ -132,14 +137,14 @@ function AddNewExpense({
                   options={timeOptions}
                   required
                   className="dropDownStyle w-full"
-                  placeholder="Select time"
+                  placeholder="Select Time"
                   {...field}
                 />
               )}
             />
             <InputText
               className="inputFieldStyle w-full"
-              placeholder="Enter expense amount"
+              placeholder="Enter Expense Amount"
               required
               {...register("expense", {
                 minLength: 1,
