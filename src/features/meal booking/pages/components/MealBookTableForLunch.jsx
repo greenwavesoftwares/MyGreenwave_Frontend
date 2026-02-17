@@ -32,14 +32,14 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
       setLoader(true);
       const response = await ListOfMeals(token);
       setMealList(response.data);
-      console.log("list_meal_api_res", response.data,response,mealList);
-      console.log("CheckArray",Array.isArray(response.data))
+      console.log("list_meal_api_res", response.data, response, mealList);
+      console.log("CheckArray", Array.isArray(response.data));
       //NOTE Weekly Check Status
       Array.isArray(response.data) &&
         response.data.map((ele) => {
           //Exclude Sunday And Saturday
           const day = new Date(ele.date).getDay();
-          console.log("day",day)
+          console.log("day", day);
           if (day != 0 && day != 6) {
             //console.log("Check_Meal", ele.Meal_On);
             if (ele.mealOn === 1) {
@@ -93,19 +93,32 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
       });
       const response = await updateMeal(updateList, token);
       if (response.status === 200) {
+        //Call Meal All Data
+        mealData();
         showSuccessMessage(
           toastRef,
           "Success",
           "Extra Meal Updated Successfully",
         );
       }
-      console.log("updateList", updateList);
+      //console.log("updateList", updateList);
     };
   }
 
   //NOTE Meal Update (Toggle Button)
-  async function handleMealOnChange(changeDate, checked) {
-    console.log("On_Change_Checked_Status", checked,changeDate);
+  async function handleMealOnChange(changeDate, checked, extraMeal) {
+    console.log(
+      "On_Change_Checked_Status",
+      checked,
+      changeDate,
+      extraMeal,
+      extraMeal > 0,
+    );
+    //If Extra Meal Already Book
+    if (checked && extraMeal > 0) {
+      return showWarningMessage(toastRef, "Warning", "Extra Meal Already Book");
+    }
+    //Update Meal
     const updateList = mealList.map((ele) => {
       return ele.date === changeDate
         ? {
@@ -114,7 +127,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
           }
         : ele;
     });
-    console.log("updateList",updateList);
+    console.log("Meal_UpdateList", updateList);
     setMealList(updateList);
     const response = await updateMeal(updateList, token);
     if (response.status === 200) {
@@ -130,17 +143,17 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
   async function handleWeekendMealBooking(checked) {
     //NOTE Weekly Meal ON
     if (checked) {
-      setWeeklyCheck(true)
+      setWeeklyCheck(true);
       const weekUpdateList = mealList.map((ele) => {
         if (
-          new Date(ele.date).getDay() === 0 ||
-          new Date(ele.date).getDay() === 6
+          new Date(ele.date).getDay() === 0 || new Date(ele.date).getDay() === 6
         ) {
           return {
             ...ele,
-            mealOn: 0,
+            //mealOn: 0,
           };
         }
+        //Meal On Excepted Sunday And Saturday
         return {
           ...ele,
           mealOn: 1,
@@ -152,7 +165,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
         const response = await updateMeal(weekUpdateList, token);
         if (response.status === 200) {
           setMealList(weekUpdateList);
-          
+
           showInfoMessage(toastRef, "Success", "Meals booked for the week");
         }
       } catch (error) {
@@ -162,7 +175,19 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
     }
     //NOTE Weekly Meal OFF
     else {
-       setWeeklyCheck(false)
+      //check if any extra meal already booked
+      const hasExtraMeal = mealList.some((ele) => ele.extraMeal > 0);
+      if (hasExtraMeal) {
+        showWarningMessage(
+          toastRef,
+          "Warning",
+          "Extra Meal Already Booked. Cannot disabled weekly booking.",
+        );
+        return;
+      }
+      //Status False
+      setWeeklyCheck(false);
+      //Weekly all meal set 0
       const weekMealOffData = mealList.map((ele) => {
         return {
           ...ele,
@@ -170,7 +195,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
         };
       });
       try {
-        //Update api call
+        //Update api call for meal off
         const response = await updateMeal(weekMealOffData, token);
         if (response.status === 200) {
           setMealList(weekMealOffData);
@@ -188,8 +213,8 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
     }
   }
 
-  console.log("weeklyCheck",weeklyCheck);
-  console.log("mealList",mealList)
+  console.log("weeklyCheck", weeklyCheck);
+  //console.log("mealList", mealList);
 
   return (
     <>
@@ -255,7 +280,9 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
                 name="Meal_On"
                 size="small"
                 checked={ele.mealOn > 0 ? true : false}
-                onChange={() => handleMealOnChange(ele.date, ele.mealOn)}
+                onChange={() =>
+                  handleMealOnChange(ele.date, ele.mealOn, ele.extraMeal)
+                }
               />
             );
           }}
@@ -273,7 +300,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
           body={(ele) => {
             return (
               <CartCounter
-                count={ele.extraMeal ??"NA"}
+                count={ele.extraMeal ?? "NA"}
                 checked={ele.mealOn > 0 ? true : false}
                 updateExtraMeal={handelExtraMeal({
                   date: ele.date,
