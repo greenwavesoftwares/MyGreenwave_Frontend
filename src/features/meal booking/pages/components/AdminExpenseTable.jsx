@@ -34,10 +34,11 @@ function AdminExpenseTable() {
     try {
       setLoader(true);
       const response = await fetchExpense(token);
-      setExpense(response);
+      console.log("response_dailyExpenseData",response.dailyExpenseData);
+      setExpense(response.dailyExpenseData);
     } catch (error) {
       console.log(error);
-      showErrorMessage(toastRef, "Error", "Failed to fetch dashboard data");
+      showErrorMessage(toastRef, "Error", "Failed to fetch expense data");
     } finally {
       setLoader(false);
     }

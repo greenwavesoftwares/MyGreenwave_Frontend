@@ -1,18 +1,17 @@
 import axios from "axios";
 
 //Meal Booking Base URL
-const mealBaseUrl = import.meta.env.VITE_MEAL_APP_BACKEND_URL;
+const mealBaseUrl = import.meta.env.VITE_END_POINT;
 
 //Admin Dashboard API Call
 async function fetchAdminDashboard(token) {
   try {
-    const response = await axios.get(`${mealBaseUrl}/admin/dashboard`, {
+    const response = await axios.get(`${mealBaseUrl}adminmeal/dashboard`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("admin_dashboard_api_Response", response);
     return response?.data;
   } catch (error) {
     console.log("failed to fetch admin dashboard api", error);
@@ -22,7 +21,7 @@ async function fetchAdminDashboard(token) {
 //Expense Table API Call
 async function fetchExpense(token) {
   try {
-    const response = await axios.get(`${mealBaseUrl}/admin/expense`, {
+    const response = await axios.get(`${mealBaseUrl}adminmeal/expense`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -38,7 +37,7 @@ async function fetchExpense(token) {
 //Insert Expense API Call
 async function addNewExpense(token, data) {
   try {
-    const response = await axios.post(`${mealBaseUrl}/admin/expense`, data, {
+    const response = await axios.post(`${mealBaseUrl}adminmeal/expense`, data, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -54,13 +53,12 @@ async function addNewExpense(token, data) {
 //Update Expense API Call
 async function updateExpense(token, data) {
   try {
-    const response = await axios.put(`${mealBaseUrl}/admin/expense`, data, {
+    const response = await axios.put(`${mealBaseUrl}adminmeal/expense`, data, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("update expense data", response);
     return response;
   } catch (error) {
     console.log("failed to update expense api", error);
@@ -73,7 +71,7 @@ async function expenseDelete(token, data) {
   console.log("data", data, token);
   try {
     const response = await axios.delete(
-      `${mealBaseUrl}/admin/expense?date=${data.date}&time=${data.time}`,
+      `${mealBaseUrl}adminmeal/expense?date=${data.date}&time=${data.time}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +79,6 @@ async function expenseDelete(token, data) {
         },
       },
     );
-    console.log("expense delete", response);
     return response;
   } catch (error) {
     console.log("failed to delete expense ", error);
@@ -93,7 +90,7 @@ async function expenseDelete(token, data) {
 async function getSummary(token, data) {
   try {
     const response = await axios.post(
-      "http://192.168.7.31:8081/adminmeal/getsummary",
+      `${mealBaseUrl}adminmeal/getsummary`,
       data,
       {
         headers: {

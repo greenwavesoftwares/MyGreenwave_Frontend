@@ -31,17 +31,19 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
       let count = [];
       setLoader(true);
       const response = await ListOfMeals(token);
-      setMealList(response[0]);
-      console.log("list_meal_api_res", response);
+      setMealList(response.data);
+      console.log("list_meal_api_res", response.data,response,mealList);
+      console.log("CheckArray",Array.isArray(response.data))
       //NOTE Weekly Check Status
-      Array.isArray(response) &&
-        response?.map((ele) => {
+      Array.isArray(response.data) &&
+        response.data.map((ele) => {
           //Exclude Sunday And Saturday
-          const day = new Date(ele.Date).getDay();
+          const day = new Date(ele.date).getDay();
+          console.log("day",day)
           if (day != 0 && day != 6) {
             //console.log("Check_Meal", ele.Meal_On);
-            if (ele.Meal_On === 1) {
-              count.push(ele.Meal_On);
+            if (ele.mealOn === 1) {
+              count.push(ele.mealOn);
             }
           }
         });
@@ -78,14 +80,14 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
     "Saturday",
   ];
 
-  //Add Extra Meal
+  //NOTE Add Extra Meal
   function handelExtraMeal(value) {
     return async function updateExtraMeal(count) {
       const updateList = mealList.map((ele) => {
-        return ele.Date === value.date
+        return ele.date === value.date
           ? {
               ...ele,
-              Extra_Meal: count,
+              extraMeal: count,
             }
           : ele;
       });
@@ -101,14 +103,14 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
     };
   }
 
-  //Meal Update (Toggle Button)
+  //NOTE Meal Update (Toggle Button)
   async function handleMealOnChange(changeDate, checked) {
     console.log("On_Change_Checked_Status", checked,changeDate);
     const updateList = mealList.map((ele) => {
       return ele.date === changeDate
         ? {
             ...ele,
-            meal_On: ele.meal_On === 0 ? 1 : 0,
+            mealOn: ele.mealOn === 0 ? 1 : 0,
           }
         : ele;
     });
@@ -131,17 +133,17 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
       setWeeklyCheck(true)
       const weekUpdateList = mealList.map((ele) => {
         if (
-          new Date(ele.Date).getDay() === 0 ||
-          new Date(ele.Date).getDay() === 6
+          new Date(ele.date).getDay() === 0 ||
+          new Date(ele.date).getDay() === 6
         ) {
           return {
             ...ele,
-            Meal_On: 0,
+            mealOn: 0,
           };
         }
         return {
           ...ele,
-          Meal_On: 1,
+          mealOn: 1,
         };
       });
 
@@ -164,7 +166,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
       const weekMealOffData = mealList.map((ele) => {
         return {
           ...ele,
-          Meal_On: 0,
+          mealOn: 0,
         };
       });
       try {
@@ -187,6 +189,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
   }
 
   console.log("weeklyCheck",weeklyCheck);
+  console.log("mealList",mealList)
 
   return (
     <>
@@ -237,7 +240,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
             return (
               <Tag
                 className="meal-app-tag"
-                severity={ele.meal_On > 0 ? "success" : "contrast"}
+                severity={ele.mealOn > 0 ? "success" : "contrast"}
                 rounded
                 value={ele.time}
               ></Tag>
@@ -251,8 +254,8 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
               <Switch
                 name="Meal_On"
                 size="small"
-                checked={ele.meal_On > 0 ? true : false}
-                onChange={() => handleMealOnChange(ele.date, ele.meal_On)}
+                checked={ele.mealOn > 0 ? true : false}
+                onChange={() => handleMealOnChange(ele.date, ele.mealOn)}
               />
             );
           }}
@@ -270,11 +273,11 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
           body={(ele) => {
             return (
               <CartCounter
-                count={ele.extra_Meal ??"NA"}
-                checked={ele.meal_On > 0 ? true : false}
+                count={ele.extraMeal ??"NA"}
+                checked={ele.mealOn > 0 ? true : false}
                 updateExtraMeal={handelExtraMeal({
                   date: ele.date,
-                  count: ele.extra_Meal,
+                  count: ele.extraMeal,
                 })}
               />
             );

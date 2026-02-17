@@ -1,14 +1,14 @@
 import axios from "axios";
 
 //Meal Booking Base URL
-const mealBaseUrl = import.meta.env.VITE_MEAL_APP_BACKEND_URL;
+const mealBaseUrl = import.meta.env.VITE_END_POINT;
 
 
 //Dashboard API Call
 async function fetchDashboard(token) {
   try {
     const response = await axios.get(
-      `${mealBaseUrl}/usermeal/dashboard`,
+      `${mealBaseUrl}usermeal/dashboard`,
       {
         headers: {
            "Content-Type": "application/json",
@@ -27,7 +27,7 @@ async function fetchDashboard(token) {
 async function ListOfMeals(token) {
   try {
     const response = await axios.get(
-      `${mealBaseUrl}/usermeal/meals`,
+      `${mealBaseUrl}usermeal/meals`,
       {
         headers: {
            "Content-Type": "application/json",
@@ -48,7 +48,7 @@ async function ListOfMeals(token) {
 //Update Meal API Call
 async function updateMeal(data,token) {
   try {
-    const response = await axios.put(`${mealBaseUrl}/usermeal/updatemeals`, data,{
+    const response = await axios.put(`${mealBaseUrl}usermeal/updatemeals`, data,{
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

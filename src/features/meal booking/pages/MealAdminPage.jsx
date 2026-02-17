@@ -25,11 +25,10 @@ function MealAdminPage() {
   async function adminDashboard() {
     try {
       const response = await fetchAdminDashboard(token);
-      // setAdminDashboardData(response);
       //Set Chart Data
-      setChartData(response[1]);
+      setChartData(response.currentMonthMeal);
       //Set top 4 card data
-      setData(response[0][0]);
+      setData(response.summary[0]);
     } catch (error) {
       console.log(error);
     }
@@ -64,7 +63,7 @@ function MealAdminPage() {
                   Todays Lunch ({currentData ?? "NA"})
                 </h3>
                 <p className="stat-value-meal-app">
-                  {data.Today_Lunch ?? "NA"}
+                  {data.todayLunch ?? "NA"}
                 </p>
               </div>
 
@@ -77,7 +76,7 @@ function MealAdminPage() {
                 <h3 className="stat-label-meal-app">
                   Tomorrow's Lunch ({nextDay ?? "NA"})
                 </h3>
-                <p className="stat-value-meal-app">{data.Tom_Lunch ?? "NA"}</p>
+                <p className="stat-value-meal-app">{data.tomLunch ?? "NA"}</p>
               </div>
 
               <div className="stat-card-meal-app">
@@ -87,7 +86,7 @@ function MealAdminPage() {
                   </div>
                 </div>
                 <h3 className="stat-label-meal-app">Yesterday Lunch</h3>
-                <p className="stat-value-meal-app">{data.Yest_Lunch ?? "NA"}</p>
+                <p className="stat-value-meal-app">{data.yestLunch ?? "NA"}</p>
               </div>
 
               <div className="stat-card-meal-app">
@@ -97,7 +96,7 @@ function MealAdminPage() {
                   </div>
                 </div>
                 <h3 className="stat-label-meal-app">Todays Snacks</h3>
-                <p className="stat-value-meal-app">{data.Today_ES ?? "NA"}</p>
+                <p className="stat-value-meal-app">{data.todayEs ?? "NA"}</p>
               </div>
             </div>
 
@@ -110,7 +109,7 @@ function MealAdminPage() {
                   <div className="flex align-items-center justify-content-between p-3 admin-card-bg border-round-lg">
                     <span className="text-sm text-gray-600">Lunch Expense</span>
                     <span className="font-semibold text-gray-900">
-                      {data.Lunch_Expense ?? "NA"}
+                      {data.lunchExpense ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -121,7 +120,7 @@ function MealAdminPage() {
                       Lunch (this month)
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {data.Total_Meal ?? "NA"}
+                      {data.totalMeal ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -130,7 +129,7 @@ function MealAdminPage() {
                   <div className="flex align-items-center justify-content-between p-3 admin-card-bg border-round-lg">
                     <span className="text-sm text-gray-600">Cost / Lunch</span>
                     <span className="font-semibold text-gray-900">
-                      {data.Lunch_Cost ?? "NA"}
+                      {data.lunchCost ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -141,7 +140,7 @@ function MealAdminPage() {
                       Snacks Expense
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {data.Snacks_Expense ?? "NA"}
+                      {data.snacksExpense ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -152,7 +151,7 @@ function MealAdminPage() {
                       Snacks (this month)
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {data.Total_Snacks ?? "NA"}
+                      {data.totalSnacks ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -161,7 +160,7 @@ function MealAdminPage() {
                   <div className="flex align-items-center justify-content-between p-3 admin-card-bg border-round-lg">
                     <span className="text-sm text-gray-600">Cost / Snacks</span>
                     <span className="font-semibold text-gray-900">
-                      {data.ES_Cost ?? "NA"}
+                      {data.esCost ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -172,7 +171,7 @@ function MealAdminPage() {
                       Last Lunch Charge
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {data.Last_Month_LunchCharge ?? "NA"}
+                      {data.lastMonthLunchCharge ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -183,7 +182,7 @@ function MealAdminPage() {
                       Last Snacks Charge
                     </span>
                     <span className="font-semibold text-gray-900">
-                      {data.Last_Month_ESCharge ?? "NA"}
+                      {data.lastMonthEsCharge ?? "NA"}
                     </span>
                   </div>
                 </div>
@@ -192,7 +191,7 @@ function MealAdminPage() {
                   <div className="flex align-items-center justify-content-between p-3 admin-card-bg border-round-lg">
                     <span className="text-sm text-gray-600">All Expense</span>
                     <span className="font-semibold text-gray-900">
-                      {data.All_Expense ?? "NA"}
+                      {data.allExpense ?? "NA"}
                     </span>
                   </div>
                 </div>
