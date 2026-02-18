@@ -79,7 +79,7 @@
 }
 
 .meal-app-icon-red {
-  background-color: #fef2f2;
+  background-color: var(--meal-app-red);
 }
 
 .meal-app-icon-red-text {
@@ -87,7 +87,7 @@
 }
 
 .meal-app-icon-orange {
-  background-color: #fff7ed;
+  background-color: var(--meal-app-orange);
 }
 
 .meal-app-icon-orange-text {
@@ -95,7 +95,7 @@
 }
 
 .meal-app-icon-teal {
-  background-color: #f0fdfa;
+  background-color: var(--meal-app-teal);
 }
 
 .meal-app-icon-teal-text {
@@ -103,7 +103,7 @@
 }
 
 .meal-app-icon-blue {
-  background-color: #eff6ff;
+  background-color: var(--meal-app-blue);
 }
 
 .meal-app-icon-blue-text {
@@ -111,7 +111,7 @@
 }
 
 .meal-app-icon-emerald {
-  background-color: #ecfdf5;
+  background-color: var(--meal-app-emerald);
 }
 
 .meal-app-icon-emerald-text {
@@ -119,7 +119,7 @@
 }
 
 .meal-app-icon-violet {
-  background-color: #f5f3ff;
+  background-color: var(--meal-app-violet);;
 }
 
 .meal-app-icon-violet-text {
@@ -198,6 +198,9 @@
 .admin-card-bg{
   background: var(--bg-admin-meal) !important;
 }
+.meal-app-card-border{
+  border: 1px solid var(--meal-app-card-border);
+}
 
 .meal-app-metric-card-featured {
   background: linear-gradient(to bottom right, #14b8a6, #0d9488);
@@ -235,4 +238,9 @@
 //Tag Style
 .meal-app-tag.p-tag{
   text-transform: capitalize;
+}
+
+
+.barChartColor{
+  background: var(--chart-axis-color);
 }

@@ -5,11 +5,27 @@ export default function MealBookBarChart({ allChartData }) {
   const [chartData, setChartData] = useState(null);
   const [chartOptions, setChartOptions] = useState({});
 
-  //Get Current Theme
-  const theme=localStorage.getItem("Theme")
-  console.log("current_theme",theme);
+// NOTE Get Current Theme
+const saveTheme= localStorage.getItem("Theme")
+const [currentTheme, setCurrentTheme] = useState(saveTheme ?? "light")
+ useEffect(() => {
+  const observer = new MutationObserver(() => {
+    const theme = document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light";
 
-  console.log("allChartData",allChartData);
+    setCurrentTheme(theme);
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+
+  return () => observer.disconnect();
+}, []);
+
+  
 
   useEffect(() => {
     if (!Array.isArray(allChartData) || allChartData.length === 0) return;
@@ -26,11 +42,11 @@ export default function MealBookBarChart({ allChartData }) {
     //Y1 axis data
     const y2AxisData = snacksData.map((ele) => Number(ele.meals));
 
+    //Set Chart Color
     const documentStyle = getComputedStyle(document.documentElement);
-    
     //X and Y Axis Color
-    const textColor = documentStyle.getPropertyValue("--chart-axis-color").trim();
-    const surfaceBorder = documentStyle.getPropertyValue("--surface-border");
+    const textColor = documentStyle.getPropertyValue("--chart-text-color").trim();
+    const surfaceBorder = documentStyle.getPropertyValue("--chart-grid-color").trim();
    
 
     //set chart data
@@ -78,12 +94,14 @@ export default function MealBookBarChart({ allChartData }) {
         },
       },
     });
-  }, [allChartData]);
+  }, [allChartData,currentTheme]);
 
   if (!chartData) return <p>Loading chart...</p>;
 
 
   return (
+    <>
     <Chart type="bar" data={chartData} options={chartOptions} height="300" />
+    </>
   );
 }

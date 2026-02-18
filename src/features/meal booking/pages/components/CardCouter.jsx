@@ -33,7 +33,7 @@ const CartCounter = ({ count,updateExtraMeal,checked }) => {
         <Plus size={16} />
       </button>
       <div
-        className="border-2 border-slate-200 rounded-lg flex items-center justify-center"
+        className="meal-app-card-border rounded-lg flex items-center justify-center"
         style={{
           width: "2.5rem",
           height: "2rem",
