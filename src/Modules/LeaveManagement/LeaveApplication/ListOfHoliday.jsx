@@ -10,7 +10,6 @@ import "../../Home/HomePage.scss";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { getUserData } from "../../Login/Encrypt";
 
-
 const ListOfHoliday = ({ visible, setHolidayList }) => {
   const [holiday, setHoliday] = useState("");
   //mobile view
@@ -21,15 +20,17 @@ const ListOfHoliday = ({ visible, setHolidayList }) => {
     try {
       const response = await getHolidaysAPI();
       //Get Current Year
-      const currentYear=new Date().getFullYear()
+      const currentYear = new Date().getFullYear();
       //Get Login User ID
-      const userInfo=getUserData()
-      const userId=userInfo?.userDetails.employeeId
+      const userInfo = getUserData();
+      const userId = userInfo?.userDetails.employeeId;
       //Filter current year data and restricted holiday for login user
       const filterCurrentYear = response?.holiday.filter(
-        (ele) => ele.year === currentYear && (!ele.restrictedUsers || ele.restrictedUsers.includes(userId))
+        (ele) =>
+          ele.year === currentYear &&
+          (!ele.restrictedUsers || ele.restrictedUsers.includes(userId)),
       );
-       setHoliday(filterCurrentYear);
+      setHoliday(filterCurrentYear);
     } catch (error) {
       console.log("Failed to fetch holiday api", error);
     }
@@ -38,6 +39,16 @@ const ListOfHoliday = ({ visible, setHolidayList }) => {
   useEffect(() => {
     holidayList();
   }, []);
+
+  const dayName = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
 
   return (
     <>
@@ -59,6 +70,25 @@ const ListOfHoliday = ({ visible, setHolidayList }) => {
           >
             <Column field="year" header="Year"></Column>
             <Column field="holidays" header="Holiday Name"></Column>
+            <Column
+              header="Day"
+              body={(rowData) => {
+                const fromDate = new Date(rowData.fromDate).getDay();
+                const toDate = new Date(rowData.toDate).getDay();
+                if (fromDate === toDate) {
+                  return (
+                    <p style={{ textTransform: "capitalize" }}>
+                      {dayName[fromDate]}
+                    </p>
+                  );
+                }
+                return (
+                  <p style={{ textTransform: "capitalize" }}>
+                    {dayName[fromDate]} - {dayName[toDate]}
+                  </p>
+                );
+              }}
+            ></Column>
             <Column field="fromDate" header="From Date"></Column>
             <Column field="toDate" header="To Date"></Column>
             <Column

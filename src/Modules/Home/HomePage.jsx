@@ -135,6 +135,8 @@ const HomePage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const doj = formatDate(getUserData().userDetails.doj);
+
   //Call Home Page All
   const getHomePageData = async () => {
     try {
@@ -342,10 +344,7 @@ const HomePage = () => {
     );
   };
 
-  console.log(
-    "Event_Image_File_Name",
-    eventImageFileName,
-  );
+  console.log("Event_Image_File_Name", eventImageFileName);
 
   //Event Caption Template
   // const eventCaptionTemplate = (item) => {
@@ -355,7 +354,7 @@ const HomePage = () => {
   //         <Typography
   //           sx={{
   //             fontSize: "0.9rem !important",
-             
+
   //             textTransform: "capitalize",
   //           }}
   //         >
@@ -419,7 +418,7 @@ const HomePage = () => {
       showErrorMessage(
         toastRef,
         "Invalid Action",
-        "You might have already closed a travel today!"
+        "You might have already closed a travel today!",
       );
     } else {
       showErrorMessage(toastRef, "Error", "Internal Server Error");
@@ -473,7 +472,7 @@ const HomePage = () => {
         token,
         file,
         employeeId,
-        userName
+        userName,
       );
 
       console.log("profileUploadResponse", profileUploadResponse);
@@ -505,7 +504,7 @@ const HomePage = () => {
       showSuccessMessage(
         toastRef,
         "Success",
-        "Feedback submitted successfully"
+        "Feedback submitted successfully",
       );
       setFeedback("");
       setFeedbackDialogVisible(false);
@@ -727,7 +726,25 @@ const HomePage = () => {
                         </div>
 
                         {/* Key Dates */}
-                        <div className="space-y-4 mt-2">
+                        <div className="space-y-2 mt-2">
+                          <div className="flex justify-between items-center p-2 rounded-xl appraisalBGColor">
+                            <div className="flex items-center">
+                              {/* <Clock className="w-4 h-4 text-slate-500" /> */}
+                              <Typography
+                                className="fontSize-sm"
+                                sx={{ m: 0, fontWeight: 500 }}
+                              >
+                                Date of Joining
+                              </Typography>
+                            </div>
+                            <Tag
+                              style={{ background: "#8399a2" }}
+                              //severity="success"
+                              className="TagStyle"
+                              value={doj ?? "NA"}
+                              rounded
+                            ></Tag>
+                          </div>
                           <div className="flex justify-between items-center p-2 rounded-xl appraisalBGColor">
                             <div className="flex items-center">
                               {/* <Clock className="w-4 h-4 text-slate-500" /> */}
@@ -765,7 +782,7 @@ const HomePage = () => {
                       </div>
                     </div>
                   </Card>
-
+                  {/* Training Section */}
                   <Grid sx={{ marginTop: "0.5rem" }}>
                     <Grid size={12}>
                       <Card
@@ -815,6 +832,7 @@ const HomePage = () => {
                     </Grid>
                   </Grid>
 
+                  {/* Claims Section */}
                   <Grid sx={{ marginTop: "0.5rem" }}>
                     <Grid size={12}>
                       <Card
@@ -861,31 +879,26 @@ const HomePage = () => {
                               ></Tag>
                             </div>
                           </Grid>
-                          <Grid>
-                            <div className="NewCard">
-                              <Typography className="fontSize-sm">
-                                Travel Status
-                              </Typography>
+                          {/* <Grid>
+                                  <div className="NewCard">
+                                    <Typography className="fontSize-sm">
+                                      Travel Status
+                                    </Typography>
 
-                              <Tag
-                                severity="success"
-                                className="TagStyle"
-                                value={
-                                  tourClaims?.travelReqUnderProcessStatus ||
-                                  "NA"
-                                }
-                                rounded
-                              ></Tag>
-                            </div>
-                          </Grid>
+                                    
+                                    <Typography className="fontSize-sm">
+                                      {tourClaims?.travelReqUnderProcessStatus ||  "NA"}
+                                    </Typography>
+                                  </div>
+                                </Grid> */}
                         </Grid>
                       </Card>
                     </Grid>
                   </Grid>
-                  {/* </Grid> */}
                 </Grid>
                 <Grid size={{ xs: 12, sm: 12, md: 9, lg: 9 }}>
                   <Grid>
+                    {/* Event Section */}
                     <Grid size={12}>
                       <Card
                         className="cardNew BorderRadius cardStyle"
@@ -979,14 +992,15 @@ const HomePage = () => {
                                 </div>
                               </div>
                               <div className="galleriaContainer-eventSection">
-                                {eventImageFileName===null ?
+                                {eventImageFileName === null ? (
                                   <Image
                                     src={defaultEventBanner}
                                     alt="Image"
                                     style={{ height: "18.7rem" }}
                                   />
-                                  :""
-                                }
+                                ) : (
+                                  ""
+                                )}
                                 <Galleria
                                   value={eventData}
                                   className="EventThumbnailStyle"
@@ -1009,6 +1023,58 @@ const HomePage = () => {
                     </Grid>
                     <Grid container spacing={{ xs: 1, sm: 1, md: 2, lg: 2 }}>
                       <Grid size={{ xs: 12, sm: 12, md: 5, lg: 5 }}>
+                        {/* CL And PL Section */}
+                        <Grid sx={{ marginTop: "0.5rem" }}>
+                          <Grid size={12}>
+                            <Card
+                              className="cardNew BorderRadius cardStyle"
+                              sx={{
+                                padding: "0.9rem",
+                                //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
+                              }}
+                            >
+                              <Grid container direction="column" spacing={1}>
+                                {/*CL Available*/}
+                                <Grid>
+                                  <div className="NewCard">
+                                    <Tooltip
+                                      placement="top"
+                                      title={`Total CL Used - ${tourClaims?.clUsed}`}
+                                    >
+                                      <Typography className="fontSize-sm">
+                                        CL Available
+                                      </Typography>
+                                    </Tooltip>
+
+                                    <Typography className="fontSize-sm">
+                                      {tourClaims?.clAvailable ?? "NA"}
+                                    </Typography>
+                                  </div>
+                                </Grid>
+
+                                {/* PL Available */}
+                                <Grid>
+                                  <div className="NewCard">
+                                    <Tooltip
+                                      placement="top"
+                                      title={`Total PL Used - ${tourClaims?.plUsed}`}
+                                    >
+                                      <Typography className="fontSize-sm">
+                                        PL Available
+                                      </Typography>
+                                    </Tooltip>
+
+                                    <Typography className="fontSize-sm">
+                                      {tourClaims?.plAvailable ?? "NA"}
+                                    </Typography>
+
+                                   
+                                  </div>
+                                </Grid>
+                              </Grid>
+                            </Card>
+                          </Grid>
+                        </Grid>
                         {/* Claims */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid size={12}>
@@ -1054,56 +1120,7 @@ const HomePage = () => {
                             </Card>
                           </Grid>
                         </Grid>
-                        {/* CL And PL Section */}
-                        <Grid sx={{ marginTop: "0.5rem" }}>
-                          <Grid size={12}>
-                            <Card
-                              className="cardNew BorderRadius cardStyle"
-                              sx={{
-                                padding: "0.9rem",
-                                //background:"linear-gradient(119deg, transparent 0%, #dde45024 100%)",
-                              }}
-                            >
-                              <Grid container direction="column" spacing={1}>
-                                {/*CL Available*/}
-                                <Grid>
-                                  <div className="NewCard">
-                                    <Tooltip
-                                      placement="top"
-                                      title={`Total CL Used - ${tourClaims?.clUsed}`}
-                                    >
-                                      <Typography className="fontSize-sm">
-                                        CL Available
-                                      </Typography>
-                                    </Tooltip>
 
-                                    <Typography className="fontSize-sm">
-                                      {tourClaims?.clAvailable ?? "NA"}
-                                    </Typography>
-                                  </div>
-                                </Grid>
-
-                                {/* PL Available */}
-                                <Grid>
-                                  <div className="NewCard">
-                                    <Tooltip
-                                      placement="top"
-                                      title={`Total PL Used - ${tourClaims?.plUsed}`}
-                                    >
-                                      <Typography className="fontSize-sm">
-                                        PL Available
-                                      </Typography>
-                                    </Tooltip>
-
-                                    <Typography className="fontSize-sm">
-                                      {tourClaims?.plAvailable ?? "NA"}
-                                    </Typography>
-                                  </div>
-                                </Grid>
-                              </Grid>
-                            </Card>
-                          </Grid>
-                        </Grid>
                         {/* Attendance / Leaves Taken (Current Month) */}
                         <Grid sx={{ marginTop: "0.5rem" }}>
                           <Grid size={12}>
@@ -1133,6 +1150,7 @@ const HomePage = () => {
                           </Grid>
                         </Grid>
                       </Grid>
+                      {/* Notification Section */}
                       <Grid size={{ xs: 12, sm: 12, md: 7, lg: 7 }}>
                         <Grid
                           sx={{
