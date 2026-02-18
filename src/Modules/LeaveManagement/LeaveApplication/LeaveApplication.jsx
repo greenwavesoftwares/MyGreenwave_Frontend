@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Grid from "@mui/material/Grid";
 import { Card } from "primereact/card";
 import { Dropdown } from "primereact/dropdown";
-import { Container } from "@mui/material";
+import { Button, Container } from "@mui/material";
 import SpeedDial from "../../../components/SpeedDial/SpeedDial";
 import Toast from "../../../components/Toast/Toast";
 import Chart from "../../../components/Chart/Chart";
@@ -41,6 +41,8 @@ import GlobalFilterHeader from "../../../components/Table/GlobalFilterHeader";
 import YearCarouselPrime from "./YearCarouselPrime";
 import Holiday from "../../Holiday/Holiday";
 import ListOfHoliday from "./ListOfHoliday";
+import HikingIcon from '@mui/icons-material/Hiking';
+import RedeemIcon from '@mui/icons-material/Redeem';
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -166,11 +168,11 @@ const LeaveApplication = () => {
     //   icon: "pi pi-history",
     //   command: () => showleaveDialog("PrevPL", false),
     // },
-    {
-      label: "Holiday List",
-      icon: "pi pi-list-check",
-      command: () => setHolidayList(true),
-    },
+    // {
+    //   label: "Holiday List",
+    //   icon: "pi pi-list-check",
+    //   command: () => setHolidayList(true),
+    // },
   ];
 
   useEffect(() => {
@@ -257,8 +259,44 @@ const LeaveApplication = () => {
   });
   return (
     <>
+   
       <Container maxWidth="lg">
-        <Grid container spacing={1} marginTop={2} className="items-stretch">
+            <div className="cardStyle mt-4 mb-2 py-2.5 px-4 shadow rounded">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg blue-icon">
+                        <HikingIcon/>
+                      </div>
+                      <div>
+                        <h1 className="text-1xl font-bold text-gray-900">
+                          Leave Management
+                        </h1>
+                        <p
+                          className=" titleTextStyle"
+                          style={{ fontSize: "0.8rem" }}
+                        >
+                          View and manage your leave records
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                          <Button variant="outlined" 
+                          startIcon={<RedeemIcon />}
+                          sx={{boxShadow:"none",borderRadius:"1rem"}}
+                          size="small" onClick={()=> setHolidayList(true)}>View Holidays</Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+        <Grid container spacing={1} marginTop={1} className="items-stretch">
+
+          
           {/* <Grid size={12}>
             <YearCarouselPrime />
           </Grid>

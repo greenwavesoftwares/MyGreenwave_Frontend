@@ -8,6 +8,7 @@ import { Tag } from "primereact/tag";
 import "../../Appraisal/Appraisal.scss";
 import "../../Home/HomePage.scss";
 import { useMediaQuery, useTheme } from "@mui/material";
+import { getUserData } from "../../Login/Encrypt";
 
 
 const ListOfHoliday = ({ visible, setHolidayList }) => {
@@ -19,14 +20,18 @@ const ListOfHoliday = ({ visible, setHolidayList }) => {
   async function holidayList() {
     try {
       const response = await getHolidaysAPI();
+      //Get Current Year
       const currentYear=new Date().getFullYear()
-      //Filter current year data
+      //Get Login User ID
+      const userInfo=getUserData()
+      const userId=userInfo?.userDetails.employeeId
+      //Filter current year data and restricted holiday for login user
       const filterCurrentYear = response?.holiday.filter(
-        (ele) => ele.year === currentYear
+        (ele) => ele.year === currentYear && (!ele.restrictedUsers || ele.restrictedUsers.includes(userId))
       );
-      setHoliday(filterCurrentYear);
+       setHoliday(filterCurrentYear);
     } catch (error) {
-      console.log("Faild to fatch holiday api", error);
+      console.log("Failed to fetch holiday api", error);
     }
   }
 
