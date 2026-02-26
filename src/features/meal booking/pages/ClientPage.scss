@@ -244,3 +244,6 @@
 .barChartColor{
   background: var(--chart-axis-color);
 }
+.mealAppTabView.p-tabview .p-tabview-panels{
+  padding: 0.5rem !important;
+}

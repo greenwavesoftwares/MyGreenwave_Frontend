@@ -107,7 +107,7 @@ function GetExpenseSummaryDialog() {
                     {...field}
                     view="month"
                     dateFormat="mm/yy"
-                    className="w-full"
+                    className="w-full NumberFieldStyle"
                   />
                   <label htmlFor="month_year">Select Month & Year</label>
                 </FloatLabel>

@@ -18,6 +18,7 @@ import { showErrorMessage } from "../../../components/Toast/ShowMessage";
 import { getUserData } from "../../../Modules/Login/Encrypt";
 import MealFeedback from "./components/MealFeedback";
 import UnderDevelopment from "./components/UnderDevelopment";
+import SnacksBookTable from "./components/SnacksBookTable";
 
 function ClientPage() {
   const [mealBookData, setMealBookData] = useState([]);
@@ -174,15 +175,15 @@ function ClientPage() {
             </div>
             {/* Tab Section */}
             <div className="stat-card-meal-app-tab">
-              <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/>
-              {/* <TabView>
+              {/* <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/> */}
+              <TabView className="mealAppTabView">
                 <TabPanel header="Lunch">
                  <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/>
                 </TabPanel>
-                <TabPanel header="Snacks" disabled>
-                  <h1>evening snacks</h1>
+                <TabPanel header="Snacks">
+                  <SnacksBookTable/>
                 </TabPanel>
-              </TabView> */}
+              </TabView>
             </div>
             {/* Bar Chart */}
             <div className="stat-card-meal-app mt-4">

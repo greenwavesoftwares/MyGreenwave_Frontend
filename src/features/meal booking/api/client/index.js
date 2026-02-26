@@ -3,7 +3,6 @@ import axios from "axios";
 //Meal Booking Base URL
 const mealBaseUrl = import.meta.env.VITE_END_POINT;
 
-
 //Dashboard API Call
 async function fetchDashboard(token) {
   try {
@@ -27,12 +26,11 @@ async function fetchDashboard(token) {
 async function ListOfMeals(token) {
   try {
     const response = await axios.get(
-      `${mealBaseUrl}usermeal/meals`,
+        `${mealBaseUrl}usermeal/meals/Lunch`,
       {
         headers: {
            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
-          'meal_type': 'lunch',
         },
       }
     );
@@ -44,6 +42,24 @@ async function ListOfMeals(token) {
   
 }
 
+async function ListOfSnacks(token) {
+  try {
+    const response = await axios.get(
+        `${mealBaseUrl}usermeal/meals/ES`,
+      {
+        headers: {
+           "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("List OF all snack",response);
+    return response?.data;
+  } catch (error) {
+    console.log("failed to fetch meal book api", error);
+  }
+  
+}
 
 //Update Meal API Call
 async function updateMeal(data,token) {
@@ -63,4 +79,4 @@ async function updateMeal(data,token) {
   }
 }
 
-export  {fetchDashboard,ListOfMeals,updateMeal};
+export  {fetchDashboard,ListOfMeals,updateMeal,ListOfSnacks};
