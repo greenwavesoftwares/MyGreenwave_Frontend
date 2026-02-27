@@ -110,7 +110,7 @@ function AdminExpenseTable() {
         value={expense}
         showGridlines
         stripedRows
-        paginator
+        paginator={expense?.length > 10 ? true : false}
         rows={10}
         className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
       >

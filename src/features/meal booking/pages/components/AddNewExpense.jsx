@@ -44,6 +44,41 @@ function AddNewExpense({
 
     return `${y}-${m}-${d}`;
   };
+
+
+  //IMPORTANT Grace Period Validation Function
+  function validateExpenseDate(selectedDate) {
+  const today = new Date();
+  //User Select Data 
+  const selected = new Date(selectedDate);
+  const selectedMonth = selected.getMonth();
+  const selectedYear = selected.getFullYear();
+
+  //Get Current Month
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const currentDay = today.getDate();
+
+  //Get Previous Month
+  const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
+  const previousMonth = previousMonthDate.getMonth();
+  const previousYear = previousMonthDate.getFullYear();
+
+  //NOTE If Current Month and Year is same as Selected Month and Year then allow
+  const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
+
+  //NOTE If Previous Month and Year is same as Selected Month and Year then allow.
+  const isPreviousMonth = selectedMonth === previousMonth && selectedYear === previousYear;
+
+  // Allow current month
+  if (isCurrentMonth) return true;
+
+  // Allow previous month only within first 10 days
+  if (isPreviousMonth && currentDay <= 10) return true;
+
+  // Everything else blocked
+  return false;
+}
   //Add New Expense
   async function handleAddNewExpense(ele) {
     setReloadExpenseData(false);
@@ -54,6 +89,16 @@ function AddNewExpense({
       breakup: ele.breakup,
       details: ele.details,
     };
+
+  // Grace period validation
+  if (!validateExpenseDate(ele.date)) {
+    return showWarningMessage(
+      toastRef,
+      "Grace Period Expired",
+      "Previous month expenses can only be added within the first 10 days of this month."
+    );
+  }
+  // Expense value greater than zero validation
     if(ele.expense <=0 ){
       return showWarningMessage(toastRef,"Waring","The expense value must be greater than zero")
     }
