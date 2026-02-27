@@ -32,7 +32,7 @@ function AddNewExpense({
   const toastRef = useRef(null);
 
   //Time Options
-  const timeOptions = ["Lunch", "Snacks"];
+  const timeOptions = ["Lunch", "ES"];
 
   //Formate Date
   const formatDateLocal = (date) => {
