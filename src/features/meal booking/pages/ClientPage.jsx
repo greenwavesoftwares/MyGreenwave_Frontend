@@ -19,12 +19,15 @@ import { getUserData } from "../../../Modules/Login/Encrypt";
 import MealFeedback from "./components/MealFeedback";
 import UnderDevelopment from "./components/UnderDevelopment";
 import SnacksBookTable from "./components/SnacksBookTable";
+import QRCodeGenerator from "./components/QRCodeGenerator";
 
 function ClientPage() {
   const [mealBookData, setMealBookData] = useState([]);
   const [numberOfMeal, setNumberOfMeal] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [callDashboardApi, setCallDashboardApi] = useState(false);
+  const [showQRCode,setShowQRCode]=useState(false)
+  const [isTodayScanned,setIsTodayScanned] = useState(false);
   //For Toast
   const toastRef = useRef(null);
 
@@ -41,6 +44,8 @@ function ClientPage() {
      setNumberOfMeal(response[0][0] ?? null);
      //IMPORTANT Set Chart Data
      setChartData(response[1] ?? null);
+     //IMPORTANT Set Today Scanned or Not
+     setIsTodayScanned(response[0][0].today_Scanned  || false)
    } catch (error) {
       console.log("Error fetching dashboard data", error);
       showErrorMessage(toastRef, "Error", "Failed to fetch dashboard data");   
@@ -58,6 +63,20 @@ function ClientPage() {
   const nextDay = nextDate.toISOString().split("T")[0];
 
   console.log("Call_Dashboard_Api", callDashboardApi);
+
+  //IMPORTANT QR Code Scan Component Visibility
+  function qrCodeScanVisibility() {
+    const currentHours = new Date().getHours();
+    //Component Visibility 12PM To 3PM
+    if (currentHours >= 12 && currentHours < 18) {
+      setShowQRCode(true)
+    }
+  }
+  useEffect(() => {
+    qrCodeScanVisibility();
+  }, []);
+
+  console.log("!numberOfMeal?.today_Sacnned",isTodayScanned);
   return (
     <>
     <UnderDevelopment/>
@@ -173,6 +192,12 @@ function ClientPage() {
                 </p>
               </div>
             </div>
+            {/* QRCode_Generator */}
+
+            {showQRCode &&  !isTodayScanned && ( 
+            <QRCodeGenerator mealBookData={mealBookData}/>
+            )
+            }
             {/* Tab Section */}
             <div className="stat-card-meal-app-tab">
               {/* <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/> */}
