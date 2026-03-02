@@ -14,6 +14,7 @@ import AdminExpenseTable from "./components/AdminExpenseTable";
 import { getUserData } from "../../../Modules/Login/Encrypt";
 import GetExpenseSummaryDialog from "./components/getExpenseSummaryDialog";
 import UnderDevelopment from "./components/UnderDevelopment";
+import ScanQRCode from "./components/ScanQRCode";
 
 function MealAdminPage() {
   //const [adminDashboardData, setAdminDashboardData] = useState(null);
@@ -210,9 +211,7 @@ function MealAdminPage() {
             <GetExpenseSummaryDialog/>
           </div>
         </div>
-      </div>
-
-      
+      </div>      
     </>
   );
 }

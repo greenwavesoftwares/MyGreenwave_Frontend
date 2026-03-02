@@ -14,6 +14,8 @@ import {
 } from "../../../../components/Toast/ShowMessage";
 import { Toast } from "primereact/toast";
 import { getUserData } from "../../../../Modules/Login/Encrypt";
+import { CheckCircle, XCircle } from "lucide-react";
+
 
 function MealBookTableForLunch({ setCallDashboardApi }) {
   const [mealList, setMealList] = useState([]);
@@ -266,12 +268,28 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
               <Tag
                 className="meal-app-tag"
                 severity={ele.mealOn > 0 ? "success" : "contrast"}
+                icon={ele.scanned ? "pi pi-qrcode":"pi pi-times"}
                 rounded
                 value={ele.time}
               ></Tag>
             );
           }}
         ></Column>
+        {/* <Column
+          header="Scan Status"
+          body={(ele) => {
+            return (
+              <Tag
+                className="meal-app-tag"
+                severity={ele.scanned? "success" : "warning"}
+                icon="pi pi-user"
+                rounded
+                value={ele.scanned ? "Scanned":"Not Scanned"}
+              ></Tag>
+            );
+          }}
+        ></Column> */}
+        
         <Column
           header="ON/OFF"
           body={(ele) => {
