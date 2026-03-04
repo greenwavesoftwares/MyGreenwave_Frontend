@@ -1,85 +1,172 @@
- const dummyData = [
+import axios from "axios";
+
+const dummyData = [
   {
-    name: "madderson0",
-    id: "01KJQ0DGAS5AT9ZMEW6T9T2TJB",
-    scanTime: "3/17/2025",
-    lunchType: "Overhold",
-    scanStatus: "Gusti Syamsir Alam Airport",
+    today: [
+      {
+        name: "user1",
+        id: "01TODAY000000000000001",
+        scanTime: "3/4/2026",
+        lunchType: "Lunch",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user2",
+        id: "01TODAY000000000000002",
+        scanTime: "3/4/2026",
+        lunchType: "Breakfast",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user3",
+        id: "01TODAY000000000000003",
+        scanTime: "3/4/2026",
+        lunchType: "Dinner",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user5",
+        id: "01TODAY000000000000005",
+        scanTime: "3/4/2026",
+        lunchType: "Breakfast",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user6",
+        id: "01TODAY000000000000006",
+        scanTime: "3/4/2026",
+        lunchType: "Dinner",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user7",
+        id: "01TODAY000000000000007",
+        scanTime: "3/4/2026",
+        lunchType: "Lunch",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user8",
+        id: "01TODAY000000000000008",
+        scanTime: "3/4/2026",
+        lunchType: "Breakfast",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user9",
+        id: "01TODAY000000000000009",
+        scanTime: "3/4/2026",
+        lunchType: "Dinner",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user10",
+        id: "01TODAY000000000000010",
+        scanTime: "3/4/2026",
+        lunchType: "Lunch",
+        scanStatus: "Pending",
+      },
+    ],
   },
   {
-    name: "cdeane1",
-    id: "01KJQ0DGATK689QQD50CPHW1B7",
-    scanTime: "4/11/2025",
-    lunchType: "Kanlam",
-    scanStatus: "Matão Airport",
-  },
-  {
-    name: "vstorrier2",
-    id: "01KJQ0DGATZBTRW5HQNPKDCP7R",
-    scanTime: "1/30/2026",
-    lunchType: "Temp",
-    scanStatus: "Nefteyugansk Airport",
-  },
-  {
-    name: "wlinnett3",
-    id: "01KJQ0DGAVEGVWMC8C74YQY3S3",
-    scanTime: "6/10/2025",
-    lunchType: "Zaam-Dox",
-    scanStatus: "Antsoa Airport",
-  },
-  {
-    name: "cpoole4",
-    id: "01KJQ0DGAW3KTR31KKT0SM9HTA",
-    scanTime: "4/22/2025",
-    lunchType: "Ventosanzap",
-    scanStatus: "RAF West Malling",
-  },
-  {
-    name: "scowperthwaite5",
-    id: "01KJQ0DGAW2BQ9Z5GQ4A739401",
-    scanTime: "12/5/2025",
-    lunchType: "Treeflex",
-    scanStatus: "Taylor Airport",
-  },
-  {
-    name: "ahirche6",
-    id: "01KJQ0DGAX9M1JCXG7JVSGMW7K",
-    scanTime: "5/24/2025",
-    lunchType: "Aerified",
-    scanStatus: "San Miguel Airport",
-  },
-  {
-    name: "lyakob7",
-    id: "01KJQ0DGAY80CBYZZ5EFCKG3Y9",
-    scanTime: "6/13/2025",
-    lunchType: "Bamity",
-    scanStatus: "Bulagtai Resort Airport",
-  },
-  {
-    name: "zgiovanni8",
-    id: "01KJQ0DGAYGKJ9HXGGAP9XRRY8",
-    scanTime: "12/20/2025",
-    lunchType: "Tempsoft",
-    scanStatus: "Whakatane Airport",
-  },
-  {
-    name: "lrentilll9",
-    id: "01KJQ0DGAZ9MBN70NQRF7QBY39",
-    scanTime: "1/10/2026",
-    lunchType: "Overhold",
-    scanStatus: "Tougan Airport",
+    tomorrow: [
+      {
+        name: "user11",
+        id: "01TOMORROW00000000000001",
+        scanTime: "3/5/2026",
+        lunchType: "Lunch",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user12",
+        id: "01TOMORROW00000000000002",
+        scanTime: "3/5/2026",
+        lunchType: "Breakfast",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user13",
+        id: "01TOMORROW00000000000003",
+        scanTime: "3/5/2026",
+        lunchType: "Dinner",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user14",
+        id: "01TOMORROW00000000000004",
+        scanTime: "3/5/2026",
+        lunchType: "Lunch",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user15",
+        id: "01TOMORROW00000000000005",
+        scanTime: "3/5/2026",
+        lunchType: "Breakfast",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user16",
+        id: "01TOMORROW00000000000006",
+        scanTime: "3/5/2026",
+        lunchType: "Dinner",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user17",
+        id: "01TOMORROW00000000000007",
+        scanTime: "3/5/2026",
+        lunchType: "Lunch",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user18",
+        id: "01TOMORROW00000000000008",
+        scanTime: "3/5/2026",
+        lunchType: "Breakfast",
+        scanStatus: "Pending",
+      },
+      {
+        name: "user19",
+        id: "01TOMORROW00000000000009",
+        scanTime: "3/5/2026",
+        lunchType: "Dinner",
+        scanStatus: "Scanned",
+      },
+      {
+        name: "user20",
+        id: "01TOMORROW00000000000010",
+        scanTime: "3/5/2026",
+        lunchType: "Lunch",
+        scanStatus: "Pending",
+      },
+    ],
   },
 ];
 
-
+//Dummy Data Call
 async function dummyDataAPICall() {
   return new Promise((resolve)=>{
     setTimeout(() => {
       resolve(dummyData)
-    }, 5*1000);
+    }, 5 *1000);
 
   })
-  
+
 }
+
+//Post Mock Server Call
+// async function dummyDataAPICall() {
+//   try {
+//     const response = await axios.get(
+//       "https://2d27db31-fcae-4057-9469-76b858cc22c8.mock.pstmn.io/meal",
+//     );
+//     console.log("ap");
+//     return response?.data || [];
+//   } catch (error) {
+//     console.log("Meal_Booked api error", error);
+//     throw error;
+//   }
+// }
 
 export default dummyDataAPICall;

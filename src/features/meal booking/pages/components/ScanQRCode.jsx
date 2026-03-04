@@ -13,8 +13,7 @@ import {
 } from "../../../../components/Toast/ShowMessage";
 import CryptoJS from "crypto-js";
 
-
-export default function ScanQRCode() {
+export default function ScanQRCode({ setScanSuccessfullyDone }) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const scannerRef = useRef(null); // holds Html5Qrcode instance
@@ -22,7 +21,6 @@ export default function ScanQRCode() {
   const toastRef = useRef(null);
   const readerId = "reader";
   const secretKey = "my_super_secret_key";
-
   const { token } = getUserData();
 
   // Auto start/stop scanner
@@ -90,18 +88,21 @@ export default function ScanQRCode() {
             }
 
             //Previous Data Validation
-            const currentData=new Date().toISOString().split('T')[0];
-            console.log("currentData",currentData,decryptedData?.date);
-            if(decryptedData?.date !== currentData){
-              showErrorMessage(toastRef, "Scan Error", "QR code is not valid for today");
+            const currentData = new Date().toISOString().split("T")[0];
+            console.log("currentData", currentData, decryptedData?.date);
+            if (decryptedData?.date !== currentData) {
+              showErrorMessage(
+                toastRef,
+                "Scan Error",
+                "QR code is not valid for today",
+              );
               await stopScanner();
               setVisible(false);
               setLoading(false);
               return;
             }
 
-
-            console.log("decryptedData", decryptedData);
+            //console.log("decryptedData", decryptedData);
 
             // Example logic for mealOn values
             //IMPORTANT API call if meal on
@@ -129,6 +130,7 @@ export default function ScanQRCode() {
                     "You're all set! Your meal plan is already active.",
                   );
                 }
+                setScanSuccessfullyDone(true);
               } catch (err) {
                 console.error("API call failed:", err);
                 showErrorMessage(
@@ -155,6 +157,7 @@ export default function ScanQRCode() {
               try {
                 const response = await updateMeal(data, token);
                 if (response.status === 200) {
+                  setScanSuccessfullyDone(true);
                   showWarningMessage(
                     toastRef,
                     decryptedData?.mealOn ? "OFF" : "ON",
@@ -261,6 +264,11 @@ export default function ScanQRCode() {
       <Button
         label="Open Scanner"
         icon="pi pi-camera"
+        rounded
+        style={{
+          padding:"0.35rem 0.85rem",
+          fontSize:"0.85rem"
+        }}
         size="small"
         onClick={() => setVisible(true)}
       />
@@ -289,7 +297,6 @@ export default function ScanQRCode() {
           }}
         />
       </Dialog>
-
     </div>
   );
 }

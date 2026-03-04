@@ -1,30 +1,10 @@
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import dummyDataAPICall from "./dummyData";
-import { useEffect, useState } from "react";
 import { LinearProgress } from "@mui/material";
+import { Tag } from "primereact/tag";
 
-function TodayMeal() {
-  const [data, setData] = useState([]);
-  const [loader, setLoader] = useState(false);
-  async function fetchMealBooking() {
-    try {
-      //Set Loader
-      setLoader(true);
-      const response = await dummyDataAPICall();
-      setData(response);
-      console.log("res", response);
-    } catch (error) {
-      console.log("Failed to fetch meal data", error);
-    } finally {
-      setLoader(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchMealBooking();
-  }, []);
-
+function TodayMeal({ loader, todayMealBooked }) {
+  console.log("todayMealBooked",todayMealBooked);
   return (
     <>
       <DataTable
@@ -32,39 +12,57 @@ function TodayMeal() {
         emptyMessage={
           loader ? <LinearProgress color="inherit" /> : "No Data Found"
         }
-        value={data}
+        value={todayMealBooked}
+        paginator={todayMealBooked?.length>=10}
+        rows={10}
+        rowsPerPageOptions={[10, 15, 20, 50]}
         showGridlines
         stripedRows
-        className="dataTableHeader dataTableBody dataTableBodyPadding"
+        className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator dropDownStyle"
       >
         <Column
           header="Name"
           body={(ele) => {
-            return <p>{ele.name}</p>;
+            return <p>{ele.name || "NA"}</p>;
           }}
         ></Column>
         <Column
           header="Emp ID"
           body={(ele) => {
-            return <p>{ele.id}</p>;
+            return <p>{ele.id || "NA"}</p>;
           }}
         ></Column>
         <Column
-          header="Lunch Type"
+          header="Meal Type"
           body={(ele) => {
-            return <p>NA</p>;
+            return <Tag value={ele.lunchType || "NA"} rounded />;
           }}
         ></Column>
         <Column
           header="Scan Time"
           body={(ele) => {
-            return <p>{ele.scanTime}</p>;
+            return <p>{ele.scanTime || "NA"}</p>;
           }}
         ></Column>
         <Column
           header="Scan Status"
           body={(ele) => {
-            return <p>NA</p>;
+            return (
+              <Tag
+                value={ele?.scanStatus || "NA"}
+                severity={
+                  ele?.scanStatus?.toLowerCase() === "scanned"
+                    ? "success"
+                    : "warning"
+                }
+                icon={
+                  ele?.scanStatus?.toLowerCase() === "scanned"
+                    ? "pi pi-check"
+                    : "pi pi-clock"
+                }
+              />
+              
+            );
           }}
         ></Column>
       </DataTable>
