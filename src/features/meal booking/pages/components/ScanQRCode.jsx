@@ -12,8 +12,7 @@ import {
   showWarningMessage,
 } from "../../../../components/Toast/ShowMessage";
 import CryptoJS from "crypto-js";
-import { TabPanel, TabView } from "primereact/tabview";
-import TodayMeal from "../MealBookedHistory/TodayMeal";
+
 
 export default function ScanQRCode() {
   const [visible, setVisible] = useState(false);
@@ -89,6 +88,18 @@ export default function ScanQRCode() {
               setLoading(false);
               return;
             }
+
+            //Previous Data Validation
+            const currentData=new Date().toISOString().split('T')[0];
+            console.log("currentData",currentData,decryptedData?.date);
+            if(decryptedData?.date !== currentData){
+              showErrorMessage(toastRef, "Scan Error", "QR code is not valid for today");
+              await stopScanner();
+              setVisible(false);
+              setLoading(false);
+              return;
+            }
+
 
             console.log("decryptedData", decryptedData);
 
@@ -244,12 +255,13 @@ export default function ScanQRCode() {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div>
       <Toast ref={toastRef} />
 
       <Button
         label="Open Scanner"
         icon="pi pi-camera"
+        size="small"
         onClick={() => setVisible(true)}
       />
 
@@ -278,17 +290,6 @@ export default function ScanQRCode() {
         />
       </Dialog>
 
-      <div className="stat-card-meal-app-tab">
-        {/* <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/> */}
-        <TabView className="mealAppTabView">
-          <TabPanel header="Today Lunch">
-           <TodayMeal/>
-          </TabPanel>
-          <TabPanel header="Tomorrow Lunch">
-            <h1>qwertyuiop</h1>
-          </TabPanel>
-        </TabView>
-      </div>
     </div>
   );
 }
