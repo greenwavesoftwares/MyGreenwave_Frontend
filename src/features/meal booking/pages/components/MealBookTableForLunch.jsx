@@ -268,7 +268,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
               <Tag
                 className="meal-app-tag"
                 severity={ele.mealOn > 0 ? "success" : "contrast"}
-                icon={ele.scanned ? "pi pi-qrcode":"pi pi-times"}
+                icon={ele.mealOn > 0? "pi pi-check":"pi pi-times"}
                 rounded
                 value={ele.time}
               ></Tag>

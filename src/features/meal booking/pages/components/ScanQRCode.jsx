@@ -279,6 +279,7 @@ export default function ScanQRCode({ setScanSuccessfullyDone }) {
         style={{ width: "450px" }}
         modal
         onHide={handleHide}
+         className="dialogHeader dialogContent"
       >
         {loading && (
           <div style={{ textAlign: "center", marginBottom: "1rem" }}>

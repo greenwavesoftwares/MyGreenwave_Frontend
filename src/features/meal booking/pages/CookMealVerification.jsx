@@ -3,11 +3,11 @@ import UnderDevelopment from "./components/UnderDevelopment";
 import { TabPanel, TabView } from "primereact/tabview";
 import TodayMeal from "./MealBookedHistory/TodayMeal";
 import QrCodeIcon from "@mui/icons-material/QrCode";
-//Dummy Mel Book Data
-import dummyDataAPICall from "./MealBookedHistory/dummyData";
 import { useEffect, useState } from "react";
 import CookMealSkeleton from "./components/CookMealSkeleton";
 import { Skeleton } from "primereact/skeleton";
+import { mealVerification } from "./MealBookedHistory/api/mealVerifictaion";
+import { getUserData } from "../../../Modules/Login/Encrypt";
 
 function CookMealVerification() {
   const [todayMealBooked, setTodayMealBooked] = useState([]);
@@ -19,9 +19,14 @@ function CookMealVerification() {
     try {
       //Set Loader
       setLoader(true);
-      const response = await dummyDataAPICall();
-      setTodayMealBooked(response[0].today);
-      setTomorrowMealBooked(response[1].tomorrow);
+      //Get User Token
+      const { token } = getUserData();
+      const response = await mealVerification(token);
+      console.log("api_response", response.data.today);
+      if (response.status === 200) {
+        setTodayMealBooked(response?.data.today);
+        setTomorrowMealBooked(response?.data.tomorrow);
+      }
       console.log("Dummy_api_call_response", response);
     } catch (error) {
       console.log("Failed to fetch meal data", error);
@@ -36,13 +41,13 @@ function CookMealVerification() {
 
   useEffect(() => {
     if (scanSuccessfullyDone) {
-      // 🔹 After QR scan
+      // After QR scan
       fetchMealBooking();
       setScanSuccessfullyDone(false);
     }
   }, [scanSuccessfullyDone]);
 
-  console.log("scanSuccessfullyDone", scanSuccessfullyDone, "loader", loader);
+  console.log("todayMealBooked", todayMealBooked, "loader", loader);
   console.log("tomorrowMealBooked", tomorrowMealBooked);
   return (
     <>
@@ -50,7 +55,7 @@ function CookMealVerification() {
         <UnderDevelopment />
         <div className="container mx-auto px-4">
           <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-            <div className=" mt-4 py-2 px-3">
+            <div className=" mt-4">
               <div className="cardStyle mb-1 py-2.5 px-4 bg-white shadow rounded">
                 <div className="flex items-center gap-6">
                   <div className="flex items-center justify-between w-full">
@@ -59,11 +64,11 @@ function CookMealVerification() {
                         <QrCodeIcon />
                       </div>
                       <div>
-                        <h1 className="text-1xl font-bold text-gray-900">
-                          Cook Meal Verification
+                        <h1 className="text-1xl font-bold text-gray-900 text-xs md:text-sm">
+                          Meal Verification
                         </h1>
                         <p
-                          className=" titleTextStyle"
+                          className=" titleTextStyle hidden md:block"
                           style={{ fontSize: "0.8rem" }}
                         >
                           Scan QR & Verify Employee Meals

@@ -4,7 +4,7 @@ import { LinearProgress } from "@mui/material";
 import { Tag } from "primereact/tag";
 
 function TodayMeal({ loader, todayMealBooked }) {
-  console.log("todayMealBooked",todayMealBooked);
+  console.log("todayMealBooked", todayMealBooked);
   return (
     <>
       <DataTable
@@ -13,7 +13,7 @@ function TodayMeal({ loader, todayMealBooked }) {
           loader ? <LinearProgress color="inherit" /> : "No Data Found"
         }
         value={todayMealBooked}
-        paginator={todayMealBooked?.length>=10}
+        paginator={todayMealBooked?.length >= 10}
         rows={10}
         rowsPerPageOptions={[10, 15, 20, 50]}
         showGridlines
@@ -41,7 +41,7 @@ function TodayMeal({ loader, todayMealBooked }) {
         <Column
           header="Scan Time"
           body={(ele) => {
-            return <p>{ele.scanTime || "NA"}</p>;
+            return <p>{ele.scanTime || "---"}</p>;
           }}
         ></Column>
         <Column
@@ -49,19 +49,10 @@ function TodayMeal({ loader, todayMealBooked }) {
           body={(ele) => {
             return (
               <Tag
-                value={ele?.scanStatus || "NA"}
-                severity={
-                  ele?.scanStatus?.toLowerCase() === "scanned"
-                    ? "success"
-                    : "warning"
-                }
-                icon={
-                  ele?.scanStatus?.toLowerCase() === "scanned"
-                    ? "pi pi-check"
-                    : "pi pi-clock"
-                }
+                value={ele?.scanStatus ? "Completed" : "Pending"}
+                severity={ele?.scanStatus ? "success" : "warning"}
+                icon={ele?.scanStatus ? "pi pi-check" : "pi pi-clock"}
               />
-              
             );
           }}
         ></Column>

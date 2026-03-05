@@ -7,8 +7,9 @@ import {
   LogOut,
   Bell,
   User,
+  BadgeCheck,
 } from "lucide-react";
-import {fetchDashboard} from "../api/client";
+import { fetchDashboard } from "../api/client";
 import "./ClientPage.scss";
 import MealBookBarChart from "./components/MealBookBarChart";
 import { TabPanel, TabView } from "primereact/tabview";
@@ -20,39 +21,51 @@ import MealFeedback from "./components/MealFeedback";
 import UnderDevelopment from "./components/UnderDevelopment";
 import SnacksBookTable from "./components/SnacksBookTable";
 import QRCodeGenerator from "./components/QRCodeGenerator";
+import { Avatar, Badge } from "@mui/material";
 
 function ClientPage() {
   const [mealBookData, setMealBookData] = useState([]);
   const [numberOfMeal, setNumberOfMeal] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [callDashboardApi, setCallDashboardApi] = useState(false);
-  const [showQRCode,setShowQRCode]=useState(false)
-  const [isTodayScanned,setIsTodayScanned] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [isTodayScanned, setIsTodayScanned] = useState(false);
   //For Toast
   const toastRef = useRef(null);
 
   //Get User Token
-  const {token} =  getUserData();
+  const { token } = getUserData();
 
   //Dashboard API Call Function
   async function dashboardApiCallFn() {
-   try {
-     const response = await fetchDashboard(token);
-     //IMPORTANT Set Meal Book Information (Today & Tomorrow)
-     setMealBookData(response[3][0] ?? null);
-     //IMPORTANT Set Number of meal card section
-     setNumberOfMeal(response[0][0] ?? null);
-     //IMPORTANT Set Chart Data
-     setChartData(response[1] ?? null);
-     //IMPORTANT Set Today Scanned or Not
-     setIsTodayScanned(response[0][0].today_Scanned  || false)
-   } catch (error) {
+    try {
+      const response = await fetchDashboard(token);
+      //IMPORTANT Set Meal Book Information (Today & Tomorrow)
+      setMealBookData(response[3][0] ?? null);
+      //IMPORTANT Set Number of meal card section
+      setNumberOfMeal(response[0][0] ?? null);
+      //IMPORTANT Set Chart Data
+      setChartData(response[1] ?? null);
+      //IMPORTANT Set Today Scanned or Not
+      setIsTodayScanned(response[0][0].today_Scanned || false);
+    } catch (error) {
       console.log("Error fetching dashboard data", error);
-      showErrorMessage(toastRef, "Error", "Failed to fetch dashboard data");   
-   }
+      showErrorMessage(toastRef, "Error", "Failed to fetch dashboard data");
+    }
   }
   useEffect(() => {
+    //NOTEFirst Page Load API Call
     dashboardApiCallFn();
+    //Polling Dashboard api call in every 2 sec
+    const currentHours = new Date().getHours();
+    //IMPORTANT if Current Hours between 11AM to 3PM
+    if (currentHours >= 11 && currentHours <= 15) {
+      console.log("condition_match");
+      const interval = setInterval(() => {
+        dashboardApiCallFn();
+      }, 3 * 1000);
+      return () => clearInterval(interval);
+    }
   }, [callDashboardApi]);
 
   //Get Current Date
@@ -68,27 +81,52 @@ function ClientPage() {
   function qrCodeScanVisibility() {
     const currentHours = new Date().getHours();
     //Component Visibility 12PM To 3PM
-    if (currentHours >= 12 && currentHours < 18) {
-      setShowQRCode(true)
+    if (currentHours >= 11 && currentHours < 18) {
+      setShowQRCode(true);
     }
   }
   useEffect(() => {
     qrCodeScanVisibility();
   }, []);
 
-  console.log("!numberOfMeal?.today_Sacnned",isTodayScanned);
+  console.log("!numberOfMeal?.today_Sacnned", isTodayScanned);
   return (
     <>
-    <UnderDevelopment/>
+      <UnderDevelopment />
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          <div className=" mt-4 py-2 px-3">
+          <div className=" mt-4">
             <div className="stats-grid-meal-app">
               <div className="stat-card-meal-app">
                 <div className="stat-header-meal-app">
-                  <div className="icon-wrapper-meal-app meal-app-icon-red">
-                    <Calendar className="meal-app-icon-red-text" size={20} />
-                  </div>
+                  {/*//BUGS */}
+                  {mealBookData?.todays_meal > 0 ? (
+                    <>
+                      <Badge
+                        overlap="circular"
+                        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                        badgeContent={
+                          isTodayScanned && (
+                            <BadgeCheck
+                              className="meal-app-icon-blue-text-badge"
+                              size={17}
+                            />
+                          )
+                        }
+                      >
+                        <div className="icon-wrapper-meal-app meal-app-icon-teal">
+                          <Calendar
+                            className="meal-app-icon-teal-text"
+                            size={20}
+                          />
+                        </div>
+                      </Badge>
+                    </>
+                  ) : (
+                    <div className="icon-wrapper-meal-app meal-app-icon-red">
+                      <Calendar className="meal-app-icon-red-text" size={20} />
+                    </div>
+                  )}
                   <span
                     className={
                       mealBookData?.todays_meal > 0
@@ -96,7 +134,7 @@ function ClientPage() {
                         : "meal-app-badge meal-app-badge-red"
                     }
                   >
-                    {mealBookData?.todays_meal > 0 ? "ON" : "OFF"}
+                    {mealBookData?.todays_meal > 0 ? "Booked" : "Not Booked"}
                   </span>
                 </div>
                 <h3 className="stat-label-meal-app">Today's Lunch</h3>
@@ -105,9 +143,18 @@ function ClientPage() {
 
               <div className="stat-card-meal-app">
                 <div className="stat-header-meal-app">
-                  <div className="icon-wrapper-meal-app meal-app-icon-orange">
-                    <Calendar className="meal-app-icon-orange-text" size={20} />
-                  </div>
+                  {mealBookData?.tomm_Meal > 0 ? (
+                    <div className="icon-wrapper-meal-app meal-app-icon-teal">
+                      <Calendar className="meal-app-icon-teal-text" size={20} />
+                    </div>
+                  ) : (
+                    <div className="icon-wrapper-meal-app meal-app-icon-orange">
+                      <Calendar
+                        className="meal-app-icon-orange-text"
+                        size={20}
+                      />
+                    </div>
+                  )}
                   <span
                     className={
                       mealBookData?.tomm_Meal > 0
@@ -115,7 +162,7 @@ function ClientPage() {
                         : "meal-app-badge meal-app-badge-red"
                     }
                   >
-                    {mealBookData?.tomm_Meal > 0 ? "ON" : "OFF"}
+                    {mealBookData?.tomm_Meal > 0 ? "Booked" : "Not Booked"}
                   </span>
                 </div>
                 <h3 className="stat-label-meal-app">Tomorrow's Lunch</h3>
@@ -194,19 +241,20 @@ function ClientPage() {
             </div>
             {/* QRCode_Generator */}
 
-            {showQRCode &&  !isTodayScanned && ( 
-            <QRCodeGenerator mealBookData={mealBookData}/>
-            )
-            }
+            {showQRCode && !isTodayScanned && (
+              <QRCodeGenerator mealBookData={mealBookData} />
+            )}
             {/* Tab Section */}
             <div className="stat-card-meal-app-tab">
               {/* <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/> */}
               <TabView className="mealAppTabView">
                 <TabPanel header="Lunch">
-                 <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/>
+                  <MealBookTableForLunch
+                    setCallDashboardApi={setCallDashboardApi}
+                  />
                 </TabPanel>
                 <TabPanel header="Snacks">
-                  <SnacksBookTable/>
+                  <SnacksBookTable />
                 </TabPanel>
               </TabView>
             </div>
@@ -214,11 +262,11 @@ function ClientPage() {
             <div className="stat-card-meal-app mt-4">
               <MealBookBarChart allChartData={chartData} />
             </div>
-            <MealFeedback/>
+            <MealFeedback />
           </div>
         </div>
       </div>
-       <Toast ref={toastRef} />
+      <Toast ref={toastRef} />
     </>
   );
 }
