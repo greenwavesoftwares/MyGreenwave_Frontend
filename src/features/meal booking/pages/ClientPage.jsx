@@ -253,7 +253,7 @@ function ClientPage() {
                     setCallDashboardApi={setCallDashboardApi}
                   />
                 </TabPanel>
-                <TabPanel header="Snacks">
+                <TabPanel header="Snacks" disabled>
                   <SnacksBookTable />
                 </TabPanel>
               </TabView>
