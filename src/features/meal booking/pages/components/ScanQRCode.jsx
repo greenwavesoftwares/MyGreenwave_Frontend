@@ -89,7 +89,7 @@ export default function ScanQRCode({ setScanSuccessfullyDone }) {
 
             //Previous Data Validation
             const currentData = new Date().toISOString().split("T")[0];
-            console.log("currentData", currentData, decryptedData?.date);
+            console.log("currentData", currentData, decryptedData?.date,decryptedData);
             if (decryptedData?.date !== currentData) {
               showErrorMessage(
                 toastRef,
@@ -106,7 +106,7 @@ export default function ScanQRCode({ setScanSuccessfullyDone }) {
 
             // Example logic for mealOn values
             //IMPORTANT API call if meal on
-            if (decryptedData?.mealOn === 1) {
+            if (decryptedData?.mealOn > 0) {
               //NOTE API Payload
               const data = [
                 {
@@ -116,7 +116,7 @@ export default function ScanQRCode({ setScanSuccessfullyDone }) {
                   mealOn: 1,
                   roti: 0,
                   scanned: true,
-                  extraMeal: 0,
+                  extraMeal: decryptedData.extraMeal,
                   menu: "No Menu Added",
                 },
               ];

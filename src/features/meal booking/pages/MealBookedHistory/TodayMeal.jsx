@@ -23,13 +23,13 @@ function TodayMeal({ loader, todayMealBooked }) {
         <Column
           header="Name"
           body={(ele) => {
-            return <p>{ele.name || "NA"}</p>;
+            return <p>{ele.userName || "NA"}</p>;
           }}
         ></Column>
         <Column
           header="Emp ID"
           body={(ele) => {
-            return <p>{ele.id || "NA"}</p>;
+            return <p>{ele.employeeId || "NA"}</p>;
           }}
         ></Column>
         <Column
@@ -39,9 +39,16 @@ function TodayMeal({ loader, todayMealBooked }) {
           }}
         ></Column>
         <Column
+          header="Extra Meal"
+          body={(ele) => {
+            //return <Tag value={ele.extraMeal || "0"} rounded />;
+             return <p>{ele.extraMeal || "0"}</p>;
+          }}
+        ></Column>
+        <Column
           header="Scan Time"
           body={(ele) => {
-            return <p>{ele.scanTime || "---"}</p>;
+            return <p>{ele.scanTime || "--"}</p>;
           }}
         ></Column>
         <Column
@@ -49,9 +56,9 @@ function TodayMeal({ loader, todayMealBooked }) {
           body={(ele) => {
             return (
               <Tag
-                value={ele?.scanStatus ? "Completed" : "Pending"}
-                severity={ele?.scanStatus ? "success" : "warning"}
-                icon={ele?.scanStatus ? "pi pi-check" : "pi pi-clock"}
+                value={ele?.scanned ? "Completed" : "Pending"}
+                severity={ele?.scanned ? "success" : "warning"}
+                icon={ele?.scanned ? "pi pi-check" : "pi pi-clock"}
               />
             );
           }}

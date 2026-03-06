@@ -58,8 +58,8 @@ function ClientPage() {
     dashboardApiCallFn();
     //Polling Dashboard api call in every 2 sec
     const currentHours = new Date().getHours();
-    //IMPORTANT if Current Hours between 11AM to 3PM
-    if (currentHours >= 11 && currentHours <= 15) {
+    //IMPORTANT if Current Hours between 12AM to 3PM
+    if (currentHours >= 12 && currentHours <= 15) {
       console.log("condition_match");
       const interval = setInterval(() => {
         dashboardApiCallFn();
@@ -81,7 +81,7 @@ function ClientPage() {
   function qrCodeScanVisibility() {
     const currentHours = new Date().getHours();
     //Component Visibility 12PM To 3PM
-    if (currentHours >= 11 && currentHours < 18) {
+    if (currentHours >= 12 && currentHours < 18) {
       setShowQRCode(true);
     }
   }
@@ -89,7 +89,7 @@ function ClientPage() {
     qrCodeScanVisibility();
   }, []);
 
-  console.log("!numberOfMeal?.today_Sacnned", isTodayScanned);
+  //console.log("!numberOfMeal?.today_Sacnned", isTodayScanned);
   return (
     <>
       <UnderDevelopment />

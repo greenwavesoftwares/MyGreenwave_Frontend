@@ -96,6 +96,7 @@ import {
 } from "../../components/Toast/ShowMessage";
 import { FileUpload } from "primereact/fileupload";
 import HomePageSkeleton from "./HomePageSkeleton";
+import MealFeedback from "../../features/meal booking/pages/components/MealFeedback";
 let itemData = null;
 const HomePage = () => {
   const toastRef = useRef(null);
@@ -1322,6 +1323,9 @@ const HomePage = () => {
               </Button>
             </div>
           </Dialog>
+            
+           {/* Meal Feedback Dialog   */}
+           <MealFeedback />
           <Toast ref={toastRef} />
         </div>
       )}
