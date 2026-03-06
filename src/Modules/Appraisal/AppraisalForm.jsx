@@ -489,7 +489,7 @@ function AppraisalDialog({
   //Find appraisal-tracker end point
   const location = useLocation();
   // Check if current path is `/appraisal-tracker`
-  const isTrackerPage = location.pathname.includes("/admin/appraisal");
+  const isTrackerPage = location.pathname === "/mygreenwave/admin/appraisal";
 
   //Compare Previous and Current Change
   const savePrevious_PersonalDetails = [
