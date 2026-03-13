@@ -13,7 +13,7 @@ import {
 } from "../../../../components/Toast/ShowMessage";
 import CryptoJS from "crypto-js";
 
-export default function ScanQRCode({ setScanSuccessfullyDone }) {
+export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const scannerRef = useRef(null); // holds Html5Qrcode instance
@@ -103,6 +103,20 @@ export default function ScanQRCode({ setScanSuccessfullyDone }) {
             }
 
             //console.log("decryptedData", decryptedData);
+            //console.log("todayMealBooked_todayMealBooked",todayMealBooked);
+
+            //BUG Validation for already scanned user for today
+            todayMealBooked?.map((meal) => {
+              if (meal?.employeeId === decryptedData?.userId  && meal.scanned===true) {
+                showWarningMessage(
+                  toastRef,
+                  "Already Scanned",
+                  `User ID ${decryptedData?.userId} has already been scanned for today.`,
+                );
+                throw new Error("User already scanned");
+              }
+            });
+
 
             // Example logic for mealOn values
             //IMPORTANT API call if meal on

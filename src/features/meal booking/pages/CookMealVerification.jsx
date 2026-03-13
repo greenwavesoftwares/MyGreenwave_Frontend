@@ -83,6 +83,8 @@ function CookMealVerification() {
                     ) : (
                       <ScanQRCode
                         setScanSuccessfullyDone={setScanSuccessfullyDone}
+                        todayMealBooked={todayMealBooked}
+
                       />
                     )}
                   </div>
