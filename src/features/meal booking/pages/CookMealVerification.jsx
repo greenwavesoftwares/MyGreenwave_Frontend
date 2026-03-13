@@ -8,6 +8,7 @@ import CookMealSkeleton from "./components/CookMealSkeleton";
 import { Skeleton } from "primereact/skeleton";
 import { mealVerification } from "./MealBookedHistory/api/mealVerifictaion";
 import { getUserData } from "../../../Modules/Login/Encrypt";
+import FactoryMealTable from "./FactoryMealTable";
 
 function CookMealVerification() {
   const [todayMealBooked, setTodayMealBooked] = useState([]);
@@ -95,7 +96,7 @@ function CookMealVerification() {
                 ) : (
                   <TabView className="mealAppTabView">
                     <TabPanel
-                      header={`Today Lunch (${todayMealBooked?.length || 0})`}
+                      header={`Today's Lunch (${todayMealBooked?.length || 0})`}
                     >
                       <TodayMeal
                         loader={loader}
@@ -103,12 +104,18 @@ function CookMealVerification() {
                       />
                     </TabPanel>
                     <TabPanel
-                      header={`Tomorrow Lunch (${tomorrowMealBooked?.length || 0})`}
+                      header={`Tomorrow's Lunch (${tomorrowMealBooked?.length || 0})`}
                     >
                       <TodayMeal
                         loader={loader}
                         todayMealBooked={tomorrowMealBooked}
                       />
+                    </TabPanel>
+
+                     <TabPanel
+                      header={"Add Factory Meal"}
+                    >
+                      <FactoryMealTable/>
                     </TabPanel>
                   </TabView>
                 )}

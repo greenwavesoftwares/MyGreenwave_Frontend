@@ -170,6 +170,7 @@ function AddNewExpense({
                   showIcon
                   placeholder="Select Date"
                   className="calendarStyle w-full"
+                  maxDate={new Date()}
                 />
               )}
             />

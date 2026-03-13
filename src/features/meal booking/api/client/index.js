@@ -79,4 +79,26 @@ async function updateMeal(data,token) {
   }
 }
 
-export  {fetchDashboard,ListOfMeals,updateMeal,ListOfSnacks};
+ async function  getMealBookingsByUserId  (userId,token) {
+  try {
+    
+
+    const response = await axios.get(
+      `${mealBaseUrl}usermeal/getbookedmealbyuserId`,
+      {
+        params: { userId },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+
+  } catch (error) {
+    console.error("Failed to fetch meal bookings", error);
+    throw error;
+  }
+};
+
+export  {fetchDashboard,ListOfMeals,updateMeal,ListOfSnacks,getMealBookingsByUserId};
