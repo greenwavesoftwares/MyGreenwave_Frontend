@@ -28,6 +28,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [wpDialogVisible, setWPDialogVisible] = useState(false);
   const [wpDialogMessage, setWPDialogMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const showWPDialog = (message) => {
     setWPDialogMessage(message);
     setWPDialogVisible(true);
@@ -38,11 +39,13 @@ const Login = () => {
     }
   };
   const onLoginClick = async () => {
+    setLoading(true);
     const loginCheck = await checkCredential(
       credential,
       toastRef,
       showWPDialog
     );
+    setLoading(false);
     if (loginCheck) {
       const userData = getUserData();
       const baseRoute = import.meta.env.VITE_BASE_ROUTE;
@@ -140,6 +143,7 @@ const Login = () => {
               <div className=" mt-3">
                 <Button
                   label="Login"
+                  loading={loading}
                   size="small"
                   icon="pi pi-sign-in mr-2"
                   rounded
