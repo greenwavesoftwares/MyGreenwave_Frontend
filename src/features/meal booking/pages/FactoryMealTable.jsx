@@ -210,8 +210,11 @@ const FactoryMealTable = () => {
       <Dialog
         header={isEdit ? "Edit Meal" : "Add Meal"}
         visible={dialogVisible}
-        style={{ width: "30vw" }}
         onHide={() => setDialogVisible(false)}
+        style={{ width: "90vw", maxWidth: "420px" }}
+        breakpoints={{ "960px": "75vw", "640px": "95vw" }}
+        contentStyle={{ maxHeight: "60vh", overflowY: "auto" }}
+        draggable={false}
       >
         <div className="flex flex-column gap-3">
 
@@ -242,7 +245,7 @@ const FactoryMealTable = () => {
 
           <Button
             label="Save"
-            icon="pi pi-check"
+           // icon="pi pi-check"
             onClick={handleSaveRow}
           />
         </div>

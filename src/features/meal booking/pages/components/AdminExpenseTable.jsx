@@ -144,7 +144,10 @@ function AdminExpenseTable() {
                   width: "1.5rem",
                   height: "1.5rem",
                 }}
-                onClick={() => updateExpense(ele, rowIndex)}
+                onClick={() => 
+                {
+                  console.log("update object--",ele);
+                  updateExpense(ele, rowIndex)}}
               >
                 <Pencil size={16} />
               </button>
