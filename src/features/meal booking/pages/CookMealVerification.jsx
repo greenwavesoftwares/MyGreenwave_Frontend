@@ -91,7 +91,7 @@ function CookMealVerification() {
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div className="my-4 ">
                 {/* Tab Section for toady and tomorrow meal book table */}
                 {loader ? (
                   <CookMealSkeleton />

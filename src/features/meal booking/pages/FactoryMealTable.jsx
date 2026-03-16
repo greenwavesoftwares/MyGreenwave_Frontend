@@ -20,6 +20,7 @@ import {
   showErrorMessage,
 } from "../../../components/Toast/ShowMessage";
 import { getMonth } from "date-fns";
+import { Tag } from "primereact/tag";
 
 const FactoryMealTable = () => {
   const toast = useRef(null);
@@ -53,7 +54,7 @@ const FactoryMealTable = () => {
     try {
       const response = await getMealBookingsByUserId(
         userDetails.employeeId,
-        token
+        token,
       );
 
       const mappedData = response.data.map((item, index) => ({
@@ -96,14 +97,14 @@ const FactoryMealTable = () => {
         (item) =>
           (!isEdit || item.id !== formData.id) &&
           formatDate(item.date) === formatDate(formData.date) &&
-          item.lunchType === formData.lunchType
+          item.lunchType === formData.lunchType,
       );
 
       if (isDuplicate) {
         showErrorMessage(
           toast,
           "Duplicate",
-          "Meal already added for this Date & Time"
+          "Meal already added for this Date & Time",
         );
         return;
       }
@@ -113,10 +114,9 @@ const FactoryMealTable = () => {
         return;
       }
 
-       if(userDetails.employeeId!==11111)
-      {
-              showErrorMessage(toast, "Error", "This feature Only for Kaka");
-              return;
+      if (userDetails.employeeId !== 11111) {
+        showErrorMessage(toast, "Error", "This feature Only for Kaka");
+        return;
       }
 
       const payload = [
@@ -160,10 +160,9 @@ const FactoryMealTable = () => {
         },
       ];
 
-      if(userDetails.employeeId!==11111)
-      {
-              showErrorMessage(toast, "Error", "This feature Only for Kaka");
-              return;
+      if (userDetails.employeeId !== 11111) {
+        showErrorMessage(toast, "Error", "This feature Only for Kaka");
+        return;
       }
 
       const response = await updateMeal(payload, token);
@@ -177,46 +176,95 @@ const FactoryMealTable = () => {
       showErrorMessage(toast, "Error", err.message);
     }
   };
- 
 
-
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
 
   return (
     <div>
       <CustomToast ref={toast} />
 
-      <DataTableComponent data={tableData} rows={15}>
+      <DataTableComponent data={tableData} rows={15} showGridlines stripedRows>
         <CustomColumn
           field="date"
           header="Date"
           body={(row) => formatDate(row.date)}
         />
+        <CustomColumn
+          header="Day"
+          body={(row) => {
+            return <p>{days[new Date(row?.date).getDay()]}</p>;
+          }}
+        />
 
-        <CustomColumn field="lunchType" header="Time" />
+        <CustomColumn
+          field="lunchType"
+          header="Time"
+          body={(ele) => (
+            <Tag
+              value={ele.lunchType}
+              rounded
+              severity={
+                ele?.lunchType.toLowerCase() === "lunch"
+                  ? "success"
+                  : "secondary"
+              }
+            />
+          )}
+        />
 
         <CustomColumn field="mealOn" header="No of People" />
 
         <CustomColumn
           header="Action"
           body={(row) => (
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-center">
               <Button
+                className="rounded-full text-teal-500 hover:bg-teal-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                style={{
+                  width: "1.5rem",
+                  height: "1.5rem",
+                }}
                 icon="pi pi-pencil"
                 rounded
+                size="small"
                 text
                 onClick={() => handleEditRow(row)}
-                disabled={!(new Date(row.date).getFullYear() === new Date().getFullYear() &&
-                new Date(row.date).getMonth() === new Date().getMonth())}
+                disabled={
+                  !(
+                    new Date(row.date).getFullYear() ===
+                      new Date().getFullYear() &&
+                    new Date(row.date).getMonth() === new Date().getMonth()
+                  )
+                }
               />
 
               <Button
+                className="rounded-full  text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                style={{
+                  width: "1.5rem",
+                  height: "1.5rem",
+                }}
                 icon="pi pi-trash"
                 rounded
+                size="small"
                 text
                 severity="danger"
                 onClick={() => handleDeleteRow(row)}
-                disabled={!(new Date(row.date).getFullYear() === new Date().getFullYear() &&
-        new Date(row.date).getMonth() === new Date().getMonth())}
+                disabled={
+                  !(
+                    new Date(row.date).getFullYear() ===
+                      new Date().getFullYear() &&
+                    new Date(row.date).getMonth() === new Date().getMonth()
+                  )
+                }
               />
             </div>
           )}
@@ -224,7 +272,7 @@ const FactoryMealTable = () => {
       </DataTableComponent>
 
       <div className="flex justify-end -mt-6 mr-2 md:mr-6">
-        <Button icon="pi pi-plus" severity="info" onClick={handleAddRow} />
+        <Button icon="pi pi-plus" size="small" rounded severity="info" onClick={handleAddRow} />
       </div>
 
       <Dialog
@@ -235,39 +283,32 @@ const FactoryMealTable = () => {
         breakpoints={{ "960px": "75vw", "640px": "95vw" }}
         contentStyle={{ maxHeight: "60vh", overflowY: "auto" }}
         draggable={false}
+        className="dialogHeader dialogContent"
       >
         <div className="flex flex-column gap-3">
-
           <Calendar
             value={formData.date}
-            onChange={(e) =>
-              setFormData({ ...formData, date: e.value })
-            }
+            onChange={(e) => setFormData({ ...formData, date: e.value })}
             dateFormat="yy-mm-dd"
             showIcon
+            className="w-full NumberFieldStyle"
           />
 
           <Dropdown
             options={timeOptions}
             value={formData.lunchType}
-            onChange={(e) =>
-              setFormData({ ...formData, lunchType: e.value })
-            }
+            onChange={(e) => setFormData({ ...formData, lunchType: e.value })}
+            className="dropDownStyle w-full"
           />
 
           <InputNumber
             value={formData.mealOn}
-            onValueChange={(e) =>
-              setFormData({ ...formData, mealOn: e.value })
-            }
+            onValueChange={(e) => setFormData({ ...formData, mealOn: e.value })}
             min={0}
+            className="NumberFieldStyle"
           />
 
-          <Button
-            label="Save"
-           // icon="pi pi-check"
-            onClick={handleSaveRow}
-          />
+          <Button label="Save" size="small" onClick={handleSaveRow} />
         </div>
       </Dialog>
     </div>
