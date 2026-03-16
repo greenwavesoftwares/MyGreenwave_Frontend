@@ -19,6 +19,7 @@ import {
   showSuccessMessage,
   showErrorMessage,
 } from "../../../components/Toast/ShowMessage";
+import { getMonth } from "date-fns";
 
 const FactoryMealTable = () => {
   const toast = useRef(null);
@@ -112,6 +113,12 @@ const FactoryMealTable = () => {
         return;
       }
 
+       if(userDetails.employeeId!==11111)
+      {
+              showErrorMessage(toast, "Error", "This feature Only for Kaka");
+              return;
+      }
+
       const payload = [
         {
           date: formatDate(formData.date),
@@ -153,6 +160,12 @@ const FactoryMealTable = () => {
         },
       ];
 
+      if(userDetails.employeeId!==11111)
+      {
+              showErrorMessage(toast, "Error", "This feature Only for Kaka");
+              return;
+      }
+
       const response = await updateMeal(payload, token);
 
       if (response.status === 200) {
@@ -164,12 +177,15 @@ const FactoryMealTable = () => {
       showErrorMessage(toast, "Error", err.message);
     }
   };
+ 
+
+
 
   return (
     <div>
       <CustomToast ref={toast} />
 
-      <DataTableComponent data={tableData} rows={30}>
+      <DataTableComponent data={tableData} rows={15}>
         <CustomColumn
           field="date"
           header="Date"
@@ -189,6 +205,8 @@ const FactoryMealTable = () => {
                 rounded
                 text
                 onClick={() => handleEditRow(row)}
+                disabled={!(new Date(row.date).getFullYear() === new Date().getFullYear() &&
+                new Date(row.date).getMonth() === new Date().getMonth())}
               />
 
               <Button
@@ -197,6 +215,8 @@ const FactoryMealTable = () => {
                 text
                 severity="danger"
                 onClick={() => handleDeleteRow(row)}
+                disabled={!(new Date(row.date).getFullYear() === new Date().getFullYear() &&
+        new Date(row.date).getMonth() === new Date().getMonth())}
               />
             </div>
           )}
