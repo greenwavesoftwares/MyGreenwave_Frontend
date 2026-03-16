@@ -5,27 +5,25 @@ export default function MealBookBarChart({ allChartData }) {
   const [chartData, setChartData] = useState(null);
   const [chartOptions, setChartOptions] = useState({});
 
-// NOTE Get Current Theme
-const saveTheme= localStorage.getItem("Theme")
-const [currentTheme, setCurrentTheme] = useState(saveTheme ?? "light")
- useEffect(() => {
-  const observer = new MutationObserver(() => {
-    const theme = document.documentElement.classList.contains("dark")
-      ? "dark"
-      : "light";
+  // NOTE Get Current Theme
+  const saveTheme = localStorage.getItem("Theme");
+  const [currentTheme, setCurrentTheme] = useState(saveTheme ?? "light");
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const theme = document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light";
 
-    setCurrentTheme(theme);
-  });
+      setCurrentTheme(theme);
+    });
 
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-  return () => observer.disconnect();
-}, []);
-
-  
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!Array.isArray(allChartData) || allChartData.length === 0) return;
@@ -45,9 +43,12 @@ const [currentTheme, setCurrentTheme] = useState(saveTheme ?? "light")
     //Set Chart Color
     const documentStyle = getComputedStyle(document.documentElement);
     //X and Y Axis Color
-    const textColor = documentStyle.getPropertyValue("--chart-text-color").trim();
-    const surfaceBorder = documentStyle.getPropertyValue("--chart-grid-color").trim();
-   
+    const textColor = documentStyle
+      .getPropertyValue("--chart-text-color")
+      .trim();
+    const surfaceBorder = documentStyle
+      .getPropertyValue("--chart-grid-color")
+      .trim();
 
     //set chart data
     setChartData({
@@ -84,24 +85,25 @@ const [currentTheme, setCurrentTheme] = useState(saveTheme ?? "light")
           ticks: {
             color: textColor,
             font: { weight: 500 },
-        
           },
           grid: { display: false },
         },
         y: {
-          ticks: { color: textColor },
+          ticks: { color: textColor, 
+            // stepSize: 1,
+            //  precision: 0 
+            },
           grid: { color: surfaceBorder },
         },
       },
     });
-  }, [allChartData,currentTheme]);
+  }, [allChartData, currentTheme]);
 
   if (!chartData) return <p>Loading chart...</p>;
 
-
   return (
     <>
-    <Chart type="bar" data={chartData} options={chartOptions} height="300" />
+      <Chart type="bar" data={chartData} options={chartOptions} height="300" />
     </>
   );
 }

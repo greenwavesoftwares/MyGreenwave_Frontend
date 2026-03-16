@@ -34,17 +34,46 @@
   }
 }
 
+
+.stats-grid-meal-app-admin {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .stats-grid-meal-app-admin {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .stats-grid-meal-app-admin {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
 .stat-card-meal-app {
   background-color: var(--card-bg);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid var(--card-border);
   padding: 0.8rem 1.35rem;
   transition: box-shadow 0.2s;
 }
+
+/* Mobile For Card Header*/
+@media (max-width: 600px) {
+  .stat-card-meal-app {
+    padding: 0.5rem 0.8rem;
+  }
+}
 .stat-card-meal-app-admin {
   background-color: var(--card-bg);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid var(--card-border);
   padding: 0.8rem;
@@ -52,10 +81,18 @@
 }
 .stat-card-meal-app-tab {
   background-color: var(--card-bg);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid var(--card-border);
   padding: 0.5rem;
+  transition: box-shadow 0.2s;
+}
+.stat-card-meal-app-onlyTable {
+  background-color: var(--card-bg);
+   border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+   border: 1px solid var(--card-border);
+  // padding: 0.5rem;
   transition: box-shadow 0.2s;
 }
 
@@ -76,6 +113,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* Mobile */
+@media (max-width: 600px) {
+  .icon-wrapper-meal-app {
+     padding: 0.5rem;
+  }
 }
 
 .meal-app-icon-red {
@@ -145,6 +188,7 @@
   border-radius: 9999px;
 }
 
+
 .meal-app-badge-red {
   background-color: #fee2e2;
   color: #b91c1c;
@@ -172,6 +216,8 @@
   color: var( --fontColor);
 }
 
+
+
 .meal-app-metrics-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -187,14 +233,14 @@
 
 .meal-app-metric-card {
   background-color: var(--card-bg);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid var(--card-border);
   padding: 1.5rem;
 }
 .meal-app-metric-card-admin {
   background-color: var(--card-bg);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border: 1px solid var(--card-border);
   padding: 1rem;
@@ -250,4 +296,20 @@
 }
 .mealAppTabView.p-tabview .p-tabview-panels{
   padding: 0.5rem !important;
+}
+
+.MuiButtonBase-root-MuiSwitch-switchBase{
+      color: #b3b3b3;
+
+}
+
+
+/* Mobile */
+@media (max-width: 600px) {
+  .stat-value-meal-app {
+    font-size: 0.85rem;
+  }
+  .meal-app-badge{
+        font-size: 0.6rem;
+  }
 }

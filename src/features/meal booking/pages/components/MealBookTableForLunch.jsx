@@ -15,7 +15,7 @@ import {
 import { Toast } from "primereact/toast";
 import { getUserData } from "../../../../Modules/Login/Encrypt";
 import { CheckCircle, XCircle } from "lucide-react";
-
+import AntSwitch from "./AntSwitch";
 
 function MealBookTableForLunch({ setCallDashboardApi }) {
   const [mealList, setMealList] = useState([]);
@@ -148,7 +148,8 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
       setWeeklyCheck(true);
       const weekUpdateList = mealList.map((ele) => {
         if (
-          new Date(ele.date).getDay() === 0 || new Date(ele.date).getDay() === 6
+          new Date(ele.date).getDay() === 0 ||
+          new Date(ele.date).getDay() === 6
         ) {
           return {
             ...ele,
@@ -227,15 +228,21 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
             <div className="flex justify-between items-center">
               <p>Meal Booking</p>
               <>
-                <div className="flex items-center">
-                  <p>*Weekly Booking</p>
-                  <Switch
+                <div className="flex items-center gap-1">
+                  {/* <p>Weekly Booking</p>
+                  <AntSwitch 
+                    checked={weeklyCheck}
+                    onChange={(e) => {
+                      handleWeekendMealBooking(e.target.checked);
+                    }}/> */}
+                  <p>Weekly Booking</p> 
+                   <Switch
                     size="small"
                     checked={weeklyCheck}
                     onChange={(e) => {
                       handleWeekendMealBooking(e.target.checked);
                     }}
-                  />
+                  /> 
                 </div>
               </>
             </div>
@@ -252,7 +259,15 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
         <Column
           header="Date"
           body={(ele) => {
-            return <p>{ele.date}</p>;
+            return (
+              <p
+                style={{
+                  minWidth: "5rem",
+                }}
+              >
+                {ele.date}
+              </p>
+            );
           }}
         ></Column>
         <Column
@@ -268,7 +283,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
               <Tag
                 className="meal-app-tag"
                 severity={ele.mealOn > 0 ? "success" : "contrast"}
-                icon={ele.mealOn > 0? "pi pi-check":"pi pi-times"}
+                icon={ele.mealOn > 0 ? "pi pi-check" : "pi pi-times"}
                 rounded
                 value={ele.time}
               ></Tag>
@@ -289,7 +304,7 @@ function MealBookTableForLunch({ setCallDashboardApi }) {
             );
           }}
         ></Column> */}
-        
+
         <Column
           header="ON/OFF"
           body={(ele) => {

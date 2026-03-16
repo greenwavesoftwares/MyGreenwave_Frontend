@@ -21,7 +21,16 @@ import MealFeedback from "./components/MealFeedback";
 import UnderDevelopment from "./components/UnderDevelopment";
 import SnacksBookTable from "./components/SnacksBookTable";
 import QRCodeGenerator from "./components/QRCodeGenerator";
-import { Avatar, Badge } from "@mui/material";
+// import RestoreIcon from "@mui/icons-material/Restore";
+// import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
+
+
+import {
+  Avatar,
+  Badge,
+  BottomNavigation,
+  BottomNavigationAction,
+} from "@mui/material";
 
 function ClientPage() {
   const [mealBookData, setMealBookData] = useState([]);
@@ -92,11 +101,113 @@ function ClientPage() {
   //console.log("!numberOfMeal?.today_Sacnned", isTodayScanned);
   return (
     <>
-      <UnderDevelopment />
+      {/* <UnderDevelopment /> */}
       <div className="container mx-auto px-4">
         <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
           <div className=" mt-4">
-            <div className="stats-grid-meal-app">
+            {/* <div className="stats-grid-meal-app">
+              <div className="stat-card-meal-app">
+                <div className="stat-header-meal-app">
+                  {mealBookData?.todays_meal > 0 ? (
+                    <>
+                      <Badge
+                        overlap="circular"
+                        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                        badgeContent={
+                          isTodayScanned && (
+                            <BadgeCheck
+                              className="meal-app-icon-blue-text-badge"
+                              size={17}
+                            />
+                          )
+                        }
+                      >
+                        <div className="icon-wrapper-meal-app meal-app-icon-teal">
+                          <Calendar
+                            className="meal-app-icon-teal-text"
+                            size={20}
+                          />
+                        </div>
+                      </Badge>
+                    </>
+                  ) : (
+                    <div className="icon-wrapper-meal-app meal-app-icon-red">
+                      <Calendar className="meal-app-icon-red-text" size={20} />
+                    </div>
+                  )}
+                  <span
+                    className={
+                      mealBookData?.todays_meal > 0
+                        ? "meal-app-badge meal-app-badge-green"
+                        : "meal-app-badge meal-app-badge-red"
+                    }
+                  >
+                    {mealBookData?.todays_meal > 0 ? "Booked" : "Not Booked"}
+                  </span>
+                </div>
+                <h3 className="stat-label-meal-app">Today's Lunch</h3>
+                <p className="stat-value-meal-app">{currentData ?? "NA"}</p>
+              </div>
+
+              <div className="stat-card-meal-app">
+                <div className="stat-header-meal-app">
+                  {mealBookData?.tomm_Meal > 0 ? (
+                    <div className="icon-wrapper-meal-app meal-app-icon-teal">
+                      <Calendar className="meal-app-icon-teal-text" size={20} />
+                    </div>
+                  ) : (
+                    <div className="icon-wrapper-meal-app meal-app-icon-orange">
+                      <Calendar
+                        className="meal-app-icon-orange-text"
+                        size={20}
+                      />
+                    </div>
+                  )}
+                  <span
+                    className={
+                      mealBookData?.tomm_Meal > 0
+                        ? "meal-app-badge meal-app-badge-green"
+                        : "meal-app-badge meal-app-badge-red"
+                    }
+                  >
+                    {mealBookData?.tomm_Meal > 0 ? "Booked" : "Not Booked"}
+                  </span>
+                </div>
+                <h3 className="stat-label-meal-app">Tomorrow's Lunch</h3>
+                <p className="stat-value-meal-app">{nextDay ?? "NA"}</p>
+              </div>
+
+              <div className="stat-card-meal-app">
+                <div className="stat-header-meal-app">
+                  <div className="icon-wrapper-meal-app meal-app-icon-teal">
+                    <Utensils className="meal-app-icon-teal-text" size={20} />
+                  </div>
+                </div>
+                <h3 className="stat-label-meal-app">My Meals</h3>
+                <p className="stat-value-meal-app">
+                  {numberOfMeal.my_Meals ?? "NA"}
+                </p>
+              </div>
+
+              <div className="stat-card-meal-app">
+                <div className="stat-header-meal-app">
+                  <div className="icon-wrapper-meal-app meal-app-icon-violet">
+                    <TrendingUp
+                      className="meal-app-icon-violet-text"
+                      size={20}
+                    />
+                  </div>
+                </div>
+                <h3 className="stat-label-meal-app">Average Meal Cost</h3>
+                <p className="stat-value-meal-app">
+                   ₹{numberOfMeal.lunch_Cost ?? "NA"}
+                </p>
+              </div>
+            </div> */}
+
+            {/* New Design Stats Section */}
+
+            <div className="stats-grid-meal-app-admin mb-3">
               <div className="stat-card-meal-app">
                 <div className="stat-header-meal-app">
                   {/*//BUGS */}
@@ -183,18 +294,21 @@ function ClientPage() {
 
               <div className="stat-card-meal-app">
                 <div className="stat-header-meal-app">
-                  <div className="icon-wrapper-meal-app meal-app-icon-blue">
-                    <Coffee className="meal-app-icon-blue-text" size={20} />
+                  <div className="icon-wrapper-meal-app meal-app-icon-violet">
+                    <TrendingUp
+                      className="meal-app-icon-violet-text"
+                      size={20}
+                    />
                   </div>
                 </div>
-                <h3 className="stat-label-meal-app">My Snacks</h3>
+                <h3 className="stat-label-meal-app">Average Meal Cost</h3>
                 <p className="stat-value-meal-app">
-                  {numberOfMeal.my_Snacks ?? "NA"}
+                  ₹{numberOfMeal.lunch_Cost ?? "NA"}
                 </p>
               </div>
             </div>
 
-            <div className="meal-app-metrics-grid">
+            {/* <div className="meal-app-metrics-grid">
               <div className="meal-app-metric-card">
                 <div className="meal-app-metric-header">
                   <div className="icon-wrapper-meal-app meal-app-icon-emerald">
@@ -238,16 +352,18 @@ function ClientPage() {
                   {numberOfMeal.total_Meal ?? "NA"}
                 </p>
               </div>
-            </div>
+            </div> */}
             {/* QRCode_Generator */}
 
             {showQRCode && !isTodayScanned && (
               <QRCodeGenerator mealBookData={mealBookData} />
             )}
             {/* Tab Section */}
-            <div className="stat-card-meal-app-tab">
-              {/* <MealBookTableForLunch setCallDashboardApi={setCallDashboardApi}/> */}
-              <TabView className="mealAppTabView">
+            <div className="stat-card-meal-app-onlyTable">
+              <MealBookTableForLunch
+                setCallDashboardApi={setCallDashboardApi}
+              />
+              {/* <TabView className="mealAppTabView">
                 <TabPanel header="Lunch">
                   <MealBookTableForLunch
                     setCallDashboardApi={setCallDashboardApi}
@@ -256,10 +372,10 @@ function ClientPage() {
                 <TabPanel header="Snacks" disabled>
                   <SnacksBookTable />
                 </TabPanel>
-              </TabView>
+              </TabView> */}
             </div>
             {/* Bar Chart */}
-            <div className="stat-card-meal-app mt-4">
+            <div className="stat-card-meal-app mt-3 mb-3">
               <MealBookBarChart allChartData={chartData} />
             </div>
             <MealFeedback />

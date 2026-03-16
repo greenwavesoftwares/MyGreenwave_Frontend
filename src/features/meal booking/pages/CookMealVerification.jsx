@@ -53,7 +53,7 @@ function CookMealVerification() {
   return (
     <>
       <>
-        <UnderDevelopment />
+        {/* <UnderDevelopment /> */}
         <div className="container mx-auto px-4">
           <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
             <div className=" mt-4">
