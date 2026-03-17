@@ -1,6 +1,7 @@
 import axios from "axios";
 const endPoint = import.meta.env.VITE_END_POINT;
 
+//Get all the trining
 const getTrainingDetails = async (token) => {
   try {
     const response = await axios.get(`${endPoint}trainings/training-details`, {
@@ -8,13 +9,14 @@ const getTrainingDetails = async (token) => {
         Authorization: `Bearer ${token}`,
       },
     });
-
     return response;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
+//Create a new training post api 
 const postTrainingDetailsData = async (formData, token) => {
   try {
     const response = await axios.post(
@@ -23,18 +25,19 @@ const postTrainingDetailsData = async (formData, token) => {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
-const putTrainingDetailsData = async (formData, token,id) => {
-  console.log("put",JSON.stringify(formData),token,id,`${endPoint}trainings/training-details/${id}`);
+//Training Master Update API
+const putTrainingDetailsData = async (formData, token, id) => {
   try {
     const response = await axios.put(
       `${endPoint}trainings/training-details/${id}`,
@@ -42,33 +45,39 @@ const putTrainingDetailsData = async (formData, token,id) => {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
+//Delete Training Data 
 const deleteTrainingDetailsData = async (formData, token) => {
-  console.log("deleteTrainingDetailsData", formData);
-
   try {
-    const response = await axios.delete(`${endPoint}trainings/training-details`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+    const response = await axios.delete(
+      `${endPoint}trainings/training-details`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        data: formData, // Attach formData here
       },
-      data: formData, // Attach formData here
-    });
-    return response
+    );
+    return response;
   } catch (error) {
     console.error("Error deleting training details:", error);
-    
   }
 };
 
-
-export { getTrainingDetails, postTrainingDetailsData,putTrainingDetailsData,deleteTrainingDetailsData };
+export {
+  getTrainingDetails,
+  postTrainingDetailsData,
+  putTrainingDetailsData,
+  deleteTrainingDetailsData,
+};

@@ -18,7 +18,12 @@ import {
 } from "./TrainingMasterAPI";
 import { getUserData } from "../Login/Encrypt";
 import { Toast } from "primereact/toast";
-import { showErrorMessage, showSuccessMessage, showWarningMessage } from "../../components/Toast/ShowMessage";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+  showWarningMessage,
+} from "../../components/Toast/ShowMessage";
+import { getAllUsersAPI } from "../AdminPage/AdminAPI";
 
 const TrainingScheduleMaster = () => {
   //For Toast
@@ -26,24 +31,32 @@ const TrainingScheduleMaster = () => {
   const [trainingList, setTrainingList] = useState([]);
   const [loader, setLoader] = useState(true);
   const [editingRowIndex, setEditingRowIndex] = useState(null);
-   //Filter For Data Table
-    const [globalFilter, setGlobalFilter] = useState("");
+  const [listOfAllDepartment, setListOfAllDepartment] = useState([]);
+  //Filter For Data Table
+  const [globalFilter, setGlobalFilter] = useState("");
 
-  const departmentData = ["Software", "Automation", "HR","Accounts", "Sales", "Marketing","Factory","We Care"];
-
+  //NOTE Get all training api call
+  async function getTrainingData() {
+    try {
+      const { token } = getUserData();
+      const response = await getTrainingDetails(token);
+      setTrainingList(response?.data || []);
+      //List of all department
+      const { departmentData } = await getAllUsersAPI();
+      setListOfAllDepartment(departmentData.map((ele) => ele?.deptName));
+      //Set
+    } catch (error) {
+      showErrorMessage(
+        toastRef,
+        "Error",
+        error.message || "Failed to fetch training api",
+      );
+      console.error(error);
+    } finally {
+      setLoader(false);
+    }
+  }
   useEffect(() => {
-    const getTrainingData = async () => {
-      try {
-        const { token } = getUserData();
-        const response = await getTrainingDetails(token);
-        setTrainingList(response?.data || []);
-        setLoader(false);
-      } catch (error) {
-        console.error(error);
-        setLoader(false);
-      }
-    };
-
     getTrainingData();
   }, []);
 
@@ -57,47 +70,96 @@ const TrainingScheduleMaster = () => {
     setTrainingList(updatedRows);
   };
 
+  //Update And Insert API in same function
   const handleSaveRow = async (rowData, rowIndex) => {
     const { token } = getUserData();
 
+    // Validation: Ensure all fields are filled before saving
     if (!rowData.trainingName || !rowData.department || !rowData.category) {
-      return showErrorMessage(toastRef,"","Please fill all fields before saving.")
+      return showWarningMessage(
+        toastRef,
+        "Warning",
+        "Please fill all fields before saving.",
+      );
     }
 
+    console.log("Form_TrainingId",rowData.trainingId);
     try {
-      let response;
       if (rowData.trainingId) {
-        // PUT: update
-        response = await putTrainingDetailsData(rowData, token,rowData.trainingId);
-      } else {
+        // PUT: update section call
+        const updateResponse = await putTrainingDetailsData(
+          rowData,
+          token,
+          rowData.trainingId,
+        );
+        if (updateResponse.status === 200) {
+          //get Training api call again
+          getTrainingData();
+          setEditingRowIndex(null);
+          showWarningMessage(
+            toastRef,
+            rowData.trainingName,
+            "Training Updated Successfully"
+          );
+        }
+      } 
+      else {
         // POST: create
-        response = await postTrainingDetailsData(rowData, token);
-      }
-
-      if (response?.status === 200) {
-        showSuccessMessage(toastRef, rowData.trainingName,"Training has been added successfully")
-        const updatedList = [...trainingList];
-        updatedList[rowIndex] = response.data;
-        setTrainingList(updatedList);
-        setEditingRowIndex(null);
-      }
-      else{
-        showWarningMessage(toastRef, "Duplicate Entry", "This training already exists");
-        setEditingRowIndex(null)
+        const createResponse = await postTrainingDetailsData(rowData, token);
+        if (createResponse.status === 200) {
+          getTrainingData();
+          setEditingRowIndex(null);
+          showSuccessMessage(
+            toastRef,
+            rowData.trainingName,
+            "Training Added Successfully"
+          );
+        }
       }
     } catch (error) {
+      showErrorMessage(
+        toastRef,
+        "Error",
+        error?.response?.data ||
+          "Api error occurred while saving training details",
+      );
       console.error("Save failed:", error);
     }
   };
 
+  // if (response?.status === 200) {
+  //   showSuccessMessage(
+  //     toastRef,
+  //     rowData.trainingName,
+  //     "Training has been added successfully",
+  //   );
+  //   const updatedList = [...trainingList];
+  //   updatedList[rowIndex] = response.data;
+  //   setTrainingList(updatedList);
+  //   setEditingRowIndex(null);
+  // } else if (response?.status === 400) {
+  //   showWarningMessage(
+  //     toastRef,
+  //     "Duplicate Entry",
+  //     `${response || "This training already exists"}`,
+  //   );
+  //   setEditingRowIndex(null);
+  // } else {
+  //   showWarningMessage(
+  //     toastRef,
+  //     "Duplicate Entry",
+  //     "This training already exists",
+  //   );
+  //   setEditingRowIndex(null);
+
   const handleDeleteRow = async (rowData) => {
     const { token } = getUserData();
-
+    setEditingRowIndex(null);
     try {
-      showErrorMessage(toastRef,`${rowData.trainingName}`,"Now Delete")
+      showErrorMessage(toastRef, `${rowData.trainingName}`, "Now Delete");
       await deleteTrainingDetailsData(rowData, token);
       const updatedList = trainingList.filter((e) => e !== rowData);
-      
+
       setTrainingList(updatedList);
     } catch (error) {
       console.error("Delete failed:", error);
@@ -116,17 +178,23 @@ const TrainingScheduleMaster = () => {
     >
       <h4 className="mx-0 my-1">Training Details</h4>
       <span className="p-input-icon-left">
-        {/* <InputText
+        <InputText
           type="search"
           className="p-inputtext-sm inputFieldStyle"
           onInput={(e) => setGlobalFilter(e.target.value)}
           placeholder="Keyword Search"
           style={{ padding: "0.45625rem 0.45625rem" }}
-        /> */}
+        />
       </span>
     </Box>
   );
 
+  const departmentColors = {
+    accounts: "primary",
+    automation: "secondary",
+    software: "success",
+  };
+  //console.log("globalFilter", listOfAllDepartment);
   return (
     <div className="container mx-auto px-4">
       <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
@@ -136,8 +204,12 @@ const TrainingScheduleMaster = () => {
             emptyMessage={
               loader ? <LinearProgress color="inherit" /> : "No Data Found"
             }
+            // paginator={trainingList.length >= 10}
+            // rows={10}
+            // rowsPerPageOptions={[10, 20, 50]}
             //header={<Typography className="text-sm">Training Details</Typography>}
             header={tableHeader}
+            globalFilterFields={["trainingName", "department"]}
             globalFilter={globalFilter}
             value={trainingList}
             showGridlines
@@ -153,7 +225,11 @@ const TrainingScheduleMaster = () => {
                     className="p-inputtext-sm inputFieldStyle"
                     required
                     onChange={(e) =>
-                      handleInputChange(e.target.value, "trainingName", rowIndex)
+                      handleInputChange(
+                        e.target.value,
+                        "trainingName",
+                        rowIndex,
+                      )
                     }
                   />
                 ) : (
@@ -166,7 +242,7 @@ const TrainingScheduleMaster = () => {
               body={(rowData, { rowIndex }) =>
                 editingRowIndex === rowIndex ? (
                   <Dropdown
-                    options={departmentData}
+                    options={listOfAllDepartment}
                     className="dropDownStyle"
                     required
                     value={rowData.department}
@@ -178,11 +254,10 @@ const TrainingScheduleMaster = () => {
                 ) : (
                   <Chip
                     size="small"
-                    label={rowData.department}
+                    label={rowData?.department}
                     color={
-                      rowData?.department.toLowerCase() === "software"
-                        ? "success"
-                        : "secondary"
+                      departmentColors[rowData?.department?.toLowerCase()] ||
+                      "default"
                     }
                   />
                 )
@@ -220,7 +295,7 @@ const TrainingScheduleMaster = () => {
                     icon="pi pi-pencil"
                     size="small"
                     type="button"
-                    style={{width:"2rem", height: "2rem"}}
+                    style={{ width: "2rem", height: "2rem" }}
                     text
                     onClick={() => handleEditRow(rowData, rowIndex)}
                   />
@@ -234,7 +309,7 @@ const TrainingScheduleMaster = () => {
                   severity="danger"
                   size="small"
                   icon="pi pi-trash"
-                  style={{width:"2rem", height: "2rem"}}
+                  style={{ width: "2rem", height: "2rem" }}
                   rounded
                   text
                   onClick={() => handleDeleteRow(rowData)}
@@ -270,9 +345,8 @@ const TrainingScheduleMaster = () => {
           </MuiButton>
         </div>
       </div>
-       <Toast ref={toastRef} />
+      <Toast ref={toastRef} />
     </div>
-    
   );
 };
 
