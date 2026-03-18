@@ -7,6 +7,7 @@ import { Chip, Button as MuiButton } from "@mui/material";
 import { Dropdown } from "primereact/dropdown";
 import { Calendar } from "primereact/calendar";
 import { formatDate } from "../formatDate";
+import { InputTextarea } from "primereact/inputtextarea";
 
 const FutureComptency = ({
   appraiserPreviousSaveFormDat,
@@ -15,16 +16,17 @@ const FutureComptency = ({
   isReviewer,
   isApprover,
   trackFutureComptency,
-  appraiserUserName
+  appraiserUserName,
 }) => {
   const [selectedRowData, setSelectedRowData] = useState([]);
   //For Edit Section
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Set Training Data
   const [training, setTraining] = useState([]);
-   //Store Temp Data
-    const [originalRowData, setOriginalRowData] = useState(null);
-  
+  //Store Temp Data
+  const [originalRowData, setOriginalRowData] = useState(null);
+  //Edit All The Row Enable
+  const [isEditAllForm, setIsEditAllForm] = useState(false);
 
   //Set Dropdown Data
   const relevanceData = ["High", "Medium", "Low"];
@@ -71,8 +73,18 @@ const FutureComptency = ({
     trackFutureComptency(true);
   };
 
+  //NOTE All edit section enable
+  const handelEnableAllEditSection = () => {
+    setIsEditAllForm(true);
+  };
+
+  //NOTE Save and close all edit section
+  const handelSaveAllFormData = () => {
+    setIsEditAllForm(false);
+  };
+
   //const getDate=new Date();
-  console.log("currentDate",formatDate(new Date().toISOString()));
+  //console.log("currentDate", formatDate(new Date().toISOString()));
 
   return (
     <>
@@ -103,7 +115,7 @@ const FutureComptency = ({
         <Column
           header="Competency Goals"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm ? (
               <Dropdown
                 options={training}
                 className="dropDownStyle"
@@ -113,7 +125,7 @@ const FutureComptency = ({
                 placeholder="Select Training"
               />
             ) : (
-             rowData?.goals
+              rowData?.goals
             )
           }
         />
@@ -121,12 +133,12 @@ const FutureComptency = ({
           field="relevance"
           header="Relevance(H/M/L)"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm? (
               <Dropdown
                 options={relevanceData}
                 className="dropDownStyle"
                 value={rowData.relevance}
-                 disabled={appraiserUserName}
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(e.value, "relevance", rowIndex)
                 }
@@ -153,7 +165,7 @@ const FutureComptency = ({
           field="target_date"
           header="Target Date"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm? (
               <Calendar
                 dateFormat="yy-mm-dd"
                 className="calendarStyle"
@@ -161,12 +173,12 @@ const FutureComptency = ({
                 value={
                   rowData.target_date ? new Date(rowData.target_date) : null
                 }
-                 disabled={appraiserUserName}
+                disabled={appraiserUserName}
                 onChange={(e) =>
                   handleInputChange(
                     formatDate(e.value),
                     "target_date",
-                    rowIndex
+                    rowIndex,
                   )
                 }
                 placeholder="Select Date"
@@ -182,8 +194,8 @@ const FutureComptency = ({
           field="reviewers_comment"
           header="Reviewer's Comment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm? (
+              <InputTextarea
                 value={rowData.reviewers_comment}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
@@ -191,7 +203,7 @@ const FutureComptency = ({
                   handleInputChange(
                     e.target.value,
                     "reviewers_comment",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -204,8 +216,8 @@ const FutureComptency = ({
           field="appraisers_comments"
           header="Appraiser's Comments"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.appraisers_comments}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
@@ -213,7 +225,7 @@ const FutureComptency = ({
                   handleInputChange(
                     e.target.value,
                     "appraisers_comments",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -225,8 +237,8 @@ const FutureComptency = ({
         <Column
           header="Edit"
           body={(rowData, { rowIndex }) => {
-            return editingRowIndex === rowIndex ? (
-              <div style={{ display: "flex" }}>
+            return editingRowIndex === rowIndex  ? (
+              <div style={{ display: "flex",justifyContent:"center" }}>
                 <Button
                   icon="pi pi-check"
                   size="small"
@@ -239,7 +251,7 @@ const FutureComptency = ({
                   text
                   style={{ color: "red" }}
                   type="button"
-                   onClick={() => {
+                  onClick={() => {
                     if (originalRowData && editingRowIndex !== null) {
                       const updatedData = [...selectedRowData];
                       updatedData[editingRowIndex] = originalRowData; // restore original
@@ -274,7 +286,7 @@ const FutureComptency = ({
                 icon="pi pi-trash"
                 rounded
                 text
-                 disabled={appraiserUserName}
+                disabled={appraiserUserName}
                 onClick={(e) => {
                   e.preventDefault();
                   handleDeleteRow(rowData);
@@ -290,6 +302,7 @@ const FutureComptency = ({
           display: "flex",
           justifyContent: "flex-end",
           padding: "0.5rem 0.2rem 0.35rem 0",
+          gap:6
         }}
       >
         <MuiButton
@@ -313,6 +326,37 @@ const FutureComptency = ({
         >
           Add New Row
         </MuiButton>
+
+        {/* in table data present  */}
+        {selectedRowData.length > 1 && (
+          <>
+            {!isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelEnableAllEditSection}
+              >
+                Edit All
+              </MuiButton>
+            )}
+
+            {isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelSaveAllFormData}
+              >
+                Save Changes
+              </MuiButton>
+            )}
+          </>
+        )}
       </div>
     </>
   );

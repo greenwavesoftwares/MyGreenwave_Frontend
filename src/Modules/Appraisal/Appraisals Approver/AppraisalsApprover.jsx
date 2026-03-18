@@ -23,6 +23,7 @@ import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { InputText } from "primereact/inputtext";
+import { trainingApi } from "../AppraisalAPI";
 
 const AppraisalsApprover = () => {
   //For Toast
@@ -39,6 +40,9 @@ const AppraisalsApprover = () => {
   const [globalFilter, setGlobalFilter] = useState("");
    //Check Form Update Status
   const [formSubmitStatus, setFormSubmitStatus] = useState(false);
+  //NOTE Set Training Data
+  const [trainingData, setTrainingData] = useState(null);
+  
 
   //Call Approver API Data
   useEffect(() => {
@@ -49,10 +53,15 @@ const AppraisalsApprover = () => {
         const employeeName = localStorageAuth?.userDetails.userId;
         setLoading(true);
         const response = await appraisalApproverApi(authToken, employeeName);
+        //Training list api call
+        const trainingResponse = await trainingApi(authToken);
+        console.log("trainingResponse",trainingResponse);
         setLoading(false);
         console.log("appraisal_approver_api", response);
         //Set Approver List
         setApproverList(response?.data.appraisalsList);
+        //Set Training List
+        setTrainingData(trainingResponse?.data)
       } catch (error) {
          setLoading(false);
         console.error("Error fetching approver data:", error);
@@ -129,6 +138,7 @@ const AppraisalsApprover = () => {
           {appraisalFormVisible && (
             <AppraisalDialog
               appraiserForm={appraisalFormData}
+              trainingData={trainingData}
               //Close Appraisal Form
               appraisalFormVisible={setAppraisalFormVisible}
               formSubmitStatus={setFormSubmitStatus}

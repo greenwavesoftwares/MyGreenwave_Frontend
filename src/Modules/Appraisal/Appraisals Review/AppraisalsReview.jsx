@@ -22,6 +22,7 @@ import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { InputText } from "primereact/inputtext";
+import { trainingApi } from "../AppraisalAPI";
 
 const AppraisalsReview = () => {
   //For Toast
@@ -42,21 +43,28 @@ const AppraisalsReview = () => {
   //Check Form Update Status
     const [formSubmitStatus, setFormSubmitStatus] = useState(false);
 
+  //NOTE Set Training Data
+  const [trainingData, setTrainingData] = useState(null);
+
   //Call Reviewer API
   useEffect(() => {
     const fetchReviewerData = async () => {
       try {
         const localStorageAuth = getUserData();
-        //console.log("localStorageAuth", localStorageAuth);
         const authToken = localStorageAuth?.token;
         const employeeName = localStorageAuth?.userDetails.userId;
-        // console.log("local_data", authToken, employeeName);
         setLoading(true);
         const response = await appraisalReviewerApi(authToken, employeeName);
         console.log("appraisal_reviewer_api", response);
+        //Training list api call
+        const trainingResponse = await trainingApi(authToken);
+        console.log("trainingResponse",trainingResponse);
+
         setLoading(false);
         //Set Reviewer List
         setReviewerList(response?.data.appraisalsList);
+        //Set Training List
+        setTrainingData(trainingResponse?.data)
       } catch (error) {
         console.error("Error fetching reviewer data:", error);
       }
@@ -132,6 +140,7 @@ const AppraisalsReview = () => {
           {appraisalFormVisible && (
             <AppraisalDialog
               appraiserForm={appraisalFormData}
+              trainingData={trainingData}
               //Close Appraisal Form
               appraisalFormVisible={setAppraisalFormVisible}
               formSubmitStatus={setFormSubmitStatus}

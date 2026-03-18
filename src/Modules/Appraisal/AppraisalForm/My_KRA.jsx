@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Chip, Button as MuiButton } from "@mui/material";
 import { InputText } from "primereact/inputtext";
 import { MultiSelect } from "primereact/multiselect";
+import { InputTextarea } from "primereact/inputtextarea";
 
 const MyKRA = ({
   appraiserPreviousSaveFormDat,
@@ -24,6 +25,9 @@ const MyKRA = ({
   const [trainingDataOnly, setTrainingDataOnly] = useState([]);
   //Store Temp Data
     const [originalRowData, setOriginalRowData] = useState(null);
+  //Edit All The Row Enable
+  const [isEditAllForm, setIsEditAllForm] = useState(false);
+    
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -67,6 +71,16 @@ const MyKRA = ({
     trackMyKRA(true);
   };
 
+  //NOTE All edit section enable
+  const handelEnableAllEditSection = () => {
+    setIsEditAllForm(true);
+  };
+
+  //NOTE Save and close all edit section
+  const handelSaveAllFormData = () => {
+    setIsEditAllForm(false);
+  };
+
   //training data set
   console.log("trainingDataOnly", trainingDataOnly);
 
@@ -83,9 +97,10 @@ const MyKRA = ({
         <Column
           field="my_next12month_KRA"
           header="Next Year KRA"
+          style={{ width: "16rem" }}
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.my_next12month_KRA}
                 disabled={appraiserUserName}
                 className="inputFieldStyle inputSectionWidth"
@@ -93,7 +108,7 @@ const MyKRA = ({
                   handleInputChange(
                     e.target.value,
                     "my_next12month_KRA",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -105,7 +120,7 @@ const MyKRA = ({
         <Column
           header="Training"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm? (
               <MultiSelect
                 options={appraisalTraining}
                 className="multiselectDropdownStyle"
@@ -142,8 +157,8 @@ const MyKRA = ({
           field="reviewers_comment"
           header="Reviewer's Comment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.reviewers_comment}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
@@ -151,7 +166,7 @@ const MyKRA = ({
                   handleInputChange(
                     e.target.value,
                     "reviewers_comment",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -164,8 +179,8 @@ const MyKRA = ({
           field="appraisers_comments"
           header="Appraiser's Comments"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm? (
+              <InputTextarea
                 value={rowData.appraisers_comments}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
@@ -173,7 +188,7 @@ const MyKRA = ({
                   handleInputChange(
                     e.target.value,
                     "appraisers_comments",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -185,32 +200,32 @@ const MyKRA = ({
         <Column
           header="Edit"
           body={(rowData, { rowIndex }) => {
-            return editingRowIndex === rowIndex ? (
-              <div style={{ display: "flex" }}>
-              <Button
-                icon="pi pi-check"
-                size="small"
-                 type="button"
-                text
-                onClick={handleSaveRow}
-              />
-              <Button
-                                icon="pi pi-times"
-                                size="small"
-                                text
-                                style={{ color: "red" }}
-                                type="button"
-                                onClick={() => {
-                                  if (originalRowData && editingRowIndex !== null) {
-                                    const updatedData = [...selectedRowData];
-                                    updatedData[editingRowIndex] = originalRowData; // restore original
-                                    setSelectedRowData(updatedData);
-                                  }
-                                  setEditingRowIndex(null);
-                                  setOriginalRowData(null);
-                                }}
-                              />
-                              </div>
+            return editingRowIndex === rowIndex  ? (
+              <div style={{ display: "flex",justifyContent:"center" }}>
+                <Button
+                  icon="pi pi-check"
+                  size="small"
+                  type="button"
+                  text
+                  onClick={handleSaveRow}
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  style={{ color: "red" }}
+                  type="button"
+                  onClick={() => {
+                    if (originalRowData && editingRowIndex !== null) {
+                      const updatedData = [...selectedRowData];
+                      updatedData[editingRowIndex] = originalRowData; // restore original
+                      setSelectedRowData(updatedData);
+                    }
+                    setEditingRowIndex(null);
+                    setOriginalRowData(null);
+                  }}
+                />
+              </div>
             ) : (
               <Button
                 icon="pi pi-pencil"
@@ -251,6 +266,7 @@ const MyKRA = ({
           display: "flex",
           justifyContent: "flex-end",
           padding: "0.5rem 0.2rem 0.35rem 0",
+          gap:6
         }}
       >
         <MuiButton
@@ -272,6 +288,36 @@ const MyKRA = ({
         >
           Add New Row
         </MuiButton>
+        {/* in table data present  */}
+        {selectedRowData.length > 1 && (
+          <>
+            {!isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelEnableAllEditSection}
+              >
+                Edit All
+              </MuiButton>
+            )}
+
+            {isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelSaveAllFormData}
+              >
+                Save Changes
+              </MuiButton>
+            )}
+          </>
+        )}
       </div>
     </>
   );

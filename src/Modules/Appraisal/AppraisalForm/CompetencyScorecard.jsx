@@ -9,6 +9,7 @@ import { formatDate } from "../formatDate";
 import { Calendar } from "primereact/calendar";
 import { Tag } from "primereact/tag";
 import CircleIcon from "@mui/icons-material/Circle";
+import { InputTextarea } from "primereact/inputtextarea";
 const CompetencyScorecard = ({
   appraiserPreviousSaveFormDat,
   CompetencyScorecardData,
@@ -25,6 +26,9 @@ const CompetencyScorecard = ({
   const [training, setTraining] = useState([]);
   //Store Temp Data
     const [originalRowData, setOriginalRowData] = useState(null);
+  //Edit All The Row Enable
+  const [isEditAllForm, setIsEditAllForm] = useState(false);
+    
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -78,6 +82,17 @@ const CompetencyScorecard = ({
     return false;
   };
 
+    //NOTE All edit section enable
+  const handelEnableAllEditSection = () => {
+    setIsEditAllForm(true);
+  };
+
+  //NOTE Save and close all edit section
+  const handelSaveAllFormData = () => {
+    setIsEditAllForm(false);
+  };
+  
+
   return (
     <>
       <DataTable
@@ -112,8 +127,7 @@ const CompetencyScorecard = ({
         //   }
         // }}
         rowClassName={(rowData) =>
-          Array.isArray(rowData) &&
-          rowData.some((ele) => ele.previous)
+          Array.isArray(rowData) && rowData.some((ele) => ele.previous)
             ? "bgcyan-100"
             : ""
         }
@@ -122,8 +136,12 @@ const CompetencyScorecard = ({
           field="personal_goals"
           header="Last Year's Training Goals"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <Dropdown
+            editingRowIndex === rowIndex || isEditAllForm ? 
+          (
+            
+             <> 
+{             console.log("competency_scorecard_training",training,"rowData.personal_goals",rowData.personal_goals)
+}              <Dropdown
                 options={training}
                 className="dropDownStyle"
                 disabled={checkedPreviousYearData(rowData) || appraiserUserName}
@@ -133,6 +151,7 @@ const CompetencyScorecard = ({
                 }
                 placeholder="Select Training"
               />
+              </>
             ) : (
               <>
                 {rowData.personal_goals}
@@ -162,7 +181,7 @@ const CompetencyScorecard = ({
           field="relevance"
           header="Relevance"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm ? (
               <Dropdown
                 options={relevanceData}
                 className="dropDownStyle"
@@ -194,7 +213,7 @@ const CompetencyScorecard = ({
           field="level_of_fullfillment"
           header="Level of Fulfillment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm ? (
               <Dropdown
                 options={LevelFullfillmentData}
                 className="dropDownStyle"
@@ -214,7 +233,7 @@ const CompetencyScorecard = ({
           field="target_date"
           header="Target Date"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm ? (
               <Calendar
                 dateFormat="yy-mm-dd"
                 className="calendarStyle"
@@ -242,8 +261,8 @@ const CompetencyScorecard = ({
           field="reviewers_comment"
           header="Reviewer's Comment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.reviewers_comment}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
@@ -264,8 +283,8 @@ const CompetencyScorecard = ({
           field="appraisers_comments"
           header="Appraiser's Comments"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.appraisers_comments}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
@@ -285,8 +304,8 @@ const CompetencyScorecard = ({
         <Column
           header="Edit"
           body={(rowData, { rowIndex }) => {
-            return editingRowIndex === rowIndex ? (
-              <div style={{ display: "flex" }}>
+            return editingRowIndex === rowIndex  ? (
+              <div style={{ display: "flex",justifyContent:"center" }}>
                 <Button
                   icon="pi pi-check"
                   size="small"
@@ -351,6 +370,7 @@ const CompetencyScorecard = ({
           display: "flex",
           justifyContent: "flex-end",
           padding: "0.5rem 0.2rem 0.35rem 0",
+          gap:6
         }}
       >
         <MuiButton
@@ -374,6 +394,36 @@ const CompetencyScorecard = ({
         >
           Add New Row
         </MuiButton>
+        {/* in table data present  */}
+        {selectedRowData.length > 1 && (
+          <>
+            {!isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelEnableAllEditSection}
+              >
+                Edit All
+              </MuiButton>
+            )}
+
+            {isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelSaveAllFormData}
+              >
+                Save Changes
+              </MuiButton>
+            )}
+          </>
+        )}
       </div>
     </>
   );

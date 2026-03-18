@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Button as MuiButton } from "@mui/material";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputTextarea } from "primereact/inputtextarea";
 
 const MyInsights = ({
   appraiserPreviousSaveFormDat,
@@ -18,9 +19,12 @@ const MyInsights = ({
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   //Store Temp Data
   const [originalRowData, setOriginalRowData] = useState(null);
+  //Edit All The Row Enable
+  const [isEditAllForm, setIsEditAllForm] = useState(false);
+  
 
   //console.log("myInsight_reviewer", isReviewer,isApprover);
-  console.log("selectForm_myInsights_Form",appraiserPreviousSaveFormDat);
+  //console.log("selectForm_myInsights_Form",appraiserPreviousSaveFormDat);
 
   //selectedRowData send to parent component
   useEffect(() => {
@@ -33,7 +37,7 @@ const MyInsights = ({
       setSelectedRowData(appraiserPreviousSaveFormDat);
     }
   }, [appraiserPreviousSaveFormDat]);
-  console.log("Previous_MyInsightsCardData", selectedRowData);
+  //console.log("Previous_MyInsightsCardData", selectedRowData);
 
   //Delete Row
   const handleDeleteRow = (ele) => {
@@ -59,6 +63,16 @@ const MyInsights = ({
     trackMyInsights(true);
   };
 
+//NOTE All edit section enable
+  const handelEnableAllEditSection = () => {
+    setIsEditAllForm(true);
+  };
+
+  //NOTE Save and close all edit section
+  const handelSaveAllFormData = () => {
+    setIsEditAllForm(false);
+  };
+
   return (
     <>
       <DataTable
@@ -72,9 +86,10 @@ const MyInsights = ({
         <Column
           field="my_ideas"
           header="My Ideas"
+          style={{ width: "16rem" }}
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm? (
+              <InputTextarea
                 className="inputFieldStyle inputSectionWidth"
                 value={rowData.my_ideas}
                 disabled={appraiserUserName}
@@ -90,9 +105,10 @@ const MyInsights = ({
         <Column
           field="my_contribution_plans"
           header="My Contribution Plans"
+          style={{ width: "16rem" }}
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.my_contribution_plans}
                 disabled={appraiserUserName}
                 className="inputFieldStyle inputSectionWidth"
@@ -100,7 +116,7 @@ const MyInsights = ({
                   handleInputChange(
                     e.target.value,
                     "my_contribution_plans",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -113,8 +129,8 @@ const MyInsights = ({
           field="reviewers_comment"
           header="Reviewer's Comment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.reviewers_comment}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isReviewer}
@@ -122,7 +138,7 @@ const MyInsights = ({
                   handleInputChange(
                     e.target.value,
                     "reviewers_comment",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -135,8 +151,8 @@ const MyInsights = ({
           field="appraisers_comments"
           header="Appraiser's Comments"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.appraisers_comments}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
@@ -144,7 +160,7 @@ const MyInsights = ({
                   handleInputChange(
                     e.target.value,
                     "appraisers_comments",
-                    rowIndex
+                    rowIndex,
                   )
                 }
               />
@@ -157,7 +173,7 @@ const MyInsights = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <div style={{ display: "flex" }}>
+              <div style={{ display: "flex",justifyContent:"center" }}>
                 <Button
                   icon="pi pi-check"
                   size="small"
@@ -221,6 +237,7 @@ const MyInsights = ({
           display: "flex",
           justifyContent: "flex-end",
           padding: "0.5rem 0.2rem 0.35rem 0",
+          gap:6
         }}
       >
         <MuiButton
@@ -242,6 +259,36 @@ const MyInsights = ({
         >
           Add New Row
         </MuiButton>
+        {/* in table data present  */}
+        {selectedRowData.length > 1 && (
+          <>
+            {!isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelEnableAllEditSection}
+              >
+                Edit All
+              </MuiButton>
+            )}
+
+            {isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelSaveAllFormData}
+              >
+                Save Changes
+              </MuiButton>
+            )}
+          </>
+        )}
       </div>
     </>
   );

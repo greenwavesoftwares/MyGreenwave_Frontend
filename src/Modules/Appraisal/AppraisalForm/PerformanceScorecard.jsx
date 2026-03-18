@@ -33,6 +33,9 @@ const PerformanceScorecardDateTable = ({
    //Store Temp Data
     const [originalRowData, setOriginalRowData] = useState(null);
 
+  //Edit All The Row Enable
+  const [isEditAllForm, setIsEditAllForm] = useState(false); 
+
   //set Training Data
   useEffect(() => {
     setAppraisalTraining(trainingData);
@@ -113,6 +116,16 @@ const PerformanceScorecardDateTable = ({
     return false;
   };
 
+   //NOTE All edit section enable
+  const handelEnableAllEditSection = () => {
+    setIsEditAllForm(true);
+  };
+
+  //NOTE Save and close all edit section
+  const handelSaveAllFormData = () => {
+    setIsEditAllForm(false);
+  };
+
   return (
     <>
       {/* Popup */}
@@ -125,10 +138,7 @@ const PerformanceScorecardDateTable = ({
         showGridlines
         className="dataTableHeader dataTableBody dataTableBodyPadding"
         rowClassName={(rowData) => {
-          if (
-            Array.isArray(rowData) &&
-            rowData.some((ele) => ele.previous)
-          ) {
+          if (Array.isArray(rowData) && rowData.some((ele) => ele.previous)) {
             return "bgcyan-100";
           }
         }}
@@ -136,9 +146,10 @@ const PerformanceScorecardDateTable = ({
         <Column
           field="my_last_year_KRA"
           header="Last Year's KRA"
+          style={{ width: "16rem" }}
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.my_last_year_KRA}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={checkedPreviousYearData(rowData) || appraiserUserName}
@@ -159,7 +170,7 @@ const PerformanceScorecardDateTable = ({
           field="level_of_fullfillment"
           header="Level of Fulfillment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm ? (
               <Dropdown
                 options={LevelFullfillmentData}
                 className="dropDownStyle"
@@ -178,7 +189,7 @@ const PerformanceScorecardDateTable = ({
         <Column
           header="Training"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
+            editingRowIndex === rowIndex || isEditAllForm ? (
               <MultiSelect
                 options={appraisalTraining}
                 className="multiselectDropdownStyle"
@@ -214,9 +225,10 @@ const PerformanceScorecardDateTable = ({
 
         <Column
           field="remarks"
+          style={{ width: "16rem" }}
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.remarks}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={appraiserUserName}
@@ -233,8 +245,8 @@ const PerformanceScorecardDateTable = ({
         <Column
           field="reviewers_comment"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex|| isEditAllForm ? (
+              <InputTextarea
                 className="inputFieldStyle inputSectionWidth"
                 value={rowData.reviewers_comment}
                 disabled={isReviewer}
@@ -256,8 +268,8 @@ const PerformanceScorecardDateTable = ({
           field="appraisers_comments"
           header="Appraiser's Comments"
           body={(rowData, { rowIndex }) =>
-            editingRowIndex === rowIndex ? (
-              <InputText
+            editingRowIndex === rowIndex || isEditAllForm ? (
+              <InputTextarea
                 value={rowData.appraisers_comments}
                 className="inputFieldStyle inputSectionWidth"
                 disabled={isApprover}
@@ -278,7 +290,7 @@ const PerformanceScorecardDateTable = ({
           header="Edit"
           body={(rowData, { rowIndex }) => {
             return editingRowIndex === rowIndex ? (
-              <div style={{ display: "flex" }}>
+              <div style={{ display: "flex",justifyContent:"center" }}>
                 <Button
                   icon="pi pi-check"
                   size="small"
@@ -344,6 +356,7 @@ const PerformanceScorecardDateTable = ({
           display: "flex",
           justifyContent: "flex-end",
           padding: "0.5rem 0.2rem 0.35rem 0",
+          gap:6
         }}
       >
         <MuiButton
@@ -367,6 +380,37 @@ const PerformanceScorecardDateTable = ({
         >
           Add New Row
         </MuiButton>
+
+        {/* in table data present  */}
+        {selectedRowData.length > 1 && (
+          <>
+            {!isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelEnableAllEditSection}
+              >
+                Edit All
+              </MuiButton>
+            )}
+
+            {isEditAllForm && (
+              <MuiButton
+                size="small"
+                variant="contained"
+                type="button"
+                color="primary"
+                sx={{ boxShadow: "none" }}
+                onClick={handelSaveAllFormData}
+              >
+                Save Changes
+              </MuiButton>
+            )}
+          </>
+        )}
       </div>
       <div
         style={{
