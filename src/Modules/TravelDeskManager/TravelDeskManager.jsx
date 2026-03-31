@@ -541,6 +541,8 @@ export default function TravelDeskManager() {
         visible={visible}
         style={{ width: "90vw" }}
         maximizable
+       className="dialogHeader dialogContent"
+
         onHide={() => {
           if (!visible) return;
           setVisible(false);

@@ -13,7 +13,10 @@ import {
 } from "../../../../components/Toast/ShowMessage";
 import CryptoJS from "crypto-js";
 
-export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) {
+export default function ScanQRCode({
+  setScanSuccessfullyDone,
+  todayMealBooked,
+}) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const scannerRef = useRef(null); // holds Html5Qrcode instance
@@ -89,7 +92,12 @@ export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) 
 
             //Previous Data Validation
             const currentData = new Date().toISOString().split("T")[0];
-            console.log("currentData", currentData, decryptedData?.date,decryptedData);
+            console.log(
+              "currentData",
+              currentData,
+              decryptedData?.date,
+              decryptedData,
+            );
             if (decryptedData?.date !== currentData) {
               showErrorMessage(
                 toastRef,
@@ -107,7 +115,10 @@ export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) 
 
             //BUG Validation for already scanned user for today
             todayMealBooked?.map((meal) => {
-              if (meal?.employeeId === decryptedData?.userId  && meal.scanned===true) {
+              if (
+                meal?.employeeId === decryptedData?.userId &&
+                meal.scanned === true
+              ) {
                 showWarningMessage(
                   toastRef,
                   "Already Scanned",
@@ -116,7 +127,6 @@ export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) 
                 throw new Error("User already scanned");
               }
             });
-
 
             // Example logic for mealOn values
             //IMPORTANT API call if meal on
@@ -280,8 +290,8 @@ export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) 
         icon="pi pi-camera"
         rounded
         style={{
-          padding:"0.35rem 0.85rem",
-          fontSize:"0.85rem"
+          padding: "0.35rem 0.85rem",
+          fontSize: "0.85rem",
         }}
         size="small"
         onClick={() => setVisible(true)}
@@ -293,7 +303,7 @@ export default function ScanQRCode({ setScanSuccessfullyDone,todayMealBooked }) 
         style={{ width: "450px" }}
         modal
         onHide={handleHide}
-         className="dialogHeader dialogContent"
+        className="dialogHeader dialogContent"
       >
         {loading && (
           <div style={{ textAlign: "center", marginBottom: "1rem" }}>

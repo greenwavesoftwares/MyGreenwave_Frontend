@@ -19,7 +19,7 @@ import {
   showSuccessMessage,
   showErrorMessage,
 } from "../../../components/Toast/ShowMessage";
-import { getMonth } from "date-fns";
+import { getMonth, toDate } from "date-fns";
 import { Tag } from "primereact/tag";
 
 const FactoryMealTable = () => {
@@ -128,7 +128,7 @@ const FactoryMealTable = () => {
           roti: 0,
           extraMeal: 0,
           menu: "No Menu Added",
-          scanned: false,
+          scanned: true
         },
       ];
 
@@ -186,6 +186,11 @@ const FactoryMealTable = () => {
     "Friday",
     "Saturday",
   ];
+
+  const today = new Date();
+
+// 1st day of current month
+const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
   return (
     <div>
@@ -292,6 +297,10 @@ const FactoryMealTable = () => {
             dateFormat="yy-mm-dd"
             showIcon
             className="w-full NumberFieldStyle"
+            minDate={firstDayOfMonth}
+            maxDate={today}
+            //enabledDates={new Date()}
+            
           />
 
           <Dropdown

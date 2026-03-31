@@ -169,7 +169,7 @@ function MealAdminPage() {
                 <div className="col-12 lg:col-4">
                   <div className="flex align-items-center justify-content-between p-3 admin-card-bg border-round-lg">
                     <span className="text-sm text-gray-600">
-                      Last Lunch Charge
+                      Previous month lunch cost
                     </span>
                     <span className="font-semibold text-gray-900">
                       {data.lastMonthLunchCharge ?? "NA"}

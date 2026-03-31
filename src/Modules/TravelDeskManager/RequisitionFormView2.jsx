@@ -60,7 +60,9 @@ const RequisitionFormView2 = ({
   return (
     <>
       <Grid container spacing={2}>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{ borderRadius: 2, p: 2 }}
+        className="defaultBorder"
+        >
           <span
             style={{
               fontWeight: "bold",
@@ -72,7 +74,9 @@ const RequisitionFormView2 = ({
           </span>
           <span>{rowData.purpose}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 2 }}
+        className="defaultBorder"
+        >
           <span
             style={{
               fontWeight: "bold",
@@ -84,7 +88,9 @@ const RequisitionFormView2 = ({
           </span>
           <span>{rowData.projectName}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 2 }}
+        className="defaultBorder"
+        >
           <span
             style={{
               fontWeight: "bold",
@@ -96,7 +102,9 @@ const RequisitionFormView2 = ({
           </span>
           <span>{rowData.city}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{ borderRadius: 2, p: 2 }}
+        className="defaultBorder"
+        >
           <span
             style={{
               fontWeight: "bold",
@@ -108,7 +116,9 @@ const RequisitionFormView2 = ({
           </span>
           <span>{rowData.localityArea}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{  borderRadius: 2, p: 2 }}
+        className="defaultBorder"
+        >
           <span
             style={{
               fontWeight: "bold",
@@ -120,7 +130,9 @@ const RequisitionFormView2 = ({
           </span>
           <span>{rowData.typeOfTravel}</span>
         </Grid>
-        <Grid size={6} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
+        <Grid size={6} sx={{ borderRadius: 2, p: 2 }}
+        className="defaultBorder"
+        >
           <span
             style={{
               fontWeight: "bold",
@@ -134,7 +146,8 @@ const RequisitionFormView2 = ({
         </Grid>
         <Grid
           size={12}
-          sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}
+          sx={{borderRadius: 2, p: 2 }}
+          className="defaultBorder"
         >
           <span
             style={{
@@ -147,15 +160,17 @@ const RequisitionFormView2 = ({
           </span>
           <span>{rowData.advance}</span>
         </Grid>
-        <Grid size={12} sx={{ border: "1px solid #ccc" }}>
+        <Grid size={12} className="defaultBorder">
           <DataTable
             header="Transportation Request"
+            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
             value={rowData.transportModes}
             editMode="row"
             dataKey="mode"
             onRowEditComplete={onRowEditComplete}
             editingRows={editingRows}
             onRowEditChange={(e) => setEditingRows(e.data)}
+            size="small"
           >
             <Column field="mode" header="Mode"></Column>
             <Column field="fromDate" header="From Date"></Column>
@@ -170,15 +185,17 @@ const RequisitionFormView2 = ({
           </DataTable>
         </Grid>
 
-        <Grid size={12} sx={{ border: "1px solid #ccc" }}>
+        <Grid size={12} className="defaultBorder">
           <DataTable
             header="Accommodation Request"
+            className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
             value={rowData.accommodations}
             editMode="row"
             dataKey="type"
             onRowEditComplete={onRowEditComplete2}
             editingRows={editingRows2}
             onRowEditChange={(e) => setEditingRows2(e.data)}
+            size="small"
           >
             <Column field="type" header="Type"></Column>
             <Column field="numberOfRooms" header="Number Of Rooms"></Column>
@@ -210,7 +227,8 @@ const RequisitionFormView2 = ({
         </Grid> */}
         <Grid
           size={12}
-          sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}
+          sx={{ borderRadius: 2, p: 2 }}
+          className="defaultBorder"
         >
           {" "}
           {formData?.manager_id === userDetails?.userId &&
@@ -232,6 +250,7 @@ const RequisitionFormView2 = ({
               <FloatLabel>
                 <InputTextarea
                   cols={50}
+                  className="inputFieldStyle inputSectionWidth"
                   value={formData?.manager_suggestion}
                   onChange={(e) =>
                     setFormData({
