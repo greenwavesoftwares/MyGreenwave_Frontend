@@ -40,16 +40,25 @@ const Login = () => {
   };
   const onLoginClick = async () => {
     setLoading(true);
-    const loginCheck = await checkCredential(
-      credential,
-      toastRef,
-      showWPDialog
-    );
-    setLoading(false);
-    if (loginCheck) {
-      const userData = getUserData();
-      const baseRoute = import.meta.env.VITE_BASE_ROUTE;
-      navigate(`/${baseRoute}/${userData?.userDetails?.espHomepage}`);
+    try {
+      const loginCheck = await checkCredential(
+        credential,
+        toastRef,
+        showWPDialog
+      );
+      
+      console.log("loginCheck",loginCheck);
+      if (loginCheck) {
+        const userData = getUserData();
+        const baseRoute = import.meta.env.VITE_BASE_ROUTE;
+        navigate(`/${baseRoute}/${userData?.userDetails?.espHomepage}`);
+      }
+    } catch (error) {
+      setLoading(false);
+      console.log("Login_error",error);
+    }
+    finally{
+      setLoading(false);
     }
   };
   return (
