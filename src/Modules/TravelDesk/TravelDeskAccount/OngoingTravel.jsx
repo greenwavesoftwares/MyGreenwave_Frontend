@@ -153,6 +153,7 @@ const OngoingTravel = () => {
               name="file"
               accept="*/*"
               customUpload
+              auto
               uploadHandler={onFileSelect}
               maxFileSize={50000000}
               chooseLabel="Upload"

@@ -90,7 +90,7 @@ function ClientPage() {
   function qrCodeScanVisibility() {
     const currentHours = new Date().getHours();
     //Component Visibility 12PM To 3PM
-    if (currentHours >= 12 && currentHours < 18) {
+    if (currentHours >= 10 && currentHours < 18) {
       setShowQRCode(true);
     }
   }

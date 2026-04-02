@@ -663,6 +663,7 @@ const TourClaimTable = ({
             name="file"
             accept=".xls,.xlsx"
             customUpload
+            auto
             uploadHandler={(e) => {
               onFileSelect(e);
               setFileUploaded(true);

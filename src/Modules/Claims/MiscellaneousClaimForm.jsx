@@ -203,8 +203,9 @@ const MiscellaneousClaimForm = () => {
                             name="file"
                            accept="*/*"
                             customUpload
+                            auto
                             uploadHandler={onUpload}
-                            maxFileSize={50000000}
+                            maxFileSize={1000000000}
                             chooseLabel="Upload Document"
                             className="selectButtonStyle"
                           />

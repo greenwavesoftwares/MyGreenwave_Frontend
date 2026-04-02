@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
-import { DataTableComponent,CustomColumn } from "../../components/DataTable/DataTableComponent";
-import CustomDialog from "../../components/Dialog/DialogComponent"
-
+import {
+  DataTableComponent,
+  CustomColumn,
+} from "../../components/DataTable/DataTableComponent";
+import CustomDialog from "../../components/Dialog/DialogComponent";
 
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
@@ -29,7 +31,6 @@ const initialFormState = {
   Remarks: "",
 };
 
-
 import {
   getTravelDropDown,
   uploadSupportingDocuments,
@@ -44,11 +45,12 @@ import {
 } from "./claimServices";
 
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
+import LinearProgressMUI from "../../components/LinearProgressMUI";
 
 const DraftForm = ({
   draftData,
   setDraftData,
-  refreshDraftData,  
+  refreshDraftData,
   seteditableMode,
   editableMode,
   settoggleNewClaim,
@@ -59,38 +61,33 @@ const DraftForm = ({
   setTravelModeOptions,
   setselectedtravelMode,
 }) => {
-  const cellStyle = {  };
-const toastRef = useRef(null);
+  const cellStyle = {};
+  const toastRef = useRef(null);
   const [rowData, setRowData] = useState({});
 
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [selectedRowData, setSelectedRowData] = useState(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleDelete = async (claim_id, status) => {
     let response = await deleteDraftList(claim_id, status);
     if (!response.status) {
-      showErrorMessage(
-          toastRef,
-         "error",
-          response.message
-        );
-     
+      showErrorMessage(toastRef, "error", response.message);
     } else {
       showSuccessMessage(
-          toastRef,
-          "success",
-          response.message || "One more draft data deleted",
-        );
-    
+        toastRef,
+        "success",
+        response.message || "One more draft data deleted",
+      );
+
       setDraftData(response.data);
       if (response.data.length == 0) {
         settoggleNewClaim(true);
         seteditableMode(false);
         settourClaimTableData([]);
         settourclaimformData([]);
-        
       }
       settourClaimTableData([]);
       setselectedtravelMode(null);
@@ -100,22 +97,17 @@ const toastRef = useRef(null);
 
   const handleApplyApproval = async (claim_id, status) => {
     try {
-      console.log()
+      console.log();
       let response = await applyClaim(claim_id, status);
       if (!response.status) {
-
-       showErrorMessage(
-          toastRef,
-         "error",
-          response.message
-        );
+        showErrorMessage(toastRef, "error", response.message);
       } else {
-         showSuccessMessage(
+        showSuccessMessage(
           toastRef,
           "success",
-          "You have successfully applied for approval."
+          "You have successfully applied for approval.",
         );
-       
+
         setDraftData(response.data);
         if (response.data.length == 0) {
           settoggleNewClaim(true);
@@ -130,11 +122,10 @@ const toastRef = useRef(null);
       }
     } catch (error) {
       showErrorMessage(
-          toastRef,
-         "error",
-          "Failed to apply: " + (error?.message || error),
-        );
-    
+        toastRef,
+        "error",
+        "Failed to apply: " + (error?.message || error),
+      );
     }
   };
 
@@ -142,7 +133,7 @@ const toastRef = useRef(null);
     try {
       const data = await getTourClaimTableDraftData(claim_id);
       const travelDropDown = await getTravelDropDown();
-      console.log('travelDropDown',travelDropDown)
+      console.log("travelDropDown", travelDropDown);
 
       let obj = travelDropDown.data;
       const matchedItem = obj.find((item) => item.value === data.travel_id);
@@ -193,7 +184,7 @@ const toastRef = useRef(null);
         Total: row.total,
         Remarks: row.remarks,
       }));
-      console.log('formattedRows', formattedRows)
+      console.log("formattedRows", formattedRows);
 
       settourClaimTableData(formattedRows);
       seteditableMode(true);
@@ -223,17 +214,12 @@ const toastRef = useRef(null);
         label="Apply"
         className="p-button-sm p-button-success p-button-text"
         onClick={() => {
-          if(rowData.total_expense>0)
-          {
-             handleApplyApproval(rowData.claim_id, "Applied")
-          }else{
-            showErrorMessage(
-          toastRef,
-         "error",
-         'claim amount is zero'
-        );
+          if (rowData.total_expense > 0) {
+            handleApplyApproval(rowData.claim_id, "Applied");
+          } else {
+            showErrorMessage(toastRef, "error", "claim amount is zero");
           }
-         }}
+        }}
         tooltip="Apply for Approval"
       />
     </div>
@@ -245,11 +231,13 @@ const toastRef = useRef(null);
         <span className="font-semibold text-gray-700">Advance:</span> ₹
         {rowData["advance"]}
       </div>
-       <div>
-        <span className="font-semibold text-gray-700">Expenditure Claimed:</span> ₹
-        {rowData["total_expense"]}
+      <div>
+        <span className="font-semibold text-gray-700">
+          Expenditure Claimed:
+        </span>{" "}
+        ₹{rowData["total_expense"]}
       </div>
-         <div>
+      <div>
         <span className="font-semibold text-gray-700">Claim Approved:</span> ₹
         {rowData["approvedAmount"]}
       </div>
@@ -291,21 +279,16 @@ const toastRef = useRef(null);
 
   const supportingDocumentBody = (rowData) => {
     const [fileUploaded, setFileUploaded] = useState(
-      rowData.filename ? true : false
+      rowData.filename ? true : false,
     );
     const [togglefileUpload, settogglefileUpload] = useState(
-      rowData.filename ? false : true
+      rowData.filename ? false : true,
     );
     const handleDownloadFile = async (claim_id) => {
       try {
         let d = await downloadTourClaimSupportingDocument(claim_id);
       } catch (error) {
-        showErrorMessage(
-          toastRef,
-         "error",
-          "Something Wrong."
-        );
-       
+        showErrorMessage(toastRef, "error", "Something Wrong.");
       }
     };
     const onFileSelect = async (event) => {
@@ -313,34 +296,43 @@ const toastRef = useRef(null);
       setFileUploaded(true);
       settogglefileUpload(false);
 
+      //test
+      setUploadProgress(10); // start
+      // fake progress simulation
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 300);
+      // test
+
       const formData = new FormData();
       formData.append("file", file); // Append file to formData
 
       try {
         const response = await uploadSupportingDocuments(
           file,
-          rowData.claim_id
+          rowData.claim_id,
         ); // Adjust this call accordingly
-        if(response=='File uploaded successfully')
-        {
-         showSuccessMessage(
-          toastRef,
-          "success",
-          "File Uploaded"
-        );
-         await refreshDraftData();
+
+        //test
+         clearInterval(interval);
+         setUploadProgress(100);
+         //test
+
+        if (response == "File uploaded successfully") {
+          showSuccessMessage(toastRef, "success", "File Uploaded");
+          await refreshDraftData();
         }
-       
-        
-         
-       
       } catch (error) {
-        showErrorMessage(
-          toastRef,
-         "error",
-         "Upload failed"
-        );
-        
+
+        //test
+           clearInterval(interval);
+            setUploadProgress(0);
+    //test
+        showErrorMessage(toastRef, "error", "Upload failed");
+
         console.log(error);
         setFileUploaded(false);
         settogglefileUpload(true);
@@ -348,14 +340,18 @@ const toastRef = useRef(null);
     };
     return (
       <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
+        {uploadProgress > 0 && uploadProgress < 100 && (
+  <LinearProgressMUI value={uploadProgress} />
+)}
         {togglefileUpload ? (
           <FileUpload
             mode="basic"
             name="file"
             accept="*/*"
+            auto
             customUpload
             uploadHandler={onFileSelect}
-            maxFileSize={50000000}
+            maxFileSize={5000000000}
             chooseLabel="Upload"
           />
         ) : null}
@@ -390,12 +386,7 @@ const toastRef = useRef(null);
       try {
         let d = await downloadTourClaimExpanseDocument(claim_id);
       } catch (error) {
-        showErrorMessage(
-          toastRef,
-         "error",
-          "Something Wrong."
-        );
-     
+        showErrorMessage(toastRef, "error", "Something Wrong.");
       }
     };
 
@@ -405,13 +396,7 @@ const toastRef = useRef(null);
         setviewtabledata(data.tourClaimRecords);
         setShowViewDialog(true);
       } catch (error) {
-        showErrorMessage(
-          toastRef,
-         "error",
-          "Failed to load table."
-        );
-
-      
+        showErrorMessage(toastRef, "error", "Failed to load table.");
       }
     };
 
@@ -456,29 +441,50 @@ const toastRef = useRef(null);
   const datebody = (rowData) => {
     return (
       <div className="flex flex-col justify-center items-center">
-        <span > {rowData.from_date}</span>
-        <span > to </span>
-        <span > {rowData.to_date} </span>
+        <span> {rowData.from_date}</span>
+        <span> to </span>
+        <span> {rowData.to_date} </span>
       </div>
     );
   };
 
   const totals = Array.isArray(viewtabledata)
-  ? {
-      lodging: viewtabledata.reduce((s, r) => s + (Number(r.lodging) || 0), 0),
-      breakfast: viewtabledata.reduce((s, r) => s + (Number(r.breakfast) || 0), 0),
-      lunch: viewtabledata.reduce((s, r) => s + (Number(r.lunch) || 0), 0),
-      snacks: viewtabledata.reduce((s, r) => s + (Number(r.snacks) || 0), 0),
-      dinner: viewtabledata.reduce((s, r) => s + (Number(r.dinner) || 0), 0),
-      teaWater: viewtabledata.reduce((s, r) => s + (Number(r.teaWater) || 0), 0),
-      longTravel: viewtabledata.reduce((s, r) => s + (Number(r.longTravel) || 0), 0),
-      shortTravel: viewtabledata.reduce((s, r) => s + (Number(r.shortTravel) || 0), 0),
-      tollTax: viewtabledata.reduce((s, r) => s + (Number(r.tollTax) || 0), 0),
-      incidentals: viewtabledata.reduce((s, r) => s + (Number(r.incidentals) || 0), 0),
-      other: viewtabledata.reduce((s, r) => s + (Number(r.other) || 0), 0),
-      total: viewtabledata.reduce((s, r) => s + (Number(r.total) || 0), 0),
-    }
-  : {};
+    ? {
+        lodging: viewtabledata.reduce(
+          (s, r) => s + (Number(r.lodging) || 0),
+          0,
+        ),
+        breakfast: viewtabledata.reduce(
+          (s, r) => s + (Number(r.breakfast) || 0),
+          0,
+        ),
+        lunch: viewtabledata.reduce((s, r) => s + (Number(r.lunch) || 0), 0),
+        snacks: viewtabledata.reduce((s, r) => s + (Number(r.snacks) || 0), 0),
+        dinner: viewtabledata.reduce((s, r) => s + (Number(r.dinner) || 0), 0),
+        teaWater: viewtabledata.reduce(
+          (s, r) => s + (Number(r.teaWater) || 0),
+          0,
+        ),
+        longTravel: viewtabledata.reduce(
+          (s, r) => s + (Number(r.longTravel) || 0),
+          0,
+        ),
+        shortTravel: viewtabledata.reduce(
+          (s, r) => s + (Number(r.shortTravel) || 0),
+          0,
+        ),
+        tollTax: viewtabledata.reduce(
+          (s, r) => s + (Number(r.tollTax) || 0),
+          0,
+        ),
+        incidentals: viewtabledata.reduce(
+          (s, r) => s + (Number(r.incidentals) || 0),
+          0,
+        ),
+        other: viewtabledata.reduce((s, r) => s + (Number(r.other) || 0), 0),
+        total: viewtabledata.reduce((s, r) => s + (Number(r.total) || 0), 0),
+      }
+    : {};
 
   return (
     <div>
@@ -492,10 +498,8 @@ const toastRef = useRef(null);
           emptyMessage="No data found"
           className="dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
         >
-          
           <CustomColumn
             header="Claim Duration"
-          
             body={datebody}
             headerStyle={cellStyle}
             bodyStyle={cellStyle}
@@ -522,8 +526,7 @@ const toastRef = useRef(null);
           <CustomColumn
             header="Claim Calculation"
             body={claimCalculationBody}
-              headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
-          
+            headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
             sortable={true}
             filter={true}
@@ -533,7 +536,7 @@ const toastRef = useRef(null);
             body={supportingDocumentBody}
             headerStyle={cellStyle}
             bodyStyle={{ ...cellStyle, whiteSpace: "pre-line" }}
-           sortable={true}
+            sortable={true}
             filter={true}
           />
           <CustomColumn
@@ -548,7 +551,7 @@ const toastRef = useRef(null);
             body={actionBodyTemplate}
             headerStyle={{ ...cellStyle, textAlign: "center" }}
             bodyStyle={{ ...cellStyle, textAlign: "center" }}
-           sortable={true}
+            sortable={true}
             filter={true}
           />
         </DataTableComponent>
@@ -566,7 +569,9 @@ const toastRef = useRef(null);
             textSize="text-xs"
             tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
             emptyMessage="No data found"
-            className={"dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"}
+            className={
+              "dataTableHeader dataTableBody dataTableBodyPadding dataTablePaginator"
+            }
           >
             {/* </DataTableComponent> */}
             {/* <DataTable
@@ -580,8 +585,7 @@ const toastRef = useRef(null);
               header="Date"
               headerStyle={{ ...cellStyle, minWidth: "100px" }}
               bodyStyle={cellStyle}
-              footer='Total'
-              
+              footer="Total"
             />
             <CustomColumn
               field="lodging"
@@ -595,15 +599,14 @@ const toastRef = useRef(null);
               header="Breakfast"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-               
-               footer={totals.breakfast?.toFixed(2)}
+              footer={totals.breakfast?.toFixed(2)}
             />
             <CustomColumn
               field="lunch"
               header="Lunch"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-            footer={totals.lunch?.toFixed(2)}
+              footer={totals.lunch?.toFixed(2)}
             />
             <CustomColumn
               field="snacks"
@@ -624,7 +627,7 @@ const toastRef = useRef(null);
               header="Tea & Water"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-               footer={totals.teaWater?.toFixed(2)}
+              footer={totals.teaWater?.toFixed(2)}
             />
             <CustomColumn
               field="longTravel"
@@ -638,37 +641,35 @@ const toastRef = useRef(null);
               header="Auto, Cab"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-               footer={totals.shortTravel?.toFixed(2)}
+              footer={totals.shortTravel?.toFixed(2)}
             />
             <CustomColumn
               field="tollTax"
               header="Parking, Toll, Fuel"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-               footer={totals.tollTax?.toFixed(2)}
-
+              footer={totals.tollTax?.toFixed(2)}
             />
             <CustomColumn
               field="incidentals"
               header="Incidentals"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-               footer={totals.incidentals?.toFixed(2)}
+              footer={totals.incidentals?.toFixed(2)}
             />
             <CustomColumn
               field="other"
               header="Other Business Expenses"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-               footer={totals.other?.toFixed(2)}
+              footer={totals.other?.toFixed(2)}
             />
             <CustomColumn
               field="total"
               header="Total"
               headerStyle={cellStyle}
               bodyStyle={cellStyle}
-             footer={totals.total?.toFixed(2)}
-           
+              footer={totals.total?.toFixed(2)}
             />
             <CustomColumn
               field="remarks"
