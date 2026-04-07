@@ -1208,13 +1208,7 @@ export const getApprovedTourClaims = async () => {
   const userDetails = getUserData()?.userDetails;
 const token = `Bearer ${getUserData()?.token}`;
   try {
-    // const myHeaders = new Headers();
-    // myHeaders.append("Authorization", token);
-    // const requestOptions = {
-    //   method: "GET",
-    //   headers: myHeaders,
-    //   redirect: "follow",
-    // };
+   
 
     let ApprovedResponse = await axios.get(
       `${host}claims/tour-claims-by-status/Approved`,
@@ -1232,32 +1226,31 @@ const token = `Bearer ${getUserData()?.token}`;
       Authorization: token
     }}
     );
-    // if (!ReviewedResponse.ok) {
-    //   const message = await ReviewedResponse.text();
-    //   return {
-    //     status: false,
-    //     message: message || "Internal server error!",
-    //     data: [],
-    //   };
-    // }
+   
     let ReviewedData = ReviewedResponse.data //await ReviewedResponse.json();
 
+    
+   /* for account department only need reviewedData,RejectedData,ApprovedData
     let CancelledResponse = await axios.get(
       `${host}claims/tour-claims-by-status/Cancelled`,
       { headers: {
       Authorization: token
     }}
     );
-    // if (!CancelledResponse.ok) {
-    //   const message = await ReviewedResponse.text();
-    //   return {
-    //     status: false,
-    //     message: message || "Internal server error!",
-    //     data: [],
-    //   };
-    // }
-    let CancelledData =  CancelledResponse.data;
-    let finaldata = [...ReviewedData, ...CancelledData, ...ApprovedData];
+   
+    let CancelledData =  CancelledResponse.data; */
+
+      let rejectedResponse = await axios.get(
+      `${host}claims/tour-claims-by-status/Rejected`,
+      { headers: {
+      Authorization: token
+    }}
+    );
+   
+    let rejectedData =  rejectedResponse.data;
+
+
+    let finaldata = [...ReviewedData, ...rejectedData, ...ApprovedData];
 
      finaldata.sort((a, b) => new Date(b.from_date) - new Date(a.from_date));
      
