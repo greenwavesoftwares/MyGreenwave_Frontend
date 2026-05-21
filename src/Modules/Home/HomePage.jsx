@@ -1068,8 +1068,6 @@ const HomePage = () => {
                                     <Typography className="fontSize-sm">
                                       {tourClaims?.plAvailable ?? "NA"}
                                     </Typography>
-
-                                   
                                   </div>
                                 </Grid>
                               </Grid>
@@ -1233,7 +1231,7 @@ const HomePage = () => {
                   onChange={(e) => setFeedback(e.target.value)}
                 />
                 <br />
-                <button
+                {/* <button
                   type="submit"
                   style={{
                     backgroundColor: "rgb(76, 175, 80)",
@@ -1246,9 +1244,20 @@ const HomePage = () => {
                     fontSize: "14px",
                     marginTop: "5px",
                   }}
+                  disabled={!feedback}
                 >
                   Submit
-                </button>
+                </button> */}
+                <Button
+                  variant="contained"
+                  type="submit"
+                  size="small"
+                  sx={{ boxShadow: "none",backgroundColor: "rgb(76, 175, 80)",
+                    borderRadius: "0.5rem", marginTop: "5px",}}
+                  disabled={!feedback}
+                >
+                  Submit
+                </Button>
               </form>
             </div>
           </Dialog>
@@ -1323,9 +1332,9 @@ const HomePage = () => {
               </Button>
             </div>
           </Dialog>
-            
-           {/* Meal Feedback Dialog   */}
-           <MealFeedback />
+
+          {/* Meal Feedback Dialog   */}
+          <MealFeedback />
           <Toast ref={toastRef} />
         </div>
       )}
