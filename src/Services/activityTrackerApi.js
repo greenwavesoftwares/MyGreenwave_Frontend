@@ -305,6 +305,32 @@ const activityTrackerApi = {
     );
     return response.data;
   },
+
+  // ============================================================
+  // User Groups
+  // ============================================================
+
+  getAllGroups: async () => {
+    const response = await axios.get(`${host}admin/getallgroups`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
+  // Body:
+  //   [
+  // 	  "string"
+  // 	]
+  getUserIdAndLeavesBygroupIds: async (groupIds) => {
+    const response = await axios.post(
+      `${host}admin/getUserIdAndLeavesBygroupIds`,
+      groupIds,
+      {
+        headers: getHeaders(),
+      },
+    );
+    return response.data;
+  },
 };
 
 export default activityTrackerApi;
