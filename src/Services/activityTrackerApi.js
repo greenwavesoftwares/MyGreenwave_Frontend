@@ -298,6 +298,17 @@ const activityTrackerApi = {
   },
 
   /**
+   * GET /activityTracker/projects/{projectId}/activity/{activityId}/comments
+   */
+  getCommentsByActivity: async (projectId, activityId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/activity/${activityId}/comments`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
    * POST /activityTracker/projects/{projectId}/comments
    * Body:
    * {
