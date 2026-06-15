@@ -228,6 +228,26 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  /**
+   * GET /activityTracker/isUserHasPendingActivity
+   * Query params: userId, fromDate, toDate
+   * Returns: boolean
+   */
+  isUserHasPendingActivity: async (userId, fromDate, toDate) => {
+    const response = await axios.get(
+      `${apiEndPoint}/isUserHasPendingActivity`,
+      {
+        headers: getHeaders(),
+        params: {
+          userId,
+          fromDate,
+          toDate,
+        },
+      },
+    );
+    return response.data;
+  },
+
   // ============================================================
   // ACTIVITY REJECTIONS
   // ============================================================
