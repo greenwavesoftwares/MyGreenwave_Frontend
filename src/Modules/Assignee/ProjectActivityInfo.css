@@ -1,0 +1,388 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.pai-page {
+  background: #eef1f8;
+  min-height: 100vh;
+  padding: 24px 28px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ══════════════════════════════════════
+   TOPBAR / BREADCRUMB
+══════════════════════════════════════ */
+.pai-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pai-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b5bdb;
+  background: #ffffff;
+  border: 1px solid #e2e7f0;
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.pai-back-btn:hover {
+  background: #eef2ff;
+  box-shadow: 0 1px 4px rgba(59, 91, 219, 0.12);
+}
+
+.pai-back-btn svg { flex-shrink: 0; }
+
+.pai-breadcrumb-sep {
+  color: #c0c8dc;
+  display: flex;
+  align-items: center;
+}
+
+.pai-breadcrumb-current {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1f36;
+}
+
+/* ══════════════════════════════════════
+   PROJECT INFO CARD
+══════════════════════════════════════ */
+.pai-info-card {
+  background: #ffffff;
+  border: 1px solid #e2e7f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  animation: fadeUp 0.3s ease both;
+}
+
+.pai-project-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f6ef7 0%, #2d4fd6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.pai-info-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  flex: 1;
+}
+
+.pai-info-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 28px;
+  border-right: 1px solid #eef1f8;
+  min-width: 140px;
+}
+
+.pai-info-field:first-child { padding-left: 0; }
+.pai-info-field:last-child  { border-right: none; }
+
+.pai-field-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #a0aec0;
+}
+
+.pai-field-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1a1f36;
+}
+
+/* ══════════════════════════════════════
+   STATUS PILLS
+══════════════════════════════════════ */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-active      { color: #276749; background: #e6f4ec; }
+.pill-active .pill-dot { background: #38a169; animation: blink 2s ease-in-out infinite; }
+
+.pill-running     { color: #1d4ed8; background: #eff6ff; }
+.pill-running .pill-dot { background: #3b82f6; animation: blink 1.5s ease-in-out infinite; }
+
+.pill-paused      { color: #7b4b00; background: #fff8e6; }
+.pill-paused .pill-dot { background: #dd9008; }
+
+.pill-not-started { color: #718096; background: #f4f6fb; }
+.pill-not-started .pill-dot { background: #a0aec0; }
+
+.pill-closed      { color: #4a5568; background: #f4f6fb; }
+.pill-closed .pill-dot { background: #a0aec0; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ══════════════════════════════════════
+   ACTIVITIES CARD
+══════════════════════════════════════ */
+.pai-activity-card {
+  background: #ffffff;
+  border: 1px solid #e2e7f0;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: fadeUp 0.35s ease 0.06s both;
+}
+
+.pai-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eef1f8;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pai-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pai-section-icon {
+  width: 28px;
+  height: 28px;
+  background: #eef2ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pai-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1f36;
+}
+
+.pai-counter {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #3b5bdb;
+  background: #eef2ff;
+  border: 1px solid #c5d0fa;
+  border-radius: 20px;
+  padding: 2px 9px;
+}
+
+.pai-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pai-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pai-search-wrap svg {
+  position: absolute;
+  left: 10px;
+  color: #a0aec0;
+  pointer-events: none;
+}
+
+.pai-search {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px;
+  color: #1a1f36;
+  background: #f8f9fd;
+  border: 1px solid #e2e7f0;
+  border-radius: 8px;
+  padding: 8px 12px 8px 32px;
+  outline: none;
+  width: 220px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pai-search::placeholder { color: #b0b8cc; }
+
+.pai-search:focus {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+  background: #fff;
+}
+
+.pai-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #3b5bdb;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.pai-add-btn:hover {
+  background: #2d4fd6;
+  box-shadow: 0 2px 8px rgba(59, 91, 219, 0.25);
+}
+
+/* ══════════════════════════════════════
+   TABLE
+══════════════════════════════════════ */
+.pai-table-wrapper {
+  overflow-x: auto;
+}
+
+.pai-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+/* Override MUI padding on our table */
+.pai-table .MuiTableCell-root {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border-bottom: 1px solid #f4f6fb;
+  padding: 0;
+}
+
+.pai-thead-row {
+  background: #f8f9fd;
+}
+
+.pai-thead-row .MuiTableCell-root {
+  border-bottom: 1px solid #eef1f8;
+}
+
+.pai-th {
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  color: #a0aec0 !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+  padding: 12px 14px !important;
+  white-space: nowrap;
+  background: #f8f9fd;
+}
+
+.pai-th-toggle {
+  width: 36px !important;
+  padding: 12px 8px !important;
+}
+
+/* Body rows — TreeRows component will inherit these via MUI overrides */
+.pai-table .MuiTableBody-root .MuiTableRow-root {
+  transition: background 0.12s;
+}
+
+.pai-table .MuiTableBody-root .MuiTableRow-root:hover {
+  background: #f8f9fd;
+}
+
+.pai-table .MuiTableBody-root .MuiTableCell-root {
+  font-size: 12.5px;
+  color: #4a5568;
+  padding: 12px 14px;
+}
+
+/* ── animation ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.my-activity-row {
+  opacity: 1;
+}
+
+.other-activity-row {
+  opacity: 0.65;
+  filter: grayscale(0.3);
+}
+.custom-datepicker-input {
+  font-size: 0.8rem;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 150px;
+  outline: none;
+  color: #333;
+}
+
+.custom-datepicker-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.react-datepicker__header {
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 10px 10px 0 0;
+}
+
+.react-datepicker__day--selected {
+  background-color: #1976d2;
+  border-radius: 50%;
+}
+
+.react-datepicker__day:hover {
+  border-radius: 50%;
+}

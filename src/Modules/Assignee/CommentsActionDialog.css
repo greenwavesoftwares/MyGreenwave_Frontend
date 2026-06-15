@@ -1,0 +1,408 @@
+/* ============================================================
+   DIALOG SHELL
+   ============================================================ */
+
+.comments-dialog {
+  width: 96vw;
+  max-width: 1850px;
+  border-radius: 18px !important;
+  overflow: hidden;
+}
+
+.comments-content {
+  padding: 0 !important;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.comments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.comments-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.comments-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #eef2ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.comments-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+
+.comments-subtitle {
+  font-size: 14px !important;
+  color: #6b7280;
+}
+
+
+/* ============================================================
+   ENTRIES CONTAINER
+   ============================================================ */
+
+.entries-container {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+/* ── Empty state ── */
+
+.empty-state {
+  height: 120px;
+  border: 1px dashed #d6d6d6;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fafafa;
+}
+
+.empty-state-icon {
+  color: #c9c9c9;
+  font-size: 30px !important;
+  margin-bottom: 10px;
+}
+
+.empty-state-text {
+  color: #9ca3af;
+  font-size: 14px !important;
+}
+
+
+/* ── Table ── */
+
+.comments-table {
+  width: 100%;
+}
+
+.added-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.added-cell span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reply-count {
+  margin-left: 4px;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  padding: 1px 6px;
+}
+
+
+/* ── Replies list ── */
+
+.reply-history-cell {
+  background: #f8fafc;
+  padding-left: 48px !important;
+}
+
+.reply-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.reply-item:last-child {
+  border-bottom: none;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.reply-header span {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.reply-text {
+  color: #374151;
+  font-size: 14px;
+}
+
+
+/* ── Reply input box ── */
+
+.reply-box-cell {
+  background: #f8fafc;
+  padding: 12px 24px !important;
+}
+
+.reply-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.reply-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.reply-content {
+  flex: 1;
+}
+
+.reply-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.reply-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+
+/* ============================================================
+   ADD ENTRY SECTION
+   ============================================================ */
+
+.entry-section {
+  padding: 20px 24px;
+}
+
+.entry-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.entry-grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1.4fr;
+  gap: 14px;
+}
+
+.entry-grid label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.chip-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+
+/* ── Footer ── */
+
+.dialog-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 12px;
+}
+
+
+/* ============================================================
+   RESPONSIVE — MOBILE  (≤ 768 px)
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+  /* Dialog shell */
+  .comments-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0;
+    border-radius: 0 !important;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .comments-content {
+    overflow-y: auto;
+  }
+
+  /* Header */
+  .comments-header {
+    padding: 16px;
+  }
+
+  .comments-header-left {
+    gap: 10px;
+  }
+
+  .comments-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .comments-title {
+    font-size: 16px !important;
+  }
+
+  .comments-subtitle {
+    font-size: 13px !important;
+  }
+
+  /* Entries */
+  .entries-container {
+    padding: 16px;
+  }
+
+  .empty-state {
+    height: 100px;
+  }
+
+  .empty-state-text {
+    font-size: 13px !important;
+    padding: 0 16px;
+    text-align: center;
+  }
+
+  /* Add entry section */
+  .entry-section {
+    padding: 16px;
+  }
+
+  .entry-title {
+    font-size: 14px;
+  }
+
+  .entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .entry-grid label {
+    font-size: 12px;
+  }
+
+  .chip-group {
+    flex-wrap: wrap;
+  }
+
+  /* Footer */
+  .dialog-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .dialog-footer > label {
+    width: 100%;
+  }
+
+  .dialog-footer > label > span {
+    width: 100%;
+  }
+
+  .footer-actions {
+    width: 100%;
+  }
+
+  .footer-actions > button {
+    flex: 1;
+  }
+}
+
+/* ── Add these rules to CommentsActionDialog.css ── */
+
+/* Attachment pill shown in the table cell (saved entries) */
+.attachment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 4px;
+  background-color: var(--attachment-bg, #f0f4ff);
+  border: 1px solid var(--attachment-border, #c7d7f9);
+  color: var(--attachment-color, #2c5fe0);
+  font-size: 0.75rem;
+  max-width: 160px;
+}
+
+.attachment-pill .attachment-name,
+.attachment-staged .attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+/* Staged attachment pill in the footer (before saving) */
+.attachment-staged {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 8px;
+  border-radius: 6px;
+  background-color: var(--attachment-bg, #f0f4ff);
+  border: 1px solid var(--attachment-border, #c7d7f9);
+  color: var(--attachment-color, #2c5fe0);
+  font-size: 0.8125rem;
+  max-width: 260px;
+}
+
+.attachment-staged svg {
+  flex-shrink: 0;
+  color: var(--attachment-color, #2c5fe0);
+}
+
+.attachment-staged .MuiIconButton-root {
+  padding: 2px;
+  color: var(--attachment-cancel, #7a90c4);
+}
+
+.attachment-staged .MuiIconButton-root:hover {
+  color: #c0392b;
+  background: transparent;
+}

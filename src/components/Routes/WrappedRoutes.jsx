@@ -22,6 +22,7 @@ import Restricted from "../../Restricted";
 import ClientPage from "../../features/meal booking/pages/ClientPage";
 import MealAdminPage from "../../features/meal booking/pages/MealAdminPage";
 import CookMealVerification from "../../features/meal booking/pages/CookMealVerification";
+import Assignee from "../../Modules/Assignee/Assignee";
 
 function WrappedRoutes() {
   return (
@@ -46,6 +47,7 @@ function WrappedRoutes() {
       <Route path="meal" element={<ClientPage />} />
       <Route path="admin-meal" element={<MealAdminPage />} />
       <Route path="meal-verification" element={<CookMealVerification />} />
+      <Route path="assignee" element={<Assignee/>}/>
 
       {/* Claim section with nested routes */}
       <Route path="claim" element={<Outlet />}>
