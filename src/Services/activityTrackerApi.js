@@ -400,11 +400,23 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/getActivityTree
-   * Returns all ProjectTreeDTOs for the logged-in user's groups.
+   * Returns all ProjectTreeDTOs for all the projects.
    * Response: List<ProjectTreeDTO> or 204 No Content
    */
   getActivityTree: async () => {
     const response = await axios.get(`${apiEndPoint}/getActivityTree`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/getActivityTree
+   * Returns all ProjectTreeDTOs for the logged-in user.
+   * Response: List<ProjectTreeDTO> or 204 No Content
+   */
+  getActivityTreeByUser: async () => {
+    const response = await axios.get(`${apiEndPoint}/getActivityTreeByUser`, {
       headers: getHeaders(),
     });
     return response.data;
