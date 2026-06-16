@@ -411,7 +411,7 @@ const activityTrackerApi = {
   },
 
   /**
-   * GET /activityTracker/getActivityTree
+   * GET /activityTracker/getActivityTreeByUser
    * Returns all ProjectTreeDTOs for the logged-in user.
    * Response: List<ProjectTreeDTO> or 204 No Content
    */
@@ -419,6 +419,21 @@ const activityTrackerApi = {
     const response = await axios.get(`${apiEndPoint}/getActivityTreeByUser`, {
       headers: getHeaders(),
     });
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/getNonPublishedActivityTreesByUser
+   * Returns all non-published ProjectTreeDTOs for the logged-in user.
+   * Response: List<ProjectTreeDTO> or 204 No Content
+   */
+  getNonPublishedActivityTreesByUser: async () => {
+    const response = await axios.get(
+      `${apiEndPoint}/getNonPublishedActivityTreesByUser`,
+      {
+        headers: getHeaders(),
+      },
+    );
     return response.data;
   },
 
