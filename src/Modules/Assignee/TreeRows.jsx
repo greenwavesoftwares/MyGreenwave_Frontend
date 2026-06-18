@@ -113,6 +113,7 @@ export default function TreeRows({
             <IconButton
               size="small"
               onClick={() => updateStatusOfActivity(id, "Completed")}
+              disabled={!allChildrenCompleted(node)}
             >
               <StopIcon className="stop-icon" />
             </IconButton>
@@ -161,8 +162,10 @@ export default function TreeRows({
               >
                 <ModeCommentOutlinedIcon fontSize="small" />
               </IconButton>
-              {sortOrder === 0 && (
-                <IconButton size="small" onClick={() => addChildNode(node)}>
+              {sortOrder === 0  && (
+                <IconButton size="small" onClick={() => {addChildNode(node)}}
+                disabled={node.activityStatus === 'Completed'}
+                >
                   <SubdirectoryArrowLeftIcon fontSize="small" />
                 </IconButton>
               )}
@@ -171,6 +174,12 @@ export default function TreeRows({
       </>
     );
   };
+
+  const allChildrenCompleted = (activity)=>{
+    return activity.children.every(
+  child => child.activityStatus === "Completed"
+);
+  }
 
   return (
     <>

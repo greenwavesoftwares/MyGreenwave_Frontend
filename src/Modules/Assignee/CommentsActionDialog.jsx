@@ -80,7 +80,7 @@ export default function CommentsActionDialog({
       replies: [],
     };
     console.log("new comment:",newComment)
-    const reponse=await activityTrackerApi.addComment(newComment.projectId,payload)
+    // const reponse=await activityTrackerApi.addComment(newComment.projectId,payload)
     setExistingComments((prev) => [...prev, payload]);
     const newCommentPayload=addComment(newComment.projectId,newComment.activityId,newComment.moduleID)
     console.log("New Comment:",newComment)

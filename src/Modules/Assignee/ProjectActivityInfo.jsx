@@ -457,7 +457,6 @@ const totalActivities = useMemo(
         </div>
       </div>
       <CommentsActionDialog
-        
         existingComments={existingComments}
         setExistingComments={setExistingComments}
         newComment={newComment}
