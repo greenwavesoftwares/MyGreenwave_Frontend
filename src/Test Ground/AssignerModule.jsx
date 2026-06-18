@@ -6700,7 +6700,7 @@ export default function AssignerModule() {
     setDraftsLoading(true);
     setDraftsError(null);
     try {
-      const projects = await activityTrackerApi.getActivityTreeByUser();
+      const projects = await activityTrackerApi.getActivityTreeCreatedByUser();
       setDrafts(Array.isArray(projects) ? projects : []);
     } catch (err) {
       console.error("Failed to load projects:", err);
