@@ -42,35 +42,78 @@ export default function CommentsActionDialog({
 }) {
   const [activeReply, setActiveReply] = useState(null);
   const [replyText, setReplyText] = useState({});
+  const [replyAttachment, setReplyAttachment] = useState({});
+
+  const handleReplyAttachment = (commentIndex, event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    setReplyAttachment((prev) => ({
+      ...prev,
+      [commentIndex]: {
+        attachmentBase64: reader.result.split(",")[1],
+        attachmentName: file.name,
+      },
+    }));
+  };
+
+  reader.readAsDataURL(file);
+  event.target.value = "";
+};
+
+const removeReplyAttachment = (commentIndex) => {
+  setReplyAttachment((prev) => {
+    const updated = { ...prev };
+    delete updated[commentIndex];
+    return updated;
+  });
+};
+
   const handleChange = (field, value) => {
     setNewComment((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCommentAttachment = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setNewComment((prev) => ({
-        ...prev,
-        attachmentMent: reader.result.split(",")[1],
-        attachmentName: file.name, // ← store the name
-      }));
-    };
-    reader.readAsDataURL(file);
-    // reset input so the same file can be reselected after cancel
-    event.target.value = "";
+ const handleCommentAttachment = (event) => {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    setNewComment((prev) => ({
+      ...prev,
+      attachmentBase64: reader.result.split(",")[1],
+      attachmentName: file.name,
+    }));
   };
+
+  reader.readAsDataURL(file);
+
+  // Allow selecting the same file again later
+  event.target.value = "";
+};
+
+// const removeCommentAttachment = () => {
+//   setNewComment((prev) => ({
+//     ...prev,
+//     attachmentBase64: null,
+//     attachmentName: null,
+//   }));
+// };
 
   // ── NEW: remove the staged attachment ──────────────────────────────
   const removeCommentAttachment = () => {
     setNewComment((prev) => ({
       ...prev,
-      attachmentMent: null,
+      attachmentBase64: null,
       attachmentName: null,
     }));
   };
-
+console.log('Comment : ',newComment)
   const addComments = async() => {
     if (!newComment.commentDescription.trim()) return;
     const payload = {
@@ -78,45 +121,101 @@ export default function CommentsActionDialog({
       createdBy: getUserData()?.userDetails?.userId,
       createdAt: new Date().toISOString(),
       replies: [],
+      commentId:crypto.randomUUID() // temporary ID for frontend purposes
     };
     console.log("new comment:",newComment)
-    // const reponse=await activityTrackerApi.addComment(newComment.projectId,payload)
-    setExistingComments((prev) => [...prev, payload]);
-    const newCommentPayload=addComment(newComment.projectId,newComment.activityId,newComment.moduleID)
-    console.log("New Comment:",newComment)
+    console.log('Updated Payload : ',payload)
+    const response=await activityTrackerApi.addComment(newComment.projectId,payload)
+    if(response)
+    {
+    // setExistingComments((prev) => [...prev, payload]);
+    
+    const updatedComments= await activityTrackerApi.getCommentsByActivity(newComment.projectId,newComment.activityId)
+    setExistingComments(updatedComments)
+    const newCommentPayload=addComment(payload.projectId,payload.activityId,payload.moduleId)
+    console.log("New Comment:",newCommentPayload)
     setNewComment(newCommentPayload);
+    }
   };
 
-  const addReply = (commentIndex) => {
-    const text = replyText[commentIndex];
-    if (!text?.trim()) return;
-    setExistingComments((prev) =>
-      prev.map((item, index) =>
-        index === commentIndex
-          ? {
-              ...item,
-              replies: [
-                ...(item.replies || []),
-                {
-                  replyId: Date.now(),
-                  replyDescription: text,
-                  createdBy: "You",
-                  createdAt: new Date().toISOString(),
-                },
-              ],
-            }
-          : item
-      )
-    );
-    setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
-    setActiveReply(null);
+ const addReply = async (commentIndex) => {
+  const comment = existingComments[commentIndex];
+  const text = replyText[commentIndex];
+
+  if (!text?.trim()) return;
+
+  const replyId = crypto.randomUUID();
+
+  const payload = {
+    commentId: comment.commentId,
+    replyId,
+    createdBy: getUserData()?.userDetails?.userId,
+    createdAt: new Date().toISOString(),
+    replyText: text,
+    attachment: null,
+    attachmentBase64:
+      replyAttachment[commentIndex]?.attachmentBase64 || null,
+    attachmentName:
+      replyAttachment[commentIndex]?.attachmentName || null,
   };
 
-  const deleteComment = (index) => {
+  console.log("Reply Payload:", payload);
+
+ const replyAdded= await activityTrackerApi.addReply(comment.commentId,payload);
+
+ if(!replyAdded) {
+  console.error("Failed to add reply");
+  return;
+ }
+
+  // await activityTrackerApi.addReply(payload);
+
+  setExistingComments((prev) =>
+    prev.map((item, index) =>
+      index === commentIndex
+        ? {
+            ...item,
+            replies: [
+              ...(item.replies || []),
+              {
+                replyId,
+                replyText: text,
+                createdBy: payload.createdBy,
+                createdAt: payload.createdAt,
+                attachmentName: payload.attachmentName,
+              },
+            ],
+          }
+        : item
+    )
+  );
+
+  setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
+
+  setReplyAttachment((prev) => {
+    const updated = { ...prev };
+    delete updated[commentIndex];
+    return updated;
+  });
+
+  setActiveReply(null);
+};
+
+  const deleteComment =async (index) => {
+   const commentDeleted= await activityTrackerApi.deleteComment(existingComments[index].commentId);
+   if(!commentDeleted) {
+    console.error("Failed to delete comment");
+    return;
+   }
     setExistingComments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const deleteReply = (commentIndex, replyId) => {
+  const deleteReply = async (commentIndex, replyId) => {
+    const replyDeleted= await activityTrackerApi.deleteReply(replyId);
+    if(!replyDeleted) {
+      console.error("Failed to delete reply");
+      return;
+     }
     setExistingComments((prev) =>
       prev.map((item, index) =>
         index === commentIndex
@@ -200,19 +299,70 @@ export default function CommentsActionDialog({
 
                       {/* ── ATTACHMENT CELL ── */}
                       <TableCell>
-                        {entry.attachmentMent ? (
-                          <div className="attachment-pill">
-                            <InsertDriveFileOutlinedIcon fontSize="small" />
-                            <span
-                              className="attachment-name"
-                              title={entry.attachmentName}
-                            >
-                              {entry.attachmentName}
-                            </span>
-                          </div>
-                        ) : (
-                          "-"
-                        )}
+                       {entry.attachment ? (
+<div
+  className="attachment-pill"
+  // onClick={async () => {
+  //   try {
+  //     const separatorIndex = entry.attachment.indexOf("_");
+
+  //     const fileId = entry.attachment.substring(0, separatorIndex);
+  //     const fileName = entry.attachment.substring(separatorIndex + 1);
+
+  //     const response = await activityTrackerApi.getMinIoFile(fileId);
+  //     console.log('Response : ',response)
+
+  //     const blob = new Blob([response.data]);
+  //     const url = window.URL.createObjectURL(blob);
+
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = fileName;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     document.body.removeChild(a);
+
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Failed to download file", error);
+  //   }
+  // }}
+>
+    <InsertDriveFileOutlinedIcon fontSize="small" />
+    <span onClick={async () => {
+    try {
+      const separatorIndex = entry.attachment.indexOf("_");
+
+      const fileId = entry.attachment.substring(0, separatorIndex);
+      const fileName = entry.attachment.substring(separatorIndex + 1);
+      const minioBucket='comments'
+      const response = await activityTrackerApi.getMinIoFile( entry.attachment,minioBucket);
+      console.log('Response : ',response)
+
+      // const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(response);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download file", error);
+    }
+  }}
+  className="attachment-name"
+  title={entry.attachment.substring(entry.attachment.indexOf("_") + 1)}
+>
+  {entry.attachment.substring(entry.attachment.indexOf("_") + 1)}
+</span>
+  </div>
+) : (
+  "-"
+)}
                       </TableCell>
 
                       <TableCell>
@@ -244,6 +394,7 @@ export default function CommentsActionDialog({
                           </Button>
                           <IconButton
                             size="small"
+                            disabled={entry.createdBy !== getUserData()?.userDetails?.userId}
                             onClick={() => deleteComment(index)}
                           >
                             <DeleteOutlineIcon fontSize="small" />
@@ -265,6 +416,7 @@ export default function CommentsActionDialog({
                                 </span>
                                 <IconButton
                                   size="small"
+                                  disabled={reply.createdBy !== getUserData()?.userDetails?.userId}
                                   onClick={() =>
                                     deleteReply(index, reply.replyId)
                                   }
@@ -273,7 +425,7 @@ export default function CommentsActionDialog({
                                 </IconButton>
                               </div>
                               <div className="reply-text">
-                                {reply.replyDescription}
+                                {reply.replyText}
                               </div>
                             </div>
                           ))}
@@ -320,6 +472,35 @@ export default function CommentsActionDialog({
                                   >
                                     Reply
                                   </Button>
+                                  <input
+  id={`reply-file-${index}`}
+  hidden
+  type="file"
+  onChange={(e) => handleReplyAttachment(index, e)}
+/>
+
+<label htmlFor={`reply-file-${index}`}>
+  <Button
+    component="span"
+    size="small"
+    startIcon={<AttachFileIcon />}
+  >
+    Attach File
+  </Button>
+</label>
+
+{replyAttachment[index]?.attachmentName && (
+  <div className="attachment-pill">
+    <InsertDriveFileOutlinedIcon fontSize="small" />
+    <span>{replyAttachment[index].attachmentName}</span>
+    <IconButton
+      size="small"
+      onClick={() => removeReplyAttachment(index)}
+    >
+      <CancelOutlinedIcon fontSize="small" />
+    </IconButton>
+  </div>
+)}
                                 </div>
                               </div>
                             </div>
@@ -419,43 +600,45 @@ export default function CommentsActionDialog({
           <div className="dialog-footer">
 
             {/* ── ATTACHMENT: show pill if file selected, button otherwise ── */}
-            {newComment?.attachmentMent ? (
-              <div className="attachment-staged">
-                <InsertDriveFileOutlinedIcon fontSize="small" />
-                <span
-                  className="attachment-name"
-                  title={newComment?.attachmentName}
-                >
-                  {newComment?.attachmentName}
-                </span>
-                <IconButton
-                  size="small"
-                  onClick={removeCommentAttachment}
-                  aria-label="Remove attachment"
-                >
-                  <CancelOutlinedIcon fontSize="small" />
-                </IconButton>
-              </div>
-            ) : (
-              <>
-                <input
-                  id="comment-file"
-                  hidden
-                  type="file"
-                  onChange={handleCommentAttachment}
-                />
-                <label htmlFor="comment-file">
-                  <Button
-                    component="span"
-                    variant="outlined"
-                    startIcon={<AttachFileIcon />}
-                  >
-                    Attach Files
-                  </Button>
-                </label>
-              </>
-            )}
+           {newComment?.attachmentBase64 ? (
+  <div className="attachment-staged">
+    <InsertDriveFileOutlinedIcon fontSize="small" />
 
+    <span
+      className="attachment-name"
+      title={newComment?.attachmentName}
+    >
+      {newComment?.attachmentName}
+    </span>
+
+    <IconButton
+      size="small"
+      onClick={removeCommentAttachment}
+      aria-label="Remove attachment"
+    >
+      <CancelOutlinedIcon fontSize="small" />
+    </IconButton>
+  </div>
+) : (
+  <>
+    <input
+      id="comment-file"
+      hidden
+      type="file"
+      onChange={handleCommentAttachment}
+    />
+
+    <label htmlFor="comment-file">
+      <Button
+        component="span"
+        variant="outlined"
+        startIcon={<AttachFileIcon />}
+      >
+        Attach File
+      </Button>
+    </label>
+  </>
+)}
             <div className="footer-actions">
               <Button variant="outlined" onClick={onClose}>
                 Cancel

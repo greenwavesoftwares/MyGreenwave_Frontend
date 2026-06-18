@@ -183,7 +183,14 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
       modules: addRecursively(prev.modules),
     }));
 
-    
+   function generateRowId() {
+  // Use native crypto.randomUUID (all modern browsers + Node 19+)
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
+  return `row_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+} 
   
   function addRecursively(nodes) {
       return nodes.map((node) => {
@@ -192,11 +199,11 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
           const allocated = existing.reduce((s, c) => s + (Number(c.durationHrs) || 0), 0);
           const plannedStart=parent.plannedStart//calculatePlannedStart(parent)
           const plannedStop=parent.plannedStop//addDuration(plannedStart,durationHrs)
-          const durationHrs = dayjs(plannedStop).diff(dayjs(plannedStart), "hour")
+          // const durationHrs = dayjs(plannedStop).diff(dayjs(plannedStart), "hour")
                                       
           
           const newNode = {
-            id: `${parent.type === "MODULE" ? "activity" : "subactivity"}-${Date.now()}`,
+            id:generateRowId(),
             type: parent.type === "MODULE" ? "ACTIVITY" : "SUBACTIVITY",
             parentId: parent.id,
             name: "",
@@ -204,8 +211,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
             resource: currentUserId,
             resourceName: currentUserName,
             plannedStart: plannedStart,
-            plannedStop: plannedStop,
-            durationHrs,
+            plannedStop: plannedStart,
+            durationHrs: 0,
             actualStart: "", actualStop: "", actualElapsed: "",
             pauseStart: "", pauseDuration: "",
             activityStatus: "Not Ready", priority: "Medium", progress: 0,
@@ -227,7 +234,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
   }, 0);
 };
 const onOpenCommentBox = async(projectId,activityId,moduleId) => {
-  const existingCommentsResp=await activityTrackerApi.getCommentsByActivity(projectId,activityId)
+  const existingCommentsResp=await activityTrackerApi.getCommentsAndReplies(projectId)
+  console.log("Existing comments and replies::",existingCommentsResp)
   const newCommentBody=addComment(projectId,activityId,moduleId)
   
   setExistingComments(existingCommentsResp);
@@ -319,6 +327,12 @@ const totalActivities = useMemo(
   const fetchActivities=async()=>{
     const activityDetails=await activityTrackerApi.getAllActivities(selectedProject.projectId)
     setActivityInfo(activityDetails)
+    const expandedModules = activityDetails.modules.reduce((acc, module) => {
+  acc[module.id] = true;
+  return acc;
+}, {});
+console.log('Expanded Modules : ',expandedModules)
+setExpanded(expandedModules);
   }
   useEffect(()=>{
     fetchActivities()
