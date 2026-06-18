@@ -16,16 +16,17 @@ import Login from "./Modules/Login/Login";
 import { getUserData } from "./Modules/Login/Encrypt";
 import { useEffect } from "react";
 import Restricted from "./Restricted";
+import ActivityAssigner from "./Test Ground/Example";
 
 function App() {
-  console.log("rendering app component")
+  console.log("rendering app component");
   const userData = getUserData();
   const baseRoute = import.meta.env.VITE_BASE_ROUTE;
   useEffect(() => {
     const setLastActionTime = () =>
       localStorage.setItem(
         "lastActionTime",
-        Math.floor(Date.now() / 1000).toString()
+        Math.floor(Date.now() / 1000).toString(),
       );
 
     window.addEventListener("mousemove", setLastActionTime);
@@ -34,11 +35,29 @@ function App() {
       window.removeEventListener("mousemove", setLastActionTime);
     };
   }, []);
-
+  useEffect(() => {
+    const originalError = console.error;
+    console.error = (...args) => {
+      // Suppress known extension noise
+      const message = args[0];
+      if (
+        typeof message === "string" &&
+        (message.includes("disconnected port") ||
+          message.includes("Extension context invalidated"))
+      ) {
+        return;
+      }
+      originalError.apply(console, args);
+    };
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
   return (
     <Routes>
       {/* This will be only accessible for public */}
       <Route path="login" element={<Login />} />
+      <Route path="ActivityAssigner" element={<ActivityAssigner />} />
 
       {/* Any other route will go via this  */}
       <Route element={<PrivateRoute />}>
@@ -54,9 +73,6 @@ function App() {
         <Route path={`${baseRoute}`} element={<MenuBar />}>
           {WrappedRoutes()}
         </Route>
-       
-          
-        
       </Route>
 
       {/* For wrong routing go to login */}
