@@ -38,6 +38,16 @@ const activityTrackerApi = {
   },
 
   /**
+   * GET /activityTracker/projects/assigneeGroup
+   */
+  getProjectsByAssigneeGroup: async () => {
+    const response = await axios.get(`${apiEndPoint}/projects/assigneeGroup`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
+  /**
    * GET /activityTracker/projects/{projectId}
    */
   getProjectById: async (projectId) => {
@@ -355,6 +365,63 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  /****************************************
+   * DELETE /activityTracker/comments/{commentId}
+   ****************************************/
+  deleteComment: async (commentId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/comments/${commentId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
+  // REPLIES
+  // ============================================================
+
+  /**
+   * GET /activityTracker/comments/{commentId}/replies
+   */
+  getReplies: async (commentId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/comments/${commentId}/replies`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/comments/{commentId}/replies
+   *
+   * Body:
+   * {
+   *   "createdBy": "string",
+   *   "createdAt": "2026-06-17T09:00:00.000Z",
+   *   "replyText": "string",
+   *   "attachmentBase64": "string",
+   *   "attachmentName": "string"
+   * }
+   */
+  addReply: async (commentId, replyPayload) => {
+    const response = await axios.post(
+      `${apiEndPoint}/comments/${commentId}/replies`,
+      replyPayload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/replies/{replyId}
+   */
+  deleteReply: async (replyId) => {
+    const response = await axios.delete(`${apiEndPoint}/replies/${replyId}`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
   // ============================================================
   // ACTIVITY TREE
   // ============================================================
@@ -434,6 +501,32 @@ const activityTrackerApi = {
         headers: getHeaders(),
       },
     );
+    return response.data;
+  },
+
+  // ============================================================
+  // FILES
+  // ============================================================
+
+  /**
+   * GET /activityTracker/minIoFile
+   *
+   * Params:
+   * minioKey
+   * fileCategory
+   *
+   * Returns Blob
+   */
+  getMinIoFile: async (minioKey, fileCategory) => {
+    const response = await axios.get(`${apiEndPoint}/minIoFile`, {
+      headers: getHeaders(),
+      params: {
+        minioKey,
+        fileCategory,
+      },
+      responseType: "blob",
+    });
+
     return response.data;
   },
 
