@@ -275,7 +275,7 @@ const totalActivities = useMemo(
     console.log("Activity data:::",activityData)
     console.log("Activity name:",activityData.name,"Duration:",activityData.durationHrs)
     console.log("Module id:",moduleId)
-    if(!(activityData?.name?.length>0) || !(activityData?.durationHrs>0) ){
+    if(!(activityData?.name?.length>0)  ){
       console.log("Enter actiivity name and duration")
       return
     }
@@ -327,12 +327,13 @@ const totalActivities = useMemo(
   const fetchActivities=async()=>{
     const activityDetails=await activityTrackerApi.getAllActivities(selectedProject.projectId)
     setActivityInfo(activityDetails)
+    console.log('Activity Details : ',activityDetails)
     const expandedModules = activityDetails.modules.reduce((acc, module) => {
   acc[module.id] = true;
   return acc;
 }, {});
 console.log('Expanded Modules : ',expandedModules)
-setExpanded(expandedModules);
+setExpanded({...expanded,...expandedModules});
   }
   useEffect(()=>{
     fetchActivities()
