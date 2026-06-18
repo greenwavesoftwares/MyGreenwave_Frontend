@@ -23,6 +23,7 @@ import ClientPage from "../../features/meal booking/pages/ClientPage";
 import MealAdminPage from "../../features/meal booking/pages/MealAdminPage";
 import CookMealVerification from "../../features/meal booking/pages/CookMealVerification";
 import Assignee from "../../Modules/Assignee/Assignee";
+import ActivityAssigner from "../../Test Ground/Example";
 
 function WrappedRoutes() {
   return (
@@ -47,7 +48,8 @@ function WrappedRoutes() {
       <Route path="meal" element={<ClientPage />} />
       <Route path="admin-meal" element={<MealAdminPage />} />
       <Route path="meal-verification" element={<CookMealVerification />} />
-      <Route path="assignee" element={<Assignee/>}/>
+      <Route path="assignee" element={<Assignee />} />
+      <Route path="ActivityAssigner" element={<ActivityAssigner />} />
 
       {/* Claim section with nested routes */}
       <Route path="claim" element={<Outlet />}>
@@ -58,7 +60,7 @@ function WrappedRoutes() {
 
       {/* For wrong routing go to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
-       <Route path="restricted" element={<Restricted/>}/>
+      <Route path="restricted" element={<Restricted />} />
     </React.Fragment>
   );
 }
