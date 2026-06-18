@@ -384,6 +384,17 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  /****************************************
+   * GET /activityTracker/projects/{projectId}/commentReplyTree
+   ****************************************/
+  getCommentReplyTreeByProjectId: async (projectId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/projects/${projectId}/commentReplyTree`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
   // ============================================================
   // REPLIES
   // ============================================================
