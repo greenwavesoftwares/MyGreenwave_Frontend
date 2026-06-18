@@ -532,12 +532,12 @@ const activityTrackerApi = {
    *
    * Returns Blob
    */
-  getMinIoFile: async (minioKey, fileCategory) => {
+  getMinIoFile: async (minioKey, bucketName) => {
     const response = await axios.get(`${apiEndPoint}/minIoFile`, {
       headers: getHeaders(),
       params: {
         minioKey,
-        fileCategory,
+        bucketName,
       },
       responseType: "blob",
     });
