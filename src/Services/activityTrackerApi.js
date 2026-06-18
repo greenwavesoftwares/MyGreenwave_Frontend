@@ -490,6 +490,21 @@ const activityTrackerApi = {
   },
 
   /**
+   * GET /activityTracker/getActivityTreeCreatedByUser
+   * Returns all ProjectTreeDTOs created by the logged-in user.
+   * Response: List<ProjectTreeDTO> or 204 No Content
+   */
+  getActivityTreeCreatedByUser: async () => {
+    const response = await axios.get(
+      `${apiEndPoint}/getActivityTreeCreatedByUser`,
+      {
+        headers: getHeaders(),
+      },
+    );
+    return response.data;
+  },
+
+  /**
    * GET /activityTracker/getNonPublishedActivityTreesByUser
    * Returns all non-published ProjectTreeDTOs for the logged-in user.
    * Response: List<ProjectTreeDTO> or 204 No Content
