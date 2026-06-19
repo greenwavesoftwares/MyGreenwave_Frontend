@@ -234,7 +234,7 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
   }, 0);
 };
 const onOpenCommentBox = async(projectId,activityId,moduleId) => {
-  const existingCommentsResp=await activityTrackerApi.getCommentsAndReplies(projectId)
+  const existingCommentsResp=await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(projectId,activityId)
   console.log("Existing comments and replies::",existingCommentsResp)
   const newCommentBody=addComment(projectId,activityId,moduleId)
   
@@ -243,6 +243,7 @@ const onOpenCommentBox = async(projectId,activityId,moduleId) => {
   setOpenCommentDialog(true);
   };
   const onCloseCommentbox = () => {
+    fetchActivities();
     setOpenCommentDialog(false);
     setExistingComments(null);
     setNewComment(null)

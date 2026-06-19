@@ -30,6 +30,7 @@ import CommentsActionDialog from "./CommentsActionDialog";
 import "./ProjectActivityInfo.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import Badge from '@mui/material/Badge';
 
 export default function TreeRows({
   node,
@@ -154,6 +155,7 @@ export default function TreeRows({
         {currentUserId?.toLowerCase() === resource?.toLowerCase() &&
           activityStatus !== "Not Ready" && (
             <>
+             <Badge badgeContent={node?.commentCount} color="primary">
               <IconButton
                 size="small"
                 onClick={() => {
@@ -162,6 +164,7 @@ export default function TreeRows({
               >
                 <ModeCommentOutlinedIcon fontSize="small" />
               </IconButton>
+              </Badge>
               {sortOrder === 0  && (
                 <IconButton size="small" onClick={() => {addChildNode(node)}}
                 disabled={node.activityStatus === 'Completed'}

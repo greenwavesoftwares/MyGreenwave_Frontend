@@ -72,9 +72,9 @@ const removeReplyAttachment = (commentIndex) => {
   });
 };
 
-  const handleChange = (field, value) => {
-    setNewComment((prev) => ({ ...prev, [field]: value }));
-  };
+ const handleChange = (field, value) => {
+  setNewComment((prev) => ({ ...prev, [field]: value }));
+};
 
  const handleCommentAttachment = (event) => {
   const file = event.target.files?.[0];
@@ -114,6 +114,8 @@ const removeReplyAttachment = (commentIndex) => {
     }));
   };
 console.log('Comment : ',newComment)
+
+
   const addComments = async() => {
     if (!newComment.commentDescription.trim()) return;
     const payload = {
@@ -121,7 +123,10 @@ console.log('Comment : ',newComment)
       createdBy: getUserData()?.userDetails?.userId,
       createdAt: new Date().toISOString(),
       replies: [],
-      commentId:crypto.randomUUID() // temporary ID for frontend purposes
+      commentId:crypto.randomUUID(), // temporary ID for frontend purposes
+      responsibility: Array.isArray(newComment?.responsibility)
+  ? newComment.responsibility.join(",")
+  : ""
     };
     console.log("new comment:",newComment)
     console.log('Updated Payload : ',payload)
@@ -178,11 +183,13 @@ console.log('Comment : ',newComment)
             replies: [
               ...(item.replies || []),
               {
-                replyId,
-                replyText: text,
-                createdBy: payload.createdBy,
-                createdAt: payload.createdAt,
-                attachmentName: payload.attachmentName,
+                // replyId,
+                // replyText: text,
+                // createdBy: payload.createdBy,
+                // createdAt: payload.createdAt,
+                // attachmentName: payload.attachmentName,
+                ...payload,
+                attachment: payload.commentId+'_'+payload.attachmentName,
               },
             ],
           }
@@ -427,6 +434,43 @@ console.log('Comment : ',newComment)
                               <div className="reply-text">
                                 {reply.replyText}
                               </div>
+                             {reply.attachment && (
+  <div className="attachment-pill">
+    <InsertDriveFileOutlinedIcon fontSize="small" />
+
+    <span
+      className="attachment-name"
+      title={reply.attachment.substring(reply.attachment.indexOf("_") + 1)}
+      onClick={async () => {
+        try {
+          const separatorIndex = reply.attachment.indexOf("_");
+
+          const minioKey = reply.attachment.substring(0, separatorIndex);
+          const fileName = reply.attachment.substring(separatorIndex + 1);
+
+          const response = await activityTrackerApi.getMinIoFile(
+            minioKey,
+            "replies"
+          );
+
+          // const blob = new Blob([response.data]);
+          const url = window.URL.createObjectURL(response);
+
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          a.click();
+
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("Failed to download attachment:", error);
+        }
+      }}
+    >
+      {reply.attachment.substring(reply.attachment.indexOf("_") + 1)}
+    </span>
+  </div>
+)} 
                             </div>
                           ))}
                         </TableCell>
@@ -568,18 +612,34 @@ console.log('Comment : ',newComment)
             <div>
               <label>Responsibility</label>
               <div className="chip-group">
-                {["GW", "Customer"].map((opt) => (
-                  <Chip
-                    key={opt}
-                    clickable
-                    label={opt}
-                    color={
-                      newComment?.responsibility === opt ? "primary" : "default"
-                    }
-                    onClick={() => handleChange("responsibility", opt)}
-                  />
-                ))}
-              </div>
+  {["GW", "Customer"].map((opt) => (
+    <Chip
+      key={opt}
+      clickable
+      label={opt}
+      color={
+        newComment?.responsibility?.includes(opt)
+          ? "primary"
+          : "default"
+      }
+      variant={
+        newComment?.responsibility?.includes(opt)
+          ? "filled"
+          : "outlined"
+      }
+      onClick={() =>
+        handleChange(
+          "responsibility",
+          newComment?.responsibility?.includes(opt)
+            ? newComment.responsibility.filter(
+                (item) => item !== opt
+              )
+            : [...(newComment?.responsibility || []), opt]
+        )
+      }
+    />
+  ))}
+</div>
             </div>
 
             <div>
