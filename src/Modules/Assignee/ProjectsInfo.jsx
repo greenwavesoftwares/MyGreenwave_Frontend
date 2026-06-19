@@ -111,6 +111,7 @@ function normalizeStatus(status) {
 
 const TAB_DEFS = [
   { key: "all", label: "All Projects", icon: BriefcaseIcon },
+  
   { key: "published", label: "Published", icon: RocketIcon },
 ];
 
@@ -164,19 +165,19 @@ export default function ProjectsInfo({ projectSelection }) {
   const renderBody = () => {
     if (loading) {
       return (
-        <div className="pi-empty">
-          <div className="pi-spinner" />
-          <p className="pi-empty-title">Loading projects…</p>
+        <div className="proj-empty">
+          <div className="proj-spinner" />
+          <p className="proj-empty-title">Loading projects…</p>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div className="pi-empty pi-empty--error">
+        <div className="proj-empty proj-empty--error">
           <ErrorIcon />
-          <p className="pi-empty-title">{error}</p>
-          <button className="pi-retry-btn" onClick={fetchProjects}>
+          <p className="proj-empty-title">{error}</p>
+          <button className="proj-retry-btn" onClick={fetchProjects}>
             Try again
           </button>
         </div>
@@ -185,74 +186,74 @@ export default function ProjectsInfo({ projectSelection }) {
 
     if (visibleProjects.length === 0) {
       return (
-        <div className="pi-empty">
+        <div className="proj-empty">
           <EmptyIcon />
-          <p className="pi-empty-title">No projects yet</p>
-          <p className="pi-empty-sub">Projects you create will appear here.</p>
+          <p className="proj-empty-title">No projects yet</p>
+          <p className="proj-empty-sub">Projects you create will appear here.</p>
         </div>
       );
     }
 
     return (
-      <div className="pi-grid">
+      <div className="proj-grid">
         {visibleProjects.map((project, index) => {
           const status = normalizeStatus(project.projectStatus);
-          const tags = project.tags ?? [project.group].filter(Boolean);
+          const tags = project.groupNames;
           return (
             <div
-              className="pi-card"
+              className="proj-card"
               key={project.id ?? index}
               style={{ animationDelay: `${Math.min(index, 8) * 0.04}s` }}
               onClick={() => projectSelection && projectSelection(project)}
             >
-              <span className={`pi-status pi-status--${status}`}>
+              <span className={`proj-status proj-status--${status}`}>
                 {status === "published" ? <RocketIcon /> : <DocIcon />}
                 {status === "published" ? "PUBLISHED" : "DRAFT"}
               </span>
 
-              <h3 className="pi-card-title">{project.projectName}</h3>
+              <h3 className="proj-card-title">{project.projectName}</h3>
 
-              <p className="pi-card-meta">
+              <p className="proj-card-meta">
                 PO: <strong>{project.poNumber}</strong>
                 {project.siteCustomer ? <> &nbsp;·&nbsp; {project.siteCustomer}</> : null}
               </p>
 
-              <div className="pi-chip-row">
+              <div className="proj-chip-row">
                 {project.moduleCount != null && (
-                  <span className="pi-chip pi-chip--module">
+                  <span className="proj-chip proj-chip--module">
                     <LayerIcon /> {project.moduleCount} module{project.moduleCount === 1 ? "" : "s"}
                   </span>
                 )}
-                {project.taskCount != null && (
-                  <span className="pi-chip pi-chip--task">
-                    <CheckCircleIcon /> {project.taskCount} task{project.taskCount === 1 ? "" : "s"}
+                {project.activityCount != null && (
+                  <span className="proj-chip proj-chip--task">
+                    <CheckCircleIcon /> {project.activityCount} task{project.activityCount === 1 ? "" : "s"}
                   </span>
                 )}
                 {project.subTaskCount != null && (
-                  <span className="pi-chip pi-chip--sub">
+                  <span className="proj-chip proj-chip--sub">
                     <SubtaskIcon /> {project.subTaskCount} sub{project.subTaskCount === 1 ? "" : "s"}
                   </span>
                 )}
               </div>
 
               {tags.length > 0 && (
-                <div className="pi-tag-row">
+                <div className="proj-tag-row">
                   {tags.map((tag, i) => (
-                    <span className="pi-tag" key={i}>
+                    <span className="proj-tag" key={i}>
                       {tag}
                     </span>
                   ))}
                 </div>
               )}
 
-              <div className="pi-card-footer">
-                <span className="pi-card-date">
+              <div className="proj-card-footer">
+                <span className="proj-card-date">
                   <ClockIcon />
                   {project.createdAt && dayjs(project.createdAt).isValid()
                     ? dayjs(project.createdAt).format("D MMM YYYY, HH:mm")
                     : "-"}
                 </span>
-                <span className="pi-open-link">
+                <span className="proj-open-link">
                   Open <ArrowIcon />
                 </span>
               </div>
@@ -264,24 +265,24 @@ export default function ProjectsInfo({ projectSelection }) {
   };
 
   return (
-    <div className="pi-page container mx-auto">
-      <div className="pi-tabs">
+    <div className="proj-page  container mx-auto">
+      <div className="proj-tabs">
         {TAB_DEFS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
-            className={`pi-tab ${activeTab === key ? "pi-tab--active" : ""} pi-tab--${key}`}
+            className={`proj-tab ${activeTab === key ? "proj-tab--active" : ""} proj-tab--${key}`}
             onClick={() => setActiveTab(key)}
           >
             <Icon />
             {label}
-            <span className="pi-tab-count">{counts[key]}</span>
+            <span className="proj-tab-count">{counts[key]}</span>
           </button>
         ))}
       </div>
 
-      <div className="pi-toolbar">
-        <div className="pi-toolbar-title">
-          <div className="pi-toolbar-icon">
+      <div className="proj-toolbar">
+        <div className="proj-toolbar-title">
+          <div className="proj-toolbar-icon">
             <BriefcaseIcon />
           </div>
           <div>
@@ -290,8 +291,8 @@ export default function ProjectsInfo({ projectSelection }) {
           </div>
         </div>
 
-        <div className="pi-toolbar-actions">
-          <div className="pi-search">
+        <div className="proj-toolbar-actions">
+          <div className="proj-search">
             <SearchIcon />
             <input
               type="text"
@@ -300,12 +301,10 @@ export default function ProjectsInfo({ projectSelection }) {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <button className="pi-refresh-btn" onClick={fetchProjects}>
+          <button className="proj-refresh-btn" onClick={fetchProjects}>
             <RefreshIcon /> Refresh
           </button>
-          <button className="pi-new-btn">
-            <PlusIcon /> New Project
-          </button>
+          
         </div>
       </div>
 
