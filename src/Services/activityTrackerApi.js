@@ -373,9 +373,9 @@ const activityTrackerApi = {
     return response.data;
   },
 
-  /****************************************
+  /**
    * DELETE /activityTracker/comments/{commentId}
-   ****************************************/
+   */
   deleteComment: async (commentId) => {
     const response = await axios.delete(
       `${apiEndPoint}/comments/${commentId}`,
@@ -384,12 +384,26 @@ const activityTrackerApi = {
     return response.data;
   },
 
-  /****************************************
+  /**
    * GET /activityTracker/projects/{projectId}/commentReplyTree
-   ****************************************/
+   */
   getCommentReplyTreeByProjectId: async (projectId) => {
-    const response = await axios.delete(
+    const response = await axios.get(
       `${apiEndPoint}/projects/${projectId}/commentReplyTree`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/commentReplyTree/{activityId}
+   */
+  getCommentReplyTreeByProjectIdAndActivityId: async (
+    projectId,
+    activityId,
+  ) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/commentReplyTree/${activityId}`,
       { headers: getHeaders() },
     );
     return response.data;
