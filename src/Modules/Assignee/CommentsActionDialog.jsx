@@ -449,7 +449,7 @@ console.log('Comment : ',newComment)
           const fileName = reply.attachment.substring(separatorIndex + 1);
 
           const response = await activityTrackerApi.getMinIoFile(
-            minioKey,
+            reply.attachment,
             "replies"
           );
 
