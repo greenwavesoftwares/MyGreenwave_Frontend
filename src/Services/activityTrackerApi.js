@@ -28,7 +28,7 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/assignee
-   * Returns published projects assigned to the logged-in user.
+   * Returns published projects assigned to the logged-in user with counts.
    */
   getProjectsByAssignee: async () => {
     const response = await axios.get(`${apiEndPoint}/projects/assignee`, {
@@ -39,6 +39,7 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/assigneeGroup
+   * Returns projects assigned to the user's group with counts.
    */
   getProjectsByAssigneeGroup: async () => {
     const response = await axios.get(`${apiEndPoint}/projects/assigneeGroup`, {
@@ -49,6 +50,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}
+   * Returns details for a specific project.
+   * @param {string} projectId
    */
   getProjectById: async (projectId) => {
     const response = await axios.get(`${apiEndPoint}/projects/${projectId}`, {
@@ -59,16 +62,18 @@ const activityTrackerApi = {
 
   /**
    * POST /activityTracker/projects
-   * Body:
+   * Creates a new project and maps it to groups.
+   * @param {Object} projectData (ProjectGroupRequest)
+   * @example
    * {
-   *   "projectId": "PRJ001",
-   *   "projectName": "Project A",
-   *   "poNumber": "PO123",
-   *   "siteCustomer": "ABC",
-   *   "projectStatus": "Draft",
-   *   "createdBy": "admin",
-   *   "createdAt": "2026-06-05T09:30:19.069Z",
-   *   "groupIds": ["G1", "G2"]
+   * "projectId": "string",
+   * "projectName": "string",
+   * "poNumber": "string",
+   * "siteCustomer": "string",
+   * "projectStatus": "string",
+   * "createdBy": "string",
+   * "createdAt": "2026-06-05T09:30:19.069Z",
+   * "groupIds": ["group1", "group2"]
    * }
    */
   createProject: async (projectData) => {
@@ -80,14 +85,19 @@ const activityTrackerApi = {
 
   /**
    * PUT /activityTracker/projects
-   * Body:
+   * Updates an existing project's metadata.
+   * @param {Object} projectData (Project Model)
+   * @example
    * {
-   *   "projectId": "PRJ001",
-   *   "projectName": "Updated Name",
-   *   "poNumber": "PO123",
-   *   "siteCustomer": "ABC",
-   *   "projectStatus": "Draft",
-   *   "updatedBy": "admin"
+   * "projectId": "string",
+   * "projectName": "string",
+   * "poNumber": "string",
+   * "siteCustomer": "string",
+   * "projectStatus": "string",
+   * "createdBy": "string",
+   * "createdAt": "2026-06-05T09:30:19.069Z",
+   * "updatedBy": "string",
+   * "updatedAt": "2026-06-06T09:30:19.069Z"
    * }
    */
   updateProject: async (projectData) => {
@@ -99,6 +109,9 @@ const activityTrackerApi = {
 
   /**
    * PUT /activityTracker/projects/{projectId}/submit/{projectStatus}
+   * Submits a project, effectively changing its status.
+   * @param {string} projectId
+   * @param {string} projectStatus (e.g., 'Published', 'Draft')
    */
   submitProject: async (projectId, projectStatus) => {
     const response = await axios.put(
@@ -111,6 +124,8 @@ const activityTrackerApi = {
 
   /**
    * DELETE /activityTracker/projects/{projectId}
+   * Deletes a project by ID.
+   * @param {string} projectId
    */
   deleteProject: async (projectId) => {
     const response = await axios.delete(
@@ -126,7 +141,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}/activities
-   * Returns all activities grouped by module.
+   * Returns all activities grouped by module for a given project.
+   * @param {string} projectId
    */
   getAllActivities: async (projectId) => {
     const response = await axios.get(
@@ -138,7 +154,9 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}/activities/{resourceCode}
-   * Returns activities filtered by resourceId/resourceCode.
+   * Returns activities for a specific project filtered by resource/employee.
+   * @param {string} projectId
+   * @param {string} resourceCode
    */
   getActivitiesByResource: async (projectId, resourceCode) => {
     const response = await axios.get(
@@ -150,7 +168,10 @@ const activityTrackerApi = {
 
   /**
    * POST /activityTracker/projects/{projectId}/activities
-   * Body: ProjectActivitiesResponse (modules → children tree)
+   * Bulk creates activities/modules via the tree response payload.
+   * @param {string} projectId
+   * @param {Object} payload (ProjectActivitiesResponse DTO)
+   * Expected to have project details and an array of `modules` containing `children` (activities).
    */
   createActivities: async (projectId, payload) => {
     const response = await axios.post(
@@ -163,18 +184,22 @@ const activityTrackerApi = {
 
   /**
    * POST /activityTracker/projects/{projectId}/activity
-   * Creates a single activity. moduleId must be set inside the body —
-   * the module must already exist (moduleId FK).
-   * Body:
+   * Creates a single activity. The moduleId must already exist.
+   * @param {string} projectId
+   * @param {Object} activityData (Activity Model)
+   * @example
    * {
-   *   "activityId": "ACT001",
-   *   "moduleId": "MOD001",
-   *   "activityName": "Cable Laying",
-   *   "resourceId": "EMP001",
-   *   "plannedStart": "2026-06-05T09:33:47.392Z",
-   *   "plannedStop": "2026-06-05T17:33:47.392Z",
-   *   "durationHrs": 8,
-   *   "activityStatus": "pending"
+   * "activityId": "string",
+   * "projectId": "string",
+   * "moduleId": "string",
+   * "activityName": "string",
+   * "parentActivityId": "string",
+   * "resourceId": "string",
+   * "plannedStart": "2026-06-05T09:33:47.392Z",
+   * "durationHrs": 8.0,
+   * "plannedStop": "2026-06-05T17:33:47.392Z",
+   * "activityStatus": "Pending",
+   * "sortOrder": 0
    * }
    */
   createActivity: async (projectId, activityData) => {
@@ -188,7 +213,9 @@ const activityTrackerApi = {
 
   /**
    * PUT /activityTracker/activities/{projectId}
-   * Body: Activity object with activityId set.
+   * Updates a single activity.
+   * @param {string} projectId
+   * @param {Object} activityData (Activity Model with activityId present)
    */
   updateActivity: async (projectId, activityData) => {
     const response = await axios.put(
@@ -201,6 +228,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/activities/{activityId}
+   * Gets a specific activity by its ID.
+   * @param {string} activityId
    */
   getActivity: async (activityId) => {
     const response = await axios.get(
@@ -212,6 +241,8 @@ const activityTrackerApi = {
 
   /**
    * DELETE /activityTracker/activities/{activityId}
+   * Deletes a specific activity.
+   * @param {string} activityId
    */
   deleteActivity: async (activityId) => {
     const response = await axios.delete(
@@ -223,10 +254,13 @@ const activityTrackerApi = {
 
   /**
    * PATCH /activityTracker/activities/{activityId}/status
-   * Body:
+   * Updates the status of an activity, managing pause/resume logic.
+   * @param {string} activityId
+   * @param {Object} statusPayload (ActivityStatus DTO)
+   * @example
    * {
-   *   "status": "Running",       // Not Ready | Pending | Running | Paused | Completed
-   *   "actualTime": "2026-06-05T09:35:19.717Z"
+   * "status": "Running", // Not Ready | Pending | Running | Paused | Completed
+   * "actualTime": "2026-06-05T09:35:19.717Z"
    * }
    */
   updateActivityStatus: async (activityId, statusPayload) => {
@@ -240,8 +274,11 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/isUserHasPendingActivity
-   * Query params: userId, fromDate, toDate
-   * Returns: boolean
+   * Checks if a user has activities pending between dates.
+   * @param {string} userId
+   * @param {string} fromDate (Timestamp)
+   * @param {string} toDate (Timestamp)
+   * @returns {boolean}
    */
   isUserHasPendingActivity: async (userId, fromDate, toDate) => {
     const response = await axios.get(
@@ -264,7 +301,10 @@ const activityTrackerApi = {
 
   /**
    * POST /activityTracker/activities/reject/{activityId}
-   * Body: { "reason": "Incorrect planned hours" }
+   * Logs a rejection reason for an activity.
+   * @param {string} activityId
+   * @param {string} reason
+   * @example Payload Sent: { "reason": "Incorrect planned hours" }
    */
   rejectActivity: async (activityId, reason) => {
     const response = await axios.post(
@@ -277,6 +317,9 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/activities/{activityId}/rejections
+   * Gets the rejection history for an activity.
+   * @param {string} activityId
+   * @returns Array of ActivityReject model
    */
   getActivityRejections: async (activityId) => {
     const response = await axios.get(
@@ -292,6 +335,9 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/activities/{activityId}/pauses
+   * Gets the pause/resume history for an activity.
+   * @param {string} activityId
+   * @returns Array of ActivityPauses model
    */
   getActivityPauses: async (activityId) => {
     const response = await axios.get(
@@ -303,6 +349,8 @@ const activityTrackerApi = {
 
   /**
    * DELETE /activityTracker/activities/{activityId}/pauses
+   * Deletes all pause records for an activity.
+   * @param {string} activityId
    */
   deleteActivityPauses: async (activityId) => {
     const response = await axios.delete(
@@ -318,6 +366,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}/comments
+   * Gets all flat comments for a project.
+   * @param {string} projectId
    */
   getComments: async (projectId) => {
     const response = await axios.get(
@@ -329,6 +379,9 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}/activity/{activityId}/comments
+   * Gets all flat comments for a specific activity within a project.
+   * @param {string} projectId
+   * @param {string} activityId
    */
   getCommentsByActivity: async (projectId, activityId) => {
     const response = await axios.get(
@@ -348,20 +401,23 @@ const activityTrackerApi = {
 
   /**
    * POST /activityTracker/projects/{projectId}/comments
-   * Body:
+   * Adds a new comment to a project/activity.
+   * @param {string} projectId
+   * @param {Object} commentPayload (Comment Model)
+   * @example
    * {
-   *   "projectId": "PRJ001",
-   *   "commentDescription": "Issue found",
-   *   "commentType": "Observation",
-   *   "resolutionDate": "2026-06-05T09:37:04.818Z",
-   *   "responsibility": "Site Team",
-   *   "activityId": "ACT001",
-   *   "moduleId": "MOD001",
-   *   "actionPoint": "Fix alignment",
-   *   "others": "",
-   *   "attachMent": "",
-   *   "createdBy": "admin",
-   *   "createdAt": "2026-06-05T09:37:04.818Z"
+   * "commentDescription": "string",
+   * "commentType": "string",
+   * "resolutionDate": "2026-06-05", // SQL Date
+   * "responsibility": "string",
+   * "activityId": "string",
+   * "moduleId": "string",
+   * "actionPoint": "string",
+   * "others": "string",
+   * "attachmentBase64": "base64string", // Transient file bytes
+   * "attachmentName": "file.pdf", // Transient file name
+   * "createdBy": "string",
+   * "createdAt": "2026-06-05T09:37:04.818Z"
    * }
    */
   addComment: async (projectId, commentPayload) => {
@@ -375,6 +431,8 @@ const activityTrackerApi = {
 
   /**
    * DELETE /activityTracker/comments/{commentId}
+   * Deletes a specific comment.
+   * @param {string} commentId
    */
   deleteComment: async (commentId) => {
     const response = await axios.delete(
@@ -386,6 +444,9 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}/commentReplyTree
+   * Gets comments and their corresponding replies mapped in a tree format for a whole project.
+   * @param {string} projectId
+   * @returns Array of CommentReplyTree DTO
    */
   getCommentReplyTreeByProjectId: async (projectId) => {
     const response = await axios.get(
@@ -397,6 +458,10 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/projects/{projectId}/commentReplyTree/{activityId}
+   * Gets comments and their replies in a tree format for a specific activity.
+   * @param {string} projectId
+   * @param {string} activityId
+   * @returns Array of CommentReplyTree DTO
    */
   getCommentReplyTreeByProjectIdAndActivityId: async (
     projectId,
@@ -415,6 +480,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/comments/{commentId}/replies
+   * Gets all flat replies belonging to a specific comment.
+   * @param {string} commentId
    */
   getReplies: async (commentId) => {
     const response = await axios.get(
@@ -426,14 +493,16 @@ const activityTrackerApi = {
 
   /**
    * POST /activityTracker/comments/{commentId}/replies
-   *
-   * Body:
+   * Adds a reply to a comment.
+   * @param {string} commentId
+   * @param {Object} replyPayload (Reply Model)
+   * @example
    * {
-   *   "createdBy": "string",
-   *   "createdAt": "2026-06-17T09:00:00.000Z",
-   *   "replyText": "string",
-   *   "attachmentBase64": "string",
-   *   "attachmentName": "string"
+   * "replyText": "string",
+   * "createdBy": "string",
+   * "createdAt": "2026-06-17T09:00:00.000Z",
+   * "attachmentBase64": "base64string", // Transient
+   * "attachmentName": "file.pdf" // Transient
    * }
    */
   addReply: async (commentId, replyPayload) => {
@@ -447,6 +516,8 @@ const activityTrackerApi = {
 
   /**
    * DELETE /activityTracker/replies/{replyId}
+   * Deletes a specific reply.
+   * @param {string} replyId
    */
   deleteReply: async (replyId) => {
     const response = await axios.delete(`${apiEndPoint}/replies/${replyId}`, {
@@ -462,32 +533,30 @@ const activityTrackerApi = {
   /**
    * POST /activityTracker/postActivityTree
    * Upserts a full project tree (project + groups + activities + comments) in one call.
-   * Body: ProjectTreeDTO
+   * @param {Object} projectTreePayload (ProjectTreeDTO)
+   * @example
    * {
-   *   "id": "PRJ001",
-   *   "project": "Project A",
-   *   "po": "PO123",
-   *   "site": "ABC Corp",
-   *   "status": "draft",
-   *   "groups": ["G1", "G2"],
-   *   "rows": [
-   *     {
-   *       "id": "ACT001",
-   *       "parentId": null,
-   *       "moduleId": "MOD001",
-   *       "module": "Electrical",
-   *       "task": "Cable Laying",
-   *       "resource": "EMP001",
-   *       "plannedStart": "2026-06-05T09:00:00.000Z",
-   *       "plannedStop": "2026-06-05T17:00:00.000Z",
-   *       "durationHrs": 8,
-   *       "status": "pending",
-   *       "sortOrder": 0,
-   *       "comments": []
-   *     }
-   *   ]
+   * "id": "PRJ001",
+   * "project": "Project A",
+   * "po": "PO123",
+   * "site": "ABC Corp",
+   * "status": "draft",
+   * "groups": ["G1", "G2"],
+   * "rows": [
+   * {
+   * "id": "ACT001",
+   * "parentId": null,
+   * "moduleId": "MOD001",
+   * "module": "Electrical",
+   * "task": "Cable Laying",
+   * "resource": "EMP001",
+   * "plannedStart": "2026-06-05T09:00:00.000Z",
+   * "durationHrs": 8,
+   * "status": "pending",
+   * "comments": []
    * }
-   * Response: true (boolean)
+   * ]
+   * }
    */
   postActivityTree: async (projectTreePayload) => {
     const response = await axios.post(
@@ -500,8 +569,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/getActivityTree
-   * Returns all ProjectTreeDTOs for all the projects.
-   * Response: List<ProjectTreeDTO> or 204 No Content
+   * Returns all ProjectTreeDTOs for all projects in the system.
+   * @returns Array of ProjectTreeDTO
    */
   getActivityTree: async () => {
     const response = await axios.get(`${apiEndPoint}/getActivityTree`, {
@@ -512,8 +581,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/getActivityTreeByUser
-   * Returns all ProjectTreeDTOs for the logged-in user.
-   * Response: List<ProjectTreeDTO> or 204 No Content
+   * Returns all ProjectTreeDTOs applicable to the logged-in user.
+   * @returns Array of ProjectTreeDTO
    */
   getActivityTreeByUser: async () => {
     const response = await axios.get(`${apiEndPoint}/getActivityTreeByUser`, {
@@ -524,8 +593,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/getActivityTreeCreatedByUser
-   * Returns all ProjectTreeDTOs created by the logged-in user.
-   * Response: List<ProjectTreeDTO> or 204 No Content
+   * Returns all ProjectTreeDTOs that were explicitly created by the logged-in user.
+   * @returns Array of ProjectTreeDTO
    */
   getActivityTreeCreatedByUser: async () => {
     const response = await axios.get(
@@ -539,8 +608,8 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/getNonPublishedActivityTreesByUser
-   * Returns all non-published ProjectTreeDTOs for the logged-in user.
-   * Response: List<ProjectTreeDTO> or 204 No Content
+   * Returns ProjectTreeDTOs for the user that are NOT yet in 'Published' status.
+   * @returns Array of ProjectTreeDTO
    */
   getNonPublishedActivityTreesByUser: async () => {
     const response = await axios.get(
@@ -558,12 +627,10 @@ const activityTrackerApi = {
 
   /**
    * GET /activityTracker/minIoFile
-   *
-   * Params:
-   * minioKey
-   * fileCategory
-   *
-   * Returns Blob
+   * Downloads an attachment securely via MinIO.
+   * @param {string} minioKey - The unique key/filename generated in MinIO
+   * @param {string} bucketName - The specific MinIO bucket (e.g. comments, replies)
+   * @returns {Blob} Binary file data for download/rendering
    */
   getMinIoFile: async (minioKey, bucketName) => {
     const response = await axios.get(`${apiEndPoint}/minIoFile`, {
@@ -574,7 +641,6 @@ const activityTrackerApi = {
       },
       responseType: "blob",
     });
-
     return response.data;
   },
 
@@ -584,6 +650,8 @@ const activityTrackerApi = {
 
   /**
    * GET /admin/getallgroups
+   * Fetches all user groups from the admin API.
+   * Note: Hits the main host path, not the activityTracker subset.
    */
   getAllGroups: async () => {
     const response = await axios.get(`${host}admin/getallgroups`, {
@@ -594,7 +662,10 @@ const activityTrackerApi = {
 
   /**
    * POST /admin/getUserIdAndLeavesBygroupIds
-   * Body: ["groupId1", "groupId2"]
+   * Gets user IDs and leaf nodes based on provided group IDs.
+   * Note: Hits the main host path, not the activityTracker subset.
+   * @param {Array<string>} groupIds
+   * @example ["groupId1", "groupId2"]
    */
   getUserIdAndLeavesBygroupIds: async (groupIds) => {
     const response = await axios.post(
