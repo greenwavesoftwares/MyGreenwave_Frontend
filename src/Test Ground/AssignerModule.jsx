@@ -92,7 +92,7 @@ import { createPortal } from "react-dom";
 import * as XLSX from "xlsx";
 import { MdDelete } from "react-icons/md";
 import activityTrackerApi from "../Services/activityTrackerApi";
-import { getUserData } from "../Modules/Login/Encrypt";
+import { RotateCcw } from "lucide-react";
 
 /* ─── Constants ─── */
 /* ─── API Configuration ─── */
@@ -667,6 +667,14 @@ function fmtDisplay(d) {
   const mn = String(d.getMinutes()).padStart(2, "0");
   return `${dd}-${mm}-${yy} ${hh}:${mn}`;
 }
+/* ─── Status utilities ─── */
+function isPending(row) {
+  return (
+    String(row.status || "pending")
+      .toLowerCase()
+      .trim() === "pending"
+  );
+}
 function isWeekday(d) {
   const day = d.getDay();
   return day >= 1 && day <= 5;
@@ -814,63 +822,247 @@ function defaultFirstStart(userId, groupResources = {}) {
 
 /* ─── Chain computation ─── */
 function recomputeChains(rows, groupResources = {}) {
-  // Work on shallow copies
   const updated = rows.map((r) => ({ ...r }));
-
-  // Build ID → row map for fast lookups
   const byId = new Map(updated.map((r) => [r.id, r]));
 
-  // Get ordered list (any depth)
-  const ordered = flattenOrdered(updated);
+  // ── Build parent → children map ──
+  const childrenMap = new Map();
+  updated.forEach((r) => {
+    const pid = r.parentId || "__ROOT__";
+    if (!childrenMap.has(pid)) childrenMap.set(pid, []);
+    childrenMap.get(pid).push(r);
+  });
 
-  // Get unique resource codes
-  const userIds = new Set(updated.map((r) => r.resource).filter(Boolean));
+  // ── HELPER: Get children of a row ──
+  const getChildren = (id) => childrenMap.get(id) || [];
 
-  userIds.forEach((userId) => {
-    // Filter chain for this resource, in ordered sequence
-    const chain = ordered.filter((r) => r.resource === userId);
-    console.log(
-      `Chain for ${userId}:`,
-      chain.map((r) => ({
-        id: r.id,
-        task: r.task,
-        depth: r.sortOrder,
-        dur: r.durationHrs,
-        start: r.plannedStart,
-        stop: r.plannedStop,
-      })),
-    );
+  // ── HELPER: Sum all descendant durations (top-level children only) ──
+  // We use only DIRECT children (one level) — they recursively include their own descendants
+  const sumChildrenDurations = (parentId) => {
+    const children = getChildren(parentId);
+    if (children.length === 0) return null; // signal "no children"
+    let total = 0;
+    for (const child of children) {
+      // If child has its own children, use child's computed duration (recursive)
+      const grandChildren = getChildren(child.id);
+      let childDur;
+      if (grandChildren.length > 0) {
+        // Recursive: child's duration = sum of grandchildren
+        childDur = sumChildrenDurations(child.id);
+        if (childDur == null) childDur = 0;
+      } else {
+        childDur = Number(child.durationHrs);
+        if (isNaN(childDur)) childDur = 0;
+      }
+      total += childDur;
+    }
+    return total;
+  };
+
+  // NOTE: Parent durations are computed after child scheduling below
+  // (don't override parent.durationHrs here). This preserves user-set
+  // parent durations when sub-tasks are all zero-duration.
+
+  // ── STEP 2: Process top-level rows (module-scoped chains) ──
+  const topRows = childrenMap.get("__ROOT__") || [];
+  const chains = new Map();
+
+  topRows.forEach((row) => {
+    // Skip auto-scheduling for parent rows (those with children)
+    if (getChildren(row.id).length > 0) return;
+    if (!row.resource) return;
+    const moduleKey = row.moduleId || row.module || "__no_module__";
+    const chainKey = `${moduleKey}|${row.resource}`;
+    if (!chains.has(chainKey)) chains.set(chainKey, []);
+    chains.get(chainKey).push(row);
+  });
+
+  chains.forEach((chainRows, chainKey) => {
+    const [, userId] = chainKey.split("|");
     let prevEnd = null;
 
-    chain.forEach((row, idx) => {
-      // Get the real row from the map (not the spread copy)
+    chainRows.forEach((row, idx) => {
       const realRow = byId.get(row.id);
       const dur = Number(realRow.durationHrs);
-      let start;
 
+      const hasValidDuration =
+        realRow.durationHrs !== "" &&
+        realRow.durationHrs !== null &&
+        realRow.durationHrs !== undefined &&
+        !isNaN(Number(realRow.durationHrs));
+
+      let start;
       if (idx === 0) {
-        let userStart = realRow.plannedStart
+        const userStart = realRow.plannedStart
           ? parseISODateTime(realRow.plannedStart)
           : null;
-        if (!userStart) userStart = defaultFirstStart(userId, groupResources);
+        if (!userStart) {
+          realRow.plannedStart = "";
+          realRow.plannedStop = "";
+          prevEnd = null;
+          return;
+        }
         start = nextWorkMoment(userStart, userId, groupResources);
       } else {
-        const base = prevEnd ? new Date(prevEnd) : defaultFirstStart(userId);
-        start = nextWorkMoment(base, userId);
+        if (!prevEnd) {
+          realRow.plannedStart = "";
+          realRow.plannedStop = "";
+          return;
+        }
+        start = nextWorkMoment(new Date(prevEnd), userId, groupResources);
       }
 
       realRow.plannedStart = isoDateTime(start);
 
-      if (dur > 0) {
-        const end = addWorkHours(start, dur, userId, groupResources);
-        realRow.plannedStop = isoDateTime(end);
-        prevEnd = end;
+      if (hasValidDuration) {
+        if (dur === 0) {
+          realRow.plannedStop = isoDateTime(start);
+          prevEnd = start;
+        } else {
+          const end = addWorkHours(start, dur, userId, groupResources);
+          realRow.plannedStop = isoDateTime(end);
+          prevEnd = end;
+        }
       } else {
         realRow.plannedStop = "";
         prevEnd = start;
       }
     });
   });
+
+  // ── STEP 3: Process sub-tasks (recursively, chained within parent) ──
+  const processChildren = (parentId) => {
+    const parent = byId.get(parentId);
+    if (!parent) return;
+
+    const children = getChildren(parentId);
+    if (children.length === 0) return;
+
+    const parentStart = parent.plannedStart
+      ? parseISODateTime(parent.plannedStart)
+      : null;
+    const parentStop = parent.plannedStop
+      ? parseISODateTime(parent.plannedStop)
+      : null;
+
+    // ── Sub-tasks: Allow user to manually set start/duration ──
+    // plannedStop will be auto-calculated from plannedStart + duration
+    children.forEach((child) => {
+      const realChild = byId.get(child.id);
+      const dur = Number(realChild.durationHrs);
+
+      const hasValidDuration =
+        realChild.durationHrs !== "" &&
+        realChild.durationHrs !== null &&
+        realChild.durationHrs !== undefined &&
+        !isNaN(Number(realChild.durationHrs));
+
+      // User has manually set plannedStart via date picker
+      // Just calculate plannedStop from plannedStart + duration
+      if (realChild.plannedStart && hasValidDuration) {
+        const start = parseISODateTime(realChild.plannedStart);
+        if (start) {
+          let end;
+          if (dur === 0) {
+            end = new Date(start);
+          } else {
+            end = new Date(start.getTime() + dur * 60 * 60 * 1000);
+          }
+          realChild.plannedStop = isoDateTime(end);
+        }
+      } else {
+        // No valid start or duration → clear planned stop
+        realChild.plannedStop = "";
+      }
+    });
+
+    // Recurse into deeper sub-tasks
+    children.forEach((child) => processChildren(child.id));
+  };
+
+  topRows.forEach((row) => processChildren(row.id));
+
+  // ── STEP 4: Compute parent durations from direct children timings ──
+  // Rule:
+  // - If no child has a non-zero computed interval, leave parent.durationHrs untouched
+  //   (this allows manual editing).
+  // - If all children belong to the same resource, parent duration = sum(child durations).
+  // - Otherwise (multiple resources), parent duration = union length of all child intervals.
+  const parentIds = Array.from(childrenMap.keys()).filter(
+    (k) => k !== "__ROOT__",
+  );
+  for (const pid of parentIds) {
+    const parent = byId.get(pid);
+    if (!parent) continue;
+    const children = getChildren(pid);
+    const intervals = [];
+    const resourcesSet = new Set();
+
+    for (const c of children) {
+      const realChild = byId.get(c.id);
+      if (!realChild) continue;
+      if (!realChild.plannedStart || !realChild.plannedStop) continue;
+      const s = parseISODateTime(realChild.plannedStart);
+      const e = parseISODateTime(realChild.plannedStop);
+      if (!s || !e) continue;
+      const startMs = s.getTime();
+      const endMs = e.getTime();
+      if (endMs <= startMs) continue; // zero or invalid
+      intervals.push({
+        start: startMs,
+        end: endMs,
+        resource: realChild.resource || "",
+      });
+      resourcesSet.add(realChild.resource || "");
+    }
+
+    if (intervals.length === 0) {
+      // no timed children → clear parent timing
+      parent.plannedStart = "";
+      parent.plannedStop = "";
+      parent.durationHrs = "";
+      parent._autoDuration = false;
+      continue;
+    }
+
+    // ── Calculate parent timing from sub-tasks ──
+    // Parent start = earliest sub-task start
+    const minStart = Math.min(...intervals.map((i) => i.start));
+    parent.plannedStart = isoDateTime(new Date(minStart));
+
+    // Parent stop = latest sub-task stop
+    const maxEnd = Math.max(...intervals.map((i) => i.end));
+    parent.plannedStop = isoDateTime(new Date(maxEnd));
+
+    // ── Calculate parent duration based on resource concurrency ──
+    let parentMs = 0;
+    if (resourcesSet.size === 1) {
+      // same resource: sum durations (they are effectively sequential for that resource)
+      for (const it of intervals) parentMs += it.end - it.start;
+    } else {
+      // multiple resources: compute union length across all intervals
+      const sorted = intervals
+        .map((i) => ({ s: i.start, e: i.end }))
+        .sort((a, b) => a.s - b.s);
+      let curS = sorted[0].s;
+      let curE = sorted[0].e;
+      for (let i = 1; i < sorted.length; i++) {
+        const it = sorted[i];
+        if (it.s <= curE) {
+          curE = Math.max(curE, it.e);
+        } else {
+          parentMs += curE - curS;
+          curS = it.s;
+          curE = it.e;
+        }
+      }
+      parentMs += curE - curS;
+    }
+
+    const hours = Math.round((parentMs / (1000 * 60 * 60)) * 100) / 100;
+    parent.durationHrs = hours;
+    parent._autoDuration = true;
+  }
 
   return updated;
 }
@@ -976,9 +1168,14 @@ function runValidations(rows, project, po, site, groups, groupResources) {
   });
 
   // ── 3. Scheduling Info (ERROR) ──
-  const incomplete = rows.filter(
-    (r) => !r.resource || !r.durationHrs || !r.plannedStart,
-  );
+  const incomplete = rows.filter((r) => {
+    const hasDuration =
+      r.durationHrs !== "" &&
+      r.durationHrs !== null &&
+      r.durationHrs !== undefined &&
+      !isNaN(Number(r.durationHrs));
+    return !r.resource || !hasDuration || !r.plannedStart;
+  });
   results.push({
     ok: incomplete.length === 0,
     title:
@@ -1005,16 +1202,16 @@ function runValidations(rows, project, po, site, groups, groupResources) {
     }
   });
 
-  const isPending = (row) =>
-    String(row.status || "pending")
-      .toLowerCase()
-      .trim() === "pending";
+  const isParentSubPair = (a, b) => a.parentId === b.id || b.parentId === a.id;
 
   Object.entries(byRes).forEach(([userId, arr]) => {
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
         const a = arr[i];
         const b = arr[j];
+
+        // ✅ Skip parent ⇄ sub-task overlap check
+        if (isParentSubPair(a, b)) continue;
 
         if (a.plannedStart < b.plannedStop && b.plannedStart < a.plannedStop) {
           const aPending = isPending(a);
@@ -1043,7 +1240,6 @@ function runValidations(rows, project, po, site, groups, groupResources) {
       }
     }
   });
-
   // ❌ ERROR: Pending tasks overlap each other — must fix
   results.push({
     ok: pendingOverlaps.length === 0,
@@ -1097,6 +1293,75 @@ function runValidations(rows, project, po, site, groups, groupResources) {
     detail: !badTime
       ? "Stops skip weekends and leaves."
       : "A computed stop date is on a non-working day.",
+  });
+
+  // ── 7. Sub-task overflow check (WARNING) ──
+  const overflowSubs = [];
+
+  rows.forEach((r) => {
+    // use `rows` if `updated` not in scope
+    if (!r.parentId) return;
+    if (!r.plannedStart || !r.plannedStop) return;
+
+    const parent = rows.find((p) => p.id === r.parentId);
+    if (!parent || !parent.plannedStart || !parent.plannedStop) return;
+
+    const subStart = parseISODateTime(r.plannedStart);
+    const subStop = parseISODateTime(r.plannedStop);
+    const parStart = parseISODateTime(parent.plannedStart);
+    const parStop = parseISODateTime(parent.plannedStop);
+
+    if (subStart < parStart || subStop > parStop) {
+      overflowSubs.push({
+        sub: r.task || `Row #${r.id}`,
+        parent: parent.task || `Row #${parent.id}`,
+      });
+    }
+  });
+
+  // ── Sub-task overflow check (BLOCKING ERROR) ──
+
+  rows.forEach((r) => {
+    if (!r.parentId) return;
+    if (!r.plannedStart || !r.plannedStop) return;
+
+    const parent = rows.find((p) => p.id === r.parentId);
+    if (!parent || !parent.plannedStart || !parent.plannedStop) return;
+
+    const subStart = parseISODateTime(r.plannedStart);
+    const subStop = parseISODateTime(r.plannedStop);
+    const parStart = parseISODateTime(parent.plannedStart);
+    const parStop = parseISODateTime(parent.plannedStop);
+
+    // Allow small tolerance (1 minute) for rounding
+    const tolerance = 60 * 1000;
+
+    if (
+      subStart.getTime() < parStart.getTime() - tolerance ||
+      subStop.getTime() > parStop.getTime() + tolerance
+    ) {
+      overflowSubs.push({
+        sub: r.task || `Row #${r.id}`,
+        parent: parent.task || `Row #${parent.id}`,
+      });
+    }
+  });
+
+  results.push({
+    ok: overflowSubs.length === 0,
+    title:
+      overflowSubs.length === 0
+        ? "Sub-tasks fit within parent windows"
+        : `${overflowSubs.length} sub-task${overflowSubs.length !== 1 ? "s exceed" : " exceeds"} parent window`,
+    detail:
+      overflowSubs.length === 0
+        ? "All sub-tasks are bounded by their parent task times."
+        : `Reduce these sub-task durations:\n${overflowSubs
+            .slice(0, 5)
+            .map((o) => `• "${o.sub}" — exceeds parent "${o.parent}"`)
+            .join(
+              "\n",
+            )}${overflowSubs.length > 5 ? `\n…and ${overflowSubs.length - 5} more` : ""}`,
   });
 
   // ── 6. Past Date Check ──
@@ -2337,7 +2602,7 @@ function TimePickerSection({
         )}
       </select>
       <span style={{ fontSize: 10, color: "#94A3B8", marginLeft: 4 }}>
-        (Work: {WORK_START_HR}–{WORK_END_HR}h)
+        (Work: {WORK_START_HR}–{WORK_END_HR + 1}h)
       </span>
     </div>
   );
@@ -3557,6 +3822,260 @@ function StatusBadge({ status }) {
   );
 }
 
+/* ─── Reject / Redo Reason Modal ─── */
+function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
+  const [reason, setReason] = useState("");
+  const [touched, setTouched] = useState(false);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    setTimeout(() => textareaRef.current?.focus(), 100);
+  }, []);
+
+  const trimmed = reason.trim();
+  const isValid = trimmed.length >= 5;
+
+  const handleSubmit = async () => {
+    setTouched(true);
+    if (!isValid) return;
+    await onConfirm(trimmed);
+  };
+
+  return (
+    <div
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          width: "100%",
+          maxWidth: 480,
+          fontFamily: "Sora,sans-serif",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "16px 20px",
+            borderBottom: "1px solid #E2E8F0",
+            background: "#FFFBEB",
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: "#FEF3C7",
+              color: "#B45309",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <RotateCcw size={20} strokeWidth={2} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
+              Redo / Reject Task
+            </div>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: "#64748B",
+                marginTop: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {row.task || row.module || `Row #${row.id}`}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              color: "#94A3B8",
+              padding: 4,
+              opacity: isSubmitting ? 0.5 : 1,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "16px 20px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8,
+              padding: 10,
+              background: "#FEF2F2",
+              border: "1px solid #FCA5A5",
+              borderRadius: 8,
+              marginBottom: 14,
+            }}
+          >
+            <AlertOctagon
+              size={16}
+              color="#DC2626"
+              style={{ flexShrink: 0, marginTop: 1 }}
+            />
+            <div style={{ fontSize: 11.5, color: "#7F1D1D", lineHeight: 1.5 }}>
+              This will mark the task as <strong>Rejected</strong> and notify
+              the assignee that the work needs to be redone.
+            </div>
+          </div>
+
+          <label
+            style={{
+              display: "block",
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: "#0F172A",
+              marginBottom: 6,
+            }}
+          >
+            Reason for Redo / Rejection
+            <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+          </label>
+
+          <textarea
+            ref={textareaRef}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            onBlur={() => setTouched(true)}
+            placeholder="Explain why this task needs to be redone (min. 5 characters)…"
+            disabled={isSubmitting}
+            rows={4}
+            style={{
+              width: "100%",
+              border: `1px solid ${touched && !isValid ? "#FCA5A5" : "#CBD5E1"}`,
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontFamily: "Sora,sans-serif",
+              fontSize: 12.5,
+              outline: "none",
+              boxSizing: "border-box",
+              resize: "vertical",
+              minHeight: 80,
+              lineHeight: 1.5,
+              background: isSubmitting ? "#F8FAFC" : "#fff",
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 6,
+              fontSize: 10.5,
+              color: touched && !isValid ? "#DC2626" : "#94A3B8",
+            }}
+          >
+            <span>
+              {touched && !isValid
+                ? "⚠ Reason must be at least 5 characters"
+                : "Be specific — this helps the assignee understand what to fix"}
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                color: trimmed.length > 0 ? "#475569" : "#CBD5E1",
+              }}
+            >
+              {trimmed.length} chars
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: "12px 20px 16px",
+            borderTop: "1px solid #E2E8F0",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            background: "#FAFBFC",
+          }}
+        >
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            style={{
+              ...btnStyle,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              opacity: isSubmitting ? 0.5 : 1,
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+            }}
+          >
+            <X size={13} />
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || isSubmitting}
+            style={{
+              ...btnStyle,
+              background: isValid ? "#D97706" : "#F1F5F9",
+              color: isValid ? "#fff" : "#94A3B8",
+              borderColor: isValid ? "#D97706" : "#E2E8F0",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              opacity: isSubmitting ? 0.6 : 1,
+              cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
+              boxShadow: isValid ? "0 2px 6px rgba(217,119,6,0.25)" : "none",
+            }}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2
+                  size={14}
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <RotateCcw size={14} />
+                Redo & Reject
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 /* ─── Activity Row ─── */
 const ActivityRow = React.memo(function ActivityRow({
   row,
@@ -3564,10 +4083,12 @@ const ActivityRow = React.memo(function ActivityRow({
   isFirstInChain,
   resources,
   groupResources,
+  hasChildren,
   onUpdate,
   onDelete,
   onAddSub,
   onOpenComments,
+  onRedoReject, // ← NEW
 }) {
   //  const { groupResources } = useData();
   const res = row.resource
@@ -3586,14 +4107,36 @@ const ActivityRow = React.memo(function ActivityRow({
     const TEXT_ONLY_FIELDS = ["module", "task"];
     const needsRecompute = !TEXT_ONLY_FIELDS.includes(field);
 
-    onUpdate(
-      {
-        ...row,
-        [field]:
-          field === "durationHrs" ? (value === "" ? "" : Number(value)) : value,
-      },
-      { recompute: needsRecompute },
-    );
+    const updated = {
+      ...row,
+      [field]:
+        field === "durationHrs" ? (value === "" ? "" : Number(value)) : value,
+    };
+
+    // When a new resource is selected and there is no plannedStart,
+    // default the start using `defaultFirstStart`. Also set plannedStop
+    // if a duration exists.
+    if (field === "resource" && value && !row.plannedStart) {
+      try {
+        const dt = defaultFirstStart(value, groupResources || {});
+        if (dt instanceof Date && !isNaN(dt)) {
+          updated.plannedStart = isoDateTime(dt);
+          if (updated.durationHrs) {
+            const stop = addWorkHours(
+              dt,
+              Number(updated.durationHrs),
+              value,
+              groupResources || {},
+            );
+            updated.plannedStop = isoDateTime(stop);
+          }
+        }
+      } catch (e) {
+        // ignore and proceed without setting defaults
+      }
+    }
+
+    onUpdate(updated, { recompute: needsRecompute });
   };
 
   const cellBg =
@@ -3612,7 +4155,11 @@ const ActivityRow = React.memo(function ActivityRow({
     fontSize: 12.5, // slightly increased for better look
   };
   const moduleModules = row.module;
-
+  const statusLower = String(row.status || "pending")
+    .toLowerCase()
+    .trim();
+  const isCompleted = statusLower === "completed";
+  const isRowPending = !row.status || statusLower === "pending";
   return (
     <tr style={{ transition: "background .12s" }}>
       {/* # */}
@@ -3740,12 +4287,16 @@ const ActivityRow = React.memo(function ActivityRow({
                 ? `Sub-activity (L${row.sortOrder})…`
                 : "Task name…"
             }
+            disabled={!isPending(row)}
+            title={!isPending(row) ? "Locked — task not pending" : ""}
             style={{
               ...inputStyle,
               height: 28,
               fontSize: 11.5,
               flex: 1,
               minWidth: 0,
+              opacity: !isPending(row) ? 0.65 : 1,
+              cursor: !isPending(row) ? "not-allowed" : "text",
             }}
           />
         </div>
@@ -3753,7 +4304,13 @@ const ActivityRow = React.memo(function ActivityRow({
       {/* Resource */}
       <td style={{ ...tdStyle, width: 240 }}>
         <div
-          style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            minWidth: 0,
+            opacity: !isPending(row) ? 0.65 : 1,
+          }}
         >
           {res ? (
             <ResChip
@@ -3769,9 +4326,14 @@ const ActivityRow = React.memo(function ActivityRow({
             <SearchableDropdown
               value={row.resource || ""}
               onChange={(val) => handleField("resource", val)}
-              disabled={!resources.length}
+              disabled={!resources.length || !isPending(row)}
+              title={!isPending(row) ? "Locked — task not pending" : ""}
               placeholder={
-                resources.length ? "Select resource..." : "Pick group first"
+                !isPending(row)
+                  ? "Locked (not pending)"
+                  : resources.length
+                    ? "Select resource..."
+                    : "Pick group first"
               }
               searchPlaceholder="Search by name, code, email..."
               maxHeight={320}
@@ -3864,114 +4426,165 @@ const ActivityRow = React.memo(function ActivityRow({
 
       {/* Planned Start */}
       <td style={{ ...tdStyle, width: 180 }}>
-        {isFirstInChain && row.resource ? (
-          <>
-            {isPastStart && (
-              <span
-                style={{
-                  marginLeft: 5,
-                  background: "#FEF2F2",
-                  color: "#DC2626",
-                  border: "1px solid #FCA5A5",
-                  borderRadius: 3,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 700,
-                }}
-              >
-                ⚠ PAST
-              </span>
-            )}
-            <button
-              ref={dateBtnRef} // ← Attach ref
-              onClick={() => setPickerOpen(true)}
+        {hasChildren ? (
+          // Parent with subtasks: display auto-calculated start (read-only)
+          !row.resource ? (
+            <span
+              style={{ fontSize: 11, color: "#94A3B8", fontStyle: "italic" }}
+            >
+              Assign resource first
+            </span>
+          ) : (
+            <span
               style={{
-                ...inputStyle,
-                height: 28,
                 fontSize: 11,
                 fontFamily: "'JetBrains Mono',monospace",
-                textAlign: "left",
-                cursor: "pointer",
-                background: "#fff",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
+                color: "#475569",
               }}
             >
-              <span style={{ fontSize: 12 }}>
-                <Calendar size={12} />
-              </span>
-              <span style={{ flex: 1 }}>
-                {startDisplay || (
-                  <span style={{ color: "#94A3B8" }}>Pick date…</span>
-                )}
-              </span>
-            </button>
-            {pickerOpen && (
-              <WorkingDatePicker
-                value={row.plannedStart}
-                resourceUserId={row.resource}
-                groupResources={groupResources} // ← Pass from context
-                anchorRef={dateBtnRef}
-                onChange={(val) => handleField("plannedStart", val)}
-                onClose={() => setPickerOpen(false)}
-              />
-            )}
-          </>
-        ) : !row.resource ? (
-          <span style={{ fontSize: 11, color: "#94A3B8", fontStyle: "italic" }}>
-            Assign resource first
-          </span>
-        ) : (
-          <span
-            style={{
-              fontSize: 11,
-              fontFamily: "'JetBrains Mono',monospace",
-              color: "#475569",
-            }}
-          >
-            {startDisplay || "—"}
-            {startDisplay && (
-              <span
+              {startDisplay || "—"}
+              {startDisplay && (
+                <span
+                  style={{
+                    marginLeft: 5,
+                    background: "#F0F9FF",
+                    color: "#0369A1",
+                    border: "1px solid #BAE6FD",
+                    borderRadius: 3,
+                    padding: "1px 5px",
+                    fontSize: 9,
+                    fontWeight: 600,
+                  }}
+                >
+                  AUTO
+                </span>
+              )}
+            </span>
+          )
+        ) : // No children: allow user to pick date only if resource assigned AND task is pending
+        row.resource ? (
+          isPending(row) ? (
+            <>
+              {isPastStart && (
+                <span
+                  style={{
+                    marginLeft: 5,
+                    background: "#FEF2F2",
+                    color: "#DC2626",
+                    border: "1px solid #FCA5A5",
+                    borderRadius: 3,
+                    padding: "1px 5px",
+                    fontSize: 9,
+                    fontWeight: 700,
+                  }}
+                >
+                  ⚠ PAST
+                </span>
+              )}
+              <button
+                ref={dateBtnRef} // ← Attach ref
+                onClick={() => setPickerOpen(true)}
                 style={{
-                  marginLeft: 5,
-                  background: "#F0F9FF",
-                  color: "#0369A1",
-                  border: "1px solid #BAE6FD",
-                  borderRadius: 3,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
+                  ...inputStyle,
+                  height: 28,
+                  fontSize: 11,
+                  fontFamily: "'JetBrains Mono',monospace",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  background: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
                 }}
               >
-                AUTO
-              </span>
-            )}
+                <span style={{ fontSize: 12 }}>
+                  <Calendar size={12} />
+                </span>
+                <span style={{ flex: 1 }}>
+                  {startDisplay || (
+                    <span style={{ color: "#94A3B8" }}>Pick date…</span>
+                  )}
+                </span>
+              </button>
+              {pickerOpen && (
+                <WorkingDatePicker
+                  value={row.plannedStart}
+                  resourceUserId={row.resource}
+                  groupResources={groupResources} // ← Pass from context
+                  anchorRef={dateBtnRef}
+                  onChange={(val) => handleField("plannedStart", val)}
+                  onClose={() => setPickerOpen(false)}
+                />
+              )}
+            </>
+          ) : (
+            // Resource assigned but not pending: show read-only start
+            <span
+              style={{
+                fontSize: 11,
+                fontFamily: "'JetBrains Mono',monospace",
+                color: "#475569",
+                opacity: 0.9,
+              }}
+              title="Locked — task not pending"
+            >
+              {startDisplay || "—"}
+            </span>
+          )
+        ) : (
+          <span style={{ fontSize: 11, color: "#94A3B8", fontStyle: "italic" }}>
+            Assign resource first
           </span>
         )}
       </td>
       {/* Duration */}
       <td style={{ ...tdStyle, width: 110, textAlign: "right" }}>
-        <input
-          type="number"
-          min="0"
-          step="0.5"
-          value={
-            row.durationHrs === "" || row.durationHrs == null
-              ? ""
-              : row.durationHrs
-          }
-          onChange={(e) => handleField("durationHrs", e.target.value)}
-          placeholder="—"
-          style={{
-            ...inputStyle,
-            height: 28,
-            fontSize: 11.5,
-            fontFamily: "'JetBrains Mono',monospace",
-            textAlign: "right",
-            width: "100%",
-          }}
-        />
+        {hasChildren && row._autoDuration ? (
+          <span
+            title="Auto-computed from sub-tasks"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: 11.5,
+              fontFamily: "'JetBrains Mono', monospace",
+              color: "#7C3AED",
+              background: "#EDE9FE",
+              border: "1px solid #DDD6FE",
+              borderRadius: 5,
+              padding: "4px 8px",
+              fontWeight: 600,
+              cursor: "help",
+            }}
+          >
+            Σ {row.durationHrs ?? "0"}
+          </span>
+        ) : (
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            value={
+              row.durationHrs === "" || row.durationHrs == null
+                ? ""
+                : row.durationHrs
+            }
+            onChange={(e) => handleField("durationHrs", e.target.value)}
+            placeholder="—"
+            disabled={!isPending(row)}
+            title={!isPending(row) ? "Locked — task not pending" : ""}
+            style={{
+              ...inputStyle,
+              height: 28,
+              fontSize: 11.5,
+              fontFamily: "'JetBrains Mono',monospace",
+              textAlign: "right",
+              width: "100%",
+              opacity: !isPending(row) ? 0.65 : 1,
+              cursor: !isPending(row) ? "not-allowed" : "text",
+            }}
+          />
+        )}
       </td>
       {/* Planned Stop */}
       <td style={{ ...tdStyle, width: 180 }}>
@@ -3999,6 +4612,23 @@ const ActivityRow = React.memo(function ActivityRow({
               AUTO
             </span>
           )}
+          {/* {row.parentId && stopDisplay && (
+            <span
+              style={{
+                marginLeft: 4,
+                background: "#EDE9FE",
+                color: "#7C3AED",
+                border: "1px solid #DDD6FE",
+                borderRadius: 3,
+                padding: "1px 5px",
+                fontSize: 9,
+                fontWeight: 700,
+              }}
+              title="Bounded by parent task window"
+            >
+              🔗 BOUNDED
+            </span>
+          )} */}
         </span>
       </td>
       {/* Status */}
@@ -4006,7 +4636,7 @@ const ActivityRow = React.memo(function ActivityRow({
         <StatusBadge status={row.status} />
       </td>
       {/* Actions */}
-      <td style={{ ...tdStyle, width: 140, textAlign: "center" }}>
+      <td style={{ ...tdStyle, width: 160, textAlign: "center" }}>
         <div
           style={{
             display: "flex",
@@ -4015,6 +4645,7 @@ const ActivityRow = React.memo(function ActivityRow({
             gap: 4,
           }}
         >
+          {/* Comments button (always shown) */}
           <button
             onClick={() => onOpenComments(row)}
             title={
@@ -4028,7 +4659,7 @@ const ActivityRow = React.memo(function ActivityRow({
               color: commentCount > 0 ? "#7C3AED" : "#94A3B8",
               borderColor: commentCount > 0 ? "#DDD6FE" : "#E2E8F0",
               position: "relative",
-              overflow: "visible", // ← Critical: allow badge to escape
+              overflow: "visible",
             }}
           >
             <MessageSquare size={13} />
@@ -4049,10 +4680,9 @@ const ActivityRow = React.memo(function ActivityRow({
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "2px solid #fff", // ← White ring for contrast
+                  border: "2px solid #fff",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                   lineHeight: 1,
-                  zIndex: 2, // ← Above other elements
                 }}
               >
                 {commentCount > 99 ? "99+" : commentCount}
@@ -4060,23 +4690,40 @@ const ActivityRow = React.memo(function ActivityRow({
             )}
           </button>
 
-          {row.sortOrder === 0 &&
-            (!row.status || String(row.status).toLowerCase() === "pending") && (
-              <button
-                onClick={() => onAddSub(row)}
-                title="Add sub-activity"
-                style={{
-                  ...iconBtn,
-                  color: "#7C3AED",
-                  borderColor: "#DDD6FE",
-                  background: "#FAF5FF",
-                }}
-              >
-                <CornerDownRight size={13} />
-              </button>
-            )}
+          {/* Add sub-activity (only for pending top-level) */}
+          {row.sortOrder === 0 && isRowPending && (
+            <button
+              onClick={() => onAddSub(row)}
+              title="Add sub-activity"
+              style={{
+                ...iconBtn,
+                color: "#7C3AED",
+                borderColor: "#DDD6FE",
+                background: "#FAF5FF",
+              }}
+            >
+              <CornerDownRight size={13} />
+            </button>
+          )}
 
-          {(!row.status || String(row.status).toLowerCase() === "pending") && (
+          {/* ── NEW: Redo button for completed tasks ── */}
+          {isCompleted && (
+            <button
+              onClick={() => onRedoReject(row)}
+              title="Redo / Reject — needs to be redone"
+              style={{
+                ...iconBtn,
+                color: "#D97706",
+                borderColor: "#FCD34D",
+                background: "#FFFBEB",
+              }}
+            >
+              <RotateCcw size={13} />
+            </button>
+          )}
+
+          {/* Delete (only for pending) */}
+          {isRowPending && (
             <button
               onClick={() => onDelete(row)}
               title="Delete row"
@@ -4157,7 +4804,8 @@ function ProjectEditor({
     type: "info",
     msg: "Download the Excel template, fill it with your activities, then upload back here.",
   });
-
+  const [rejectRow, setRejectRow] = useState(null);
+  const [isRejecting, setIsRejecting] = useState(false);
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
   const fileInputRef = useRef();
@@ -4220,7 +4868,38 @@ function ProjectEditor({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+  const handleRedoReject = useCallback(
+    async (reason) => {
+      if (!rejectRow) return;
 
+      setIsRejecting(true);
+      try {
+        // Call the API
+        await activityTrackerApi.rejectActivity(rejectRow.id, reason);
+
+        // Update local state — mark as Rejected
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === rejectRow.id ? { ...r, status: "Rejected" } : r,
+          ),
+        );
+
+        showToast(
+          "success",
+          "Task Rejected",
+          `"${rejectRow.task || "Task"}" has been marked for redo.`,
+        );
+
+        setRejectRow(null);
+      } catch (err) {
+        console.error("Reject failed:", err);
+        showToast("error", "Reject failed", err.message);
+      } finally {
+        setIsRejecting(false);
+      }
+    },
+    [rejectRow, showToast],
+  );
   const buildProjectData = useCallback(
     () => ({
       ...draft,
@@ -4476,26 +5155,61 @@ function ProjectEditor({
           "Hours",
         ]);
 
-        // Normalize date
+        // Normalize date — always treat as string since raw:false gives us formatted strings
         let plannedStart = "";
-        if (plannedStartRaw) {
+        if (plannedStartRaw !== "" && plannedStartRaw != null) {
+          // Handle Date objects defensively (just in case)
+          let s;
           if (plannedStartRaw instanceof Date) {
-            plannedStart = isoDateTime(plannedStartRaw);
+            s = isoDateTime(plannedStartRaw);
           } else {
-            const s = String(plannedStartRaw).trim();
-            const parsed1 = parseISODateTime(s);
-            if (parsed1 && !isNaN(parsed1)) {
-              plannedStart = isoDateTime(parsed1);
-            } else {
-              const m = s.match(
-                /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s+(\d{1,2}):(\d{2})/,
-              );
-              if (m) {
-                const d = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]);
-                plannedStart = isoDateTime(d);
+            s = String(plannedStartRaw).trim();
+          }
+
+          console.log("📅 Date string to parse:", s);
+
+          // Check if string contains time
+          const hasTime = /\d{1,2}:\d{2}/.test(s);
+
+          // Pattern 1: dd-mm-yyyy hh:mm  OR  dd/mm/yyyy hh:mm
+          let m = s.match(
+            /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s+(\d{1,2}):(\d{2})/,
+          );
+          if (m) {
+            const d = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], 0, 0);
+            plannedStart = isoDateTime(d);
+          }
+          // Pattern 2: yyyy-mm-dd hh:mm  OR  yyyy-mm-ddThh:mm
+          else if (
+            (m = s.match(
+              /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T\s]+(\d{1,2}):(\d{2})/,
+            ))
+          ) {
+            const d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], 0, 0);
+            plannedStart = isoDateTime(d);
+          }
+          // Pattern 3: dd-mm-yyyy  OR  dd/mm/yyyy  (date only)
+          else if ((m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/))) {
+            const d = new Date(+m[3], +m[2] - 1, +m[1], WORK_START_HR, 0, 0, 0);
+            plannedStart = isoDateTime(d);
+          }
+          // Pattern 4: yyyy-mm-dd  (date only)
+          else if ((m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/))) {
+            const d = new Date(+m[1], +m[2] - 1, +m[3], WORK_START_HR, 0, 0, 0);
+            plannedStart = isoDateTime(d);
+          }
+          // Fallback: try native Date parse
+          else {
+            const d = new Date(s);
+            if (!isNaN(d)) {
+              if (!hasTime) {
+                d.setHours(WORK_START_HR, 0, 0, 0);
               }
+              plannedStart = isoDateTime(d);
             }
           }
+
+          console.log("✅ Parsed plannedStart:", plannedStart);
         }
 
         // Resolve resource input → userId
@@ -4630,35 +5344,81 @@ function ProjectEditor({
       );
     }
   };
+  /* ─── Build safe filename from project name ─── */
+  function buildExportFilename(projectName) {
+    const base = (projectName || "Untitled Project")
+      .trim()
+      // Replace illegal Windows filename chars with hyphens
+      .replace(/[\\/:*?"<>|]/g, "-")
+      // Collapse multiple whitespace/dashes into single underscore
+      .replace(/\s+/g, "_")
+      .replace(/-+/g, "-")
+      // Trim leading/trailing dots/dashes/underscores
+      .replace(/^[._-]+|[._-]+$/g, "")
+      // Cap length to 100 chars (reserve space for date suffix)
+      .slice(0, 100);
 
+    // Add timestamp suffix
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yyyy = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mn = String(now.getMinutes()).padStart(2, "0");
+    const timestamp = `${dd}-${mm}-${yyyy}_${hh}${mn}`;
+
+    return `${base || "Untitled_Project"}_${timestamp}.xlsx`;
+  }
+  //without timestamp
+  // function buildExportFilename(projectName) {
+  //   const base = (projectName || "Untitled Project")
+  //     .trim()
+  //     .replace(/[\\/:*?"<>|]/g, "-")
+  //     .replace(/\s+/g, "_")
+  //     .replace(/-+/g, "-")
+  //     .replace(/^[._-]+|[._-]+$/g, "")
+  //     .slice(0, 100);
+
+  //   return `${base || "Untitled_Project"}.xlsx`;
+  // }
   const handleExport = () => {
-    if (typeof XLSX !== "undefined") {
-      const ordered = flattenOrdered(rows);
-      const out = ordered.map((r) => {
-        const resObj = r.resource
-          ? getResourceByUserId(r.resource, groups)
-          : null;
-        return {
-          "Module ID": r.moduleId || "", // ← New column
-          "Module Name": r.module,
-          Task: (r.parentId ? "  ↳ " : "") + r.task,
-          "Resource Code": resObj?.code || "",
-          "Resource Name": resObj?.name || "",
-          "User ID": r.resource || "",
-          "Planned Start": r.plannedStart ? fmtDisplay(r.plannedStart) : "",
-          "Duration (hrs)": r.durationHrs ?? "",
-          "Planned Stop": r.plannedStop ? fmtDisplay(r.plannedStop) : "",
-          Status: r.status || "Pending",
-          Comments: (r.comments || [])
-            .map((c) => `[${c.author}] ${c.description}`)
-            .join(" | "),
-        };
-      });
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(out);
-      XLSX.utils.book_append_sheet(wb, ws, "Activities");
-      XLSX.writeFile(wb, "Activity_Tracker_Export.xlsx");
-    } else showToast("info", "Export", "SheetJS (xlsx) library required.");
+    if (typeof XLSX === "undefined") {
+      showToast("info", "Export", "SheetJS (xlsx) library required.");
+      return;
+    }
+
+    const ordered = flattenOrdered(rows);
+    const out = ordered.map((r) => {
+      const resObj = r.resource
+        ? getResourceByUserId(r.resource, groups, groupResources)
+        : null;
+      return {
+        "Module ID": r.moduleId || "",
+        "Module Name": r.module,
+        Task: (r.parentId ? "  ↳ " : "") + r.task,
+        "Resource Code": resObj?.code || "",
+        "Resource Name": resObj?.name || "",
+        "User ID": r.resource || "",
+        "Planned Start": r.plannedStart ? fmtDisplay(r.plannedStart) : "",
+        "Duration (hrs)":
+          r.durationHrs === "" || r.durationHrs == null ? "" : r.durationHrs,
+        "Planned Stop": r.plannedStop ? fmtDisplay(r.plannedStop) : "",
+        Status: r.status || "pending",
+        Comments: (r.comments || [])
+          .map((c) => `[${c.author}] ${c.description}`)
+          .join(" | "),
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(out);
+    XLSX.utils.book_append_sheet(wb, ws, "Activities");
+
+    // ── Build filename from project name ──
+    const filename = buildExportFilename(project);
+    XLSX.writeFile(wb, filename);
+
+    showToast("success", "Exported", `Downloaded as ${filename}`);
   };
   /* Validation + submit */
   const handleSubmitMotion = () => {
@@ -4734,9 +5494,14 @@ function ProjectEditor({
   const isFirstInChain = useCallback(
     (row) => {
       if (!row.resource) return true;
-      const chain = flattenOrdered(rows).filter(
-        (r) => r.resource === row.resource,
-      );
+
+      // First in chain WITHIN THE SAME MODULE
+      const moduleKey = row.moduleId || row.module || "__no_module__";
+      const chain = flattenOrdered(rows).filter((r) => {
+        const rModuleKey = r.moduleId || r.module || "__no_module__";
+        return r.resource === row.resource && rModuleKey === moduleKey;
+      });
+
       return chain[0]?.id === row.id;
     },
     [rows],
@@ -5159,7 +5924,6 @@ function ProjectEditor({
                 padding: "12px 18px",
                 borderBottom: "1px solid #E2E8F0",
                 flexWrap: "wrap",
-                gap: 10,
               }}
             >
               <div
@@ -5406,7 +6170,6 @@ function ProjectEditor({
                           .map((r) => r.id),
                       );
 
-                      // Helper: check if row is descendant of any top-level in this module
                       const isDescendantOf = (rowId, ancestorSet) => {
                         let cur = rows.find((r) => r.id === rowId);
                         while (cur?.parentId) {
@@ -5431,7 +6194,7 @@ function ProjectEditor({
 
                       return (
                         <React.Fragment key={mod || "unnamed"}>
-                          {/* Section Header */}
+                          {/* ── Section Header (no add button now) ── */}
                           <tr>
                             <td
                               colSpan={9}
@@ -5447,61 +6210,35 @@ function ProjectEditor({
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "space-between",
+                                  gap: 8,
                                 }}
                               >
-                                <span>
-                                  <span
-                                    style={{
-                                      background: "#DBEAFE",
-                                      color: "#1D4ED8",
-                                      border: "1px solid #B5D4F4",
-                                      borderRadius: 5,
-                                      padding: "2px 9px",
-                                      fontSize: 10.5,
-                                      fontWeight: 700,
-                                      marginRight: 8,
-                                    }}
-                                    title={`Module ID: ${rows.find((r) => r.module === mod)?.moduleId || "—"}`} // ← Tooltip
-                                  >
-                                    {mod || "— unnamed —"}
-                                  </span>
-                                  <span
-                                    style={{ color: "#94A3B8", fontSize: 10.5 }}
-                                  >
-                                    {modCount}{" "}
-                                    {modCount === 1 ? "task" : "tasks"}
-                                  </span>
-                                </span>
-                                <button
-                                  onClick={() => addRow(mod)}
+                                <span
                                   style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "8px 12px",
-                                    borderRadius: 8,
-                                    border: "1px solid #C7D2FE",
-                                    background: "#EEF2FF",
-                                    color: "#4338CA",
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    fontFamily: "Sora, sans-serif",
-                                    cursor: "pointer",
-                                    transition: "all 0.2s ease",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                                    background: "#DBEAFE",
+                                    color: "#1D4ED8",
+                                    border: "1px solid #B5D4F4",
+                                    borderRadius: 5,
+                                    padding: "3px 10px",
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
                                   }}
                                 >
-                                  <Plus size={14} strokeWidth={2.5} />
-                                  Add Row to Module
-                                </button>
+                                  {mod || "— unnamed —"}
+                                </span>
+                                <span
+                                  style={{ color: "#94A3B8", fontSize: 10.5 }}
+                                >
+                                  {modCount} {modCount === 1 ? "task" : "tasks"}
+                                </span>
                               </div>
                             </td>
                           </tr>
 
-                          {/* Activity Rows */}
+                          {/* ── Activity Rows ── */}
                           {modRows.map((r) => {
-                            if (r.sortOrder === 0) displayIdx++;
+                            if (r.sortOrder === 0 || r._depth === 0)
+                              displayIdx++;
                             return (
                               <ActivityRow
                                 key={r.id}
@@ -5510,13 +6247,59 @@ function ProjectEditor({
                                 isFirstInChain={isFirstInChain(r)}
                                 resources={resources}
                                 groupResources={groupResources}
+                                hasChildren={rows.some(
+                                  (c) => c.parentId === r.id,
+                                )}
                                 onUpdate={updateRow}
                                 onDelete={deleteRow}
                                 onAddSub={addSubActivity}
                                 onOpenComments={setCommentRow}
+                                onRedoReject={setRejectRow}
                               />
                             );
                           })}
+
+                          {/* ── NEW: "Add Row to Module" button (BOTTOM) ── */}
+                          <tr>
+                            <td
+                              colSpan={9}
+                              style={{
+                                padding: "6px 14px 10px",
+                                background: "#FAFBFC",
+                                borderBottom: "1px solid #E2E8F0",
+                              }}
+                            >
+                              <button
+                                onClick={() => addRow(mod)}
+                                style={{
+                                  background: "#fff",
+                                  border: "1px dashed #1D4ED8",
+                                  color: "#1D4ED8",
+                                  borderRadius: 7,
+                                  padding: "6px 14px 6px 12px",
+                                  cursor: "pointer",
+                                  fontSize: 11.5,
+                                  fontFamily: "Sora,sans-serif",
+                                  fontWeight: 600,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  transition: "all .12s",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = "#EFF6FF";
+                                  e.currentTarget.style.borderStyle = "solid";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = "#fff";
+                                  e.currentTarget.style.borderStyle = "dashed";
+                                }}
+                              >
+                                <Plus size={13} />
+                                Add row to {mod || "module"}
+                              </button>
+                            </td>
+                          </tr>
                         </React.Fragment>
                       );
                     })
@@ -5545,7 +6328,7 @@ function ProjectEditor({
                 gap: 6,
               }}
             >
-              <Plus size={14} /> Add new module row
+              <Plus size={14} /> Add new module
             </button>
           </div>
         )}
@@ -5772,6 +6555,14 @@ function ProjectEditor({
             updateRow(updated);
             setCommentRow(updated);
           }}
+        />
+      )}
+      {rejectRow && (
+        <RejectReasonModal
+          row={rejectRow}
+          onClose={() => !isRejecting && setRejectRow(null)}
+          onConfirm={handleRedoReject}
+          isSubmitting={isRejecting}
         />
       )}
       {validationOpen && (
