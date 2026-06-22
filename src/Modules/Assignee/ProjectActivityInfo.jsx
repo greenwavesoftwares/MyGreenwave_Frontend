@@ -182,6 +182,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
       ...prev,
       modules: addRecursively(prev.modules),
     }));
+    setExpanded({ ...expanded, [parent.id]: true });
+    console.log('Current Expanded Row:', { ...expanded, [parent.id]: true });
 
    function generateRowId() {
   // Use native crypto.randomUUID (all modern browsers + Node 19+)
@@ -225,7 +227,27 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
         return node;
       });
     }
+
+    // setExpanded((prev) => ({ ...prev, [parent.id]: true }));
   }
+
+  const deleteNode = (projectId, moduleId, nodeToDelete) => {
+  setActivityInfo((prev) => ({
+    ...prev,
+    modules: deleteRecursively(prev.modules, nodeToDelete.id),
+  }));
+};
+
+function deleteRecursively(nodes, nodeId) {
+  return nodes
+    .filter((node) => node.id !== nodeId) // remove matching node
+    .map((node) => ({
+      ...node,
+      children: node.children?.length
+        ? deleteRecursively(node.children, nodeId)
+        : [],
+    }));
+}
   const countActivities = (nodes) => {
   return nodes.reduce((count, node) => {
     const selfCount = node.type !== "MODULE" && node.resource===currentUserId? 1 : 0;
@@ -327,12 +349,14 @@ const totalActivities = useMemo(
 
   const fetchActivities=async()=>{
     const activityDetails=await activityTrackerApi.getAllActivities(selectedProject.projectId)
+    if(!activityDetails) return;
     setActivityInfo(activityDetails)
     console.log('Activity Details : ',activityDetails)
     const expandedModules = activityDetails.modules.reduce((acc, module) => {
   acc[module.id] = true;
   return acc;
 }, {});
+
 console.log('Expanded Modules : ',expandedModules)
 setExpanded({...expanded,...expandedModules});
   }
@@ -466,6 +490,7 @@ setExpanded({...expanded,...expandedModules});
                   currentUserId={currentUserId}
                   updateStatusOfActivity={updateStatusOfActivity}
                   onOpenCommentBox={onOpenCommentBox}
+                  deleteNode={deleteNode}
                 />
               ))}
             </TableBody>
@@ -480,6 +505,7 @@ setExpanded({...expanded,...expandedModules});
         open={openCommentDialog}
         onClose={onCloseCommentbox}
       />
+       
     </div>
   );
 }

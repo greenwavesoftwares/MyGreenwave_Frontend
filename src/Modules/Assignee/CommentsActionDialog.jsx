@@ -31,6 +31,7 @@ import "./CommentsActionDialog.css";
 import { addComment } from "./AssigneeHelper";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { getUserData } from "../Login/Encrypt";
+import ConfirmDialog from "./ConfirmDialog";
 
 export default function CommentsActionDialog({
   open,
@@ -43,6 +44,8 @@ export default function CommentsActionDialog({
   const [activeReply, setActiveReply] = useState(null);
   const [replyText, setReplyText] = useState({});
   const [replyAttachment, setReplyAttachment] = useState({});
+  const [openConfirm,setOpenConfirm]=useState(false)
+  const [deleteInfo,setDeleteInfo]=useState({})
 
   const handleReplyAttachment = (commentIndex, event) => {
   const file = event.target.files?.[0];
@@ -147,6 +150,8 @@ console.log('Comment : ',newComment)
   const comment = existingComments[commentIndex];
   const text = replyText[commentIndex];
 
+  console.log('Comment Data : ',comment)
+
   if (!text?.trim()) return;
 
   const replyId = crypto.randomUUID();
@@ -175,27 +180,35 @@ console.log('Comment : ',newComment)
 
   // await activityTrackerApi.addReply(payload);
 
-  setExistingComments((prev) =>
-    prev.map((item, index) =>
-      index === commentIndex
-        ? {
-            ...item,
-            replies: [
-              ...(item.replies || []),
-              {
-                // replyId,
-                // replyText: text,
-                // createdBy: payload.createdBy,
-                // createdAt: payload.createdAt,
-                // attachmentName: payload.attachmentName,
-                ...payload,
-                attachment: payload.commentId+'_'+payload.attachmentName,
-              },
-            ],
-          }
-        : item
-    )
-  );
+  // setExistingComments((prev) =>
+  //   prev.map((item, index) =>
+  //     index === commentIndex
+  //       ? {
+  //           ...item,
+  //           replies: [
+  //             ...(item.replies || []),
+  //             {
+  //               // replyId,
+  //               // replyText: text,
+  //               // createdBy: payload.createdBy,
+  //               // createdAt: payload.createdAt,
+  //               // attachmentName: payload.attachmentName,
+  //               ...payload,
+  //               attachment: payload.commentId+'_'+payload.attachmentName,
+  //             },
+  //           ],
+  //         }
+  //       : item
+  //   )
+  // );
+
+  // console.log('Existing Co')
+
+ const existingCommentsResp=await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(comment.projectId,comment.activityId)
+
+  
+  setExistingComments(existingCommentsResp);
+
 
   setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
 
@@ -207,6 +220,15 @@ console.log('Comment : ',newComment)
 
   setActiveReply(null);
 };
+
+const handleDelete=async(type,index,id)=>
+{
+  if(type === 'comment')
+   await  deleteComment(index);
+  else
+   await deleteReply(index,id)
+
+}
 
   const deleteComment =async (index) => {
    const commentDeleted= await activityTrackerApi.deleteComment(existingComments[index].commentId);
@@ -234,6 +256,21 @@ console.log('Comment : ',newComment)
       )
     );
   };
+
+  const openDeleteConfirmation = (type, index, id) => {
+    console.log('Current  ID :',id)
+  setDeleteInfo({ type, index, id });
+  setOpenConfirm(true);
+};
+
+const confirmDelete = () => {
+  handleDelete(
+    deleteInfo.type,
+    deleteInfo.index,
+    deleteInfo.id
+  );
+  setOpenConfirm(false)
+};
 
   return (
     <Dialog
@@ -402,7 +439,9 @@ console.log('Comment : ',newComment)
                           <IconButton
                             size="small"
                             disabled={entry.createdBy !== getUserData()?.userDetails?.userId}
-                            onClick={() => deleteComment(index)}
+                            onClick={() =>
+  openDeleteConfirmation("comment", index)
+}
                           >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
@@ -425,8 +464,10 @@ console.log('Comment : ',newComment)
                                   size="small"
                                   disabled={reply.createdBy !== getUserData()?.userDetails?.userId}
                                   onClick={() =>
-                                    deleteReply(index, reply.replyId)
-                                  }
+                                  {
+                                    console.log("Current Reply ",reply)
+  openDeleteConfirmation("reply", index, reply.replyId)}
+}
                                 >
                                   <DeleteOutlineIcon fontSize="small" />
                                 </IconButton>
@@ -434,7 +475,8 @@ console.log('Comment : ',newComment)
                               <div className="reply-text">
                                 {reply.replyText}
                               </div>
-                             {reply.attachment && (
+                             
+                             {reply.attachment  && (
   <div className="attachment-pill">
     <InsertDriveFileOutlinedIcon fontSize="small" />
 
@@ -713,6 +755,14 @@ console.log('Comment : ',newComment)
             </div>
           </div>
         </div>
+
+         <ConfirmDialog
+        open={openConfirm}
+        // title="Delete Activity"
+        // message="Are you sure you want to delete this activity?"
+        onConfirm={confirmDelete}
+        onCancel={() => setOpenConfirm(false)}
+      />
 
       </DialogContent>
     </Dialog>

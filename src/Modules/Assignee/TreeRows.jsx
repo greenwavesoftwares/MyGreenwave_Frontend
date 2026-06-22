@@ -31,6 +31,8 @@ import "./ProjectActivityInfo.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Badge from '@mui/material/Badge';
+import DeleteIcon from "@mui/icons-material/Delete";
+import StatusChip from "./StatusChip";
 
 export default function TreeRows({
   node,
@@ -48,6 +50,7 @@ export default function TreeRows({
   projectId,
   updateStatusOfActivity,
   onOpenCommentBox,
+  deleteNode
 }) {
   console.log("Current user id:", currentUserId);
   const {
@@ -66,6 +69,10 @@ export default function TreeRows({
     pauseStart,
     pauseDuration,
     sortOrder,
+    latestRejectReason
+    
+    
+    
   } = node;
 
   const hasChildren = children?.length > 0;
@@ -78,6 +85,8 @@ export default function TreeRows({
       [nodeId]: !(prev[nodeId] ?? false),
     }));
   };
+
+
   const findInitials = (userId) => {
     const initials = userId
       .split("@")[0]
@@ -122,6 +131,26 @@ export default function TreeRows({
         </>
       ),
 
+       Rejected: (
+        <>
+            <IconButton
+            size="small"
+            onClick={() => updateStatusOfActivity(id, "Running")}
+          >
+            <PlayArrowIcon className="start-icon" />
+          </IconButton>
+          <Tooltip title="Complete">
+            <IconButton
+              size="small"
+              onClick={() => updateStatusOfActivity(id, "Completed")}
+              disabled={!allChildrenCompleted(node)}
+            >
+              <StopIcon className="stop-icon" />
+            </IconButton>
+          </Tooltip>
+        </>
+      ),
+
       Paused: (
         <Tooltip title="Resume">
           <IconButton
@@ -134,17 +163,29 @@ export default function TreeRows({
       ),
 
       "Not Ready": (
-        <>
-          <Tooltip title="Submit Activity">
-            <IconButton
-              size="small"
-              onClick={() => submitAddedNode(projectId, moduleId, node)}
-            >
-              <SendIcon className="send-icon" />
-            </IconButton>
-          </Tooltip>
-        </>
-      ),
+  <>
+    <Tooltip title="Submit Activity">
+      <IconButton
+        size="small"
+        sx={{ p: 0.3 }}
+        onClick={() => submitAddedNode(projectId, moduleId, node)}
+      >
+        <SendIcon sx={{ fontSize: 16 }} className="send-icon" />
+      </IconButton>
+    </Tooltip>
+
+    <Tooltip title="Delete Activity">
+      <IconButton
+        size="small"
+        color="error"
+        sx={{ p: 0.3 }}
+        onClick={() => deleteNode(projectId, moduleId, node)}
+      >
+        <DeleteIcon sx={{ fontSize: 16 }} />
+      </IconButton>
+    </Tooltip>
+  </>
+)
     };
     console.log("Status::", activityStatus);
     return (
@@ -177,6 +218,8 @@ export default function TreeRows({
       </>
     );
   };
+
+  
 
   const allChildrenCompleted = (activity)=>{
     return activity.children.every(
@@ -232,6 +275,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onOpenCommentBox={onOpenCommentBox}
+                deleteNode={deleteNode}
               />
             ))}
         </>
@@ -316,7 +360,9 @@ export default function TreeRows({
               )}
             </TableCell>
             <TableCell>
-              <Chip
+              <Tooltip title={latestRejectReason ?? activityStatus}>
+  <span>
+              {/* <Chip
                 size="small"
                 label={activityStatus || "-"}
                 color={
@@ -326,7 +372,10 @@ export default function TreeRows({
                       ? "warning"
                       : "default"
                 }
-              />
+              /> */}
+              <StatusChip status={activityStatus?.toLowerCase()} />
+              </span>
+              </Tooltip>
             </TableCell>
 
             <TableCell>
@@ -369,6 +418,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onOpenCommentBox={onOpenCommentBox}
+                  deleteNode={deleteNode}
               />
             ))}
         </>

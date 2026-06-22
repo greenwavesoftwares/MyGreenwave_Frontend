@@ -8,7 +8,7 @@ export function addComment(projectId,activityId,moduleId){
     responsibility: "",
     actionPoint: "",
     others: "",
-    attachmentMent: null,
+    attachment: null,
     attachmentName: null, // ← NEW: store original file name
     moduleId
   })
