@@ -3,7 +3,8 @@ import "./ProjectsInfo.css";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import dayjs from "dayjs";
 import StatusChip from "./StatusChip";
-
+import { Rocket,
+} from "lucide-react";
 /* =========================
    ICONS
 ========================= */
@@ -23,21 +24,19 @@ const DocIcon = (p) => (
   </svg>
 );
 
-const RocketIcon = (p) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
-    <path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.8-.8 1-2.5 1-2.5" />
-    <path d="M12 15l-3-3a22 22 0 0 1 6.4-9.4 5 5 0 0 1 5 5A22 22 0 0 1 11 14l-3 3z" />
-    <circle cx="15" cy="9" r="1.4" />
-  </svg>
-);
-
 const SearchIcon = (p) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
     <circle cx="11" cy="11" r="7" />
     <path d="M21 21l-4.3-4.3" />
   </svg>
 );
-
+const RocketIcon = (props) => (
+  <Rocket
+    size={16}
+    strokeWidth={2}
+    {...props}
+  />
+);
 const RefreshIcon = (p) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
     <path d="M21 12a9 9 0 1 1-2.6-6.4L21 8" />
@@ -113,7 +112,7 @@ function normalizeStatus(status) {
 const TAB_DEFS = [
   { key: "all", label: "All Projects", icon: BriefcaseIcon },
   
-  { key: "published", label: "Published", icon: RocketIcon },
+  { key: "published", label: "Published", icon: RocketIcon  },
 ];
 
 export default function ProjectsInfo({ projectSelection }) {
