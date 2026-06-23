@@ -1132,6 +1132,7 @@ body {
   padding: 6px;
 
   margin-bottom: 18px;
+  margin-top: 10px;
 }
 
 .proj-tab {
@@ -1642,6 +1643,7 @@ body {
   .proj-tabs {
     width: 100%;
     overflow-x: auto;
+    margin-top: 10px;
   }
 }
 
