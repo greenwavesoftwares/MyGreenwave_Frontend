@@ -32,6 +32,7 @@ import { addComment } from "./AssigneeHelper";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { getUserData } from "../Login/Encrypt";
 import ConfirmDialog from "./ConfirmDialog";
+import { showToast } from "./toastService";
 
 export default function CommentsActionDialog({
   open,
@@ -64,6 +65,7 @@ export default function CommentsActionDialog({
   };
 
   reader.readAsDataURL(file);
+   showToast("success", "Success", 'File attached successfully');
   event.target.value = "";
 };
 
@@ -73,6 +75,7 @@ const removeReplyAttachment = (commentIndex) => {
     delete updated[commentIndex];
     return updated;
   });
+   showToast("success", "Success", 'File removed successfully');
 };
 
  const handleChange = (field, value) => {
@@ -95,6 +98,7 @@ const removeReplyAttachment = (commentIndex) => {
   };
 
   reader.readAsDataURL(file);
+   showToast("success", "Success", 'File attached successfully');
 
   // Allow selecting the same file again later
   event.target.value = "";
@@ -115,12 +119,17 @@ const removeReplyAttachment = (commentIndex) => {
       attachmentBase64: null,
       attachmentName: null,
     }));
+     showToast("success", "Success", 'File removed successfully');
   };
 console.log('Comment : ',newComment)
 
 
   const addComments = async() => {
-    if (!newComment.commentDescription.trim()) return;
+    if (!newComment.commentDescription.trim() || !newComment.resolutionDate || newComment?.responsibility?.length ===0 )
+       {
+        showToast("error", "Data Missing", 'Fill in the required fields');
+        return;
+    }
     const payload = {
       ...newComment,
       createdBy: getUserData()?.userDetails?.userId,
@@ -143,6 +152,7 @@ console.log('Comment : ',newComment)
     const newCommentPayload=addComment(payload.projectId,payload.activityId,payload.moduleId)
     console.log("New Comment:",newCommentPayload)
     setNewComment(newCommentPayload);
+    showToast("success", "Success", 'Comment added successfully');
     }
   };
 
@@ -175,6 +185,7 @@ console.log('Comment : ',newComment)
 
  if(!replyAdded) {
   console.error("Failed to add reply");
+  showToast("error", "Error", 'Failed to add reply');
   return;
  }
 
@@ -219,6 +230,7 @@ console.log('Comment : ',newComment)
   });
 
   setActiveReply(null);
+  showToast("success", "Success", 'Reply added successfully');
 };
 
 const handleDelete=async(type,index,id)=>
@@ -234,15 +246,18 @@ const handleDelete=async(type,index,id)=>
    const commentDeleted= await activityTrackerApi.deleteComment(existingComments[index].commentId);
    if(!commentDeleted) {
     console.error("Failed to delete comment");
+    showToast("error", "Error", 'Failed to delete comment');
     return;
    }
     setExistingComments((prev) => prev.filter((_, i) => i !== index));
+    showToast("success", "Success", 'Comment deleted successfully');
   };
 
   const deleteReply = async (commentIndex, replyId) => {
     const replyDeleted= await activityTrackerApi.deleteReply(replyId);
     if(!replyDeleted) {
       console.error("Failed to delete reply");
+       showToast("error", "Error", 'Failed to delete reply');
       return;
      }
     setExistingComments((prev) =>
@@ -255,6 +270,7 @@ const handleDelete=async(type,index,id)=>
           : item
       )
     );
+     showToast("success", "Success", 'Reply deleted successfully');
   };
 
   const openDeleteConfirmation = (type, index, id) => {
@@ -639,7 +655,7 @@ const confirmDelete = () => {
             </div>
 
             <div>
-              <label>Resolution Date</label>
+              <label>Resolution Date *</label>
               <TextField
                 fullWidth
                 type="date"
@@ -652,7 +668,7 @@ const confirmDelete = () => {
             </div>
 
             <div>
-              <label>Responsibility</label>
+              <label>Responsibility *</label>
               <div className="chip-group">
   {["GW", "Customer"].map((opt) => (
     <Chip

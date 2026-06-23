@@ -9,6 +9,7 @@ import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "./AssigneeHelper";
 import { getUserData } from "../Login/Encrypt";
 import StatusChip from "./StatusChip";
+import { showToast } from "./toastService";
 
 const activity = {
   projectId: "PRJ-1001",
@@ -326,6 +327,7 @@ const totalActivities = useMemo(
   const updateStatusOfActivity=async (activityId,status)=>{
     const statusPayload={status,actualTime:new Date()}
     const response=await activityTrackerApi.updateActivityStatus(activityId,statusPayload)
+     showToast("success", "Status Updated",`Activity ${statusPayload.status}` );
     fetchActivities()
   }
   const totalTasks = useMemo(
@@ -452,7 +454,7 @@ setExpanded({...expanded,...expandedModules});
                 <TableCell className="pai-th">Task</TableCell>
                 <TableCell className="pai-th">Resource</TableCell>
                 <TableCell className="pai-th">Planned Start</TableCell>
-                <TableCell className="pai-th">Duration</TableCell>
+                <TableCell className="pai-th">Duration(Hours)</TableCell>
                 <TableCell className="pai-th">Planned Stop</TableCell>
                 <TableCell className="pai-th">Status</TableCell>
                 <TableCell className="pai-th">Actual Start</TableCell>

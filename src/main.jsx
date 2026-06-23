@@ -10,12 +10,15 @@ import LoadingScreen from "./components/LoadingScreen/LoadingScreen.jsx";
 import { BrowserRouter } from "react-router-dom";
 import '../main.scss';
 import ErrorBoundary from './ErrorBoundary.jsx'
+import ToastProvider from "./Modules/Assignee/ToastProvider.jsx";
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
   <BrowserRouter>
     <LoadingProvider>
       <ErrorBoundary>
+        <ToastProvider>
       <App />
+      </ToastProvider>
       </ErrorBoundary>
       <LoadingScreen />
     </LoadingProvider>

@@ -350,7 +350,7 @@ export default function TreeRows({
               )}
             </TableCell>
 
-            <TableCell>{durationHrs ?? "-"}</TableCell>
+            <TableCell align="center">{durationHrs ?? "-"}</TableCell>
 
             <TableCell>
               { plannedStop && dayjs(plannedStop).isValid() ? (
