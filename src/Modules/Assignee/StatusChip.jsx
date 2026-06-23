@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Loader2,
   Rocket,
+  ShieldCheck
 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -76,6 +77,14 @@ const STATUS_CONFIG = {
     border: "#DDD6FE",
     spin: true,
   },
+  finished: {
+    label: "Finished",
+    Icon: ShieldCheck,
+    bg: "#F0FDF4",
+    color: "#166534",
+    border: "#4ADE80",
+  },
+ 
 };
 
 const StatusChip = ({ status = "pending" }) => {
