@@ -1,4 +1,4 @@
-export function addComment(projectId,activityId,moduleId){
+export function addComment(projectId,activityId,moduleId,activityName=''){
     return({
     projectId,
     activityId,
@@ -10,6 +10,7 @@ export function addComment(projectId,activityId,moduleId){
     others: "",
     attachment: null,
     attachmentName: null, // ← NEW: store original file name
-    moduleId
+    moduleId,
+    name:activityName
   })
   }

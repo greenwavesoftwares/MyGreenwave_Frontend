@@ -33,6 +33,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import Badge from '@mui/material/Badge';
 import DeleteIcon from "@mui/icons-material/Delete";
 import StatusChip from "./StatusChip";
+import { showToast } from "./toastService";
 
 export default function TreeRows({
   node,
@@ -122,8 +123,14 @@ export default function TreeRows({
           <Tooltip title="Complete">
             <IconButton
               size="small"
-              onClick={() => updateStatusOfActivity(id, "Completed")}
-              disabled={!allChildrenCompleted(node)}
+              onClick={() =>{ 
+                if(!allChildrenCompleted(node))
+                  {
+                    showToast("error", "Error", 'Please complete all subactivities')
+                     return;
+                  }
+                updateStatusOfActivity(id, "Completed")}}
+              // disabled={!allChildrenCompleted(node)}
             >
               <StopIcon className="stop-icon" />
             </IconButton>
@@ -168,7 +175,9 @@ export default function TreeRows({
       <IconButton
         size="small"
         sx={{ p: 0.3 }}
-        onClick={() => submitAddedNode(projectId, moduleId, node)}
+        onClick={() =>{
+           showToast("success", "Success",'SubActivity added' );
+          submitAddedNode(projectId, moduleId, node)}}
       >
         <SendIcon sx={{ fontSize: 16 }} className="send-icon" />
       </IconButton>
@@ -200,7 +209,8 @@ export default function TreeRows({
               <IconButton
                 size="small"
                 onClick={() => {
-                  onOpenCommentBox(projectId, id,moduleId);
+                  console.log('Clicked Node : ',node)
+                  onOpenCommentBox(projectId, id,moduleId,node?.name??'');
                 }}
               >
                 <ModeCommentOutlinedIcon fontSize="small" />

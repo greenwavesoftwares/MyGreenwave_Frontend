@@ -308,7 +308,7 @@ const confirmDelete = () => {
                 Comments & Action Points
               </Typography>
               <Typography className="comments-subtitle">
-                {newComment?.projectId}
+                {newComment?.name}
               </Typography>
             </div>
           </div>

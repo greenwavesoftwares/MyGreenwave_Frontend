@@ -215,6 +215,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
       });
     }
 
+      showToast("success", "Success",'Submit the subactivity for confirmation' );
+
     // setExpanded((prev) => ({ ...prev, [parent.id]: true }));
   }
 
@@ -223,6 +225,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
     ...prev,
     modules: deleteRecursively(prev.modules, nodeToDelete.id),
   }));
+
+   showToast("error", "Activity",'SubActivity deleted' );
 };
 
 function deleteRecursively(nodes, nodeId) {
@@ -242,10 +246,10 @@ function deleteRecursively(nodes, nodeId) {
     return count + selfCount + childCount;
   }, 0);
 };
-const onOpenCommentBox = async(projectId,activityId,moduleId) => {
+const onOpenCommentBox = async(projectId,activityId,moduleId,activityName) => {
   const existingCommentsResp=await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(projectId,activityId)
   console.log("Existing comments and replies::",existingCommentsResp)
-  const newCommentBody=addComment(projectId,activityId,moduleId)
+  const newCommentBody=addComment(projectId,activityId,moduleId,activityName)
   
   setExistingComments(existingCommentsResp);
   setNewComment(newCommentBody)
