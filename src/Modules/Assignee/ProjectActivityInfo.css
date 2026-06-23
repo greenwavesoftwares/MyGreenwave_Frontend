@@ -1,7 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 
 /* ── Reset & base ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .pai-page {
   background: #F1F5F9;
@@ -43,7 +49,9 @@
   box-shadow: 0 1px 4px rgba(59, 91, 219, 0.12);
 }
 
-.pai-back-btn svg { flex-shrink: 0; }
+.pai-back-btn svg {
+  flex-shrink: 0;
+}
 
 .pai-breadcrumb-sep {
   color: #94A3B8;
@@ -102,8 +110,13 @@
   min-width: 140px;
 }
 
-.pai-info-field:first-child { padding-left: 0; }
-.pai-info-field:last-child  { border-right: none; }
+.pai-info-field:first-child {
+  padding-left: 0;
+}
+
+.pai-info-field:last-child {
+  border-right: none;
+}
 
 .pai-field-label {
   font-size: 10.5px;
@@ -141,24 +154,63 @@
   flex-shrink: 0;
 }
 
-.pill-active      { color: #15803D; background: #DCFCE7; }
-.pill-active .pill-dot { background: #15803D; animation: blink 2s ease-in-out infinite; }
+.pill-active {
+  color: #15803D;
+  background: #DCFCE7;
+}
 
-.pill-running     { color: #1D4ED8; background: #DBEAFE; }
-.pill-running .pill-dot { background: #1D4ED8; animation: blink 1.5s ease-in-out infinite; }
+.pill-active .pill-dot {
+  background: #15803D;
+  animation: blink 2s ease-in-out infinite;
+}
 
-.pill-paused      { color: #B45309; background: #FEF3C7; }
-.pill-paused .pill-dot { background: #B45309; }
+.pill-running {
+  color: #1D4ED8;
+  background: #DBEAFE;
+}
 
-.pill-not-started { color: #64748B; background: #F8FAFC; }
-.pill-not-started .pill-dot { background: #94A3B8; }
+.pill-running .pill-dot {
+  background: #1D4ED8;
+  animation: blink 1.5s ease-in-out infinite;
+}
 
-.pill-closed      { color: #64748B; background: #F8FAFC; }
-.pill-closed .pill-dot { background: #94A3B8; }
+.pill-paused {
+  color: #B45309;
+  background: #FEF3C7;
+}
+
+.pill-paused .pill-dot {
+  background: #B45309;
+}
+
+.pill-not-started {
+  color: #64748B;
+  background: #F8FAFC;
+}
+
+.pill-not-started .pill-dot {
+  background: #94A3B8;
+}
+
+.pill-closed {
+  color: #64748B;
+  background: #F8FAFC;
+}
+
+.pill-closed .pill-dot {
+  background: #94A3B8;
+}
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
 }
 
 /* ══════════════════════════════════════
@@ -247,7 +299,9 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.pai-search::placeholder { color: #94A3B8; }
+.pai-search::placeholder {
+  color: #94A3B8;
+}
 
 .pai-search:focus {
   border-color: #93C5FD;
@@ -338,8 +392,15 @@
 
 /* ── animation ── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .my-activity-row {
@@ -350,6 +411,7 @@
   opacity: 0.65;
   filter: grayscale(0.3);
 }
+
 .custom-datepicker-input {
   font-size: 0.8rem;
   padding: 5px 8px;
@@ -385,4 +447,24 @@
 
 .react-datepicker__day:hover {
   border-radius: 50%;
+}
+.back-to-draft {
+  height: 32px;
+  padding: 0 14px;
+
+  border: 1px solid #CBD5E1;
+  border-radius: 7px;
+
+  background: #FFFFFF;
+  color: #475569;
+
+  font-family: "Sora", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }

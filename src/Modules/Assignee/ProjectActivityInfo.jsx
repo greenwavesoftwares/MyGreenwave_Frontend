@@ -10,7 +10,7 @@ import { addComment } from "./AssigneeHelper";
 import { getUserData } from "../Login/Encrypt";
 import StatusChip from "./StatusChip";
 import { showToast } from "./toastService";
-
+import { ArrowLeft } from "lucide-react";
 const activity = {
   projectId: "PRJ-1001",
   projectName: "Solar Farm Expansion",
@@ -180,7 +180,7 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
   // Fallback for older environments
   return `row_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 } 
-  
+   
   function addRecursively(nodes) {
       return nodes.map((node) => {
         if (node.id === parent.id) {
@@ -229,6 +229,7 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
    showToast("error", "Activity",'SubActivity deleted' );
 };
 
+
 function deleteRecursively(nodes, nodeId) {
   return nodes
     .filter((node) => node.id !== nodeId) // remove matching node
@@ -246,10 +247,10 @@ function deleteRecursively(nodes, nodeId) {
     return count + selfCount + childCount;
   }, 0);
 };
-const onOpenCommentBox = async(projectId,activityId,moduleId,activityName) => {
+const onOpenCommentBox = async(projectId,activityId,moduleId) => {
   const existingCommentsResp=await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(projectId,activityId)
   console.log("Existing comments and replies::",existingCommentsResp)
-  const newCommentBody=addComment(projectId,activityId,moduleId,activityName)
+  const newCommentBody=addComment(projectId,activityId,moduleId)
   
   setExistingComments(existingCommentsResp);
   setNewComment(newCommentBody)
@@ -362,23 +363,12 @@ setExpanded({...expanded,...expandedModules});
 
       {/* ── Breadcrumb / back bar ── */}
       <div className="pai-topbar">
-        <button
-          className="pai-back-btn"
-          onClick={() => {console.log("On back home click");setSelectedProject && setSelectedProject(null)}}
-          title="Back to Projects"
-        >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-            <path d="M9 21V12h6v9"/>
-          </svg>
-          Projects
-        </button>
-        <span className="pai-breadcrumb-sep">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </span>
-        <span className="pai-breadcrumb-current">{activityInfo?.projectName}</span>
+         <button
+            onClick={() => {console.log("On back home click");setSelectedProject && setSelectedProject(null)}}
+            className="back-to-draft"
+          >
+            <ArrowLeft size={14} /> Back to Drafts
+          </button>
       </div>
 
       {/* ── Project info card ── */}

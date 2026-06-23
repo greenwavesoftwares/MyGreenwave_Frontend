@@ -285,8 +285,8 @@ export default function ProjectsInfo({ projectSelection }) {
             <BriefcaseIcon />
           </div>
           <div>
-            <h2>Projects</h2>
-            <p>{projects.length} project{projects.length === 1 ? "" : "s"} saved</p>
+            <div className="proj-header">Projects</div>
+            <div className="proj-header-saved">{projects.length} project{projects.length === 1 ? "" : "s"} saved</div>
           </div>
         </div>
 
