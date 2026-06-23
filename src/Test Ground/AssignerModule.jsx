@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, {
   useState,
   useCallback,
@@ -90,196 +89,13 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import * as XLSX from "xlsx";
-import { MdDelete } from "react-icons/md";
 import activityTrackerApi from "../Services/activityTrackerApi";
 import { RotateCcw } from "lucide-react";
+import { addComment } from "../Modules/Assignee/AssigneeHelper";
+import CommentsActionDialog from "../Modules/Assignee/CommentsActionDialog";
 
 /* ─── Constants ─── */
-/* ─── API Configuration ─── */
-const API_BASE_URL = "http://localhost:8081/activityTracker";
-const ADMIN_API_BASE = "http://localhost:8081/admin";
-const TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhc2hvay5zaW5naEBncmVlbndhdmUuY28uaW4iLCJpYXQiOjE3ODE2NzQwMjEsImV4cCI6MTc4MTcxMDAyMX0._LL1jlf8Bcu9INwE-lLzon0Ox7IHzF_WHiOdqHPP5Hg";
 
-const API = {
-  saveProject: `${API_BASE_URL}/postActivityTree`,
-  getAllProjects: `${API_BASE_URL}/getActivityTree`,
-};
-async function apiGetAllGroups() {
-  const response = await activityTrackerApi.getAllGroups();
-  //   fetch(`${ADMIN_API_BASE}/getallgroups`, {
-  //     method: "GET",
-  //     headers: {
-  //       Accept: "application/json",
-  //       Authorization: `Bearer ${getUserData()?.token}`,
-  //     },
-  //   });
-  //   console.log(response);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch groups (${response.status}): ${response.statusText}`,
-    );
-  }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
-}
-
-/* ─── Fetch resources (users + leaves) for selected groups ─── */
-async function apiGetResourcesByGroupIds(groupIds) {
-  if (!groupIds || groupIds.length === 0) return {};
-
-  const response =
-    await activityTrackerApi.getUserIdAndLeavesBygroupIds(groupIds);
-
-  //   fetch(
-  //     `${ADMIN_API_BASE}/getUserIdAndLeavesBygroupIds`,
-  //     {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${TOKEN}`,
-  //       },
-  //       body: JSON.stringify(groupIds),
-  //     },
-  //   );
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch resources (${response.status}): ${response.statusText}`,
-    );
-  }
-
-  const data = await response.json();
-  return data && typeof data === "object" ? data : {};
-}
-async function apiDeleteProject(projectId) {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-    method: "DELETE",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${TOKEN}`,
-    },
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(
-      `Failed to delete (${response.status}): ${text || response.statusText}`,
-    );
-  }
-
-  // Handle empty response (204 No Content) or JSON response
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return await response.json();
-  }
-  return { success: true, deletedId: projectId };
-}
-/* ─── API Helpers ─── */
-async function apiPostProject(projectData) {
-  const response = await fetch(API.saveProject, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${TOKEN}`,
-    },
-    body: JSON.stringify(projectData),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(
-      `Failed to save (${response.status}): ${text || response.statusText}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return await response.json();
-  }
-  return await response.text();
-}
-
-async function apiGetAllProjects() {
-  const response = await activityTrackerApi.getAllProjects();
-  //   fetch(API.getAllProjects, {
-  //     method: "GET",
-  //     headers: { Accept: "application/json", Authorization: `Bearer ${TOKEN}` },
-  //   });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch projects (${response.status}): ${response.statusText}`,
-    );
-  }
-
-  const data = await response.json();
-  return Array.isArray(data) ? data : data.projects || [];
-}
-/* ─── Draft Storage (localStorage) ─── */
-// const STORAGE_KEY = "ess_draft_projects";
-
-// function loadDrafts() {
-//   try {
-//     const raw = localStorage.getItem(STORAGE_KEY);
-//     if (!raw) return [];
-//     const drafts = JSON.parse(raw);
-
-//     return drafts.map((d) => {
-//       if (!d.rows) return d;
-
-//       // If old draft has no moduleRegistry, build one from rows
-//       if (!d.moduleRegistry) {
-//         const synced = syncModuleIds(d.rows, {});
-//         return {
-//           ...d,
-//           rows: synced.rows,
-//           moduleRegistry: synced.registry,
-//         };
-//       }
-//       return d;
-//     });
-//   } catch {
-//     return [];
-//   }
-// }
-
-// async function loadDrafts() {
-//   try {
-//     const response = await axios.get(
-//       "http://localhost:8081/activityTracker/getActivityTree",
-//       {
-//         headers: {
-//           Authorization: `Bearer ${TOKEN}`,
-//         },
-//       },
-//     );
-
-//     const drafts = response.data;
-//     console.log("Loaded drafts from API:", drafts);
-//     if (!Array.isArray(drafts)) return [];
-
-//     // Strip stale nextId from API response
-//     return drafts.map((d) => {
-//       const { nextId, ...rest } = d;
-//       return rest;
-//     });
-//   } catch (error) {
-//     console.error("Failed to load drafts:", error);
-//     return [];
-//   }
-// }
-// function saveDrafts(drafts) {
-//   console.log("Saving drafts to API:", drafts);
-//   try {
-//     localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts));
-//   } catch (e) {
-//     console.error("Failed to save drafts:", e);
-//   }
-// }
 const STATUS_CONFIG = {
   pending: {
     label: "Pending",
@@ -414,128 +230,7 @@ function generateProjectId() {
 const WORK_START_HR = 10;
 const WORK_END_HR = 18;
 
-const GROUP_RESOURCES = {
-  "Abis@greenwave.co.in": [
-    {
-      code: "AR",
-      name: "Anchit Raj Roy",
-      userId: "anchit.roy@greenwave.co.in",
-      tone: 1,
-      leaves: [],
-    },
-    {
-      code: "AM",
-      name: "Arindam Mondal",
-      userId: "arindam.mondal@greenwave.co.in",
-      tone: 2,
-      leaves: [],
-    },
-    {
-      code: "GB",
-      name: "Gopal Basak",
-      userId: "gopal.basak@greenwave.co.in",
-      tone: 3,
-      leaves: [],
-    },
-    {
-      code: "GS",
-      name: "Goutam Shui",
-      userId: "goutam.shui@greenwave.co.in",
-      tone: 4,
-      leaves: [],
-    },
-    {
-      code: "SP",
-      name: "Sannidhya Pan",
-      userId: "sannidhya.pan@greenwave.co.in",
-      tone: 5,
-      leaves: [],
-    },
-  ],
-  "admin@greenwave.co.in": [
-    {
-      code: "AT",
-      name: "Arun Thakur",
-      userId: "arun.thakur@greenwave.co.in",
-      tone: 1,
-      leaves: [],
-    },
-    {
-      code: "DM",
-      name: "Deepa Menon",
-      userId: "deepa.menon@greenwave.co.in",
-      tone: 2,
-      leaves: [{ date: "2026-05-14" }],
-    },
-    {
-      code: "KS",
-      name: "Kunal Shah",
-      userId: "kunal.shah@greenwave.co.in",
-      tone: 3,
-      leaves: [],
-    },
-  ],
-  "Appraiser@greenwave.co.in": [
-    {
-      code: "BL",
-      name: "Bryan Lee",
-      userId: "bryan.lee@greenwave.co.in",
-      tone: 1,
-      leaves: [],
-    },
-    {
-      code: "CJ",
-      name: "Chen Jian",
-      userId: "chen.jian@greenwave.co.in",
-      tone: 2,
-      leaves: [{ date: "2026-05-18" }],
-    },
-    {
-      code: "MR",
-      name: "Mei Ramirez",
-      userId: "mei.ramirez@greenwave.co.in",
-      tone: 3,
-      leaves: [],
-    },
-    {
-      code: "TO",
-      name: "Tomás Ortega",
-      userId: "tomas.ortega@greenwave.co.in",
-      tone: 4,
-      leaves: [],
-    },
-  ],
-};
-const GROUP_LABELS = [
-  {
-    active: true,
-    groupId: "Abis@greenwave.co.in",
-    phoneNumber: 7908009891,
-    homePage: "",
-    groupName: "ABIS",
-    groupManager: "avik.samanta@greenwave.co.in",
-  },
-  {
-    active: true,
-    groupId: "admin@greenwave.co.in",
-    phoneNumber: 9831504426,
-    homePage: "",
-    groupName: "Admin",
-    groupManager: "Swapnila.chakraborty@greenwave.co.in",
-  },
-  {
-    active: true,
-    groupId: "Appraiser@greenwave.co.in",
-    phoneNumber: 9748066716,
-    homePage: "",
-    groupName: "Appraiser",
-    groupManager: "Arup.Chakraborti@greenwave.co.in",
-  },
-];
 /* ─── Group Helpers ─── */
-function getGroupById(groupId) {
-  return GROUP_LABELS.find((g) => g.groupId === groupId) || null;
-}
 
 function getGroupName(groupId, groupLabels) {
   return groupLabels.find((g) => g.groupId === groupId)?.groupName || groupId;
@@ -719,7 +414,7 @@ function nextWorkMoment(dt, userId, groupResources = {}) {
       d.setHours(WORK_START_HR, 0, 0, 0);
       continue;
     }
-    if (hr >= WORK_END_HR) {
+    if (hr > WORK_END_HR) {
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
       continue;
@@ -777,7 +472,7 @@ function defaultFirstStart(userId, groupResources = {}) {
       0,
       0,
     );
-  } else if (hr >= WORK_END_HR) {
+  } else if (hr > WORK_END_HR) {
     // After work hours → start tomorrow at WORK_START_HR
     baseDate = new Date(
       now.getFullYear(),
@@ -833,43 +528,17 @@ function recomputeChains(rows, groupResources = {}) {
     childrenMap.get(pid).push(r);
   });
 
-  // ── HELPER: Get children of a row ──
   const getChildren = (id) => childrenMap.get(id) || [];
 
-  // ── HELPER: Sum all descendant durations (top-level children only) ──
-  // We use only DIRECT children (one level) — they recursively include their own descendants
-  const sumChildrenDurations = (parentId) => {
-    const children = getChildren(parentId);
-    if (children.length === 0) return null; // signal "no children"
-    let total = 0;
-    for (const child of children) {
-      // If child has its own children, use child's computed duration (recursive)
-      const grandChildren = getChildren(child.id);
-      let childDur;
-      if (grandChildren.length > 0) {
-        // Recursive: child's duration = sum of grandchildren
-        childDur = sumChildrenDurations(child.id);
-        if (childDur == null) childDur = 0;
-      } else {
-        childDur = Number(child.durationHrs);
-        if (isNaN(childDur)) childDur = 0;
-      }
-      total += childDur;
-    }
-    return total;
-  };
-
-  // NOTE: Parent durations are computed after child scheduling below
-  // (don't override parent.durationHrs here). This preserves user-set
-  // parent durations when sub-tasks are all zero-duration.
-
-  // ── STEP 2: Process top-level rows (module-scoped chains) ──
+  // ── STEP 1: Process top-level rows (module-scoped chains) ──
   const topRows = childrenMap.get("__ROOT__") || [];
   const chains = new Map();
 
   topRows.forEach((row) => {
     // Skip auto-scheduling for parent rows (those with children)
     if (getChildren(row.id).length > 0) return;
+    // ── SKIP non-pending rows entirely ──
+    if (!isPending(row)) return;
     if (!row.resource) return;
     const moduleKey = row.moduleId || row.module || "__no_module__";
     const chainKey = `${moduleKey}|${row.resource}`;
@@ -883,6 +552,10 @@ function recomputeChains(rows, groupResources = {}) {
 
     chainRows.forEach((row, idx) => {
       const realRow = byId.get(row.id);
+
+      // ── SKIP non-pending rows — preserve their values ──
+      if (!isPending(realRow)) return;
+
       const dur = Number(realRow.durationHrs);
 
       const hasValidDuration =
@@ -892,17 +565,19 @@ function recomputeChains(rows, groupResources = {}) {
         !isNaN(Number(realRow.durationHrs));
 
       let start;
-      if (idx === 0) {
-        const userStart = realRow.plannedStart
-          ? parseISODateTime(realRow.plannedStart)
-          : null;
-        if (!userStart) {
-          realRow.plannedStart = "";
-          realRow.plannedStop = "";
-          prevEnd = null;
-          return;
-        }
+
+      // ── Every row: respect user-set plannedStart if present ──
+      const userStart = realRow.plannedStart
+        ? parseISODateTime(realRow.plannedStart)
+        : null;
+
+      if (userStart) {
         start = nextWorkMoment(userStart, userId, groupResources);
+      } else if (idx === 0) {
+        realRow.plannedStart = "";
+        realRow.plannedStop = "";
+        prevEnd = null;
+        return;
       } else {
         if (!prevEnd) {
           realRow.plannedStart = "";
@@ -930,7 +605,7 @@ function recomputeChains(rows, groupResources = {}) {
     });
   });
 
-  // ── STEP 3: Process sub-tasks (recursively, chained within parent) ──
+  // ── STEP 2: Process sub-tasks ──
   const processChildren = (parentId) => {
     const parent = byId.get(parentId);
     if (!parent) return;
@@ -938,17 +613,15 @@ function recomputeChains(rows, groupResources = {}) {
     const children = getChildren(parentId);
     if (children.length === 0) return;
 
-    const parentStart = parent.plannedStart
-      ? parseISODateTime(parent.plannedStart)
-      : null;
-    const parentStop = parent.plannedStop
-      ? parseISODateTime(parent.plannedStop)
-      : null;
-
-    // ── Sub-tasks: Allow user to manually set start/duration ──
-    // plannedStop will be auto-calculated from plannedStart + duration
     children.forEach((child) => {
       const realChild = byId.get(child.id);
+
+      // ── SKIP non-pending sub-tasks — preserve their values ──
+      if (!isPending(realChild)) {
+        processChildren(realChild.id);
+        return;
+      }
+
       const dur = Number(realChild.durationHrs);
 
       const hasValidDuration =
@@ -957,8 +630,6 @@ function recomputeChains(rows, groupResources = {}) {
         realChild.durationHrs !== undefined &&
         !isNaN(Number(realChild.durationHrs));
 
-      // User has manually set plannedStart via date picker
-      // Just calculate plannedStop from plannedStart + duration
       if (realChild.plannedStart && hasValidDuration) {
         const start = parseISODateTime(realChild.plannedStart);
         if (start) {
@@ -971,29 +642,28 @@ function recomputeChains(rows, groupResources = {}) {
           realChild.plannedStop = isoDateTime(end);
         }
       } else {
-        // No valid start or duration → clear planned stop
         realChild.plannedStop = "";
       }
-    });
 
-    // Recurse into deeper sub-tasks
-    children.forEach((child) => processChildren(child.id));
+      // Recurse into deeper sub-tasks
+      processChildren(realChild.id);
+    });
   };
 
   topRows.forEach((row) => processChildren(row.id));
 
-  // ── STEP 4: Compute parent durations from direct children timings ──
-  // Rule:
-  // - If no child has a non-zero computed interval, leave parent.durationHrs untouched
-  //   (this allows manual editing).
-  // - If all children belong to the same resource, parent duration = sum(child durations).
-  // - Otherwise (multiple resources), parent duration = union length of all child intervals.
+  // ── STEP 3: Compute parent durations from children ──
   const parentIds = Array.from(childrenMap.keys()).filter(
     (k) => k !== "__ROOT__",
   );
+
   for (const pid of parentIds) {
     const parent = byId.get(pid);
     if (!parent) continue;
+
+    // ── SKIP non-pending parents — preserve their values ──
+    if (!isPending(parent)) continue;
+
     const children = getChildren(pid);
     const intervals = [];
     const resourcesSet = new Set();
@@ -1016,31 +686,25 @@ function recomputeChains(rows, groupResources = {}) {
       resourcesSet.add(realChild.resource || "");
     }
 
+    // ── No timed children (all 0-duration or no valid intervals) ──
+    // Allow manual editing — DON'T clear parent values
     if (intervals.length === 0) {
-      // no timed children → clear parent timing
-      parent.plannedStart = "";
-      parent.plannedStop = "";
-      parent.durationHrs = "";
       parent._autoDuration = false;
       continue;
     }
 
     // ── Calculate parent timing from sub-tasks ──
-    // Parent start = earliest sub-task start
     const minStart = Math.min(...intervals.map((i) => i.start));
     parent.plannedStart = isoDateTime(new Date(minStart));
 
-    // Parent stop = latest sub-task stop
     const maxEnd = Math.max(...intervals.map((i) => i.end));
     parent.plannedStop = isoDateTime(new Date(maxEnd));
 
-    // ── Calculate parent duration based on resource concurrency ──
+    // ── Calculate parent duration ──
     let parentMs = 0;
     if (resourcesSet.size === 1) {
-      // same resource: sum durations (they are effectively sequential for that resource)
       for (const it of intervals) parentMs += it.end - it.start;
     } else {
-      // multiple resources: compute union length across all intervals
       const sorted = intervals
         .map((i) => ({ s: i.start, e: i.end }))
         .sort((a, b) => a.s - b.s);
@@ -1365,11 +1029,10 @@ function runValidations(rows, project, po, site, groups, groupResources) {
   });
 
   // ── 6. Past Date Check ──
-  //    BLOCK if any PENDING task has past start
-  //    WARN if non-pending tasks have past start (informational only)
+  //    BLOCK only if PENDING task has past start
+  //    Non-pending tasks are ignored (already running/completed)
   const now = new Date();
   const pendingPastRows = [];
-  const nonPendingPastRows = [];
 
   rows.forEach((r, idx) => {
     if (!r.plannedStart) return;
@@ -1379,18 +1042,16 @@ function runValidations(rows, project, po, site, groups, groupResources) {
     const status = String(r.status || "pending")
       .toLowerCase()
       .trim();
-    const taskInfo = {
+
+    // Only flag pending tasks — skip everything else
+    if (status !== "pending") return;
+
+    pendingPastRows.push({
       idx: idx + 1,
       task: r.task || r.module || `Row #${idx + 1}`,
       start: fmtDisplay(startDt),
       status: r.status || "pending",
-    };
-
-    if (status === "pending") {
-      pendingPastRows.push(taskInfo);
-    } else {
-      nonPendingPastRows.push(taskInfo);
-    }
+    });
   });
 
   // ❌ ERROR: Pending tasks in the past — must fix
@@ -1411,18 +1072,8 @@ function runValidations(rows, project, po, site, groups, groupResources) {
             )}${pendingPastRows.length > 5 ? `\n…and ${pendingPastRows.length - 5} more` : ""}`,
   });
 
-  // ⚠️ WARNING: Non-pending in the past — informational
-  if (nonPendingPastRows.length > 0) {
-    warnings.push({
-      title: `${nonPendingPastRows.length} active task${nonPendingPastRows.length !== 1 ? "s have" : " has"} a past start time`,
-      detail: `These tasks are already in progress or completed:\n${nonPendingPastRows
-        .slice(0, 5)
-        .map((r) => `• "${r.task}" (${r.status}) — ${r.start}`)
-        .join(
-          "\n",
-        )}${nonPendingPastRows.length > 5 ? `\n…and ${nonPendingPastRows.length - 5} more` : ""}`,
-    });
-  }
+  // ── REMOVED: Non-pending past start warning ──
+  // No warning for running/completed/paused tasks with past start times
 
   // ✅ Return BOTH arrays
   return { results, warnings };
@@ -2526,13 +2177,14 @@ function TimePickerSection({
   const minuteOptions = [
     0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59,
   ].filter((m) => {
+    if (hour === WORK_END_HR) return m === 0; // only 18:00 allowed
     if (isSelectedToday && hour === nowHour) return m > nowMinute;
     return true;
   });
 
   // Auto-correct invalid hour/minute when switching to TODAY
   useEffect(() => {
-    if (!isSelectedToday) return; // ← only adjust if today selected
+    if (!isSelectedToday) return;
 
     let newHour = hour;
     let newMinute = minute;
@@ -2542,9 +2194,17 @@ function TimePickerSection({
       newMinute = 0;
     }
 
+    // If hour is 18, force minute to 0
+    if (newHour === WORK_END_HR && newMinute > 0) {
+      newMinute = 0;
+    }
+
     if (newHour === nowHour && newMinute <= nowMinute) {
       const nextValid = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59].find(
-        (m) => m > nowMinute,
+        (m) => {
+          if (newHour === WORK_END_HR) return m === 0 && m > nowMinute;
+          return m > nowMinute;
+        },
       );
       if (nextValid !== undefined) {
         newMinute = nextValid;
@@ -2557,8 +2217,7 @@ function TimePickerSection({
     if (newHour !== hour) setHour(newHour);
     if (newMinute !== minute) setMinute(newMinute);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelectedToday]); // ← only when switching to/from today
-
+  }, [isSelectedToday]);
   return (
     <div
       style={{
@@ -2602,7 +2261,7 @@ function TimePickerSection({
         )}
       </select>
       <span style={{ fontSize: 10, color: "#94A3B8", marginLeft: 4 }}>
-        (Work: {WORK_START_HR}–{WORK_END_HR + 1}h)
+        (Work: {WORK_START_HR}:00–{WORK_END_HR}:00)
       </span>
     </div>
   );
@@ -2741,18 +2400,21 @@ function WorkingDatePicker({
       minute,
     );
 
-    // ── NEW: Final guard against past selection ──
+    // Block past selection
     if (final.getTime() < today.getTime()) {
       alert("Cannot select a date/time in the past.");
+      return;
+    }
+
+    // Block only time strictly after 18:00
+    if (hour > WORK_END_HR || (hour === WORK_END_HR && minute > 0)) {
+      alert("Cannot select time after 18:00.");
       return;
     }
 
     onChange(isoDateTime(final));
     onClose();
   };
-
-  const monthName = viewDate.toLocaleString("en-US", { month: "long" });
-  const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
 
   // The actual popup JSX
   const popup = (
@@ -4096,7 +3758,8 @@ const ActivityRow = React.memo(function ActivityRow({
     : null;
   const startDisplay = row.plannedStart ? fmtDisplay(row.plannedStart) : "";
   const stopDisplay = row.plannedStop ? fmtDisplay(row.plannedStop) : "";
-  const commentCount = (row.comments || []).length;
+  // const commentCount = (row.comments || []).length;
+  const commentCount = row.commentCount || 0;
   const [pickerOpen, setPickerOpen] = useState(false);
   const dateBtnRef = useRef(null);
   const isPastStart = row.plannedStart
@@ -4797,7 +4460,12 @@ function ProjectEditor({
         })
       : null,
   );
-  const [commentRow, setCommentRow] = useState(null);
+  // const [commentRow, setCommentRow] = useState(null);
+  // ADD these:
+  const [openCommentDialog, setOpenCommentDialog] = useState(false);
+  const [existingComments, setExistingComments] = useState([]);
+  const [newComment, setNewComment] = useState(null);
+  const [commentDialogRow, setCommentDialogRow] = useState(null);
   const [validationOpen, setValidationOpen] = useState(false);
   const [validationResults, setValidationResults] = useState([]);
   const [uploadStatus, setUploadStatus] = useState({
@@ -4868,6 +4536,31 @@ function ProjectEditor({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const onOpenCommentBox = useCallback(
+    async (projectId, activityId, moduleId) => {
+      try {
+        const existingCommentsResp =
+          await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+            projectId,
+            activityId,
+          );
+
+        const newCommentBody = addComment(projectId, activityId, moduleId);
+        //                     ↑ returns the correct shape with
+        //                       responsibility: "" and attachment: null
+
+        setExistingComments(existingCommentsResp || []);
+        setNewComment(newCommentBody);
+        setOpenCommentDialog(true);
+      } catch (err) {
+        console.error("Failed to load comments:", err);
+        showToast("error", "Failed to load comments", err.message);
+      }
+    },
+    [showToast],
+  );
+
   const handleRedoReject = useCallback(
     async (reason) => {
       if (!rejectRow) return;
@@ -4971,12 +4664,6 @@ function ProjectEditor({
     },
     [groupResources],
   );
-  const toggleGroup = (g) => {
-    const newGs = groups.includes(g)
-      ? groups.filter((x) => x !== g)
-      : [...groups, g];
-    updateGroups(newGs);
-  };
 
   /* CRUD */
   const addRow = useCallback(
@@ -6253,7 +5940,13 @@ function ProjectEditor({
                                 onUpdate={updateRow}
                                 onDelete={deleteRow}
                                 onAddSub={addSubActivity}
-                                onOpenComments={setCommentRow}
+                                onOpenComments={(row) =>
+                                  onOpenCommentBox(
+                                    draft.id, // projectId — the current project's ID
+                                    row.id, // activityId — the row's ID
+                                    row.moduleId, // moduleId
+                                  )
+                                }
                                 onRedoReject={setRejectRow}
                               />
                             );
@@ -6296,7 +5989,7 @@ function ProjectEditor({
                                 }}
                               >
                                 <Plus size={13} />
-                                Add row to {mod || "module"}
+                                Add Task to {mod || "module"}
                               </button>
                             </td>
                           </tr>
@@ -6547,14 +6240,14 @@ function ProjectEditor({
       </div>
 
       {/* ── Modals ── */}
-      {commentRow && (
-        <CommentsModal
-          row={commentRow}
-          onClose={() => setCommentRow(null)}
-          onUpdate={(updated) => {
-            updateRow(updated);
-            setCommentRow(updated);
-          }}
+      {openCommentDialog && newComment && (
+        <CommentsActionDialog
+          open={openCommentDialog}
+          onClose={() => setOpenCommentDialog(false)}
+          existingComments={existingComments}
+          setExistingComments={setExistingComments}
+          newComment={newComment}
+          setNewComment={setNewComment}
         />
       )}
       {rejectRow && (
@@ -7422,7 +7115,6 @@ const DataContext = createContext({
   fetchResourcesForGroups: async () => {},
 });
 
-const useData = () => useContext(DataContext);
 /* ─── Top-level App with Tab Navigation ─── */
 export default function AssignerModule() {
   const [deletingProjectId, setDeletingProjectId] = useState(null);
