@@ -370,7 +370,7 @@ export default function TreeRows({
               )}
             </TableCell>
             <TableCell>
-              <Tooltip title={activityStatus?.toLowerCase() ==='completed'? latestRejectReason ?? activityStatus : activityStatus}>
+              <Tooltip title={activityStatus?.toLowerCase() ==='rejected'? latestRejectReason ?? activityStatus : activityStatus}>
   <span>
               {/* <Chip
                 size="small"
