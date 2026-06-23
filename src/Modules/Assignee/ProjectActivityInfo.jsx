@@ -8,6 +8,7 @@ import CommentsActionDialog from "./CommentsActionDialog";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "./AssigneeHelper";
 import { getUserData } from "../Login/Encrypt";
+import StatusChip from "./StatusChip";
 
 const activity = {
   projectId: "PRJ-1001",
@@ -136,21 +137,6 @@ function getInitials(name = "") {
   return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
-function StatusPill({ activityStatus }) {
-  const map = {
-    Active:      "pill-active",
-    Running:     "pill-running",
-    Paused:      "pill-paused",
-    "Not Started": "pill-not-started",
-    Closed:      "pill-closed",
-  };
-  return (
-    <span className={`status-pill ${map[activityStatus] || "pill-not-started"}`}>
-      <span className="pill-dot" />
-      {activityStatus}
-    </span>
-  );
-}
 
 /* ── main component ── */
 export default function ProjectActivityInfo({ selectedProject, setSelectedProject }) {
@@ -411,7 +397,7 @@ setExpanded({...expanded,...expandedModules});
             </div>
             <div className="pai-info-field">
               <span className="pai-field-label">Status</span>
-              <StatusPill activityStatus={activityInfo.projectStatus} />
+              <StatusChip status={activityInfo.projectStatus} />
             </div>
             <div className="pai-info-field">
               <span className="pai-field-label">Created By</span>

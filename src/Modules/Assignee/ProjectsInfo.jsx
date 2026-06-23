@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./ProjectsInfo.css";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import dayjs from "dayjs";
+import StatusChip from "./StatusChip";
 
 /* =========================
    ICONS
@@ -206,11 +207,10 @@ export default function ProjectsInfo({ projectSelection }) {
               style={{ animationDelay: `${Math.min(index, 8) * 0.04}s` }}
               onClick={() => projectSelection && projectSelection(project)}
             >
-              <span className={`proj-status proj-status--${status}`}>
-                {status === "published" ? <RocketIcon /> : <DocIcon />}
-                {status === "published" ? "PUBLISHED" : "DRAFT"}
+              <span >
+                
+              <StatusChip status={status}/>
               </span>
-
               <h3 className="proj-card-title">{project.projectName}</h3>
 
               <p className="proj-card-meta">

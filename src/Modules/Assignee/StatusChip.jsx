@@ -7,6 +7,7 @@ import {
   PlayCircle,
   CheckCircle2,
   Loader2,
+  Rocket,
 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -17,6 +18,7 @@ const STATUS_CONFIG = {
     color: "#64748B",
     border: "#E2E8F0",
   },
+
   "not ready": {
     label: "Not Ready",
     Icon: AlertCircle,
@@ -24,6 +26,7 @@ const STATUS_CONFIG = {
     color: "#B45309",
     border: "#FCD34D",
   },
+
   rejected: {
     label: "Rejected",
     Icon: XCircle,
@@ -31,6 +34,7 @@ const STATUS_CONFIG = {
     color: "#DC2626",
     border: "#FCA5A5",
   },
+
   paused: {
     label: "Paused",
     Icon: PauseCircle,
@@ -38,6 +42,7 @@ const STATUS_CONFIG = {
     color: "#C2410C",
     border: "#FDBA74",
   },
+
   running: {
     label: "Running",
     Icon: PlayCircle,
@@ -46,6 +51,7 @@ const STATUS_CONFIG = {
     border: "#93C5FD",
     pulse: true,
   },
+
   completed: {
     label: "Completed",
     Icon: CheckCircle2,
@@ -53,6 +59,15 @@ const STATUS_CONFIG = {
     color: "#15803D",
     border: "#86EFAC",
   },
+
+  published: {
+    label: "Published",
+    Icon: Rocket,
+    bg: "#D1FAE5",
+    color: "#065F46",
+    border: "#6EE7B7",
+  },
+
   loading: {
     label: "Loading",
     Icon: Loader2,
@@ -63,54 +78,66 @@ const STATUS_CONFIG = {
   },
 };
 
-const StatusChip = ({ status }) => {
+const StatusChip = ({ status = "pending" }) => {
   const config =
     STATUS_CONFIG[status?.toLowerCase()] || STATUS_CONFIG.pending;
 
   const Icon = config.Icon;
 
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "4px 10px",
-        borderRadius: 999,
-        background: config.bg,
-        border: `1px solid ${config.border}`,
-        color: config.color,
-        fontSize: 12,
-        fontWeight: 600,
-      }}
-    >
-      <Icon
-        size={14}
+    <>
+      <div
         style={{
-          animation: config.spin
-            ? "spin 1s linear infinite"
-            : config.pulse
-            ? "pulse 1.5s ease-in-out infinite"
-            : "none",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "4px 10px",
+          borderRadius: 999,
+          background: config.bg,
+          border: `1px solid ${config.border}`,
+          color: config.color,
+          fontFamily: "'Sora', sans-serif",
+          fontSize: 12,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
         }}
-      />
+      >
+        <Icon
+          size={14}
+          style={{
+            animation: config.spin
+              ? "status-spin 1s linear infinite"
+              : config.pulse
+              ? "status-pulse 1.5s ease-in-out infinite"
+              : "none",
+          }}
+        />
 
-      {config.label}
+        {config.label}
+      </div>
 
       <style>
         {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+          @keyframes status-spin {
+            from {
+              transform: rotate(0deg);
+            }
+            to {
+              transform: rotate(360deg);
+            }
           }
 
-          @keyframes pulse {
-            0%,100% { opacity: 1; }
-            50% { opacity: 0.5; }
+          @keyframes status-pulse {
+            0%, 100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
           }
         `}
       </style>
-    </div>
+    </>
   );
 };
 
