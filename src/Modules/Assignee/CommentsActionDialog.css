@@ -829,3 +829,68 @@
     transition: none !important;
   }
 }
+
+/* ==========================================================
+   COMMENTS TABLE — HEADER STYLES
+   Imported separately; relies on Inter font + CSS vars
+   from CommentsActionDialog.css
+   ========================================================== */
+
+/* Head row background — one clean stripe */
+.comments-table .MuiTableHead-root {
+  background: linear-gradient(180deg, #f4f6fb 0%, #eef1f7 100%);
+}
+
+/* Individual header cells */
+.comments-table .MuiTableCell-head {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5568;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  padding: 11px 14px;
+  border-bottom: 1.5px solid #dde3ee;
+  position: relative;
+  user-select: none;
+}
+
+/* Vertical divider between columns */
+.comments-table .MuiTableCell-head:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: #dde3ee;
+}
+
+/* # column — smaller, centered, muted */
+.comments-table .MuiTableCell-head:first-child {
+  width: 36px;
+  text-align: center;
+  color: #9aa5bb;
+  font-size: 11px;
+  padding-right: 8px;
+}
+
+/* Actions column — right-aligned */
+.comments-table .MuiTableCell-head:last-child {
+  text-align: right;
+  padding-right: 16px;
+}
+
+/* Tiny sort indicator placeholder (non-functional, visual only) */
+.comments-table .MuiTableCell-head .col-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comments-table .MuiTableCell-head .col-label svg {
+  font-size: 13px;
+  opacity: 0.45;
+  flex-shrink: 0;
+}

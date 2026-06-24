@@ -284,13 +284,13 @@ export default function CommentsActionDialog({
               <TableHead>
                 <TableRow>
                   <TableCell>#</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Action Point</TableCell>
-                  <TableCell>Resolution Date</TableCell>
-                  <TableCell>Responsibility</TableCell>
-                  <TableCell>Others</TableCell>
-                  <TableCell>Attachment</TableCell>
-                  <TableCell>Added By</TableCell>
+                  <TableCell><span className="col-label">Description</span></TableCell>
+                  <TableCell><span className="col-label">Action Point</span></TableCell>
+                  <TableCell><span className="col-label">Resolution Date</span></TableCell>
+                  <TableCell><span className="col-label">Responsibility</span></TableCell>
+                  <TableCell><span className="col-label">Others</span></TableCell>
+                  <TableCell><span className="col-label">Attachment</span></TableCell>
+                  <TableCell><span className="col-label">Added By</span></TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -351,15 +351,11 @@ export default function CommentsActionDialog({
                       {/* ADDED BY */}
                       <TableCell>
                         <div className="added-cell">
-                          <Tooltip title={<div className="added-cell-meta">
+                          
+                          <div className="added-cell-meta">
                             <strong>{entry.createdBy}</strong>
                             <span>{new Date(entry.createdAt).toLocaleString()}</span>
-                          </div>}>
-                          <span className="avatar-badge" aria-hidden="true">
-                            {getInitials(entry.createdBy)}
-                          </span>
-                          </Tooltip>
-                          
+                          </div>
                         </div>
                       </TableCell>
 
