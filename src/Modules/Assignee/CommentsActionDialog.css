@@ -1,107 +1,177 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 
-/* ============================================================
-   DIALOG SHELL
-   ============================================================ */
+/* ==========================================================
+   THEME
+   ========================================================== */
+
+:root {
+  --primary: #4f46e5;
+  --primary-light: #eef2ff;
+
+  --bg: #ffffff;
+  --bg-secondary: #f8fafc;
+
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  --danger: #dc2626;
+
+  --shadow:
+    0 10px 25px rgba(15, 23, 42, 0.08),
+    0 4px 10px rgba(15, 23, 42, 0.04);
+}
+
+/* ==========================================================
+   GLOBAL
+   ========================================================== */
 
 .comments-dialog,
 .comments-dialog * {
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
+  box-sizing: border-box;
 }
 
 .comments-dialog {
-  width: 96vw;
-  max-width: 1850px;
-  border-radius: 18px !important;
+  width: 90vw;
+  max-width: 1400px;
+  max-height: 85vh;
+
+  border-radius: 16px !important;
   overflow: hidden;
+
+  background: var(--bg);
+  box-shadow: var(--shadow);
 }
 
 .comments-content {
   padding: 0 !important;
+  overflow: hidden;
 }
 
-
-/* ============================================================
+/* ==========================================================
    HEADER
-   ============================================================ */
+   ========================================================== */
 
 .comments-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #E2E8F0;
+
+  padding: 16px 20px;
+
+  background: white;
+  border-bottom: 1px solid var(--border);
 }
 
 .comments-header-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .comments-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #DBEAFE;
-  color: #7C3AED;
+  width: 40px;
+  height: 40px;
+
+  border-radius: 12px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 .comments-title {
-  font-size: 18px !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
+  color: var(--text-primary);
 }
 
 .comments-subtitle {
-  font-size: 14px !important;
-  color: #64748B;
+  font-size: 13px !important;
+  color: var(--text-secondary);
 }
 
-
-/* ============================================================
-   ENTRIES CONTAINER
-   ============================================================ */
+/* ==========================================================
+   COMMENTS LIST
+   ========================================================== */
 
 .entries-container {
-  padding: 20px 24px;
-  border-bottom: 1px solid #E2E8F0;
+  padding: 16px 20px;
+  max-height: 45vh;
+  overflow: auto;
 }
 
-
-/* ── Empty state ── */
+/* ==========================================================
+   EMPTY STATE
+   ========================================================== */
 
 .empty-state {
-  height: 120px;
-  border: 1px dashed #E2E8F0;
+  height: 180px;
+
+  border: 1px dashed var(--border);
   border-radius: 12px;
+
+  background: var(--bg-secondary);
+
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #F8FAFC;
 }
 
 .empty-state-icon {
-  color: #94A3B8;
-  font-size: 30px !important;
+  font-size: 36px !important;
+  color: var(--text-muted);
   margin-bottom: 10px;
 }
 
 .empty-state-text {
-  color: #94A3B8;
-  font-size: 14px !important;
+  color: var(--text-secondary);
+  font-size: 13px !important;
 }
 
-
-/* ── Table ── */
+/* ==========================================================
+   TABLE
+   ========================================================== */
 
 .comments-table {
-  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
 }
+
+.comments-table .MuiTableHead-root {
+  background: #f8fafc;
+}
+
+.comments-table .MuiTableCell-head {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.comments-table .MuiTableCell-root {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+
+.comments-table .MuiTableRow-root:hover {
+  background: rgba(79, 70, 229, 0.03);
+}
+
+/* ==========================================================
+   ADDED BY
+   ========================================================== */
 
 .added-cell {
   display: flex;
@@ -109,10 +179,19 @@
   gap: 2px;
 }
 
-.added-cell span {
+.added-cell strong {
   font-size: 12px;
-  color: #64748B;
+  color: var(--text-primary);
 }
+
+.added-cell span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================
+   ACTIONS
+   ========================================================== */
 
 .action-buttons {
   display: flex;
@@ -121,72 +200,102 @@
 }
 
 .reply-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 18px;
+  height: 18px;
+
+  border-radius: 999px;
+
+  background: var(--primary);
+  color: white;
+
+  font-size: 10px;
+  font-weight: 600;
+
   margin-left: 4px;
-  background: #7C3AED;
-  color: #FFF;
-  border-radius: 10px;
-  font-size: 11px;
-  padding: 1px 6px;
 }
 
-
-/* ── Replies list ── */
+/* ==========================================================
+   REPLIES
+   ========================================================== */
 
 .reply-history-cell {
-  background: #F8FAFC;
-  padding-left: 48px !important;
+  background: #fafbfc;
+  padding: 12px 12px 12px 40px !important;
 }
 
 .reply-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #F1F5F9;
+  background: white;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  padding: 12px;
+  margin-bottom: 8px;
 }
 
 .reply-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .reply-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
 }
 
-.reply-header span {
-  color: #94A3B8;
+.reply-header strong {
   font-size: 12px;
 }
 
-.reply-text {
-  color: #64748B;
-  font-size: 14px;
+.reply-header span {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
+.reply-text {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
 
-/* ── Reply input box ── */
+/* ==========================================================
+   REPLY BOX
+   ========================================================== */
 
 .reply-box-cell {
-  background: #F8FAFC;
-  padding: 12px 24px !important;
+  background: #fafbfc;
+  padding: 12px !important;
 }
 
 .reply-box {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
+
+  padding: 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: white;
 }
 
 .reply-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+
   border-radius: 50%;
-  background: #DBEAFE;
-  color: #7C3AED;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 .reply-content {
@@ -194,222 +303,210 @@
 }
 
 .reply-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .reply-footer-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
+/* ==========================================================
+   ATTACHMENTS
+   ========================================================== */
 
-/* ============================================================
-   ADD ENTRY SECTION
-   ============================================================ */
+.attachment-pill,
+.attachment-staged {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  max-width: 220px;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  background: var(--primary-light);
+  border: 1px solid #c7d2fe;
+
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-pill:hover {
+  cursor: pointer;
+}
+
+.attachment-staged .MuiIconButton-root {
+  padding: 2px;
+}
+
+/* ==========================================================
+   ENTRY SECTION
+   ========================================================== */
 
 .entry-section {
-  padding: 20px 24px;
+  padding: 18px 20px;
+
+  border-top: 1px solid var(--border);
+  background: white;
 }
 
 .entry-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 15px;
+
+  margin-bottom: 14px;
+
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 16px;
+
+  color: var(--text-primary);
 }
 
 .entry-grid {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1.4fr;
-  gap: 14px;
+  grid-template-columns:
+    2fr
+    2fr
+    1fr
+    1fr
+    1fr;
+
+  gap: 12px;
 }
 
 .entry-grid label {
   display: block;
   margin-bottom: 6px;
-  font-size: 13px;
+
+  font-size: 12px;
   font-weight: 600;
-  color: #64748B;
+
+  color: var(--text-secondary);
 }
 
 .chip-group {
   display: flex;
-  gap: 8px;
-  margin-top: 6px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-
-/* ── Footer ── */
+/* ==========================================================
+   FOOTER
+   ========================================================== */
 
 .dialog-footer {
-  margin-top: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  margin-top: 16px;
+  padding-top: 16px;
+
+  border-top: 1px solid var(--border);
 }
 
 .footer-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
+/* ==========================================================
+   MUI OVERRIDES
+   ========================================================== */
 
-/* ============================================================
-   RESPONSIVE — MOBILE  (≤ 768 px)
-   ============================================================ */
+.comments-dialog .MuiOutlinedInput-root {
+  border-radius: 8px;
+}
+
+.comments-dialog .MuiInputBase-input {
+  font-size: 13px;
+}
+
+.comments-dialog .MuiButton-root {
+  text-transform: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.comments-dialog .MuiButton-contained {
+  background: var(--primary);
+  box-shadow: none;
+}
+
+.comments-dialog .MuiButton-contained:hover {
+  background: #4338ca;
+  box-shadow: none;
+}
+
+.comments-dialog .MuiChip-root {
+  border-radius: 999px;
+  height: 26px;
+  font-size: 12px;
+}
+
+/* ==========================================================
+   SCROLLBAR
+   ========================================================== */
+
+.entries-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.entries-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
 
 @media (max-width: 768px) {
 
-  /* Dialog shell */
   .comments-dialog {
     width: 100vw;
     max-width: 100vw;
-    margin: 0;
-    border-radius: 0 !important;
-    height: 100vh;
     max-height: 100vh;
+    border-radius: 0 !important;
   }
 
-  .comments-content {
-    overflow-y: auto;
-  }
-
-  /* Header */
-  .comments-header {
-    padding: 16px;
-  }
-
-  .comments-header-left {
-    gap: 10px;
-  }
-
-  .comments-icon {
-    width: 36px;
-    height: 36px;
-  }
-
-  .comments-title {
-    font-size: 16px !important;
-  }
-
-  .comments-subtitle {
-    font-size: 13px !important;
-  }
-
-  /* Entries */
-  .entries-container {
-    padding: 16px;
-  }
-
-  .empty-state {
-    height: 100px;
-  }
-
-  .empty-state-text {
-    font-size: 13px !important;
-    padding: 0 16px;
-    text-align: center;
-  }
-
-  /* Add entry section */
+  .entries-container,
   .entry-section {
     padding: 16px;
-  }
-
-  .entry-title {
-    font-size: 14px;
   }
 
   .entry-grid {
     grid-template-columns: 1fr;
   }
 
-  .entry-grid label {
-    font-size: 12px;
+  .reply-history-cell {
+    padding-left: 12px !important;
   }
 
-  .chip-group {
-    flex-wrap: wrap;
-  }
-
-  /* Footer */
   .dialog-footer {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
 
-  .dialog-footer > label {
-    width: 100%;
-  }
-
-  .dialog-footer > label > span {
-    width: 100%;
-  }
-
   .footer-actions {
     width: 100%;
   }
 
-  .footer-actions > button {
+  .footer-actions button {
     flex: 1;
   }
-}
-
-/* ── Add these rules to CommentsActionDialog.css ── */
-
-/* Attachment pill shown in the table cell (saved entries) */
-.attachment-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px 2px 4px;
-  border-radius: 4px;
-  background-color: var(--attachment-bg, #DBEAFE);
-  border: 1px solid var(--attachment-border, #93C5FD);
-  color: var(--attachment-color, #1D4ED8);
-  font-size: 0.75rem;
-  max-width: 160px;
-}
-
-.attachment-pill .attachment-name,
-.attachment-staged .attachment-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 120px;
-}
-
-/* Staged attachment pill in the footer (before saving) */
-.attachment-staged {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 4px 4px 8px;
-  border-radius: 6px;
-  background-color: var(--attachment-bg, #DBEAFE);
-  border: 1px solid var(--attachment-border, #93C5FD);
-  color: var(--attachment-color, #1D4ED8);
-  font-size: 0.8125rem;
-  max-width: 260px;
-}
-
-.attachment-staged svg {
-  flex-shrink: 0;
-  color: var(--attachment-color, #1D4ED8);
-}
-
-.attachment-staged .MuiIconButton-root {
-  padding: 2px;
-  color: var(--attachment-cancel, #64748B);
-}
-
-.attachment-staged .MuiIconButton-root:hover {
-  color: #DC2626;
-  background: transparent;
 }
