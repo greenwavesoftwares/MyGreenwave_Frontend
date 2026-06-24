@@ -377,7 +377,7 @@ setExpanded({...expanded,...expandedModules});
             onClick={() => {console.log("On back home click");setSelectedProject && setSelectedProject(null)}}
             className="back-to-draft"
           >
-            <ArrowLeft size={14} /> Back to Drafts
+            <ArrowLeft size={14} /> Back to Projects
           </button>
       </div>
 
