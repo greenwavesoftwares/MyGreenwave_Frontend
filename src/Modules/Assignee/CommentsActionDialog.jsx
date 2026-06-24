@@ -13,6 +13,7 @@ import {
   TextField,
   Button,
   Chip,
+  Tooltip,
 } from "@mui/material";
 
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -297,7 +298,18 @@ export default function CommentsActionDialog({
     handleDelete(deleteInfo.type, deleteInfo.index, deleteInfo.id);
     setOpenConfirm(false);
   };
-
+  const TruncatedText = ({ text }) => (
+  <Tooltip
+    title={text || ""}
+    placement="top"
+    arrow
+    disableHoverListener={!text || text.length < 60}
+  >
+    <div className="table-text-clamp">
+      {text || "-"}
+    </div>
+  </Tooltip>
+);
   return (
     <Dialog
       open={open}
@@ -357,13 +369,13 @@ export default function CommentsActionDialog({
                     {/* COMMENT ROW */}
                     <TableRow>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell>{entry.commentDescription}</TableCell>
-                      <TableCell>{entry.actionPoint}</TableCell>
+                      <TableCell><TruncatedText text={entry.commentDescription}/></TableCell>
+                      <TableCell><TruncatedText text={entry.actionPoint}/></TableCell>
                       <TableCell>{entry.resolutionDate}</TableCell>
                       <TableCell>
                         <Chip size="small" label={entry.responsibility} />
                       </TableCell>
-                      <TableCell>{entry.others}</TableCell>
+                      <TableCell><TruncatedText  text={entry.others}/></TableCell>
 
                       {/* ── ATTACHMENT CELL ── */}
                       <TableCell>
