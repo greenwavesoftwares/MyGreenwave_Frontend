@@ -291,12 +291,14 @@ const totalActivities = useMemo(
     console.log("Activity name:",activityData.name,"Duration:",activityData.durationHrs)
     console.log("Module id:",moduleId)
     if(!(activityData?.name?.length>0)  ){
-      console.log("Enter actiivity name and duration")
+      console.log("Enter actiivty name and duration")
+      showToast("error", "Error", "Activity Name is required");
       return
     }
     const payload=mapToActivityPayload(activityData,projectId,moduleId)
     const response=await activityTrackerApi.createActivity(projectId,payload)
     await fetchActivities()
+    showToast("success", "Success", "SubActivity added");
  
   };
   const mapToActivityPayload = (node, projectId, moduleId) => ({
@@ -342,6 +344,7 @@ const totalActivities = useMemo(
 
   const fetchActivities=async()=>{
     const activityDetails=await activityTrackerApi.getAllActivities(selectedProject.projectId)
+    console.log("Fetched activities:",activityDetails)
     if(!activityDetails) return;
     setActivityInfo(activityDetails)
     console.log('Activity Details : ',activityDetails)

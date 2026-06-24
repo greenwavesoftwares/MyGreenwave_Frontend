@@ -30,10 +30,12 @@ import CommentsActionDialog from "./CommentsActionDialog";
 import "./ProjectActivityInfo.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import Badge from '@mui/material/Badge';
+import Badge from "@mui/material/Badge";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StatusChip from "./StatusChip";
+import { Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
+
 
 export default function TreeRows({
   node,
@@ -51,7 +53,7 @@ export default function TreeRows({
   projectId,
   updateStatusOfActivity,
   onOpenCommentBox,
-  deleteNode
+  deleteNode,
 }) {
   console.log("Current user id:", currentUserId);
   const {
@@ -70,12 +72,10 @@ export default function TreeRows({
     pauseStart,
     pauseDuration,
     sortOrder,
-    latestRejectReason
-    
-    
-    
+    latestRejectReason,
   } = node;
-
+  console.log("Node Details:",node)
+  console.log("Planned Start:",plannedStart)
   const hasChildren = children?.length > 0;
 
   const isExpanded = expanded?.[id] ?? false;
@@ -87,7 +87,6 @@ export default function TreeRows({
     }));
   };
 
-
   const findInitials = (userId) => {
     const initials = userId
       .split("@")[0]
@@ -97,145 +96,184 @@ export default function TreeRows({
       .toUpperCase();
     return initials;
   };
-  const renderActions = () => {
-    const statusActions = {
-      Pending: (
-        <Tooltip title="Start">
-          <IconButton
-            size="small"
-            onClick={() => updateStatusOfActivity(id, "Running")}
+ const renderActions = () => {
+  const isAssignedUser =
+    currentUserId?.toLowerCase() === resource?.toLowerCase();
+
+  const statusActions = {
+    Pending: [
+      <Tooltip key="start" title="Start">
+        <button
+          className="icon-button icon-btn--start"
+          onClick={() => {
+            if (!allChildrenCompleted(node)) {
+              showToast(
+                "error",
+                "Error",
+                "Please complete all subactivities"
+              );
+              return;
+            }
+
+            updateStatusOfActivity(id, "Running");
+          }}
+        >
+          <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
+        </button>
+      </Tooltip>,
+    ],
+
+    Running: [
+      <Tooltip key="pause" title="Pause">
+        <button
+          className="icon-button icon-btn--pause"
+          onClick={() => updateStatusOfActivity(id, "Paused")}
+        >
+          <PauseIcon sx={{ fontSize: 14 }} className="pause-icon" />
+        </button>
+      </Tooltip>,
+
+      allChildrenCompleted(node) && (
+        <Tooltip key="complete" title="Complete">
+          <button
+            className="icon-button icon-btn--stop"
+            onClick={() => updateStatusOfActivity(id, "Completed")}
           >
-            <PlayArrowIcon className="start-icon" />
-          </IconButton>
+            <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
+          </button>
         </Tooltip>
       ),
+    ].filter(Boolean),
 
-      Running: (
-        <>
-          <Tooltip title="Pause">
-            <IconButton
-              size="small"
-              onClick={() => updateStatusOfActivity(id, "Paused")}
-            >
-              <PauseIcon className="pause-icon" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Complete">
-            <IconButton
-              size="small"
-              onClick={() =>{ 
-                if(!allChildrenCompleted(node))
-                  {
-                    showToast("error", "Error", 'Please complete all subactivities')
-                     return;
-                  }
-                updateStatusOfActivity(id, "Completed")}}
-              // disabled={!allChildrenCompleted(node)}
-            >
-              <StopIcon className="stop-icon" />
-            </IconButton>
-          </Tooltip>
-        </>
-      ),
+    Rejected: [
+      <Tooltip key="restart" title="Restart">
+        <button
+          className="icon-button icon-btn--start"
+          onClick={() => updateStatusOfActivity(id, "Running")}
+        >
+          <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
+        </button>
+      </Tooltip>,
 
-       Rejected: (
-        <>
-            <IconButton
-            size="small"
-            onClick={() => updateStatusOfActivity(id, "Running")}
+      allChildrenCompleted(node) && (
+        <Tooltip key="complete" title="Complete">
+          <button
+            className="icon-button icon-btn--stop"
+            onClick={() => updateStatusOfActivity(id, "Completed")}
           >
-            <PlayArrowIcon className="start-icon" />
-          </IconButton>
-          <Tooltip title="Complete">
-            <IconButton
-              size="small"
-              onClick={() => updateStatusOfActivity(id, "Completed")}
-              disabled={!allChildrenCompleted(node)}
-            >
-              <StopIcon className="stop-icon" />
-            </IconButton>
-          </Tooltip>
-        </>
-      ),
-
-      Paused: (
-        <Tooltip title="Resume">
-          <IconButton
-            size="small"
-            onClick={() => updateStatusOfActivity(id, "Running")}
-          >
-            <FastForwardIcon className="resume-icon" />
-          </IconButton>
+            <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
+          </button>
         </Tooltip>
       ),
+    ].filter(Boolean),
 
-      "Not Ready": (
-  <>
-    <Tooltip title="Submit Activity">
-      <IconButton
-        size="small"
-        sx={{ p: 0.3 }}
-        onClick={() =>{
-           showToast("success", "Success",'SubActivity added' );
-          submitAddedNode(projectId, moduleId, node)}}
-      >
-        <SendIcon sx={{ fontSize: 16 }} className="send-icon" />
-      </IconButton>
-    </Tooltip>
+    Paused: [
+      <Tooltip key="resume" title="Resume">
+        <button
+          className="icon-button icon-btn--resume"
+          onClick={() => updateStatusOfActivity(id, "Running")}
+        >
+          <FastForwardIcon
+            sx={{ fontSize: 14 }}
+            className="resume-icon"
+          />
+        </button>
+      </Tooltip>,
+    ],
 
-    <Tooltip title="Delete Activity">
-      <IconButton
-        size="small"
-        color="error"
-        sx={{ p: 0.3 }}
-        onClick={() => deleteNode(projectId, moduleId, node)}
-      >
-        <DeleteIcon sx={{ fontSize: 16 }} />
-      </IconButton>
-    </Tooltip>
-  </>
-)
-    };
-    console.log("Status::", activityStatus);
-    return (
-      <>
-        {currentUserId?.toLowerCase() === resource?.toLowerCase() &&
-          statusActions[activityStatus]}
+    "Not Ready": [
+      <Tooltip key="submit" title="Submit Activity">
+        <button
+          className="icon-button icon-btn--submit"
+          onClick={() =>
+            submitAddedNode(projectId, moduleId, node)
+          }
+        >
+          <SendIcon sx={{ fontSize: 14 }} className="send-icon" />
+        </button>
+      </Tooltip>,
 
-        {currentUserId?.toLowerCase() === resource?.toLowerCase() &&
-          activityStatus !== "Not Ready" && (
-            <>
-             <Badge badgeContent={node?.commentCount} color="primary">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  console.log('Clicked Node : ',node)
-                  onOpenCommentBox(projectId, id,moduleId,node?.name??'');
-                }}
-              >
-                <ModeCommentOutlinedIcon fontSize="small" />
-              </IconButton>
-              </Badge>
-              {sortOrder === 0  && (
-                <IconButton size="small" onClick={() => {addChildNode(node)}}
-                disabled={node.activityStatus === 'Completed'}
-                >
-                  <SubdirectoryArrowLeftIcon fontSize="small" />
-                </IconButton>
-              )}
-            </>
-          )}
-      </>
-    );
+      <Tooltip key="delete" title="Delete Activity">
+        <button
+          className="icon-button icon-btn--delete"
+          onClick={() =>
+            deleteNode(projectId, moduleId, node)
+          }
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>,
+    ],
   };
 
-  
+  const actionItems = [];
 
-  const allChildrenCompleted = (activity)=>{
-    return activity.children.every(
-  child => child.activityStatus === "Completed"
-);
+  if (isAssignedUser) {
+    actionItems.push(...(statusActions[activityStatus] || []));
+
+    if (activityStatus !== "Not Ready") {
+      actionItems.push(
+        <Badge
+          key="comment"
+          badgeContent={node?.commentCount}
+          color="primary"
+        >
+          <Tooltip title="Comments">
+            <button
+              className="icon-button icon-btn--comment"
+              onClick={() =>
+                onOpenCommentBox(projectId, id, moduleId)
+              }
+            >
+              <ModeCommentOutlinedIcon sx={{ fontSize: 14 }} />
+            </button>
+          </Tooltip>
+        </Badge>
+      );
+
+      if (sortOrder === 0 && activityStatus === "Running") {
+        actionItems.push(
+          <Tooltip key="subtask" title="Add sub-activity">
+            <button
+              className="icon-button icon-btn--subtask"
+              onClick={() => addChildNode(node)}
+            >
+              <SubdirectoryArrowLeftIcon sx={{ fontSize: 14 }} />
+            </button>
+          </Tooltip>
+        );
+      }
+    }
   }
+
+  if (actionItems.length > 3) {
+    const mid = Math.ceil(actionItems.length / 2);
+
+    return (
+      <div className="action-rows" style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  }}>
+        <div className="action-container">
+          {actionItems.slice(0, mid)}
+        </div>
+
+        <div className="action-container">
+          {actionItems.slice(mid)}
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="action-container">{actionItems}</div>;
+};
+
+  const allChildrenCompleted = (activity) => {
+    return activity.children.every(
+      (child) => child.activityStatus === "Completed",
+    );
+  };
 
   return (
     <>
@@ -260,7 +298,7 @@ export default function TreeRows({
                     className="add-row-chip"
                     onClick={() => addChildNode(node)}
                   >
-                    <AddIcon fontSize="small" />
+                    <AddIcon sx={{ fontSize: 14 }} />
                     <span>Add row to module</span>
                   </button>
                 </Box>*/}
@@ -353,26 +391,23 @@ export default function TreeRows({
             </TableCell>
 
             <TableCell>
-              { plannedStart && dayjs(plannedStart).isValid() ? (
-                dayjs(plannedStart).format("DD-MM-YYYY HH:mm")
-              ) : (
-                "-"
-              )}
+              {plannedStart && dayjs(plannedStart).isValid()
+                ? dayjs(plannedStart).format("DD-MM-YYYY HH:mm")
+                : "-"}
             </TableCell>
 
-            <TableCell align="center">{durationHrs ?? "-"}</TableCell>
+            <TableCell>{durationHrs ?? "-"}</TableCell>
 
             <TableCell>
-              { plannedStop && dayjs(plannedStop).isValid() ? (
-                dayjs(plannedStop).format("DD-MM-YYYY HH:mm")
-              ) : (
-                "-"
-              )}
+              {plannedStop && dayjs(plannedStop).isValid()
+                ? dayjs(plannedStop).format("DD-MM-YYYY HH:mm")
+                : "-"}
             </TableCell>
             <TableCell>
+              
               <Tooltip title={activityStatus?.toLowerCase() ==='rejected'? latestRejectReason ?? activityStatus : activityStatus}>
-  <span>
-              {/* <Chip
+                <span>
+                  {/* <Chip
                 size="small"
                 label={activityStatus || "-"}
                 color={
@@ -383,8 +418,8 @@ export default function TreeRows({
                       : "default"
                 }
               /> */}
-              <StatusChip status={activityStatus?.toLowerCase()} />
-              </span>
+                  <StatusChip status={activityStatus?.toLowerCase()} />
+                </span>
               </Tooltip>
             </TableCell>
 
@@ -428,7 +463,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onOpenCommentBox={onOpenCommentBox}
-                  deleteNode={deleteNode}
+                deleteNode={deleteNode}
               />
             ))}
         </>
