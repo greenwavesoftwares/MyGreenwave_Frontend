@@ -148,6 +148,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
   const [openCommentDialog, setOpenCommentDialog] = useState(false);
   const [existingComments, setExistingComments] = useState(null);
   const [newComment,setNewComment]=useState(null)
+  const [allowNewcomment,setAllowNewComment]=useState(true)
+  const [commentActivityName,setCommentActivityName]=useState(null)
   
   const currentUserId   = getUserData()?.userDetails?.userId;
   const currentUserName = getUserData()?.userDetails?.userName;
@@ -247,11 +249,15 @@ function deleteRecursively(nodes, nodeId) {
     return count + selfCount + childCount;
   }, 0);
 };
-const onOpenCommentBox = async(projectId,activityId,moduleId) => {
+const onOpenCommentBox = async(projectId,activityId,moduleId,status,activityName) => {
   const existingCommentsResp=await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(projectId,activityId)
   console.log("Existing comments and replies::",existingCommentsResp)
   const newCommentBody=addComment(projectId,activityId,moduleId)
-  
+  if(status.toLowerCase()!=='finished')
+    setAllowNewComment(true)
+  else
+    setAllowNewComment(false)
+  setCommentActivityName(activityName)
   setExistingComments(existingCommentsResp);
   setNewComment(newCommentBody)
   setOpenCommentDialog(true);
@@ -261,6 +267,7 @@ const onOpenCommentBox = async(projectId,activityId,moduleId) => {
     setOpenCommentDialog(false);
     setExistingComments(null);
     setNewComment(null)
+    setAllowNewComment(null)
   };
   
 const totalActivities = useMemo(
@@ -489,7 +496,7 @@ setExpanded({...expanded,...expandedModules});
         setNewComment={setNewComment}
         open={openCommentDialog}
         onClose={onCloseCommentbox}
-      />
+        allowNewComment={allowNewcomment} activityName={commentActivityName}   />
        
     </div>
   );

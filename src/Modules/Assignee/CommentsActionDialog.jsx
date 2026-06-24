@@ -40,77 +40,79 @@ export default function CommentsActionDialog({
   existingComments,
   setExistingComments,
   newComment,
-  setNewComment
+  setNewComment,
+  allowNewComment,
+  activityName
 }) {
   const [activeReply, setActiveReply] = useState(null);
   const [replyText, setReplyText] = useState({});
   const [replyAttachment, setReplyAttachment] = useState({});
-  const [openConfirm,setOpenConfirm]=useState(false)
-  const [deleteInfo,setDeleteInfo]=useState({})
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [deleteInfo, setDeleteInfo] = useState({});
 
   const handleReplyAttachment = (commentIndex, event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const reader = new FileReader();
+    const reader = new FileReader();
 
-  reader.onload = () => {
-    setReplyAttachment((prev) => ({
-      ...prev,
-      [commentIndex]: {
+    reader.onload = () => {
+      setReplyAttachment((prev) => ({
+        ...prev,
+        [commentIndex]: {
+          attachmentBase64: reader.result.split(",")[1],
+          attachmentName: file.name,
+        },
+      }));
+    };
+
+    reader.readAsDataURL(file);
+    showToast("success", "Success", "File attached successfully");
+    event.target.value = "";
+  };
+
+  const removeReplyAttachment = (commentIndex) => {
+    setReplyAttachment((prev) => {
+      const updated = { ...prev };
+      delete updated[commentIndex];
+      return updated;
+    });
+    showToast("success", "Success", "File removed successfully");
+  };
+
+  const handleChange = (field, value) => {
+    setNewComment((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCommentAttachment = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setNewComment((prev) => ({
+        ...prev,
         attachmentBase64: reader.result.split(",")[1],
         attachmentName: file.name,
-      },
-    }));
+      }));
+    };
+
+    reader.readAsDataURL(file);
+    showToast("success", "Success", "File attached successfully");
+
+    // Allow selecting the same file again later
+    event.target.value = "";
   };
 
-  reader.readAsDataURL(file);
-   showToast("success", "Success", 'File attached successfully');
-  event.target.value = "";
-};
-
-const removeReplyAttachment = (commentIndex) => {
-  setReplyAttachment((prev) => {
-    const updated = { ...prev };
-    delete updated[commentIndex];
-    return updated;
-  });
-   showToast("success", "Success", 'File removed successfully');
-};
-
- const handleChange = (field, value) => {
-  setNewComment((prev) => ({ ...prev, [field]: value }));
-};
-
- const handleCommentAttachment = (event) => {
-  const file = event.target.files?.[0];
-
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    setNewComment((prev) => ({
-      ...prev,
-      attachmentBase64: reader.result.split(",")[1],
-      attachmentName: file.name,
-    }));
-  };
-
-  reader.readAsDataURL(file);
-   showToast("success", "Success", 'File attached successfully');
-
-  // Allow selecting the same file again later
-  event.target.value = "";
-};
-
-// const removeCommentAttachment = () => {
-//   setNewComment((prev) => ({
-//     ...prev,
-//     attachmentBase64: null,
-//     attachmentName: null,
-//   }));
-// };
+  // const removeCommentAttachment = () => {
+  //   setNewComment((prev) => ({
+  //     ...prev,
+  //     attachmentBase64: null,
+  //     attachmentName: null,
+  //   }));
+  // };
 
   // ── NEW: remove the staged attachment ──────────────────────────────
   const removeCommentAttachment = () => {
@@ -119,147 +121,159 @@ const removeReplyAttachment = (commentIndex) => {
       attachmentBase64: null,
       attachmentName: null,
     }));
-     showToast("success", "Success", 'File removed successfully');
+    showToast("success", "Success", "File removed successfully");
   };
-console.log('Comment : ',newComment)
+  console.log("Comment : ", newComment);
 
-
-  const addComments = async() => {
-    if (!newComment.commentDescription.trim() || !newComment.resolutionDate || newComment?.responsibility?.length ===0 )
-       {
-        showToast("error", "Data Missing", 'Fill in the required fields');
-        return;
+  const addComments = async () => {
+    if (
+      !newComment.commentDescription.trim() ||
+      !newComment.resolutionDate ||
+      newComment?.responsibility?.length === 0
+    ) {
+      showToast("error", "Data Missing", "Fill in the required fields");
+      return;
     }
     const payload = {
       ...newComment,
       createdBy: getUserData()?.userDetails?.userId,
       createdAt: new Date().toISOString(),
       replies: [],
-      commentId:crypto.randomUUID(), // temporary ID for frontend purposes
+      commentId: crypto.randomUUID(), // temporary ID for frontend purposes
       responsibility: Array.isArray(newComment?.responsibility)
-  ? newComment.responsibility.join(",")
-  : ""
+        ? newComment.responsibility.join(",")
+        : "",
     };
-    console.log("new comment:",newComment)
-    console.log('Updated Payload : ',payload)
-    const response=await activityTrackerApi.addComment(newComment.projectId,payload)
-    if(response)
-    {
-    // setExistingComments((prev) => [...prev, payload]);
-    
-    const updatedComments= await activityTrackerApi.getCommentsByActivity(newComment.projectId,newComment.activityId)
-    setExistingComments(updatedComments)
-    const newCommentPayload=addComment(payload.projectId,payload.activityId,payload.moduleId)
-    console.log("New Comment:",newCommentPayload)
-    setNewComment(newCommentPayload);
-    showToast("success", "Success", 'Comment added successfully');
+    console.log("new comment:", newComment);
+    console.log("Updated Payload : ", payload);
+    const response = await activityTrackerApi.addComment(
+      newComment.projectId,
+      payload,
+    );
+    if (response) {
+      // setExistingComments((prev) => [...prev, payload]);
+
+      const updatedComments = await activityTrackerApi.getCommentsByActivity(
+        newComment.projectId,
+        newComment.activityId,
+      );
+      setExistingComments(updatedComments);
+      const newCommentPayload = addComment(
+        payload.projectId,
+        payload.activityId,
+        payload.moduleId,
+      );
+      console.log("New Comment:", newCommentPayload);
+      setNewComment(newCommentPayload);
+      showToast("success", "Success", "Comment added successfully");
     }
   };
 
- const addReply = async (commentIndex) => {
-  const comment = existingComments[commentIndex];
-  const text = replyText[commentIndex];
+  const addReply = async (commentIndex) => {
+    const comment = existingComments[commentIndex];
+    const text = replyText[commentIndex];
 
-  console.log('Comment Data : ',comment)
+    console.log("Comment Data : ", comment);
 
-  if (!text?.trim()) return;
+    if (!text?.trim()) return;
 
-  const replyId = crypto.randomUUID();
+    const replyId = crypto.randomUUID();
 
-  const payload = {
-    commentId: comment.commentId,
-    replyId,
-    createdBy: getUserData()?.userDetails?.userId,
-    createdAt: new Date().toISOString(),
-    replyText: text,
-    attachment: null,
-    attachmentBase64:
-      replyAttachment[commentIndex]?.attachmentBase64 || null,
-    attachmentName:
-      replyAttachment[commentIndex]?.attachmentName || null,
+    const payload = {
+      commentId: comment.commentId,
+      replyId,
+      createdBy: getUserData()?.userDetails?.userId,
+      createdAt: new Date().toISOString(),
+      replyText: text,
+      attachment: null,
+      attachmentBase64: replyAttachment[commentIndex]?.attachmentBase64 || null,
+      attachmentName: replyAttachment[commentIndex]?.attachmentName || null,
+    };
+
+    console.log("Reply Payload:", payload);
+
+    const replyAdded = await activityTrackerApi.addReply(
+      comment.commentId,
+      payload,
+    );
+
+    if (!replyAdded) {
+      console.error("Failed to add reply");
+      showToast("error", "Error", "Failed to add reply");
+      return;
+    }
+
+    // await activityTrackerApi.addReply(payload);
+
+    // setExistingComments((prev) =>
+    //   prev.map((item, index) =>
+    //     index === commentIndex
+    //       ? {
+    //           ...item,
+    //           replies: [
+    //             ...(item.replies || []),
+    //             {
+    //               // replyId,
+    //               // replyText: text,
+    //               // createdBy: payload.createdBy,
+    //               // createdAt: payload.createdAt,
+    //               // attachmentName: payload.attachmentName,
+    //               ...payload,
+    //               attachment: payload.commentId+'_'+payload.attachmentName,
+    //             },
+    //           ],
+    //         }
+    //       : item
+    //   )
+    // );
+
+    // console.log('Existing Co')
+
+    const existingCommentsResp =
+      await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+        comment.projectId,
+        comment.activityId,
+      );
+
+    setExistingComments(existingCommentsResp);
+
+    setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
+
+    setReplyAttachment((prev) => {
+      const updated = { ...prev };
+      delete updated[commentIndex];
+      return updated;
+    });
+
+    setActiveReply(null);
+    showToast("success", "Success", "Reply added successfully");
   };
 
-  console.log("Reply Payload:", payload);
+  const handleDelete = async (type, index, id) => {
+    if (type === "comment") await deleteComment(index);
+    else await deleteReply(index, id);
+  };
 
- const replyAdded= await activityTrackerApi.addReply(comment.commentId,payload);
-
- if(!replyAdded) {
-  console.error("Failed to add reply");
-  showToast("error", "Error", 'Failed to add reply');
-  return;
- }
-
-  // await activityTrackerApi.addReply(payload);
-
-  // setExistingComments((prev) =>
-  //   prev.map((item, index) =>
-  //     index === commentIndex
-  //       ? {
-  //           ...item,
-  //           replies: [
-  //             ...(item.replies || []),
-  //             {
-  //               // replyId,
-  //               // replyText: text,
-  //               // createdBy: payload.createdBy,
-  //               // createdAt: payload.createdAt,
-  //               // attachmentName: payload.attachmentName,
-  //               ...payload,
-  //               attachment: payload.commentId+'_'+payload.attachmentName,
-  //             },
-  //           ],
-  //         }
-  //       : item
-  //   )
-  // );
-
-  // console.log('Existing Co')
-
- const existingCommentsResp=await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(comment.projectId,comment.activityId)
-
-  
-  setExistingComments(existingCommentsResp);
-
-
-  setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
-
-  setReplyAttachment((prev) => {
-    const updated = { ...prev };
-    delete updated[commentIndex];
-    return updated;
-  });
-
-  setActiveReply(null);
-  showToast("success", "Success", 'Reply added successfully');
-};
-
-const handleDelete=async(type,index,id)=>
-{
-  if(type === 'comment')
-   await  deleteComment(index);
-  else
-   await deleteReply(index,id)
-
-}
-
-  const deleteComment =async (index) => {
-   const commentDeleted= await activityTrackerApi.deleteComment(existingComments[index].commentId);
-   if(!commentDeleted) {
-    console.error("Failed to delete comment");
-    showToast("error", "Error", 'Failed to delete comment');
-    return;
-   }
+  const deleteComment = async (index) => {
+    const commentDeleted = await activityTrackerApi.deleteComment(
+      existingComments[index].commentId,
+    );
+    if (!commentDeleted) {
+      console.error("Failed to delete comment");
+      showToast("error", "Error", "Failed to delete comment");
+      return;
+    }
     setExistingComments((prev) => prev.filter((_, i) => i !== index));
-    showToast("success", "Success", 'Comment deleted successfully');
+    showToast("success", "Success", "Comment deleted successfully");
   };
 
   const deleteReply = async (commentIndex, replyId) => {
-    const replyDeleted= await activityTrackerApi.deleteReply(replyId);
-    if(!replyDeleted) {
+    const replyDeleted = await activityTrackerApi.deleteReply(replyId);
+    if (!replyDeleted) {
       console.error("Failed to delete reply");
-       showToast("error", "Error", 'Failed to delete reply');
+      showToast("error", "Error", "Failed to delete reply");
       return;
-     }
+    }
     setExistingComments((prev) =>
       prev.map((item, index) =>
         index === commentIndex
@@ -267,26 +281,22 @@ const handleDelete=async(type,index,id)=>
               ...item,
               replies: item.replies.filter((r) => r.replyId !== replyId),
             }
-          : item
-      )
+          : item,
+      ),
     );
-     showToast("success", "Success", 'Reply deleted successfully');
+    showToast("success", "Success", "Reply deleted successfully");
   };
 
   const openDeleteConfirmation = (type, index, id) => {
-    console.log('Current  ID :',id)
-  setDeleteInfo({ type, index, id });
-  setOpenConfirm(true);
-};
+    console.log("Current  ID :", id);
+    setDeleteInfo({ type, index, id });
+    setOpenConfirm(true);
+  };
 
-const confirmDelete = () => {
-  handleDelete(
-    deleteInfo.type,
-    deleteInfo.index,
-    deleteInfo.id
-  );
-  setOpenConfirm(false)
-};
+  const confirmDelete = () => {
+    handleDelete(deleteInfo.type, deleteInfo.index, deleteInfo.id);
+    setOpenConfirm(false);
+  };
 
   return (
     <Dialog
@@ -296,7 +306,6 @@ const confirmDelete = () => {
       PaperProps={{ className: "comments-dialog" }}
     >
       <DialogContent className="comments-content">
-
         {/* ── HEADER ── */}
         <div className="comments-header">
           <div className="comments-header-left">
@@ -308,7 +317,7 @@ const confirmDelete = () => {
                 Comments & Action Points
               </Typography>
               <Typography className="comments-subtitle">
-                {newComment?.name}
+                {activityName}
               </Typography>
             </div>
           </div>
@@ -345,7 +354,6 @@ const confirmDelete = () => {
               <TableBody>
                 {existingComments.map((entry, index) => (
                   <React.Fragment key={index}>
-
                     {/* COMMENT ROW */}
                     <TableRow>
                       <TableCell>{index + 1}</TableCell>
@@ -359,70 +367,89 @@ const confirmDelete = () => {
 
                       {/* ── ATTACHMENT CELL ── */}
                       <TableCell>
-                       {entry.attachment ? (
-<div
-  className="attachment-pill"
-  // onClick={async () => {
-  //   try {
-  //     const separatorIndex = entry.attachment.indexOf("_");
+                        {entry.attachment ? (
+                          <div
+                            className="attachment-pill"
+                            // onClick={async () => {
+                            //   try {
+                            //     const separatorIndex = entry.attachment.indexOf("_");
 
-  //     const fileId = entry.attachment.substring(0, separatorIndex);
-  //     const fileName = entry.attachment.substring(separatorIndex + 1);
+                            //     const fileId = entry.attachment.substring(0, separatorIndex);
+                            //     const fileName = entry.attachment.substring(separatorIndex + 1);
 
-  //     const response = await activityTrackerApi.getMinIoFile(fileId);
-  //     console.log('Response : ',response)
+                            //     const response = await activityTrackerApi.getMinIoFile(fileId);
+                            //     console.log('Response : ',response)
 
-  //     const blob = new Blob([response.data]);
-  //     const url = window.URL.createObjectURL(blob);
+                            //     const blob = new Blob([response.data]);
+                            //     const url = window.URL.createObjectURL(blob);
 
-  //     const a = document.createElement("a");
-  //     a.href = url;
-  //     a.download = fileName;
-  //     document.body.appendChild(a);
-  //     a.click();
-  //     document.body.removeChild(a);
+                            //     const a = document.createElement("a");
+                            //     a.href = url;
+                            //     a.download = fileName;
+                            //     document.body.appendChild(a);
+                            //     a.click();
+                            //     document.body.removeChild(a);
 
-  //     window.URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error("Failed to download file", error);
-  //   }
-  // }}
->
-    <InsertDriveFileOutlinedIcon fontSize="small" />
-    <span onClick={async () => {
-    try {
-      const separatorIndex = entry.attachment.indexOf("_");
+                            //     window.URL.revokeObjectURL(url);
+                            //   } catch (error) {
+                            //     console.error("Failed to download file", error);
+                            //   }
+                            // }}
+                          >
+                            <InsertDriveFileOutlinedIcon fontSize="small" />
+                            <span
+                              onClick={async () => {
+                                try {
+                                  const separatorIndex =
+                                    entry.attachment.indexOf("_");
 
-      const fileId = entry.attachment.substring(0, separatorIndex);
-      const fileName = entry.attachment.substring(separatorIndex + 1);
-      const minioBucket='comments'
-      const response = await activityTrackerApi.getMinIoFile( entry.attachment,minioBucket);
-      console.log('Response : ',response)
+                                  const fileId = entry.attachment.substring(
+                                    0,
+                                    separatorIndex,
+                                  );
+                                  const fileName = entry.attachment.substring(
+                                    separatorIndex + 1,
+                                  );
+                                  const minioBucket = "comments";
+                                  const response =
+                                    await activityTrackerApi.getMinIoFile(
+                                      entry.attachment,
+                                      minioBucket,
+                                    );
+                                  console.log("Response : ", response);
 
-      // const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(response);
+                                  // const blob = new Blob([response.data]);
+                                  const url =
+                                    window.URL.createObjectURL(response);
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = fileName;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
 
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download file", error);
-    }
-  }}
-  className="attachment-name"
-  title={entry.attachment.substring(entry.attachment.indexOf("_") + 1)}
->
-  {entry.attachment.substring(entry.attachment.indexOf("_") + 1)}
-</span>
-  </div>
-) : (
-  "-"
-)}
+                                  window.URL.revokeObjectURL(url);
+                                } catch (error) {
+                                  console.error(
+                                    "Failed to download file",
+                                    error,
+                                  );
+                                }
+                              }}
+                              className="attachment-name"
+                              title={entry.attachment.substring(
+                                entry.attachment.indexOf("_") + 1,
+                              )}
+                            >
+                              {entry.attachment.substring(
+                                entry.attachment.indexOf("_") + 1,
+                              )}
+                            </span>
+                          </div>
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -441,7 +468,7 @@ const confirmDelete = () => {
                             startIcon={<ReplyOutlinedIcon />}
                             onClick={() =>
                               setActiveReply(
-                                activeReply === index ? null : index
+                                activeReply === index ? null : index,
                               )
                             }
                           >
@@ -454,10 +481,13 @@ const confirmDelete = () => {
                           </Button>
                           <IconButton
                             size="small"
-                            disabled={entry.createdBy !== getUserData()?.userDetails?.userId}
+                            disabled={
+                              entry.createdBy !==
+                              getUserData()?.userDetails?.userId
+                            }
                             onClick={() =>
-  openDeleteConfirmation("comment", index)
-}
+                              openDeleteConfirmation("comment", index)
+                            }
                           >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
@@ -478,12 +508,18 @@ const confirmDelete = () => {
                                 </span>
                                 <IconButton
                                   size="small"
-                                  disabled={reply.createdBy !== getUserData()?.userDetails?.userId}
-                                  onClick={() =>
-                                  {
-                                    console.log("Current Reply ",reply)
-  openDeleteConfirmation("reply", index, reply.replyId)}
-}
+                                  disabled={
+                                    reply.createdBy !==
+                                    getUserData()?.userDetails?.userId
+                                  }
+                                  onClick={() => {
+                                    console.log("Current Reply ", reply);
+                                    openDeleteConfirmation(
+                                      "reply",
+                                      index,
+                                      reply.replyId,
+                                    );
+                                  }}
                                 >
                                   <DeleteOutlineIcon fontSize="small" />
                                 </IconButton>
@@ -491,44 +527,61 @@ const confirmDelete = () => {
                               <div className="reply-text">
                                 {reply.replyText}
                               </div>
-                             
-                             {reply.attachment  && (
-  <div className="attachment-pill">
-    <InsertDriveFileOutlinedIcon fontSize="small" />
 
-    <span
-      className="attachment-name"
-      title={reply.attachment.substring(reply.attachment.indexOf("_") + 1)}
-      onClick={async () => {
-        try {
-          const separatorIndex = reply.attachment.indexOf("_");
+                              {reply.attachment && (
+                                <div className="attachment-pill">
+                                  <InsertDriveFileOutlinedIcon fontSize="small" />
 
-          const minioKey = reply.attachment.substring(0, separatorIndex);
-          const fileName = reply.attachment.substring(separatorIndex + 1);
+                                  <span
+                                    className="attachment-name"
+                                    title={reply.attachment.substring(
+                                      reply.attachment.indexOf("_") + 1,
+                                    )}
+                                    onClick={async () => {
+                                      try {
+                                        const separatorIndex =
+                                          reply.attachment.indexOf("_");
 
-          const response = await activityTrackerApi.getMinIoFile(
-            reply.attachment,
-            "replies"
-          );
+                                        const minioKey =
+                                          reply.attachment.substring(
+                                            0,
+                                            separatorIndex,
+                                          );
+                                        const fileName =
+                                          reply.attachment.substring(
+                                            separatorIndex + 1,
+                                          );
 
-          // const blob = new Blob([response.data]);
-          const url = window.URL.createObjectURL(response);
+                                        const response =
+                                          await activityTrackerApi.getMinIoFile(
+                                            reply.attachment,
+                                            "replies",
+                                          );
 
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          a.click();
+                                        // const blob = new Blob([response.data]);
+                                        const url =
+                                          window.URL.createObjectURL(response);
 
-          window.URL.revokeObjectURL(url);
-        } catch (error) {
-          console.error("Failed to download attachment:", error);
-        }
-      }}
-    >
-      {reply.attachment.substring(reply.attachment.indexOf("_") + 1)}
-    </span>
-  </div>
-)} 
+                                        const a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = fileName;
+                                        a.click();
+
+                                        window.URL.revokeObjectURL(url);
+                                      } catch (error) {
+                                        console.error(
+                                          "Failed to download attachment:",
+                                          error,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    {reply.attachment.substring(
+                                      reply.attachment.indexOf("_") + 1,
+                                    )}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </TableCell>
@@ -558,7 +611,6 @@ const confirmDelete = () => {
                                 }
                               />
                               <div className="reply-footer">
-                                
                                 <div className="reply-footer-actions">
                                   <Button
                                     size="small"
@@ -575,34 +627,40 @@ const confirmDelete = () => {
                                     Reply
                                   </Button>
                                   <input
-  id={`reply-file-${index}`}
-  hidden
-  type="file"
-  onChange={(e) => handleReplyAttachment(index, e)}
-/>
+                                    id={`reply-file-${index}`}
+                                    hidden
+                                    type="file"
+                                    onChange={(e) =>
+                                      handleReplyAttachment(index, e)
+                                    }
+                                  />
 
-<label htmlFor={`reply-file-${index}`}>
-  <Button
-    component="span"
-    size="small"
-    startIcon={<AttachFileIcon />}
-  >
-    Attach File
-  </Button>
-</label>
+                                  <label htmlFor={`reply-file-${index}`}>
+                                    <Button
+                                      component="span"
+                                      size="small"
+                                      startIcon={<AttachFileIcon />}
+                                    >
+                                      Attach File
+                                    </Button>
+                                  </label>
 
-{replyAttachment[index]?.attachmentName && (
-  <div className="attachment-pill">
-    <InsertDriveFileOutlinedIcon fontSize="small" />
-    <span>{replyAttachment[index].attachmentName}</span>
-    <IconButton
-      size="small"
-      onClick={() => removeReplyAttachment(index)}
-    >
-      <CancelOutlinedIcon fontSize="small" />
-    </IconButton>
-  </div>
-)}
+                                  {replyAttachment[index]?.attachmentName && (
+                                    <div className="attachment-pill">
+                                      <InsertDriveFileOutlinedIcon fontSize="small" />
+                                      <span>
+                                        {replyAttachment[index].attachmentName}
+                                      </span>
+                                      <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                          removeReplyAttachment(index)
+                                        }
+                                      >
+                                        <CancelOutlinedIcon fontSize="small" />
+                                      </IconButton>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -610,7 +668,6 @@ const confirmDelete = () => {
                         </TableCell>
                       </TableRow>
                     )}
-
                   </React.Fragment>
                 ))}
               </TableBody>
@@ -618,7 +675,7 @@ const confirmDelete = () => {
           )}
         </div>
 
-        {/* ── ADD COMMENT ── */}
+        {/* ── ADD COMMENT ── */}{allowNewComment&&
         <div className="entry-section">
           <div className="entry-title">
             <AddIcon fontSize="small" />
@@ -661,43 +718,41 @@ const confirmDelete = () => {
                 type="date"
                 size="small"
                 value={newComment?.resolutionDate}
-                onChange={(e) =>
-                  handleChange("resolutionDate", e.target.value)
-                }
+                onChange={(e) => handleChange("resolutionDate", e.target.value)}
               />
             </div>
 
             <div>
               <label>Responsibility *</label>
               <div className="chip-group">
-  {["GW", "Customer"].map((opt) => (
-    <Chip
-      key={opt}
-      clickable
-      label={opt}
-      color={
-        newComment?.responsibility?.includes(opt)
-          ? "primary"
-          : "default"
-      }
-      variant={
-        newComment?.responsibility?.includes(opt)
-          ? "filled"
-          : "outlined"
-      }
-      onClick={() =>
-        handleChange(
-          "responsibility",
-          newComment?.responsibility?.includes(opt)
-            ? newComment.responsibility.filter(
-                (item) => item !== opt
-              )
-            : [...(newComment?.responsibility || []), opt]
-        )
-      }
-    />
-  ))}
-</div>
+                {["GW", "Customer"].map((opt) => (
+                  <Chip
+                    key={opt}
+                    clickable
+                    label={opt}
+                    color={
+                      newComment?.responsibility?.includes(opt)
+                        ? "primary"
+                        : "default"
+                    }
+                    variant={
+                      newComment?.responsibility?.includes(opt)
+                        ? "filled"
+                        : "outlined"
+                    }
+                    onClick={() =>
+                      handleChange(
+                        "responsibility",
+                        newComment?.responsibility?.includes(opt)
+                          ? newComment.responsibility.filter(
+                              (item) => item !== opt,
+                            )
+                          : [...(newComment?.responsibility || []), opt],
+                      )
+                    }
+                  />
+                ))}
+              </div>
             </div>
 
             <div>
@@ -716,47 +771,46 @@ const confirmDelete = () => {
 
           {/* ── FOOTER ── */}
           <div className="dialog-footer">
-
             {/* ── ATTACHMENT: show pill if file selected, button otherwise ── */}
-           {newComment?.attachmentBase64 ? (
-  <div className="attachment-staged">
-    <InsertDriveFileOutlinedIcon fontSize="small" />
+            {newComment?.attachmentBase64 ? (
+              <div className="attachment-staged">
+                <InsertDriveFileOutlinedIcon fontSize="small" />
 
-    <span
-      className="attachment-name"
-      title={newComment?.attachmentName}
-    >
-      {newComment?.attachmentName}
-    </span>
+                <span
+                  className="attachment-name"
+                  title={newComment?.attachmentName}
+                >
+                  {newComment?.attachmentName}
+                </span>
 
-    <IconButton
-      size="small"
-      onClick={removeCommentAttachment}
-      aria-label="Remove attachment"
-    >
-      <CancelOutlinedIcon fontSize="small" />
-    </IconButton>
-  </div>
-) : (
-  <>
-    <input
-      id="comment-file"
-      hidden
-      type="file"
-      onChange={handleCommentAttachment}
-    />
+                <IconButton
+                  size="small"
+                  onClick={removeCommentAttachment}
+                  aria-label="Remove attachment"
+                >
+                  <CancelOutlinedIcon fontSize="small" />
+                </IconButton>
+              </div>
+            ) : (
+              <>
+                <input
+                  id="comment-file"
+                  hidden
+                  type="file"
+                  onChange={handleCommentAttachment}
+                />
 
-    <label htmlFor="comment-file">
-      <Button
-        component="span"
-        variant="outlined"
-        startIcon={<AttachFileIcon />}
-      >
-        Attach File
-      </Button>
-    </label>
-  </>
-)}
+                <label htmlFor="comment-file">
+                  <Button
+                    component="span"
+                    variant="outlined"
+                    startIcon={<AttachFileIcon />}
+                  >
+                    Attach File
+                  </Button>
+                </label>
+              </>
+            )}
             <div className="footer-actions">
               <Button variant="outlined" onClick={onClose}>
                 Cancel
@@ -771,15 +825,14 @@ const confirmDelete = () => {
             </div>
           </div>
         </div>
-
-         <ConfirmDialog
-        open={openConfirm}
-        // title="Delete Activity"
-        // message="Are you sure you want to delete this activity?"
-        onConfirm={confirmDelete}
-        onCancel={() => setOpenConfirm(false)}
-      />
-
+      }
+        <ConfirmDialog
+          open={openConfirm}
+          // title="Delete Activity"
+          // message="Are you sure you want to delete this activity?"
+          onConfirm={confirmDelete}
+          onCancel={() => setOpenConfirm(false)}
+        />
       </DialogContent>
     </Dialog>
   );

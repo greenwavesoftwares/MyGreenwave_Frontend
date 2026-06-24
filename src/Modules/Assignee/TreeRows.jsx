@@ -222,7 +222,7 @@ export default function TreeRows({
             <button
               className="icon-button icon-btn--comment"
               onClick={() =>
-                onOpenCommentBox(projectId, id, moduleId)
+                onOpenCommentBox(projectId, id, moduleId,activityStatus,name)
               }
             >
               <ModeCommentOutlinedIcon sx={{ fontSize: 14 }} />
