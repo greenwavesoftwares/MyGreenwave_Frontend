@@ -113,7 +113,7 @@ export default function CommentsActionDialog({
       !newComment.resolutionDate ||
       newComment?.responsibility?.length === 0
     ) {
-      showToast("error", "Data Missing", "Fill in the required fields");
+      showToast("error", "Data Missing", "Fill in the required fields *");
       return;
     }
     const payload = {
