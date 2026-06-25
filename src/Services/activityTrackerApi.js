@@ -12,7 +12,7 @@ const getHeaders = () => ({
 
 const activityTrackerApi = {
   // ============================================================
-  // PROJECTS
+  //                        PROJECTS
   // ============================================================
 
   /**
@@ -130,13 +130,112 @@ const activityTrackerApi = {
   deleteProject: async (projectId) => {
     const response = await axios.delete(
       `${apiEndPoint}/projects/${projectId}`,
+      {
+        headers: getHeaders(),
+      },
+    );
+    return response.data;
+  },
+
+  // ============================================================
+  //                  PROJECT USER RATINGS
+  // ============================================================
+
+  /**
+   * GET /activityTracker/projects/{projectId}/userRatings
+   * Retrieves all user ratings for a specific project.
+   * @param {string} projectId
+   */
+  getUserRatingsByProjectId: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/userRatings`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/userRatings
+   * Retrieves user ratings for multiple projects.
+   * @param {Array<string>} projectIds - Array of project IDs.
+   */
+  getUserRatingsByProjectIds: async (projectIds) => {
+    const response = await axios.get(`${apiEndPoint}/projects/userRatings`, {
+      headers: getHeaders(),
+      params: { projectIds }, // Axios will serialize this array into the query string
+    });
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/users/{userId}/userRatings
+   * Retrieves all user ratings submitted by (or for) a specific user.
+   * @param {string} userId
+   */
+  getUserRatingsByUserId: async (userId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/users/${userId}/userRatings`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/users/userRatings
+   * Retrieves user ratings for multiple users.
+   * @param {Array<string>} userIds - Array of user IDs.
+   */
+  getUserRatingsByUserIds: async (userIds) => {
+    const response = await axios.get(`${apiEndPoint}/users/userRatings`, {
+      headers: getHeaders(),
+      params: { userIds },
+    });
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/userRatings
+   * Creates a new project user rating.
+   * @param {Object} ratingPayload (ProjectUserRating Model)
+   * @example
+   * {
+   * "projectId": "string",
+   * "userId": "string",
+   * "name": "string",
+   * "rating": 5,
+   * "comments": "Excellent job on the deployment",
+   * "avgTimeFromTasks": 4.5,
+   * "avgFulfillmentFromTasks": 5.0,
+   * "avgInnovationFromTasks": 4.0,
+   * "ratedAt": "2026-06-05T09:30:19.069Z",
+   * "ratedBy": "ManagerName"
+   * }
+   */
+  createProjectUserRating: async (ratingPayload) => {
+    const response = await axios.post(
+      `${apiEndPoint}/userRatings`,
+      ratingPayload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/userRatings
+   * Updates an existing project user rating.
+   * @param {Object} ratingPayload (ProjectUserRating Model with 'id' present)
+   */
+  updateProjectUserRating: async (ratingPayload) => {
+    const response = await axios.put(
+      `${apiEndPoint}/userRatings`,
+      ratingPayload,
       { headers: getHeaders() },
     );
     return response.data;
   },
 
   // ============================================================
-  // ACTIVITIES
+  //                        ACTIVITIES
   // ============================================================
 
   /**
@@ -234,7 +333,9 @@ const activityTrackerApi = {
   getActivity: async (activityId) => {
     const response = await axios.get(
       `${apiEndPoint}/activities/${activityId}`,
-      { headers: getHeaders() },
+      {
+        headers: getHeaders(),
+      },
     );
     return response.data;
   },
@@ -285,18 +386,14 @@ const activityTrackerApi = {
       `${apiEndPoint}/isUserHasPendingActivity`,
       {
         headers: getHeaders(),
-        params: {
-          userId,
-          fromDate,
-          toDate,
-        },
+        params: { userId, fromDate, toDate },
       },
     );
     return response.data;
   },
 
   // ============================================================
-  // ACTIVITY REJECTIONS
+  //                  ACTIVITY REJECTIONS
   // ============================================================
 
   /**
@@ -330,7 +427,7 @@ const activityTrackerApi = {
   },
 
   // ============================================================
-  // ACTIVITY PAUSES
+  //                    ACTIVITY PAUSES
   // ============================================================
 
   /**
@@ -361,7 +458,7 @@ const activityTrackerApi = {
   },
 
   // ============================================================
-  // COMMENTS
+  //                        COMMENTS
   // ============================================================
 
   /**
@@ -437,7 +534,9 @@ const activityTrackerApi = {
   deleteComment: async (commentId) => {
     const response = await axios.delete(
       `${apiEndPoint}/comments/${commentId}`,
-      { headers: getHeaders() },
+      {
+        headers: getHeaders(),
+      },
     );
     return response.data;
   },
@@ -475,7 +574,7 @@ const activityTrackerApi = {
   },
 
   // ============================================================
-  // REPLIES
+  //                        REPLIES
   // ============================================================
 
   /**
@@ -527,7 +626,7 @@ const activityTrackerApi = {
   },
 
   // ============================================================
-  // ACTIVITY TREE
+  //                     ACTIVITY TREE
   // ============================================================
 
   /**
@@ -599,9 +698,7 @@ const activityTrackerApi = {
   getActivityTreeCreatedByUser: async () => {
     const response = await axios.get(
       `${apiEndPoint}/getActivityTreeCreatedByUser`,
-      {
-        headers: getHeaders(),
-      },
+      { headers: getHeaders() },
     );
     return response.data;
   },
@@ -614,15 +711,13 @@ const activityTrackerApi = {
   getNonPublishedActivityTreesByUser: async () => {
     const response = await axios.get(
       `${apiEndPoint}/getNonPublishedActivityTreesByUser`,
-      {
-        headers: getHeaders(),
-      },
+      { headers: getHeaders() },
     );
     return response.data;
   },
 
   // ============================================================
-  // FILES
+  //                         FILES
   // ============================================================
 
   /**
@@ -635,17 +730,14 @@ const activityTrackerApi = {
   getMinIoFile: async (minioKey, bucketName) => {
     const response = await axios.get(`${apiEndPoint}/minIoFile`, {
       headers: getHeaders(),
-      params: {
-        minioKey,
-        bucketName,
-      },
+      params: { minioKey, bucketName },
       responseType: "blob",
     });
     return response.data;
   },
 
   // ============================================================
-  // USER GROUPS / ADMIN
+  //                   USER GROUPS / ADMIN
   // ============================================================
 
   /**
