@@ -156,16 +156,6 @@ export default function TreeRows({
         </button>
       </Tooltip>,
 
-      allChildrenCompleted(node) && (
-        <Tooltip key="complete" title="Complete">
-          <button
-            className="icon-button icon-btn--stop"
-            onClick={() => updateStatusOfActivity(id, "Completed")}
-          >
-            <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
-          </button>
-        </Tooltip>
-      ),
     ].filter(Boolean),
 
     Paused: [
