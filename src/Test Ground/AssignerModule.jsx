@@ -81,6 +81,7 @@ import {
   Reply,
   Paperclip,
   AtSign,
+  Lightbulb,
 } from "lucide-react";
 import { ShieldCheck, XCircle, ClipboardList, CalendarX } from "lucide-react";
 import {
@@ -156,6 +157,13 @@ const STATUS_CONFIG = {
     bg: "#F0FDF4",
     color: "#166534",
     border: "#4ADE80",
+  },
+  closed: {
+    label: "Closed",
+    Icon: XCircle,
+    bg: "#F1F5F9",
+    color: "#475569",
+    border: "#CBD5E1",
   },
 };
 
@@ -3746,157 +3754,76 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
     </div>
   );
 }
-
-function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
-  // ── Determine mode ──
-  const isFinished =
-    String(row.status || "")
-      .toLowerCase()
-      .trim() === "finished";
-  const readOnly = isFinished;
-
-  // ── Compute reference data ──
-  const plannedStartDt = parseISODateTime(row.plannedStart);
-  const plannedStopDt = parseISODateTime(row.plannedStop);
-  const actualStartDt = row.actualStart ? new Date(row.actualStart) : null;
-  const actualStopDt = row.actualStop ? new Date(row.actualStop) : null;
-
-  const fmtHrMin = (hrs) => {
-    if (hrs === null || hrs === undefined || isNaN(hrs)) return "—";
-    const totalMinutes = Math.round(Math.abs(hrs) * 60);
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    const sign = hrs < 0 ? "-" : "";
-    if (h === 0) return `${sign}${m}m`;
-    if (m === 0) return `${sign}${h}h`;
-    return `${sign}${h}h ${m}m`;
-  };
-  const benchmarkHrs =
-    plannedStartDt && plannedStopDt
-      ? Math.round(
-          ((plannedStopDt.getTime() - plannedStartDt.getTime()) /
-            (1000 * 60 * 60)) *
-            100,
-        ) / 100
-      : row.durationHrs || 0;
-
-  const actualHrs =
-    actualStartDt && actualStopDt
-      ? Math.round(
-          ((actualStopDt.getTime() - actualStartDt.getTime()) /
-            (1000 * 60 * 60)) *
-            100,
-        ) / 100
-      : row.actualElapsedHrs || 0;
-
-  const rejectCount = row.actiVityRejectCount || 0;
-
-  // ── Auto-suggest: Time Efficiency (1–10) ──
-  const suggestTimeRating = () => {
-    if (!benchmarkHrs || benchmarkHrs <= 0 || !actualHrs) return 5;
-    const ratio = actualHrs / benchmarkHrs;
-    // ratio <= 0.8 → 10 (finished early)
-    // ratio === 1.0 → 8 (on time)
-    // ratio >= 2.0 → 1 (took 2x or more)
-    if (ratio <= 0.8) return 10;
-    if (ratio <= 0.9) return 9;
-    if (ratio <= 1.0) return 8;
-    if (ratio <= 1.1) return 7;
-    if (ratio <= 1.2) return 6;
-    if (ratio <= 1.4) return 5;
-    if (ratio <= 1.6) return 4;
-    if (ratio <= 1.8) return 3;
-    if (ratio <= 2.0) return 2;
-    return 1;
-  };
-
-  // ── Auto-suggest: Fulfillment (1–10) ──
-  const suggestFulfillmentRating = () => {
-    if (rejectCount === 0) return 10;
-    if (rejectCount === 1) return 7;
-    if (rejectCount === 2) return 5;
-    if (rejectCount === 3) return 3;
-    return 1;
-  };
-
-  // ── State ──
-  const [timeRating, setTimeRating] = useState(
-    readOnly ? row.timeEfficiencyRating || 0 : suggestTimeRating(),
+/* ─── Comment Field (defined OUTSIDE FeedbackModal) ─── */
+function CommentField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  readOnly: isReadOnly,
+  disabled,
+}) {
+  return (
+    <div style={{ marginTop: 10 }}>
+      <label
+        style={{
+          display: "block",
+          fontSize: 10.5,
+          fontWeight: 600,
+          color: "#64748B",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </label>
+      {isReadOnly ? (
+        <div
+          style={{
+            width: "100%",
+            border: "1px solid #E2E8F0",
+            borderRadius: 6,
+            padding: "8px 10px",
+            fontFamily: "Sora,sans-serif",
+            fontSize: 11.5,
+            lineHeight: 1.5,
+            color: "#475569",
+            background: "#F8FAFC",
+            minHeight: 36,
+            boxSizing: "border-box",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {value || "—"}
+        </div>
+      ) : (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          rows={2}
+          style={{
+            width: "100%",
+            border: "1px solid #E2E8F0",
+            borderRadius: 6,
+            padding: "8px 10px",
+            fontFamily: "Sora,sans-serif",
+            fontSize: 11.5,
+            outline: "none",
+            boxSizing: "border-box",
+            resize: "vertical",
+            minHeight: 48,
+            lineHeight: 1.5,
+            background: disabled ? "#F8FAFC" : "#fff",
+          }}
+        />
+      )}
+    </div>
   );
-  const [fulfillmentRating, setFulfillmentRating] = useState(
-    readOnly ? row.fulfillmentRating || 0 : suggestFulfillmentRating(),
-  );
-  const [hoverTime, setHoverTime] = useState(0);
-  const [hoverFulfillment, setHoverFulfillment] = useState(0);
-  const [comments, setComments] = useState(
-    readOnly ? row.feedbackComments || "" : "",
-  );
-  const [touched, setTouched] = useState(false);
-
-  const isValid =
-    timeRating > 0 && fulfillmentRating > 0 && comments.trim().length >= 5;
-
-  // ── Rating labels ──
-  const timeLabels = {
-    1: "Very Poor — Took 2x+ longer than planned",
-    2: "Poor — Significant delay (80–100% over)",
-    3: "Below Average — 60–80% over planned time",
-    4: "Slightly Below — 40–60% over planned time",
-    5: "Average — 20–40% over planned time",
-    6: "Slightly Above — 10–20% over planned time",
-    7: "Good — Within 10% over planned time",
-    8: "Very Good — Completed on time",
-    9: "Excellent — Finished slightly ahead of schedule",
-    10: "Outstanding — Finished well ahead of schedule",
-  };
-
-  const fulfillmentLabels = {
-    1: "Unacceptable — Multiple reworks, major gaps",
-    2: "Very Poor — Extensive rework needed",
-    3: "Poor — Significant quality issues",
-    4: "Below Average — Notable gaps remain",
-    5: "Average — Acceptable with improvements",
-    6: "Slightly Above — Minor issues present",
-    7: "Good — Meets most expectations",
-    8: "Very Good — Meets all expectations",
-    9: "Excellent — Exceeds expectations",
-    10: "Outstanding — Exceptional quality, zero rework",
-  };
-
-  const handleSubmit = async () => {
-    if (readOnly) return;
-    setTouched(true);
-    if (!isValid) return;
-    await onConfirm({
-      timeEfficiencyRating: timeRating,
-      fulfillmentRating: fulfillmentRating,
-      comments: comments.trim(),
-    });
-  };
-
-  // ── Helper: format date for display ──
-  const fmtRef = (d) => {
-    if (!d) return "—";
-    if (typeof d === "string") d = new Date(d);
-    if (!(d instanceof Date) || isNaN(d)) return "—";
-    return d.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // ── Rating bar component (1–10) ──
-  const RatingBar = ({
-    value,
-    hover,
-    onChange,
-    onHover,
-    onLeave,
-    disabled,
-  }) => (
+}
+/* ─── Rating Bar (defined OUTSIDE FeedbackModal) ─── */
+function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
+  return (
     <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
       {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
         const active = n <= (disabled ? value : hover || value);
@@ -3979,9 +3906,11 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
       )}
     </div>
   );
+}
 
-  // ── Reference card component ──
-  const RefCard = ({ label, value, icon, color = "#475569" }) => (
+/* ─── Reference Card (defined OUTSIDE FeedbackModal) ─── */
+function RefCard({ label, value, icon, color = "#475569" }) {
+  return (
     <div
       style={{
         display: "flex",
@@ -4024,6 +3953,201 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
       </div>
     </div>
   );
+}
+function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
+  // ── Determine mode ──
+  const isFinished =
+    String(row.status || "")
+      .toLowerCase()
+      .trim() === "finished";
+  const readOnly = isFinished;
+
+  // ── Compute reference data ──
+  const parseDt = (val) => {
+    if (!val) return null;
+    const d = new Date(val);
+    return isNaN(d) ? null : d;
+  };
+
+  const plannedStartDt = parseDt(row.plannedStart);
+  const plannedStopDt = parseDt(row.plannedStop);
+  const actualStartDt = parseDt(row.actualStart);
+  const actualStopDt = parseDt(row.actualStop);
+
+  const benchmarkHrs =
+    plannedStartDt && plannedStopDt
+      ? Math.round(
+          ((plannedStopDt.getTime() - plannedStartDt.getTime()) /
+            (1000 * 60 * 60)) *
+            100,
+        ) / 100
+      : row.durationHrs || 0;
+
+  const actualHrs =
+    actualStartDt && actualStopDt
+      ? Math.round(
+          ((actualStopDt.getTime() - actualStartDt.getTime()) /
+            (1000 * 60 * 60)) *
+            100,
+        ) / 100
+      : row.actualElapsedHrs || 0;
+
+  const rejectCount = row.actiVityRejectCount || 0;
+
+  // ── Format helpers ──
+  const fmtHrMin = (hrs) => {
+    if (hrs === null || hrs === undefined || isNaN(hrs)) return "—";
+    const totalMinutes = Math.round(Math.abs(hrs) * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    const sign = hrs < 0 ? "-" : "";
+    if (h === 0) return `${sign}${m}m`;
+    if (m === 0) return `${sign}${h}h`;
+    return `${sign}${h}h ${m}m`;
+  };
+
+  const fmtPlanned = (val) => {
+    if (!val) return "—";
+    const d = new Date(val);
+    if (isNaN(d)) return "—";
+    return d.toLocaleString("en-GB", {
+      timeZone: "UTC",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const fmtActual = (val) => {
+    if (!val) return "—";
+    const d = new Date(val);
+    if (isNaN(d)) return "—";
+    return d.toLocaleString("en-GB", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // ── Auto-suggest: Time Efficiency (1–10) ──
+  const suggestTimeRating = () => {
+    if (!benchmarkHrs || benchmarkHrs <= 0 || !actualHrs) return 5;
+    const ratio = actualHrs / benchmarkHrs;
+    if (ratio <= 0.8) return 10;
+    if (ratio <= 0.9) return 9;
+    if (ratio <= 1.0) return 8;
+    if (ratio <= 1.1) return 7;
+    if (ratio <= 1.2) return 6;
+    if (ratio <= 1.4) return 5;
+    if (ratio <= 1.6) return 4;
+    if (ratio <= 1.8) return 3;
+    if (ratio <= 2.0) return 2;
+    return 1;
+  };
+
+  // ── Auto-suggest: Fulfillment (1–10) ──
+  const suggestFulfillmentRating = () => {
+    if (rejectCount === 0) return 10;
+    if (rejectCount === 1) return 7;
+    if (rejectCount === 2) return 5;
+    if (rejectCount === 3) return 3;
+    return 1;
+  };
+
+  // ── State ──
+  const [timeRating, setTimeRating] = useState(
+    readOnly ? row.timeEfficiencyRating || 0 : suggestTimeRating(),
+  );
+  const [fulfillmentRating, setFulfillmentRating] = useState(
+    readOnly ? row.fulfillmentRating || 0 : suggestFulfillmentRating(),
+  );
+  const [innovationRating, setInnovationRating] = useState(
+    readOnly ? row.innovationRating || 0 : 0,
+  );
+  const [hoverTime, setHoverTime] = useState(0);
+  const [hoverFulfillment, setHoverFulfillment] = useState(0);
+  const [hoverInnovation, setHoverInnovation] = useState(0);
+
+  const [timeComments, setTimeComments] = useState(
+    readOnly ? row.timeEfficiencyComments || "" : "",
+  );
+  const [fulfillmentComments, setFulfillmentComments] = useState(
+    readOnly ? row.fulfillmentComments || "" : "",
+  );
+  const [innovationComments, setInnovationComments] = useState(
+    readOnly ? row.innovationComments || "" : "",
+  );
+  const [overallComments, setOverallComments] = useState(
+    readOnly ? row.feedbackComments || "" : "",
+  );
+
+  const [touched, setTouched] = useState(false);
+
+  const isValid =
+    timeRating > 0 &&
+    fulfillmentRating > 0 &&
+    innovationRating > 0 &&
+    overallComments.trim().length >= 5;
+
+  // ── Rating labels ──
+  const timeLabels = {
+    1: "Very Poor — Took 2x+ longer than planned",
+    2: "Poor — Significant delay (80–100% over)",
+    3: "Below Average — 60–80% over planned time",
+    4: "Slightly Below — 40–60% over planned time",
+    5: "Average — 20–40% over planned time",
+    6: "Slightly Above — 10–20% over planned time",
+    7: "Good — Within 10% over planned time",
+    8: "Very Good — Completed on time",
+    9: "Excellent — Finished slightly ahead of schedule",
+    10: "Outstanding — Finished well ahead of schedule",
+  };
+
+  const fulfillmentLabels = {
+    1: "Unacceptable — Multiple reworks, major gaps",
+    2: "Very Poor — Extensive rework needed",
+    3: "Poor — Significant quality issues",
+    4: "Below Average — Notable gaps remain",
+    5: "Average — Acceptable with improvements",
+    6: "Slightly Above — Minor issues present",
+    7: "Good — Meets most expectations",
+    8: "Very Good — Meets all expectations",
+    9: "Excellent — Exceeds expectations",
+    10: "Outstanding — Exceptional quality, zero rework",
+  };
+
+  const innovationLabels = {
+    1: "No Innovation — Followed instructions only",
+    2: "Minimal — Very little creative input",
+    3: "Below Average — Routine approach",
+    4: "Slightly Below — Some effort but conventional",
+    5: "Average — Standard approach with minor improvements",
+    6: "Slightly Above — Some creative solutions applied",
+    7: "Good — Noticeable innovative thinking",
+    8: "Very Good — Creative problem-solving demonstrated",
+    9: "Excellent — Significant innovative contributions",
+    10: "Outstanding — Exceptional creativity and innovation",
+  };
+
+  const handleSubmit = async () => {
+    if (readOnly) return;
+    setTouched(true);
+    if (!isValid) return;
+    await onConfirm({
+      timeEfficiencyRating: timeRating,
+      timeEfficiencyComments: timeComments.trim(),
+      fulfillmentRating,
+      fulfillmentComments: fulfillmentComments.trim(),
+      innovationRating,
+      innovationComments: innovationComments.trim(),
+      comments: overallComments.trim(),
+    });
+  };
 
   // ── Efficiency comparison ──
   const efficiencyPercent =
@@ -4032,6 +4156,10 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
       : 0;
   const isAhead = efficiencyPercent < 0;
   const isOnTime = efficiencyPercent === 0;
+
+  // ── Rating bar component (1–10) ──
+
+  // ── Comment input component ──
 
   return (
     <div
@@ -4054,7 +4182,7 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
           background: "#fff",
           borderRadius: 14,
           width: "100%",
-          maxWidth: 640,
+          maxWidth: 680,
           maxHeight: "92vh",
           fontFamily: "Sora,sans-serif",
           boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
@@ -4210,38 +4338,32 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
             >
               <RefCard
                 label="Planned Start"
-                value={fmtRef(row.plannedStart)}
+                value={fmtPlanned(row.plannedStart)}
                 icon={<CalendarX size={13} />}
                 color="#1D4ED8"
               />
               <RefCard
                 label="Planned Stop"
-                value={fmtRef(row.plannedStop)}
+                value={fmtPlanned(row.plannedStop)}
                 icon={<CalendarX size={13} />}
                 color="#1D4ED8"
               />
               <RefCard
                 label="Actual Start"
-                value={fmtRef(row.actualStart)}
+                value={fmtActual(row.actualStart)}
                 icon={<ClipboardList size={13} />}
                 color="#15803D"
               />
               <RefCard
                 label="Actual Stop"
-                value={fmtRef(row.actualStop)}
+                value={fmtActual(row.actualStop)}
                 icon={<ClipboardList size={13} />}
                 color="#15803D"
               />
             </div>
 
             {/* Duration Comparison */}
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <div
                 style={{
                   flex: 1,
@@ -4424,7 +4546,6 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
               onLeave={() => setHoverTime(0)}
               disabled={readOnly || isSubmitting}
             />
-
             <div
               style={{
                 fontSize: 10.5,
@@ -4437,12 +4558,21 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
               {timeLabels[readOnly ? timeRating : hoverTime || timeRating] ||
                 "Select a rating"}
             </div>
-
             {!readOnly && touched && timeRating === 0 && (
               <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
                 ⚠ Please rate time efficiency
               </div>
             )}
+
+            {/* Time Efficiency Comment */}
+            <CommentField
+              label="Time Efficiency Comments"
+              value={timeComments}
+              onChange={setTimeComments}
+              placeholder="Comments on time management, delays, early delivery…"
+              readOnly={readOnly}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* ═══════════════════════════════════════════
@@ -4495,19 +4625,15 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
             </div>
 
             {/* Reject Count Reference */}
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <div
                 style={{
                   flex: 1,
                   padding: "8px 12px",
                   background: rejectCount === 0 ? "#DCFCE7" : "#FEE2E2",
-                  border: `1px solid ${rejectCount === 0 ? "#86EFAC" : "#FCA5A5"}`,
+                  border: `1px solid ${
+                    rejectCount === 0 ? "#86EFAC" : "#FCA5A5"
+                  }`,
                   borderRadius: 7,
                   display: "flex",
                   alignItems: "center",
@@ -4615,7 +4741,6 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
               onLeave={() => setHoverFulfillment(0)}
               disabled={readOnly || isSubmitting}
             />
-
             <div
               style={{
                 fontSize: 10.5,
@@ -4631,16 +4756,138 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
                   : hoverFulfillment || fulfillmentRating
               ] || "Select a rating"}
             </div>
-
             {!readOnly && touched && fulfillmentRating === 0 && (
               <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
                 ⚠ Please rate level of fulfillment
               </div>
             )}
+
+            {/* Fulfillment Comment */}
+            <CommentField
+              label="Fulfillment Comments"
+              value={fulfillmentComments}
+              onChange={setFulfillmentComments}
+              placeholder="Comments on quality, completeness, rework needed…"
+              readOnly={readOnly}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* ═══════════════════════════════════════════
-              SECTION 3: COMMENTS
+              SECTION 3: LEVEL OF INNOVATION
+             ═══════════════════════════════════════════ */}
+          <div
+            style={{
+              border: "1px solid #E2E8F0",
+              borderRadius: 10,
+              padding: 16,
+              marginBottom: 18,
+              background: "#FAFBFC",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "#FEF3C7",
+                  color: "#B45309",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Lightbulb size={14} />
+              </div>
+              <div>
+                <div
+                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
+                >
+                  Level of Innovation
+                  {!readOnly && (
+                    <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 10.5, color: "#64748B" }}>
+                  Creativity, problem-solving, and innovative thinking applied
+                  to the task.
+                </div>
+              </div>
+            </div>
+
+            {/* No reference data — subjective rating */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 12,
+                padding: "5px 10px",
+                background: "#FFFBEB",
+                border: "1px solid #FDE68A",
+                borderRadius: 6,
+                fontSize: 10.5,
+                color: "#92400E",
+              }}
+            >
+              <Info size={12} />
+              <span>
+                This is a subjective assessment — rate based on your observation
+                of creative and innovative effort.
+              </span>
+            </div>
+
+            {/* Rating Bar */}
+            <RatingBar
+              value={innovationRating}
+              hover={hoverInnovation}
+              onChange={setInnovationRating}
+              onHover={setHoverInnovation}
+              onLeave={() => setHoverInnovation(0)}
+              disabled={readOnly || isSubmitting}
+            />
+            <div
+              style={{
+                fontSize: 10.5,
+                color: "#64748B",
+                fontStyle: "italic",
+                marginTop: 6,
+                minHeight: 14,
+              }}
+            >
+              {innovationLabels[
+                readOnly
+                  ? innovationRating
+                  : hoverInnovation || innovationRating
+              ] || "Select a rating"}
+            </div>
+            {!readOnly && touched && innovationRating === 0 && (
+              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
+                ⚠ Please rate level of innovation
+              </div>
+            )}
+
+            {/* Innovation Comment */}
+            <CommentField
+              label="Innovation Comments"
+              value={innovationComments}
+              onChange={setInnovationComments}
+              placeholder="Comments on creative solutions, novel approaches, improvements…"
+              readOnly={readOnly}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* ═══════════════════════════════════════════
+              SECTION 4: OVERALL COMMENTS
              ═══════════════════════════════════════════ */}
           <div>
             <label
@@ -4652,7 +4899,7 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
                 marginBottom: 6,
               }}
             >
-              Feedback Comments
+              Overall Feedback
               {!readOnly && (
                 <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
               )}
@@ -4675,21 +4922,21 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
                   whiteSpace: "pre-wrap",
                 }}
               >
-                {comments || "No feedback provided."}
+                {overallComments || "No feedback provided."}
               </div>
             ) : (
               <>
                 <textarea
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
+                  value={overallComments}
+                  onChange={(e) => setOverallComments(e.target.value)}
                   onBlur={() => setTouched(true)}
-                  placeholder="Describe the quality of work, time management, areas of improvement…"
+                  placeholder="Share your overall assessment of the task — summary of all areas…"
                   disabled={isSubmitting}
-                  rows={4}
+                  rows={3}
                   style={{
                     width: "100%",
                     border: `1px solid ${
-                      touched && comments.trim().length < 5
+                      touched && overallComments.trim().length < 5
                         ? "#FCA5A5"
                         : "#CBD5E1"
                     }`,
@@ -4700,7 +4947,7 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
                     outline: "none",
                     boxSizing: "border-box",
                     resize: "vertical",
-                    minHeight: 80,
+                    minHeight: 70,
                     lineHeight: 1.5,
                     background: isSubmitting ? "#F8FAFC" : "#fff",
                   }}
@@ -4713,23 +4960,26 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
                     marginTop: 6,
                     fontSize: 10.5,
                     color:
-                      touched && comments.trim().length < 5
+                      touched && overallComments.trim().length < 5
                         ? "#DC2626"
                         : "#94A3B8",
                   }}
                 >
                   <span>
-                    {touched && comments.trim().length < 5
-                      ? "⚠ Feedback must be at least 5 characters"
-                      : "Share your overall assessment"}
+                    {touched && overallComments.trim().length < 5
+                      ? "⚠ Overall feedback must be at least 5 characters"
+                      : "Summarize your overall assessment"}
                   </span>
                   <span
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
-                      color: comments.trim().length > 0 ? "#475569" : "#CBD5E1",
+                      color:
+                        overallComments.trim().length > 0
+                          ? "#475569"
+                          : "#CBD5E1",
                     }}
                   >
-                    {comments.trim().length} chars
+                    {overallComments.trim().length} chars
                   </span>
                 </div>
               </>
@@ -4809,6 +5059,1665 @@ function FeedbackModal({ row, onClose, onConfirm, isSubmitting = false }) {
                   <>
                     <Star size={14} />
                     Submit & Finish
+                  </>
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectCloseModal({
+  project,
+  rows,
+  onClose,
+  onConfirm,
+  isSubmitting = false,
+  readOnly = false,
+  savedFeedback = null,
+}) {
+  // ── Only top-level tasks (no sub-tasks) ──
+  const topLevelRows = useMemo(() => rows.filter((r) => !r.parentId), [rows]);
+
+  // ── Compute per-resource averages ──
+  const resourceStats = useMemo(() => {
+    const map = {};
+
+    topLevelRows.forEach((r) => {
+      if (!r.resource) return;
+      const key = r.resource;
+      if (!map[key]) {
+        map[key] = {
+          userId: key,
+          name: r.resourceName || key,
+          taskCount: 0,
+          totalTime: 0,
+          totalFulfillment: 0,
+          totalInnovation: 0,
+          ratedCount: 0,
+        };
+      }
+      map[key].taskCount += 1;
+
+      if (r.timeEfficiencyRating && r.fulfillmentRating && r.innovationRating) {
+        map[key].totalTime += r.timeEfficiencyRating;
+        map[key].totalFulfillment += r.fulfillmentRating;
+        map[key].totalInnovation += r.innovationRating;
+        map[key].ratedCount += 1;
+      }
+    });
+
+    return Object.values(map).map((s) => ({
+      ...s,
+      avgTime:
+        s.ratedCount > 0
+          ? Math.round((s.totalTime / s.ratedCount) * 10) / 10
+          : 0,
+      avgFulfillment:
+        s.ratedCount > 0
+          ? Math.round((s.totalFulfillment / s.ratedCount) * 10) / 10
+          : 0,
+      avgInnovation:
+        s.ratedCount > 0
+          ? Math.round((s.totalInnovation / s.ratedCount) * 10) / 10
+          : 0,
+    }));
+  }, [topLevelRows]);
+
+  // ── Compute total benchmark vs actual duration (top-level only) ──
+  const totalBenchmarkHrs = useMemo(() => {
+    return topLevelRows.reduce((sum, r) => {
+      const planned = r.durationHrs || 0;
+      return sum + Number(planned);
+    }, 0);
+  }, [topLevelRows]);
+
+  const totalActualHrs = useMemo(() => {
+    return topLevelRows.reduce((sum, r) => {
+      const pStart = r.actualStart ? new Date(r.actualStart) : null;
+      const pStop = r.actualStop ? new Date(r.actualStop) : null;
+      if (pStart && pStop && !isNaN(pStart) && !isNaN(pStop)) {
+        return sum + (pStop.getTime() - pStart.getTime()) / (1000 * 60 * 60);
+      }
+      if (r.actualElapsedHrs) return sum + Math.abs(Number(r.actualElapsedHrs));
+      return sum;
+    }, 0);
+  }, [topLevelRows]);
+
+  const totalBenchmarkRounded = Math.round(totalBenchmarkHrs * 100) / 100;
+  const totalActualRounded = Math.round(totalActualHrs * 100) / 100;
+
+  const fmtHrMin = (hrs) => {
+    if (hrs === null || hrs === undefined || isNaN(hrs)) return "—";
+    const totalMinutes = Math.round(Math.abs(hrs) * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    const sign = hrs < 0 ? "-" : "";
+    if (h === 0) return `${sign}${m}m`;
+    if (m === 0) return `${sign}${h}h`;
+    return `${sign}${h}h ${m}m`;
+  };
+
+  // ── Efficiency ──
+  const efficiencyPercent =
+    totalBenchmarkRounded > 0
+      ? Math.round(
+          ((totalActualRounded - totalBenchmarkRounded) /
+            totalBenchmarkRounded) *
+            100,
+        )
+      : 0;
+  const isAhead = efficiencyPercent < 0;
+  const isOnTime = efficiencyPercent === 0;
+
+  // ── Auto-suggest: Time Efficiency ──
+  const suggestTimeRating = () => {
+    if (
+      !totalBenchmarkRounded ||
+      totalBenchmarkRounded <= 0 ||
+      !totalActualRounded
+    )
+      return 5;
+    const ratio = totalActualRounded / totalBenchmarkRounded;
+    if (ratio <= 0.8) return 10;
+    if (ratio <= 0.9) return 9;
+    if (ratio <= 1.0) return 8;
+    if (ratio <= 1.1) return 7;
+    if (ratio <= 1.2) return 6;
+    if (ratio <= 1.4) return 5;
+    if (ratio <= 1.6) return 4;
+    if (ratio <= 1.8) return 3;
+    if (ratio <= 2.0) return 2;
+    return 1;
+  };
+
+  // ── Auto-suggest: Fulfillment (avg of resource averages) ──
+  const suggestFulfillmentRating = () => {
+    const rated = resourceStats.filter((s) => s.ratedCount > 0);
+    if (rated.length === 0) return 5;
+    const avg =
+      rated.reduce((sum, s) => sum + s.avgFulfillment, 0) / rated.length;
+    return Math.round(avg);
+  };
+
+  // ── State ──
+  const [timeRating, setTimeRating] = useState(
+    readOnly && savedFeedback
+      ? savedFeedback.timeEfficiencyRating || 0
+      : suggestTimeRating(),
+  );
+  const [fulfillmentRating, setFulfillmentRating] = useState(
+    readOnly && savedFeedback
+      ? savedFeedback.fulfillmentRating || 0
+      : suggestFulfillmentRating(),
+  );
+  const [innovationRating, setInnovationRating] = useState(
+    readOnly && savedFeedback ? savedFeedback.innovationRating || 0 : 0,
+  );
+  const [hoverTime, setHoverTime] = useState(0);
+  const [hoverFulfillment, setHoverFulfillment] = useState(0);
+  const [hoverInnovation, setHoverInnovation] = useState(0);
+
+  const [timeComments, setTimeComments] = useState(
+    readOnly && savedFeedback ? savedFeedback.timeEfficiencyComments || "" : "",
+  );
+  const [fulfillmentComments, setFulfillmentComments] = useState(
+    readOnly && savedFeedback ? savedFeedback.fulfillmentComments || "" : "",
+  );
+  const [innovationComments, setInnovationComments] = useState(
+    readOnly && savedFeedback ? savedFeedback.innovationComments || "" : "",
+  );
+  const [overallComments, setOverallComments] = useState(
+    readOnly && savedFeedback ? savedFeedback.overallComments || "" : "",
+  );
+  const [touched, setTouched] = useState(false);
+  // ── Per-resource project-level ratings ──
+  const [resourceRatings, setResourceRatings] = useState(() => {
+    const initial = {};
+
+    if (readOnly && savedFeedback?.resourceRatings) {
+      // Load from saved feedback
+      savedFeedback.resourceRatings.forEach((r) => {
+        initial[r.userId] = {
+          rating: r.rating || 0,
+          comments: r.comments || "",
+        };
+      });
+      // Fill any missing resources
+      resourceStats.forEach((s) => {
+        if (!initial[s.userId]) {
+          initial[s.userId] = { rating: 0, comments: "" };
+        }
+      });
+    } else {
+      // Editable mode — suggest from task averages
+      resourceStats.forEach((s) => {
+        const overallAvg =
+          s.ratedCount > 0
+            ? Math.round(
+                ((s.avgTime + s.avgFulfillment + s.avgInnovation) / 3) * 10,
+              ) / 10
+            : 0;
+        initial[s.userId] = {
+          rating: overallAvg > 0 ? Math.round(overallAvg) : 0,
+          comments: "",
+        };
+      });
+    }
+
+    return initial;
+  });
+
+  const [resourceHovers, setResourceHovers] = useState({});
+  const allResourcesRated = resourceStats.every(
+    (s) => resourceRatings[s.userId]?.rating > 0,
+  );
+
+  const isValid =
+    timeRating > 0 &&
+    fulfillmentRating > 0 &&
+    innovationRating > 0 &&
+    allResourcesRated &&
+    overallComments.trim().length >= 5;
+  // ── Labels ──
+  const timeLabels = {
+    1: "Very Poor — Project took 2x+ longer than planned",
+    2: "Poor — Significant project delay",
+    3: "Below Average — Notable time overrun",
+    4: "Slightly Below — Moderate delays",
+    5: "Average — Some delays across tasks",
+    6: "Slightly Above — Minor delays overall",
+    7: "Good — Most tasks on time",
+    8: "Very Good — Project completed on time",
+    9: "Excellent — Ahead of schedule",
+    10: "Outstanding — Well ahead of schedule",
+  };
+
+  const fulfillmentLabels = {
+    1: "Unacceptable — Major quality failures across team",
+    2: "Very Poor — Extensive rework needed",
+    3: "Poor — Significant quality issues",
+    4: "Below Average — Notable gaps",
+    5: "Average — Acceptable overall",
+    6: "Slightly Above — Minor issues",
+    7: "Good — Meets most expectations",
+    8: "Very Good — Meets all expectations",
+    9: "Excellent — Exceeds expectations",
+    10: "Outstanding — Exceptional quality across all tasks",
+  };
+
+  const innovationLabels = {
+    1: "No Innovation — Routine execution only",
+    2: "Minimal — Very little creative input",
+    3: "Below Average — Standard approach",
+    4: "Slightly Below — Some effort but conventional",
+    5: "Average — Standard with minor improvements",
+    6: "Slightly Above — Some creative solutions",
+    7: "Good — Noticeable innovative thinking",
+    8: "Very Good — Creative problem-solving",
+    9: "Excellent — Significant innovation",
+    10: "Outstanding — Exceptional creativity",
+  };
+
+  const handleSubmit = async () => {
+    setTouched(true);
+    if (!isValid) return;
+    await onConfirm({
+      timeEfficiencyRating: timeRating,
+      timeEfficiencyComments: timeComments.trim(),
+      fulfillmentRating,
+      fulfillmentComments: fulfillmentComments.trim(),
+      innovationRating,
+      innovationComments: innovationComments.trim(),
+      overallComments: overallComments.trim(),
+      resourceRatings: resourceStats.map((s) => ({
+        userId: s.userId,
+        name: s.name,
+        rating: resourceRatings[s.userId]?.rating || 0,
+        comments: (resourceRatings[s.userId]?.comments || "").trim(),
+        avgTimeFromTasks: s.avgTime,
+        avgFulfillmentFromTasks: s.avgFulfillment,
+        avgInnovationFromTasks: s.avgInnovation,
+      })),
+    });
+  };
+  // ── Rating color helper ──
+  const ratingColor = (val) => {
+    if (val <= 0) return { bg: "#F1F5F9", color: "#94A3B8", border: "#E2E8F0" };
+    if (val <= 3) return { bg: "#FEE2E2", color: "#DC2626", border: "#FCA5A5" };
+    if (val <= 5) return { bg: "#FEF3C7", color: "#B45309", border: "#FCD34D" };
+    if (val <= 7) return { bg: "#DBEAFE", color: "#1D4ED8", border: "#93C5FD" };
+    return { bg: "#DCFCE7", color: "#15803D", border: "#86EFAC" };
+  };
+
+  // ── Unrated task count ──
+  const unratedCount = topLevelRows.filter(
+    (r) =>
+      !r.timeEfficiencyRating || !r.fulfillmentRating || !r.innovationRating,
+  ).length;
+  const finishedCount = topLevelRows.filter(
+    (r) =>
+      String(r.status || "")
+        .toLowerCase()
+        .trim() === "finished",
+  ).length;
+
+  return (
+    <div
+      onClick={(e) =>
+        e.target === e.currentTarget && !isSubmitting && onClose()
+      }
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          width: "100%",
+          maxWidth: 720,
+          maxHeight: "92vh",
+          fontFamily: "Sora,sans-serif",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* ── Header ── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "16px 20px",
+            borderBottom: "1px solid #E2E8F0",
+            background: readOnly ? "#EDE9FE" : "#FEF2F2",
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: readOnly ? "#DDD6FE" : "#FEE2E2",
+              color: readOnly ? "#7C3AED" : "#DC2626",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {readOnly ? (
+              <Star size={20} strokeWidth={2} fill="#7C3AED" />
+            ) : (
+              <XCircle size={20} strokeWidth={2} />
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
+              {readOnly ? "Project Feedback" : "Close Project"}
+            </div>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: "#64748B",
+                marginTop: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {project || "Untitled Project"}
+            </div>
+          </div>
+
+          {readOnly && (
+            <span
+              style={{
+                padding: "3px 10px",
+                borderRadius: 999,
+                fontSize: 10,
+                fontWeight: 700,
+                background: "#EDE9FE",
+                color: "#7C3AED",
+                border: "1px solid #DDD6FE",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Read Only
+            </span>
+          )}
+
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              color: "#94A3B8",
+              padding: 4,
+              opacity: isSubmitting ? 0.5 : 1,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* ── Scrollable Body ── */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
+          {/* Warning banner */}
+          {!readOnly && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+                padding: 10,
+                background: "#FEF2F2",
+                border: "1px solid #FCA5A5",
+                borderRadius: 8,
+                marginBottom: 18,
+              }}
+            >
+              <AlertOctagon
+                size={16}
+                color="#DC2626"
+                style={{ flexShrink: 0, marginTop: 1 }}
+              />
+              <div
+                style={{ fontSize: 11.5, color: "#7F1D1D", lineHeight: 1.5 }}
+              >
+                This will permanently <strong>close</strong> the project. All
+                tasks will be finalized. This action cannot be undone.
+              </div>
+            </div>
+          )}
+
+          {/* Unrated tasks warning */}
+          {unratedCount > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+                padding: 10,
+                background: "#FFFBEB",
+                border: "1px solid #FCD34D",
+                borderRadius: 8,
+                marginBottom: 18,
+              }}
+            >
+              <AlertTriangle
+                size={16}
+                color="#B45309"
+                style={{ flexShrink: 0, marginTop: 1 }}
+              />
+              <div
+                style={{ fontSize: 11.5, color: "#92400E", lineHeight: 1.5 }}
+              >
+                <strong>{unratedCount}</strong> of {topLevelRows.length}{" "}
+                top-level task{topLevelRows.length !== 1 ? "s" : ""} have not
+                been rated yet. ({finishedCount} finished,{" "}
+                {topLevelRows.length - finishedCount} remaining). Resource
+                averages below may be incomplete.
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════
+              SECTION 0: PER-RESOURCE AVERAGE RATINGS
+             ═══════════════════════════════════════════ */}
+          {false && (
+            <div
+              style={{
+                border: "1px solid #E2E8F0",
+                borderRadius: 10,
+                padding: 16,
+                marginBottom: 18,
+                background: "#FAFBFC",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 7,
+                    background: "#DBEAFE",
+                    color: "#1D4ED8",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Users size={14} />
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 12.5,
+                      color: "#0F172A",
+                    }}
+                  >
+                    Resource Performance Summary
+                  </div>
+                  <div style={{ fontSize: 10.5, color: "#64748B" }}>
+                    Average ratings per resource from individual task feedback
+                  </div>
+                </div>
+              </div>
+
+              {resourceStats.length === 0 ? (
+                <div
+                  style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    color: "#94A3B8",
+                    fontSize: 12,
+                  }}
+                >
+                  No resources assigned to tasks.
+                </div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 11.5,
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ background: "#F8FAFC" }}>
+                        {[
+                          "Resource",
+                          "Tasks",
+                          "Rated",
+                          "Avg Time",
+                          "Avg Fulfillment",
+                          "Avg Innovation",
+                          "Overall Avg",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "8px 10px",
+                              textAlign: h === "Resource" ? "left" : "center",
+                              fontWeight: 600,
+                              color: "#64748B",
+                              fontSize: 10,
+                              letterSpacing: "0.4px",
+                              textTransform: "uppercase",
+                              borderBottom: "1px solid #E2E8F0",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resourceStats.map((s) => {
+                        const overallAvg =
+                          s.ratedCount > 0
+                            ? Math.round(
+                                ((s.avgTime +
+                                  s.avgFulfillment +
+                                  s.avgInnovation) /
+                                  3) *
+                                  10,
+                              ) / 10
+                            : 0;
+                        const oc = ratingColor(overallAvg);
+
+                        return (
+                          <tr
+                            key={s.userId}
+                            style={{ borderBottom: "1px solid #F1F5F9" }}
+                          >
+                            <td
+                              style={{
+                                padding: "8px 10px",
+                                fontWeight: 600,
+                                color: "#0F172A",
+                                maxWidth: 160,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <div>{s.name}</div>
+                              <div
+                                style={{
+                                  fontSize: 10,
+                                  color: "#94A3B8",
+                                  fontWeight: 400,
+                                  fontFamily: "'JetBrains Mono',monospace",
+                                }}
+                              >
+                                {s.userId}
+                              </div>
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px 10px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {s.taskCount}
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px 10px",
+                                textAlign: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color:
+                                    s.ratedCount === s.taskCount
+                                      ? "#15803D"
+                                      : "#B45309",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {s.ratedCount}/{s.taskCount}
+                              </span>
+                            </td>
+                            {[s.avgTime, s.avgFulfillment, s.avgInnovation].map(
+                              (val, i) => {
+                                const c = ratingColor(val);
+                                return (
+                                  <td
+                                    key={i}
+                                    style={{
+                                      padding: "8px 10px",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: "inline-block",
+                                        padding: "2px 8px",
+                                        borderRadius: 999,
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        background: c.bg,
+                                        color: c.color,
+                                        border: `1px solid ${c.border}`,
+                                        fontFamily:
+                                          "'JetBrains Mono',monospace",
+                                      }}
+                                    >
+                                      {val > 0 ? val.toFixed(1) : "—"}
+                                    </span>
+                                  </td>
+                                );
+                              },
+                            )}
+                            <td
+                              style={{
+                                padding: "8px 10px",
+                                textAlign: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "3px 10px",
+                                  borderRadius: 999,
+                                  fontSize: 12,
+                                  fontWeight: 800,
+                                  background: oc.bg,
+                                  color: oc.color,
+                                  border: `1.5px solid ${oc.border}`,
+                                  fontFamily: "'JetBrains Mono',monospace",
+                                }}
+                              >
+                                {overallAvg > 0 ? overallAvg.toFixed(1) : "—"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+          {/* ═══════════════════════════════════════════
+    SECTION 0.5: PER-RESOURCE PROJECT RATINGS
+   ═══════════════════════════════════════════ */}
+          {resourceStats.length > 0 && (
+            <div
+              style={{
+                border: "1px solid #E2E8F0",
+                borderRadius: 10,
+                padding: 16,
+                marginBottom: 18,
+                background: "#FAFBFC",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 7,
+                    background: "#FCE7F3",
+                    color: "#BE185D",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Star size={14} />
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 12.5,
+                      color: "#0F172A",
+                    }}
+                  >
+                    Rate Each Resource
+                    <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+                  </div>
+                  <div style={{ fontSize: 10.5, color: "#64748B" }}>
+                    Based on the task-level averages above, give a final
+                    project-level rating to each resource
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
+                {resourceStats.map((s) => {
+                  const overallAvg =
+                    s.ratedCount > 0
+                      ? Math.round(
+                          ((s.avgTime + s.avgFulfillment + s.avgInnovation) /
+                            3) *
+                            10,
+                        ) / 10
+                      : 0;
+                  const rc = ratingColor(overallAvg);
+                  const currentRating = resourceRatings[s.userId]?.rating || 0;
+                  const currentComments =
+                    resourceRatings[s.userId]?.comments || "";
+                  const currentHover = resourceHovers[s.userId] || 0;
+
+                  return (
+                    <div
+                      key={s.userId}
+                      style={{
+                        border: "1px solid #E2E8F0",
+                        borderRadius: 8,
+                        padding: 14,
+                        background: "#fff",
+                      }}
+                    >
+                      {/* Resource header */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          marginBottom: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "50%",
+                            background: "#DBEAFE",
+                            color: "#1D4ED8",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {(s.name || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: 12.5,
+                              color: "#0F172A",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {s.name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#94A3B8",
+                              fontFamily: "'JetBrains Mono',monospace",
+                            }}
+                          >
+                            {s.userId}
+                          </div>
+                        </div>
+
+                        {/* Task-level avg reference */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "#64748B",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Task Avg:
+                          </span>
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: 999,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: rc.bg,
+                              color: rc.color,
+                              border: `1px solid ${rc.border}`,
+                              fontFamily: "'JetBrains Mono',monospace",
+                            }}
+                          >
+                            {overallAvg > 0 ? overallAvg.toFixed(1) : "—"}
+                          </span>
+                        </div>
+
+                        {/* Mini stats */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 4,
+                            fontSize: 9.5,
+                            color: "#94A3B8",
+                          }}
+                        >
+                          {[
+                            { label: "T", val: s.avgTime },
+                            { label: "F", val: s.avgFulfillment },
+                            { label: "I", val: s.avgInnovation },
+                          ].map(({ label, val }) => (
+                            <span
+                              key={label}
+                              title={
+                                label === "T"
+                                  ? "Avg Time Efficiency"
+                                  : label === "F"
+                                    ? "Avg Fulfillment"
+                                    : "Avg Innovation"
+                              }
+                              style={{
+                                padding: "1px 5px",
+                                borderRadius: 3,
+                                background: "#F1F5F9",
+                                border: "1px solid #E2E8F0",
+                                fontFamily: "'JetBrains Mono',monospace",
+                                fontSize: 9,
+                                fontWeight: 600,
+                                cursor: "help",
+                              }}
+                            >
+                              {label}:{val > 0 ? val.toFixed(1) : "—"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Suggested badge */}
+                      {overallAvg > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            marginBottom: 8,
+                            padding: "4px 10px",
+                            background: "#F0F9FF",
+                            border: "1px solid #BAE6FD",
+                            borderRadius: 6,
+                            fontSize: 10.5,
+                            color: "#0369A1",
+                          }}
+                        >
+                          <Info size={11} />
+                          <span>
+                            Suggested:{" "}
+                            <strong>{Math.round(overallAvg)}/10</strong> based
+                            on task averages ({s.ratedCount}/{s.taskCount}{" "}
+                            rated)
+                          </span>
+                          <button
+                            onClick={() =>
+                              setResourceRatings((prev) => ({
+                                ...prev,
+                                [s.userId]: {
+                                  ...prev[s.userId],
+                                  rating: Math.round(overallAvg),
+                                },
+                              }))
+                            }
+                            style={{
+                              marginLeft: "auto",
+                              background: "#1D4ED8",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 4,
+                              padding: "2px 8px",
+                              fontSize: 10,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Apply
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Rating bar */}
+                      <RatingBar
+                        value={currentRating}
+                        hover={currentHover}
+                        onChange={(val) =>
+                          setResourceRatings((prev) => ({
+                            ...prev,
+                            [s.userId]: { ...prev[s.userId], rating: val },
+                          }))
+                        }
+                        onHover={(val) =>
+                          setResourceHovers((prev) => ({
+                            ...prev,
+                            [s.userId]: val,
+                          }))
+                        }
+                        onLeave={() =>
+                          setResourceHovers((prev) => ({
+                            ...prev,
+                            [s.userId]: 0,
+                          }))
+                        }
+                        disabled={readOnly || isSubmitting}
+                      />
+
+                      {touched && currentRating === 0 && (
+                        <div
+                          style={{
+                            fontSize: 10.5,
+                            color: "#DC2626",
+                            marginTop: 4,
+                          }}
+                        >
+                          ⚠ Please rate {s.name}
+                        </div>
+                      )}
+
+                      {/* Comment */}
+                      <CommentField
+                        label={`Comments for ${s.name}`}
+                        value={currentComments}
+                        onChange={(val) =>
+                          setResourceRatings((prev) => ({
+                            ...prev,
+                            [s.userId]: { ...prev[s.userId], comments: val },
+                          }))
+                        }
+                        placeholder={`Project-level feedback for ${s.name}…`}
+                        readOnly={readOnly}
+                        disabled={readOnly || isSubmitting}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* ═══════════════════════════════════════════
+              SECTION 1: TIME EFFICIENCY
+             ═══════════════════════════════════════════ */}
+          <div
+            style={{
+              border: "1px solid #E2E8F0",
+              borderRadius: 10,
+              padding: 16,
+              marginBottom: 18,
+              background: "#FAFBFC",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "#DBEAFE",
+                  color: "#1D4ED8",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Clock size={14} />
+              </div>
+              <div>
+                <div
+                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
+                >
+                  Project Time Efficiency
+                  <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+                </div>
+                <div style={{ fontSize: 10.5, color: "#64748B" }}>
+                  Overall time efficiency across all top-level tasks (sub-tasks
+                  excluded)
+                </div>
+              </div>
+            </div>
+
+            {/* Duration Comparison */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <div
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  background: "#DBEAFE",
+                  border: "1px solid #93C5FD",
+                  borderRadius: 7,
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9.5,
+                    color: "#1D4ED8",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.3px",
+                    marginBottom: 2,
+                  }}
+                >
+                  Total Benchmark
+                </div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: "#1E40AF",
+                    fontFamily: "'JetBrains Mono',monospace",
+                  }}
+                >
+                  {fmtHrMin(totalBenchmarkRounded)}
+                </div>
+                <div style={{ fontSize: 10, color: "#64748B", marginTop: 2 }}>
+                  {topLevelRows.length} task
+                  {topLevelRows.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  background: isAhead
+                    ? "#DCFCE7"
+                    : isOnTime
+                      ? "#DBEAFE"
+                      : "#FEF3C7",
+                  border: `1px solid ${
+                    isAhead ? "#86EFAC" : isOnTime ? "#93C5FD" : "#FCD34D"
+                  }`,
+                  borderRadius: 7,
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9.5,
+                    color: isAhead
+                      ? "#15803D"
+                      : isOnTime
+                        ? "#1D4ED8"
+                        : "#B45309",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.3px",
+                    marginBottom: 2,
+                  }}
+                >
+                  Total Actual
+                </div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: isAhead
+                      ? "#166534"
+                      : isOnTime
+                        ? "#1E40AF"
+                        : "#92400E",
+                    fontFamily: "'JetBrains Mono',monospace",
+                  }}
+                >
+                  {fmtHrMin(totalActualRounded)}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "8px 12px",
+                  background: isAhead
+                    ? "#DCFCE7"
+                    : isOnTime
+                      ? "#F0F9FF"
+                      : "#FEE2E2",
+                  border: `1px solid ${
+                    isAhead ? "#86EFAC" : isOnTime ? "#BAE6FD" : "#FCA5A5"
+                  }`,
+                  borderRadius: 7,
+                  textAlign: "center",
+                  minWidth: 80,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9.5,
+                    color: "#64748B",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.3px",
+                    marginBottom: 2,
+                  }}
+                >
+                  Variance
+                </div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: isAhead
+                      ? "#15803D"
+                      : isOnTime
+                        ? "#1D4ED8"
+                        : "#DC2626",
+                    fontFamily: "'JetBrains Mono',monospace",
+                  }}
+                >
+                  {isAhead ? "" : isOnTime ? "" : "+"}
+                  {efficiencyPercent}%
+                </div>
+              </div>
+            </div>
+
+            {/* Suggested badge */}
+            {!readOnly && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 8,
+                  padding: "5px 10px",
+                  background: "#F0F9FF",
+                  border: "1px solid #BAE6FD",
+                  borderRadius: 6,
+                  fontSize: 10.5,
+                  color: "#0369A1",
+                }}
+              >
+                <Info size={12} />
+                <span>
+                  Suggested rating: <strong>{suggestTimeRating()}/10</strong>{" "}
+                  based on{" "}
+                  {efficiencyPercent === 0
+                    ? "on-time delivery"
+                    : isAhead
+                      ? `${Math.abs(efficiencyPercent)}% ahead of schedule`
+                      : `${efficiencyPercent}% over planned time`}
+                </span>
+                <button
+                  onClick={() => setTimeRating(suggestTimeRating())}
+                  style={{
+                    marginLeft: "auto",
+                    background: "#1D4ED8",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "2px 8px",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+            <RatingBar
+              value={timeRating}
+              hover={hoverTime}
+              onChange={setTimeRating}
+              onHover={setHoverTime}
+              onLeave={() => setHoverTime(0)}
+              disabled={readOnly || isSubmitting}
+            />
+            <div
+              style={{
+                fontSize: 10.5,
+                color: "#64748B",
+                fontStyle: "italic",
+                marginTop: 6,
+                minHeight: 14,
+              }}
+            >
+              {timeLabels[hoverTime || timeRating] || "Select a rating"}
+            </div>
+            {touched && timeRating === 0 && (
+              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
+                ⚠ Please rate time efficiency
+              </div>
+            )}
+
+            <CommentField
+              label="Time Efficiency Comments"
+              value={timeComments}
+              onChange={setTimeComments}
+              placeholder="Comments on overall project time management…"
+              readOnly={readOnly}
+              disabled={readOnly || isSubmitting}
+            />
+          </div>
+
+          {/* ═══════════════════════════════════════════
+              SECTION 2: LEVEL OF FULFILLMENT
+             ═══════════════════════════════════════════ */}
+          <div
+            style={{
+              border: "1px solid #E2E8F0",
+              borderRadius: 10,
+              padding: 16,
+              marginBottom: 18,
+              background: "#FAFBFC",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "#EDE9FE",
+                  color: "#7C3AED",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ShieldCheck size={14} />
+              </div>
+              <div>
+                <div
+                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
+                >
+                  Project Fulfillment
+                  <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+                </div>
+                <div style={{ fontSize: 10.5, color: "#64748B" }}>
+                  Overall quality and completeness based on per-resource
+                  performance above
+                </div>
+              </div>
+            </div>
+
+            {/* Suggested badge */}
+            {!readOnly && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 8,
+                  padding: "5px 10px",
+                  background: "#F5F3FF",
+                  border: "1px solid #DDD6FE",
+                  borderRadius: 6,
+                  fontSize: 10.5,
+                  color: "#5B21B6",
+                }}
+              >
+                <Info size={12} />
+                <span>
+                  Suggested rating:{" "}
+                  <strong>{suggestFulfillmentRating()}/10</strong> based on
+                  average resource fulfillment scores
+                </span>
+                <button
+                  onClick={() =>
+                    setFulfillmentRating(suggestFulfillmentRating())
+                  }
+                  style={{
+                    marginLeft: "auto",
+                    background: "#7C3AED",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "2px 8px",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+            <RatingBar
+              value={fulfillmentRating}
+              hover={hoverFulfillment}
+              onChange={setFulfillmentRating}
+              onHover={setHoverFulfillment}
+              onLeave={() => setHoverFulfillment(0)}
+              disabled={readOnly || isSubmitting}
+            />
+            <div
+              style={{
+                fontSize: 10.5,
+                color: "#64748B",
+                fontStyle: "italic",
+                marginTop: 6,
+                minHeight: 14,
+              }}
+            >
+              {fulfillmentLabels[hoverFulfillment || fulfillmentRating] ||
+                "Select a rating"}
+            </div>
+            {touched && fulfillmentRating === 0 && (
+              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
+                ⚠ Please rate level of fulfillment
+              </div>
+            )}
+
+            <CommentField
+              label="Fulfillment Comments"
+              value={fulfillmentComments}
+              onChange={setFulfillmentComments}
+              placeholder="Comments on overall project quality…"
+              readOnly={readOnly}
+              disabled={readOnly || isSubmitting}
+            />
+          </div>
+
+          {/* ═══════════════════════════════════════════
+              SECTION 3: LEVEL OF INNOVATION
+             ═══════════════════════════════════════════ */}
+          <div
+            style={{
+              border: "1px solid #E2E8F0",
+              borderRadius: 10,
+              padding: 16,
+              marginBottom: 18,
+              background: "#FAFBFC",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "#FEF3C7",
+                  color: "#B45309",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Lightbulb size={14} />
+              </div>
+              <div>
+                <div
+                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
+                >
+                  Project Innovation
+                  <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+                </div>
+                <div style={{ fontSize: 10.5, color: "#64748B" }}>
+                  Overall creative and innovative effort across the project
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 12,
+                padding: "5px 10px",
+                background: "#FFFBEB",
+                border: "1px solid #FDE68A",
+                borderRadius: 6,
+                fontSize: 10.5,
+                color: "#92400E",
+              }}
+            >
+              <Info size={12} />
+              <span>
+                Subjective assessment — rate based on your overall observation
+                of innovation across the project.
+              </span>
+            </div>
+
+            <RatingBar
+              value={innovationRating}
+              hover={hoverInnovation}
+              onChange={setInnovationRating}
+              onHover={setHoverInnovation}
+              onLeave={() => setHoverInnovation(0)}
+              disabled={readOnly || isSubmitting}
+            />
+            <div
+              style={{
+                fontSize: 10.5,
+                color: "#64748B",
+                fontStyle: "italic",
+                marginTop: 6,
+                minHeight: 14,
+              }}
+            >
+              {innovationLabels[hoverInnovation || innovationRating] ||
+                "Select a rating"}
+            </div>
+            {touched && innovationRating === 0 && (
+              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
+                ⚠ Please rate level of innovation
+              </div>
+            )}
+
+            <CommentField
+              label="Innovation Comments"
+              value={innovationComments}
+              onChange={setInnovationComments}
+              placeholder="Comments on creative solutions, novel approaches at project level…"
+              readOnly={readOnly}
+              disabled={readOnly || isSubmitting}
+            />
+          </div>
+
+          {/* ═══════════════════════════════════════════
+              SECTION 4: OVERALL COMMENTS
+             ═══════════════════════════════════════════ */}
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: "#0F172A",
+                marginBottom: 6,
+              }}
+            >
+              Overall Project Feedback
+              <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+            </label>
+            <textarea
+              value={overallComments}
+              onChange={(e) => setOverallComments(e.target.value)}
+              onBlur={() => setTouched(true)}
+              placeholder="Summarize your overall assessment of the project — delivery, quality, team performance…"
+              disabled={readOnly || isSubmitting}
+              rows={4}
+              style={{
+                width: "100%",
+                border: `1px solid ${
+                  touched && overallComments.trim().length < 5
+                    ? "#FCA5A5"
+                    : "#CBD5E1"
+                }`,
+                borderRadius: 8,
+                padding: "10px 12px",
+                fontFamily: "Sora,sans-serif",
+                fontSize: 12.5,
+                outline: "none",
+                boxSizing: "border-box",
+                resize: "vertical",
+                minHeight: 80,
+                lineHeight: 1.5,
+                background: readOnly || isSubmitting ? "#F8FAFC" : "#fff",
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 6,
+                fontSize: 10.5,
+                color:
+                  touched && overallComments.trim().length < 5
+                    ? "#DC2626"
+                    : "#94A3B8",
+              }}
+            >
+              <span>
+                {touched && overallComments.trim().length < 5
+                  ? "⚠ Overall feedback must be at least 5 characters"
+                  : "Summarize your overall project assessment"}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color:
+                    overallComments.trim().length > 0 ? "#475569" : "#CBD5E1",
+                }}
+              >
+                {overallComments.trim().length} chars
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <div
+          style={{
+            padding: "12px 20px 16px",
+            borderTop: "1px solid #E2E8F0",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            background: "#FAFBFC",
+            flexShrink: 0,
+          }}
+        >
+          {readOnly ? (
+            <button
+              onClick={onClose}
+              style={{
+                ...btnStyle,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <X size={13} />
+              Close
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={onClose}
+                disabled={isSubmitting}
+                style={{
+                  ...btnStyle,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  opacity: isSubmitting ? 0.5 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                }}
+              >
+                <X size={13} />
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!isValid || isSubmitting}
+                style={{
+                  ...btnStyle,
+                  background: isValid ? "#DC2626" : "#F1F5F9",
+                  color: isValid ? "#fff" : "#94A3B8",
+                  borderColor: isValid ? "#DC2626" : "#E2E8F0",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  opacity: isSubmitting ? 0.6 : 1,
+                  cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
+                  boxShadow: isValid
+                    ? "0 2px 6px rgba(220,38,38,0.25)"
+                    : "none",
+                }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2
+                      size={14}
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
+                    Closing...
+                  </>
+                ) : (
+                  <>
+                    <XCircle size={14} />
+                    Close Project
                   </>
                 )}
               </button>
@@ -5579,6 +7488,8 @@ function ProjectEditor({
   const toastIdRef = useRef(0);
   const fileInputRef = useRef();
   const groupMenuRef = useRef();
+  const [closeProjectOpen, setCloseProjectOpen] = useState(false);
+  const [isClosingProject, setIsClosingProject] = useState(false);
 
   //   const showToast = useCallback((kind, title, msg, dur = 3800) => {
   //     const id = ++toastIdRef.current;
@@ -5662,7 +7573,15 @@ function ProjectEditor({
     [showToast],
   );
   const handleFeedbackSubmit = useCallback(
-    async ({ timeEfficiencyRating, fulfillmentRating, comments }) => {
+    async ({
+      timeEfficiencyRating,
+      timeEfficiencyComments,
+      fulfillmentRating,
+      fulfillmentComments,
+      innovationRating,
+      innovationComments,
+      comments,
+    }) => {
       if (!feedbackRow) return;
 
       setIsFeedbackSubmitting(true);
@@ -5671,7 +7590,11 @@ function ProjectEditor({
           ...feedbackRow,
           status: "Finished",
           timeEfficiencyRating,
+          timeEfficiencyComments,
           fulfillmentRating,
+          fulfillmentComments,
+          innovationRating,
+          innovationComments,
           feedbackComments: comments,
         };
 
@@ -5681,10 +7604,17 @@ function ProjectEditor({
           prev.map((r) => (r.id === feedbackRow.id ? updatedActivity : r)),
         );
 
+        const avg =
+          Math.round(
+            ((timeEfficiencyRating + fulfillmentRating + innovationRating) /
+              3) *
+              10,
+          ) / 10;
+
         showToast(
           "success",
           "Task Finished ⭐",
-          `"${feedbackRow.task || "Task"}" — Time: ${timeEfficiencyRating}/10, Quality: ${fulfillmentRating}/10`,
+          `"${feedbackRow.task || "Task"}" — Avg: ${avg}/10 (Time: ${timeEfficiencyRating}, Quality: ${fulfillmentRating}, Innovation: ${innovationRating})`,
         );
 
         setFeedbackRow(null);
@@ -5739,9 +7669,41 @@ function ProjectEditor({
       groups,
       rows,
       moduleRegistry, // ← New field
+      projectUserRatings: [], // ← New field[]
       status: draft.status === "published" ? "published" : "draft",
     }),
     [draft, project, po, site, groups, rows, moduleRegistry],
+  );
+  const handleCloseProject = useCallback(
+    async (feedback) => {
+      setIsClosingProject(true);
+      try {
+        const payload = {
+          ...buildProjectData(),
+          status: "closed",
+          projectFeedback: feedback,
+          timeEfficiencyRating: feedback.timeEfficiencyRating,
+          timeEfficiencyComments: feedback.timeEfficiencyComments,
+          fulfillmentRating: feedback.fulfillmentRating,
+          fulfillmentComments: feedback.fulfillmentComments,
+          innovationRating: feedback.innovationRating,
+          innovationComments: feedback.innovationComments,
+          overallComments: feedback.overallComments,
+          projectUserRatings: feedback.resourceRatings || [],
+          closedAt: new Date().toISOString(),
+        };
+
+        await onPublish(payload);
+
+        setCloseProjectOpen(false);
+      } catch (err) {
+        console.error("Close project failed:", err);
+        showToast("error", "Close failed", err.message);
+      } finally {
+        setIsClosingProject(false);
+      }
+    },
+    [buildProjectData, onPublish, showToast],
   );
   const handleSaveDraft = useCallback(async () => {
     const data = buildProjectData();
@@ -6300,7 +8262,17 @@ function ProjectEditor({
   const assigned = rows.filter((r) => r.resource).length;
   const unassigned = total - assigned;
   const totalComments = rows.reduce((s, r) => s + (r.comments || []).length, 0);
-
+  const allTasksDone = useMemo(() => {
+    return (
+      rows.length > 0 &&
+      rows.every((r) => {
+        const s = String(r.status || "")
+          .toLowerCase()
+          .trim();
+        return s === "completed" || s === "finished";
+      })
+    );
+  }, [rows]);
   /* Module groups for section headers */
   const sections = useMemo(() => {
     const seen = new Set();
@@ -6399,25 +8371,83 @@ function ProjectEditor({
               borderRadius: 999,
               fontSize: 10,
               fontWeight: 700,
-              background: motionSubmitted ? "#DCFCE7" : "#FEF3C7",
-              color: motionSubmitted ? "#15803D" : "#B45309",
-              border: `1px solid ${motionSubmitted ? "#86EFAC" : "#FCD34D"}`,
+              background:
+                draft.status === "closed"
+                  ? "#F1F5F9"
+                  : motionSubmitted
+                    ? "#DCFCE7"
+                    : "#FEF3C7",
+              color:
+                draft.status === "closed"
+                  ? "#475569"
+                  : motionSubmitted
+                    ? "#15803D"
+                    : "#B45309",
+              border: `1px solid ${
+                draft.status === "closed"
+                  ? "#CBD5E1"
+                  : motionSubmitted
+                    ? "#86EFAC"
+                    : "#FCD34D"
+              }`,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}
           >
-            {motionSubmitted ? (
+            {draft.status === "closed" ? (
               <>
-                <Rocket size={11} /> {"Published"}
+                <Lock size={11} /> Closed
+              </>
+            ) : motionSubmitted ? (
+              <>
+                <Rocket size={11} /> Published
               </>
             ) : (
               <>
-                <FileText size={11} /> {"Draft"}
+                <FileText size={11} /> Draft
               </>
             )}
           </span>
         </div>
-
+        {/* Close Project button — only for published projects */}
+        {motionSubmitted && draft.status !== "closed" && allTasksDone && (
+          <button
+            onClick={() => setCloseProjectOpen(true)}
+            style={{
+              ...btnStyle,
+              marginLeft: "auto",
+              background: "#FEF2F2",
+              color: "#DC2626",
+              borderColor: "#FCA5A5",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <XCircle size={14} />
+            Close Project
+          </button>
+        )}
+        {draft.status === "closed" && (
+          <button
+            onClick={() => setCloseProjectOpen(true)}
+            style={{
+              ...btnStyle,
+              marginLeft: "auto",
+              background: "#EDE9FE",
+              color: "#7C3AED",
+              borderColor: "#DDD6FE",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Star size={14} fill="#7C3AED" />
+            View Project Feedback
+          </button>
+        )}
         {/* ── Setup Card ── */}
         <div
           style={{
@@ -7205,12 +9235,32 @@ function ProjectEditor({
                 borderRadius: 999,
                 fontSize: 11,
                 fontWeight: 500,
-                background: motionSubmitted ? "#DCFCE7" : "#F1F5F9",
-                color: motionSubmitted ? "#16A34A" : "#64748B",
-                border: `1px solid ${motionSubmitted ? "#86EFAC" : "#E2E8F0"}`,
+                background:
+                  draft.status === "closed"
+                    ? "#F1F5F9"
+                    : motionSubmitted
+                      ? "#DCFCE7"
+                      : "#F1F5F9",
+                color:
+                  draft.status === "closed"
+                    ? "#475569"
+                    : motionSubmitted
+                      ? "#16A34A"
+                      : "#64748B",
+                border: `1px solid ${
+                  draft.status === "closed"
+                    ? "#CBD5E1"
+                    : motionSubmitted
+                      ? "#86EFAC"
+                      : "#E2E8F0"
+                }`,
               }}
             >
-              {motionSubmitted ? (
+              {draft.status === "closed" ? (
+                <>
+                  <Lock size={12} /> Closed — project has been finalized
+                </>
+              ) : motionSubmitted ? (
                 <>
                   <Rocket size={12} /> Published — edit & re-publish to update
                 </>
@@ -7223,19 +9273,33 @@ function ProjectEditor({
           </div>
           <button
             onClick={handleSaveDraft}
-            disabled={isSaving || motionSubmitted}
+            disabled={isSaving || motionSubmitted || draft.status === "closed"}
             title={
-              motionSubmitted
-                ? "Cannot save — project is already published"
-                : ""
+              draft.status === "closed"
+                ? "Cannot save — project is closed"
+                : motionSubmitted
+                  ? "Cannot save — project is already published"
+                  : ""
             }
             style={{
               ...btnStyle,
               height: 36,
-              opacity: isSaving || motionSubmitted ? 0.5 : 1,
-              cursor: isSaving || motionSubmitted ? "not-allowed" : "pointer",
-              background: motionSubmitted ? "#F1F5F9" : "#fff",
-              color: motionSubmitted ? "#94A3B8" : "#475569",
+              opacity:
+                isSaving || motionSubmitted || draft.status === "closed"
+                  ? 0.5
+                  : 1,
+              cursor:
+                isSaving || motionSubmitted || draft.status === "closed"
+                  ? "not-allowed"
+                  : "pointer",
+              background:
+                motionSubmitted || draft.status === "closed"
+                  ? "#F1F5F9"
+                  : "#fff",
+              color:
+                motionSubmitted || draft.status === "closed"
+                  ? "#94A3B8"
+                  : "#475569",
             }}
           >
             {isSaving ? (
@@ -7245,6 +9309,11 @@ function ProjectEditor({
                   style={{ animation: "spin 1s linear infinite" }}
                 />
                 {" Saving..."}
+              </>
+            ) : draft.status === "closed" ? (
+              <>
+                <Lock size={12} />
+                {" Save Draft"}
               </>
             ) : motionSubmitted ? (
               <>
@@ -7260,18 +9329,31 @@ function ProjectEditor({
           </button>
           <button
             onClick={handleSubmitMotion}
-            disabled={isSaving}
+            disabled={isSaving || draft.status === "closed"}
+            title={
+              draft.status === "closed"
+                ? "Cannot submit — project is closed"
+                : ""
+            }
             style={{
               ...btnStyle,
-              background: "#1D4ED8",
-              color: "#fff",
-              borderColor: "#1D4ED8",
+              background: draft.status === "closed" ? "#F1F5F9" : "#1D4ED8",
+              color: draft.status === "closed" ? "#94A3B8" : "#fff",
+              borderColor: draft.status === "closed" ? "#E2E8F0" : "#1D4ED8",
               height: 36,
-              opacity: isSaving ? 0.6 : 1,
-              cursor: isSaving ? "not-allowed" : "pointer",
+              opacity: isSaving || draft.status === "closed" ? 0.5 : 1,
+              cursor:
+                isSaving || draft.status === "closed"
+                  ? "not-allowed"
+                  : "pointer",
             }}
           >
-            {motionSubmitted ? (
+            {draft.status === "closed" ? (
+              <>
+                <Lock size={14} />
+                Project Closed
+              </>
+            ) : motionSubmitted ? (
               <>
                 <RefreshCw size={14} />
                 Update &amp; Re-publish
@@ -7414,6 +9496,17 @@ function ProjectEditor({
           isSubmitting={isFeedbackSubmitting}
         />
       )}
+      {closeProjectOpen && (
+        <ProjectCloseModal
+          project={project}
+          rows={rows}
+          onClose={() => !isClosingProject && setCloseProjectOpen(false)}
+          onConfirm={handleCloseProject}
+          isSubmitting={isClosingProject}
+          readOnly={draft.status === "closed"}
+          savedFeedback={draft.status === "closed" ? draft : null}
+        />
+      )}
       {/* ── Toasts ── */}
       <Toast
         toasts={toasts}
@@ -7441,8 +9534,11 @@ function DraftProjectsList({
   const statusCounts = useMemo(
     () => ({
       all: drafts.length,
-      draft: drafts.filter((d) => d.status !== "published").length,
+      draft: drafts.filter(
+        (d) => d.status !== "published" && d.status !== "closed",
+      ).length,
       published: drafts.filter((d) => d.status === "published").length,
+      closed: drafts.filter((d) => d.status === "closed").length,
     }),
     [drafts],
   );
@@ -7451,9 +9547,13 @@ function DraftProjectsList({
 
     // Status filter
     if (statusFilter === "draft") {
-      result = result.filter((d) => d.status !== "published");
+      result = result.filter(
+        (d) => d.status !== "published" && d.status !== "closed",
+      );
     } else if (statusFilter === "published") {
       result = result.filter((d) => d.status === "published");
+    } else if (statusFilter === "closed") {
+      result = result.filter((d) => d.status === "closed");
     }
 
     // Search filter
@@ -7520,6 +9620,12 @@ function DraftProjectsList({
               label: "Published",
               icon: <Rocket size={11} />,
               color: "#15803D",
+            },
+            {
+              key: "closed",
+              label: "Closed",
+              icon: <Lock size={11} />,
+              color: "#475569",
             },
           ].map((tab) => {
             const active = statusFilter === tab.key;
@@ -7846,7 +9952,9 @@ function DraftProjectsList({
                     ? "No draft projects"
                     : statusFilter === "published"
                       ? "No published projects yet"
-                      : "No projects yet"}
+                      : statusFilter === "closed"
+                        ? "No closed projects"
+                        : "No projects yet"}
               </div>
               <div
                 style={{
@@ -7860,9 +9968,11 @@ function DraftProjectsList({
                   ? "Try a different search term or filter."
                   : statusFilter === "published"
                     ? "Publish a draft project to see it here."
-                    : statusFilter === "draft"
-                      ? "Create a new project to get started."
-                      : "Create your first project to get started."}
+                    : statusFilter === "closed"
+                      ? "Close a published project to see it here."
+                      : statusFilter === "draft"
+                        ? "Create a new project to get started."
+                        : "Create your first project to get started."}
               </div>
               {!search && statusFilter !== "published" && (
                 <button
@@ -7950,14 +10060,34 @@ function DraftProjectsList({
                           fontSize: 10,
                           fontWeight: 700,
                           background:
-                            status === "published" ? "#DCFCE7" : "#FEF3C7",
-                          color: status === "published" ? "#15803D" : "#B45309",
-                          border: `1px solid ${status === "published" ? "#86EFAC" : "#FCD34D"}`,
+                            status === "closed"
+                              ? "#F1F5F9"
+                              : status === "published"
+                                ? "#DCFCE7"
+                                : "#FEF3C7",
+                          color:
+                            status === "closed"
+                              ? "#475569"
+                              : status === "published"
+                                ? "#15803D"
+                                : "#B45309",
+                          border: `1px solid ${
+                            status === "closed"
+                              ? "#CBD5E1"
+                              : status === "published"
+                                ? "#86EFAC"
+                                : "#FCD34D"
+                          }`,
                           textTransform: "uppercase",
                           letterSpacing: "0.5px",
                         }}
                       >
-                        {status === "published" ? (
+                        {status === "closed" ? (
+                          <>
+                            <Lock size={11} />
+                            Closed
+                          </>
+                        ) : status === "published" ? (
                           <>
                             <Rocket size={11} />
                             Published
@@ -7969,7 +10099,7 @@ function DraftProjectsList({
                           </>
                         )}
                       </span>
-                      {d.status !== "published" && (
+                      {d.status !== "published" && d.status !== "closed" && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -8461,13 +10591,18 @@ export default function AssignerModule() {
   const handlePublish = useCallback(
     async (projectData) => {
       const isUpdate = projectData.status === "published";
+      const isClose = projectData.status === "closed";
 
       const payload = {
         ...projectData,
-        status: "published",
-        publishedAt: isUpdate
-          ? projectData.publishedAt
-          : new Date().toISOString(),
+        status: isClose ? "closed" : "published",
+        publishedAt:
+          isUpdate || isClose
+            ? projectData.publishedAt
+            : new Date().toISOString(),
+        closedAt: isClose
+          ? projectData.closedAt || new Date().toISOString()
+          : projectData.closedAt || null,
         updatedAt: new Date().toISOString(),
       };
 
@@ -8488,18 +10623,37 @@ export default function AssignerModule() {
           prev && prev.id === projectData.id ? null : prev,
         );
 
-        showToast(
-          "success",
-          isUpdate ? "Project Updated 🔄" : "Project Published 🚀",
-          `${finalData.project || "Project"} ${isUpdate ? "has been updated" : "is now live"}.`,
-        );
+        if (isClose) {
+          showToast(
+            "success",
+            "Project Closed 🔒",
+            `"${finalData.project || "Project"}" has been closed with feedback.`,
+          );
+        } else if (isUpdate) {
+          showToast(
+            "success",
+            "Project Updated 🔄",
+            `"${finalData.project || "Project"}" has been updated.`,
+          );
+        } else {
+          showToast(
+            "success",
+            "Project Published 🚀",
+            `"${finalData.project || "Project"}" is now live.`,
+          );
+        }
+
         setTab("drafts");
         setCurrentProjectId(null);
       } catch (err) {
-        console.error("Publish failed:", err);
+        console.error(isClose ? "Close failed:" : "Publish failed:", err);
         showToast(
           "error",
-          isUpdate ? "Update failed" : "Publish failed",
+          isClose
+            ? "Close failed"
+            : isUpdate
+              ? "Update failed"
+              : "Publish failed",
           err.message,
         );
         throw err;
@@ -8509,7 +10663,6 @@ export default function AssignerModule() {
     },
     [showToast],
   );
-
   const handleBackToList = useCallback(() => {
     setTab("drafts");
     setCurrentProjectId(null);
@@ -8674,7 +10827,9 @@ export default function AssignerModule() {
                 }}
               >
                 <FolderOpen size={14} /> Drafts
-                {drafts.filter((d) => d.status !== "published").length > 0 && (
+                {drafts.filter(
+                  (d) => d.status !== "published" && d.status !== "closed",
+                ).length > 0 && (
                   <span
                     style={{
                       background:
@@ -8686,7 +10841,12 @@ export default function AssignerModule() {
                       fontWeight: 700,
                     }}
                   >
-                    {drafts.filter((d) => d.status !== "published").length}
+                    {
+                      drafts.filter(
+                        (d) =>
+                          d.status !== "published" && d.status !== "closed",
+                      ).length
+                    }
                   </span>
                 )}
               </button>
