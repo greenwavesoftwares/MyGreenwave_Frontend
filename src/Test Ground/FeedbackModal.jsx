@@ -280,16 +280,14 @@ function fmtActual(val) {
   if (!val) return "—";
   const d = new Date(val);
   if (isNaN(d)) return "—";
-  return (
-    d.toLocaleString("en-GB", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }) + " IST"
-  );
+  return d.toLocaleString("en-GB", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /* ─── Main FeedbackModal Component ─── */
