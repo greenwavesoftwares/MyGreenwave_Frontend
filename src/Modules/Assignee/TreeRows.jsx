@@ -481,7 +481,6 @@ export default function TreeRows({
                 updateStatusOfActivity={updateStatusOfActivity}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
-                openFeedbackRow={openFeedbackRow}
               />
             ))}
         </>
