@@ -3,7 +3,7 @@ import "./ProjectsInfo.css";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import dayjs from "dayjs";
 import StatusChip from "./StatusChip";
-import { Rocket,
+import { Lock, Rocket,
 } from "lucide-react";
 /* =========================
    ICONS
@@ -98,21 +98,27 @@ const ErrorIcon = (p) => (
     <path d="M12 8v4M12 16h.01" strokeLinecap="round" />
   </svg>
 );
-
+const LockIcon = (props) => (
+  <Lock
+    size={14}
+    strokeWidth={2}
+    {...props}
+  />
+);
 /* =========================
    HELPERS
 ========================= */
 
 function normalizeStatus(status) {
   const s = (status || "").toLowerCase();
-  if (s === "draft") return "draft";
-  return "published";
+  return s;
 }
 
 const TAB_DEFS = [
   { key: "all", label: "All Projects", icon: BriefcaseIcon },
   
   { key: "published", label: "Published", icon: RocketIcon  },
+  { key:"closed", label: "Closed",  icon: LockIcon},
 ];
 
 export default function ProjectsInfo({ projectSelection }) {
@@ -141,9 +147,9 @@ export default function ProjectsInfo({ projectSelection }) {
   }, []);
 
   const counts = useMemo(() => {
-    const draft = projects.filter((p) => normalizeStatus(p.projectStatus) === "draft").length;
     const published = projects.filter((p) => normalizeStatus(p.projectStatus) === "published").length;
-    return { all: projects.length, draft, published };
+    const closed = projects.filter((p) => normalizeStatus(p.projectStatus) === "closed").length;
+    return { all: projects.length, published, closed };
   }, [projects]);
 
   const visibleProjects = useMemo(() => {
@@ -151,6 +157,8 @@ export default function ProjectsInfo({ projectSelection }) {
     if (activeTab !== "all") {
       list = list.filter((p) => normalizeStatus(p.projectStatus) === activeTab);
     }
+    console.log("active tab::",activeTab)
+    console.log("List:",list)
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((p) =>

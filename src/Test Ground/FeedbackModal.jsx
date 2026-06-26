@@ -299,9 +299,10 @@ export default function FeedbackModal({
   onConfirm,
   isSubmitting = false,
 }) {
+  console.log("Feedback row::::",row)
   // ── Determine mode ──
   const isFinished =
-    String(row.status || "")
+    String(row.status || row.activityStatus || "")
       .toLowerCase()
       .trim() === "finished";
   const readOnly = isFinished;
@@ -535,7 +536,7 @@ export default function FeedbackModal({
                 whiteSpace: "nowrap",
               }}
             >
-              {row.task || row.module || `Row #${row.id}`}
+              {row.task || row.name || row.module || `Row #${row.id}`}
             </div>
           </div>
 

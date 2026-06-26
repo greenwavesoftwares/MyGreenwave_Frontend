@@ -33,7 +33,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import Badge from "@mui/material/Badge";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StatusChip from "./StatusChip";
-import { Trash2 } from "lucide-react";
+import { Star, Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
 
 
@@ -53,6 +53,7 @@ export default function TreeRows({
   projectId,
   updateStatusOfActivity,
   onOpenCommentBox,
+  onOpenFeedbackForm,
   deleteNode,
 }) {
   console.log("Current user id:", currentUserId);
@@ -180,7 +181,21 @@ export default function TreeRows({
         </button>
       </Tooltip>,
     ],
-
+    "Finished": [
+        <Tooltip key="submit" title="Submit Activity">
+        <button
+          className="icon-button icon-btn--feedback"
+          onClick={() =>
+            onOpenFeedbackForm(node)
+          }
+        >
+          <Star  className="send-icon" size={15}
+              strokeWidth={2}
+               fill={"#7C3AED"}
+             />
+        </button>
+      </Tooltip>,
+      ],
     "Not Ready": [
       <Tooltip key="submit" title="Submit Activity">
         <button
@@ -203,6 +218,7 @@ export default function TreeRows({
           <Trash2 size={14} />
         </button>
       </Tooltip>,
+      
     ],
   };
 
@@ -324,6 +340,7 @@ export default function TreeRows({
                 updateStatusOfActivity={updateStatusOfActivity}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
+                onOpenFeedbackForm={onOpenFeedbackForm}
               />
             ))}
         </>
@@ -464,6 +481,7 @@ export default function TreeRows({
                 updateStatusOfActivity={updateStatusOfActivity}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
+                openFeedbackRow={openFeedbackRow}
               />
             ))}
         </>

@@ -479,6 +479,16 @@
   background: #BBF7D0 !important;
 }
 
+/* Redo / Submit */
+.icon-btn--feedback {
+  color:  #7C3AED !important;
+                border-color: #DDD6FE !important ;
+                background: #EDE9FE !important;
+}
+
+.icon-btn--feedback:hover {
+  background: #c5b8fc !important;
+}
 /* Delete */
 .icon-btn--delete {
   background: #FEF2F2 !important;

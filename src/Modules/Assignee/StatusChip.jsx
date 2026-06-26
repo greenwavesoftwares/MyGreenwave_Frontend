@@ -8,7 +8,8 @@ import {
   CheckCircle2,
   Loader2,
   Rocket,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -84,6 +85,20 @@ const STATUS_CONFIG = {
     color: "#166534",
     border: "#4ADE80",
   },
+ ongoing: {
+  label: "Ongoing",
+  Icon: PlayCircle,
+  bg: "#E8F1FF",
+  color: "#2563EB",
+  border: "#1D4ED8",
+},
+closed: {
+  label: "Closed",
+  Icon: Lock,
+  bg: "#F1F5F9",
+  color: "#475569",
+  border: "#CBD5E1",
+},
  
 };
 

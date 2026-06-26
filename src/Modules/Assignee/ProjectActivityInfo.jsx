@@ -11,6 +11,8 @@ import { getUserData } from "../Login/Encrypt";
 import StatusChip from "./StatusChip";
 import { showToast } from "./toastService";
 import { ArrowLeft } from "lucide-react";
+import FeedbackModal from "../../Test Ground/FeedbackModal";
+import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 const activity = {
   projectId: "PRJ-1001",
   projectName: "Solar Farm Expansion",
@@ -150,7 +152,8 @@ export default function ProjectActivityInfo({ selectedProject, setSelectedProjec
   const [newComment,setNewComment]=useState(null)
   const [allowNewcomment,setAllowNewComment]=useState(true)
   const [commentActivityName,setCommentActivityName]=useState(null)
-  
+  const [openFeedback,setFeedback]=useState(false)
+  const [openFeedbackRow,setOpenFeedbackRow]=useState(null)
   const currentUserId   = getUserData()?.userDetails?.userId;
   const currentUserName = getUserData()?.userDetails?.userName;
 
@@ -269,7 +272,15 @@ const onOpenCommentBox = async(projectId,activityId,moduleId,status,activityName
     setNewComment(null)
     setAllowNewComment(null)
   };
-  
+const onOpenFeedbackForm=(node)=>{
+  console.log("Node:",node)
+  setOpenFeedbackRow(node)
+  setFeedback(true)
+}
+const onCloseFeedbackForm=()=>{
+  setOpenFeedbackRow(null)
+  setFeedback(false)
+}
 const totalActivities = useMemo(
   () => activityInfo?.modules ? countActivities(activityInfo.modules) : 0,
   [activityInfo]
@@ -483,6 +494,7 @@ setExpanded({...expanded,...expandedModules});
                   updateStatusOfActivity={updateStatusOfActivity}
                   onOpenCommentBox={onOpenCommentBox}
                   deleteNode={deleteNode}
+                  onOpenFeedbackForm={onOpenFeedbackForm}
                 />
               ))}
             </TableBody>
@@ -497,7 +509,9 @@ setExpanded({...expanded,...expandedModules});
         open={openCommentDialog}
         onClose={onCloseCommentbox}
         allowNewComment={allowNewcomment} activityName={commentActivityName}   />
-       
+        {openFeedback&&
+       <FeedbackModal  row={openFeedbackRow}  onClose={onCloseFeedbackForm}  onConfirm={() => {}}/>
+        }
     </div>
   );
 }
