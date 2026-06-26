@@ -189,7 +189,7 @@ export default function ProjectsInfo({ projectSelection }) {
         <div className="proj-empty">
           <EmptyIcon />
           <p className="proj-empty-title">No projects yet</p>
-          <p className="proj-empty-sub">Projects you create will appear here.</p>
+          <p className="proj-empty-sub">Projects assigned to you will appear here.</p>
         </div>
       );
     }
