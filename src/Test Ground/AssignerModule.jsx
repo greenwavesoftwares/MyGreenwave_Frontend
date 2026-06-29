@@ -6737,10 +6737,12 @@ const ActivityRow = React.memo(function ActivityRow({
   resources,
   groupResources,
   hasChildren,
+  moduleColor,
   parentRow,
   onUpdate,
   onDelete,
   onAddSub,
+  onAddRowBelow,
   onOpenComments,
   onRedoReject,
   onFeedback, // ← ADD THIS
@@ -6827,18 +6829,20 @@ const ActivityRow = React.memo(function ActivityRow({
   return (
     <tr style={{ transition: "background .12s" }}>
       {/* # */}
-      <td
-        style={{
-          ...tdStyle,
-          textAlign: "center",
-          color: "#94A3B8",
-          fontWeight: 600,
-          width: 44,
-          fontSize: 11,
-        }}
-      >
-        {row.sortOrder === 0 ? idx : ""}
-      </td>
+      {false && (
+        <td
+          style={{
+            ...tdStyle,
+            textAlign: "center",
+            color: "#94A3B8",
+            fontWeight: 600,
+            width: 44,
+            fontSize: 11,
+          }}
+        >
+          {row.sortOrder === 0 ? idx : ""}
+        </td>
+      )}
       {/* Module */}
       <td style={{ ...tdStyle, width: 160 }}>
         {row.module && !row._editingModule ? (
@@ -6851,12 +6855,12 @@ const ActivityRow = React.memo(function ActivityRow({
               alignItems: "center",
               gap: 5,
               padding: "3px 9px",
-              background: "#F0F9FF",
-              color: "#0369A1",
-              border: "1px solid #BAE6FD",
+              background: moduleColor.bg,
+              color: moduleColor.color,
+              border: `1px solid ${moduleColor.border}`,
               borderRadius: 6,
               fontSize: 11,
-              fontWeight: 500,
+              fontWeight: 600,
               maxWidth: 140,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -7326,51 +7330,68 @@ const ActivityRow = React.memo(function ActivityRow({
             gap: 4,
           }}
         >
-          {/* Comments button (always shown) */}
-          <button
-            onClick={() => onOpenComments(row)}
-            title={
-              commentCount > 0
-                ? `${commentCount} comment${commentCount !== 1 ? "s" : ""}`
-                : "Comments"
-            }
-            style={{
-              ...iconBtn,
-              background: commentCount > 0 ? "#EDE9FE" : "transparent",
-              color: commentCount > 0 ? "#7C3AED" : "#94A3B8",
-              borderColor: commentCount > 0 ? "#DDD6FE" : "#E2E8F0",
-              position: "relative",
-              overflow: "visible",
-            }}
-          >
-            <MessageSquare size={13} />
-            {commentCount > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: -6,
-                  right: -6,
-                  minWidth: 16,
-                  height: 16,
-                  padding: "0 4px",
-                  background: "#7C3AED",
-                  color: "#fff",
-                  borderRadius: 999,
-                  fontSize: 9,
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "2px solid #fff",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                  lineHeight: 1,
-                }}
-              >
-                {commentCount > 99 ? "99+" : commentCount}
-              </span>
-            )}
-          </button>
+          {/* ── Add row below (top-level pending only) ── */}
+          {row.sortOrder === 0 && (
+            <button
+              onClick={() => onAddRowBelow(row)}
+              title={`Add row below in "${row.module || "module"}"`}
+              style={{
+                ...iconBtn,
+                color: "#1D4ED8",
+                borderColor: "#93C5FD",
+                background: "#EFF6FF",
+              }}
+            >
+              <Plus size={13} />
+            </button>
+          )}
 
+          {/* Comments button (always shown) */}
+          {commentCount > 0 && (
+            <button
+              onClick={() => onOpenComments(row)}
+              title={
+                commentCount > 0
+                  ? `${commentCount} comment${commentCount !== 1 ? "s" : ""}`
+                  : "Comments"
+              }
+              style={{
+                ...iconBtn,
+                background: commentCount > 0 ? "#EDE9FE" : "transparent",
+                color: commentCount > 0 ? "#7C3AED" : "#94A3B8",
+                borderColor: commentCount > 0 ? "#DDD6FE" : "#E2E8F0",
+                position: "relative",
+                overflow: "visible",
+              }}
+            >
+              <MessageSquare size={13} />
+              {commentCount > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                    minWidth: 16,
+                    height: 16,
+                    padding: "0 4px",
+                    background: "#7C3AED",
+                    color: "#fff",
+                    borderRadius: 999,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "2px solid #fff",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                    lineHeight: 1,
+                  }}
+                >
+                  {commentCount > 99 ? "99+" : commentCount}
+                </span>
+              )}
+            </button>
+          )}
           {/* Add sub-activity (only for pending top-level) */}
           {row.sortOrder === 0 && isRowPending && !isLockedByParent && (
             <button
@@ -7387,7 +7408,7 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* ── NEW: Redo button for completed tasks ── */}
+          {/* Redo button for completed tasks */}
           {isCompleted && (
             <button
               onClick={() => onRedoReject(row)}
@@ -7402,8 +7423,8 @@ const ActivityRow = React.memo(function ActivityRow({
               <RotateCcw size={13} />
             </button>
           )}
-          {/* ── NEW: Feedback button for completed tasks ── */}
-          {/* ── Feedback button for completed OR finished tasks ── */}
+
+          {/* Feedback button for completed OR finished tasks */}
           {(isCompleted || statusLower === "finished") && (
             <button
               onClick={() => onFeedback(row)}
@@ -7421,7 +7442,8 @@ const ActivityRow = React.memo(function ActivityRow({
               />
             </button>
           )}
-          {/* Delete (only for pending) */}
+
+          {/* Delete (only for pending, not locked by parent) */}
           {isRowPending && !isLockedByParent && (
             <button
               onClick={() => onDelete(row)}
@@ -7724,6 +7746,32 @@ function ColumnFilterDropdown({
     </div>
   );
 }
+const MODULE_COLORS = [
+  { bg: "#DBEAFE", color: "#1D4ED8", border: "#93C5FD" }, // Blue
+  { bg: "#DCFCE7", color: "#15803D", border: "#86EFAC" }, // Green
+  { bg: "#EDE9FE", color: "#7C3AED", border: "#DDD6FE" }, // Violet
+  { bg: "#FEF3C7", color: "#B45309", border: "#FCD34D" }, // Amber
+  { bg: "#FCE7F3", color: "#BE185D", border: "#F9A8D4" }, // Pink
+  { bg: "#CCFBF1", color: "#0F766E", border: "#5EEAD4" }, // Teal
+  { bg: "#FEE2E2", color: "#B91C1C", border: "#FCA5A5" }, // Red
+  { bg: "#E0F2FE", color: "#0369A1", border: "#7DD3FC" }, // Sky
+  { bg: "#ECFCCB", color: "#4D7C0F", border: "#BEF264" }, // Lime
+  { bg: "#F3E8FF", color: "#9333EA", border: "#D8B4FE" }, // Purple
+  { bg: "#FFF7ED", color: "#C2410C", border: "#FDBA74" }, // Orange
+  { bg: "#F0FDFA", color: "#115E59", border: "#99F6E4" }, // Emerald
+];
+
+function getModuleColor(moduleName, moduleColorMap) {
+  if (!moduleName)
+    return { bg: "#F1F5F9", color: "#94A3B8", border: "#E2E8F0" };
+  return (
+    moduleColorMap[moduleName] || {
+      bg: "#F1F5F9",
+      color: "#94A3B8",
+      border: "#E2E8F0",
+    }
+  );
+}
 /* ─── Main Assigner Module ─── */
 function ProjectEditor({
   draft,
@@ -7832,6 +7880,19 @@ function ProjectEditor({
     });
 
     return { modules, resourceOpts, statuses };
+  }, [rows]);
+
+  const moduleColorMap = useMemo(() => {
+    const uniqueModules = [
+      ...new Set(rows.filter((r) => r.module).map((r) => r.module)),
+    ];
+
+    const map = {};
+    uniqueModules.forEach((mod, idx) => {
+      map[mod] = MODULE_COLORS[idx % MODULE_COLORS.length];
+    });
+
+    return map;
   }, [rows]);
   // Add this useEffect for diagnostics
   useEffect(() => {
@@ -8154,7 +8215,65 @@ function ProjectEditor({
     };
     setRows((prev) => recomputeChains([...prev, newRow], groupResources));
   }, []);
+  const addRowBelow = useCallback(
+    (referenceRow) => {
+      const name = referenceRow.module || "";
+      const { moduleId, registry: newRegistry } = ensureModuleId(
+        name,
+        moduleRegistry,
+      );
 
+      const newRow = {
+        id: generateRowId(),
+        parentId: null,
+        module: name,
+        moduleId,
+        task: "",
+        resource: "",
+        plannedStart: "",
+        durationHrs: "",
+        plannedStop: "",
+        status: "Pending",
+        comments: [],
+      };
+
+      setModuleRegistry(newRegistry);
+
+      setRows((prev) => {
+        // Find the index of the reference row
+        const refIndex = prev.findIndex((r) => r.id === referenceRow.id);
+
+        // Find the last row in the same "family" (reference + all its descendants)
+        let insertIndex = refIndex + 1;
+        const descendants = new Set([referenceRow.id]);
+
+        for (let i = refIndex + 1; i < prev.length; i++) {
+          if (prev[i].parentId && descendants.has(prev[i].parentId)) {
+            descendants.add(prev[i].id);
+            insertIndex = i + 1;
+          } else if (
+            !prev[i].parentId &&
+            prev[i].module === name &&
+            prev[i].moduleId === moduleId
+          ) {
+            // Still same module top-level rows — keep going
+            break;
+          } else {
+            break;
+          }
+        }
+
+        const updated = [
+          ...prev.slice(0, insertIndex),
+          newRow,
+          ...prev.slice(insertIndex),
+        ];
+
+        return recomputeChains(updated, groupResources);
+      });
+    },
+    [moduleRegistry, groupResources],
+  );
   const updateRow = useCallback(
     (updated, opts = {}) => {
       const { recompute = true } = opts;
@@ -9385,12 +9504,12 @@ function ProjectEditor({
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
                     {[
-                      {
-                        label: "#",
-                        width: 48,
-                        align: "center",
-                        filterKey: null,
-                      },
+                      // {
+                      //   label: "#",
+                      //   width: 48,
+                      //   align: "center",
+                      //   filterKey: null,
+                      // },
                       {
                         label: "MODULE NAME",
                         width: 160,
@@ -9631,45 +9750,56 @@ function ProjectEditor({
                       return (
                         <React.Fragment key={mod || "unnamed"}>
                           {/* ── Section Header (no add button now) ── */}
-                          <tr>
-                            <td
-                              colSpan={9}
-                              style={{
-                                padding: "10px 14px",
-                                background:
-                                  "linear-gradient(180deg,#F4F2EC 0%,#EFEDE6 100%)",
-                                borderTop: "1px solid #E2E8F0",
-                                borderBottom: "1px solid #CBD5E1",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 8,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    background: "#DBEAFE",
-                                    color: "#1D4ED8",
-                                    border: "1px solid #B5D4F4",
-                                    borderRadius: 5,
-                                    padding: "3px 10px",
-                                    fontSize: 10.5,
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {mod || "— unnamed —"}
-                                </span>
-                                <span
-                                  style={{ color: "#94A3B8", fontSize: 10.5 }}
-                                >
-                                  {modCount} {modCount === 1 ? "task" : "tasks"}
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
+                          {false && (
+                            <tr>
+                              {(() => {
+                                const mc = getModuleColor(mod, moduleColorMap);
+                                return (
+                                  <td
+                                    colSpan={9}
+                                    style={{
+                                      padding: "10px 14px",
+                                      background: `linear-gradient(180deg, ${mc.bg}88 0%, ${mc.bg}44 100%)`,
+                                      borderTop: `1px solid ${mc.border}`,
+                                      borderBottom: `1px solid ${mc.border}`,
+                                      borderLeft: `4px solid ${mc.color}`,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          background: mc.bg,
+                                          color: mc.color,
+                                          border: `1px solid ${mc.border}`,
+                                          borderRadius: 5,
+                                          padding: "3px 10px",
+                                          fontSize: 10.5,
+                                          fontWeight: 700,
+                                        }}
+                                      >
+                                        {mod || "— unnamed —"}
+                                      </span>
+                                      <span
+                                        style={{
+                                          color: "#94A3B8",
+                                          fontSize: 10.5,
+                                        }}
+                                      >
+                                        {modCount}{" "}
+                                        {modCount === 1 ? "task" : "tasks"}
+                                      </span>
+                                    </div>
+                                  </td>
+                                );
+                              })()}
+                            </tr>
+                          )}
 
                           {/* ── Activity Rows ── */}
                           {modRows.map((r) => {
@@ -9691,9 +9821,14 @@ function ProjectEditor({
                                     ? rows.find((p) => p.id === r.parentId)
                                     : null
                                 } // ← ADD THIS
+                                moduleColor={getModuleColor(
+                                  r.module,
+                                  moduleColorMap,
+                                )} // ← ADD THIS
                                 onUpdate={updateRow}
                                 onDelete={deleteRow}
                                 onAddSub={addSubActivity}
+                                onAddRowBelow={addRowBelow}
                                 onOpenComments={(row) =>
                                   onOpenCommentBox(
                                     draft.id,
@@ -9708,46 +9843,60 @@ function ProjectEditor({
                           })}
 
                           {/* ── NEW: "Add Row to Module" button (BOTTOM) ── */}
-                          <tr>
-                            <td
-                              colSpan={9}
-                              style={{
-                                padding: "6px 14px 10px",
-                                background: "#FAFBFC",
-                                borderBottom: "1px solid #E2E8F0",
-                              }}
-                            >
-                              <button
-                                onClick={() => addRow(mod)}
+                          {false && (
+                            <tr>
+                              <td
+                                colSpan={9}
                                 style={{
-                                  background: "#fff",
-                                  border: "1px dashed #1D4ED8",
-                                  color: "#1D4ED8",
-                                  borderRadius: 7,
-                                  padding: "6px 14px 6px 12px",
-                                  cursor: "pointer",
-                                  fontSize: 11.5,
-                                  fontFamily: "Sora,sans-serif",
-                                  fontWeight: 600,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                  transition: "all .12s",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = "#EFF6FF";
-                                  e.currentTarget.style.borderStyle = "solid";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = "#fff";
-                                  e.currentTarget.style.borderStyle = "dashed";
+                                  padding: "6px 14px 10px",
+                                  background: "#FAFBFC",
+                                  borderBottom: "1px solid #E2E8F0",
                                 }}
                               >
-                                <Plus size={13} />
-                                Add Task to {mod || "module"}
-                              </button>
-                            </td>
-                          </tr>
+                                {(() => {
+                                  const mc = getModuleColor(
+                                    mod,
+                                    moduleColorMap,
+                                  );
+                                  return (
+                                    <button
+                                      onClick={() => addRow(mod)}
+                                      style={{
+                                        background: "#fff",
+                                        border: `1px dashed ${mc.color}`,
+                                        color: mc.color,
+                                        borderRadius: 7,
+                                        padding: "6px 14px 6px 12px",
+                                        cursor: "pointer",
+                                        fontSize: 11.5,
+                                        fontFamily: "Sora,sans-serif",
+                                        fontWeight: 600,
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                        transition: "all .12s",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background =
+                                          mc.bg;
+                                        e.currentTarget.style.borderStyle =
+                                          "solid";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background =
+                                          "#fff";
+                                        e.currentTarget.style.borderStyle =
+                                          "dashed";
+                                      }}
+                                    >
+                                      <Plus size={13} />
+                                      Add row to {mod || "module"}
+                                    </button>
+                                  );
+                                })()}
+                              </td>
+                            </tr>
+                          )}
                         </React.Fragment>
                       );
                     })
