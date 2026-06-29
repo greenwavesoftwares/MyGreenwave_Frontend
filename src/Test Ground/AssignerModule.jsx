@@ -6737,6 +6737,7 @@ const ActivityRow = React.memo(function ActivityRow({
   resources,
   groupResources,
   hasChildren,
+  parentRow,
   onUpdate,
   onDelete,
   onAddSub,
@@ -6815,6 +6816,14 @@ const ActivityRow = React.memo(function ActivityRow({
     .trim();
   const isCompleted = statusLower === "completed";
   const isRowPending = !row.status || statusLower === "pending";
+  // ── Lock sub-task if parent is not pending ──
+  const isParentNotPending = parentRow
+    ? String(parentRow.status || "pending")
+        .toLowerCase()
+        .trim() !== "pending"
+    : false;
+  const isLockedByParent = !!row.parentId && isParentNotPending;
+  const isLocked = !isPending(row) || isLockedByParent;
   return (
     <tr style={{ transition: "background .12s" }}>
       {/* # */}
@@ -6936,22 +6945,23 @@ const ActivityRow = React.memo(function ActivityRow({
           /> */}
           <input
             value={row.task || ""}
-            onChange={(e) => handleField("task", e.target.value)}
-            placeholder={
-              row.sortOrder > 0
-                ? `Sub-activity (L${row.sortOrder})…`
-                : "Task name…"
+            onChange={(e) => !isLocked && handleField("task", e.target.value)}
+            disabled={isLocked}
+            title={
+              isLocked
+                ? isLockedByParent
+                  ? "Locked — parent task is not pending"
+                  : "Locked — task not pending"
+                : ""
             }
-            disabled={!isPending(row)}
-            title={!isPending(row) ? "Locked — task not pending" : ""}
             style={{
               ...inputStyle,
               height: 28,
               fontSize: 11.5,
               flex: 1,
               minWidth: 0,
-              opacity: !isPending(row) ? 0.65 : 1,
-              cursor: !isPending(row) ? "not-allowed" : "text",
+              opacity: isLocked ? 0.65 : 1,
+              cursor: isLocked ? "not-allowed" : "text",
             }}
           />
         </div>
@@ -6964,7 +6974,7 @@ const ActivityRow = React.memo(function ActivityRow({
             alignItems: "center",
             gap: 8,
             minWidth: 0,
-            opacity: !isPending(row) ? 0.65 : 1,
+            opacity: isLocked ? 0.65 : 1,
           }}
         >
           {res ? (
@@ -6981,11 +6991,17 @@ const ActivityRow = React.memo(function ActivityRow({
             <SearchableDropdown
               value={row.resource || ""}
               onChange={(val) => handleField("resource", val)}
-              disabled={!resources.length || !isPending(row)}
-              title={!isPending(row) ? "Locked — task not pending" : ""}
+              disabled={!resources.length || isLocked}
+              title={
+                isLocked
+                  ? isLockedByParent
+                    ? "Locked — parent task is not pending"
+                    : "Locked — task not pending"
+                  : ""
+              }
               placeholder={
-                !isPending(row)
-                  ? "Locked (not pending)"
+                isLocked
+                  ? "Locked"
                   : resources.length
                     ? "Select resource..."
                     : "Pick group first"
@@ -7118,7 +7134,7 @@ const ActivityRow = React.memo(function ActivityRow({
           )
         ) : // No children: allow user to pick date only if resource assigned AND task is pending
         row.resource ? (
-          isPending(row) ? (
+          !isLocked ? (
             <>
               {isPastStart && (
                 <span
@@ -7181,7 +7197,11 @@ const ActivityRow = React.memo(function ActivityRow({
                 color: "#475569",
                 opacity: 0.9,
               }}
-              title="Locked — task not pending"
+              title={
+                isLockedByParent
+                  ? "Locked — parent task is not pending"
+                  : "Locked — task not pending"
+              }
             >
               {startDisplay || "—"}
             </span>
@@ -7226,8 +7246,14 @@ const ActivityRow = React.memo(function ActivityRow({
             }
             onChange={(e) => handleField("durationHrs", e.target.value)}
             placeholder="—"
-            disabled={!isPending(row)}
-            title={!isPending(row) ? "Locked — task not pending" : ""}
+            disabled={isLocked}
+            title={
+              isLocked
+                ? isLockedByParent
+                  ? "Locked — parent task is not pending"
+                  : "Locked — task not pending"
+                : ""
+            }
             style={{
               ...inputStyle,
               height: 28,
@@ -7235,8 +7261,8 @@ const ActivityRow = React.memo(function ActivityRow({
               fontFamily: "'JetBrains Mono',monospace",
               textAlign: "right",
               width: "100%",
-              opacity: !isPending(row) ? 0.65 : 1,
-              cursor: !isPending(row) ? "not-allowed" : "text",
+              opacity: isLocked ? 0.65 : 1,
+              cursor: isLocked ? "not-allowed" : "text",
             }}
           />
         )}
@@ -7346,7 +7372,7 @@ const ActivityRow = React.memo(function ActivityRow({
           </button>
 
           {/* Add sub-activity (only for pending top-level) */}
-          {row.sortOrder === 0 && isRowPending && (
+          {row.sortOrder === 0 && isRowPending && !isLockedByParent && (
             <button
               onClick={() => onAddSub(row)}
               title="Add sub-activity"
@@ -7396,7 +7422,7 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
           {/* Delete (only for pending) */}
-          {isRowPending && (
+          {isRowPending && !isLockedByParent && (
             <button
               onClick={() => onDelete(row)}
               title="Delete row"
@@ -7430,7 +7456,274 @@ const iconBtn = {
   position: "relative", // ← Added
   overflow: "visible", // ← Added — ensures badge isn't clipped
 };
+function ColumnFilterDropdown({
+  label,
+  options,
+  selected,
+  onChange,
+  type = "multi",
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef(null);
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = options.filter((o) => {
+    const lbl = typeof o === "string" ? o : o.label;
+    return lbl.toLowerCase().includes(search.toLowerCase());
+  });
+
+  const isActive =
+    type === "multi" ? selected.length > 0 : selected.trim() !== "";
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        title={`Filter by ${label}`}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 2,
+          display: "flex",
+          alignItems: "center",
+          color: isActive ? "#1D4ED8" : "#94A3B8",
+          position: "relative",
+        }}
+      >
+        <Filter size={12} />
+        {isActive && (
+          <span
+            style={{
+              position: "absolute",
+              top: -3,
+              right: -3,
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#1D4ED8",
+              border: "1.5px solid #fff",
+            }}
+          />
+        )}
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            marginTop: 4,
+            width: 220,
+            background: "#fff",
+            border: "1px solid #CBD5E1",
+            borderRadius: 8,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            zIndex: 999,
+            fontFamily: "Sora,sans-serif",
+            overflow: "hidden",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "8px 10px",
+              borderBottom: "1px solid #E2E8F0",
+              background: "#F8FAFC",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+              Filter: {label}
+            </span>
+            {isActive && (
+              <button
+                onClick={() => {
+                  onChange(type === "multi" ? [] : "");
+                  setOpen(false);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#EF4444",
+                  cursor: "pointer",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: 0,
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Search */}
+          {type === "multi" && options.length > 5 && (
+            <div
+              style={{ padding: "6px 8px", borderBottom: "1px solid #F1F5F9" }}
+            >
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search…"
+                autoFocus
+                style={{
+                  width: "100%",
+                  height: 28,
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 5,
+                  padding: "0 8px",
+                  fontSize: 11,
+                  fontFamily: "Sora,sans-serif",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Text input for task filter */}
+          {type === "text" && (
+            <div style={{ padding: "8px" }}>
+              <input
+                value={selected}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="Type to filter…"
+                autoFocus
+                style={{
+                  width: "100%",
+                  height: 30,
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 5,
+                  padding: "0 8px",
+                  fontSize: 11.5,
+                  fontFamily: "Sora,sans-serif",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Options list */}
+          {type === "multi" && (
+            <div
+              style={{ maxHeight: 200, overflowY: "auto", padding: "4px 0" }}
+            >
+              {filtered.length === 0 ? (
+                <div
+                  style={{
+                    padding: "12px",
+                    textAlign: "center",
+                    color: "#94A3B8",
+                    fontSize: 11,
+                  }}
+                >
+                  No options
+                </div>
+              ) : (
+                filtered.map((opt) => {
+                  const value = typeof opt === "string" ? opt : opt.value;
+                  const label = typeof opt === "string" ? opt : opt.label;
+                  const checked = selected.includes(value);
+
+                  return (
+                    <div
+                      key={value}
+                      onClick={() => {
+                        onChange(
+                          checked
+                            ? selected.filter((v) => v !== value)
+                            : [...selected, value],
+                        );
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 10px",
+                        cursor: "pointer",
+                        background: checked ? "#F0F9FF" : "transparent",
+                        borderLeft: checked
+                          ? "3px solid #1D4ED8"
+                          : "3px solid transparent",
+                        transition: "background .1s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!checked)
+                          e.currentTarget.style.background = "#F8FAFC";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!checked)
+                          e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: 4,
+                          border: `1.5px solid ${checked ? "#1D4ED8" : "#CBD5E1"}`,
+                          background: checked ? "#1D4ED8" : "#fff",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          color: "#fff",
+                        }}
+                      >
+                        {checked && <Check size={11} strokeWidth={3} />}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          color: "#0F172A",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          fontWeight: checked ? 600 : 400,
+                        }}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* Footer count */}
+          {type === "multi" && selected.length > 0 && (
+            <div
+              style={{
+                padding: "6px 10px",
+                borderTop: "1px solid #E2E8F0",
+                background: "#FAFBFC",
+                fontSize: 10,
+                color: "#64748B",
+                textAlign: "center",
+              }}
+            >
+              {selected.length} selected
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 /* ─── Main Assigner Module ─── */
 function ProjectEditor({
   draft,
@@ -7457,6 +7750,12 @@ function ProjectEditor({
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [groupOpen, setGroupOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [columnFilters, setColumnFilters] = useState({
+    module: [],
+    task: "",
+    resource: [],
+    status: [],
+  });
   const [motionSubmitted, setMotionSubmitted] = useState(
     draft.status === "published",
   );
@@ -7512,6 +7811,28 @@ function ProjectEditor({
     () => getResources(groups, groupResources),
     [groups, groupResources],
   );
+  const filterOptions = useMemo(() => {
+    const modules = [
+      ...new Set(rows.filter((r) => r.module).map((r) => r.module)),
+    ].sort();
+    const resources = [
+      ...new Set(rows.filter((r) => r.resource).map((r) => r.resource)),
+    ].sort();
+    const statuses = [
+      ...new Set(rows.map((r) => r.status || "Pending")),
+    ].sort();
+
+    // Build resource options with names
+    const resourceOpts = resources.map((userId) => {
+      const row = rows.find((r) => r.resource === userId);
+      return {
+        value: userId,
+        label: row?.resourceName || userId,
+      };
+    });
+
+    return { modules, resourceOpts, statuses };
+  }, [rows]);
   // Add this useEffect for diagnostics
   useEffect(() => {
     console.log("=== DROPDOWN DATA CHECK ===");
@@ -8247,40 +8568,100 @@ function ProjectEditor({
   /* Filtered/ordered rows */
   const orderedRows = useMemo(() => flattenOrdered(rows), [rows]);
   const filteredRows = useMemo(() => {
-    if (!searchTerm) return orderedRows;
-    const q = searchTerm.toLowerCase();
-    const matched = new Set();
+    let result = orderedRows;
 
-    orderedRows.forEach((r) => {
-      if (
-        (r.module || "").toLowerCase().includes(q) ||
-        (r.task || "").toLowerCase().includes(q)
-      ) {
-        matched.add(r.id);
+    // ── Global search ──
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      const matched = new Set();
 
-        // Add all ancestors
-        let cur = rows.find((x) => x.id === r.parentId);
-        while (cur) {
-          matched.add(cur.id);
-          cur = rows.find((x) => x.id === cur.parentId);
+      result.forEach((r) => {
+        if (
+          (r.module || "").toLowerCase().includes(q) ||
+          (r.task || "").toLowerCase().includes(q)
+        ) {
+          matched.add(r.id);
+          let cur = rows.find((x) => x.id === r.parentId);
+          while (cur) {
+            matched.add(cur.id);
+            cur = rows.find((x) => x.id === cur.parentId);
+          }
+          const addDescendants = (pid) => {
+            rows
+              .filter((c) => c.parentId === pid)
+              .forEach((c) => {
+                matched.add(c.id);
+                addDescendants(c.id);
+              });
+          };
+          addDescendants(r.id);
+        }
+      });
+
+      result = result.filter((r) => matched.has(r.id));
+    }
+
+    // ── Column filters ──
+    const hasColumnFilter =
+      columnFilters.module.length > 0 ||
+      columnFilters.task.trim() !== "" ||
+      columnFilters.resource.length > 0 ||
+      columnFilters.status.length > 0;
+
+    if (hasColumnFilter) {
+      const matched = new Set();
+
+      result.forEach((r) => {
+        let pass = true;
+
+        // Module filter
+        if (columnFilters.module.length > 0) {
+          if (!columnFilters.module.includes(r.module || "")) pass = false;
         }
 
-        // Add all descendants
-        const addDescendants = (pid) => {
-          rows
-            .filter((c) => c.parentId === pid)
-            .forEach((c) => {
-              matched.add(c.id);
-              addDescendants(c.id);
-            });
-        };
-        addDescendants(r.id);
-      }
-    });
+        // Task filter (text search)
+        if (columnFilters.task.trim()) {
+          const q = columnFilters.task.toLowerCase();
+          if (!(r.task || "").toLowerCase().includes(q)) pass = false;
+        }
 
-    return orderedRows.filter((r) => matched.has(r.id));
-  }, [orderedRows, searchTerm, rows]);
+        // Resource filter
+        if (columnFilters.resource.length > 0) {
+          if (!columnFilters.resource.includes(r.resource || "")) pass = false;
+        }
 
+        // Status filter
+        if (columnFilters.status.length > 0) {
+          const rowStatus = r.status || "Pending";
+          if (!columnFilters.status.includes(rowStatus)) pass = false;
+        }
+
+        if (pass) {
+          matched.add(r.id);
+          // Include ancestors
+          let cur = rows.find((x) => x.id === r.parentId);
+          while (cur) {
+            matched.add(cur.id);
+            cur = rows.find((x) => x.id === cur.parentId);
+          }
+          // Include descendants
+          const addDescendants = (pid) => {
+            rows
+              .filter((c) => c.parentId === pid)
+              .forEach((c) => {
+                matched.add(c.id);
+                addDescendants(c.id);
+              });
+          };
+          addDescendants(r.id);
+        }
+      });
+
+      result = result.filter((r) => matched.has(r.id));
+    }
+
+    return result;
+  }, [orderedRows, searchTerm, columnFilters, rows]);
   /* Stats */
   const total = rows.length;
   const assigned = rows.filter((r) => r.resource).length;
@@ -8944,7 +9325,31 @@ function ProjectEditor({
                     }}
                   />
                 </div>
-
+                {(columnFilters.module.length > 0 ||
+                  columnFilters.task.trim() !== "" ||
+                  columnFilters.resource.length > 0 ||
+                  columnFilters.status.length > 0) && (
+                  <button
+                    onClick={() =>
+                      setColumnFilters({
+                        module: [],
+                        task: "",
+                        resource: [],
+                        status: [],
+                      })
+                    }
+                    style={{
+                      ...btnStyle,
+                      height: 32,
+                      color: "#EF4444",
+                      borderColor: "#FCA5A5",
+                      background: "#FEF2F2",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <X size={13} /> Clear Filters
+                  </button>
+                )}
                 <button
                   onClick={handleExport}
                   style={{ ...btnStyle, height: 32 }}
@@ -8980,15 +9385,60 @@ function ProjectEditor({
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
                     {[
-                      { label: "#", width: 48, align: "center" },
-                      { label: "MODULE NAME", width: 160, align: "left" },
-                      { label: "TASK", width: 240, align: "left" },
-                      { label: "RESOURCE", width: 240, align: "left" }, // ← 145 → 240
-                      { label: "PLANNED START", width: 175, align: "left" },
-                      { label: "DURATION (HRS)", width: 110, align: "right" },
-                      { label: "PLANNED STOP", width: 175, align: "left" },
-                      { label: "STATUS", width: 105, align: "center" },
-                      { label: "ACTIONS", width: 130, align: "center" },
+                      {
+                        label: "#",
+                        width: 48,
+                        align: "center",
+                        filterKey: null,
+                      },
+                      {
+                        label: "MODULE NAME",
+                        width: 160,
+                        align: "left",
+                        filterKey: "module",
+                      },
+                      {
+                        label: "TASK",
+                        width: 240,
+                        align: "left",
+                        filterKey: "task",
+                      },
+                      {
+                        label: "RESOURCE",
+                        width: 240,
+                        align: "left",
+                        filterKey: "resource",
+                      },
+                      {
+                        label: "PLANNED START",
+                        width: 175,
+                        align: "left",
+                        filterKey: null,
+                      },
+                      {
+                        label: "DURATION (HRS)",
+                        width: 110,
+                        align: "right",
+                        filterKey: null,
+                      },
+                      {
+                        label: "PLANNED STOP",
+                        width: 175,
+                        align: "left",
+                        filterKey: null,
+                      },
+                      {
+                        label: "STATUS",
+                        width: 105,
+                        align: "center",
+                        filterKey: "status",
+                      },
+                      {
+                        label: "ACTIONS",
+                        width: 130,
+                        align: "center",
+                        filterKey: null,
+                      },
                     ].map((col) => (
                       <th
                         key={col.label}
@@ -9009,7 +9459,85 @@ function ProjectEditor({
                           zIndex: 10,
                         }}
                       >
-                        {col.label}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            justifyContent:
+                              col.align === "center"
+                                ? "center"
+                                : col.align === "right"
+                                  ? "flex-end"
+                                  : "flex-start",
+                          }}
+                        >
+                          <span>{col.label}</span>
+
+                          {/* Module filter */}
+                          {col.filterKey === "module" && (
+                            <ColumnFilterDropdown
+                              label="Module"
+                              type="multi"
+                              options={filterOptions.modules}
+                              selected={columnFilters.module}
+                              onChange={(val) =>
+                                setColumnFilters((prev) => ({
+                                  ...prev,
+                                  module: val,
+                                }))
+                              }
+                            />
+                          )}
+
+                          {/* Task filter */}
+                          {col.filterKey === "task" && (
+                            <ColumnFilterDropdown
+                              label="Task"
+                              type="text"
+                              options={[]}
+                              selected={columnFilters.task}
+                              onChange={(val) =>
+                                setColumnFilters((prev) => ({
+                                  ...prev,
+                                  task: val,
+                                }))
+                              }
+                            />
+                          )}
+
+                          {/* Resource filter */}
+                          {col.filterKey === "resource" && (
+                            <ColumnFilterDropdown
+                              label="Resource"
+                              type="multi"
+                              options={filterOptions.resourceOpts}
+                              selected={columnFilters.resource}
+                              onChange={(val) =>
+                                setColumnFilters((prev) => ({
+                                  ...prev,
+                                  resource: val,
+                                }))
+                              }
+                            />
+                          )}
+
+                          {/* Status filter */}
+                          {col.filterKey === "status" && (
+                            <ColumnFilterDropdown
+                              label="Status"
+                              type="multi"
+                              options={filterOptions.statuses}
+                              selected={columnFilters.status}
+                              onChange={(val) =>
+                                setColumnFilters((prev) => ({
+                                  ...prev,
+                                  status: val,
+                                }))
+                              }
+                            />
+                          )}
+                        </div>
                       </th>
                     ))}
                   </tr>
@@ -9158,6 +9686,11 @@ function ProjectEditor({
                                 hasChildren={rows.some(
                                   (c) => c.parentId === r.id,
                                 )}
+                                parentRow={
+                                  r.parentId
+                                    ? rows.find((p) => p.id === r.parentId)
+                                    : null
+                                } // ← ADD THIS
                                 onUpdate={updateRow}
                                 onDelete={deleteRow}
                                 onAddSub={addSubActivity}
