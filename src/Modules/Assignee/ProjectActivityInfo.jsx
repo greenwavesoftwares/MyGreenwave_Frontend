@@ -470,86 +470,86 @@ export default function ProjectActivityInfo({
       }
     });
   };
- const getRandomColor = () => {
-  const badgeColors = [
-    {
-      color: "#2563EB",
-      bgColor: "#DBEAFE",
-      border: "#93C5FD",
-      rowBg: "#F8FBFF",
-    }, // Blue
+  const getRandomColor = () => {
+    const badgeColors = [
+      {
+        color: "#2563EB",
+        bgColor: "#DBEAFE",
+        border: "#93C5FD",
+        rowBg: "#F8FBFF",
+      }, // Blue
 
-    {
-      color: "#059669",
-      bgColor: "#D1FAE5",
-      border: "#6EE7B7",
-      rowBg: "#F5FCF9",
-    }, // Emerald
+      {
+        color: "#059669",
+        bgColor: "#D1FAE5",
+        border: "#6EE7B7",
+        rowBg: "#F5FCF9",
+      }, // Emerald
 
-    {
-      color: "#7C3AED",
-      bgColor: "#F3E8FF",
-      border: "#C4B5FD",
-      rowBg: "#FAF7FF",
-    }, // Purple
+      {
+        color: "#7C3AED",
+        bgColor: "#F3E8FF",
+        border: "#C4B5FD",
+        rowBg: "#FAF7FF",
+      }, // Purple
 
-    {
-      color: "#EC4899",
-      bgColor: "#FCE7F3",
-      border: "#F9A8D4",
-      rowBg: "#FFF8FC",
-    }, // Pink
+      {
+        color: "#EC4899",
+        bgColor: "#FCE7F3",
+        border: "#F9A8D4",
+        rowBg: "#FFF8FC",
+      }, // Pink
 
-    {
-      color: "#F97316",
-      bgColor: "#FFEDD5",
-      border: "#FDBA74",
-      rowBg: "#FFF9F5",
-    }, // Orange
+      {
+        color: "#F97316",
+        bgColor: "#FFEDD5",
+        border: "#FDBA74",
+        rowBg: "#FFF9F5",
+      }, // Orange
 
-    {
-      color: "#D97706",
-      bgColor: "#FEF3C7",
-      border: "#FCD34D",
-      rowBg: "#FFFDF6",
-    }, // Amber
+      {
+        color: "#D97706",
+        bgColor: "#FEF3C7",
+        border: "#FCD34D",
+        rowBg: "#FFFDF6",
+      }, // Amber
 
-    {
-      color: "#0891B2",
-      bgColor: "#CFFAFE",
-      border: "#67E8F9",
-      rowBg: "#F4FCFE",
-    }, // Cyan
+      {
+        color: "#0891B2",
+        bgColor: "#CFFAFE",
+        border: "#67E8F9",
+        rowBg: "#F4FCFE",
+      }, // Cyan
 
-    {
-      color: "#65A30D",
-      bgColor: "#ECFCCB",
-      border: "#BEF264",
-      rowBg: "#FBFDF6",
-    }, // Lime
+      {
+        color: "#65A30D",
+        bgColor: "#ECFCCB",
+        border: "#BEF264",
+        rowBg: "#FBFDF6",
+      }, // Lime
 
-    {
-      color: "#4F46E5",
-      bgColor: "#E0E7FF",
-      border: "#A5B4FC",
-      rowBg: "#F7F8FF",
-    }, // Indigo
+      {
+        color: "#4F46E5",
+        bgColor: "#E0E7FF",
+        border: "#A5B4FC",
+        rowBg: "#F7F8FF",
+      }, // Indigo
 
-    {
-      color: "#DC2626",
-      bgColor: "#FEE2E2",
-      border: "#FCA5A5",
-      rowBg: "#FFF7F7",
-    }, // Red
-  ];
+      {
+        color: "#DC2626",
+        bgColor: "#FEE2E2",
+        border: "#FCA5A5",
+        rowBg: "#FFF7F7",
+      }, // Red
+    ];
 
-  return badgeColors[Math.floor(Math.random() * badgeColors.length)];
-};
- const fetchColor=(res)=>{
-    return resourceColor[res]
-  }
+    return badgeColors[Math.floor(Math.random() * badgeColors.length)];
+  };
+  const fetchColor = (res) => {
+    return resourceColor[res];
+  };
   const fetchActivities = async () => {
-    console.log("fetch activities called")
+    console.log("fetch activities called");
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
@@ -699,8 +699,16 @@ export default function ProjectActivityInfo({
                 <TableCell className="pai-th">Task</TableCell>
                 <TableCell className="pai-th">Resource</TableCell>
                 <TableCell className="pai-th">Planned Start</TableCell>
-                <TableCell className="pai-th">Duration(Hours)</TableCell>
+                <TableCell className="pai-th">
+                  <div>
+                    <div>Duration</div>
+                    <div >
+                      (Hours)
+                    </div>
+                  </div>
+                </TableCell>
                 <TableCell className="pai-th">Planned Stop</TableCell>
+                <TableCell className="pai-th">Elapsed Hours</TableCell>
                 <TableCell className="pai-th">Status</TableCell>
                 <TableCell className="pai-th">Actual Start</TableCell>
                 <TableCell className="pai-th">Actual Stop</TableCell>
@@ -710,7 +718,15 @@ export default function ProjectActivityInfo({
             <TableBody>
               {filteredModules.length === 0 && search && (
                 <TableRow>
-                  <TableCell colSpan={11} align="center" style={{ padding: "32px 0", color: "#94a3b8", fontSize: "13px" }}>
+                  <TableCell
+                    colSpan={11}
+                    align="center"
+                    style={{
+                      padding: "32px 0",
+                      color: "#94a3b8",
+                      fontSize: "13px",
+                    }}
+                  >
                     No activities match &ldquo;{search}&rdquo;
                   </TableCell>
                 </TableRow>

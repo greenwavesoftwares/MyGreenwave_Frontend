@@ -384,7 +384,7 @@
 }
 
 .other-activity-row {
-  background: #FFFFFF;
+  background:#FFFFFF;
   border-left: 3px solid transparent !important;
   opacity: 0.72;
   filter: grayscale(0.25);
@@ -644,4 +644,67 @@
 .avatar-resource.disabled {
   opacity: 0.85;
   filter: saturate(90%);
+}
+
+/* ══════════════════════════════════════
+   ACTIVITY TIMER
+══════════════════════════════════════ */
+.duration-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.duration-hrs {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.activity-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.timer-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.timer-countdown {
+  color: #1D4ED8;
+  background: #DBEAFE;
+  border: 1px solid #93C5FD;
+}
+
+.timer-countdown .timer-dot {
+  background: #1D4ED8;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.timer-overdue {
+  color: #DC2626;
+  background: #FEE2E2;
+  border: 1px solid #FCA5A5;
+}
+
+.timer-overdue .timer-dot {
+  background: #DC2626;
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+.timer-dash {
+  color: #94A3B8;
+  font-size: 12px;
 }

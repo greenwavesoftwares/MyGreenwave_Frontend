@@ -35,6 +35,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import StatusChip from "./StatusChip";
 import { Star, Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
+import ActivityTimer from "./ActivityTimer";
 
 export default function TreeRows({
   node,
@@ -396,12 +397,18 @@ export default function TreeRows({
                 : "-"}
             </TableCell>
 
-            <TableCell>{durationHrs ?? "-"}</TableCell>
-
+             <TableCell>
+              <div className="duration-cell">{durationHrs ?? "—"}
+               
+              </div>
+            </TableCell>
             <TableCell>
               {plannedStop && dayjs(plannedStop).isValid()
                 ? dayjs(plannedStop).format("DD-MM-YYYY HH:mm")
                 : "-"}
+            </TableCell>
+            <TableCell>
+               <ActivityTimer plannedStop={plannedStop} status={activityStatus} />
             </TableCell>
             <TableCell>
               <Tooltip
