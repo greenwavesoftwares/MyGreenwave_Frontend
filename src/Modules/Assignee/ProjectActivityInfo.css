@@ -384,11 +384,14 @@
 }
 
 .other-activity-row {
-  background: var(--bg, #FFFFFF);
+  background:  #FFFFFF;
   border-left: 3px solid transparent !important;
   opacity: 0.72;
   filter: grayscale(0.25);
-  
+}
+
+.other-activity-row:hover {
+  background:  #FFFFFF !important;
 }
 
 
