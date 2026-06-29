@@ -368,9 +368,10 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
 .my-activity-row {
-  background: linear-gradient(90deg, #FEF3C7 0%, #FFFBEB 100%);
-  border-left: 3px solid #F59E0B !important;
+  background: linear-gradient(90deg, #FFFBEB 0%, #FFFFFF 100%);
+  border-left: 3px solid #FCD34D !important;
   position: relative;
 }
 
@@ -379,19 +380,18 @@
 }
 
 .my-activity-row:hover {
-  background: linear-gradient(90deg, rgb(255, 241, 185) 0%, #fff7d5 100%) !important;
+  background: linear-gradient(90deg, #FEF3C7 0%, #FFFBEB 100%) !important;
 }
 
-
 .other-activity-row {
-  background:  #FFFFFF;
+  background: #FFFFFF;
   border-left: 3px solid transparent !important;
   opacity: 0.72;
   filter: grayscale(0.25);
 }
 
 .other-activity-row:hover {
-  background:  #FFFFFF !important;
+  background: #FFFFFF !important;
 }
 
 
