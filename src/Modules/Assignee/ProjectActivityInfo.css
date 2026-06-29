@@ -370,7 +370,7 @@
 }
 
 .my-activity-row {
-  background: linear-gradient(90deg, #FFFBEB 0%, #FFFFFF 100%);
+  background: linear-gradient(90deg, hsl(48, 100%, 93%) 0%, #faf7eb 100%);
   border-left: 3px solid #FCD34D !important;
   position: relative;
 }
