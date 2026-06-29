@@ -549,6 +549,7 @@ export default function ProjectActivityInfo({
     return resourceColor[res]
   }
   const fetchActivities = async () => {
+    console.log("fetch activities called")
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
@@ -662,6 +663,24 @@ export default function ProjectActivityInfo({
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <button
+              className="pai-refresh-btn"
+              onClick={fetchActivities}
+              title="Refresh"
+            >
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <path d="M23 4v6h-6" />
+                <path d="M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0114.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0020.49 15" />
+              </svg>
+            </button>
             {/* <button className="pai-add-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 5v14M5 12h14"/>
