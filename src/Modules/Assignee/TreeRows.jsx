@@ -107,15 +107,6 @@ export default function TreeRows({
           <button
             className="icon-button icon-btn--start"
             onClick={() => {
-              if (!allChildrenCompleted(node)) {
-                showToast(
-                  "error",
-                  "Error",
-                  "Please complete all subactivities",
-                );
-                return;
-              }
-
               updateStatusOfActivity(id, "Running");
             }}
           >
@@ -138,7 +129,17 @@ export default function TreeRows({
           <Tooltip key="complete" title="Complete">
             <button
               className="icon-button icon-btn--stop"
-              onClick={() => updateStatusOfActivity(id, "Completed")}
+              onClick={() => {
+                if (!allChildrenCompleted(node)) {
+                  showToast(
+                    "error",
+                    "Error",
+                    "Please complete all subactivities",
+                  );
+                  return;
+                }
+                updateStatusOfActivity(id, "Completed");
+              }}
             >
               <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
             </button>
@@ -320,8 +321,8 @@ export default function TreeRows({
               currentUserId?.toLowerCase() === resource?.toLowerCase()
                 ? "my-activity-row"
                 : "other-activity-row"
-            } style={{"--bg": fetchColor(resource).rowBg,
-                      }}
+            }
+            style={{ "--bg": fetchColor(resource).rowBg }}
           >
             <TableCell />
 

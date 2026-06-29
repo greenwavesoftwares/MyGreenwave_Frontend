@@ -368,10 +368,9 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 .my-activity-row {
-  background: linear-gradient(90deg, #DCFCE7 0%, #F0FDF4 100%);
-  border-left: 3px solid #22C55E !important;
+  background: linear-gradient(90deg, #FEF3C7 0%, #FFFBEB 100%);
+  border-left: 3px solid #F59E0B !important;
   position: relative;
 }
 
@@ -380,8 +379,9 @@
 }
 
 .my-activity-row:hover {
-  background: linear-gradient(90deg, #BBF7D0 0%, #DCFCE7 100%);
+  background: linear-gradient(90deg, rgb(255, 241, 185) 0%, #fff7d5 100%) !important;
 }
+
 
 .other-activity-row {
   background:  #FFFFFF;
