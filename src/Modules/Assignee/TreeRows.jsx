@@ -170,7 +170,7 @@ export default function TreeRows({
         </Tooltip>,
       ],
       Finished: [
-        <Tooltip key="submit" title="Submit Activity">
+        <Tooltip key="submit" title="View Feedback">
           <button
             className="icon-button icon-btn--feedback"
             onClick={() => onOpenFeedbackForm(node)}
