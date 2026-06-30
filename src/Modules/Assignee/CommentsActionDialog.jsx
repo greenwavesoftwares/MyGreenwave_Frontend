@@ -42,7 +42,7 @@ export default function CommentsActionDialog({
   setExistingComments,
   newComment,
   setNewComment,
-  allowNewComment,
+  allowActions,
   activityName,
 }) {
   const [activeReply, setActiveReply] = useState(null);
@@ -126,14 +126,21 @@ export default function CommentsActionDialog({
         ? newComment.responsibility.join(",")
         : "",
     };
-    const response = await activityTrackerApi.addComment(newComment.projectId, payload);
+    const response = await activityTrackerApi.addComment(
+      newComment.projectId,
+      payload,
+    );
     if (response) {
       const updatedComments = await activityTrackerApi.getCommentsByActivity(
         newComment.projectId,
         newComment.activityId,
       );
       setExistingComments(updatedComments);
-      const newCommentPayload = addComment(payload.projectId, payload.activityId, payload.moduleId);
+      const newCommentPayload = addComment(
+        payload.projectId,
+        payload.activityId,
+        payload.moduleId,
+      );
       setNewComment(newCommentPayload);
       showToast("success", "Success", "Comment added successfully");
     }
@@ -154,7 +161,10 @@ export default function CommentsActionDialog({
       attachmentBase64: replyAttachment[commentIndex]?.attachmentBase64 || null,
       attachmentName: replyAttachment[commentIndex]?.attachmentName || null,
     };
-    const replyAdded = await activityTrackerApi.addReply(comment.commentId, payload);
+    const replyAdded = await activityTrackerApi.addReply(
+      comment.commentId,
+      payload,
+    );
     if (!replyAdded) {
       showToast("error", "Error", "Failed to add reply");
       return;
@@ -201,7 +211,10 @@ export default function CommentsActionDialog({
     setExistingComments((prev) =>
       prev.map((item, index) =>
         index === commentIndex
-          ? { ...item, replies: item.replies.filter((r) => r.replyId !== replyId) }
+          ? {
+              ...item,
+              replies: item.replies.filter((r) => r.replyId !== replyId),
+            }
           : item,
       ),
     );
@@ -244,7 +257,6 @@ export default function CommentsActionDialog({
       PaperProps={{ className: "comments-dialog" }}
     >
       <DialogContent className="comments-content">
-
         {/* ── HEADER ── */}
         <div className="comments-header">
           <div className="comments-header-left">
@@ -255,10 +267,14 @@ export default function CommentsActionDialog({
               <Typography className="comments-title">
                 Comments &amp; Action Points
                 {!!existingComments?.length && (
-                  <span className="comments-count-badge">{existingComments.length}</span>
+                  <span className="comments-count-badge">
+                    {existingComments.length}
+                  </span>
                 )}
               </Typography>
-              <Typography className="comments-subtitle">{activityName}</Typography>
+              <Typography className="comments-subtitle">
+                {activityName}
+              </Typography>
             </div>
           </div>
 
@@ -274,9 +290,12 @@ export default function CommentsActionDialog({
               <div className="empty-state-icon-wrap">
                 <SpeakerNotesOffOutlinedIcon className="empty-state-icon" />
               </div>
-              <Typography className="empty-state-title">No comments yet</Typography>
+              <Typography className="empty-state-title">
+                No comments yet
+              </Typography>
               <Typography className="empty-state-text">
-                Add the first description or action point below to start the conversation.
+                Add the first description or action point below to start the
+                conversation.
               </Typography>
             </div>
           ) : (
@@ -284,13 +303,27 @@ export default function CommentsActionDialog({
               <TableHead>
                 <TableRow>
                   <TableCell>#</TableCell>
-                  <TableCell><span className="col-label">Description</span></TableCell>
-                  <TableCell><span className="col-label">Action Point</span></TableCell>
-                  <TableCell><span className="col-label">Resolution Date</span></TableCell>
-                  <TableCell><span className="col-label">Responsibility</span></TableCell>
-                  <TableCell><span className="col-label">Others</span></TableCell>
-                  <TableCell><span className="col-label">Attachment</span></TableCell>
-                  <TableCell><span className="col-label">Added By</span></TableCell>
+                  <TableCell>
+                    <span className="col-label">Description</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Action Point</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Resolution Date</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Responsibility</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Others</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Attachment</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Added By</span>
+                  </TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -298,17 +331,22 @@ export default function CommentsActionDialog({
               <TableBody>
                 {existingComments.map((entry, index) => (
                   <React.Fragment key={index}>
-
                     {/* COMMENT ROW */}
                     <TableRow>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell><TruncatedText text={entry.commentDescription} /></TableCell>
-                      <TableCell><TruncatedText text={entry.actionPoint} /></TableCell>
+                      <TableCell>
+                        <TruncatedText text={entry.commentDescription} />
+                      </TableCell>
+                      <TableCell>
+                        <TruncatedText text={entry.actionPoint} />
+                      </TableCell>
                       <TableCell>{entry.resolutionDate}</TableCell>
                       <TableCell>
                         <Chip size="small" label={entry.responsibility} />
                       </TableCell>
-                      <TableCell><TruncatedText text={entry.others} /></TableCell>
+                      <TableCell>
+                        <TruncatedText text={entry.others} />
+                      </TableCell>
 
                       {/* ATTACHMENT */}
                       <TableCell>
@@ -317,17 +355,21 @@ export default function CommentsActionDialog({
                             <InsertDriveFileOutlinedIcon fontSize="small" />
                             <span
                               className="attachment-name"
-                              title={entry.attachment.substring(entry.attachment.indexOf("_") + 1)}
+                              title={entry.attachment.substring(
+                                entry.attachment.indexOf("_") + 1,
+                              )}
                               onClick={async () => {
                                 try {
                                   const fileName = entry.attachment.substring(
                                     entry.attachment.indexOf("_") + 1,
                                   );
-                                  const response = await activityTrackerApi.getMinIoFile(
-                                    entry.attachment,
-                                    "comments",
-                                  );
-                                  const url = window.URL.createObjectURL(response);
+                                  const response =
+                                    await activityTrackerApi.getMinIoFile(
+                                      entry.attachment,
+                                      "comments",
+                                    );
+                                  const url =
+                                    window.URL.createObjectURL(response);
                                   const a = document.createElement("a");
                                   a.href = url;
                                   a.download = fileName;
@@ -336,11 +378,16 @@ export default function CommentsActionDialog({
                                   document.body.removeChild(a);
                                   window.URL.revokeObjectURL(url);
                                 } catch (error) {
-                                  console.error("Failed to download file", error);
+                                  console.error(
+                                    "Failed to download file",
+                                    error,
+                                  );
                                 }
                               }}
                             >
-                              {entry.attachment.substring(entry.attachment.indexOf("_") + 1)}
+                              {entry.attachment.substring(
+                                entry.attachment.indexOf("_") + 1,
+                              )}
                             </span>
                           </div>
                         ) : (
@@ -351,10 +398,11 @@ export default function CommentsActionDialog({
                       {/* ADDED BY */}
                       <TableCell>
                         <div className="added-cell">
-                          
                           <div className="added-cell-meta">
                             <strong>{entry.createdBy}</strong>
-                            <span>{new Date(entry.createdAt).toLocaleString()}</span>
+                            <span>
+                              {new Date(entry.createdAt).toLocaleString()}
+                            </span>
                           </div>
                         </div>
                       </TableCell>
@@ -362,29 +410,40 @@ export default function CommentsActionDialog({
                       {/* ACTIONS */}
                       <TableCell>
                         <div className="action-buttons">
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<ReplyOutlinedIcon />}
-                            onClick={() =>
-                              setActiveReply(activeReply === index ? null : index)
-                            }
-                          >
-                            Reply
-                            {!!entry.replies?.length && (
-                              <span className="reply-count">{entry.replies.length}</span>
-                            )}
-                          </Button>
-                          <IconButton
-                            size="small"
-                            disabled={
-                              entry.createdBy !== getUserData()?.userDetails?.userId
-                            }
-                            aria-label="Delete comment"
-                            onClick={() => openDeleteConfirmation("comment", index)}
-                          >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
+                          {allowActions && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<ReplyOutlinedIcon />}
+                              onClick={() =>
+                                setActiveReply(
+                                  activeReply === index ? null : index,
+                                )
+                              }
+                            >
+                              Reply
+                              {!!entry.replies?.length && (
+                                <span className="reply-count">
+                                  {entry.replies.length}
+                                </span>
+                              )}
+                            </Button>
+                          )}
+                          {allowActions && (
+                            <IconButton
+                              size="small"
+                              disabled={
+                                entry.createdBy !==
+                                getUserData()?.userDetails?.userId
+                              }
+                              aria-label="Delete comment"
+                              onClick={() =>
+                                openDeleteConfirmation("comment", index)
+                              }
+                            >
+                              <DeleteOutlineIcon fontSize="small" color="error"/>
+                            </IconButton>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -396,25 +455,39 @@ export default function CommentsActionDialog({
                           {entry.replies.map((reply) => (
                             <div key={reply.replyId} className="reply-item">
                               <div className="reply-header">
-                                <span className="avatar-badge avatar-badge-sm" aria-hidden="true">
+                                <span
+                                  className="avatar-badge avatar-badge-sm"
+                                  aria-hidden="true"
+                                >
                                   {getInitials(reply.createdBy)}
                                 </span>
                                 <strong>{reply.createdBy}</strong>
-                                <span>{new Date(reply.createdAt).toLocaleString()}</span>
-                                <IconButton
-                                  size="small"
-                                  disabled={
-                                    reply.createdBy !== getUserData()?.userDetails?.userId
-                                  }
-                                  aria-label="Delete reply"
-                                  onClick={() =>
-                                    openDeleteConfirmation("reply", index, reply.replyId)
-                                  }
-                                >
-                                  <DeleteOutlineIcon fontSize="small" />
-                                </IconButton>
+                                <span>
+                                  {new Date(reply.createdAt).toLocaleString()}
+                                </span>
+                                {allowActions && (
+                                  <IconButton
+                                    size="small"
+                                    disabled={
+                                      reply.createdBy !==
+                                      getUserData()?.userDetails?.userId
+                                    }
+                                    aria-label="Delete reply"
+                                    onClick={() =>
+                                      openDeleteConfirmation(
+                                        "reply",
+                                        index,
+                                        reply.replyId,
+                                      )
+                                    }
+                                  >
+                                    <DeleteOutlineIcon fontSize="small" color="error"/>
+                                  </IconButton>
+                                )}
                               </div>
-                              <div className="reply-text">{reply.replyText}</div>
+                              <div className="reply-text">
+                                {reply.replyText}
+                              </div>
 
                               {reply.attachment && (
                                 <div
@@ -422,21 +495,27 @@ export default function CommentsActionDialog({
                                   style={{ marginTop: 8 }}
                                   onClick={async () => {
                                     try {
-                                      const fileName = reply.attachment.substring(
-                                        reply.attachment.indexOf("_") + 1,
-                                      );
-                                      const response = await activityTrackerApi.getMinIoFile(
-                                        reply.attachment,
-                                        "replies",
-                                      );
-                                      const url = window.URL.createObjectURL(response);
+                                      const fileName =
+                                        reply.attachment.substring(
+                                          reply.attachment.indexOf("_") + 1,
+                                        );
+                                      const response =
+                                        await activityTrackerApi.getMinIoFile(
+                                          reply.attachment,
+                                          "replies",
+                                        );
+                                      const url =
+                                        window.URL.createObjectURL(response);
                                       const a = document.createElement("a");
                                       a.href = url;
                                       a.download = fileName;
                                       a.click();
                                       window.URL.revokeObjectURL(url);
                                     } catch (error) {
-                                      console.error("Failed to download attachment:", error);
+                                      console.error(
+                                        "Failed to download attachment:",
+                                        error,
+                                      );
                                     }
                                   }}
                                 >
@@ -447,7 +526,9 @@ export default function CommentsActionDialog({
                                       reply.attachment.indexOf("_") + 1,
                                     )}
                                   >
-                                    {reply.attachment.substring(reply.attachment.indexOf("_") + 1)}
+                                    {reply.attachment.substring(
+                                      reply.attachment.indexOf("_") + 1,
+                                    )}
                                   </span>
                                 </div>
                               )}
@@ -465,7 +546,9 @@ export default function CommentsActionDialog({
                             <div className="reply-avatar">
                               {getUserData()?.userDetails?.userId ? (
                                 <span aria-hidden="true">
-                                  {getInitials(getUserData()?.userDetails?.userId)}
+                                  {getInitials(
+                                    getUserData()?.userDetails?.userId,
+                                  )}
                                 </span>
                               ) : (
                                 <PersonOutlineIcon />
@@ -479,7 +562,10 @@ export default function CommentsActionDialog({
                                 placeholder="Write a reply…"
                                 value={replyText[index] || ""}
                                 onChange={(e) =>
-                                  setReplyText((prev) => ({ ...prev, [index]: e.target.value }))
+                                  setReplyText((prev) => ({
+                                    ...prev,
+                                    [index]: e.target.value,
+                                  }))
                                 }
                               />
                               <div className="reply-footer">
@@ -505,7 +591,9 @@ export default function CommentsActionDialog({
                                     id={`reply-file-${index}`}
                                     hidden
                                     type="file"
-                                    onChange={(e) => handleReplyAttachment(index, e)}
+                                    onChange={(e) =>
+                                      handleReplyAttachment(index, e)
+                                    }
                                   />
                                   <label htmlFor={`reply-file-${index}`}>
                                     <Button
@@ -527,7 +615,9 @@ export default function CommentsActionDialog({
                                       <IconButton
                                         size="small"
                                         aria-label="Remove attachment"
-                                        onClick={() => removeReplyAttachment(index)}
+                                        onClick={() =>
+                                          removeReplyAttachment(index)
+                                        }
                                       >
                                         <CancelOutlinedIcon fontSize="small" />
                                       </IconButton>
@@ -548,7 +638,7 @@ export default function CommentsActionDialog({
         </div>
 
         {/* ── ADD NEW ENTRY ── */}
-        {allowNewComment && (
+        {allowActions && (
           <div className="entry-section">
             <div className="entry-title">
               <AddIcon fontSize="small" />
@@ -565,7 +655,9 @@ export default function CommentsActionDialog({
                     rows={2}
                     size="small"
                     value={newComment?.commentDescription}
-                    onChange={(e) => handleChange("commentDescription", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("commentDescription", e.target.value)
+                    }
                     placeholder="What happened or was discussed…"
                   />
                 </div>
@@ -578,7 +670,9 @@ export default function CommentsActionDialog({
                     rows={2}
                     size="small"
                     value={newComment?.actionPoint}
-                    onChange={(e) => handleChange("actionPoint", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("actionPoint", e.target.value)
+                    }
                     placeholder="Next step — who does what…"
                   />
                 </div>
@@ -590,7 +684,9 @@ export default function CommentsActionDialog({
                     type="date"
                     size="small"
                     value={newComment?.resolutionDate}
-                    onChange={(e) => handleChange("resolutionDate", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("resolutionDate", e.target.value)
+                    }
                   />
                 </div>
 
@@ -602,13 +698,23 @@ export default function CommentsActionDialog({
                         key={opt}
                         clickable
                         label={opt}
-                        color={newComment?.responsibility?.includes(opt) ? "primary" : "default"}
-                        variant={newComment?.responsibility?.includes(opt) ? "filled" : "outlined"}
+                        color={
+                          newComment?.responsibility?.includes(opt)
+                            ? "primary"
+                            : "default"
+                        }
+                        variant={
+                          newComment?.responsibility?.includes(opt)
+                            ? "filled"
+                            : "outlined"
+                        }
                         onClick={() =>
                           handleChange(
                             "responsibility",
                             newComment?.responsibility?.includes(opt)
-                              ? newComment.responsibility.filter((item) => item !== opt)
+                              ? newComment.responsibility.filter(
+                                  (item) => item !== opt,
+                                )
                               : [...(newComment?.responsibility || []), opt],
                           )
                         }
@@ -637,7 +743,10 @@ export default function CommentsActionDialog({
               {newComment?.attachmentBase64 ? (
                 <div className="attachment-staged">
                   <InsertDriveFileOutlinedIcon fontSize="small" />
-                  <span className="attachment-name" title={newComment?.attachmentName}>
+                  <span
+                    className="attachment-name"
+                    title={newComment?.attachmentName}
+                  >
                     {newComment?.attachmentName}
                   </span>
                   <IconButton

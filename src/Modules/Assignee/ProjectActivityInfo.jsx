@@ -19,6 +19,7 @@ import { showToast } from "./toastService";
 import { ArrowLeft } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
 import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
+import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 const activity = {
   projectId: "PRJ-1001",
   projectName: "Solar Farm Expansion",
@@ -163,7 +164,7 @@ export default function ProjectActivityInfo({
   const [openCommentDialog, setOpenCommentDialog] = useState(false);
   const [existingComments, setExistingComments] = useState(null);
   const [newComment, setNewComment] = useState(null);
-  const [allowNewcomment, setAllowNewComment] = useState(true);
+  const [allowActions, setAllowActions] = useState(true);
   const [commentActivityName, setCommentActivityName] = useState(null);
   const [openFeedback, setFeedback] = useState(false);
   const [openFeedbackRow, setOpenFeedbackRow] = useState(null);
@@ -292,8 +293,8 @@ export default function ProjectActivityInfo({
       );
     console.log("Existing comments and replies::", existingCommentsResp);
     const newCommentBody = addComment(projectId, activityId, moduleId);
-    if (status.toLowerCase() !== "finished") setAllowNewComment(true);
-    else setAllowNewComment(false);
+    if (status.toLowerCase() !== "finished") setAllowActions(true)
+    else setAllowActions(false);
     setCommentActivityName(activityName);
     setExistingComments(existingCommentsResp);
     setNewComment(newCommentBody);
@@ -304,7 +305,7 @@ export default function ProjectActivityInfo({
     setOpenCommentDialog(false);
     setExistingComments(null);
     setNewComment(null);
-    setAllowNewComment(null);
+    setAllowActions(null)
   };
   const onOpenFeedbackForm = (node) => {
     console.log("Node:", node);
@@ -579,10 +580,7 @@ export default function ProjectActivityInfo({
   }, []);
   if (loading) {
       return (
-        <div className="proj-empty">
-          <div className="proj-spinner" />
-          <p className="proj-empty-title">Loading Activities</p>
-        </div>
+        <ProjectActivitiesSkeleton/>
       );
     }
   /* ── render ── */
@@ -780,7 +778,7 @@ export default function ProjectActivityInfo({
         setNewComment={setNewComment}
         open={openCommentDialog}
         onClose={onCloseCommentbox}
-        allowNewComment={allowNewcomment}
+        allowActions={allowActions}
         activityName={commentActivityName}
       />
       {openFeedback && (
