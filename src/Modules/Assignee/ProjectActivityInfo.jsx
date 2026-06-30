@@ -170,6 +170,8 @@ export default function ProjectActivityInfo({
   const currentUserId = getUserData()?.userDetails?.userId;
   const currentUserName = getUserData()?.userDetails?.userName;
   const [resourceColor, setResourceColor] = useState({});
+  const [loading, setLoading] = useState(true);
+    
 
   /* ── tree helpers ── */
   const addDuration = (startTime, durationHrs) =>
@@ -549,6 +551,7 @@ export default function ProjectActivityInfo({
     return resourceColor[res];
   };
   const fetchActivities = async () => {
+    
     console.log("fetch activities called");
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
@@ -563,10 +566,25 @@ export default function ProjectActivityInfo({
     segregateBadgePerformers(activityDetails);
     setExpanded({ ...expanded, ...expandedModules });
   };
+  /**
+   * Function to add loaded on page load or refresh
+   */
+  const fetchActivitiesOnLoad=async()=>{
+    setLoading(true)
+    await fetchActivities()
+    setLoading(false)
+  }
   useEffect(() => {
-    fetchActivities();
+    fetchActivitiesOnLoad();
   }, []);
-
+  if (loading) {
+      return (
+        <div className="proj-empty">
+          <div className="proj-spinner" />
+          <p className="proj-empty-title">Loading Activities</p>
+        </div>
+      );
+    }
   /* ── render ── */
   return (
     <div className="pai-page container mx-auto">
@@ -665,7 +683,7 @@ export default function ProjectActivityInfo({
             </div>
             <button
               className="pai-refresh-btn"
-              onClick={fetchActivities}
+              onClick={fetchActivitiesOnLoad}
               title="Refresh"
             >
               <svg
