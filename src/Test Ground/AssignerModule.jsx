@@ -910,12 +910,32 @@ function runValidations(rows, project, po, site, groups, groupResources) {
             status2: b.status || "pending",
           };
 
-          if (aPending && bPending) {
-            // Both pending → error (block)
-            pendingOverlaps.push(overlapInfo);
-          } else {
-            // Exactly one is pending → warning (don't block)
-            mixedOverlaps.push(overlapInfo);
+          if (
+            a.plannedStart < b.plannedStop &&
+            b.plannedStart < a.plannedStop
+          ) {
+            const aPending = isPending(a);
+            const bPending = isPending(b);
+
+            // Skip entirely if NEITHER is pending
+            if (!aPending && !bPending) continue;
+
+            const resObj = getResourceByUserId(userId, groups, groupResources);
+            const overlapInfo = {
+              resource: resObj?.name || userId,
+              task1: a.task || `Row #${a.id}`,
+              task2: b.task || `Row #${b.id}`,
+              status1: a.status || "pending",
+              status2: b.status || "pending",
+              rowId1: a.id, // ← ADD THIS
+              rowId2: b.id, // ← ADD THIS
+            };
+
+            if (aPending && bPending) {
+              pendingOverlaps.push(overlapInfo);
+            } else {
+              mixedOverlaps.push(overlapInfo);
+            }
           }
         }
       }
@@ -1093,7 +1113,17 @@ function runValidations(rows, project, po, site, groups, groupResources) {
   // No warning for running/completed/paused tasks with past start times
 
   // ✅ Return BOTH arrays
-  return { results, warnings };
+  // ── Collect all overlapping row IDs ──
+  const overlapIds = new Set();
+  pendingOverlaps.forEach((o) => {
+    overlapIds.add(o.rowId1);
+    overlapIds.add(o.rowId2);
+  });
+  mixedOverlaps.forEach((o) => {
+    overlapIds.add(o.rowId1);
+    overlapIds.add(o.rowId2);
+  });
+  return { results, warnings, overlapIds };
 }
 
 /* ─── Toast ─── */
@@ -6738,6 +6768,7 @@ const ActivityRow = React.memo(function ActivityRow({
   groupResources,
   hasChildren,
   moduleColor,
+  isOverlapping,
   parentRow,
   onUpdate,
   onDelete,
@@ -6797,8 +6828,9 @@ const ActivityRow = React.memo(function ActivityRow({
     onUpdate(updated, { recompute: needsRecompute });
   };
 
-  const cellBg =
-    row.sortOrder === 0
+  const cellBg = isOverlapping
+    ? "#FEF2F2"
+    : row.sortOrder === 0
       ? "#fff"
       : row.sortOrder === 1
         ? "#FAFAFE"
@@ -6827,22 +6859,50 @@ const ActivityRow = React.memo(function ActivityRow({
   const isLockedByParent = !!row.parentId && isParentNotPending;
   const isLocked = !isPending(row) || isLockedByParent;
   return (
-    <tr style={{ transition: "background .12s" }}>
+    <tr
+      style={{
+        transition: "background .12s",
+        background: isOverlapping ? "#FEF2F2" : "transparent",
+        boxShadow: isOverlapping ? "inset 3px 0 0 0 #EF4444" : "none",
+      }}
+    >
       {/* # */}
-      {false && (
-        <td
+
+      <td
+        style={{
+          ...tdStyle,
+          textAlign: "center",
+          color: isOverlapping ? "#DC2626" : "#94A3B8",
+          fontWeight: 600,
+          width: 44,
+          fontSize: 11,
+        }}
+      >
+        <div
           style={{
-            ...tdStyle,
-            textAlign: "center",
-            color: "#94A3B8",
-            fontWeight: 600,
-            width: 44,
-            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 2,
           }}
         >
-          {row.sortOrder === 0 ? idx : ""}
-        </td>
-      )}
+          {isOverlapping && (
+            <span
+              title="⚠ Resource overlap detected"
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#EF4444",
+                flexShrink: 0,
+                animation: "pulse 1.5s infinite",
+              }}
+            />
+          )}
+          <span>{row.sortOrder === 0 ? idx : ""}</span>
+        </div>
+      </td>
+
       {/* Module */}
       <td style={{ ...tdStyle, width: 160 }}>
         {row.module && !row._editingModule ? (
@@ -7798,6 +7858,7 @@ function ProjectEditor({
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [groupOpen, setGroupOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [overlapRowIds, setOverlapRowIds] = useState(new Set());
   const [columnFilters, setColumnFilters] = useState({
     module: [],
     task: "",
@@ -7893,6 +7954,14 @@ function ProjectEditor({
     });
 
     return map;
+  }, [rows]);
+
+  // Clear overlap highlights when rows change (user fixes overlaps)
+  useEffect(() => {
+    if (overlapRowIds.size > 0) {
+      setOverlapRowIds(new Set());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);
   // Add this useEffect for diagnostics
   useEffect(() => {
@@ -8672,7 +8741,7 @@ function ProjectEditor({
   };
   /* Validation + submit */
   const handleSubmitMotion = () => {
-    const { results, warnings } = runValidations(
+    const { results, warnings, overlapIds } = runValidations(
       rows,
       project,
       po,
@@ -8682,6 +8751,7 @@ function ProjectEditor({
     );
     setValidationResults(results);
     setValidationWarnings(warnings);
+    setOverlapRowIds(overlapIds);
     setValidationOpen(true);
   };
   /* Filtered/ordered rows */
@@ -9504,12 +9574,12 @@ function ProjectEditor({
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
                     {[
-                      // {
-                      //   label: "#",
-                      //   width: 48,
-                      //   align: "center",
-                      //   filterKey: null,
-                      // },
+                      {
+                        label: "#",
+                        width: 48,
+                        align: "center",
+                        filterKey: null,
+                      },
                       {
                         label: "MODULE NAME",
                         width: 160,
@@ -9825,6 +9895,7 @@ function ProjectEditor({
                                   r.module,
                                   moduleColorMap,
                                 )} // ← ADD THIS
+                                isOverlapping={overlapRowIds.has(r.id)} // ← ADD THIS
                                 onUpdate={updateRow}
                                 onDelete={deleteRow}
                                 onAddSub={addSubActivity}
