@@ -767,6 +767,22 @@ const activityTrackerApi = {
     );
     return response.data;
   },
+
+  /**
+   * GET /admin/getLeavesByUserId
+   * Gets user ID and leaf nodes based on provided user ID.
+   * Note: Hits the main host path, not the activityTracker subset.
+   * @param {string} userId
+   */
+  getLeavesByUserId: async (userId) => {
+    const response = await axios.get(
+      `${host}admin/getLeavesByUserIds/${userId}`,
+      {
+        headers: getHeaders(),
+      },
+    );
+    return response.data;
+  },
 };
 
 export default activityTrackerApi;
