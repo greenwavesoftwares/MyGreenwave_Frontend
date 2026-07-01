@@ -776,7 +776,7 @@ const activityTrackerApi = {
    */
   getLeavesByUserId: async (userId) => {
     const response = await axios.get(
-      `${host}admin/getLeavesByUserIds/${userId}`,
+      `${host}admin/getLeavesByUserId/${userId}`,
       {
         headers: getHeaders(),
       },
