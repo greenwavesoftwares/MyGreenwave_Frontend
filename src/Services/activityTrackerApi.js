@@ -769,7 +769,7 @@ const activityTrackerApi = {
   },
 
   /**
-   * GET /admin/getLeavesByUserId
+   * GET /admin/getLeavesByUserId/{userId}
    * Gets user ID and leaf nodes based on provided user ID.
    * Note: Hits the main host path, not the activityTracker subset.
    * @param {string} userId
@@ -777,6 +777,22 @@ const activityTrackerApi = {
   getLeavesByUserId: async (userId) => {
     const response = await axios.get(
       `${host}admin/getLeavesByUserId/${userId}`,
+      {
+        headers: getHeaders(),
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /admin/getLeavesWithHolidaysByUserId/{userId}
+   * Gets user ID and leaf nodes based on provided user ID.
+   * Note: Hits the main host path, not the activityTracker subset.
+   * @param {string} userId
+   */
+  getLeavesWithHolidaysByUserId: async (userId) => {
+    const response = await axios.get(
+      `${host}admin/getLeavesWithHolidaysByUserId/${userId}`,
       {
         headers: getHeaders(),
       },
