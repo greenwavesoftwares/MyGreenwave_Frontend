@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@mui/material";
 import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween";
 import CommentsActionBox from "./CommentsActionDialog";
 import CommentsActionDialog from "./CommentsActionDialog";
 import activityTrackerApi from "../../Services/activityTrackerApi";
@@ -20,6 +21,8 @@ import { ArrowLeft } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
 import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
+
+dayjs.extend(isBetween); // ← add this
 const activity = {
   projectId: "PRJ-1001",
   projectName: "Solar Farm Expansion",
@@ -141,7 +144,6 @@ const activity = {
     },
   ],
 };
-
 /* ── helpers ── */
 function getInitials(name = "") {
   return name
@@ -172,7 +174,9 @@ export default function ProjectActivityInfo({
   const currentUserName = getUserData()?.userDetails?.userName;
   const [resourceColor, setResourceColor] = useState({});
   const [loading, setLoading] = useState(true);
-    
+  const WORK_START = 10;
+  const WORK_END = 18;
+  const WEEK_END = [0, 6];
 
   /* ── tree helpers ── */
   const addDuration = (startTime, durationHrs) =>
@@ -293,7 +297,7 @@ export default function ProjectActivityInfo({
       );
     console.log("Existing comments and replies::", existingCommentsResp);
     const newCommentBody = addComment(projectId, activityId, moduleId);
-    if (status.toLowerCase() !== "finished") setAllowActions(true)
+    if (status.toLowerCase() !== "finished") setAllowActions(true);
     else setAllowActions(false);
     setCommentActivityName(activityName);
     setExistingComments(existingCommentsResp);
@@ -305,7 +309,7 @@ export default function ProjectActivityInfo({
     setOpenCommentDialog(false);
     setExistingComments(null);
     setNewComment(null);
-    setAllowActions(null)
+    setAllowActions(null);
   };
   const onOpenFeedbackForm = (node) => {
     console.log("Node:", node);
@@ -361,6 +365,7 @@ export default function ProjectActivityInfo({
     await fetchActivities();
     showToast("success", "Success", "SubActivity added");
   };
+
   const mapToActivityPayload = (node, projectId, moduleId) => ({
     activityId: node.id,
     projectId: projectId,
@@ -393,8 +398,55 @@ export default function ProjectActivityInfo({
     traverse(nodes);
     return count;
   };
-  const updateStatusOfActivity = async (activityId, status) => {
-    const statusPayload = { status, actualTime: new Date() };
+  const calculateDuration = async (activity, actualTime) => {
+    const leavesOfEmployee =
+      await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
+    let leavesBetweenTask = 0;
+    const startDate = dayjs(activity.actualStart);
+    const stopDate = dayjs(actualTime);
+    console.log("Leavesof employees:", leavesOfEmployee);
+    leavesOfEmployee?.[0]?.leaves.forEach((leave) => {
+      const isLeaveInTask = dayjs(leave).isBetween(
+        startDate,
+        stopDate,
+        "day",
+        [],
+      );
+      if (isLeaveInTask) leavesBetweenTask++;
+    }); // Loop only counts FULL working days strictly between start and end
+    let current = startDate.add(1, "day");
+    let durationInDays = 0;
+    while (current.isBefore(stopDate, "day")) {
+      const dow = current.day();
+      if (!WEEK_END.includes(dow)) durationInDays++;
+      current = current.add(1, "day");
+    }
+    const startHour = startDate.hour() + startDate.minute() / 60;
+    const stopHour = stopDate.hour() + stopDate.minute() / 60;
+    // Partial hours for start and end days separately
+    const firstDayHours = !WEEK_END.includes(startDate.day())
+      ? WORK_END - Math.max(startHour, WORK_START)
+      : 0;
+
+    const lastDayHours = !WEEK_END.includes(stopDate.day())
+      ? Math.min(stopHour, WORK_END) - WORK_START
+      : 0;
+    const totalWorkingHours =
+      firstDayHours +
+      lastDayHours +
+      durationInDays * (WORK_END - WORK_START) -
+      leavesBetweenTask * (WORK_END - WORK_START);
+    console.log("Total working hours:", totalWorkingHours);
+    return totalWorkingHours;
+  };
+  const updateStatusOfActivity = async (activityId, status, activity) => {
+    const actualTime = new Date();
+    let duration=0
+    if (status.toLowerCase() === "completed") {
+      duration = await calculateDuration(activity, actualTime);
+    }
+    const statusPayload = { status, actualTime,duration };
+    
     const response = await activityTrackerApi.updateActivityStatus(
       activityId,
       statusPayload,
@@ -552,7 +604,6 @@ export default function ProjectActivityInfo({
     return resourceColor[res];
   };
   const fetchActivities = async () => {
-    
     console.log("fetch activities called");
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
@@ -570,19 +621,17 @@ export default function ProjectActivityInfo({
   /**
    * Function to add loaded on page load or refresh
    */
-  const fetchActivitiesOnLoad=async()=>{
-    setLoading(true)
-    await fetchActivities()
-    setLoading(false)
-  }
+  const fetchActivitiesOnLoad = async () => {
+    setLoading(true);
+    await fetchActivities();
+    setLoading(false);
+  };
   useEffect(() => {
     fetchActivitiesOnLoad();
   }, []);
   if (loading) {
-      return (
-        <ProjectActivitiesSkeleton/>
-      );
-    }
+    return <ProjectActivitiesSkeleton />;
+  }
   /* ── render ── */
   return (
     <div className="pai-page container mx-auto">
@@ -718,9 +767,7 @@ export default function ProjectActivityInfo({
                 <TableCell className="pai-th">
                   <div>
                     <div>Duration</div>
-                    <div >
-                      (Hours)
-                    </div>
+                    <div>(Hours)</div>
                   </div>
                 </TableCell>
                 <TableCell className="pai-th">Planned Stop</TableCell>

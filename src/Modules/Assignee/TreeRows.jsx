@@ -108,7 +108,7 @@ export default function TreeRows({
           <button
             className="icon-button icon-btn--start"
             onClick={() => {
-              updateStatusOfActivity(id, "Running");
+              updateStatusOfActivity(id, "Running",node);
             }}
           >
             <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
@@ -120,7 +120,7 @@ export default function TreeRows({
         <Tooltip key="pause" title="Pause">
           <button
             className="icon-button icon-btn--pause"
-            onClick={() => updateStatusOfActivity(id, "Paused")}
+            onClick={() => updateStatusOfActivity(id, "Paused",node)}
           >
             <PauseIcon sx={{ fontSize: 14 }} className="pause-icon" />
           </button>
@@ -139,7 +139,7 @@ export default function TreeRows({
                   );
                   return;
                 }
-                updateStatusOfActivity(id, "Completed");
+                updateStatusOfActivity(id, "Completed",node);
               }}
             >
               <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
@@ -152,7 +152,7 @@ export default function TreeRows({
         <Tooltip key="restart" title="Restart">
           <button
             className="icon-button icon-btn--start"
-            onClick={() => updateStatusOfActivity(id, "Running")}
+            onClick={() => updateStatusOfActivity(id, "Running",node)}
           >
             <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
           </button>
@@ -163,7 +163,7 @@ export default function TreeRows({
         <Tooltip key="resume" title="Resume">
           <button
             className="icon-button icon-btn--resume"
-            onClick={() => updateStatusOfActivity(id, "Running")}
+            onClick={() => updateStatusOfActivity(id, "Running",node)}
           >
             <FastForwardIcon sx={{ fontSize: 14 }} className="resume-icon" />
           </button>
