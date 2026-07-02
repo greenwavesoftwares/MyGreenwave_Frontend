@@ -194,8 +194,9 @@ const activityTrackerApi = {
   },
 
   /**
-   * POST /activityTracker/userRatings
-   * Creates a new project user rating.
+   * POST /activityTracker/userRatings/{projectId}
+   * Creates a new project user rating tied to a specific project ID in the path.
+   * @param {string} projectId
    * @param {Object} ratingPayload (ProjectUserRating Model)
    * @example
    * {
@@ -211,9 +212,9 @@ const activityTrackerApi = {
    * "ratedBy": "ManagerName"
    * }
    */
-  createProjectUserRating: async (ratingPayload) => {
+  createProjectUserRating: async (projectId, ratingPayload) => {
     const response = await axios.post(
-      `${apiEndPoint}/userRatings`,
+      `${apiEndPoint}/userRatings/${projectId}`,
       ratingPayload,
       { headers: getHeaders() },
     );
@@ -221,14 +222,223 @@ const activityTrackerApi = {
   },
 
   /**
-   * PUT /activityTracker/userRatings
-   * Updates an existing project user rating.
-   * @param {Object} ratingPayload (ProjectUserRating Model with 'id' present)
+   * PUT /activityTracker/userRatings/{projectId}
+   * Updates an existing project user rating tied to a specific project ID in the path.
+   * @param {string} projectId
+   * @param {Object} ratingPayload (ProjectUserRating Model)
    */
-  updateProjectUserRating: async (ratingPayload) => {
+  updateProjectUserRating: async (projectId, ratingPayload) => {
     const response = await axios.put(
-      `${apiEndPoint}/userRatings`,
+      `${apiEndPoint}/userRatings/${projectId}`,
       ratingPayload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
+  //                 PROJECT UPDATE CATEGORIES
+  // ============================================================
+
+  /**
+   * POST /activityTracker/projects/categories
+   * Creates a new project update category.
+   * @param {Object} categoryData (ProjectUpdateCategory Model)
+   */
+  createCategory: async (categoryData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/categories`,
+      categoryData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/categories
+   * Retrieves all categories for a specific project.
+   * @param {string} projectId
+   */
+  getCategoriesByProject: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/categories`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/projects/categories/{categoryId}
+   * Updates an existing project update category.
+   * @param {string} categoryId
+   * @param {Object} categoryData (ProjectUpdateCategory Model)
+   */
+  updateCategory: async (categoryId, categoryData) => {
+    const response = await axios.put(
+      `${apiEndPoint}/projects/categories/${categoryId}`,
+      categoryData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/projects/categories/{categoryId}
+   * Deletes a project update category by its ID.
+   * @param {string} categoryId
+   */
+  deleteCategory: async (categoryId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/projects/categories/${categoryId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
+  //                 PROJECT UPDATE SNAPSHOTS
+  // ============================================================
+
+  /**
+   * POST /activityTracker/projects/snapshots
+   * Creates a new project update snapshot.
+   * @param {Object} snapshotData (ProjectUpdateSnapshot Model)
+   */
+  createSnapshot: async (snapshotData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/snapshots`,
+      snapshotData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/snapshots
+   * Retrieves all snapshots for a specific project.
+   * @param {string} projectId
+   */
+  getSnapshotsByProject: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/snapshots`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/projects/snapshots/{snapshotId}
+   * Updates an existing project update snapshot.
+   * @param {string} snapshotId
+   * @param {Object} snapshotData (ProjectUpdateSnapshot Model)
+   */
+  updateSnapshot: async (snapshotId, snapshotData) => {
+    const response = await axios.put(
+      `${apiEndPoint}/projects/snapshots/${snapshotId}`,
+      snapshotData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/projects/snapshots/{snapshotId}
+   * Deletes a project update snapshot by its ID.
+   * @param {string} snapshotId
+   */
+  deleteSnapshot: async (snapshotId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/projects/snapshots/${snapshotId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
+  //                 PROJECT UPDATE NOTES
+  // ============================================================
+
+  /**
+   * POST /activityTracker/projects/notes
+   * Creates a new project update note.
+   * @param {Object} noteData (ProjectUpdateNote Model)
+   */
+  createNote: async (noteData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/notes`,
+      noteData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/categories/{categoryId}/snapshots/{snapshotId}/notes
+   * Retrieves notes for a specific cell intersection (Project + Category + Snapshot).
+   * @param {string} projectId
+   * @param {string} categoryId
+   * @param {string} snapshotId
+   */
+  getNotesByCell: async (projectId, categoryId, snapshotId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/categories/${categoryId}/snapshots/${snapshotId}/notes`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/snapshots/{snapshotId}/notes
+   * Retrieves all notes associated with a specific snapshot.
+   * @param {string} snapshotId
+   */
+  getNotesBySnapshot: async (snapshotId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/snapshots/${snapshotId}/notes`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/projects/notes/{noteId}
+   * Fully updates an existing project update note.
+   * @param {string} noteId
+   * @param {Object} noteData (ProjectUpdateNote Model)
+   */
+  updateNote: async (noteId, noteData) => {
+    const response = await axios.put(
+      `${apiEndPoint}/projects/notes/${noteId}`,
+      noteData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PATCH /activityTracker/projects/notes/{noteId}/text
+   * Partially updates just the text of a specific note.
+   * @param {string} noteId
+   * @param {string} newText (String payload)
+   */
+  updateNoteText: async (noteId, newText) => {
+    const response = await axios.patch(
+      `${apiEndPoint}/projects/notes/${noteId}/text`,
+      newText,
+      // Pass Content-Type text/plain if your backend treats the raw string as plain text
+      { headers: { ...getHeaders(), "Content-Type": "text/plain" } },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/projects/notes/{noteId}
+   * Deletes a project update note by its ID.
+   * @param {string} noteId
+   */
+  deleteNote: async (noteId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/projects/notes/${noteId}`,
       { headers: getHeaders() },
     );
     return response.data;
