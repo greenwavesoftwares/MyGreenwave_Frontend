@@ -445,6 +445,70 @@ const activityTrackerApi = {
   },
 
   // ============================================================
+  //                  PROJECT UPDATE SHARES
+  // ============================================================
+
+  /**
+   * POST /activityTracker/projects/categories/shares
+   * Creates a new project update share.
+   * @param {Object} shareData (ProjectUpdateShare Model)
+   */
+  createShare: async (shareData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/categories/shares`,
+      shareData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/categories/{categoryId}/shares
+   * Retrieves all shares for a specific project and category.
+   * @param {string} projectId
+   * @param {string} categoryId
+   */
+  getSharesByProjectAndCategory: async (projectId, categoryId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/categories/${categoryId}/shares`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/projects/{projectId}/categories/{categoryId}/shares/{userId}
+   * Updates an existing project update share.
+   * @param {string} projectId
+   * @param {string} categoryId
+   * @param {string} userId
+   * @param {Object} shareData (ProjectUpdateShare Model)
+   */
+  updateShare: async (projectId, categoryId, userId, shareData) => {
+    const response = await axios.put(
+      `${apiEndPoint}/projects/${projectId}/categories/${categoryId}/shares/${userId}`,
+      shareData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/projects/{projectId}/categories/{categoryId}/shares/{userId}
+   * Deletes a project update share by project, category, and user IDs.
+   * @param {string} projectId
+   * @param {string} categoryId
+   * @param {string} userId
+   */
+  deleteShare: async (projectId, categoryId, userId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/projects/${projectId}/categories/${categoryId}/shares/${userId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
   //                        ACTIVITIES
   // ============================================================
 
