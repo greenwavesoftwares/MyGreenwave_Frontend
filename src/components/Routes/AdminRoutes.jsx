@@ -21,6 +21,7 @@ import HolidayMain from "../../Modules/HolidayMaster/HolidayMain"
 import AccountMain from "../../Modules/TravelDesk/TravelDeskAccount/AccountMain";
 import OpenTravelsTable from "../../Modules/TravelDesk/OpenTravelsTable";
 import React from "react";
+import CategoryMaster from "../../Modules/CategoryMaster/CategoryMaster";
 
 function AdminRoutes() {
   return (
@@ -71,7 +72,8 @@ function AdminRoutes() {
         <Route path="schedule" element={<TrainingScheduleMaster />} />
       </Route>
 
-      
+      <Route path={"categorymaster"} element={<CategoryMaster/>}/>
+
 
       {/* Home Page */}
       <Route path="event" element={<HomepageMaster />} />

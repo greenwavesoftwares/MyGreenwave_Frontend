@@ -217,6 +217,22 @@ const postFeedbackForm = async (token, feedback) => {
     console.log(error);
   }
 };
+const fetchCategories=async(token)=>{
+  try{
+    const response=await axios.get(
+      `${endPoint}admin/categories`,
+    
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+}
 export {
   getNotificationData,
   getUserDataAPI,
@@ -229,5 +245,6 @@ export {
   getTourClaimsData,
   postProfilePictureUpload,
   postOnTourSwitchUpdate,
-  postFeedbackForm
+  postFeedbackForm,
+  fetchCategories
 };

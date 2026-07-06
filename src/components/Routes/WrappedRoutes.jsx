@@ -50,7 +50,7 @@ function WrappedRoutes() {
       <Route path="meal-verification" element={<CookMealVerification />} />
       <Route path="assignee" element={<Assignee />} />
       <Route path="ActivityAssigner" element={<ActivityAssigner />} />
-
+      
       {/* Claim section with nested routes */}
       <Route path="claim" element={<Outlet />}>
         <Route path="tour" element={<TourClaim />} />

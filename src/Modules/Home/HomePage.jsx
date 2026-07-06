@@ -83,6 +83,7 @@ import {
   postProfilePictureUpload,
   postOnTourSwitchUpdate,
   postFeedbackForm,
+  fetchCategories,
 } from "./HomePageAPI";
 import { getUserData } from "../Login/Encrypt";
 const endPoint = import.meta.env.VITE_END_POINT;
@@ -135,6 +136,7 @@ const HomePage = () => {
   //mobile view
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [allocatedCategories, setAllocatedCategories] = useState(null);
 
   const doj = formatDate(getUserData().userDetails.doj);
 
@@ -161,7 +163,9 @@ const HomePage = () => {
       const notificationResponse = await getNotificationData(token);
       //Tour Claims
       const tourClaimsResponse = await getTourClaimsData(token);
-
+      //Categories
+      const categories = await fetchCategories(token);
+      setAllocatedCategories(categories.data);
       //User Profile
       //Set User Profile File Name
       const {
@@ -896,6 +900,67 @@ const HomePage = () => {
                       </Card>
                     </Grid>
                   </Grid>
+
+                  {/* Categories Section */}
+                  <Grid sx={{ marginTop: "0.5rem" }}>
+                    <Grid size={12}>
+                      <Card
+                        className="cardNew BorderRadius cardStyle"
+                        sx={{ padding: "0.9rem" }}
+                      >
+                        <Grid container direction="column" spacing={1}>
+                          <Grid size={12}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Typography
+                                className="fontSize-sm"
+                                sx={{ fontWeight: 600, color: "#29343D" }}
+                              >
+                                Categories Allocated
+                              </Typography>
+                            </div>
+
+                            {allocatedCategories?.length > 0 ? (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: "0.5rem",
+                                }}
+                              >
+                                {allocatedCategories.map((category, index) => (
+                                  <Chip
+                                    key={
+                                      category.categoryId ??
+                                      category.categoryName ??
+                                      index
+                                    }
+                                    label={category.categoryName}
+                                    size="small"
+                                    sx={{
+                                      background:
+                                        "linear-gradient(135deg, #f2f2fe 0%, #e6e9fb 100%)",
+                                      color: "#4b3fbf",
+                                      fontWeight: 500,
+                                      fontSize: "0.75rem",
+                                      borderRadius: "0.75rem",
+                                      border: "1px solid #d8dcf7",
+                                    }}
+                                  />
+                                ))}
+                              </Box>
+                            ) : (
+                              <Typography
+                                className="fontSize-sm"
+                                sx={{ color: "#9aa0a6" }}
+                              >
+                                No categories allocated
+                              </Typography>
+                            )}
+                          </Grid>
+                        </Grid>
+                      </Card>
+                    </Grid>
+                  </Grid>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 12, md: 9, lg: 9 }}>
                   <Grid>
@@ -1252,8 +1317,12 @@ const HomePage = () => {
                   variant="contained"
                   type="submit"
                   size="small"
-                  sx={{ boxShadow: "none",backgroundColor: "rgb(76, 175, 80)",
-                    borderRadius: "0.5rem", marginTop: "5px",}}
+                  sx={{
+                    boxShadow: "none",
+                    backgroundColor: "rgb(76, 175, 80)",
+                    borderRadius: "0.5rem",
+                    marginTop: "5px",
+                  }}
                   disabled={!feedback}
                 >
                   Submit

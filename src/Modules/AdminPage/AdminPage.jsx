@@ -73,6 +73,7 @@ const AdminPage = () => {
     workflowAllottedPageList: [],
     allEspPageList: [],
     allWorkflowPageList: [],
+    categoryList:[]
   });
   const userDataValidationStructure = () => ({
     userId: true,
@@ -158,6 +159,7 @@ const AdminPage = () => {
     const init = async () => {
       setLoader(true)
       const data = await onPageLoad();
+      console.log("Data::",data)
       if (data) {
         setLoader(false)
         setAdminInfo(data);
@@ -497,6 +499,7 @@ const AdminPage = () => {
         designationList={adminInfo.designations}
         userGroupList={adminInfo.userGroup}
         departmentList={adminInfo.departmentData}
+        categoryData={adminInfo.categoryData}
         pageList={adminInfo.pages}
         userDataStructure={userDataStructure}
         userDataValidationStructure={userDataValidationStructure}

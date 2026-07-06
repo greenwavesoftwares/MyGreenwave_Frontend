@@ -34,7 +34,10 @@ const UserInfo = ({
   userDataStructure,
   userDataValidationStructure,
   showActiveData,
+  categoryData
 }) => {
+  console.log("User data structure:",userDataStructure)
+  console.log("User info::",userInfo)
   const toastRef = useRef(null);
   const [userData, setUserData] = useState(userDataStructure);
   const [prevUserData, setPrevUserData] = useState(userDataStructure);
@@ -522,6 +525,60 @@ const UserInfo = ({
               </Grid>
             </div>
 
+
+            {/* Category Info */}
+            
+            <div className=" rounded-lg defaultBorder overflow-hidden mt-2">
+              <div className="flex items-center gap-2 px-2 py-2 bg-gradient-to-r  from-violet-500 to-violet-600 text-white">
+                <div className="">
+                  <i
+                    className="pi pi-shield  ml-1 bold"
+                    style={{ fontSize: "0.7rem" }}
+                  ></i>
+                </div>
+                <h3 className="text-md">Category Info</h3>
+              </div>
+              <Grid container columnSpacing={4}>
+                <Grid size={6} className="userCell">
+                <span  className="font-bold ml-2 text-sm2">
+                 Categories
+                </span>
+              </Grid>
+                <Grid size={6} className="userCell">
+                  <div className="w-full">
+                    <div className="flex items-center gap-2">
+                      <div className="w-full ml-2">
+                        
+                        <div
+                          className="  rounded-lg text-gray-900 flex items-center"
+                          style={{ borderColor: "#e5e7eb" }}
+                        >
+                          
+                          <MultiSelect
+                            value={userData.allocatedCategories}
+                            invalid={!userDataValidation.allocatedCategories}
+                            onChange={async (e) =>
+                              setUserData((prev) => ({
+                                ...prev,
+                                allocatedCategories: e.value,
+                              }))
+                            }
+                            filter
+                            maxSelectedLabels={2}
+                            options={categoryData}
+                            optionLabel="categoryName"
+                            optionValue="categoryId"
+                            placeholder="Select Categories"
+                            className="w-full multiselectDropdownStyle multiSelectFontStyle"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Grid>
+                
+              </Grid>
+            </div>
             {/* Security & Access */}
 
             <div className=" rounded-lg defaultBorder overflow-hidden mt-2">
