@@ -325,19 +325,15 @@ const activityTrackerApi = {
   },
 
   /**
-   * GET /activityTracker/api/projects/{projectId}/updates/categories/check-name
+   * GET /activityTracker/projects/{projectId}/updates/categories/checkName/{categoryName}
    * Checks if a category name already exists within a project.
-   * Note: The Java controller explicitly includes '/api/' in this specific route.
    * @param {string} projectId
    * @param {string} categoryName
    */
   checkCategoryNameExists: async (projectId, categoryName) => {
     const response = await axios.get(
-      `${apiEndPoint}/api/projects/${projectId}/updates/categories/check-name`,
-      {
-        headers: getHeaders(),
-        params: { name: categoryName },
-      },
+      `${apiEndPoint}/projects/${projectId}/updates/categories/checkName/${categoryName}`,
+      { headers: getHeaders() },
     );
     return response.data;
   },
@@ -396,6 +392,20 @@ const activityTrackerApi = {
   deleteSnapshot: async (snapshotId) => {
     const response = await axios.delete(
       `${apiEndPoint}/projects/snapshots/${snapshotId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/updates/snapshots/checkDate/{snapShotDate}
+   * Checks if a snapshot date already exists within a project.
+   * @param {string} projectId
+   * @param {string} snapShotDate - Date string (e.g., 'YYYY-MM-DD')
+   */
+  checkSnapShotdateExists: async (projectId, snapShotDate) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/updates/snapshots/checkDate/${snapShotDate}`,
       { headers: getHeaders() },
     );
     return response.data;
@@ -996,6 +1006,21 @@ const activityTrackerApi = {
     const response = await axios.get(`${apiEndPoint}/getActivityTree`, {
       headers: getHeaders(),
     });
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/getActivityTreesByMonthAndDate/month/{months}/year/{year}
+   * Retrieves project trees filtered by comma-separated months and a specific year.
+   * @param {string} months - Comma-separated months (e.g., "1,2,3")
+   * @param {number|string} year - The year (e.g., 2026)
+   * @returns Array of ProjectTreeDTO
+   */
+  getActivityTreesByMonthAndDate: async (months, year) => {
+    const response = await axios.get(
+      `${apiEndPoint}/getActivityTreesByMonthAndDate/month/${months}/year/${year}`,
+      { headers: getHeaders() },
+    );
     return response.data;
   },
 
