@@ -21,6 +21,8 @@ import {
   deleteEntitlement as apiDeleteEntitlement,
   toggleEntitlement as apiToggleEntitlement,
 } from "./CategoryInfoApi";
+import Toast from "../Assignee/Toast";
+import { showToast } from "../Assignee/toastService";
 // ---------------------------------------------------------------------------
 // Category Master — manage Categories and the Entitlements attached to each.
 // Data model (used directly, matches the API shape — no mapping layer):
@@ -106,7 +108,7 @@ export default function CategoryMaster() {
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState(null); // entitlement id currently mid-toggle
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -127,11 +129,11 @@ export default function CategoryMaster() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, []);
 
   const filtered = categories.filter((c) => {
     const q = search.trim().toLowerCase();
@@ -178,8 +180,12 @@ export default function CategoryMaster() {
       if (mode === "add") {
         payload.categoryId=generateId('category')
         await apiCreateCategory(payload);
+        showToast("success", "Success", "Category created successfully");
+        
       } else {
         await apiUpdateCategory(id, payload);
+        showToast("success", "Success", "Category created successfully");
+        
       }
       await fetchCategories();
       setCatModal(null);
@@ -198,6 +204,8 @@ export default function CategoryMaster() {
     try {
       await apiDeleteCategory(id);
       await fetchCategories();
+      showToast("success", "Success", "Category deleted successfully");
+        
     } catch (err) {
       setError("Unable to delete category.");
     } finally {
@@ -236,8 +244,12 @@ export default function CategoryMaster() {
       if (mode === "add") {
         payload.entitlementId=generateId('entitlement')
         await apiAddEntitlement(categoryId, payload);
+        showToast("success", "Success", "Entitlement added successfully");
+        
       } else {
         await apiUpdateEntitlement(categoryId, id, payload);
+        showToast("success", "Success", "Entitlement updated successfully");
+        
       }
       await fetchCategories();
       setEntModal(null);
@@ -256,6 +268,8 @@ export default function CategoryMaster() {
     try {
       await apiDeleteEntitlement(categoryId, entId);
       await fetchCategories();
+      showToast("error", "Success", "Entitlement deleted successfully");
+        
     } catch (err) {
       setError("Unable to delete entitlement.");
     } finally {
@@ -289,6 +303,8 @@ export default function CategoryMaster() {
     setTogglingId(entId);
     try {
       await apiToggleEntitlement(nextEntitlement);
+      showToast("success", "Success", "Entitlement toggled successfully");
+        
     } catch (err) {
       // rollback on failure
       setCategories((prev) =>
