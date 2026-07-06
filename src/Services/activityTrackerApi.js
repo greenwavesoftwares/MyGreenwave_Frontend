@@ -241,20 +241,6 @@ const activityTrackerApi = {
   // ============================================================
 
   /**
-   * POST /activityTracker/projects/categories
-   * Creates a new project update category.
-   * @param {Object} categoryData (ProjectUpdateCategory Model)
-   */
-  createCategory: async (categoryData) => {
-    const response = await axios.post(
-      `${apiEndPoint}/projects/categories`,
-      categoryData,
-      { headers: getHeaders() },
-    );
-    return response.data;
-  },
-
-  /**
    * GET /activityTracker/projects/{projectId}/categories
    * Retrieves all categories for a specific project.
    * @param {string} projectId
@@ -291,6 +277,67 @@ const activityTrackerApi = {
     const response = await axios.delete(
       `${apiEndPoint}/projects/categories/${categoryId}`,
       { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/projects/category
+   * Creates a single project update category.
+   * @param {Object} categoryData (ProjectUpdateCategory Model)
+   */
+  createCategory: async (categoryData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/category`,
+      categoryData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // Note: Update your existing createCategory to reflect bulk creation if needed,
+  // or use this dedicated method for the List<ProjectUpdateCategory> endpoint.
+  /**
+   * POST /activityTracker/projects/categories
+   * Bulk creates multiple project update categories.
+   * @param {Array<Object>} categoriesData Array of ProjectUpdateCategory Models
+   */
+  createCategories: async (categoriesData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/categories`,
+      categoriesData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/updates
+   * Retrieves the entire update grid (categories, snapshots, and entries) for a project.
+   * @param {string} projectId
+   */
+  getAllUpdates: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/updates`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/api/projects/{projectId}/updates/categories/check-name
+   * Checks if a category name already exists within a project.
+   * Note: The Java controller explicitly includes '/api/' in this specific route.
+   * @param {string} projectId
+   * @param {string} categoryName
+   */
+  checkCategoryNameExists: async (projectId, categoryName) => {
+    const response = await axios.get(
+      `${apiEndPoint}/api/projects/${projectId}/updates/categories/check-name`,
+      {
+        headers: getHeaders(),
+        params: { name: categoryName },
+      },
     );
     return response.data;
   },
