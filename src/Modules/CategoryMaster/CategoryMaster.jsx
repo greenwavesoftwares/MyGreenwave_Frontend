@@ -703,7 +703,7 @@ export default function CategoryMaster() {
             Are you sure you want to delete{" "}
             <strong>{confirmDelete.label}</strong>?
             {confirmDelete.type === "category" &&
-              " This will also remove all its entitlements."}{" "}
+              " This will also remove all its entitlements and mapping with users."}{" "}
             This cannot be undone.
           </p>
           <div className="modal-actions">
