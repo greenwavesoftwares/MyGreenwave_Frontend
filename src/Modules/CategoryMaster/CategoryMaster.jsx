@@ -566,7 +566,7 @@ export default function CategoryMaster() {
                 data: { ...m.data, categoryName: v },
               }))
             }
-            placeholder="e.g. Electronics"
+            placeholder="e.g. Developer"
           />
           <TextField
             label="Description"
@@ -641,7 +641,7 @@ export default function CategoryMaster() {
                 data: { ...m.data, entitlement: v },
               }))
             }
-            placeholder="e.g. Bulk Upload"
+            placeholder="e.g. FRS Preparation"
           />
           <TextField
             label="Description"
@@ -654,20 +654,6 @@ export default function CategoryMaster() {
             }
             placeholder="Optional"
           />
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={entModal.data.enabled}
-              onChange={(e) =>
-                setEntModal((m) => ({
-                  ...m,
-                  data: { ...m.data, enabled: e.target.checked },
-                }))
-              }
-              className="checkbox-input"
-            />
-            <span className="checkbox-label">Enabled by default</span>
-          </label>
           <div className="modal-actions">
             <button
               type="button"
