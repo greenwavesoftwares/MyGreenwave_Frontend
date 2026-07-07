@@ -9,6 +9,9 @@ import {
   Shield,
   Search,
   Loader2,
+  FolderKanban,
+  CheckCircle2,
+  KeyRound,
 } from "lucide-react";
 import "./CategoryMaster.css";
 import {
@@ -134,6 +137,16 @@ export default function CategoryMaster() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  const totalEntitlements = categories.reduce(
+    (sum, c) => sum + c.entitlements.length,
+    0,
+  );
+  const activeCategoryCount = categories.filter((c) => c.active).length;
+  const enabledEntitlementCount = categories.reduce(
+    (sum, c) => sum + c.entitlements.filter((e) => e.enabled).length,
+    0,
+  );
 
   const filtered = categories.filter((c) => {
     const q = search.trim().toLowerCase();
@@ -359,6 +372,7 @@ export default function CategoryMaster() {
           </button>
         </div>
 
+
         {error && (
           <div className="empty-state" role="alert">
             {error}{" "}
@@ -373,15 +387,17 @@ export default function CategoryMaster() {
           </div>
         )}
 
-        <div className="search-wrapper">
-          <Search size={15} className="search-icon" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search categories or entitlements..."
-            className="search-input"
-          />
+        <div className="cm-toolbar">
+          <div className="search-wrapper">
+            <Search size={15} className="search-icon" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search categories or entitlements..."
+              className="search-input"
+            />
+          </div>
         </div>
 
         <div className="cm-list">
@@ -452,6 +468,7 @@ export default function CategoryMaster() {
                       type="button"
                       className="icon-btn icon-btn-danger"
                       onClick={() =>
+                        
                         setConfirmDelete({
                           type: "category",
                           categoryId: cat.categoryId,
