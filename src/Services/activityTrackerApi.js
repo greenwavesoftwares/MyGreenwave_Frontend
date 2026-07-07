@@ -565,6 +565,24 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  /**
+   * PUT /activityTracker/projects/{projectId}/categories/shares
+   * Updates shares for multiple categories in a project simultaneously.
+   * @param {string} projectId
+   * @param {Array<Object>} projectUpdateCategoryList Array of ProjectUpdateCategory Models containing sharedWith data
+   */
+  updateSharesByProjectAndCategory: async (
+    projectId,
+    projectUpdateCategoryList,
+  ) => {
+    const response = await axios.put(
+      `${apiEndPoint}/projects/${projectId}/categories/shares`,
+      projectUpdateCategoryList,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
   // ============================================================
   //                        ACTIVITIES
   // ============================================================
