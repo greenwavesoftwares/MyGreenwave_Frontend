@@ -655,8 +655,101 @@ const HomePage = () => {
                                     </Typography>
                                   </div>
                                 </Grid>
+{/* Categories */}
+<Grid size={12}>
+  <Box sx={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", justifyContent: "center", mb: 1 }}>
+    {allocatedCategories?.map((category, idx) => (
+      <Tooltip
+        key={category?.categoryId ?? idx}
+        arrow
+        placement="top"
+        title={
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8, py: 0.4, minWidth: 180 }}>
+            {/* Category Header */}
+            <Box>
+              <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: 0.2 }}>
+                {category?.categoryName}
+              </Typography>
+              {category?.description && (
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mt: 0.3 }}>
+                  <InfoIcon sx={{ fontSize: "0.85rem", opacity: 0.7, mt: "1px" }} />
+                  <Typography sx={{ fontSize: "0.68rem", fontStyle: "italic", opacity: 0.8, lineHeight: 1.3 }}>
+                    {category.description}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
 
-                                {/* Designation */}
+            {/* Divider between category info and entitlements */}
+            {category?.entitlements?.length > 0 && (
+              <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.15)", pt: 0.6 }}>
+                <Typography
+                  sx={{
+                    fontSize: "0.62rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    opacity: 0.6,
+                    mb: 0.4,
+                  }}
+                >
+                  Entitlements
+                </Typography>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                  {category.entitlements.map((entitlement, eIdx) => (
+                    <Box key={entitlement?.entitlementId ?? eIdx} sx={{ display: "flex", gap: 0.6 }}>
+                      <Box>
+                        <Typography sx={{ fontSize: "0.73rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          {entitlement?.entitlement}
+                        </Typography>
+                        {entitlement?.description && (
+                          <Typography sx={{ fontSize: "0.66rem", opacity: 0.75, lineHeight: 1.3 }}>
+                            {entitlement.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+
+            {!category?.entitlements?.length && (
+              <Typography sx={{ fontSize: "0.7rem", opacity: 0.6 }}>No entitlements</Typography>
+            )}
+          </Box>
+        }
+        componentsProps={{
+          tooltip: {
+            sx: {
+              bgcolor: "#29343D",
+              borderRadius: "8px",
+              px: 1.5,
+              py: 1.2,
+              maxWidth: 300,
+            },
+          },
+          arrow: { sx: { color: "#29343D" } },
+        }}
+      >
+        <Chip
+          label={category?.categoryName}
+          size="small"
+          sx={{
+            fontSize: "0.72rem",
+            fontWeight: 500,
+            bgcolor: "#F2F2FE",
+            color: "#29343D",
+            cursor: "pointer",
+            "&:hover": { bgcolor: "#e4e4fb" },
+          }}
+        />
+      </Tooltip>
+    ))}
+  </Box>
+</Grid>
+                               {/* Designation */}
                                 <Grid size={12}>
                                   <p className="text-slate-500 font-semibold flex items-center fontSize-sm justify-center ">
                                     {userProfile?.designation}
@@ -927,27 +1020,7 @@ const HomePage = () => {
                                   gap: "0.5rem",
                                 }}
                               >
-                                {allocatedCategories.map((category, index) => (
-                                  <Chip
-                                    key={
-                                      category.categoryId ??
-                                      category.categoryName ??
-                                      index
-                                    }
-                                    label={category.categoryName}
-                                    size="small"
-                                    sx={{
-                                      background:
-                                        "linear-gradient(135deg, #f2f2fe 0%, #e6e9fb 100%)",
-                                      color: "#4b3fbf",
-                                      fontWeight: 500,
-                                      fontSize: "0.75rem",
-                                      borderRadius: "0.75rem",
-                                      border: "1px solid #d8dcf7",
-                                    }}
-                                  />
-                                ))}
-                              </Box>
+                                </Box>
                             ) : (
                               <Typography
                                 className="fontSize-sm"
