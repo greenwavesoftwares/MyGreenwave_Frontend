@@ -24,6 +24,7 @@ import MealAdminPage from "../../features/meal booking/pages/MealAdminPage";
 import CookMealVerification from "../../features/meal booking/pages/CookMealVerification";
 import Assignee from "../../Modules/Assignee/Assignee";
 import ActivityAssigner from "../../Test Ground/Example";
+import ActivityTrackerCharts from "../../Modules/ProjectDashBoard/ActivityTrackerCharts";
 
 function WrappedRoutes() {
   return (
@@ -50,6 +51,7 @@ function WrappedRoutes() {
       <Route path="meal-verification" element={<CookMealVerification />} />
       <Route path="assignee" element={<Assignee />} />
       <Route path="ActivityAssigner" element={<ActivityAssigner />} />
+      <Route path="projectdashboard" element={<ActivityTrackerCharts />} />
       
       {/* Claim section with nested routes */}
       <Route path="claim" element={<Outlet />}>

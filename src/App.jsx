@@ -17,6 +17,7 @@ import { getUserData } from "./Modules/Login/Encrypt";
 import { useEffect } from "react";
 import Restricted from "./Restricted";
 import ActivityAssigner from "./Test Ground/Example";
+import ActivityTrackerCharts from "./Modules/ProjectDashBoard/ActivityTrackerCharts";
 
 function App() {
   console.log("rendering app component");
@@ -77,6 +78,8 @@ function App() {
 
       {/* For wrong routing go to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
+      
+            
     </Routes>
   );
 }
