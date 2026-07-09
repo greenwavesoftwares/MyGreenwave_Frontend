@@ -408,9 +408,6 @@ export default function TreeRows({
                 : "-"}
             </TableCell>
             <TableCell>
-               <ActivityTimer plannedStop={plannedStop} status={activityStatus} />
-            </TableCell>
-            <TableCell>
               <Tooltip
                 title={
                   activityStatus?.toLowerCase() === "rejected"

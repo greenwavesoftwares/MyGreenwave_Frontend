@@ -34,15 +34,15 @@ const UserInfo = ({
   userDataStructure,
   userDataValidationStructure,
   showActiveData,
-  categoryData
+  categoryData,
 }) => {
-  console.log("User data structure:",userDataStructure)
-  console.log("User info::",userInfo)
+  console.log("User data structure:", userDataStructure);
+  console.log("User info::", userInfo);
   const toastRef = useRef(null);
   const [userData, setUserData] = useState(userDataStructure);
   const [prevUserData, setPrevUserData] = useState(userDataStructure);
   const [userDataValidation, setUserDataValidation] = useState(
-    userDataValidationStructure
+    userDataValidationStructure,
   );
   const [designationVisible, setDesignationVisible] = useState(false);
   const [userGroupVisible, setUserGroupVisible] = useState(false);
@@ -525,9 +525,8 @@ const UserInfo = ({
               </Grid>
             </div>
 
-
             {/* Category Info */}
-            
+
             <div className=" rounded-lg defaultBorder overflow-hidden mt-2">
               <div className="flex items-center gap-2 px-2 py-2 bg-gradient-to-r  from-violet-500 to-violet-600 text-white">
                 <div className="">
@@ -540,43 +539,37 @@ const UserInfo = ({
               </div>
               <Grid container columnSpacing={4}>
                 <Grid size={6} className="userCell">
-                <span  className="font-bold ml-2 text-sm2">
-                 Categories
-                </span>
-              </Grid>
+                  <span className="font-bold ml-2 text-sm2">Categories</span>
+                </Grid>
                 <Grid size={6} className="userCell">
                   <div className="w-full">
                     <div className="flex items-center gap-2">
                       <div className="w-full ml-2">
-                        
                         <div
                           className="  rounded-lg text-gray-900 flex items-center"
                           style={{ borderColor: "#e5e7eb" }}
                         >
-                          
-                          <MultiSelect
-                            value={userData.allocatedCategories}
+                          <Dropdown
+                            value={userData.allocatedCategories?.[0] ?? null}
                             invalid={!userDataValidation.allocatedCategories}
-                            onChange={async (e) =>
+                            onChange={(e) =>
                               setUserData((prev) => ({
                                 ...prev,
-                                allocatedCategories: e.value,
+                                allocatedCategories: e.value ? [e.value] : [],
                               }))
                             }
                             filter
-                            maxSelectedLabels={2}
                             options={categoryData}
                             optionLabel="categoryName"
                             optionValue="categoryId"
                             placeholder="Select Categories"
-                            className="w-full multiselectDropdownStyle multiSelectFontStyle"
+                            className="w-full dropDownStyle"
                           />
                         </div>
                       </div>
                     </div>
                   </div>
                 </Grid>
-                
               </Grid>
             </div>
             {/* Security & Access */}
@@ -593,15 +586,12 @@ const UserInfo = ({
               </div>
               <Grid container columnSpacing={4}>
                 <Grid size={6} className="userCell">
-                <span  className="font-bold ml-2 text-sm2">
-                 Status
-                </span>
-              </Grid>
+                  <span className="font-bold ml-2 text-sm2">Status</span>
+                </Grid>
                 <Grid size={6} className="userCell">
                   <div className="w-full">
                     <div className="flex items-center gap-2">
                       <div className="w-full ml-2">
-                        
                         <div
                           className="  rounded-lg text-gray-900 flex items-center"
                           style={{ borderColor: "#e5e7eb" }}
@@ -625,16 +615,15 @@ const UserInfo = ({
                     </div>
                   </div>
                 </Grid>
-                             <Grid size={6} className="userCell">
-                <span  className="font-bold ml-2 text-sm2">
-                  Required password change on first login
-                </span>
-              </Grid>
+                <Grid size={6} className="userCell">
+                  <span className="font-bold ml-2 text-sm2">
+                    Required password change on first login
+                  </span>
+                </Grid>
                 <Grid size={6} className="userCell">
                   <div className="w-full">
                     <div className="flex items-center gap-2">
                       <div className="w-full ml-2">
-                        
                         <div
                           className="  rounded-lg text-gray-900 flex items-center"
                           style={{ borderColor: "#e5e7eb" }}
@@ -656,61 +645,63 @@ const UserInfo = ({
                     </div>{" "}
                   </div>
                 </Grid>
-              
-              <Grid size={6} className="userCell">
-                <span  className="font-bold ml-2 text-sm2">
-                  Password Exipry duration (days)
-                </span>
-              </Grid>
-              <Grid size={6} className="userCell">
-                <InputNumber
-                  value={userData.passwordExpiryDuraton}
-                  invalid={!userDataValidation.passwordExpiryDuraton}
-                  mode="decimal"
-                  min={0}
-                  maxLength={3}
-                  minFractionDigits={0}
-                  maxFractionDigits={0}
-                  useGrouping={false}
-                  onValueChange={(e) =>
-                    setUserData((prev) => ({
-                      ...prev,
-                      passwordExpiryDuraton: e.value,
-                    }))
-                  }
-                  className="NumberFieldStyle"
-                />
-              </Grid>
-              {editMode && (
+
                 <Grid size={6} className="userCell">
-                  <span className="font-bold ml-2 text-sm2">Password Expiry Date</span>
-                </Grid>
-              )}
-              {editMode && (
-                <Grid size={6} className="userCell">
-                  <span
-                    className="inputFieldStyle"
-                    style={{ width: "200px", borderRadius: "0.3rem" }}
-                  >
-                    {userData.passwordExpiryDate}
+                  <span className="font-bold ml-2 text-sm2">
+                    Password Exipry duration (days)
                   </span>
                 </Grid>
-              )}
-              {editMode && (
                 <Grid size={6} className="userCell">
-                  <span className="font-bold ml-2 text-sm2">Last Login</span>
+                  <InputNumber
+                    value={userData.passwordExpiryDuraton}
+                    invalid={!userDataValidation.passwordExpiryDuraton}
+                    mode="decimal"
+                    min={0}
+                    maxLength={3}
+                    minFractionDigits={0}
+                    maxFractionDigits={0}
+                    useGrouping={false}
+                    onValueChange={(e) =>
+                      setUserData((prev) => ({
+                        ...prev,
+                        passwordExpiryDuraton: e.value,
+                      }))
+                    }
+                    className="NumberFieldStyle"
+                  />
                 </Grid>
-              )}
-              {editMode && (
-                <Grid size={6} className="userCell">
-                  <span
-                    className="inputFieldStyle"
-                    style={{ width: "200px", borderRadius: "0.3rem" }}
-                  >
-                    {userData.lastLogin}
-                  </span>
-                </Grid>
-              )}
+                {editMode && (
+                  <Grid size={6} className="userCell">
+                    <span className="font-bold ml-2 text-sm2">
+                      Password Expiry Date
+                    </span>
+                  </Grid>
+                )}
+                {editMode && (
+                  <Grid size={6} className="userCell">
+                    <span
+                      className="inputFieldStyle"
+                      style={{ width: "200px", borderRadius: "0.3rem" }}
+                    >
+                      {userData.passwordExpiryDate}
+                    </span>
+                  </Grid>
+                )}
+                {editMode && (
+                  <Grid size={6} className="userCell">
+                    <span className="font-bold ml-2 text-sm2">Last Login</span>
+                  </Grid>
+                )}
+                {editMode && (
+                  <Grid size={6} className="userCell">
+                    <span
+                      className="inputFieldStyle"
+                      style={{ width: "200px", borderRadius: "0.3rem" }}
+                    >
+                      {userData.lastLogin}
+                    </span>
+                  </Grid>
+                )}
               </Grid>
             </div>
           </TabPanel>
@@ -811,7 +802,7 @@ const UserInfo = ({
               setAdminTable,
               showActiveData,
               userGroupList,
-              prevUserData
+              prevUserData,
             );
           }}
         />

@@ -771,7 +771,6 @@ export default function ProjectActivityInfo({
                   </div>
                 </TableCell>
                 <TableCell className="pai-th">Planned Stop</TableCell>
-                <TableCell className="pai-th">Elapsed Hours</TableCell>
                 <TableCell className="pai-th">Status</TableCell>
                 <TableCell className="pai-th">Actual Start</TableCell>
                 <TableCell className="pai-th">Actual Stop</TableCell>

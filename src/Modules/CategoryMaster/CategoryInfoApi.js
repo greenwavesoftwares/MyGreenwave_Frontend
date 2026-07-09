@@ -47,7 +47,15 @@ export async  function getCategoryById(categoryId) {
 export async  function createCategory(category) {
   return client.post("", category).then((res) => res.data);
 }
-
+/**
+ * Create a new category and it's entitlement
+ * POST /api/categories
+ * @param {{ categoryName: string, isActive: boolean }} category
+ * @returns created CategoryMaster
+ */
+export async  function createCategoryEntitlement(category) {
+  return client.post("addCategoryEntititlement", category).then((res) => res.data);
+}
 /**
  * Update an existing category's name/status.
  * PUT /api/categories/{categoryId}
