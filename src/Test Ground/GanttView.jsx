@@ -26,11 +26,19 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 const ROW_HEIGHT = 44;
+const SUB_HEADER_HEIGHT = 32;
 const HEADER_HEIGHT = 56;
-const LEFT_PANEL_WIDTH = 300;
+const LEFT_PANEL_WIDTH_COLLAPSED = 300; // ← Renamed
+const LEFT_PANEL_WIDTH_EXPANDED = 480;
 const MIN_COL_WIDTH = 20;
 const MAX_COL_WIDTH = 200;
-
+// ── Column widths for the left panel ──
+const COL_TASK_WIDTH = 240; // Task name column
+const COL_MODULE_WIDTH = 120; // Module column
+const COL_RESOURCE_WIDTH = 130; // Resource column
+const COL_STATUS_WIDTH = 100; // Status column
+const LEFT_PANEL_WIDTH =
+  COL_TASK_WIDTH + COL_MODULE_WIDTH + COL_RESOURCE_WIDTH + COL_STATUS_WIDTH;
 /* ─── Zoom Config ─── */
 const ZOOM_CONFIGS = {
   hour: {
@@ -914,11 +922,920 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
     </div>
   );
 }
+/* ─── Compact Per-Project Filter Dropdown ─── */
+import { createPortal } from "react-dom";
+
+/* ─── Compact Per-Project Filter Dropdown (with Portal) ─── */
+function CompactFilterDropdown({
+  label,
+  icon,
+  options,
+  selected,
+  onChange,
+  color = "#1D4ED8",
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+  const popupRef = useRef(null);
+
+  // ── Calculate dropdown position ──
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const popupWidth = 240;
+    const popupHeight = 320;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const spacing = 4;
+
+    // Vertical positioning
+    let top = rect.bottom + spacing;
+    if (top + popupHeight > viewportHeight - 20) {
+      // Open upward if not enough space below
+      top = rect.top - popupHeight - spacing;
+    }
+
+    // Horizontal positioning — align to right edge of button
+    let left = rect.right - popupWidth;
+    if (left < 10) {
+      left = 10; // Prevent going off-screen left
+    }
+    if (left + popupWidth > viewportWidth - 10) {
+      left = viewportWidth - popupWidth - 10;
+    }
+
+    setPosition({ top, left });
+  }, []);
+
+  // ── Update position when opened ──
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+
+    const handleReposition = () => updatePosition();
+    window.addEventListener("scroll", handleReposition, true);
+    window.addEventListener("resize", handleReposition);
+    return () => {
+      window.removeEventListener("scroll", handleReposition, true);
+      window.removeEventListener("resize", handleReposition);
+    };
+  }, [open, updatePosition]);
+
+  // ── Click outside handler ──
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (buttonRef.current?.contains(e.target)) return;
+      if (popupRef.current?.contains(e.target)) return;
+      setOpen(false);
+      setSearch("");
+    };
+    // Delay so opening click doesn't immediately close
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [open]);
+
+  const filtered = options.filter((o) =>
+    (o.label || "").toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const isActive = selected.length > 0;
+
+  // ── Dropdown popup (rendered via portal) ──
+  const popup = open ? (
+    <div
+      ref={popupRef}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "fixed",
+        top: position.top,
+        left: position.left,
+        width: 240,
+        background: "#fff",
+        border: "1px solid #CBD5E1",
+        borderRadius: 8,
+        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+        zIndex: 99999,
+        fontFamily: "Sora,sans-serif",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: "8px 12px",
+          borderBottom: "1px solid #E2E8F0",
+          background: "#F8FAFC",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+          Filter: {label}
+        </span>
+        {isActive && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange([]);
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#EF4444",
+              cursor: "pointer",
+              fontSize: 10,
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Search */}
+      {options.length > 5 && (
+        <div
+          style={{
+            padding: "6px 10px",
+            borderBottom: "1px solid #F1F5F9",
+          }}
+        >
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            autoFocus
+            style={{
+              width: "100%",
+              height: 26,
+              border: "1px solid #E2E8F0",
+              borderRadius: 5,
+              padding: "0 8px",
+              fontSize: 11,
+              fontFamily: "Sora,sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Options */}
+      <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 0" }}>
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              padding: "12px",
+              textAlign: "center",
+              color: "#94A3B8",
+              fontSize: 11,
+            }}
+          >
+            No options
+          </div>
+        ) : (
+          filtered.map((opt) => {
+            const checked = selected.includes(opt.value);
+            return (
+              <div
+                key={opt.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(
+                    checked
+                      ? selected.filter((v) => v !== opt.value)
+                      : [...selected, opt.value],
+                  );
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  background: checked ? `${color}15` : "transparent",
+                  borderLeft: checked
+                    ? `3px solid ${color}`
+                    : "3px solid transparent",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!checked) e.currentTarget.style.background = "#F8FAFC";
+                }}
+                onMouseLeave={(e) => {
+                  if (!checked)
+                    e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <span
+                  style={{
+                    width: 15,
+                    height: 15,
+                    borderRadius: 4,
+                    border: `1.5px solid ${checked ? color : "#CBD5E1"}`,
+                    background: checked ? color : "#fff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 700,
+                  }}
+                >
+                  {checked && "✓"}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    color: "#0F172A",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontWeight: checked ? 600 : 400,
+                    flex: 1,
+                  }}
+                  title={opt.label}
+                >
+                  {opt.label}
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      {selected.length > 0 && (
+        <div
+          style={{
+            padding: "6px 12px",
+            borderTop: "1px solid #E2E8F0",
+            background: "#FAFBFC",
+            fontSize: 10,
+            color: "#64748B",
+            textAlign: "center",
+          }}
+        >
+          {selected.length} of {options.length} selected
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((p) => !p);
+        }}
+        title={`Filter by ${label}`}
+        style={{
+          height: 22,
+          padding: "0 6px",
+          borderRadius: 4,
+          border: `1px solid ${isActive ? color : "#E2E8F0"}`,
+          background: isActive ? `${color}15` : "#fff",
+          color: isActive ? color : "#64748B",
+          fontFamily: "Sora,sans-serif",
+          fontSize: 9.5,
+          fontWeight: isActive ? 600 : 500,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 3,
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+        <span>{label}</span>
+        {isActive && (
+          <span
+            style={{
+              padding: "0 4px",
+              borderRadius: 999,
+              background: color,
+              color: "#fff",
+              fontSize: 8.5,
+              fontWeight: 700,
+              minWidth: 12,
+              textAlign: "center",
+            }}
+          >
+            {selected.length}
+          </span>
+        )}
+      </button>
+
+      {/* Portal renders popup at document.body level */}
+      {open && createPortal(popup, document.body)}
+    </>
+  );
+}
+/* ─── Column Header Filter Button (with portal) ─── */
+function ColumnFilterButton({
+  columnKey,
+  color,
+  filterOptions,
+  selected,
+  onChange,
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+  const popupRef = useRef(null);
+
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const popupWidth = 220;
+    const popupHeight = 320;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const spacing = 4;
+
+    let top = rect.bottom + spacing;
+    if (top + popupHeight > viewportHeight - 20) {
+      top = rect.top - popupHeight - spacing;
+    }
+
+    let left = rect.right - popupWidth;
+    if (left < 10) left = 10;
+    if (left + popupWidth > viewportWidth - 10) {
+      left = viewportWidth - popupWidth - 10;
+    }
+
+    setPosition({ top, left });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    const reposition = () => updatePosition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (buttonRef.current?.contains(e.target)) return;
+      if (popupRef.current?.contains(e.target)) return;
+      setOpen(false);
+      setSearch("");
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [open]);
+
+  const filtered = filterOptions.filter((o) =>
+    (o.label || "").toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const isActive = selected.length > 0;
+
+  const popup = open ? (
+    <div
+      ref={popupRef}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "fixed",
+        top: position.top,
+        left: position.left,
+        width: 220,
+        background: "#fff",
+        border: "1px solid #CBD5E1",
+        borderRadius: 8,
+        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+        zIndex: 99999,
+        fontFamily: "Sora,sans-serif",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "8px 12px",
+          borderBottom: "1px solid #E2E8F0",
+          background: "#F8FAFC",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+          Filter {columnKey.charAt(0).toUpperCase() + columnKey.slice(1)}
+        </span>
+        {isActive && (
+          <button
+            onClick={() => onChange([])}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#EF4444",
+              cursor: "pointer",
+              fontSize: 10,
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {filterOptions.length > 5 && (
+        <div style={{ padding: "6px 10px", borderBottom: "1px solid #F1F5F9" }}>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            autoFocus
+            style={{
+              width: "100%",
+              height: 26,
+              border: "1px solid #E2E8F0",
+              borderRadius: 5,
+              padding: "0 8px",
+              fontSize: 11,
+              fontFamily: "Sora,sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+      )}
+
+      <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 0" }}>
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              padding: "12px",
+              textAlign: "center",
+              color: "#94A3B8",
+              fontSize: 11,
+            }}
+          >
+            No options
+          </div>
+        ) : (
+          filtered.map((opt) => {
+            const checked = selected.includes(opt.value);
+            return (
+              <div
+                key={opt.value}
+                onClick={() => {
+                  onChange(
+                    checked
+                      ? selected.filter((v) => v !== opt.value)
+                      : [...selected, opt.value],
+                  );
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  background: checked ? `${color}15` : "transparent",
+                  borderLeft: checked
+                    ? `3px solid ${color}`
+                    : "3px solid transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!checked) e.currentTarget.style.background = "#F8FAFC";
+                }}
+                onMouseLeave={(e) => {
+                  if (!checked)
+                    e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <span
+                  style={{
+                    width: 15,
+                    height: 15,
+                    borderRadius: 4,
+                    border: `1.5px solid ${checked ? color : "#CBD5E1"}`,
+                    background: checked ? color : "#fff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 700,
+                  }}
+                >
+                  {checked && "✓"}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    color: "#0F172A",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontWeight: checked ? 600 : 400,
+                    flex: 1,
+                  }}
+                  title={opt.label}
+                >
+                  {opt.label}
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {selected.length > 0 && (
+        <div
+          style={{
+            padding: "6px 12px",
+            borderTop: "1px solid #E2E8F0",
+            background: "#FAFBFC",
+            fontSize: 10,
+            color: "#64748B",
+            textAlign: "center",
+          }}
+        >
+          {selected.length} of {filterOptions.length} selected
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={() => setOpen((p) => !p)}
+        title={`Filter ${columnKey}`}
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 4,
+          border: `1px solid ${isActive ? color : "#E2E8F0"}`,
+          background: isActive ? `${color}15` : "#fff",
+          color: isActive ? color : "#94A3B8",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 0,
+          position: "relative",
+          flexShrink: 0,
+        }}
+      >
+        <Filter size={11} />
+        {isActive && (
+          <span
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              minWidth: 14,
+              height: 14,
+              padding: "0 3px",
+              borderRadius: 999,
+              background: color,
+              color: "#fff",
+              fontSize: 8.5,
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1.5px solid #fff",
+            }}
+          >
+            {selected.length}
+          </span>
+        )}
+      </button>
+      {open && createPortal(popup, document.body)}
+    </>
+  );
+}
+/* ─── Project Column Filter Button (with portal) ─── */
+function ProjectColumnFilterButton({
+  color,
+  columnKey,
+  options,
+  selected,
+  onChange,
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+  const popupRef = useRef(null);
+
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const popupWidth = 220;
+    const popupHeight = 320;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const spacing = 4;
+
+    let top = rect.bottom + spacing;
+    if (top + popupHeight > viewportHeight - 20) {
+      top = rect.top - popupHeight - spacing;
+    }
+
+    let left = rect.right - popupWidth;
+    if (left < 10) left = 10;
+    if (left + popupWidth > viewportWidth - 10) {
+      left = viewportWidth - popupWidth - 10;
+    }
+
+    setPosition({ top, left });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    const reposition = () => updatePosition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (buttonRef.current?.contains(e.target)) return;
+      if (popupRef.current?.contains(e.target)) return;
+      setOpen(false);
+      setSearch("");
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [open]);
+
+  const filtered = options.filter((o) =>
+    (o.label || "").toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const isActive = selected.length > 0;
+
+  const popup = open ? (
+    <div
+      ref={popupRef}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "fixed",
+        top: position.top,
+        left: position.left,
+        width: 220,
+        background: "#fff",
+        border: "1px solid #CBD5E1",
+        borderRadius: 8,
+        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+        zIndex: 99999,
+        fontFamily: "Sora,sans-serif",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "8px 12px",
+          borderBottom: "1px solid #E2E8F0",
+          background: "#F8FAFC",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+          Filter {columnKey.charAt(0).toUpperCase() + columnKey.slice(1)}
+        </span>
+        {isActive && (
+          <button
+            onClick={() => onChange([])}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#EF4444",
+              cursor: "pointer",
+              fontSize: 10,
+              fontWeight: 600,
+              padding: 0,
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {options.length > 5 && (
+        <div style={{ padding: "6px 10px", borderBottom: "1px solid #F1F5F9" }}>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            autoFocus
+            style={{
+              width: "100%",
+              height: 26,
+              border: "1px solid #E2E8F0",
+              borderRadius: 5,
+              padding: "0 8px",
+              fontSize: 11,
+              fontFamily: "Sora,sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+      )}
+
+      <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 0" }}>
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              padding: "12px",
+              textAlign: "center",
+              color: "#94A3B8",
+              fontSize: 11,
+            }}
+          >
+            No options
+          </div>
+        ) : (
+          filtered.map((opt) => {
+            const checked = selected.includes(opt.value);
+            return (
+              <div
+                key={opt.value}
+                onClick={() => {
+                  onChange(
+                    checked
+                      ? selected.filter((v) => v !== opt.value)
+                      : [...selected, opt.value],
+                  );
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  background: checked ? `${color}15` : "transparent",
+                  borderLeft: checked
+                    ? `3px solid ${color}`
+                    : "3px solid transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!checked) e.currentTarget.style.background = "#F8FAFC";
+                }}
+                onMouseLeave={(e) => {
+                  if (!checked)
+                    e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <span
+                  style={{
+                    width: 15,
+                    height: 15,
+                    borderRadius: 4,
+                    border: `1.5px solid ${checked ? color : "#CBD5E1"}`,
+                    background: checked ? color : "#fff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 700,
+                  }}
+                >
+                  {checked && "✓"}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    color: "#0F172A",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontWeight: checked ? 600 : 400,
+                    flex: 1,
+                  }}
+                  title={opt.label}
+                >
+                  {opt.label}
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {selected.length > 0 && (
+        <div
+          style={{
+            padding: "6px 12px",
+            borderTop: "1px solid #E2E8F0",
+            background: "#FAFBFC",
+            fontSize: 10,
+            color: "#64748B",
+            textAlign: "center",
+          }}
+        >
+          {selected.length} of {options.length} selected
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={() => setOpen((p) => !p)}
+        title={`Filter ${columnKey}`}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 4,
+          border: `1px solid ${isActive ? color : "#E2E8F0"}`,
+          background: isActive ? `${color}15` : "#fff",
+          color: isActive ? color : "#94A3B8",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 0,
+          position: "relative",
+          flexShrink: 0,
+        }}
+      >
+        <Filter size={10} />
+        {isActive && (
+          <span
+            style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              minWidth: 13,
+              height: 13,
+              padding: "0 3px",
+              borderRadius: 999,
+              background: color,
+              color: "#fff",
+              fontSize: 8,
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1.5px solid #fff",
+            }}
+          >
+            {selected.length}
+          </span>
+        )}
+      </button>
+      {open && createPortal(popup, document.body)}
+    </>
+  );
+}
 /* ─── Main GanttView ─── */
 export default function GanttView({
   projects = [],
   onOpenComments,
   onFeedback,
+  showGlobalFilters = false,
 }) {
   const [viewMode, setViewMode] = useState("task");
   const [zoom, setZoom] = useState("day");
@@ -936,15 +1853,13 @@ export default function GanttView({
   const [statusFilter, setStatusFilter] = useState([]);
   const timelineRef = useRef(null);
   const leftPanelRef = useRef(null);
-
-  useEffect(() => {
-    setColWidthPx(ZOOM_CONFIGS[zoom].defaultColWidth);
-  }, [zoom]);
-
-  const syncScroll = useCallback((e) => {
-    if (leftPanelRef.current)
-      leftPanelRef.current.scrollTop = e.target.scrollTop;
-  }, []);
+  const [projectFilters, setProjectFilters] = useState({});
+  // ── Column filter state (global across all projects) ──
+  const [columnFilters, setColumnFilters] = useState({
+    module: [],
+    resource: [],
+    status: [],
+  });
 
   // ── Filter projects ──
   const filteredProjects = useMemo(() => {
@@ -1005,43 +1920,88 @@ export default function GanttView({
 
     return result;
   }, [projects, projectFilter, moduleFilter, resourceFilter, statusFilter]);
-
+  // Add this near your other computed values in GanttView
+  const leftPanelWidth = useMemo(() => {
+    // Expand width if any project is expanded (needs room for filter buttons)
+    const anyExpanded = filteredProjects.some((p) =>
+      expandedProjects.has(p.id),
+    );
+    return anyExpanded ? LEFT_PANEL_WIDTH_EXPANDED : LEFT_PANEL_WIDTH_COLLAPSED;
+  }, [filteredProjects, expandedProjects]);
   // ── Flatten all rows across projects ──
-  const allRows = useMemo(() => {
-    const result = [];
-    filteredProjects.forEach((project, pIdx) => {
-      const rows = project.rows || [];
-      const childrenMap = new Map();
-      rows.forEach((r) => {
-        const key = r.parentId || "__ROOT__";
-        if (!childrenMap.has(key)) childrenMap.set(key, []);
-        childrenMap.get(key).push(r);
-      });
+  // ── Compute options for column filters (cascading) ──
+  const globalColumnFilterOptions = useMemo(() => {
+    // All rows from all filtered projects
+    const allRows = filteredProjects.flatMap((p) => p.rows || []);
 
-      const walk = (parentKey, depth) => {
-        const children = childrenMap.get(parentKey) || [];
-        children.forEach((node) => {
-          result.push({
-            ...node,
-            depth,
-            _projectId: project.id,
-            _projectName: project.project || "Untitled",
-            _projectIdx: pIdx,
-            _isProjectRow: false,
-          });
-          if (childrenMap.has(node.id) && expandedRows.has(node.id)) {
-            walk(node.id, depth + 1);
-          }
-        });
-      };
-
-      if (expandedProjects.has(project.id)) {
-        walk("__ROOT__", 0);
+    // Helper: does row match all filters EXCEPT the given one?
+    const matchesExcept = (row, excludeKey) => {
+      if (
+        excludeKey !== "module" &&
+        columnFilters.module.length > 0 &&
+        !columnFilters.module.includes(row.module || "")
+      ) {
+        return false;
       }
-    });
-    return result;
-  }, [filteredProjects, expandedProjects, expandedRows]);
+      if (
+        excludeKey !== "resource" &&
+        columnFilters.resource.length > 0 &&
+        !columnFilters.resource.includes(row.resource || "")
+      ) {
+        return false;
+      }
+      if (
+        excludeKey !== "status" &&
+        columnFilters.status.length > 0 &&
+        !columnFilters.status.includes(row.status || "Pending")
+      ) {
+        return false;
+      }
+      return true;
+    };
 
+    // Modules
+    const modules = [
+      ...new Set(
+        allRows
+          .filter((r) => matchesExcept(r, "module") && r.module)
+          .map((r) => r.module),
+      ),
+    ].sort();
+    const moduleOpts = modules.map((m) => ({ value: m, label: m }));
+
+    // Resources
+    const resourcesMap = new Map();
+    allRows
+      .filter((r) => matchesExcept(r, "resource") && r.resource)
+      .forEach((r) => {
+        if (!resourcesMap.has(r.resource)) {
+          resourcesMap.set(r.resource, {
+            value: r.resource,
+            label: r.resourceName || r.resource,
+          });
+        }
+      });
+    const resourceOpts = Array.from(resourcesMap.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+
+    // Statuses
+    const statuses = [
+      ...new Set(
+        allRows
+          .filter((r) => matchesExcept(r, "status"))
+          .map((r) => r.status || "Pending"),
+      ),
+    ].sort();
+    const statusOpts = statuses.map((s) => ({ value: s, label: s }));
+
+    return { moduleOpts, resourceOpts, statusOpts };
+  }, [filteredProjects, columnFilters]);
+  const syncScroll = useCallback((e) => {
+    if (leftPanelRef.current)
+      leftPanelRef.current.scrollTop = e.target.scrollTop;
+  }, []);
   // ── Resource view ──
   const resourceViewData = useMemo(() => {
     const map = new Map();
@@ -1218,26 +2178,90 @@ export default function GanttView({
 
     return { projectOpts, moduleOpts, resourceOpts, statusOpts };
   }, [projects, projectColorMap, projectFilter, moduleFilter, resourceFilter]);
-
-  // ── Auto-clean child filters when parent filter changes ──
+  // ═══════════════════════════════════════════════════════
+  // 1. Reset column width when zoom changes
+  // ═══════════════════════════════════════════════════════
   useEffect(() => {
-    // Remove module selections that no longer exist in available options
+    setColWidthPx(ZOOM_CONFIGS[zoom].defaultColWidth);
+  }, [zoom]);
+
+  // ═══════════════════════════════════════════════════════
+  // 2. Auto-clean invalid per-project filter selections
+  // (Fixed: no infinite loop)
+  // ═══════════════════════════════════════════════════════
+  useEffect(() => {
+    setProjectFilters((prevFilters) => {
+      let hasChanges = false;
+      const newFilters = { ...prevFilters };
+
+      filteredProjects.forEach((project) => {
+        const currentFilter = prevFilters[project.id];
+        if (!currentFilter) return;
+
+        const isEmpty =
+          currentFilter.module.length === 0 &&
+          currentFilter.resource.length === 0 &&
+          currentFilter.status.length === 0;
+        if (isEmpty) return;
+
+        const opts = getProjectFilterOptions(project, currentFilter);
+        const validModules = new Set(opts.moduleOpts.map((o) => o.value));
+        const validResources = new Set(opts.resourceOpts.map((o) => o.value));
+        const validStatuses = new Set(opts.statusOpts.map((o) => o.value));
+
+        const cleanedModule = currentFilter.module.filter((m) =>
+          validModules.has(m),
+        );
+        const cleanedResource = currentFilter.resource.filter((r) =>
+          validResources.has(r),
+        );
+        const cleanedStatus = currentFilter.status.filter((s) =>
+          validStatuses.has(s),
+        );
+
+        const changed =
+          cleanedModule.length !== currentFilter.module.length ||
+          cleanedResource.length !== currentFilter.resource.length ||
+          cleanedStatus.length !== currentFilter.status.length;
+
+        if (changed) {
+          hasChanges = true;
+          newFilters[project.id] = {
+            module: cleanedModule,
+            resource: cleanedResource,
+            status: cleanedStatus,
+          };
+        }
+      });
+
+      // CRITICAL: Return same reference if nothing changed (prevents infinite loop)
+      return hasChanges ? newFilters : prevFilters;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredProjects]); // ← Only depend on filteredProjects, NOT projectFilters
+
+  // ═══════════════════════════════════════════════════════
+  // 3. Auto-clean invalid GLOBAL filter selections
+  // ═══════════════════════════════════════════════════════
+  useEffect(() => {
     const validModuleValues = filterOptions.moduleOpts.map((o) => o.value);
-    setModuleFilter((prev) =>
-      prev.filter((m) => validModuleValues.includes(m)),
-    );
-
-    // Remove resource selections that no longer exist
     const validResourceValues = filterOptions.resourceOpts.map((o) => o.value);
-    setResourceFilter((prev) =>
-      prev.filter((r) => validResourceValues.includes(r)),
-    );
-
-    // Remove status selections that no longer exist
     const validStatusValues = filterOptions.statusOpts.map((o) => o.value);
-    setStatusFilter((prev) =>
-      prev.filter((s) => validStatusValues.includes(s)),
-    );
+
+    setModuleFilter((prev) => {
+      const filtered = prev.filter((m) => validModuleValues.includes(m));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+
+    setResourceFilter((prev) => {
+      const filtered = prev.filter((r) => validResourceValues.includes(r));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+
+    setStatusFilter((prev) => {
+      const filtered = prev.filter((s) => validStatusValues.includes(s));
+      return filtered.length === prev.length ? prev : filtered;
+    });
   }, [
     filterOptions.moduleOpts,
     filterOptions.resourceOpts,
@@ -1273,6 +2297,178 @@ export default function GanttView({
     alignItems: "center",
     gap: 5,
   };
+  // Get filters for a specific project
+  const getProjectFilter = (projectId) => {
+    return (
+      projectFilters[projectId] || {
+        module: [],
+        resource: [],
+        status: [],
+      }
+    );
+  };
+
+  // Update a specific filter for a project
+  const updateProjectFilter = (projectId, filterKey, values) => {
+    setProjectFilters((prev) => ({
+      ...prev,
+      [projectId]: {
+        ...getProjectFilter(projectId),
+        [filterKey]: values,
+      },
+    }));
+  };
+
+  // Clear all filters for a specific project
+  const clearProjectFilters = (projectId) => {
+    setProjectFilters((prev) => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+  };
+
+  // Get filter options for a specific project
+  // Get filter options for a specific project (with dependent filtering)
+  const getProjectFilterOptions = useCallback((project, currentFilter) => {
+    const allRows = project.rows || [];
+
+    const matchesFilters = (row, excludeKey) => {
+      if (
+        excludeKey !== "module" &&
+        currentFilter.module.length > 0 &&
+        !currentFilter.module.includes(row.module || "")
+      )
+        return false;
+      if (
+        excludeKey !== "resource" &&
+        currentFilter.resource.length > 0 &&
+        !currentFilter.resource.includes(row.resource || "")
+      )
+        return false;
+      if (
+        excludeKey !== "status" &&
+        currentFilter.status.length > 0 &&
+        !currentFilter.status.includes(row.status || "Pending")
+      )
+        return false;
+      return true;
+    };
+
+    const rowsForModules = allRows.filter((r) => matchesFilters(r, "module"));
+    const modules = [
+      ...new Set(rowsForModules.filter((r) => r.module).map((r) => r.module)),
+    ].sort();
+
+    const rowsForResources = allRows.filter((r) =>
+      matchesFilters(r, "resource"),
+    );
+    const resourcesMap = new Map();
+    rowsForResources
+      .filter((r) => r.resource)
+      .forEach((r) => {
+        if (!resourcesMap.has(r.resource)) {
+          resourcesMap.set(r.resource, {
+            value: r.resource,
+            label: r.resourceName || r.resource,
+          });
+        }
+      });
+    const resources = Array.from(resourcesMap.values()).sort((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+
+    const rowsForStatuses = allRows.filter((r) => matchesFilters(r, "status"));
+    const statuses = [
+      ...new Set(rowsForStatuses.map((r) => r.status || "Pending")),
+    ].sort();
+
+    return {
+      moduleOpts: modules.map((m) => ({ value: m, label: m })),
+      resourceOpts: resources,
+      statusOpts: statuses.map((s) => ({ value: s, label: s })),
+    };
+  }, []);
+  // Check if project has active filters
+  const hasProjectFilters = (projectId) => {
+    const f = getProjectFilter(projectId);
+    return f.module.length > 0 || f.resource.length > 0 || f.status.length > 0;
+  };
+  const allRows = useMemo(() => {
+    const result = [];
+    filteredProjects.forEach((project, pIdx) => {
+      let rows = project.rows || [];
+
+      // ── Apply per-project filters ──
+      const pFilter = getProjectFilter(project.id);
+      const hasAnyFilter =
+        pFilter.module.length > 0 ||
+        pFilter.resource.length > 0 ||
+        pFilter.status.length > 0;
+
+      if (hasAnyFilter) {
+        const filteredRows = rows.filter((r) => {
+          if (
+            pFilter.module.length > 0 &&
+            !pFilter.module.includes(r.module || "")
+          )
+            return false;
+          if (
+            pFilter.resource.length > 0 &&
+            !pFilter.resource.includes(r.resource || "")
+          )
+            return false;
+          if (
+            pFilter.status.length > 0 &&
+            !pFilter.status.includes(r.status || "Pending")
+          )
+            return false;
+          return true;
+        });
+
+        // Include ancestors
+        const finalIds = new Set(filteredRows.map((r) => r.id));
+        filteredRows.forEach((r) => {
+          let cur = rows.find((x) => x.id === r.parentId);
+          while (cur) {
+            finalIds.add(cur.id);
+            cur = rows.find((x) => x.id === cur.parentId);
+          }
+        });
+
+        rows = rows.filter((r) => finalIds.has(r.id));
+      }
+
+      const childrenMap = new Map();
+      rows.forEach((r) => {
+        const key = r.parentId || "__ROOT__";
+        if (!childrenMap.has(key)) childrenMap.set(key, []);
+        childrenMap.get(key).push(r);
+      });
+
+      const walk = (parentKey, depth) => {
+        const children = childrenMap.get(parentKey) || [];
+        children.forEach((node) => {
+          result.push({
+            ...node,
+            depth,
+            _projectId: project.id,
+            _projectName: project.project || "Untitled",
+            _projectIdx: pIdx,
+            _isProjectRow: false,
+          });
+          if (childrenMap.has(node.id) && expandedRows.has(node.id)) {
+            walk(node.id, depth + 1);
+          }
+        });
+      };
+
+      if (expandedProjects.has(project.id)) {
+        walk("__ROOT__", 0);
+      }
+    });
+    return result;
+  }, [filteredProjects, expandedProjects, expandedRows, projectFilters]);
 
   return (
     <div
@@ -1312,7 +2508,11 @@ export default function GanttView({
           }}
         >
           {[
-            { key: "task", label: "Task View", icon: <Calendar size={13} /> },
+            {
+              key: "task",
+              label: "Project View",
+              icon: <Calendar size={13} />,
+            },
             {
               key: "resource",
               label: "Resource View",
@@ -1390,109 +2590,112 @@ export default function GanttView({
         <div style={{ width: 1, height: 20, background: "#E2E8F0" }} />
 
         {/* Filters */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            flexWrap: "wrap",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 10,
-              color: "#64748B",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.3px",
-            }}
-          >
-            Filters:
-          </span>
-
-          <GanttFilterDropdown
-            label="Project"
-            icon={<Briefcase size={11} />}
-            options={filterOptions.projectOpts}
-            selected={projectFilter}
-            onChange={setProjectFilter}
-          />
-
-          {viewMode === "task" && (
-            <GanttFilterDropdown
-              label="Module"
-              icon={<Calendar size={11} />}
-              options={filterOptions.moduleOpts}
-              selected={moduleFilter}
-              onChange={setModuleFilter}
-            />
-          )}
-
-          <GanttFilterDropdown
-            label="Resource"
-            icon={<Users size={11} />}
-            options={filterOptions.resourceOpts}
-            selected={resourceFilter}
-            onChange={setResourceFilter}
-          />
-
-          <GanttFilterDropdown
-            label="Status"
-            icon={<Filter size={11} />}
-            options={filterOptions.statusOpts}
-            selected={statusFilter}
-            onChange={setStatusFilter}
-          />
-
-          {(projectFilter.length > 0 ||
-            moduleFilter.length > 0 ||
-            resourceFilter.length > 0 ||
-            statusFilter.length > 0) && (
-            <button
-              onClick={() => {
-                setProjectFilter([]);
-                setModuleFilter([]);
-                setResourceFilter([]);
-                setStatusFilter([]);
-              }}
+        {showGlobalFilters && (
+          <>
+            <div
               style={{
-                height: 30,
-                padding: "0 10px",
-                borderRadius: 6,
-                border: "1px solid #FCA5A5",
-                background: "#FEF2F2",
-                color: "#DC2626",
-                fontFamily: "Sora,sans-serif",
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
-                gap: 4,
+                gap: 6,
+                flexWrap: "wrap",
               }}
             >
-              <X size={11} /> Clear All
-            </button>
-          )}
-        </div>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: "#64748B",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.3px",
+                }}
+              >
+                Filters:
+              </span>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 11,
-            color: "#64748B",
-            marginLeft: 6,
-          }}
-        >
-          <Briefcase size={12} />
-          <span>
-            {filteredProjects.length} project
-            {filteredProjects.length !== 1 ? "s" : ""}
-          </span>
-        </div>
+              <GanttFilterDropdown
+                label="Project"
+                icon={<Briefcase size={11} />}
+                options={filterOptions.projectOpts}
+                selected={projectFilter}
+                onChange={setProjectFilter}
+              />
 
+              {viewMode === "task" && (
+                <GanttFilterDropdown
+                  label="Module"
+                  icon={<Calendar size={11} />}
+                  options={filterOptions.moduleOpts}
+                  selected={moduleFilter}
+                  onChange={setModuleFilter}
+                />
+              )}
+
+              <GanttFilterDropdown
+                label="Resource"
+                icon={<Users size={11} />}
+                options={filterOptions.resourceOpts}
+                selected={resourceFilter}
+                onChange={setResourceFilter}
+              />
+
+              <GanttFilterDropdown
+                label="Status"
+                icon={<Filter size={11} />}
+                options={filterOptions.statusOpts}
+                selected={statusFilter}
+                onChange={setStatusFilter}
+              />
+
+              {(projectFilter.length > 0 ||
+                moduleFilter.length > 0 ||
+                resourceFilter.length > 0 ||
+                statusFilter.length > 0) && (
+                <button
+                  onClick={() => {
+                    setProjectFilter([]);
+                    setModuleFilter([]);
+                    setResourceFilter([]);
+                    setStatusFilter([]);
+                  }}
+                  style={{
+                    height: 30,
+                    padding: "0 10px",
+                    borderRadius: 6,
+                    border: "1px solid #FCA5A5",
+                    background: "#FEF2F2",
+                    color: "#DC2626",
+                    fontFamily: "Sora,sans-serif",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <X size={11} /> Clear All
+                </button>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize: 11,
+                color: "#64748B",
+                marginLeft: 6,
+              }}
+            >
+              <Briefcase size={12} />
+              <span>
+                {filteredProjects.length} project
+                {filteredProjects.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </>
+        )}
         {/* Legend */}
         <div
           style={{
@@ -1583,28 +2786,40 @@ export default function GanttView({
             zIndex: 20,
           }}
         >
+          {/* ══ COLUMN HEADERS ══ */}
           <div
             style={{
               height: HEADER_HEIGHT,
               borderBottom: "1px solid #E2E8F0",
               background: "#F8FAFC",
               display: "flex",
-              alignItems: "flex-end",
-              padding: "0 12px 8px",
               flexShrink: 0,
             }}
           >
-            <span
+            {/* ══ Main Column Header ══ */}
+            <div
               style={{
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: "#64748B",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
+                height: HEADER_HEIGHT,
+                borderBottom: "1px solid #E2E8F0",
+                background: "#F8FAFC",
+                display: "flex",
+                alignItems: "flex-end",
+                padding: "0 12px 8px",
+                flexShrink: 0,
               }}
             >
-              {viewMode === "task" ? "Project / Task" : "Resource"}
-            </span>
+              <span
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: "#64748B",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {viewMode === "task" ? "Project / Task" : "Resource"}
+              </span>
+            </div>
           </div>
 
           <div ref={leftPanelRef} style={{ flex: 1, overflowY: "hidden" }}>
@@ -1617,9 +2832,16 @@ export default function GanttView({
                     (r) => r._projectId === project.id,
                   );
 
+                  const projectFilter = getProjectFilter(project.id);
+                  const projectFilterOpts = getProjectFilterOptions(
+                    project,
+                    projectFilter,
+                  );
+                  const hasFilters = hasProjectFilters(project.id);
+
                   return (
                     <React.Fragment key={project.id}>
-                      {/* Project header row */}
+                      {/* ══ Project header row (full width) ══ */}
                       <div
                         onClick={() => {
                           setExpandedProjects((prev) => {
@@ -1635,18 +2857,32 @@ export default function GanttView({
                           alignItems: "center",
                           padding: "0 8px",
                           borderBottom: "1px solid #E2E8F0",
-                          background: "#F8FAFC",
+                          background: hasFilters ? "#F0F9FF" : "#F8FAFC",
                           cursor: "pointer",
                           gap: 6,
                           borderLeft: `4px solid ${pc}`,
+                          transition: "background 0.15s",
                         }}
                       >
                         {isExpanded ? (
-                          <ChevronDown size={13} color="#64748B" />
+                          <ChevronDown
+                            size={13}
+                            color="#64748B"
+                            style={{ flexShrink: 0 }}
+                          />
                         ) : (
-                          <ChevronRight size={13} color="#64748B" />
+                          <ChevronRight
+                            size={13}
+                            color="#64748B"
+                            style={{ flexShrink: 0 }}
+                          />
                         )}
-                        <Briefcase size={12} color={pc} />
+                        <Briefcase
+                          size={12}
+                          color={pc}
+                          style={{ flexShrink: 0 }}
+                        />
+
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
@@ -1657,21 +2893,222 @@ export default function GanttView({
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                             }}
+                            title={project.project || "Untitled"}
                           >
                             {project.project || "Untitled"}
                           </div>
-                          <div style={{ fontSize: 9.5, color: "#94A3B8" }}>
-                            {(project.rows || []).length} tasks •{" "}
-                            {project.status}
+                          <div
+                            style={{
+                              fontSize: 9.5,
+                              color: "#94A3B8",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <span>{(project.rows || []).length} tasks</span>
+                            <span>•</span>
+                            <span
+                              style={{
+                                textTransform: "capitalize",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {project.status || "draft"}
+                            </span>
+                            {hasFilters && (
+                              <>
+                                <span>•</span>
+                                <span
+                                  style={{
+                                    color: "#1D4ED8",
+                                    fontWeight: 700,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                  }}
+                                >
+                                  <Filter size={9} />
+                                  Filtered
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
+
+                        {/* Clear filters button */}
+                        {isExpanded && hasFilters && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearProjectFilters(project.id);
+                            }}
+                            title="Clear all filters"
+                            style={{
+                              height: 22,
+                              padding: "0 8px",
+                              borderRadius: 4,
+                              border: "1px solid #FCA5A5",
+                              background: "#FEF2F2",
+                              color: "#EF4444",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              flexShrink: 0,
+                            }}
+                          >
+                            <X size={10} /> Clear
+                          </button>
+                        )}
                       </div>
 
-                      {/* Task rows */}
+                      {/* ══ Sub-header (only when expanded): Column headers with filters ══ */}
+                      {isExpanded && (
+                        <div
+                          style={{
+                            height: SUB_HEADER_HEIGHT,
+                            display: "flex",
+                            borderBottom: "1px solid #E2E8F0",
+                            background: "#FAFBFC",
+                            borderLeft: `4px solid ${pc}80`, // Semi-transparent
+                          }}
+                        >
+                          {/* Task name sub-header */}
+                          <div
+                            style={{
+                              width: COL_TASK_WIDTH - 4,
+                              padding: "0 12px",
+                              display: "flex",
+                              alignItems: "center",
+                              borderRight: "1px solid #E2E8F0",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 9.5,
+                                fontWeight: 700,
+                                color: "#94A3B8",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.4px",
+                              }}
+                            >
+                              Task
+                            </span>
+                          </div>
+
+                          {/* Module sub-header */}
+                          <div
+                            style={{
+                              width: COL_MODULE_WIDTH,
+                              padding: "0 10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              borderRight: "1px solid #E2E8F0",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 9.5,
+                                fontWeight: 700,
+                                color: "#94A3B8",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.4px",
+                              }}
+                            >
+                              Module
+                            </span>
+                            <ProjectColumnFilterButton
+                              color="#7C3AED"
+                              columnKey="module"
+                              options={projectFilterOpts.moduleOpts}
+                              selected={projectFilter.module}
+                              onChange={(vals) =>
+                                updateProjectFilter(project.id, "module", vals)
+                              }
+                            />
+                          </div>
+
+                          {/* Resource sub-header */}
+                          <div
+                            style={{
+                              width: COL_RESOURCE_WIDTH,
+                              padding: "0 10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              borderRight: "1px solid #E2E8F0",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 9.5,
+                                fontWeight: 700,
+                                color: "#94A3B8",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.4px",
+                              }}
+                            >
+                              Resource
+                            </span>
+                            <ProjectColumnFilterButton
+                              color="#15803D"
+                              columnKey="resource"
+                              options={projectFilterOpts.resourceOpts}
+                              selected={projectFilter.resource}
+                              onChange={(vals) =>
+                                updateProjectFilter(
+                                  project.id,
+                                  "resource",
+                                  vals,
+                                )
+                              }
+                            />
+                          </div>
+
+                          {/* Status sub-header */}
+                          <div
+                            style={{
+                              width: COL_STATUS_WIDTH,
+                              padding: "0 10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 9.5,
+                                fontWeight: 700,
+                                color: "#94A3B8",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.4px",
+                              }}
+                            >
+                              Status
+                            </span>
+                            <ProjectColumnFilterButton
+                              color="#B45309"
+                              columnKey="status"
+                              options={projectFilterOpts.statusOpts}
+                              selected={projectFilter.status}
+                              onChange={(vals) =>
+                                updateProjectFilter(project.id, "status", vals)
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ══ Task rows with column cells ══ */}
                       {isExpanded &&
                         projectRows.map((row) => {
                           const isParent = hasChildren(row.id);
                           const isRowExpanded = expandedRows.has(row.id);
+                          const sc = getStatusColor(row.status);
 
                           return (
                             <div
@@ -1679,81 +3116,264 @@ export default function GanttView({
                               style={{
                                 height: ROW_HEIGHT,
                                 display: "flex",
-                                alignItems: "center",
-                                padding: "0 8px",
-                                paddingLeft: 12 + row.depth * 16,
                                 borderBottom: "1px solid #F1F5F9",
-                                gap: 6,
-                                borderLeft: `4px solid transparent`,
                               }}
                             >
-                              {isParent ? (
-                                <button
-                                  onClick={() => {
-                                    setExpandedRows((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(row.id)) next.delete(row.id);
-                                      else next.add(row.id);
-                                      return next;
-                                    });
-                                  }}
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    padding: 0,
-                                    color: "#94A3B8",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  {isRowExpanded ? (
-                                    <ChevronDown size={12} />
-                                  ) : (
-                                    <ChevronRight size={12} />
-                                  )}
-                                </button>
-                              ) : (
-                                <span style={{ width: 12, flexShrink: 0 }} />
-                              )}
+                              {/* Task cell */}
+                              <div
+                                style={{
+                                  width: COL_TASK_WIDTH,
+                                  padding: "0 8px",
+                                  paddingLeft: 12 + row.depth * 16,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  borderRight: "1px solid #F1F5F9",
+                                }}
+                              >
+                                {isParent ? (
+                                  <button
+                                    onClick={() => {
+                                      setExpandedRows((prev) => {
+                                        const next = new Set(prev);
+                                        if (next.has(row.id))
+                                          next.delete(row.id);
+                                        else next.add(row.id);
+                                        return next;
+                                      });
+                                    }}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      padding: 0,
+                                      color: "#94A3B8",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    {isRowExpanded ? (
+                                      <ChevronDown size={12} />
+                                    ) : (
+                                      <ChevronRight size={12} />
+                                    )}
+                                  </button>
+                                ) : (
+                                  <span style={{ width: 12, flexShrink: 0 }} />
+                                )}
 
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                  style={{
-                                    fontSize: 11,
-                                    fontWeight: row.depth === 0 ? 600 : 400,
-                                    color: "#0F172A",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                  title={row.task}
-                                >
-                                  {row.task || row.module || "—"}
-                                </div>
-                                {row.depth === 0 && (
+                                <div style={{ flex: 1, minWidth: 0 }}>
                                   <div
                                     style={{
-                                      fontSize: 9,
-                                      color: "#94A3B8",
+                                      fontSize: 11,
+                                      fontWeight: row.depth === 0 ? 600 : 400,
+                                      color: "#0F172A",
                                       overflow: "hidden",
                                       textOverflow: "ellipsis",
                                       whiteSpace: "nowrap",
                                     }}
+                                    title={row.task}
                                   >
-                                    {row.resourceName || row.resource || "—"}
+                                    {row.task || "—"}
                                   </div>
+                                </div>
+                              </div>
+
+                              {/* Module cell */}
+                              <div
+                                style={{
+                                  width: COL_MODULE_WIDTH,
+                                  padding: "0 10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  borderRight: "1px solid #F1F5F9",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {row.module ? (
+                                  <span
+                                    style={{
+                                      padding: "2px 7px",
+                                      borderRadius: 4,
+                                      background: "#EDE9FE",
+                                      color: "#7C3AED",
+                                      border: "1px solid #DDD6FE",
+                                      fontSize: 10,
+                                      fontWeight: 600,
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      maxWidth: "100%",
+                                    }}
+                                    title={row.module}
+                                  >
+                                    {row.module}
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      color: "#CBD5E1",
+                                      fontStyle: "italic",
+                                      fontSize: 10,
+                                    }}
+                                  >
+                                    —
+                                  </span>
                                 )}
+                              </div>
+
+                              {/* Resource cell */}
+                              <div
+                                style={{
+                                  width: COL_RESOURCE_WIDTH,
+                                  padding: "0 10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  borderRight: "1px solid #F1F5F9",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {row.resource ? (
+                                  <>
+                                    <div
+                                      style={{
+                                        width: 20,
+                                        height: 20,
+                                        borderRadius: "50%",
+                                        background: "#DBEAFE",
+                                        color: "#1D4ED8",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      {(row.resourceName || row.resource || "?")
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </div>
+                                    <span
+                                      style={{
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        fontSize: 10.5,
+                                        color: "#475569",
+                                        fontWeight: 500,
+                                      }}
+                                      title={row.resourceName || row.resource}
+                                    >
+                                      {row.resourceName || row.resource}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span
+                                    style={{
+                                      color: "#CBD5E1",
+                                      fontStyle: "italic",
+                                      fontSize: 10,
+                                    }}
+                                  >
+                                    —
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Status cell */}
+                              <div
+                                style={{
+                                  width: COL_STATUS_WIDTH,
+                                  padding: "0 10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 999,
+                                    fontSize: 9.5,
+                                    fontWeight: 700,
+                                    background: sc.bg,
+                                    color: sc.color,
+                                    border: `1px solid ${sc.border}`,
+                                    textTransform: "capitalize",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    maxWidth: "100%",
+                                  }}
+                                  title={row.status || "Pending"}
+                                >
+                                  {row.status || "Pending"}
+                                </span>
                               </div>
                             </div>
                           );
                         })}
+
+                      {/* Empty state when filters exclude everything */}
+                      {isExpanded && hasFilters && projectRows.length === 0 && (
+                        <div
+                          style={{
+                            padding: "16px 12px",
+                            textAlign: "center",
+                            borderBottom: "1px solid #F1F5F9",
+                            background: "#FAFBFC",
+                          }}
+                        >
+                          <Filter
+                            size={18}
+                            color="#CBD5E1"
+                            style={{ marginBottom: 6 }}
+                          />
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#64748B",
+                              fontWeight: 600,
+                              marginBottom: 3,
+                            }}
+                          >
+                            No matching tasks
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearProjectFilters(project.id);
+                            }}
+                            style={{
+                              height: 22,
+                              padding: "0 8px",
+                              borderRadius: 4,
+                              border: "1px solid #CBD5E1",
+                              background: "#fff",
+                              color: "#64748B",
+                              fontSize: 10,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              fontFamily: "Sora,sans-serif",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              marginTop: 4,
+                            }}
+                          >
+                            <X size={10} /> Clear Filters
+                          </button>
+                        </div>
+                      )}
                     </React.Fragment>
                   );
                 })}
               </>
             ) : (
+              /* ══ RESOURCE VIEW — unchanged ══ */
               resourceViewData.map((res) => {
                 const rowHeight = ROW_HEIGHT * res.laneCount;
 
@@ -1983,6 +3603,7 @@ export default function GanttView({
                   const projectRows = allRows.filter(
                     (r) => r._projectId === project.id,
                   );
+                  const hasFilters = hasProjectFilters(project.id);
 
                   return (
                     <React.Fragment key={project.id}>
@@ -1992,10 +3613,21 @@ export default function GanttView({
                           height: ROW_HEIGHT,
                           position: "relative",
                           borderBottom: "1px solid #E2E8F0",
-                          background: "#F8FAFC",
+                          background: hasFilters ? "#F0F9FF" : "#F8FAFC",
                         }}
                       />
 
+                      {/* Sub-header row (matches left panel's sub-header) */}
+                      {isExpanded && (
+                        <div
+                          style={{
+                            height: SUB_HEADER_HEIGHT,
+                            position: "relative",
+                            borderBottom: "1px solid #E2E8F0",
+                            background: "#FAFBFC",
+                          }}
+                        />
+                      )}
                       {/* Task bars */}
                       {isExpanded &&
                         projectRows.map((row) => {
@@ -2020,6 +3652,8 @@ export default function GanttView({
                                 height: ROW_HEIGHT,
                                 position: "relative",
                                 borderBottom: "1px solid #F1F5F9",
+                                minHeight: 24, // Top row (chevron + name)
+                                paddingBottom: 4,
                               }}
                             >
                               {/* Planned bar */}

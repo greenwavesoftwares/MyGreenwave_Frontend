@@ -97,7 +97,8 @@ import CommentsActionDialog from "../Modules/Assignee/CommentsActionDialog";
 import { Star } from "lucide-react";
 import FeedbackModal from "./FeedbackModal";
 import GanttView from "./GanttView";
-
+import ProjectUpdatesView from "./ProjectUpdatesView";
+import { getUserData } from "../Modules/Login/Encrypt";
 /* ─── Constants ─── */
 
 const STATUS_CONFIG = {
@@ -791,7 +792,15 @@ function getResources(groups, groupResources) {
 // }
 
 /* ─── Validation ─── */
-function runValidations(rows, project, po, site, groups, groupResources) {
+function runValidations(
+  rows,
+  project,
+  po,
+  site,
+  groups,
+  groupResources,
+  projectStatus = "draft",
+) {
   const results = [];
   const warnings = []; // ← NEW: separate warnings array
 
@@ -1040,48 +1049,53 @@ function runValidations(rows, project, po, site, groups, groupResources) {
   });
 
   // ── 6. Past Date Check ──
-  //    BLOCK only if PENDING task has past start
-  //    Non-pending tasks are ignored (already running/completed)
-  const now = new Date();
-  const pendingPastRows = [];
+  //    Only check for DRAFT projects
+  //    Skip entirely for published/closed projects (work is already ongoing)
+  const isDraftProject = !projectStatus || projectStatus === "draft";
 
-  rows.forEach((r, idx) => {
-    if (!r.plannedStart) return;
-    const startDt = parseISODateTime(r.plannedStart);
-    if (!startDt || startDt >= now) return;
+  if (isDraftProject) {
+    const now = new Date();
+    const pendingPastRows = [];
 
-    const status = String(r.status || "pending")
-      .toLowerCase()
-      .trim();
+    rows.forEach((r, idx) => {
+      if (!r.plannedStart) return;
+      const startDt = parseISODateTime(r.plannedStart);
+      if (!startDt || startDt >= now) return;
 
-    // Only flag pending tasks — skip everything else
-    if (status !== "pending") return;
+      const status = String(r.status || "pending")
+        .toLowerCase()
+        .trim();
 
-    pendingPastRows.push({
-      idx: idx + 1,
-      task: r.task || r.module || `Row #${idx + 1}`,
-      start: fmtDisplay(startDt),
-      status: r.status || "pending",
+      // Only flag pending tasks — skip everything else
+      if (status !== "pending") return;
+
+      pendingPastRows.push({
+        idx: idx + 1,
+        task: r.task || r.module || `Row #${idx + 1}`,
+        start: fmtDisplay(startDt),
+        status: r.status || "pending",
+      });
     });
-  });
 
-  // ❌ ERROR: Pending tasks in the past — must fix
-  results.push({
-    ok: pendingPastRows.length === 0,
-    title:
-      pendingPastRows.length === 0
-        ? "All pending tasks have future start times"
-        : `${pendingPastRows.length} pending task${pendingPastRows.length !== 1 ? "s have" : " has"} a past start time`,
-    detail:
-      pendingPastRows.length === 0
-        ? "Pending tasks are scheduled in the future."
-        : `These pending tasks must be rescheduled:\n${pendingPastRows
-            .slice(0, 5)
-            .map((r) => `• "${r.task}" — ${r.start}`)
-            .join(
-              "\n",
-            )}${pendingPastRows.length > 5 ? `\n…and ${pendingPastRows.length - 5} more` : ""}`,
-  });
+    // ❌ ERROR: Pending tasks in the past — must fix (draft only)
+    results.push({
+      ok: pendingPastRows.length === 0,
+      title:
+        pendingPastRows.length === 0
+          ? "All pending tasks have future start times"
+          : `${pendingPastRows.length} pending task${pendingPastRows.length !== 1 ? "s have" : " has"} a past start time`,
+      detail:
+        pendingPastRows.length === 0
+          ? "Pending tasks are scheduled in the future."
+          : `These pending tasks must be rescheduled:\n${pendingPastRows
+              .slice(0, 5)
+              .map((r) => `• "${r.task}" — ${r.start}`)
+              .join(
+                "\n",
+              )}${pendingPastRows.length > 5 ? `\n…and ${pendingPastRows.length - 5} more` : ""}`,
+    });
+  }
+  // For non-draft projects: skip past-date check entirely
 
   // ── REMOVED: Non-pending past start warning ──
   // No warning for running/completed/paused tasks with past start times
@@ -7816,6 +7830,7 @@ function ProjectEditor({
   onPublish,
   onBack,
   showToast,
+  currentUserId,
 }) {
   const [moduleRegistry, setModuleRegistry] = useState(
     draft.moduleRegistry || {},
@@ -7839,11 +7854,27 @@ function ProjectEditor({
     resource: [],
     status: [],
   });
+
   const [showGantt, setShowGantt] = useState(false);
+  const projectOwnerId = draft?.createdBy || currentUserId || "";
+  const isProjectOwner =
+    currentUserId &&
+    projectOwnerId &&
+    currentUserId.toLowerCase() === projectOwnerId.toLowerCase();
+  const isDraft = !draft?.status || draft?.status === "draft";
+  const isNewProject = !draft?.createdBy;
+  const effectiveIsOwner = isProjectOwner || isNewProject;
+  const activitiesGanttEnabled = isProjectOwner;
+  // ─── Default View ───
+  const [view, setView] = useState(
+    activitiesGanttEnabled ? "activities" : "updates",
+  );
+
   const [motionSubmitted, setMotionSubmitted] = useState(
     draft.status === "published",
   );
   const isEditable = draft.status === "draft" || !draft.status;
+
   const [draftTime, setDraftTime] = useState(
     draft.updatedAt
       ? new Date(draft.updatedAt).toLocaleString("en-GB", {
@@ -7917,7 +7948,14 @@ function ProjectEditor({
 
     return { modules, resourceOpts, statuses };
   }, [rows]);
-
+  useEffect(() => {
+    if (
+      !activitiesGanttEnabled &&
+      (view === "activities" || view === "gantt")
+    ) {
+      setView("updates");
+    }
+  }, [activitiesGanttEnabled, view]);
   const moduleColorMap = useMemo(() => {
     const uniqueModules = [
       ...new Set(rows.filter((r) => r.module).map((r) => r.module)),
@@ -8723,6 +8761,7 @@ function ProjectEditor({
       site,
       groups,
       groupResources,
+      draft.status,
     );
     setValidationResults(results);
     setValidationWarnings(warnings);
@@ -8978,543 +9017,677 @@ function ProjectEditor({
             )}
           </span>
         </div>
-        {/* Close Project button — only for published projects */}
-        {motionSubmitted && draft.status !== "closed" && allTasksDone && (
-          <button
-            onClick={() => setCloseProjectOpen(true)}
-            style={{
-              ...btnStyle,
-              marginLeft: "auto",
-              background: "#FEF2F2",
-              color: "#DC2626",
-              borderColor: "#FCA5A5",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <XCircle size={14} />
-            Close Project
-          </button>
-        )}
-        {draft.status === "closed" && (
-          <button
-            onClick={() => setCloseProjectOpen(true)}
-            style={{
-              ...btnStyle,
-              marginLeft: "auto",
-              background: "#EDE9FE",
-              color: "#7C3AED",
-              borderColor: "#DDD6FE",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <Star size={14} fill="#7C3AED" />
-            View Project Feedback
-          </button>
-        )}
-        {/* ── Setup Card ── */}
+        {/* ── Sub-Tab Bar ── */}
         <div
           style={{
             background: "#fff",
             border: "1px solid #E2E8F0",
             borderRadius: 12,
-            padding: "18px 20px",
-            marginBottom: 16,
+            padding: 4,
+            marginBottom: 12,
+            display: "flex",
+            gap: 2,
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            width: "fit-content",
+            alignItems: "center",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 14,
-            }}
-          >
-            <Settings size={15} />
-            <span style={{ fontWeight: 700, fontSize: 13.5, color: "#0F172A" }}>
-              Project Setup
-            </span>
-            <span style={{ fontSize: 11.5, color: "#94A3B8", marginLeft: 4 }}>
-              Fill details, pick group, upload sheet — table appears below.
-            </span>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "2fr 1.2fr 1.5fr 1.5fr 1fr 1.2fr",
-              gap: 12,
-              alignItems: "end",
-            }}
-          >
-            {/* Project Name */}
-            <div>
-              <label style={labelStyle}>
-                Project Name <span style={{ color: "#EF4444" }}>*</span>
-              </label>
-              <input
-                value={project}
-                onChange={(e) => isEditable && setProject(e.target.value)}
-                placeholder="e.g. ThingWorx — Adity FRP"
-                disabled={!isEditable}
-                title={
-                  !isEditable ? "Cannot edit — project is not a draft" : ""
-                }
-                style={{
-                  ...inputStyle,
-                  opacity: !isEditable ? 0.65 : 1,
-                  cursor: !isEditable ? "not-allowed" : "text",
-                  background: !isEditable ? "#F8FAFC" : "#fff",
-                }}
-              />
-            </div>
-            {/* PO No */}
-            <div>
-              <label style={labelStyle}>
-                PO No <span style={{ color: "#EF4444" }}>*</span>
-              </label>
-              <input
-                value={po}
-                onChange={(e) => isEditable && setPo(e.target.value)}
-                placeholder="e.g. PO-20240092"
-                disabled={!isEditable}
-                title={
-                  !isEditable ? "Cannot edit — project is not a draft" : ""
-                }
-                style={{
-                  ...inputStyle,
-                  opacity: !isEditable ? 0.65 : 1,
-                  cursor: !isEditable ? "not-allowed" : "text",
-                  background: !isEditable ? "#F8FAFC" : "#fff",
-                }}
-              />
-            </div>
-            {/* Site */}
-            <div>
-              <label style={labelStyle}>
-                Site / Customer <span style={{ color: "#EF4444" }}>*</span>
-              </label>
-              <input
-                value={site}
-                onChange={(e) => isEditable && setSite(e.target.value)}
-                placeholder="e.g. Hindalco — Unit 2"
-                disabled={!isEditable}
-                title={
-                  !isEditable ? "Cannot edit — project is not a draft" : ""
-                }
-                style={{
-                  ...inputStyle,
-                  opacity: !isEditable ? 0.65 : 1,
-                  cursor: !isEditable ? "not-allowed" : "text",
-                  background: !isEditable ? "#F8FAFC" : "#fff",
-                }}
-              />
-            </div>
-            {/* Groups multi-select */}
-            <div>
-              <label style={labelStyle}>
-                Group(s) <span style={{ color: "#EF4444" }}>*</span>
-              </label>
-              {console.log(
-                "Resource options:",
-                resources.map((r) => ({
-                  userId: r.userId,
-                  userIdType: typeof r.userId,
-                  isString: typeof r.userId === "string",
-                })),
-              )}
-              <SearchableDropdown
-                value={groups}
-                onChange={updateGroups}
-                multiple={true}
-                disabled={!isEditable}
-                placeholder={
-                  !isEditable ? "Locked (not a draft)" : "Select group(s)…"
-                }
-                searchPlaceholder="Search groups..."
-                emptyMessage="No groups available"
-                options={getActiveGroups(groupLabels)
-                  .filter((g) => g && typeof g.groupId === "string")
-                  .map((g) => ({
-                    value: g.groupId,
-                    label: g.groupName || g.groupId,
-                    sublabel: g.groupManager,
-                  }))}
-              />
-            </div>
-            {/* Template */}
-            <div>
-              <label style={labelStyle}>Template</label>
-              <button
-                onClick={handleDownloadTemplate}
-                style={{
-                  width: "100%",
-                  height: 34,
-                  border: "1px solid #CBD5E1",
-                  borderRadius: 6,
-                  background: "#F8FAFC",
-                  color: "#475569",
-                  fontFamily: "Sora,sans-serif",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 5,
-                }}
-              >
-                <Download size={14} /> Download Excel
-              </button>
-            </div>
-            {/* Upload */}
-            <div>
-              <label style={labelStyle}>Activity Sheet</label>
-              <button
-                onClick={() => {
-                  if (!groups.length) {
-                    setUploadStatus({
-                      type: "warn",
-                      msg: "Pick a group before uploading.",
-                    });
-                    return;
-                  }
-                  fileInputRef.current?.click();
-                }}
-                style={{
-                  width: "100%",
-                  height: 34,
-                  border: "1px dashed #93C5FD",
-                  borderRadius: 6,
-                  background: "#EFF6FF",
-                  color: "#1D4ED8",
-                  fontFamily: "Sora,sans-serif",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 5,
-                  fontWeight: 500,
-                }}
-              >
-                <Upload size={14} /> Upload Excel
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                style={{ display: "none" }}
-                onChange={handleFileUpload}
-              />
-            </div>
-          </div>
-          {/* Upload status */}
-          <div
-            style={{
-              marginTop: 10,
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-              padding: "8px 12px",
-              borderRadius: 7,
-              background:
-                uploadStatus.type === "ok"
-                  ? "#F0FDF4"
-                  : uploadStatus.type === "warn"
-                    ? "#FFFBEB"
-                    : uploadStatus.type === "err"
-                      ? "#FEF2F2"
-                      : "#F0F9FF",
-              border: `1px solid ${uploadStatus.type === "ok" ? "#86EFAC" : uploadStatus.type === "warn" ? "#FCD34D" : uploadStatus.type === "err" ? "#FCA5A5" : "#BAE6FD"}`,
-              fontSize: 11.5,
-              color: "#475569",
-            }}
-          >
-            <span style={{ flexShrink: 0, fontSize: 13 }}>
-              {uploadStatus.type === "ok" ? (
-                <CheckCircle2 size={13} />
-              ) : uploadStatus.type === "warn" ? (
-                <AlertTriangle size={13} />
-              ) : uploadStatus.type === "err" ? (
-                <AlertCircle size={13} />
-              ) : (
-                <Info size={13} />
-              )}
-            </span>
-            <span dangerouslySetInnerHTML={{ __html: uploadStatus.msg }} />
-          </div>
-        </div>
+          {[
+            {
+              key: "activities",
+              label: "Activities",
+              icon: <ClipboardList size={14} />,
+              count: rows.length,
+              disabled: !effectiveIsOwner, // ← use effectiveIsOwner
+              disabledReason: "Only the project owner can access Activities",
+            },
+            {
+              key: "gantt",
+              label: "Gantt",
+              icon: <Calendar size={14} />,
+              count: null,
+              disabled: !effectiveIsOwner, // ← use effectiveIsOwner
+              disabledReason: "Only the project owner can access Gantt",
+            },
+            {
+              key: "updates",
+              label: "Updates",
+              icon: <FileText size={14} />,
+              count: null,
+              disabled: false,
+              disabledReason: "",
+            },
+          ].map((tab) => {
+            const active = view === tab.key;
 
-        {/* ── Empty State ── */}
-        {showEmpty && (
-          <div
-            style={{
-              background: "#fff",
-              border: "1px dashed #CBD5E1",
-              borderRadius: 12,
-              padding: "60px 20px",
-              textAlign: "center",
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "#DBEAFE",
-                color: "#1D4ED8",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 26,
-                marginBottom: 14,
-              }}
-            >
-              <FolderOpen size={26} />
-            </div>
-            <div
-              style={{
-                fontWeight: 700,
-                fontSize: 15,
-                color: "#0F172A",
-                marginBottom: 4,
-              }}
-            >
-              No activities loaded yet
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "#64748B",
-                maxWidth: 420,
-                margin: "0 auto 16px",
-                lineHeight: 1.6,
-              }}
-            >
-              Fill in the project details above, pick the responsible group,
-              then upload your Excel activity sheet — the editable activity
-              table will appear here.
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                fontSize: 11.5,
-                flexWrap: "wrap",
-              }}
-            >
-              {[
-                ["1", "Project details", true],
-                ["2", "Pick group", true],
-                ["3", "Download / fill template", false],
-                ["4", "Upload & edit", false],
-              ].map(([n, l, a], i, arr) => (
-                <span
-                  key={n}
-                  style={{ display: "flex", alignItems: "center", gap: 6 }}
-                >
+            return (
+              <button
+                key={tab.key}
+                onClick={() => !tab.disabled && setView(tab.key)}
+                disabled={tab.disabled}
+                title={tab.disabled ? tab.disabledReason : ""}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: active ? "#0F172A" : "transparent",
+                  color: active ? "#fff" : tab.disabled ? "#CBD5E1" : "#64748B",
+                  cursor: tab.disabled ? "not-allowed" : "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "Sora,sans-serif",
+                  transition: "all .15s",
+                  opacity: tab.disabled ? 0.5 : 1,
+                }}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+
+                {tab.disabled && (
+                  <Lock size={11} style={{ marginLeft: 2, opacity: 0.7 }} />
+                )}
+
+                {!tab.disabled && tab.count !== null && tab.count > 0 && (
                   <span
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 5,
-                      color: a ? "#1D4ED8" : "#94A3B8",
+                      justifyContent: "center",
+                      minWidth: 20,
+                      height: 18,
+                      padding: "0 6px",
+                      borderRadius: 999,
+                      background: active ? "rgba(255,255,255,0.2)" : "#F1F5F9",
+                      color: active ? "#fff" : "#64748B",
+                      fontSize: 10,
+                      fontWeight: 700,
                     }}
                   >
-                    <span
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        background: a ? "#1D4ED8" : "#E2E8F0",
-                        color: a ? "#fff" : "#94A3B8",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 10,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {n}
-                    </span>
-                    {l}
+                    {tab.count}
                   </span>
-                  {i < arr.length - 1 && (
-                    <span style={{ color: "#CBD5E1" }}>›</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+                )}
+              </button>
+            );
+          })}
 
-        {/* ── Table Card ── */}
-        {showTable && (
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid #E2E8F0",
-              borderRadius: 12,
-              marginBottom: 16,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Table header bar */}
+          {/* ── "Shared with You" badge — only for EXISTING projects where user is NOT the owner ── */}
+          {!isProjectOwner && draft?.createdBy && (
             <div
               style={{
-                display: "flex",
+                marginLeft: 10,
+                padding: "4px 10px",
+                background: "#DBEAFE",
+                color: "#1D4ED8",
+                border: "1px solid #93C5FD",
+                borderRadius: 999,
+                fontSize: 10.5,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "12px 18px",
-                borderBottom: "1px solid #E2E8F0",
-                flexWrap: "wrap",
+                gap: 4,
+              }}
+              title={`Project owned by ${projectOwnerId}`}
+            >
+              <Users size={11} />
+              Shared with You
+            </div>
+          )}
+        </div>
+
+        {/* ── ACTIVITIES VIEW ── */}
+        {view === "activities" && (
+          <>
+            {/* Close Project button — only for published projects */}
+            {motionSubmitted && draft.status !== "closed" && allTasksDone && (
+              <button
+                onClick={() => setCloseProjectOpen(true)}
+                style={{
+                  ...btnStyle,
+                  marginLeft: "auto",
+                  background: "#FEF2F2",
+                  color: "#DC2626",
+                  borderColor: "#FCA5A5",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <XCircle size={14} />
+                Close Project
+              </button>
+            )}
+            {draft.status === "closed" && (
+              <button
+                onClick={() => setCloseProjectOpen(true)}
+                style={{
+                  ...btnStyle,
+                  marginLeft: "auto",
+                  background: "#EDE9FE",
+                  color: "#7C3AED",
+                  borderColor: "#DDD6FE",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <Star size={14} fill="#7C3AED" />
+                View Project Feedback
+              </button>
+            )}
+
+            {/* ── Setup Card ── */}
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #E2E8F0",
+                borderRadius: 12,
+                padding: "18px 20px",
+                marginBottom: 16,
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  fontWeight: 700,
-                  fontSize: 13.5,
-                  color: "#0F172A",
-                }}
-              >
-                <span style={{ color: "#1D4ED8", fontSize: 16 }}>
-                  <CheckCircle2 size={16} />
-                </span>{" "}
-                Activities
-                <span
-                  style={{
-                    background: "#F1F5F9",
-                    color: "#64748B",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 6,
-                    padding: "1px 8px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    marginLeft: 2,
-                  }}
-                >
-                  {total}
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginLeft: 8,
-                  fontSize: 11,
-                  color: "#94A3B8",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "#DBEAFE",
-                      border: "1.5px solid #93C5FD",
-                      display: "inline-block",
-                    }}
-                  ></span>{" "}
-                  Resource leave
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "#F1F5F9",
-                      border: "1.5px solid #CBD5E1",
-                      display: "inline-block",
-                    }}
-                  ></span>{" "}
-                  Weekend (disabled)
-                </span>
-              </div>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  marginLeft: "auto",
+                  marginBottom: 14,
+                }}
+              >
+                <Settings size={15} />
+                <span
+                  style={{ fontWeight: 700, fontSize: 13.5, color: "#0F172A" }}
+                >
+                  Project Setup
+                </span>
+                <span
+                  style={{ fontSize: 11.5, color: "#94A3B8", marginLeft: 4 }}
+                >
+                  Fill details, pick group, upload sheet — table appears below.
+                </span>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1.2fr 1.5fr 1.5fr 1fr 1.2fr",
+                  gap: 12,
+                  alignItems: "end",
+                }}
+              >
+                {/* Project Name */}
+                <div>
+                  <label style={labelStyle}>
+                    Project Name <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    value={project}
+                    onChange={(e) => isEditable && setProject(e.target.value)}
+                    placeholder="e.g. ThingWorx — Adity FRP"
+                    disabled={!isEditable}
+                    title={
+                      !isEditable ? "Cannot edit — project is not a draft" : ""
+                    }
+                    style={{
+                      ...inputStyle,
+                      opacity: !isEditable ? 0.65 : 1,
+                      cursor: !isEditable ? "not-allowed" : "text",
+                      background: !isEditable ? "#F8FAFC" : "#fff",
+                    }}
+                  />
+                </div>
+                {/* PO No */}
+                <div>
+                  <label style={labelStyle}>
+                    PO No <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    value={po}
+                    onChange={(e) => isEditable && setPo(e.target.value)}
+                    placeholder="e.g. PO-20240092"
+                    disabled={!isEditable}
+                    title={
+                      !isEditable ? "Cannot edit — project is not a draft" : ""
+                    }
+                    style={{
+                      ...inputStyle,
+                      opacity: !isEditable ? 0.65 : 1,
+                      cursor: !isEditable ? "not-allowed" : "text",
+                      background: !isEditable ? "#F8FAFC" : "#fff",
+                    }}
+                  />
+                </div>
+                {/* Site */}
+                <div>
+                  <label style={labelStyle}>
+                    Site / Customer <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  <input
+                    value={site}
+                    onChange={(e) => isEditable && setSite(e.target.value)}
+                    placeholder="e.g. Hindalco — Unit 2"
+                    disabled={!isEditable}
+                    title={
+                      !isEditable ? "Cannot edit — project is not a draft" : ""
+                    }
+                    style={{
+                      ...inputStyle,
+                      opacity: !isEditable ? 0.65 : 1,
+                      cursor: !isEditable ? "not-allowed" : "text",
+                      background: !isEditable ? "#F8FAFC" : "#fff",
+                    }}
+                  />
+                </div>
+                {/* Groups multi-select */}
+                <div>
+                  <label style={labelStyle}>
+                    Group(s) <span style={{ color: "#EF4444" }}>*</span>
+                  </label>
+                  {console.log(
+                    "Resource options:",
+                    resources.map((r) => ({
+                      userId: r.userId,
+                      userIdType: typeof r.userId,
+                      isString: typeof r.userId === "string",
+                    })),
+                  )}
+                  <SearchableDropdown
+                    value={groups}
+                    onChange={updateGroups}
+                    multiple={true}
+                    disabled={!isEditable}
+                    placeholder={
+                      !isEditable ? "Locked (not a draft)" : "Select group(s)…"
+                    }
+                    searchPlaceholder="Search groups..."
+                    emptyMessage="No groups available"
+                    options={getActiveGroups(groupLabels)
+                      .filter((g) => g && typeof g.groupId === "string")
+                      .map((g) => ({
+                        value: g.groupId,
+                        label: g.groupName || g.groupId,
+                        sublabel: g.groupManager,
+                      }))}
+                  />
+                </div>
+                {/* Template */}
+                <div>
+                  <label style={labelStyle}>Template</label>
+                  <button
+                    onClick={handleDownloadTemplate}
+                    style={{
+                      width: "100%",
+                      height: 34,
+                      border: "1px solid #CBD5E1",
+                      borderRadius: 6,
+                      background: "#F8FAFC",
+                      color: "#475569",
+                      fontFamily: "Sora,sans-serif",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 5,
+                    }}
+                  >
+                    <Download size={14} /> Download Excel
+                  </button>
+                </div>
+                {/* Upload */}
+                <div>
+                  <label style={labelStyle}>Activity Sheet</label>
+                  <button
+                    onClick={() => {
+                      if (!groups.length) {
+                        setUploadStatus({
+                          type: "warn",
+                          msg: "Pick a group before uploading.",
+                        });
+                        return;
+                      }
+                      fileInputRef.current?.click();
+                    }}
+                    style={{
+                      width: "100%",
+                      height: 34,
+                      border: "1px dashed #93C5FD",
+                      borderRadius: 6,
+                      background: "#EFF6FF",
+                      color: "#1D4ED8",
+                      fontFamily: "Sora,sans-serif",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 5,
+                      fontWeight: 500,
+                    }}
+                  >
+                    <Upload size={14} /> Upload Excel
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    style={{ display: "none" }}
+                    onChange={handleFileUpload}
+                  />
+                </div>
+              </div>
+              {/* Upload status */}
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 8,
+                  padding: "8px 12px",
+                  borderRadius: 7,
+                  background:
+                    uploadStatus.type === "ok"
+                      ? "#F0FDF4"
+                      : uploadStatus.type === "warn"
+                        ? "#FFFBEB"
+                        : uploadStatus.type === "err"
+                          ? "#FEF2F2"
+                          : "#F0F9FF",
+                  border: `1px solid ${uploadStatus.type === "ok" ? "#86EFAC" : uploadStatus.type === "warn" ? "#FCD34D" : uploadStatus.type === "err" ? "#FCA5A5" : "#BAE6FD"}`,
+                  fontSize: 11.5,
+                  color: "#475569",
+                }}
+              >
+                <span style={{ flexShrink: 0, fontSize: 13 }}>
+                  {uploadStatus.type === "ok" ? (
+                    <CheckCircle2 size={13} />
+                  ) : uploadStatus.type === "warn" ? (
+                    <AlertTriangle size={13} />
+                  ) : uploadStatus.type === "err" ? (
+                    <AlertCircle size={13} />
+                  ) : (
+                    <Info size={13} />
+                  )}
+                </span>
+                <span dangerouslySetInnerHTML={{ __html: uploadStatus.msg }} />
+              </div>
+            </div>
+
+            {/* ── Empty State ── */}
+            {showEmpty && (
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px dashed #CBD5E1",
+                  borderRadius: 12,
+                  padding: "60px 20px",
+                  textAlign: "center",
+                  marginBottom: 16,
                 }}
               >
                 <div
                   style={{
-                    position: "relative",
-                    width: 200,
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    background: "#DBEAFE",
+                    color: "#1D4ED8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 26,
+                    marginBottom: 14,
                   }}
                 >
-                  <Search
-                    size={14}
-                    style={{
-                      position: "absolute",
-                      left: 10,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "#94A3B8",
-                      pointerEvents: "none",
-                    }}
-                  />
-
-                  <input
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search task or module…"
-                    style={{
-                      width: "100%",
-                      height: 32,
-                      border: "1px solid #E2E8F0",
-                      borderRadius: 7,
-                      padding: "0 10px 0 32px",
-                      fontFamily: "Sora,sans-serif",
-                      fontSize: 12,
-                      outline: "none",
-                      color: "#0F172A",
-                      boxSizing: "border-box",
-                    }}
-                  />
+                  <FolderOpen size={26} />
                 </div>
-                {(columnFilters.module.length > 0 ||
-                  columnFilters.task.trim() !== "" ||
-                  columnFilters.resource.length > 0 ||
-                  columnFilters.status.length > 0) && (
-                  <button
-                    onClick={() =>
-                      setColumnFilters({
-                        module: [],
-                        task: "",
-                        resource: [],
-                        status: [],
-                      })
-                    }
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 15,
+                    color: "#0F172A",
+                    marginBottom: 4,
+                  }}
+                >
+                  No activities loaded yet
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#64748B",
+                    maxWidth: 420,
+                    margin: "0 auto 16px",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Fill in the project details above, pick the responsible group,
+                  then upload your Excel activity sheet — the editable activity
+                  table will appear here.
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    fontSize: 11.5,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {[
+                    ["1", "Project details", true],
+                    ["2", "Pick group", true],
+                    ["3", "Download / fill template", false],
+                    ["4", "Upload & edit", false],
+                  ].map(([n, l, a], i, arr) => (
+                    <span
+                      key={n}
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          color: a ? "#1D4ED8" : "#94A3B8",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            background: a ? "#1D4ED8" : "#E2E8F0",
+                            color: a ? "#fff" : "#94A3B8",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 10,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {n}
+                        </span>
+                        {l}
+                      </span>
+                      {i < arr.length - 1 && (
+                        <span style={{ color: "#CBD5E1" }}>›</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Table Card ── */}
+            {showTable && (
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 12,
+                  marginBottom: 16,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Table header bar */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 18px",
+                    borderBottom: "1px solid #E2E8F0",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div
                     style={{
-                      ...btnStyle,
-                      height: 32,
-                      color: "#EF4444",
-                      borderColor: "#FCA5A5",
-                      background: "#FEF2F2",
-                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                      fontWeight: 700,
+                      fontSize: 13.5,
+                      color: "#0F172A",
                     }}
                   >
-                    <X size={13} /> Clear Filters
-                  </button>
-                )}
-                <button
+                    <span style={{ color: "#1D4ED8", fontSize: 16 }}>
+                      <CheckCircle2 size={16} />
+                    </span>{" "}
+                    Activities
+                    <span
+                      style={{
+                        background: "#F1F5F9",
+                        color: "#64748B",
+                        border: "1px solid #E2E8F0",
+                        borderRadius: 6,
+                        padding: "1px 8px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        marginLeft: 2,
+                      }}
+                    >
+                      {total}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginLeft: 8,
+                      fontSize: 11,
+                      color: "#94A3B8",
+                    }}
+                  >
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: "#DBEAFE",
+                          border: "1.5px solid #93C5FD",
+                          display: "inline-block",
+                        }}
+                      ></span>{" "}
+                      Resource leave
+                    </span>
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: "#F1F5F9",
+                          border: "1.5px solid #CBD5E1",
+                          display: "inline-block",
+                        }}
+                      ></span>{" "}
+                      Weekend (disabled)
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginLeft: "auto",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "relative",
+                        width: 200,
+                      }}
+                    >
+                      <Search
+                        size={14}
+                        style={{
+                          position: "absolute",
+                          left: 10,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          color: "#94A3B8",
+                          pointerEvents: "none",
+                        }}
+                      />
+
+                      <input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search task or module…"
+                        style={{
+                          width: "100%",
+                          height: 32,
+                          border: "1px solid #E2E8F0",
+                          borderRadius: 7,
+                          padding: "0 10px 0 32px",
+                          fontFamily: "Sora,sans-serif",
+                          fontSize: 12,
+                          outline: "none",
+                          color: "#0F172A",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                    {(columnFilters.module.length > 0 ||
+                      columnFilters.task.trim() !== "" ||
+                      columnFilters.resource.length > 0 ||
+                      columnFilters.status.length > 0) && (
+                      <button
+                        onClick={() =>
+                          setColumnFilters({
+                            module: [],
+                            task: "",
+                            resource: [],
+                            status: [],
+                          })
+                        }
+                        style={{
+                          ...btnStyle,
+                          height: 32,
+                          color: "#EF4444",
+                          borderColor: "#FCA5A5",
+                          background: "#FEF2F2",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <X size={13} /> Clear Filters
+                      </button>
+                    )}
+                    {/* <button
                   onClick={() => setShowGantt((p) => !p)}
                   style={{
                     ...btnStyle,
@@ -9526,469 +9699,473 @@ function ProjectEditor({
                 >
                   <Calendar size={14} />
                   {showGantt ? "Table View" : "Gantt View"}
-                </button>
-                <button
-                  onClick={handleExport}
-                  style={{ ...btnStyle, height: 32 }}
-                >
-                  <Download size={14} /> Export
-                </button>
-                <button
-                  onClick={() => addRow()}
-                  style={{
-                    ...btnStyle,
-                    background: "#1D4ED8",
-                    color: "#fff",
-                    borderColor: "#1D4ED8",
-                    height: 32,
-                  }}
-                >
-                  <Plus size={14} /> Add Module
-                </button>
-              </div>
-            </div>
+                </button> */}
+                    <button
+                      onClick={handleExport}
+                      style={{ ...btnStyle, height: 32 }}
+                    >
+                      <Download size={14} /> Export
+                    </button>
+                    <button
+                      onClick={() => addRow()}
+                      style={{
+                        ...btnStyle,
+                        background: "#1D4ED8",
+                        color: "#fff",
+                        borderColor: "#1D4ED8",
+                        height: 32,
+                      }}
+                    >
+                      <Plus size={14} /> Add Module
+                    </button>
+                  </div>
+                </div>
 
-            {/* Table */}
-            {/* Table */}
-            <div style={{ overflowX: "auto" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  tableLayout: "fixed", // ← Critical fix
-                  minWidth: 1400,
-                }}
-              >
-                <thead>
-                  <tr style={{ background: "#F8FAFC" }}>
-                    {[
-                      {
-                        label: "#",
-                        width: 48,
-                        align: "center",
-                        filterKey: null,
-                      },
-                      {
-                        label: "MODULE NAME",
-                        width: 160,
-                        align: "left",
-                        filterKey: "module",
-                      },
-                      {
-                        label: "TASK",
-                        width: 240,
-                        align: "left",
-                        filterKey: "task",
-                      },
-                      {
-                        label: "RESOURCE",
-                        width: 240,
-                        align: "left",
-                        filterKey: "resource",
-                      },
-                      {
-                        label: "PLANNED START",
-                        width: 175,
-                        align: "left",
-                        filterKey: null,
-                      },
-                      {
-                        label: "DURATION (HRS)",
-                        width: 110,
-                        align: "right",
-                        filterKey: null,
-                      },
-                      {
-                        label: "PLANNED STOP",
-                        width: 175,
-                        align: "left",
-                        filterKey: null,
-                      },
-                      {
-                        label: "STATUS",
-                        width: 105,
-                        align: "center",
-                        filterKey: "status",
-                      },
-                      {
-                        label: "ACTIONS",
-                        width: 130,
-                        align: "center",
-                        filterKey: null,
-                      },
-                    ].map((col) => (
-                      <th
-                        key={col.label}
-                        style={{
-                          width: col.width,
-                          textAlign: col.align,
-                          padding: "11px 10px",
-                          fontWeight: 600,
-                          color: "#64748B",
-                          fontSize: "10.5px",
-                          letterSpacing: "0.5px",
-                          textTransform: "uppercase",
-                          borderBottom: "2px solid #CBD5E1",
-                          whiteSpace: "nowrap",
-                          background: "#F8FAFC",
-                          position: "sticky",
-                          top: 0,
-                          zIndex: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            justifyContent:
-                              col.align === "center"
-                                ? "center"
-                                : col.align === "right"
-                                  ? "flex-end"
-                                  : "flex-start",
-                          }}
-                        >
-                          <span>{col.label}</span>
+                {/* Table */}
+                {/* Table */}
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      tableLayout: "fixed", // ← Critical fix
+                      minWidth: 1400,
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ background: "#F8FAFC" }}>
+                        {[
+                          {
+                            label: "#",
+                            width: 48,
+                            align: "center",
+                            filterKey: null,
+                          },
+                          {
+                            label: "MODULE NAME",
+                            width: 160,
+                            align: "left",
+                            filterKey: "module",
+                          },
+                          {
+                            label: "TASK",
+                            width: 240,
+                            align: "left",
+                            filterKey: "task",
+                          },
+                          {
+                            label: "RESOURCE",
+                            width: 240,
+                            align: "left",
+                            filterKey: "resource",
+                          },
+                          {
+                            label: "PLANNED START",
+                            width: 175,
+                            align: "left",
+                            filterKey: null,
+                          },
+                          {
+                            label: "DURATION (HRS)",
+                            width: 110,
+                            align: "right",
+                            filterKey: null,
+                          },
+                          {
+                            label: "PLANNED STOP",
+                            width: 175,
+                            align: "left",
+                            filterKey: null,
+                          },
+                          {
+                            label: "STATUS",
+                            width: 105,
+                            align: "center",
+                            filterKey: "status",
+                          },
+                          {
+                            label: "ACTIONS",
+                            width: 130,
+                            align: "center",
+                            filterKey: null,
+                          },
+                        ].map((col) => (
+                          <th
+                            key={col.label}
+                            style={{
+                              width: col.width,
+                              textAlign: col.align,
+                              padding: "11px 10px",
+                              fontWeight: 600,
+                              color: "#64748B",
+                              fontSize: "10.5px",
+                              letterSpacing: "0.5px",
+                              textTransform: "uppercase",
+                              borderBottom: "2px solid #CBD5E1",
+                              whiteSpace: "nowrap",
+                              background: "#F8FAFC",
+                              position: "sticky",
+                              top: 0,
+                              zIndex: 10,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                justifyContent:
+                                  col.align === "center"
+                                    ? "center"
+                                    : col.align === "right"
+                                      ? "flex-end"
+                                      : "flex-start",
+                              }}
+                            >
+                              <span>{col.label}</span>
 
-                          {/* Module filter */}
-                          {col.filterKey === "module" && (
-                            <ColumnFilterDropdown
-                              label="Module"
-                              type="multi"
-                              options={filterOptions.modules}
-                              selected={columnFilters.module}
-                              onChange={(val) =>
-                                setColumnFilters((prev) => ({
-                                  ...prev,
-                                  module: val,
-                                }))
-                              }
-                            />
-                          )}
+                              {/* Module filter */}
+                              {col.filterKey === "module" && (
+                                <ColumnFilterDropdown
+                                  label="Module"
+                                  type="multi"
+                                  options={filterOptions.modules}
+                                  selected={columnFilters.module}
+                                  onChange={(val) =>
+                                    setColumnFilters((prev) => ({
+                                      ...prev,
+                                      module: val,
+                                    }))
+                                  }
+                                />
+                              )}
 
-                          {/* Task filter */}
-                          {col.filterKey === "task" && (
-                            <ColumnFilterDropdown
-                              label="Task"
-                              type="text"
-                              options={[]}
-                              selected={columnFilters.task}
-                              onChange={(val) =>
-                                setColumnFilters((prev) => ({
-                                  ...prev,
-                                  task: val,
-                                }))
-                              }
-                            />
-                          )}
+                              {/* Task filter */}
+                              {col.filterKey === "task" && (
+                                <ColumnFilterDropdown
+                                  label="Task"
+                                  type="text"
+                                  options={[]}
+                                  selected={columnFilters.task}
+                                  onChange={(val) =>
+                                    setColumnFilters((prev) => ({
+                                      ...prev,
+                                      task: val,
+                                    }))
+                                  }
+                                />
+                              )}
 
-                          {/* Resource filter */}
-                          {col.filterKey === "resource" && (
-                            <ColumnFilterDropdown
-                              label="Resource"
-                              type="multi"
-                              options={filterOptions.resourceOpts}
-                              selected={columnFilters.resource}
-                              onChange={(val) =>
-                                setColumnFilters((prev) => ({
-                                  ...prev,
-                                  resource: val,
-                                }))
-                              }
-                            />
-                          )}
+                              {/* Resource filter */}
+                              {col.filterKey === "resource" && (
+                                <ColumnFilterDropdown
+                                  label="Resource"
+                                  type="multi"
+                                  options={filterOptions.resourceOpts}
+                                  selected={columnFilters.resource}
+                                  onChange={(val) =>
+                                    setColumnFilters((prev) => ({
+                                      ...prev,
+                                      resource: val,
+                                    }))
+                                  }
+                                />
+                              )}
 
-                          {/* Status filter */}
-                          {col.filterKey === "status" && (
-                            <ColumnFilterDropdown
-                              label="Status"
-                              type="multi"
-                              options={filterOptions.statuses}
-                              selected={columnFilters.status}
-                              onChange={(val) =>
-                                setColumnFilters((prev) => ({
-                                  ...prev,
-                                  status: val,
-                                }))
-                              }
-                            />
-                          )}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
+                              {/* Status filter */}
+                              {col.filterKey === "status" && (
+                                <ColumnFilterDropdown
+                                  label="Status"
+                                  type="multi"
+                                  options={filterOptions.statuses}
+                                  selected={columnFilters.status}
+                                  onChange={(val) =>
+                                    setColumnFilters((prev) => ({
+                                      ...prev,
+                                      status: val,
+                                    }))
+                                  }
+                                />
+                              )}
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
 
-                <tbody>
-                  {!filteredRows.length ? (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        style={{
-                          padding: "48px 20px",
-                          textAlign: "center",
-                          color: "#94A3B8",
-                          fontSize: 12,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: "50%",
-                            background: "#EEF2FF",
-                            color: "#4F46E5",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            margin: "0 auto 12px",
-                            // boxShadow: "0 2px 8px rgba(79, 70, 229, 0.12)",
-                          }}
-                        >
-                          <Plus size={28} strokeWidth={2.5} />
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "#0F172A",
-                            marginBottom: 3,
-                          }}
-                        >
-                          No activities yet
-                        </div>
-                        <div>
-                          Add activities manually or upload your Excel sheet.
-                        </div>
-                        <button
-                          onClick={() => addRow()}
-                          style={{
-                            ...btnStyle,
-                            background: "#1D4ED8",
-                            color: "#fff",
-                            borderColor: "#1D4ED8",
-                            marginTop: 12,
-                          }}
-                        >
-                          <Plus size={16} style={{ marginRight: 8 }} />
-                          Add first activity
-                        </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    sections.map((mod) => {
-                      const topLevelIds = new Set(
-                        rows
-                          .filter((r) => !r.parentId && r.module === mod)
-                          .map((r) => r.id),
-                      );
+                    <tbody>
+                      {!filteredRows.length ? (
+                        <tr>
+                          <td
+                            colSpan={9}
+                            style={{
+                              padding: "48px 20px",
+                              textAlign: "center",
+                              color: "#94A3B8",
+                              fontSize: 12,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 56,
+                                height: 56,
+                                borderRadius: "50%",
+                                background: "#EEF2FF",
+                                color: "#4F46E5",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                margin: "0 auto 12px",
+                                // boxShadow: "0 2px 8px rgba(79, 70, 229, 0.12)",
+                              }}
+                            >
+                              <Plus size={28} strokeWidth={2.5} />
+                            </div>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "#0F172A",
+                                marginBottom: 3,
+                              }}
+                            >
+                              No activities yet
+                            </div>
+                            <div>
+                              Add activities manually or upload your Excel
+                              sheet.
+                            </div>
+                            <button
+                              onClick={() => addRow()}
+                              style={{
+                                ...btnStyle,
+                                background: "#1D4ED8",
+                                color: "#fff",
+                                borderColor: "#1D4ED8",
+                                marginTop: 12,
+                              }}
+                            >
+                              <Plus size={16} style={{ marginRight: 8 }} />
+                              Add first activity
+                            </button>
+                          </td>
+                        </tr>
+                      ) : (
+                        sections.map((mod) => {
+                          const topLevelIds = new Set(
+                            rows
+                              .filter((r) => !r.parentId && r.module === mod)
+                              .map((r) => r.id),
+                          );
 
-                      const isDescendantOf = (rowId, ancestorSet) => {
-                        let cur = rows.find((r) => r.id === rowId);
-                        while (cur?.parentId) {
-                          if (ancestorSet.has(cur.parentId)) return true;
-                          cur = rows.find((r) => r.id === cur.parentId);
-                        }
-                        return false;
-                      };
+                          const isDescendantOf = (rowId, ancestorSet) => {
+                            let cur = rows.find((r) => r.id === rowId);
+                            while (cur?.parentId) {
+                              if (ancestorSet.has(cur.parentId)) return true;
+                              cur = rows.find((r) => r.id === cur.parentId);
+                            }
+                            return false;
+                          };
 
-                      const modRows = filteredRows.filter(
-                        (r) =>
-                          topLevelIds.has(r.id) ||
-                          isDescendantOf(r.id, topLevelIds),
-                      );
+                          const modRows = filteredRows.filter(
+                            (r) =>
+                              topLevelIds.has(r.id) ||
+                              isDescendantOf(r.id, topLevelIds),
+                          );
 
-                      const modCount = rows.filter((r) => {
-                        if (r.module === mod && !r.parentId) return true;
-                        return isDescendantOf(r.id, topLevelIds);
-                      }).length;
+                          const modCount = rows.filter((r) => {
+                            if (r.module === mod && !r.parentId) return true;
+                            return isDescendantOf(r.id, topLevelIds);
+                          }).length;
 
-                      let displayIdx = 0;
+                          let displayIdx = 0;
 
-                      return (
-                        <React.Fragment key={mod || "unnamed"}>
-                          {/* ── Section Header (no add button now) ── */}
-                          {false && (
-                            <tr>
-                              {(() => {
-                                const mc = getModuleColor(mod, moduleColorMap);
+                          return (
+                            <React.Fragment key={mod || "unnamed"}>
+                              {/* ── Section Header (no add button now) ── */}
+                              {false && (
+                                <tr>
+                                  {(() => {
+                                    const mc = getModuleColor(
+                                      mod,
+                                      moduleColorMap,
+                                    );
+                                    return (
+                                      <td
+                                        colSpan={9}
+                                        style={{
+                                          padding: "10px 14px",
+                                          background: `linear-gradient(180deg, ${mc.bg}88 0%, ${mc.bg}44 100%)`,
+                                          borderTop: `1px solid ${mc.border}`,
+                                          borderBottom: `1px solid ${mc.border}`,
+                                          borderLeft: `4px solid ${mc.color}`,
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                          }}
+                                        >
+                                          <span
+                                            style={{
+                                              background: mc.bg,
+                                              color: mc.color,
+                                              border: `1px solid ${mc.border}`,
+                                              borderRadius: 5,
+                                              padding: "3px 10px",
+                                              fontSize: 10.5,
+                                              fontWeight: 700,
+                                            }}
+                                          >
+                                            {mod || "— unnamed —"}
+                                          </span>
+                                          <span
+                                            style={{
+                                              color: "#94A3B8",
+                                              fontSize: 10.5,
+                                            }}
+                                          >
+                                            {modCount}{" "}
+                                            {modCount === 1 ? "task" : "tasks"}
+                                          </span>
+                                        </div>
+                                      </td>
+                                    );
+                                  })()}
+                                </tr>
+                              )}
+
+                              {/* ── Activity Rows ── */}
+                              {modRows.map((r) => {
+                                if (r.sortOrder === 0 || r._depth === 0)
+                                  displayIdx++;
                                 return (
+                                  <ActivityRow
+                                    key={r.id}
+                                    row={r}
+                                    idx={displayIdx}
+                                    isFirstInChain={isFirstInChain(r)}
+                                    resources={resources}
+                                    groupResources={groupResources}
+                                    hasChildren={rows.some(
+                                      (c) => c.parentId === r.id,
+                                    )}
+                                    parentRow={
+                                      r.parentId
+                                        ? rows.find((p) => p.id === r.parentId)
+                                        : null
+                                    } // ← ADD THIS
+                                    moduleColor={getModuleColor(
+                                      r.module,
+                                      moduleColorMap,
+                                    )} // ← ADD THIS
+                                    isOverlapping={overlapRowIds.has(r.id)} // ← ADD THIS
+                                    onUpdate={updateRow}
+                                    onDelete={deleteRow}
+                                    onAddSub={addSubActivity}
+                                    onAddRowBelow={addRowBelow}
+                                    onOpenComments={(row) =>
+                                      onOpenCommentBox(
+                                        draft.id,
+                                        row.id,
+                                        row.moduleId,
+                                      )
+                                    }
+                                    onRedoReject={setRejectRow}
+                                    onFeedback={setFeedbackRow} // ← ADD THIS
+                                  />
+                                );
+                              })}
+
+                              {/* ── NEW: "Add Row to Module" button (BOTTOM) ── */}
+                              {false && (
+                                <tr>
                                   <td
                                     colSpan={9}
                                     style={{
-                                      padding: "10px 14px",
-                                      background: `linear-gradient(180deg, ${mc.bg}88 0%, ${mc.bg}44 100%)`,
-                                      borderTop: `1px solid ${mc.border}`,
-                                      borderBottom: `1px solid ${mc.border}`,
-                                      borderLeft: `4px solid ${mc.color}`,
+                                      padding: "6px 14px 10px",
+                                      background: "#FAFBFC",
+                                      borderBottom: "1px solid #E2E8F0",
                                     }}
                                   >
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          background: mc.bg,
-                                          color: mc.color,
-                                          border: `1px solid ${mc.border}`,
-                                          borderRadius: 5,
-                                          padding: "3px 10px",
-                                          fontSize: 10.5,
-                                          fontWeight: 700,
-                                        }}
-                                      >
-                                        {mod || "— unnamed —"}
-                                      </span>
-                                      <span
-                                        style={{
-                                          color: "#94A3B8",
-                                          fontSize: 10.5,
-                                        }}
-                                      >
-                                        {modCount}{" "}
-                                        {modCount === 1 ? "task" : "tasks"}
-                                      </span>
-                                    </div>
+                                    {(() => {
+                                      const mc = getModuleColor(
+                                        mod,
+                                        moduleColorMap,
+                                      );
+                                      return (
+                                        <button
+                                          onClick={() => addRow(mod)}
+                                          style={{
+                                            background: "#fff",
+                                            border: `1px dashed ${mc.color}`,
+                                            color: mc.color,
+                                            borderRadius: 7,
+                                            padding: "6px 14px 6px 12px",
+                                            cursor: "pointer",
+                                            fontSize: 11.5,
+                                            fontFamily: "Sora,sans-serif",
+                                            fontWeight: 600,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 6,
+                                            transition: "all .12s",
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.background =
+                                              mc.bg;
+                                            e.currentTarget.style.borderStyle =
+                                              "solid";
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.background =
+                                              "#fff";
+                                            e.currentTarget.style.borderStyle =
+                                              "dashed";
+                                          }}
+                                        >
+                                          <Plus size={13} />
+                                          Add row to {mod || "module"}
+                                        </button>
+                                      );
+                                    })()}
                                   </td>
-                                );
-                              })()}
-                            </tr>
-                          )}
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
-                          {/* ── Activity Rows ── */}
-                          {modRows.map((r) => {
-                            if (r.sortOrder === 0 || r._depth === 0)
-                              displayIdx++;
-                            return (
-                              <ActivityRow
-                                key={r.id}
-                                row={r}
-                                idx={displayIdx}
-                                isFirstInChain={isFirstInChain(r)}
-                                resources={resources}
-                                groupResources={groupResources}
-                                hasChildren={rows.some(
-                                  (c) => c.parentId === r.id,
-                                )}
-                                parentRow={
-                                  r.parentId
-                                    ? rows.find((p) => p.id === r.parentId)
-                                    : null
-                                } // ← ADD THIS
-                                moduleColor={getModuleColor(
-                                  r.module,
-                                  moduleColorMap,
-                                )} // ← ADD THIS
-                                isOverlapping={overlapRowIds.has(r.id)} // ← ADD THIS
-                                onUpdate={updateRow}
-                                onDelete={deleteRow}
-                                onAddSub={addSubActivity}
-                                onAddRowBelow={addRowBelow}
-                                onOpenComments={(row) =>
-                                  onOpenCommentBox(
-                                    draft.id,
-                                    row.id,
-                                    row.moduleId,
-                                  )
-                                }
-                                onRedoReject={setRejectRow}
-                                onFeedback={setFeedbackRow} // ← ADD THIS
-                              />
-                            );
-                          })}
-
-                          {/* ── NEW: "Add Row to Module" button (BOTTOM) ── */}
-                          {false && (
-                            <tr>
-                              <td
-                                colSpan={9}
-                                style={{
-                                  padding: "6px 14px 10px",
-                                  background: "#FAFBFC",
-                                  borderBottom: "1px solid #E2E8F0",
-                                }}
-                              >
-                                {(() => {
-                                  const mc = getModuleColor(
-                                    mod,
-                                    moduleColorMap,
-                                  );
-                                  return (
-                                    <button
-                                      onClick={() => addRow(mod)}
-                                      style={{
-                                        background: "#fff",
-                                        border: `1px dashed ${mc.color}`,
-                                        color: mc.color,
-                                        borderRadius: 7,
-                                        padding: "6px 14px 6px 12px",
-                                        cursor: "pointer",
-                                        fontSize: 11.5,
-                                        fontFamily: "Sora,sans-serif",
-                                        fontWeight: 600,
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        transition: "all .12s",
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        e.currentTarget.style.background =
-                                          mc.bg;
-                                        e.currentTarget.style.borderStyle =
-                                          "solid";
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.background =
-                                          "#fff";
-                                        e.currentTarget.style.borderStyle =
-                                          "dashed";
-                                      }}
-                                    >
-                                      <Plus size={13} />
-                                      Add row to {mod || "module"}
-                                    </button>
-                                  );
-                                })()}
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Add row button */}
-            <button
-              onClick={() => addRow()}
-              style={{
-                width: "100%",
-                padding: "11px",
-                background: "none",
-                border: "none",
-                borderTop: "1px solid #F1F5F9",
-                color: "#1D4ED8",
-                fontFamily: "Sora,sans-serif",
-                fontSize: 12,
-                cursor: "pointer",
-                fontWeight: 500,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <Plus size={14} /> Add new module
-            </button>
-          </div>
-        )}
-        {showTable && showGantt && (
+                {/* Add row button */}
+                <button
+                  onClick={() => addRow()}
+                  style={{
+                    width: "100%",
+                    padding: "11px",
+                    background: "none",
+                    border: "none",
+                    borderTop: "1px solid #F1F5F9",
+                    color: "#1D4ED8",
+                    fontFamily: "Sora,sans-serif",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Plus size={14} /> Add new module
+                </button>
+              </div>
+            )}
+            {/* {showTable && showGantt && (
           <div style={{ marginBottom: 16 }}>
             <GanttView
               rows={rows}
@@ -9999,270 +10176,328 @@ function ProjectEditor({
               onFeedback={setFeedbackRow}
             />
           </div>
+        )} */}
+
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #E2E8F0",
+                borderRadius: 12,
+                padding: "12px 18px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 11.5,
+                  color: "#94A3B8",
+                  flex: 1,
+                  minWidth: 0,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span>
+                  <Clock size={11} />
+                </span>
+                <span>Saved as draft:</span>
+                <strong style={{ color: "#0F172A" }}>{draftTime || "—"}</strong>
+                <span style={{ color: "#E2E8F0", margin: "0 4px" }}>|</span>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    background:
+                      draft.status === "closed"
+                        ? "#F1F5F9"
+                        : motionSubmitted
+                          ? "#DCFCE7"
+                          : "#F1F5F9",
+                    color:
+                      draft.status === "closed"
+                        ? "#475569"
+                        : motionSubmitted
+                          ? "#16A34A"
+                          : "#64748B",
+                    border: `1px solid ${
+                      draft.status === "closed"
+                        ? "#CBD5E1"
+                        : motionSubmitted
+                          ? "#86EFAC"
+                          : "#E2E8F0"
+                    }`,
+                  }}
+                >
+                  {draft.status === "closed" ? (
+                    <>
+                      <Lock size={12} /> Closed — project has been finalized
+                    </>
+                  ) : motionSubmitted ? (
+                    <>
+                      <Rocket size={12} /> Published — edit & re-publish to
+                      update
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={12} /> Draft — submit for motion to publish
+                    </>
+                  )}
+                </span>
+              </div>
+              <button
+                onClick={handleSaveDraft}
+                disabled={
+                  isSaving || motionSubmitted || draft.status === "closed"
+                }
+                title={
+                  draft.status === "closed"
+                    ? "Cannot save — project is closed"
+                    : motionSubmitted
+                      ? "Cannot save — project is already published"
+                      : ""
+                }
+                style={{
+                  ...btnStyle,
+                  height: 36,
+                  opacity:
+                    isSaving || motionSubmitted || draft.status === "closed"
+                      ? 0.5
+                      : 1,
+                  cursor:
+                    isSaving || motionSubmitted || draft.status === "closed"
+                      ? "not-allowed"
+                      : "pointer",
+                  background:
+                    motionSubmitted || draft.status === "closed"
+                      ? "#F1F5F9"
+                      : "#fff",
+                  color:
+                    motionSubmitted || draft.status === "closed"
+                      ? "#94A3B8"
+                      : "#475569",
+                }}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2
+                      size={14}
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
+                    {" Saving..."}
+                  </>
+                ) : draft.status === "closed" ? (
+                  <>
+                    <Lock size={12} />
+                    {" Save Draft"}
+                  </>
+                ) : motionSubmitted ? (
+                  <>
+                    <Lock size={12} />
+                    {" Save Draft"}
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    {" Save Draft"}
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleSubmitMotion}
+                disabled={isSaving || draft.status === "closed"}
+                title={
+                  draft.status === "closed"
+                    ? "Cannot submit — project is closed"
+                    : ""
+                }
+                style={{
+                  ...btnStyle,
+                  background: draft.status === "closed" ? "#F1F5F9" : "#1D4ED8",
+                  color: draft.status === "closed" ? "#94A3B8" : "#fff",
+                  borderColor:
+                    draft.status === "closed" ? "#E2E8F0" : "#1D4ED8",
+                  height: 36,
+                  opacity: isSaving || draft.status === "closed" ? 0.5 : 1,
+                  cursor:
+                    isSaving || draft.status === "closed"
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                {draft.status === "closed" ? (
+                  <>
+                    <Lock size={14} />
+                    Project Closed
+                  </>
+                ) : motionSubmitted ? (
+                  <>
+                    <RefreshCw size={14} />
+                    Update &amp; Re-publish
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    Submit for Motion
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* ── Footer stats ── */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginTop: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              {[
+                {
+                  label: (
+                    <>
+                      <Layers size={12} />
+                      {` ${total} task${total !== 1 ? "s" : ""}`}
+                    </>
+                  ),
+                  bg: "#F1F5F9",
+                  color: "#475569",
+                },
+                {
+                  label: (
+                    <>
+                      <UserCheck size={12} />
+                      {` ${assigned} assigned`}
+                    </>
+                  ),
+                  bg: "#DCFCE7",
+                  color: "#15803D",
+                },
+                {
+                  label: (
+                    <>
+                      <UserX size={12} />
+                      {` ${unassigned} unassigned`}
+                    </>
+                  ),
+                  bg: "#F1F5F9",
+                  color: "#64748B",
+                },
+                {
+                  label: (
+                    <>
+                      <MessageSquare size={12} />
+                      {` ${totalComments} comment${totalComments !== 1 ? "s" : ""}`}
+                    </>
+                  ),
+                  bg: "#EDE9FE",
+                  color: "#7C3AED",
+                },
+              ].map((s) => (
+                <span
+                  key={s.label}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    background: s.bg,
+                    color: s.color,
+                    fontSize: 11.5,
+                    fontWeight: 500,
+                    border: "1px solid rgba(0,0,0,0.06)",
+                  }}
+                >
+                  {s.label}
+                </span>
+              ))}
+              <div
+                style={{
+                  marginLeft: "auto",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 11.5,
+                  color: "#94A3B8",
+                }}
+              >
+                <span>
+                  Project:{" "}
+                  <strong style={{ color: "#475569" }}>{project || "—"}</strong>
+                </span>
+                <span style={{ color: "#E2E8F0" }}>|</span>
+                <span>
+                  PO: <strong style={{ color: "#475569" }}>{po || "—"}</strong>
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+        {/* ── GANTT VIEW ── */}
+        {view === "gantt" && (
+          <>
+            {rows.length > 0 ? (
+              <GanttView
+                // rows={rows}
+                projects={[draft]}
+                overlapRowIds={overlapRowIds}
+                onOpenComments={(row) =>
+                  onOpenCommentBox(draft.id, row.id, row.moduleId)
+                }
+                onFeedback={setFeedbackRow}
+              />
+            ) : (
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px dashed #CBD5E1",
+                  borderRadius: 12,
+                  padding: "60px 20px",
+                  textAlign: "center",
+                  color: "#94A3B8",
+                  fontSize: 13,
+                }}
+              >
+                <Calendar
+                  size={32}
+                  strokeWidth={1.5}
+                  style={{ marginBottom: 12, opacity: 0.5 }}
+                />
+                <div
+                  style={{ fontWeight: 600, color: "#0F172A", marginBottom: 4 }}
+                >
+                  No activities to display
+                </div>
+                <div>Add activities in the Activities tab first.</div>
+              </div>
+            )}
+          </>
+        )}
+        {/* ── UPDATES VIEW ── */}
+        {view === "updates" && (
+          <ProjectUpdatesView
+            projectId={draft.id}
+            currentUserId={currentUserId}
+            projectOwnerId={projectOwnerId} // ← NEW PROP
+            showToast={showToast}
+            readOnly={draft.status === "closed"}
+            projectName={project}
+          />
         )}
         {/* ── Submit / Draft Bar ── */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E2E8F0",
-            borderRadius: 12,
-            padding: "12px 18px",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 11.5,
-              color: "#94A3B8",
-              flex: 1,
-              minWidth: 0,
-              flexWrap: "wrap",
-            }}
-          >
-            <span>
-              <Clock size={11} />
-            </span>
-            <span>Saved as draft:</span>
-            <strong style={{ color: "#0F172A" }}>{draftTime || "—"}</strong>
-            <span style={{ color: "#E2E8F0", margin: "0 4px" }}>|</span>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "3px 10px",
-                borderRadius: 999,
-                fontSize: 11,
-                fontWeight: 500,
-                background:
-                  draft.status === "closed"
-                    ? "#F1F5F9"
-                    : motionSubmitted
-                      ? "#DCFCE7"
-                      : "#F1F5F9",
-                color:
-                  draft.status === "closed"
-                    ? "#475569"
-                    : motionSubmitted
-                      ? "#16A34A"
-                      : "#64748B",
-                border: `1px solid ${
-                  draft.status === "closed"
-                    ? "#CBD5E1"
-                    : motionSubmitted
-                      ? "#86EFAC"
-                      : "#E2E8F0"
-                }`,
-              }}
-            >
-              {draft.status === "closed" ? (
-                <>
-                  <Lock size={12} /> Closed — project has been finalized
-                </>
-              ) : motionSubmitted ? (
-                <>
-                  <Rocket size={12} /> Published — edit & re-publish to update
-                </>
-              ) : (
-                <>
-                  <Lock size={12} /> Draft — submit for motion to publish
-                </>
-              )}
-            </span>
-          </div>
-          <button
-            onClick={handleSaveDraft}
-            disabled={isSaving || motionSubmitted || draft.status === "closed"}
-            title={
-              draft.status === "closed"
-                ? "Cannot save — project is closed"
-                : motionSubmitted
-                  ? "Cannot save — project is already published"
-                  : ""
-            }
-            style={{
-              ...btnStyle,
-              height: 36,
-              opacity:
-                isSaving || motionSubmitted || draft.status === "closed"
-                  ? 0.5
-                  : 1,
-              cursor:
-                isSaving || motionSubmitted || draft.status === "closed"
-                  ? "not-allowed"
-                  : "pointer",
-              background:
-                motionSubmitted || draft.status === "closed"
-                  ? "#F1F5F9"
-                  : "#fff",
-              color:
-                motionSubmitted || draft.status === "closed"
-                  ? "#94A3B8"
-                  : "#475569",
-            }}
-          >
-            {isSaving ? (
-              <>
-                <Loader2
-                  size={14}
-                  style={{ animation: "spin 1s linear infinite" }}
-                />
-                {" Saving..."}
-              </>
-            ) : draft.status === "closed" ? (
-              <>
-                <Lock size={12} />
-                {" Save Draft"}
-              </>
-            ) : motionSubmitted ? (
-              <>
-                <Lock size={12} />
-                {" Save Draft"}
-              </>
-            ) : (
-              <>
-                <Save size={14} />
-                {" Save Draft"}
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleSubmitMotion}
-            disabled={isSaving || draft.status === "closed"}
-            title={
-              draft.status === "closed"
-                ? "Cannot submit — project is closed"
-                : ""
-            }
-            style={{
-              ...btnStyle,
-              background: draft.status === "closed" ? "#F1F5F9" : "#1D4ED8",
-              color: draft.status === "closed" ? "#94A3B8" : "#fff",
-              borderColor: draft.status === "closed" ? "#E2E8F0" : "#1D4ED8",
-              height: 36,
-              opacity: isSaving || draft.status === "closed" ? 0.5 : 1,
-              cursor:
-                isSaving || draft.status === "closed"
-                  ? "not-allowed"
-                  : "pointer",
-            }}
-          >
-            {draft.status === "closed" ? (
-              <>
-                <Lock size={14} />
-                Project Closed
-              </>
-            ) : motionSubmitted ? (
-              <>
-                <RefreshCw size={14} />
-                Update &amp; Re-publish
-              </>
-            ) : (
-              <>
-                <Send size={14} />
-                Submit for Motion
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* ── Footer stats ── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginTop: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          {[
-            {
-              label: (
-                <>
-                  <Layers size={12} />
-                  {` ${total} task${total !== 1 ? "s" : ""}`}
-                </>
-              ),
-              bg: "#F1F5F9",
-              color: "#475569",
-            },
-            {
-              label: (
-                <>
-                  <UserCheck size={12} />
-                  {` ${assigned} assigned`}
-                </>
-              ),
-              bg: "#DCFCE7",
-              color: "#15803D",
-            },
-            {
-              label: (
-                <>
-                  <UserX size={12} />
-                  {` ${unassigned} unassigned`}
-                </>
-              ),
-              bg: "#F1F5F9",
-              color: "#64748B",
-            },
-            {
-              label: (
-                <>
-                  <MessageSquare size={12} />
-                  {` ${totalComments} comment${totalComments !== 1 ? "s" : ""}`}
-                </>
-              ),
-              bg: "#EDE9FE",
-              color: "#7C3AED",
-            },
-          ].map((s) => (
-            <span
-              key={s.label}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "4px 10px",
-                borderRadius: 999,
-                background: s.bg,
-                color: s.color,
-                fontSize: 11.5,
-                fontWeight: 500,
-                border: "1px solid rgba(0,0,0,0.06)",
-              }}
-            >
-              {s.label}
-            </span>
-          ))}
-          <div
-            style={{
-              marginLeft: "auto",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 11.5,
-              color: "#94A3B8",
-            }}
-          >
-            <span>
-              Project:{" "}
-              <strong style={{ color: "#475569" }}>{project || "—"}</strong>
-            </span>
-            <span style={{ color: "#E2E8F0" }}>|</span>
-            <span>
-              PO: <strong style={{ color: "#475569" }}>{po || "—"}</strong>
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* ── Modals ── */}
@@ -10328,6 +10563,7 @@ function DraftProjectsList({
   error,
   deletingProjectId,
   groupLabels, // ← NEW
+  currentUserId,
   onOpen,
   onDelete,
   onNew,
@@ -10335,34 +10571,77 @@ function DraftProjectsList({
 }) {
   //   const { groupLabels } = useData();
   const [search, setSearch] = useState("");
+  // const [ownershipFilter, setOwnershipFilter] = useState("all"); // "all" | "mine" | "shared"
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all"); // ← NEW: "all" | "draft" | "published"
-  const statusCounts = useMemo(
-    () => ({
+  const statusCounts = useMemo(() => {
+    const isMine = (d) =>
+      d.createdBy &&
+      currentUserId &&
+      d.createdBy.toLowerCase() === currentUserId.toLowerCase();
+
+    const isShared = (d) =>
+      d.createdBy &&
+      currentUserId &&
+      d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
+
+    return {
       all: drafts.length,
       draft: drafts.filter(
-        (d) => d.status !== "published" && d.status !== "closed",
+        (d) => isMine(d) && d.status !== "published" && d.status !== "closed",
       ).length,
-      published: drafts.filter((d) => d.status === "published").length,
-      closed: drafts.filter((d) => d.status === "closed").length,
-    }),
-    [drafts],
-  );
+      published: drafts.filter((d) => isMine(d) && d.status === "published")
+        .length,
+      closed: drafts.filter((d) => isMine(d) && d.status === "closed").length,
+      sharedWithMe: drafts.filter((d) => isShared(d)).length,
+    };
+  }, [drafts, currentUserId]);
+  // const ownershipCounts = useMemo(
+  //   () => ({
+  //     all: drafts.length,
+  //     mine: drafts.filter(
+  //       (d) =>
+  //         d.createdBy &&
+  //         currentUserId &&
+  //         d.createdBy.toLowerCase() === currentUserId.toLowerCase(),
+  //     ).length,
+  //     shared: drafts.filter(
+  //       (d) =>
+  //         d.createdBy &&
+  //         currentUserId &&
+  //         d.createdBy.toLowerCase() !== currentUserId.toLowerCase(),
+  //     ).length,
+  //   }),
+  //   [drafts, currentUserId],
+  // );
   const filtered = useMemo(() => {
     let result = drafts;
 
-    // Status filter
+    const isMine = (d) =>
+      d.createdBy &&
+      currentUserId &&
+      d.createdBy.toLowerCase() === currentUserId.toLowerCase();
+
+    const isShared = (d) =>
+      d.createdBy &&
+      currentUserId &&
+      d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
+
+    // ── Status/Ownership filter (unified) ──
     if (statusFilter === "draft") {
       result = result.filter(
-        (d) => d.status !== "published" && d.status !== "closed",
+        (d) => isMine(d) && d.status !== "published" && d.status !== "closed",
       );
     } else if (statusFilter === "published") {
-      result = result.filter((d) => d.status === "published");
+      result = result.filter((d) => isMine(d) && d.status === "published");
     } else if (statusFilter === "closed") {
-      result = result.filter((d) => d.status === "closed");
+      result = result.filter((d) => isMine(d) && d.status === "closed");
+    } else if (statusFilter === "sharedWithMe") {
+      result = result.filter((d) => isShared(d));
     }
+    // "all" — no filter, show everything
 
-    // Search filter
+    // ── Search filter ──
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -10374,8 +10653,7 @@ function DraftProjectsList({
     }
 
     return result;
-  }, [drafts, search, statusFilter]);
-
+  }, [drafts, search, statusFilter, currentUserId]);
   const fmtDate = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -10394,6 +10672,7 @@ function DraftProjectsList({
     >
       {/* Header */}
       {/* ── Status Filter Tabs ── */}
+      {/* ── Status Filter Tabs (5 tabs) ── */}
       {!loading && !error && drafts.length > 0 && (
         <div
           style={{
@@ -10406,6 +10685,7 @@ function DraftProjectsList({
             padding: 4,
             boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
             width: "fit-content",
+            flexWrap: "wrap",
           }}
         >
           {[
@@ -10432,6 +10712,12 @@ function DraftProjectsList({
               label: "Closed",
               icon: <Lock size={11} />,
               color: "#475569",
+            },
+            {
+              key: "sharedWithMe",
+              label: "Shared with Me",
+              icon: <Users size={14} />,
+              color: "#1D4ED8",
             },
           ].map((tab) => {
             const active = statusFilter === tab.key;
@@ -10733,8 +11019,21 @@ function DraftProjectsList({
                   height: 56,
                   borderRadius: "50%",
                   background:
-                    statusFilter === "published" ? "#DCFCE7" : "#FEF3C7",
-                  color: statusFilter === "published" ? "#15803D" : "#B45309",
+                    statusFilter === "sharedWithMe"
+                      ? "#DBEAFE"
+                      : statusFilter === "published"
+                        ? "#DCFCE7"
+                        : statusFilter === "closed"
+                          ? "#F1F5F9"
+                          : "#FEF3C7",
+                  color:
+                    statusFilter === "sharedWithMe"
+                      ? "#1D4ED8"
+                      : statusFilter === "published"
+                        ? "#15803D"
+                        : statusFilter === "closed"
+                          ? "#475569"
+                          : "#B45309",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -10742,7 +11041,15 @@ function DraftProjectsList({
                   marginBottom: 14,
                 }}
               >
-                {statusFilter === "published" ? "🚀" : "📋"}
+                {statusFilter === "sharedWithMe" ? (
+                  <Users size={26} />
+                ) : statusFilter === "published" ? (
+                  <Rocket size={26} />
+                ) : statusFilter === "closed" ? (
+                  <Lock size={26} />
+                ) : (
+                  <ClipboardList size={26} />
+                )}
               </div>
               <div
                 style={{
@@ -10754,13 +11061,15 @@ function DraftProjectsList({
               >
                 {search
                   ? "No matching projects"
-                  : statusFilter === "draft"
-                    ? "No draft projects"
-                    : statusFilter === "published"
-                      ? "No published projects yet"
-                      : statusFilter === "closed"
-                        ? "No closed projects"
-                        : "No projects yet"}
+                  : statusFilter === "sharedWithMe"
+                    ? "No projects shared with you"
+                    : statusFilter === "draft"
+                      ? "No draft projects"
+                      : statusFilter === "published"
+                        ? "No published projects yet"
+                        : statusFilter === "closed"
+                          ? "No closed projects"
+                          : "No projects yet"}
               </div>
               <div
                 style={{
@@ -10772,28 +11081,33 @@ function DraftProjectsList({
               >
                 {search
                   ? "Try a different search term or filter."
-                  : statusFilter === "published"
-                    ? "Publish a draft project to see it here."
-                    : statusFilter === "closed"
-                      ? "Close a published project to see it here."
-                      : statusFilter === "draft"
-                        ? "Create a new project to get started."
-                        : "Create your first project to get started."}
+                  : statusFilter === "sharedWithMe"
+                    ? "Projects shared with you by other users will appear here."
+                    : statusFilter === "published"
+                      ? "Publish a draft project to see it here."
+                      : statusFilter === "closed"
+                        ? "Close a published project to see it here."
+                        : statusFilter === "draft"
+                          ? "Create a new project to get started."
+                          : "Create your first project to get started."}
               </div>
-              {!search && statusFilter !== "published" && (
-                <button
-                  onClick={onNew}
-                  style={{
-                    ...btnStyle,
-                    background: "#1D4ED8",
-                    color: "#fff",
-                    borderColor: "#1D4ED8",
-                  }}
-                >
-                  <Plus size={16} style={{ marginRight: 8 }} />
-                  Create your first project
-                </button>
-              )}
+              {!search &&
+                statusFilter !== "sharedWithMe" &&
+                statusFilter !== "published" &&
+                statusFilter !== "closed" && (
+                  <button
+                    onClick={onNew}
+                    style={{
+                      ...btnStyle,
+                      background: "#1D4ED8",
+                      color: "#fff",
+                      borderColor: "#1D4ED8",
+                    }}
+                  >
+                    <Plus size={16} style={{ marginRight: 8 }} />
+                    Create your first project
+                  </button>
+                )}
             </div>
           ) : (
             /* Grid of draft cards */
@@ -10818,143 +11132,221 @@ function DraftProjectsList({
                 ).length;
                 const status = d.status || "draft";
 
+                // ── NEW: Ownership check ──
+                const isSharedProject =
+                  d.createdBy &&
+                  currentUserId &&
+                  d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
+
                 return (
                   <div
                     key={d.id}
                     onClick={() => onOpen(d.id)}
                     style={{
                       background: "#fff",
-                      border: "1px solid #E2E8F0",
+                      border: `1px solid ${isSharedProject ? "#93C5FD" : "#E2E8F0"}`,
+                      borderLeft: isSharedProject
+                        ? "4px solid #1D4ED8"
+                        : "1px solid #E2E8F0",
                       borderRadius: 12,
                       padding: 16,
                       cursor: "pointer",
                       transition: "all .15s",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                      boxShadow: isSharedProject
+                        ? "0 2px 6px rgba(29,78,216,0.08)"
+                        : "0 1px 3px rgba(0,0,0,0.05)",
                       display: "flex",
                       flexDirection: "column",
                       gap: 10,
                       minHeight: 180,
+                      position: "relative",
+                      overflow: "hidden",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#93C5FD";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(29,78,216,0.10)";
+                      e.currentTarget.style.borderColor = isSharedProject
+                        ? "#3B82F6"
+                        : "#93C5FD";
+                      e.currentTarget.style.boxShadow = isSharedProject
+                        ? "0 6px 16px rgba(29,78,216,0.15)"
+                        : "0 4px 12px rgba(29,78,216,0.10)";
                       e.currentTarget.style.transform = "translateY(-2px)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "#E2E8F0";
-                      e.currentTarget.style.boxShadow =
-                        "0 1px 3px rgba(0,0,0,0.05)";
+                      e.currentTarget.style.borderColor = isSharedProject
+                        ? "#93C5FD"
+                        : "#E2E8F0";
+                      e.currentTarget.style.boxShadow = isSharedProject
+                        ? "0 2px 6px rgba(29,78,216,0.08)"
+                        : "0 1px 3px rgba(0,0,0,0.05)";
                       e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
+                    {/* ── NEW: Shared corner ribbon ── */}
+                    {isSharedProject && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          right: -34,
+                          background:
+                            "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)",
+                          color: "#fff",
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: "0.5px",
+                          textTransform: "uppercase",
+                          padding: "3px 40px",
+                          transform: "rotate(35deg)",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                          zIndex: 1,
+                        }}
+                      >
+                        Shared
+                      </div>
+                    )}
+
                     {/* Status badge + delete */}
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
+                        gap: 8,
                       }}
                     >
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          padding: "3px 9px",
-                          borderRadius: 999,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          background:
-                            status === "closed"
-                              ? "#F1F5F9"
-                              : status === "published"
-                                ? "#DCFCE7"
-                                : "#FEF3C7",
-                          color:
-                            status === "closed"
-                              ? "#475569"
-                              : status === "published"
-                                ? "#15803D"
-                                : "#B45309",
-                          border: `1px solid ${
-                            status === "closed"
-                              ? "#CBD5E1"
-                              : status === "published"
-                                ? "#86EFAC"
-                                : "#FCD34D"
-                          }`,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.5px",
-                        }}
+                      <div
+                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
                       >
-                        {status === "closed" ? (
-                          <>
-                            <Lock size={11} />
-                            Closed
-                          </>
-                        ) : status === "published" ? (
-                          <>
-                            <Rocket size={11} />
-                            Published
-                          </>
-                        ) : (
-                          <>
-                            <FileText size={11} />
-                            Draft
-                          </>
-                        )}
-                      </span>
-                      {d.status !== "published" && d.status !== "closed" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (deletingProjectId !== d.id) {
-                              setConfirmDelete(d);
-                            }
-                          }}
-                          disabled={deletingProjectId === d.id}
-                          title={
-                            deletingProjectId === d.id
-                              ? "Deleting..."
-                              : "Delete project"
-                          }
+                        {/* Status badge */}
+                        <span
                           style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: 6,
-                            border: "1px solid #FCA5A5",
-                            background:
-                              deletingProjectId === d.id
-                                ? "#F1F5F9"
-                                : "#FEF2F2",
-                            color:
-                              deletingProjectId === d.id
-                                ? "#94A3B8"
-                                : "#EF4444",
-                            cursor:
-                              deletingProjectId === d.id
-                                ? "not-allowed"
-                                : "pointer",
-                            fontSize: 12,
-                            opacity: deletingProjectId === d.id ? 0.6 : 1,
-                            transition: "all .12s",
-                            display: "flex",
+                            display: "inline-flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            padding: 0,
+                            gap: 4,
+                            padding: "3px 9px",
+                            borderRadius: 999,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background:
+                              status === "closed"
+                                ? "#F1F5F9"
+                                : status === "published"
+                                  ? "#DCFCE7"
+                                  : "#FEF3C7",
+                            color:
+                              status === "closed"
+                                ? "#475569"
+                                : status === "published"
+                                  ? "#15803D"
+                                  : "#B45309",
+                            border: `1px solid ${
+                              status === "closed"
+                                ? "#CBD5E1"
+                                : status === "published"
+                                  ? "#86EFAC"
+                                  : "#FCD34D"
+                            }`,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px",
                           }}
                         >
-                          {deletingProjectId === d.id ? (
-                            <Loader2
-                              size={14}
-                              style={{ animation: "spin 1s linear infinite" }}
-                            />
+                          {status === "closed" ? (
+                            <>
+                              <Lock size={11} />
+                              Closed
+                            </>
+                          ) : status === "published" ? (
+                            <>
+                              <Rocket size={11} />
+                              Published
+                            </>
                           ) : (
-                            <Trash2 size={14} />
+                            <>
+                              <FileText size={11} />
+                              Draft
+                            </>
                           )}
-                        </button>
-                      )}
+                        </span>
+
+                        {/* ── NEW: Shared badge (inline) ── */}
+                        {isSharedProject && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              padding: "3px 9px",
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              background: "#DBEAFE",
+                              color: "#1D4ED8",
+                              border: "1px solid #93C5FD",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                            title={`Shared by ${d.createdBy}`}
+                          >
+                            <Users size={11} />
+                            Collaborator
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Delete button — hide for shared projects (collaborators can't delete) */}
+                      {d.status !== "published" &&
+                        d.status !== "closed" &&
+                        !isSharedProject && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (deletingProjectId !== d.id) {
+                                setConfirmDelete(d);
+                              }
+                            }}
+                            disabled={deletingProjectId === d.id}
+                            title={
+                              deletingProjectId === d.id
+                                ? "Deleting..."
+                                : "Delete project"
+                            }
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 6,
+                              border: "1px solid #FCA5A5",
+                              background:
+                                deletingProjectId === d.id
+                                  ? "#F1F5F9"
+                                  : "#FEF2F2",
+                              color:
+                                deletingProjectId === d.id
+                                  ? "#94A3B8"
+                                  : "#EF4444",
+                              cursor:
+                                deletingProjectId === d.id
+                                  ? "not-allowed"
+                                  : "pointer",
+                              fontSize: 12,
+                              opacity: deletingProjectId === d.id ? 0.6 : 1,
+                              transition: "all .12s",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {deletingProjectId === d.id ? (
+                              <Loader2
+                                size={14}
+                                style={{ animation: "spin 1s linear infinite" }}
+                              />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        )}
                     </div>
 
                     {/* Project title */}
@@ -11000,6 +11392,66 @@ function DraftProjectsList({
                         </span>
                       </div>
                     </div>
+
+                    {/* ── NEW: Owner info for shared projects ── */}
+                    {/* ── Created by info (shown for all projects) ── */}
+                    {d.createdBy && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "6px 10px",
+                          background: isSharedProject ? "#F0F9FF" : "#FAFBFC",
+                          border: `1px solid ${isSharedProject ? "#BAE6FD" : "#E2E8F0"}`,
+                          borderRadius: 6,
+                          fontSize: 10.5,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            background: isSharedProject ? "#1D4ED8" : "#7C3AED",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 700,
+                            fontSize: 10,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {(d.createdBy || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              color: "#64748B",
+                              fontSize: 9.5,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.4px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {isSharedProject ? "Owned by" : "Created by"}
+                          </div>
+                          <div
+                            style={{
+                              color: isSharedProject ? "#0369A1" : "#475569",
+                              fontWeight: 600,
+                              fontSize: 11,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {isSharedProject ? d.createdBy : "You"}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Stats */}
                     <div
@@ -11068,7 +11520,12 @@ function DraftProjectsList({
                       <span>
                         <Clock size={11} /> {fmtDate(d.updatedAt)}
                       </span>
-                      <span style={{ color: "#1D4ED8", fontWeight: 600 }}>
+                      <span
+                        style={{
+                          color: isSharedProject ? "#1D4ED8" : "#7C3AED",
+                          fontWeight: 600,
+                        }}
+                      >
                         Open →
                       </span>
                     </div>
@@ -11198,6 +11655,9 @@ const DataContext = createContext({
 
 /* ─── Top-level App with Tab Navigation ─── */
 export default function AssignerModule() {
+  const currentUserId = getUserData()?.userDetails?.userId || null;
+  console.log("Current user ID : ", currentUserId);
+
   const [deletingProjectId, setDeletingProjectId] = useState(null);
   const [tab, setTab] = useState("drafts"); // "drafts" | "editor" | "gantt"
   const [drafts, setDrafts] = useState([]);
@@ -11346,6 +11806,7 @@ export default function AssignerModule() {
       groups: [],
       rows: [],
       //   nextId: 1,
+      createdBy: currentUserId,
       status: "draft",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -11353,7 +11814,7 @@ export default function AssignerModule() {
     setPendingDraft(newProject);
     setCurrentProjectId(newProject.id);
     setTab("editor");
-  }, []);
+  }, [currentUserId]);
   const handleOpenDraft = (id) => {
     setCurrentProjectId(id);
     setTab("editor");
@@ -11754,6 +12215,7 @@ export default function AssignerModule() {
           error={draftsError}
           deletingProjectId={deletingProjectId}
           groupLabels={groupLabels}
+          currentUserId={currentUserId}
           onOpen={handleOpenDraft}
           onDelete={handleDeleteDraft}
           onNew={handleNewProject}
@@ -11769,6 +12231,7 @@ export default function AssignerModule() {
         >
           <GanttView
             projects={drafts.filter((d) => d.status !== "draft")}
+            showGlobalFilters={true}
             onOpenComments={handleGanttOpenComments}
             onFeedback={handleGanttViewFeedback}
           />
@@ -11784,6 +12247,7 @@ export default function AssignerModule() {
           onPublish={handlePublish}
           onBack={handleBackToList}
           showToast={showToast}
+          currentUserId={currentUserId} // ← ADD THIS
         />
       ) : (
         <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>
@@ -11811,6 +12275,7 @@ export default function AssignerModule() {
           isSubmitting={false}
         />
       )}
+
       {/* Global Toasts */}
       <Toast
         toasts={toasts}
