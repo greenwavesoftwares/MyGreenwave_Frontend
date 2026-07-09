@@ -124,11 +124,9 @@ export default function CategoryMaster() {
         entitlements: c.entitlements || [],
       }));
       setCategories(normalized);
-      setExpanded((prev) =>
-        prev.size === 0 && normalized[0]
-          ? new Set([normalized[0].categoryId])
-          : prev,
-      );
+      const expand=normalized.map(category=>category.categoryId)
+      console.log("Expand::",expand)
+      setExpanded(expand);
     } catch (err) {
       setError("Unable to load categories. Please try again.");
     } finally {
@@ -200,12 +198,14 @@ export default function CategoryMaster() {
   });
 
   function toggleExpand(id) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
+  setExpanded((prev) => {
+    if (prev.includes(id)) {
+      return prev.filter((item) => item !== id);
+    } else {
+      return [...prev, id];
+    }
+  });
+}
 
   // ---- Category CRUD ----
   function openAddCategory() {
@@ -467,7 +467,7 @@ export default function CategoryMaster() {
 
           {!loading &&
             filtered.map((cat) => {
-              const isOpen = expanded.has(cat.categoryId);
+              const isOpen = expanded.includes(cat.categoryId);
               const enabledCount = cat.entitlements.filter(
                 (e) => e.enabled,
               ).length;
