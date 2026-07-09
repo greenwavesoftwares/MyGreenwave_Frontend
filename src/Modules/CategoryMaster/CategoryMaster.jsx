@@ -23,9 +23,11 @@ import {
   updateEntitlement as apiUpdateEntitlement,
   deleteEntitlement as apiDeleteEntitlement,
   toggleEntitlement as apiToggleEntitlement,
+  createCategoryEntitlement,
 } from "./CategoryInfoApi";
 import Toast from "../Assignee/Toast";
 import { showToast } from "../Assignee/toastService";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 // ---------------------------------------------------------------------------
 // Category Master — manage Categories and the Entitlements attached to each.
 // Data model (used directly, matches the API shape — no mapping layer):
@@ -33,7 +35,7 @@ import { showToast } from "../Assignee/toastService";
 //   Entitlement -> { entitlementId, entitlement, description, enabled }
 // ---------------------------------------------------------------------------
 
-const emptyCategory = { categoryName: "", description: "", active: true };
+const emptyCategory = { categoryName: "", description: "", active: true, entitlements: [] };
 const emptyEntitlement = { entitlement: "", description: "", enabled: true };
 
 function Badge({ children, tone = "neutral" }) {
@@ -105,7 +107,7 @@ export default function CategoryMaster() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [catModal, setCatModal] = useState(null); // { mode, id?, data }
+  const [catModal, setCatModal] = useState(null); // { mode, id?, sourceCategoryId?, data }
   const [entModal, setEntModal] = useState(null); // { mode, categoryId, id?, data }
   const [confirmDelete, setConfirmDelete] = useState(null); // { type, categoryId, entId?, label }
   const [saving, setSaving] = useState(false);
@@ -132,6 +134,46 @@ export default function CategoryMaster() {
     } finally {
       setLoading(false);
     }
+  }
+
+  const openCopyCategory=(category)=>{
+    const categoryId=generateId("Category")
+    const newCategory={...category,categoryId}
+    newCategory.entitlements.map((entitlement)=>{entitlement.entitlementId=generateId("Entitlement")})
+
+    setCatModal({mode:"copy",data:newCategory})
+  }
+  const addCategoryEntitlement=async()=>{
+    const response=await createCategoryEntitlement(catModal.data)
+  }
+
+  // Used inside the Add Category modal: lets the user pick an existing
+  // category to base the new one on (copies name/description/entitlements).
+  function handleCopyFromExisting(sourceCategoryId) {
+    if (!sourceCategoryId) {
+      // "None" selected — reset back to a blank Add Category form
+      setCatModal({ mode: "add", data: { ...emptyCategory } });
+      return;
+    }
+    const source = categories.find((c) => c.categoryId === sourceCategoryId);
+    if (!source) return;
+
+    const categoryId = generateId("category");
+    const clonedEntitlements = (source.entitlements || []).map((ent) => ({
+      ...ent,
+      entitlementId: generateId("entitlement"),
+    }));
+
+    setCatModal({
+      mode: "copy",
+      sourceCategoryId,
+      data: {
+        ...source,
+        categoryId,
+        categoryName: `${source.categoryName} Copy`,
+        entitlements: clonedEntitlements,
+      },
+    });
   }
 
   useEffect(() => {
@@ -174,6 +216,7 @@ export default function CategoryMaster() {
       mode: "edit",
       id: cat.categoryId,
       data: {
+        categoryId:cat.categoryId,
         categoryName: cat.categoryName,
         description: cat.description,
         active: cat.active,
@@ -185,6 +228,11 @@ export default function CategoryMaster() {
     if (!data.categoryName.trim()) return;
     setSaving(true);
     try {
+      if(categories.some((category)=>category.categoryName===data.categoryName &&(!data.categoryId || category.categoryId!==data.categoryId)))
+      {
+        showToast("error","Error","Category name already exists.")
+        return
+      } 
       const payload = {
         categoryName: data.categoryName.trim(),
         active: data.active,
@@ -195,7 +243,13 @@ export default function CategoryMaster() {
         await apiCreateCategory(payload);
         showToast("success", "Success", "Category created successfully");
         
-      } else {
+      }
+      else  if(mode==="copy"){
+        await createCategoryEntitlement(data)
+        showToast("success", "Success", "Category created successfully");
+        
+      } 
+      else {
         await apiUpdateCategory(id, payload);
         showToast("success", "Success", "Category created successfully");
         
@@ -455,7 +509,14 @@ export default function CategoryMaster() {
                         {enabledCount}/{cat.entitlements.length}
                       </span>
                     </div>
-
+                      <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => openCopyCategory(cat)}
+                      aria-label="Edit category"
+                    >
+                      <ContentCopyIcon size={14} />
+                    </button>
                     <button
                       type="button"
                       className="icon-btn"
@@ -468,7 +529,6 @@ export default function CategoryMaster() {
                       type="button"
                       className="icon-btn icon-btn-danger"
                       onClick={() =>
-                        
                         setConfirmDelete({
                           type: "category",
                           categoryId: cat.categoryId,
@@ -570,9 +630,29 @@ export default function CategoryMaster() {
       {/* Add/Edit Category Modal */}
       {catModal && (
         <Modal
-          title={catModal.mode === "add" ? "Add Category" : "Edit Category"}
+          title={catModal.mode === "add" || catModal.mode==="copy"? "Add Category" : "Edit Category"}
           onClose={() => !saving && setCatModal(null)}
         >
+          {(catModal.mode === "add" || catModal.mode === "copy") && (
+            <label className="field">
+              <span className="field-label">
+                Copy from existing category (optional)
+              </span>
+              <select
+                value={catModal.sourceCategoryId ?? ""}
+                onChange={(e) => handleCopyFromExisting(e.target.value)}
+                className="field-input"
+              >
+                <option value="">None</option>
+                {categories.map((c) => (
+                  <option key={c.categoryId} value={c.categoryId}>
+                    {c.categoryName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <TextField
             label="Name"
             required
@@ -583,7 +663,7 @@ export default function CategoryMaster() {
                 data: { ...m.data, categoryName: v },
               }))
             }
-            placeholder="e.g. Developer"
+            placeholder="e.g. L1"
           />
           <TextField
             label="Description"
@@ -615,6 +695,22 @@ export default function CategoryMaster() {
               <option value="false">Inactive</option>
             </select>
           </label>
+
+          {catModal.mode === "copy" && catModal.data.entitlements?.length > 0 && (
+            <div className="field">
+              <span className="field-label">
+                Entitlements to be copied ({catModal.data.entitlements.length})
+              </span>
+              <div className="empty-state-small" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {catModal.data.entitlements.map((ent) => (
+                  <span key={ent.entitlementId}>
+                    • {ent.entitlement}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="modal-actions">
             <button
               type="button"
@@ -632,7 +728,7 @@ export default function CategoryMaster() {
             >
               {saving
                 ? "Saving..."
-                : catModal.mode === "add"
+                : catModal.mode === "add" || catModal.mode === "copy"
                   ? "Add Category"
                   : "Save Changes"}
             </button>
@@ -658,7 +754,7 @@ export default function CategoryMaster() {
                 data: { ...m.data, entitlement: v },
               }))
             }
-            placeholder="e.g. FRS Preparation"
+            placeholder="e.g. Travelling"
           />
           <TextField
             label="Description"
