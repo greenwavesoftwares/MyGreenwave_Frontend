@@ -1,6 +1,6 @@
 import { getUserData } from "../Modules/Login/Encrypt";
 
-const API_BASE_URL = import.meta.env.VITE_END_POINT;
+const API_BASE_URL = "http://localhost:8081";
 const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
 const MINIO_BUCKET_NAME = "notes";
 /* ─── Custom Error Class ─── */
