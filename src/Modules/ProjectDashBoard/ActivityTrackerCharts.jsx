@@ -320,6 +320,7 @@ export default function ActivityTrackerCharts() {
        months.length === 0 ? MONTH_NAMES.join(','): months.join(","), // e.g. "January,March" — empty string means "all months"
         year,
       );
+      console.log('Response : ',response)
       setApiResponse(response ?? { data: [] });
     } catch (err) {
       setApiError(String(err?.message ?? err));
@@ -372,7 +373,7 @@ export default function ActivityTrackerCharts() {
     const arr = [];
     projectsData.forEach((p) => {
       (p.rows || []).forEach((r) => {
-        arr.push({ ...r, project: p.project, po: p.po, site: p.site });
+       arr.push({ project: p.project, po: p.po, site: p.site, id: p.id, ...r });
       });
     });
     return arr;
@@ -587,10 +588,12 @@ export default function ActivityTrackerCharts() {
   // currently active instead of always showing the full, unfiltered
   // dataset.
   const filteredProjectsData = useMemo(() => {
+
+    console.log('Filtered Rows : ',filteredRows)
     const map = new Map();
     filteredRows.forEach((r) => {
       if (!map.has(r.project)) {
-        map.set(r.project, { project: r.project, po: r.po, site: r.site, rows: [] });
+        map.set(r.project, { project: r.project, po: r.po, site: r.site,id: r.id, rows: [] });
       }
       map.get(r.project).rows.push(r);
     });
@@ -718,6 +721,7 @@ export default function ActivityTrackerCharts() {
     );
   }
 
+    console.log('Filtered Project Data : ',filteredProjectsData)
   const monthSummary =
     selectedMonths.length === 0
       ? "All months"
@@ -738,6 +742,7 @@ export default function ActivityTrackerCharts() {
       : selectedResources.length === 1
       ? selectedResources[0]
       : `${selectedResources.length} resources selected`;
+      
 
   const weeklyScheduleTitle = (
     <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -1152,7 +1157,8 @@ export default function ActivityTrackerCharts() {
             </div>
           </AccordionSection>
 
-          <AccordionSection title="Resource Gantt" defaultOpen>
+          <AccordionSection title="Resource Gantt" defaultOpen >
+            {console.log('Filtered Project Data component : ',filteredProjectsData)}
             <GanttView projects={filteredProjectsData} />
           </AccordionSection>
 
