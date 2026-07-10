@@ -131,7 +131,7 @@ export default function CommentsActionDialog({
       payload,
     );
     if (response) {
-      const updatedComments = await activityTrackerApi.getCommentsByActivity(
+      const updatedComments = await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
         newComment.projectId,
         newComment.activityId,
       );
