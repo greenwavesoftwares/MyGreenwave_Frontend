@@ -431,7 +431,9 @@ export default function ProjectActivityInfo({
     const lastDayHours = !WEEK_END.includes(stopDate.day())
       ? Math.min(stopHour, WORK_END) - WORK_START
       : 0;
+      const isCompletedWithinSameDay=startDate.day()===stopDate.day()&&startDate.month()===stopDate.month()&& startDate.year()===stopDate.year()
     const totalWorkingHours =
+    isCompletedWithinSameDay?(stopHour-startHour):
       firstDayHours +
       lastDayHours +
       durationInDays * (WORK_END - WORK_START) -
