@@ -190,6 +190,12 @@ function activityProgressPct(entry) {
 export default function ActivityTrackerCharts() {
   const [hovered, setHovered] = useState(null);
   const hoverHideTimeout = useRef(null);
+  // Ref to the tooltip DOM node itself. Used by the outside-click effect
+  // below to tell "the user clicked the tooltip" apart from "the user
+  // clicked anywhere else" — replaces the old full-screen transparent
+  // overlay (see notes further down for why that overlay was the source
+  // of the hover/click bugs).
+  const tooltipRef = useRef(null);
 
   // Sticky hover: showHover cancels any pending hide and shows immediately.
   // hideHover doesn't clear right away — it waits a beat so the cursor has
@@ -210,6 +216,37 @@ export default function ActivityTrackerCharts() {
       hoverHideTimeout.current = null;
     }, 200);
   }
+
+  // Close the tooltip on outside click/tap.
+  //
+  // FIX: this used to be handled by a fixed, full-viewport transparent
+  // <div> stacked at zIndex 49, rendered as a sibling of the tooltip
+  // whenever `hovered` was set. That overlay sat ON TOP of the bar
+  // segments themselves (they have no explicit z-index, so they lose to
+  // anything with one), which caused two visible bugs:
+  //   1. Hovering a segment showed the tooltip, but the very act of the
+  //      overlay mounting on top of the cursor's position made the browser
+  //      treat the segment as no longer being hovered, firing its
+  //      onMouseLeave -> hideHover -> tooltip vanished ~200ms after
+  //      appearing ("details getting away").
+  //   2. After the first click opened a tooltip, the overlay covered every
+  //      other segment too, so the NEXT click on a different segment hit
+  //      the overlay (closing the tooltip) instead of reaching the segment
+  //      underneath (which would have opened a new tooltip for it).
+  //
+  // Removing the overlay and instead listening on `document` for clicks
+  // outside the tooltip's own bounds fixes both: it never sits on top of
+  // anything, so hover/click on the chart itself always reaches the real
+  // segment elements.
+  useEffect(() => {
+    if (!hovered) return;
+    function handleDocClick(e) {
+      if (tooltipRef.current && tooltipRef.current.contains(e.target)) return;
+      setHovered(null);
+    }
+    document.addEventListener("mousedown", handleDocClick);
+    return () => document.removeEventListener("mousedown", handleDocClick);
+  }, [hovered]);
 
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
@@ -1119,7 +1156,7 @@ export default function ActivityTrackerCharts() {
             <GanttView projects={filteredProjectsData} />
           </AccordionSection>
 
-          <AccordionSection title={projectBreakdownTitle} defaultOpen>
+          {/* <AccordionSection title={projectBreakdownTitle} defaultOpen>
             <div style={{ overflow: "hidden" }}>
               <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 14px" }}>
                 {filteredRows.length} task{filteredRows.length === 1 ? "" : "s"} across {rangeLabel}
@@ -1139,45 +1176,36 @@ export default function ActivityTrackerCharts() {
                 ))}
               </div>
             </div>
-          </AccordionSection>
+          </AccordionSection> */}
         </>
       )}
 
       {hovered && (
-        <>
-          {/* Hover has no real equivalent on touch, so tapping anywhere
-              outside the tooltip closes it immediately — otherwise a
-              touch user would have no way to dismiss it. */}
-          <div
-            onClick={() => setHovered(null)}
-            style={{ position: "fixed", inset: 0, zIndex: 49, background: "transparent" }}
-          />
-          <div
-            onMouseEnter={showHover.bind(null, hovered)}
-            onMouseLeave={hideHover}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "fixed",
-              left: hovered.x,
-              top: hovered.y,
-              transform: hovered.side === "left" ? "translate(calc(-100% - 10px), -50%)" : "translate(10px, -50%)",
-              zIndex: 50,
-              background: "#0f172a",
-              color: "#f1f5f9",
-              fontSize: 12,
-              borderRadius: 10,
-              padding: 12,
-              // min(...) keeps the tooltip from overflowing narrow phone
-              // viewports instead of always reserving a fixed 280/320px.
-              maxWidth: "min(280px, 90vw)",
-              maxHeight: "min(320px, 70vh)",
-              overflowY: "auto",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
-            }}
-          >
-            <TooltipContent entry={hovered.entry} kind={hovered.kind} />
-          </div>
-        </>
+        <div
+          ref={tooltipRef}
+          onMouseEnter={showHover.bind(null, hovered)}
+          onMouseLeave={hideHover}
+          style={{
+            position: "fixed",
+            left: hovered.x,
+            top: hovered.y,
+            transform: hovered.side === "left" ? "translate(calc(-100% - 10px), -50%)" : "translate(10px, -50%)",
+            zIndex: 50,
+            background: "#0f172a",
+            color: "#f1f5f9",
+            fontSize: 12,
+            borderRadius: 10,
+            padding: 12,
+            // min(...) keeps the tooltip from overflowing narrow phone
+            // viewports instead of always reserving a fixed 280/320px.
+            maxWidth: "min(280px, 90vw)",
+            maxHeight: "min(320px, 70vh)",
+            overflowY: "auto",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
+          }}
+        >
+          <TooltipContent entry={hovered.entry} kind={hovered.kind} />
+        </div>
       )}
     </div>
     {/* </div> */}
