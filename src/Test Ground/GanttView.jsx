@@ -1837,6 +1837,7 @@ export default function GanttView({
   onFeedback,
   showGlobalFilters = false,
 }) {
+  console.log("project : ", projects);
   const [viewMode, setViewMode] = useState("task");
   const [zoom, setZoom] = useState("day");
   const [colWidthPx, setColWidthPx] = useState(
