@@ -136,10 +136,10 @@ export default function CategoryMaster() {
 
   const openCopyCategory=(category)=>{
     const categoryId=generateId("Category")
-    const newCategory={...category,categoryId}
+    const newCategory={...category,categoryId,categoryName:`${category.categoryName} copy`}
     newCategory.entitlements.map((entitlement)=>{entitlement.entitlementId=generateId("Entitlement")})
 
-    setCatModal({mode:"copy",data:newCategory})
+    setCatModal({mode:"copy",data:newCategory,sourceCategoryId:category.categoryId})
   }
   const addCategoryEntitlement=async()=>{
     const response=await createCategoryEntitlement(catModal.data)
