@@ -924,24 +924,21 @@ function runValidations(
       }
     }
   });
-  // ❌ ERROR: Pending tasks overlap each other — must fix
-  results.push({
-    ok: pendingOverlaps.length === 0,
-    title:
-      pendingOverlaps.length === 0
-        ? "No pending task overlaps"
-        : `${pendingOverlaps.length} pending task overlap${pendingOverlaps.length !== 1 ? "s" : ""} detected`,
-    detail:
-      pendingOverlaps.length === 0
-        ? "Pending tasks for each resource are sequenced cleanly."
-        : pendingOverlaps
-            .slice(0, 5)
-            .map((o) => `• ${o.resource}: "${o.task1}" ⇄ "${o.task2}"`)
-            .join("\n") +
-          (pendingOverlaps.length > 5
-            ? `\n…and ${pendingOverlaps.length - 5} more`
-            : ""),
-  });
+  // ⚠️ WARNING: Pending tasks overlap each other — can proceed with acknowledgment
+  if (pendingOverlaps.length > 0) {
+    warnings.push({
+      title: `${pendingOverlaps.length} pending task overlap${pendingOverlaps.length !== 1 ? "s" : ""} detected`,
+      detail:
+        pendingOverlaps
+          .slice(0, 5)
+          .map((o) => `• ${o.resource}: "${o.task1}" ⇄ "${o.task2}"`)
+          .join("\n") +
+        (pendingOverlaps.length > 5
+          ? `\n…and ${pendingOverlaps.length - 5} more`
+          : "") +
+        "\n\nOverlapping tasks may cause scheduling conflicts. Review and adjust if needed.",
+    });
+  }
 
   // ⚠️ WARNING: Pending overlapping with active/completed tasks
   if (mixedOverlaps.length > 0) {
@@ -960,7 +957,15 @@ function runValidations(
           : ""),
     });
   }
-
+  // ✅ SUCCESS indicator (only for the "clean" case)
+  if (pendingOverlaps.length === 0) {
+    results.push({
+      ok: true,
+      title: "No pending task overlaps",
+      detail: "Pending tasks for each resource are sequenced cleanly.",
+    });
+  }
+  // If overlaps exist, don't add to results (only add to warnings)
   // ── 5. Weekend Stop Check (ERROR) ──
   let badTime = false;
   rows.forEach((r) => {
@@ -6749,6 +6754,7 @@ function ProjectCloseModal({
 }
 /* ─── Activity Row ─── */
 const ActivityRow = React.memo(function ActivityRow({
+  draft,
   row,
   idx,
   isFirstInChain,
@@ -7188,7 +7194,7 @@ const ActivityRow = React.memo(function ActivityRow({
         row.resource ? (
           !isLocked ? (
             <>
-              {isPastStart && (
+              {isPastStart && draft.status === "draft" && (
                 <span
                   style={{
                     marginLeft: 5,
@@ -7395,51 +7401,51 @@ const ActivityRow = React.memo(function ActivityRow({
           )}
 
           {/* Comments button (always shown) */}
-          {commentCount > 0 && (
-            <button
-              onClick={() => onOpenComments(row)}
-              title={
-                commentCount > 0
-                  ? `${commentCount} comment${commentCount !== 1 ? "s" : ""}`
-                  : "Comments"
-              }
-              style={{
-                ...iconBtn,
-                background: commentCount > 0 ? "#EDE9FE" : "transparent",
-                color: commentCount > 0 ? "#7C3AED" : "#94A3B8",
-                borderColor: commentCount > 0 ? "#DDD6FE" : "#E2E8F0",
-                position: "relative",
-                overflow: "visible",
-              }}
-            >
-              <MessageSquare size={13} />
-              {commentCount > 0 && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -6,
-                    right: -6,
-                    minWidth: 16,
-                    height: 16,
-                    padding: "0 4px",
-                    background: "#7C3AED",
-                    color: "#fff",
-                    borderRadius: 999,
-                    fontSize: 9,
-                    fontWeight: 700,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "2px solid #fff",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                    lineHeight: 1,
-                  }}
-                >
-                  {commentCount > 99 ? "99+" : commentCount}
-                </span>
-              )}
-            </button>
-          )}
+          {/* {commentCount > 0 && ( */}
+          <button
+            onClick={() => onOpenComments(row)}
+            title={
+              commentCount > 0
+                ? `${commentCount} comment${commentCount !== 1 ? "s" : ""}`
+                : "Comments"
+            }
+            style={{
+              ...iconBtn,
+              background: commentCount > 0 ? "#EDE9FE" : "transparent",
+              color: commentCount > 0 ? "#7C3AED" : "#94A3B8",
+              borderColor: commentCount > 0 ? "#DDD6FE" : "#E2E8F0",
+              position: "relative",
+              overflow: "visible",
+            }}
+          >
+            <MessageSquare size={13} />
+            {commentCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                  minWidth: 16,
+                  height: 16,
+                  padding: "0 4px",
+                  background: "#7C3AED",
+                  color: "#fff",
+                  borderRadius: 999,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px solid #fff",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  lineHeight: 1,
+                }}
+              >
+                {commentCount > 99 ? "99+" : commentCount}
+              </span>
+            )}
+          </button>
+          {/* )} */}
           {/* Add sub-activity (only for pending top-level) */}
           {row.sortOrder === 0 && isRowPending && !isLockedByParent && (
             <button
@@ -9345,6 +9351,7 @@ function ProjectEditor({
                   <label style={labelStyle}>Activity Sheet</label>
                   <button
                     onClick={() => {
+                      if (!isEditable) return;
                       if (!groups.length) {
                         setUploadStatus({
                           type: "warn",
@@ -9354,24 +9361,41 @@ function ProjectEditor({
                       }
                       fileInputRef.current?.click();
                     }}
+                    disabled={!isEditable}
+                    title={
+                      !isEditable
+                        ? draft.status === "closed"
+                          ? "Cannot upload — project is closed"
+                          : "Cannot upload — project is already published"
+                        : ""
+                    }
                     style={{
                       width: "100%",
                       height: 34,
-                      border: "1px dashed #93C5FD",
+                      border: `1px dashed ${!isEditable ? "#CBD5E1" : "#93C5FD"}`,
                       borderRadius: 6,
-                      background: "#EFF6FF",
-                      color: "#1D4ED8",
+                      background: !isEditable ? "#F8FAFC" : "#EFF6FF",
+                      color: !isEditable ? "#94A3B8" : "#1D4ED8",
                       fontFamily: "Sora,sans-serif",
                       fontSize: 12,
-                      cursor: "pointer",
+                      cursor: !isEditable ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 5,
                       fontWeight: 500,
+                      opacity: !isEditable ? 0.65 : 1,
                     }}
                   >
-                    <Upload size={14} /> Upload Excel
+                    {!isEditable ? (
+                      <>
+                        <Lock size={14} /> Upload Excel
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} /> Upload Excel
+                      </>
+                    )}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -9379,6 +9403,7 @@ function ProjectEditor({
                     accept=".xlsx,.xls,.csv"
                     style={{ display: "none" }}
                     onChange={handleFileUpload}
+                    disabled={!isEditable}
                   />
                 </div>
               </div>
@@ -10042,6 +10067,7 @@ function ProjectEditor({
                                   displayIdx++;
                                 return (
                                   <ActivityRow
+                                    draft={draft}
                                     key={r.id}
                                     row={r}
                                     idx={displayIdx}
@@ -10509,6 +10535,7 @@ function ProjectEditor({
           setExistingComments={setExistingComments}
           newComment={newComment}
           setNewComment={setNewComment}
+          allowActions={true}
         />
       )}
       {rejectRow && (

@@ -1,6 +1,6 @@
 import { getUserData } from "../Modules/Login/Encrypt";
 
-const API_BASE_URL = "http://localhost:8081";
+const API_BASE_URL = import.meta.env.VITE_END_POINT;
 const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
 const MINIO_BUCKET_NAME = "notes";
 /* ─── Custom Error Class ─── */
@@ -164,7 +164,7 @@ export async function getUsers({
   limit = null,
 } = {}) {
   // Full URL for user service
-  const url = `${API_BASE_URL}/admin/allusers`;
+  const url = `${API_BASE_URL}admin/allusers`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -282,13 +282,13 @@ export async function getUsers({
   }
 }
 
-/* ─── 2. GET /activityTracker/projects/{id}/updates — Fetch updates with sharing ─── */
+/* ─── 2. GET activityTracker/projects/{id}/updates — Fetch updates with sharing ─── */
 export async function getProjectUpdates(projectId) {
   if (!projectId) {
     throw new ApiError("Project ID is required", 400, "INVALID_ARGUMENT");
   }
   return apiRequestWithRetry(
-    `/activityTracker/projects/${encodeParam(projectId)}/updates`,
+    `activityTracker/projects/${encodeParam(projectId)}/updates`,
   );
 }
 
@@ -306,7 +306,7 @@ export async function shareCategory(projectId, categoryId, payload) {
   }
 
   return apiRequest(
-    `/activityTracker/projects/${encodeParam(projectId)}/categories/shares`,
+    `activityTracker/projects/${encodeParam(projectId)}/categories/shares`,
     {
       method: "PUT",
       body: JSON.stringify([payload]), // Send as array for bulk support
@@ -340,7 +340,7 @@ export async function bulkUpdateSharing(projectId, payload) {
     throw new ApiError("Payload is required", 400, "INVALID_ARGUMENT");
   }
 
-  return apiRequest(`/activityTracker/projects/${encodeParam(projectId)}/categories/shares`, {
+  return apiRequest(`activityTracker/projects/${encodeParam(projectId)}/categories/shares`, {
     method: "PUT",
     body: JSON.stringify(payload.categories || []), // Send full categories array
   });
@@ -352,7 +352,7 @@ export async function getCollaborators(projectId) {
     throw new ApiError("Project ID is required", 400, "INVALID_ARGUMENT");
   }
   return apiRequestWithRetry(
-    `/activityTracker/projects/${encodeParam(projectId)}/updates/collaborators`,
+    `activityTracker/projects/${encodeParam(projectId)}/updates/collaborators`,
   );
 }
 
@@ -367,7 +367,7 @@ export async function getMySharedProjects(role = "all") {
 
 /* ─── 8. POST /notify — Send notifications (optional) ─── */
 export async function notifySharing(projectId, { type, userIds, categoryIds, message }) {
-  return apiRequest(`/activityTracker/projects/${encodeParam(projectId)}/updates/notify`, {
+  return apiRequest(`activityTracker/projects/${encodeParam(projectId)}/updates/notify`, {
     method: "POST",
     body: JSON.stringify({ type, userIds, categoryIds, message }),
   });
@@ -394,7 +394,7 @@ export async function createCategory(projectId, categoryData) {
   }
 
  return apiRequest(
-    `/activityTracker/projects/category`,
+    `activityTracker/projects/category`,
     {
       method: "POST",
      body: JSON.stringify(categoryData), // ← Send full object
@@ -404,7 +404,7 @@ export async function createCategory(projectId, categoryData) {
 /* ─── Rename category ─── */
 export async function renameCategory(projectId, categoryId, name, order) {
   return apiRequest(
-    `/activityTracker/projects/categories/${encodeParam(categoryId)}`,
+    `activityTracker/projects/categories/${encodeParam(categoryId)}`,
     {
       method: "PUT",
       body: JSON.stringify({ name, order }), // ← Send both name and order
@@ -415,7 +415,7 @@ export async function renameCategory(projectId, categoryId, name, order) {
 /* ─── Delete category ─── */
 export async function deleteCategory(projectId, categoryId) {
   return apiRequest(
-    `/activityTracker/projects/categories/${encodeParam(categoryId)}`,
+    `activityTracker/projects/categories/${encodeParam(categoryId)}`,
     {
       method: "DELETE",
     },
@@ -436,7 +436,7 @@ export async function createSnapshot(projectId, snapshot) {
   }
 
   return apiRequest(
-    `/activityTracker/projects/snapshots`,
+    `activityTracker/projects/snapshots`,
     {
       method: "POST",
       body: JSON.stringify(snapshot),
@@ -447,7 +447,7 @@ export async function createSnapshot(projectId, snapshot) {
 /* ─── Delete snapshot ─── */
 export async function deleteSnapshot(projectId, snapshotId) {
   return apiRequest(
-    `/activityTracker/projects/snapshots/${encodeParam(snapshotId)}`,
+    `activityTracker/projects/snapshots/${encodeParam(snapshotId)}`,
     {
       method: "DELETE",
     },
@@ -470,7 +470,7 @@ export async function createNote(projectId, note) {
     );
   }
 
-  return apiRequest(`/activityTracker/projects/notes`, {
+  return apiRequest(`activityTracker/projects/notes`, {
     method: "POST",
     body: JSON.stringify(note),
   });
@@ -491,7 +491,7 @@ export async function updateNote(projectId, noteId, note) {
   }
 
   return apiRequest(
-    `/activityTracker/projects/notes/${encodeParam(noteId)}`,
+    `activityTracker/projects/notes/${encodeParam(noteId)}`,
     {
       method: "PUT",
       body: JSON.stringify(note),
@@ -501,7 +501,7 @@ export async function updateNote(projectId, noteId, note) {
 /* ─── Delete note ─── */
 export async function deleteNote(projectId, noteId) {
   return apiRequest(
-    `/activityTracker/projects/${encodeParam(projectId)}/updates/notes/${encodeParam(noteId)}`,
+    `activityTracker/projects/${encodeParam(projectId)}/updates/notes/${encodeParam(noteId)}`,
     {
       method: "DELETE",
     },
@@ -525,7 +525,7 @@ export async function loadTemplate(projectId, categories) {
 console.log("categories template : ",categories)
   return apiRequest(
     
-    `/activityTracker/projects/categories`,
+    `activityTracker/projects/categories`,
     {
       method: "POST",
       body: JSON.stringify( categories ),
@@ -602,7 +602,7 @@ export async function downloadMinioFile(minioKey, bucketName = MINIO_BUCKET_NAME
     throw new ApiError("MinIO key is required", 400, "INVALID_ARGUMENT");
   }
 
-  const url = `${API_BASE_URL}/activityTracker/minIoFile?minioKey=${encodeParam(minioKey)}&bucketName=${encodeParam(bucketName)}`;
+  const url = `${API_BASE_URL}activityTracker/minIoFile?minioKey=${encodeParam(minioKey)}&bucketName=${encodeParam(bucketName)}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

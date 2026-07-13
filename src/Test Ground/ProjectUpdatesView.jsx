@@ -966,9 +966,7 @@ function AddSnapshotModal({
             <Calendar size={18} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>
-              Add Snapshot Date
-            </div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Add Update Date</div>
             <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 2 }}>
               Create a new column
             </div>
@@ -1082,7 +1080,7 @@ function AddSnapshotModal({
               </>
             ) : (
               <>
-                <Plus size={13} /> Add Snapshot
+                <Plus size={13} /> Add Update
               </>
             )}
           </button>
@@ -1905,7 +1903,7 @@ export default function ProjectUpdatesView({
       }
       showToast?.(
         "error",
-        "Failed to add snapshot",
+        "Failed to add update",
         err.userMessage || err.message,
       );
     } finally {
@@ -2591,7 +2589,7 @@ export default function ProjectUpdatesView({
                   borderColor: "#1D4ED8",
                 }}
               >
-                <Calendar size={13} /> Add Snapshot
+                <Calendar size={13} /> Add Update
               </button>
             )}
           </div>
