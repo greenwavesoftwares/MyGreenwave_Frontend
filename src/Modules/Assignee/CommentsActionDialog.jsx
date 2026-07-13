@@ -50,6 +50,9 @@ export default function CommentsActionDialog({
   const [replyAttachment, setReplyAttachment] = useState({});
   const [openConfirm, setOpenConfirm] = useState(false);
   const [deleteInfo, setDeleteInfo] = useState({});
+  // Mobile-only: which panel is visible — "existing" comments or the "new" entry form.
+  // Has no effect on desktop, where both panels are always shown stacked.
+  const [mobileView, setMobileView] = useState("existing");
 
   const handleReplyAttachment = (commentIndex, event) => {
     const file = event.target.files?.[0];
@@ -283,8 +286,37 @@ export default function CommentsActionDialog({
           </IconButton>
         </div>
 
+        {/* ── MOBILE VIEW SWITCHER (hidden on desktop) ── */}
+        <div className="mobile-view-tabs">
+          <button
+            type="button"
+            className={`mobile-view-tab ${mobileView === "existing" ? "active" : ""}`}
+            onClick={() => setMobileView("existing")}
+          >
+            Existing
+            {!!existingComments?.length && (
+              <span className="mobile-view-tab-count">
+                {existingComments.length}
+              </span>
+            )}
+          </button>
+          {allowActions && (
+            <button
+              type="button"
+              className={`mobile-view-tab ${mobileView === "new" ? "active" : ""}`}
+              onClick={() => setMobileView("new")}
+            >
+              Add New
+            </button>
+          )}
+        </div>
+
         {/* ── COMMENTS LIST ── */}
-        <div className="entries-container">
+        <div
+          className={`entries-container ${
+            mobileView === "existing" ? "mobile-visible" : "mobile-hidden"
+          }`}
+        >
           {!existingComments?.length ? (
             <div className="empty-state">
               <div className="empty-state-icon-wrap">
@@ -486,7 +518,8 @@ export default function CommentsActionDialog({
                                 )}
                               </div>
                               <div className="reply-text">
-                                {reply.replyText}
+                                <TruncatedText text={reply.replyText}/>
+                                
                               </div>
 
                               {reply.attachment && (
@@ -639,7 +672,11 @@ export default function CommentsActionDialog({
 
         {/* ── ADD NEW ENTRY ── */}
         {allowActions && (
-          <div className="entry-section">
+          <div
+            className={`entry-section ${
+              mobileView === "new" ? "mobile-visible" : "mobile-hidden"
+            }`}
+          >
             <div className="entry-title">
               <AddIcon fontSize="small" />
               Add new entry
