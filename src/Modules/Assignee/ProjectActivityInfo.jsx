@@ -23,127 +23,6 @@ import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 
 dayjs.extend(isBetween); // ← add this
-const activity = {
-  projectId: "PRJ-1001",
-  projectName: "Solar Farm Expansion",
-  poNumber: "PO-2025-001",
-  siteCustomer: "Green Energy Corp",
-  projectStatus: "Active",
-  createdBy: "john.smith",
-  createdAt: "2025-01-15T10:30:00.000Z",
-  activities: [
-    {
-      id: "module-1",
-      type: "MODULE",
-      name: "LOGSHEET",
-      children: [
-        {
-          id: "task-1",
-          type: "TASK",
-          name: "Scope Identification",
-          moduleName: "LOGSHEET",
-          resource: "eman.kalyan.mahato@greenwave.co.in",
-          resourceName: "Eman Mahata",
-          plannedStart: "2026-05-04T10:00:00.000Z",
-          plannedStop: "2026-05-04T12:00:00.000Z",
-          durationHrs: 2,
-          actualStart: "2026-05-04T10:05:00.000Z",
-          actualStop: "2026-05-04T11:55:00.000Z",
-          actualElapsed: "1h 50m",
-          pauseStart: "2026-05-04T10:45:00.000Z",
-          pausedurationHrs: "10m",
-          activityStatus: "Not Started",
-          priority: "Medium",
-          progress: 0,
-        },
-        {
-          id: "task-2",
-          type: "TASK",
-          name: "Data Source Identification and Modification Chargesheet",
-          moduleName: "LOGSHEET",
-          resource: "eman.kalyan.mahato@greenwave.co.in",
-          resourceName: "Eman Mahata",
-          plannedStart: "2026-05-04T10:00:00.000Z",
-          plannedStop: "2026-05-04T12:00:00.000Z",
-          durationHrs: 2,
-          actualStart: "2026-05-04T10:05:00.000Z",
-          actualStop: "2026-05-04T11:55:00.000Z",
-          actualElapsed: "1h 50m",
-          pauseStart: "2026-05-04T10:45:00.000Z",
-          pauseDuration: "10m",
-          activityStatus: "Paused",
-          priority: "High",
-          progress: 0,
-        },
-      ],
-    },
-    {
-      id: "module-2",
-      type: "MODULE",
-      name: "LOGSHEET 2",
-      children: [
-        {
-          id: "task-3",
-          type: "TASK",
-          name: "Scope Identification",
-          moduleName: "LOGSHEET 2",
-          resource: "rakesh.gupta@greenwave.co.in",
-          resourceName: "Rakesh Gupta",
-          plannedStart: "2026-05-04T10:00:00.000Z",
-          plannedStop: "2026-05-04T12:00:00.000Z",
-          durationHrs: 2,
-          actualStart: "2026-05-04T10:05:00.000Z",
-          actualStop: "2026-05-04T11:55:00.000Z",
-          actualElapsed: "1h 50m",
-          pauseStart: "2026-05-04T10:45:00.000Z",
-          pauseDuration: "10m",
-          activityStatus: "Not Started",
-          children: [
-            {
-              id: "subtask-1",
-              type: "SUBTASK",
-              name: "Scope Identification Subtree",
-              moduleName: "LOGSHEET 2",
-              resource: "indranil.sen@greenwave.co.in",
-              resourceName: "Indranil Sen",
-              plannedStart: "2026-05-04T14:30:00.000Z",
-              plannedStop: "2026-05-04T15:30:00.000Z",
-              durationHrs: 1,
-              activityStatus: "Running",
-              children: [
-                {
-                  id: "subtask-1-1",
-                  type: "SUBTASK",
-                  name: "Review Scope Document",
-                  moduleName: "LOGSHEET 2",
-                  resource: "santanu.bhattacharya@greenwave.co.in",
-                  resourceName: "Santanu Bhattacharya",
-                  plannedStart: "2026-05-04T15:30:00.000Z",
-                  plannedStop: "2026-05-04T16:30:00.000Z",
-                  durationHrs: 1,
-                  activityStatus: "Running",
-                  children: [
-                    {
-                      id: "subtask-1-1-1",
-                      type: "SUBTASK",
-                      name: "Final Scope Approval",
-                      moduleName: "LOGSHEET 2",
-                      resourceName: "Anirban Bose",
-                      plannedStart: "2026-05-04T16:30:00.000Z",
-                      plannedStop: "2026-05-04T17:00:00.000Z",
-                      durationHrs: 4,
-                      activityStatus: "Not Started",
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
 /* ── helpers ── */
 function getInitials(name = "") {
   return name
@@ -290,11 +169,13 @@ export default function ProjectActivityInfo({
     status,
     activityName,
   ) => {
+    try{
     const existingCommentsResp =
       await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
         projectId,
         activityId,
       );
+    
     console.log("Existing comments and replies::", existingCommentsResp);
     const newCommentBody = addComment(projectId, activityId, moduleId);
     if (status.toLowerCase() !== "finished") setAllowActions(true);
@@ -303,6 +184,10 @@ export default function ProjectActivityInfo({
     setExistingComments(existingCommentsResp);
     setNewComment(newCommentBody);
     setOpenCommentDialog(true);
+    }
+    catch(e){
+      showToast("error","Error","Error in fetching comment")
+    }
   };
   const onCloseCommentbox = () => {
     fetchActivities();
@@ -358,12 +243,20 @@ export default function ProjectActivityInfo({
       return;
     }
     const payload = mapToActivityPayload(activityData, projectId, moduleId);
-    const response = await activityTrackerApi.createActivity(
-      projectId,
-      payload,
-    );
-    await fetchActivities();
-    showToast("success", "Success", "SubActivity added");
+    try {
+      const response = await activityTrackerApi.createActivity(
+        projectId,
+        payload,
+      );
+
+      showToast("success", "Success", "SubActivity added");
+      await fetchActivities();
+
+      console.log("Response::", response);
+    } catch (e) {
+      console.log("Error:", e);
+      showToast("error", "Error", "Error in adding SubActivity");
+    }
   };
 
   const mapToActivityPayload = (node, projectId, moduleId) => ({
@@ -399,99 +292,96 @@ export default function ProjectActivityInfo({
     return count;
   };
   const calculateWorkingHours = (start, end, leaves) => {
-  const startDate = dayjs(start);
-  const endDate = dayjs(end);
+    const startDate = dayjs(start);
+    const endDate = dayjs(end);
 
-  const startHour = startDate.hour() + startDate.minute() / 60;
-  const endHour = endDate.hour() + endDate.minute() / 60;
+    const startHour = startDate.hour() + startDate.minute() / 60;
+    const endHour = endDate.hour() + endDate.minute() / 60;
 
-  // Same day
-  if (startDate.isSame(endDate, "day")) {
-    if (WEEK_END.includes(startDate.day())) return 0;
+    // Same day
+    if (startDate.isSame(endDate, "day")) {
+      if (WEEK_END.includes(startDate.day())) return 0;
 
-    return Math.max(
-      0,
-      Math.min(endHour, WORK_END) -
-        Math.max(startHour, WORK_START)
-    );
-  }
-
-  let workingDaysBetween = 0;
-  let current = startDate.add(1, "day");
-
-  while (current.isBefore(endDate, "day")) {
-    if (!WEEK_END.includes(current.day())) {
-      workingDaysBetween++;
+      return Math.max(
+        0,
+        Math.min(endHour, WORK_END) - Math.max(startHour, WORK_START),
+      );
     }
-    current = current.add(1, "day");
-  }
 
-  const leaveDays = leaves.reduce((count, leave) => {
-    return dayjs(leave).isBetween(startDate, endDate, "day", "()")
-      ? count + 1
-      : count;
-  }, 0);
+    let workingDaysBetween = 0;
+    let current = startDate.add(1, "day");
 
-  const firstDayHours = WEEK_END.includes(startDate.day())
-    ? 0
-    : Math.max(
-        0,
-        WORK_END - Math.max(startHour, WORK_START)
-      );
+    while (current.isBefore(endDate, "day")) {
+      if (!WEEK_END.includes(current.day())) {
+        workingDaysBetween++;
+      }
+      current = current.add(1, "day");
+    }
 
-  const lastDayHours = WEEK_END.includes(endDate.day())
-    ? 0
-    : Math.max(
-        0,
-        Math.min(endHour, WORK_END) - WORK_START
-      );
+    const leaveDays = leaves.reduce((count, leave) => {
+      return dayjs(leave).isBetween(startDate, endDate, "day", "()")
+        ? count + 1
+        : count;
+    }, 0);
 
-  return (
-    firstDayHours +
-    lastDayHours +
-    (workingDaysBetween - leaveDays) * (WORK_END - WORK_START)
-  );
-};
-const calculateDuration = async (activity, actualTime) => {
-  const leavesOfEmployee =
-    await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
+    const firstDayHours = WEEK_END.includes(startDate.day())
+      ? 0
+      : Math.max(0, WORK_END - Math.max(startHour, WORK_START));
 
-  const leaves = leavesOfEmployee?.[0]?.leaves ?? [];
+    const lastDayHours = WEEK_END.includes(endDate.day())
+      ? 0
+      : Math.max(0, Math.min(endHour, WORK_END) - WORK_START);
 
-  let totalWorkingHours = calculateWorkingHours(
-    activity.actualStart,
-    actualTime,
-    leaves
-  );
+    return (
+      firstDayHours +
+      lastDayHours +
+      (workingDaysBetween - leaveDays) * (WORK_END - WORK_START)
+    );
+  };
+  const calculateDuration = async (activity, actualTime) => {
+    const leavesOfEmployee =
+      await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
 
-  const activityPauses =
-    await activityTrackerApi.getActivityPauses(activity.id);
+    const leaves = leavesOfEmployee?.[0]?.leaves ?? [];
 
-  const totalPauseHours =
-    activityPauses?.reduce((total, pause) => {
-      return (
-        total +
-        calculateWorkingHours(
-          pause.pauseStart,
-          pause.resumeAt ?? actualTime,
-          leaves
-        )
-      );
-    }, 0) ?? 0;
-    const totalRejections=await activityTrackerApi.getActivityRejections(activity.id)
-    console.log("Rejection Details::",totalRejections) 
-  totalWorkingHours=totalWorkingHours-totalPauseHours;
-  console.log("Working Hours:", totalWorkingHours);
-  console.log("Pause Hours:", totalPauseHours);
+    let totalWorkingHours = calculateWorkingHours(
+      activity.actualStart,
+      actualTime,
+      leaves,
+    );
 
-  return Math.max(0, totalWorkingHours );
-};
+    const activityPauses = await activityTrackerApi.getActivityPauses(
+      activity.id,
+    );
+
+    const totalPauseHours =
+      activityPauses?.reduce((total, pause) => {
+        return (
+          total +
+          calculateWorkingHours(
+            pause.pauseStart,
+            pause.resumeAt ?? actualTime,
+            leaves,
+          )
+        );
+      }, 0) ?? 0;
+    const totalRejections = await activityTrackerApi.getActivityRejections(
+      activity.id,
+    );
+    console.log("Rejection Details::", totalRejections);
+    totalWorkingHours = totalWorkingHours - totalPauseHours;
+    console.log("Working Hours:", totalWorkingHours);
+    console.log("Pause Hours:", totalPauseHours);
+
+    return Math.max(0, totalWorkingHours);
+  };
   const updateStatusOfActivity = async (activityId, status, activity) => {
+    try{
     const actualTime = new Date();
     let duration = 0;
     if (status.toLowerCase() === "completed") {
       duration = await calculateDuration(activity, actualTime);
-      return
+      return;
     }
     const statusPayload = { status, actualTime, duration };
 
@@ -501,6 +391,10 @@ const calculateDuration = async (activity, actualTime) => {
     );
     showToast("success", "Status Updated", `Activity ${statusPayload.status}`);
     fetchActivities();
+  }catch(e){
+    showToast("error","Error","Error in status update")
+    
+  }
   };
   const totalTasks = useMemo(
     () => countTasks(activityInfo?.activities),

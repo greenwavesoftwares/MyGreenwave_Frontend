@@ -129,15 +129,20 @@ export default function CommentsActionDialog({
         ? newComment.responsibility.join(",")
         : "",
     };
-    const response = await activityTrackerApi.addComment(
-      newComment.projectId,
-      payload,
-    );
-    if (response) {
-      const updatedComments = await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+    try {
+      const response = await activityTrackerApi.addComment(
         newComment.projectId,
-        newComment.activityId,
+        payload,
       );
+    } catch (e) {
+      showToast("error", "Error", "Error in adding comment");
+    }
+    if (response) {
+      const updatedComments =
+        await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+          newComment.projectId,
+          newComment.activityId,
+        );
       setExistingComments(updatedComments);
       const newCommentPayload = addComment(
         payload.projectId,
@@ -164,28 +169,29 @@ export default function CommentsActionDialog({
       attachmentBase64: replyAttachment[commentIndex]?.attachmentBase64 || null,
       attachmentName: replyAttachment[commentIndex]?.attachmentName || null,
     };
-    const replyAdded = await activityTrackerApi.addReply(
-      comment.commentId,
-      payload,
-    );
-    if (!replyAdded) {
-      showToast("error", "Error", "Failed to add reply");
-      return;
-    }
-    const existingCommentsResp =
-      await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
-        comment.projectId,
-        comment.activityId,
+    try {
+      const replyAdded = await activityTrackerApi.addReply(
+        comment.commentId,
+        payload,
       );
-    setExistingComments(existingCommentsResp);
-    setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
-    setReplyAttachment((prev) => {
-      const updated = { ...prev };
-      delete updated[commentIndex];
-      return updated;
-    });
-    setActiveReply(null);
-    showToast("success", "Success", "Reply added successfully");
+
+      const existingCommentsResp =
+        await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+          comment.projectId,
+          comment.activityId,
+        );
+      setExistingComments(existingCommentsResp);
+      setReplyText((prev) => ({ ...prev, [commentIndex]: "" }));
+      setReplyAttachment((prev) => {
+        const updated = { ...prev };
+        delete updated[commentIndex];
+        return updated;
+      });
+      setActiveReply(null);
+      showToast("success", "Success", "Reply added successfully");
+    } catch (e) {
+      showToast("error", "Error", "Failed to add reply");
+    }
   };
 
   const handleDelete = async (type, index, id) => {
@@ -194,34 +200,35 @@ export default function CommentsActionDialog({
   };
 
   const deleteComment = async (index) => {
-    const commentDeleted = await activityTrackerApi.deleteComment(
-      existingComments[index].commentId,
-    );
-    if (!commentDeleted) {
-      showToast("error", "Error", "Failed to delete comment");
-      return;
+    try {
+      const commentDeleted = await activityTrackerApi.deleteComment(
+        existingComments[index].commentId,
+      );
+
+      setExistingComments((prev) => prev.filter((_, i) => i !== index));
+      showToast("success", "Success", "Comment deleted successfully");
+    } catch (e) {
+      showToast("error", "Error", "Failed to delete reply");
     }
-    setExistingComments((prev) => prev.filter((_, i) => i !== index));
-    showToast("success", "Success", "Comment deleted successfully");
   };
 
   const deleteReply = async (commentIndex, replyId) => {
-    const replyDeleted = await activityTrackerApi.deleteReply(replyId);
-    if (!replyDeleted) {
+    try {
+      const replyDeleted = await activityTrackerApi.deleteReply(replyId);
+      setExistingComments((prev) =>
+        prev.map((item, index) =>
+          index === commentIndex
+            ? {
+                ...item,
+                replies: item.replies.filter((r) => r.replyId !== replyId),
+              }
+            : item,
+        ),
+      );
+      showToast("success", "Success", "Reply deleted successfully");
+    } catch (e) {
       showToast("error", "Error", "Failed to delete reply");
-      return;
     }
-    setExistingComments((prev) =>
-      prev.map((item, index) =>
-        index === commentIndex
-          ? {
-              ...item,
-              replies: item.replies.filter((r) => r.replyId !== replyId),
-            }
-          : item,
-      ),
-    );
-    showToast("success", "Success", "Reply deleted successfully");
   };
 
   const openDeleteConfirmation = (type, index, id) => {
@@ -473,7 +480,10 @@ export default function CommentsActionDialog({
                                 openDeleteConfirmation("comment", index)
                               }
                             >
-                              <DeleteOutlineIcon fontSize="small" color="error"/>
+                              <DeleteOutlineIcon
+                                fontSize="small"
+                                color="error"
+                              />
                             </IconButton>
                           )}
                         </div>
@@ -513,13 +523,15 @@ export default function CommentsActionDialog({
                                       )
                                     }
                                   >
-                                    <DeleteOutlineIcon fontSize="small" color="error"/>
+                                    <DeleteOutlineIcon
+                                      fontSize="small"
+                                      color="error"
+                                    />
                                   </IconButton>
                                 )}
                               </div>
                               <div className="reply-text">
-                                <TruncatedText text={reply.replyText}/>
-                                
+                                <TruncatedText text={reply.replyText} />
                               </div>
 
                               {reply.attachment && (
