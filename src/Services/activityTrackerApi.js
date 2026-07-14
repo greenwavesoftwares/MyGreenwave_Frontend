@@ -138,6 +138,61 @@ const activityTrackerApi = {
   },
 
   // ============================================================
+  //                  PROJECT CO-ASSIGNERS
+  // ============================================================
+
+  getCoAssigners: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/co-assigners`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  getCoAssigner: async (projectId, userId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/co-assigners/${userId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  createCoAssigner: async (projectId, payload) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/${projectId}/co-assigners`,
+      payload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  createCoAssigners: async (projectId, payload) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/${projectId}/co-assigners/bulk`,
+      payload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  updateCoAssigner: async (projectId, userId, payload) => {
+    const response = await axios.put(
+      `${apiEndPoint}/projects/${projectId}/co-assigners/${userId}`,
+      payload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  deleteCoAssigner: async (projectId, userId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/projects/${projectId}/co-assigners/${userId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
   //                  PROJECT USER RATINGS
   // ============================================================
 
