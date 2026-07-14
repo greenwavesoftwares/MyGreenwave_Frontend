@@ -398,57 +398,103 @@ export default function ProjectActivityInfo({
     traverse(nodes);
     return count;
   };
-  const calculateDuration = async (activity, actualTime) => {
-    const leavesOfEmployee =
-      await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
-    let leavesBetweenTask = 0;
-    const startDate = dayjs(activity.actualStart);
-    const stopDate = dayjs(actualTime);
-    console.log("Leavesof employees:", leavesOfEmployee);
-    leavesOfEmployee?.[0]?.leaves.forEach((leave) => {
-      const isLeaveInTask = dayjs(leave).isBetween(
-        startDate,
-        stopDate,
-        "day",
-        [],
-      );
-      if (isLeaveInTask) leavesBetweenTask++;
-    }); // Loop only counts FULL working days strictly between start and end
-    let current = startDate.add(1, "day");
-    let durationInDays = 0;
-    while (current.isBefore(stopDate, "day")) {
-      const dow = current.day();
-      if (!WEEK_END.includes(dow)) durationInDays++;
-      current = current.add(1, "day");
-    }
-    const startHour = startDate.hour() + startDate.minute() / 60;
-    const stopHour = stopDate.hour() + stopDate.minute() / 60;
-    // Partial hours for start and end days separately
-    const firstDayHours = !WEEK_END.includes(startDate.day())
-      ? WORK_END - Math.max(startHour, WORK_START)
-      : 0;
+  const calculateWorkingHours = (start, end, leaves) => {
+  const startDate = dayjs(start);
+  const endDate = dayjs(end);
 
-    const lastDayHours = !WEEK_END.includes(stopDate.day())
-      ? Math.min(stopHour, WORK_END) - WORK_START
-      : 0;
-      const isCompletedWithinSameDay=startDate.day()===stopDate.day()&&startDate.month()===stopDate.month()&& startDate.year()===stopDate.year()
-    const totalWorkingHours =
-    isCompletedWithinSameDay?(stopHour-startHour):
-      firstDayHours +
-      lastDayHours +
-      durationInDays * (WORK_END - WORK_START) -
-      leavesBetweenTask * (WORK_END - WORK_START);
-    console.log("Total working hours:", totalWorkingHours);
-    return totalWorkingHours;
-  };
+  const startHour = startDate.hour() + startDate.minute() / 60;
+  const endHour = endDate.hour() + endDate.minute() / 60;
+
+  // Same day
+  if (startDate.isSame(endDate, "day")) {
+    if (WEEK_END.includes(startDate.day())) return 0;
+
+    return Math.max(
+      0,
+      Math.min(endHour, WORK_END) -
+        Math.max(startHour, WORK_START)
+    );
+  }
+
+  let workingDaysBetween = 0;
+  let current = startDate.add(1, "day");
+
+  while (current.isBefore(endDate, "day")) {
+    if (!WEEK_END.includes(current.day())) {
+      workingDaysBetween++;
+    }
+    current = current.add(1, "day");
+  }
+
+  const leaveDays = leaves.reduce((count, leave) => {
+    return dayjs(leave).isBetween(startDate, endDate, "day", "()")
+      ? count + 1
+      : count;
+  }, 0);
+
+  const firstDayHours = WEEK_END.includes(startDate.day())
+    ? 0
+    : Math.max(
+        0,
+        WORK_END - Math.max(startHour, WORK_START)
+      );
+
+  const lastDayHours = WEEK_END.includes(endDate.day())
+    ? 0
+    : Math.max(
+        0,
+        Math.min(endHour, WORK_END) - WORK_START
+      );
+
+  return (
+    firstDayHours +
+    lastDayHours +
+    (workingDaysBetween - leaveDays) * (WORK_END - WORK_START)
+  );
+};
+const calculateDuration = async (activity, actualTime) => {
+  const leavesOfEmployee =
+    await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
+
+  const leaves = leavesOfEmployee?.[0]?.leaves ?? [];
+
+  let totalWorkingHours = calculateWorkingHours(
+    activity.actualStart,
+    actualTime,
+    leaves
+  );
+
+  const activityPauses =
+    await activityTrackerApi.getActivityPauses(activity.id);
+
+  const totalPauseHours =
+    activityPauses?.reduce((total, pause) => {
+      return (
+        total +
+        calculateWorkingHours(
+          pause.pauseStart,
+          pause.resumeAt ?? actualTime,
+          leaves
+        )
+      );
+    }, 0) ?? 0;
+    const totalRejections=await activityTrackerApi.getActivityRejections(activity.id)
+    console.log("Rejection Details::",totalRejections) 
+  totalWorkingHours=totalWorkingHours-totalPauseHours;
+  console.log("Working Hours:", totalWorkingHours);
+  console.log("Pause Hours:", totalPauseHours);
+
+  return Math.max(0, totalWorkingHours );
+};
   const updateStatusOfActivity = async (activityId, status, activity) => {
     const actualTime = new Date();
-    let duration=0
+    let duration = 0;
     if (status.toLowerCase() === "completed") {
       duration = await calculateDuration(activity, actualTime);
+      return
     }
-    const statusPayload = { status, actualTime,duration };
-    
+    const statusPayload = { status, actualTime, duration };
+
     const response = await activityTrackerApi.updateActivityStatus(
       activityId,
       statusPayload,
