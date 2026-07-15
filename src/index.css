@@ -488,16 +488,29 @@ html {
   border-bottom-color: #374151 !important;
 }
 /* ============================================
-   .card — Theme-Aware Fix (Light & Dark)
+   Page Card Container — Theme-Aware Fix (Light & Dark)
+   Scoped to actual card containers only, not generic
+   "card flex justify-content-center" wrapper divs
    ============================================ */
-.light .card {
+.light .MuiContainer-root.card {
   background: var(--card-bg) !important;
   border: 1px solid var(--card-border) !important;
   color: var(--fontColor) !important;
 }
 
-.dark .card {
+.dark .MuiContainer-root.card {
   background: var(--card-bg) !important;
   border: 1px solid var(--card-border) !important;
   color: var(--fontColor) !important;
+}
+
+/* Reset generic "card flex justify-content-center" wrapper divs
+   used purely for layout, not as an actual styled card */
+.card.flex.justify-content-center {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  overflow: visible !important;
 }
