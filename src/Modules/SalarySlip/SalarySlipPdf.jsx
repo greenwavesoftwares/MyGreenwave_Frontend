@@ -11,7 +11,7 @@ import {
 import { saveAs } from "file-saver";
 import { Button } from "primereact/button";
 import pdfSoftSign from "../../assets/Images/softSign copy.jpg";
-import GWLogo from "../../assets/Images/GreenwaveLogo.png"
+import GWLogo from "../../assets/Images/GreenwaveLogo.png";
 
 const styles = StyleSheet.create({
   page: {
@@ -113,15 +113,34 @@ const styles = StyleSheet.create({
   },
 });
 
+const totalBaseSalary = (salaryData) =>
+  (salaryData.earnedBasic ?? 0) +
+  (salaryData.earnedHouseRent ?? 0) +
+  (salaryData.earnedConveyance ?? 0) +
+  (salaryData.earnedManagementAllowance ?? 0) +
+  (salaryData.earnedSpecialAllowance ?? 0);
+const totalGrossSalary = (salaryData) =>
+  (totalBaseSalary(salaryData) ?? 0) +
+  (salaryData.earnedPhoneAllowane ?? 0) +
+  (salaryData.earnedAssuredBonus ?? 0) +
+  (salaryData.earnedPerformanceBonus ?? 0) +
+  (salaryData.medicalAllowance ?? 0) +
+  (salaryData.arrear ?? 0);
+const totalGrossDeductions = (salaryData) =>
+  (salaryData.deductionAgainstLone ?? 0) +
+  (salaryData.deductionAgainstPf ?? 0) +
+  (salaryData.esi ?? 0) +
+  (salaryData.tds ?? 0) +
+  (salaryData.professionalTax ?? 0);
+const netSalary = (salaryData) =>
+  (totalGrossSalary(salaryData) ?? 0) - (totalGrossDeductions(salaryData) ?? 0);
+
 const MyDocument = ({ salaryData }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.headerimg}>
         <View style={styles.logoContainer}>
-          <Image
-            src={GWLogo}
-            style={styles.logo}
-          />
+          <Image src={GWLogo} style={styles.logo} />
         </View>
         <View style={styles.headertext}>
           <Text style={styles.title}>GREENWAVE SOLUTIONS PVT. LTD.</Text>
@@ -277,27 +296,14 @@ const MyDocument = ({ salaryData }) => (
           GROSS TOTAL EARNINGS
         </Text>
         <Text style={[styles.cellsmall, styles.cellHeader]}>
-          {(
-            (salaryData.earnedGross ?? 0) +
-            (salaryData.earnedPhoneAllowane ?? 0) +
-            (salaryData.earnedAssuredBonus ?? 0) +
-            (salaryData.earnedPerformanceBonus ?? 0) +
-            (salaryData.medicalAllowance ?? 0) +
-            (salaryData.arrear ?? 0)
-          ).toFixed(2)}
+          {totalGrossSalary(salaryData).toFixed(2)}
         </Text>
 
         <Text style={[styles.cell, styles.cellHeader]}>
           GROSS TOTAL DEDUCTIONS
         </Text>
         <Text style={[styles.cellsmall, styles.cellHeader]}>
-          {(
-            (salaryData.deductionAgainstLone ?? 0) +
-            (salaryData.deductionAgainstPf ?? 0) +
-            (salaryData.esi ?? 0) +
-            (salaryData.tds ?? 0) +
-            (salaryData.professionalTax ?? 0)
-          ).toFixed(2)}
+          {totalGrossDeductions(salaryData).toFixed(2)}
         </Text>
       </View>
 
@@ -326,14 +332,11 @@ const MyDocument = ({ salaryData }) => (
             styles.cellHeader,
           ]}
         >
-          {salaryData.netpayable.toFixed(2)}
+          {netSalary(salaryData).toFixed(2)}
         </Text>
       </View>
       <View style={styles.signatureSection}>
-        <Image
-          src={pdfSoftSign}
-          style={styles.signatureImage}
-        />
+        <Image src={pdfSoftSign} style={styles.signatureImage} />
         <Text style={styles.signatureLabel}>Accounts Manager</Text>
       </View>
 
@@ -359,11 +362,11 @@ const SalarySlipPdf = ({ salaryData }) => {
     // Format current date and time
     const now = new Date();
     const formattedDateTime = `${now.getFullYear()}.${String(
-      now.getMonth() + 1
+      now.getMonth() + 1,
     ).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}.${String(
-      now.getHours()
+      now.getHours(),
     ).padStart(2, "0")}.${String(now.getMinutes()).padStart(2, "0")}.${String(
-      now.getSeconds()
+      now.getSeconds(),
     ).padStart(2, "0")}`;
 
     // Format employee name (capitalize first letter of each word)

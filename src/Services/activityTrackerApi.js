@@ -1123,6 +1123,28 @@ const activityTrackerApi = {
   },
 
   /**
+   * GET /activityTracker/getActivityTreeCreatedByUser?fromDate=...&toDate=...
+   * Returns ProjectTreeDTOs created by, share-updated by, or co-assigned to
+   * the logged-in user within a date range.
+   * @param {string} fromDate - Timestamp
+   * @param {string} toDate - Timestamp
+   * @returns Array of ProjectTreeDTO
+   */
+  getActivityTreeCreatedByUserBetweenFromDateAndToDate: async (
+    fromDate,
+    toDate,
+  ) => {
+    const response = await axios.get(
+      `${apiEndPoint}/getActivityTreeCreatedByUser`,
+      {
+        headers: getHeaders(),
+        params: { fromDate, toDate },
+      },
+    );
+    return response.data;
+  },
+
+  /**
    * GET /activityTracker/getNonPublishedActivityTreesByUser
    * Returns ProjectTreeDTOs for the user that are NOT yet in 'Published' status.
    * @returns Array of ProjectTreeDTO
