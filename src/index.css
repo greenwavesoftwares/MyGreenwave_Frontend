@@ -426,3 +426,64 @@ html {
   background: #6b7280 !important;
   color: #ffffff !important;
 }
+/* --- TOOLTIP --- */
+.p-tooltip {
+  position: absolute !important;
+  display: none !important;
+  max-width: 12.5rem !important;
+}
+
+.p-tooltip.p-tooltip-active {
+  display: block !important;
+}
+
+.p-tooltip .p-tooltip-text {
+  padding: 0.5rem 0.75rem !important;
+  background: #374151 !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  border-radius: 4px !important;
+  white-space: normal !important;
+  line-height: 1.4 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+.p-tooltip-arrow {
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-color: transparent !important;
+  border-style: solid !important;
+}
+
+.p-tooltip-right .p-tooltip-arrow {
+  top: 50% !important;
+  left: 0 !important;
+  margin-top: -0.25rem !important;
+  border-width: 0.25rem 0.25rem 0.25rem 0 !important;
+  border-right-color: #374151 !important;
+}
+
+.p-tooltip-left .p-tooltip-arrow {
+  top: 50% !important;
+  right: 0 !important;
+  margin-top: -0.25rem !important;
+  border-width: 0.25rem 0 0.25rem 0.25rem !important;
+  border-left-color: #374151 !important;
+}
+
+.p-tooltip-top .p-tooltip-arrow {
+  bottom: 0 !important;
+  left: 50% !important;
+  margin-left: -0.25rem !important;
+  border-width: 0.25rem 0.25rem 0 !important;
+  border-top-color: #374151 !important;
+}
+
+.p-tooltip-bottom .p-tooltip-arrow {
+  top: 0 !important;
+  left: 50% !important;
+  margin-left: -0.25rem !important;
+  border-width: 0 0.25rem 0.25rem !important;
+  border-bottom-color: #374151 !important;
+}
