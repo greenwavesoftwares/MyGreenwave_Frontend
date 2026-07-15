@@ -183,3 +183,193 @@ html {
 .padding-0.p-datatable .p-datatable-tbody > tr > td{
   padding: 2px !important;
 }
+/* ============================================
+   PrimeReact Tab & Dropdown — Vibe Match Fix
+   ============================================ */
+
+/* --- TABS --- */
+.p-tabview .p-tabview-nav {
+  display: flex !important;
+  gap: 1.5rem !important;
+  padding: 0 0.5rem !important;
+  border-bottom: 1px solid var(--divider-color) !important;
+  background-color: var(--bg-drawer) !important;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.85rem 0.25rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  color: var(--tittleFontColor) !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  box-shadow: none !important;
+  transition: color 0.15s, border-color 0.15s !important;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  color: #3b82f6 !important;
+  border-bottom: 2px solid #3b82f6 !important;
+  background: transparent !important;
+}
+
+.p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
+  color: #3b82f6 !important;
+  background: transparent !important;
+}
+
+.p-tabview .p-tabview-ink-bar {
+  display: none !important;
+}
+
+/* --- DROPDOWN (closed state) --- */
+.p-dropdown {
+  display: flex !important;
+  align-items: center !important;
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+
+.p-dropdown .p-dropdown-label {
+  padding: 0.65rem 0.85rem !important;
+  color: var(--fontColor) !important;
+  font-size: 0.9rem !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.p-dropdown .p-dropdown-trigger {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  flex-shrink: 0 !important;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* --- DROPDOWN PANEL (open state) --- */
+.p-dropdown-panel {
+  background: var(--dropdownBG) !important;
+  border: 1px solid var(--divider-color) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+  margin-top: 4px !important;
+  overflow: hidden !important;
+}
+
+.p-dropdown-panel .p-dropdown-items {
+  padding: 0.35rem 0 !important;
+  margin: 0 !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  padding: 0.65rem 0.9rem !important;
+  color: var(--fontColor) !important;
+  font-size: 0.88rem !important;
+  border-radius: 0 !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled):hover,
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled).p-focus {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  color: #3b82f6 !important;
+}
+/* --- BUTTON --- */
+.p-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.65rem 1.1rem !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s, border-color 0.15s !important;
+}
+
+.p-button .p-button-icon {
+  font-size: 0.9rem !important;
+}
+
+.p-button .p-button-label {
+  flex: initial !important;
+}
+
+/* Rounded variant (rounded prop) */
+.p-button.p-button-rounded {
+  border-radius: 2rem !important;
+}
+
+/* Icon-only buttons (like your dropdown trigger / export icon button) */
+.p-button.p-button-icon-only {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  padding: 0 !important;
+}
+
+/* Severity color variants */
+.p-button.p-button-success {
+  background: #22c55e !important;
+  border-color: #22c55e !important;
+  color: #ffffff !important;
+}
+.p-button.p-button-success:not(:disabled):hover {
+  background: #1da750 !important;
+  border-color: #1da750 !important;
+}
+
+.p-button.p-button-danger {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+.p-button.p-button-danger:not(:disabled):hover {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.p-button.p-button-info {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+.p-button.p-button-info:not(:disabled):hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* Outlined variant */
+.p-button.p-button-outlined {
+  background: transparent !important;
+}
+.p-button.p-button-outlined.p-button-success {
+  color: #22c55e !important;
+  border-color: #22c55e !important;
+}
+.p-button.p-button-outlined.p-button-danger {
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
+/* Disabled state */
+.p-button:disabled,
+.p-button.p-disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
