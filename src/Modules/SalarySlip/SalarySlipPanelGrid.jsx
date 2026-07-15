@@ -5,12 +5,12 @@ import Paper from "@mui/material/Paper";
 import Grid from "../../components/Grid/Grid";
 import { Image } from "primereact/image";
 import GreenwaveLogo from "../../assets/Images/GreenwaveLogo.png";
-import SoftSign from "../../assets/Images/softSign.jpg"
+import SoftSign from "../../assets/Images/softSign.jpg";
 const Item = styled(Paper)(({ theme }) => ({
   //backgroundColor: "#fefefe",
   ...theme.typography.body2,
   padding: theme.spacing(1),
-  borderRadius:0,
+  borderRadius: 0,
   textAlign: "center",
   color: theme.palette.text.secondary,
   border: "1px solid #dfd7d7", // Added border
@@ -32,6 +32,27 @@ const OuterItem = styled(Paper)(({ theme }) => ({
     border: "1px solid #444", // Dark mode border
   }),
 }));
+const totalBaseSalary = (salaryData) =>
+  (salaryData.earnedBasic ?? 0) +
+  (salaryData.earnedHouseRent ?? 0) +
+  (salaryData.earnedConveyance ?? 0) +
+  (salaryData.earnedManagementAllowance ?? 0) +
+  (salaryData.earnedSpecialAllowance ?? 0);
+const totalGrossSalary = (salaryData) =>
+  (totalBaseSalary(salaryData) ?? 0) +
+  (salaryData.earnedPhoneAllowane ?? 0) +
+  (salaryData.earnedAssuredBonus ?? 0) +
+  (salaryData.earnedPerformanceBonus ?? 0) +
+  (salaryData.medicalAllowance ?? 0) +
+  (salaryData.arrear ?? 0);
+const totalGrossDeductions = (salaryData) =>
+  (salaryData.deductionAgainstLone ?? 0) +
+  (salaryData.deductionAgainstPf ?? 0) +
+  (salaryData.esi ?? 0) +
+  (salaryData.tds ?? 0) +
+  (salaryData.professionalTax ?? 0);
+const netSalary = (salaryData) =>
+  (totalGrossSalary(salaryData) ?? 0) - (totalGrossDeductions(salaryData) ?? 0);
 
 export default function SalarySlipPanelGrid({ salaryData }) {
   console.log(salaryData);
@@ -46,8 +67,8 @@ export default function SalarySlipPanelGrid({ salaryData }) {
               rowSpacing={0}
               columnSpacing={{ xs: 0, sm: 0, md: 0 }}
             >
-              <Grid size={3} >
-                <Item sx={{ height: "60px" }} >
+              <Grid size={3}>
+                <Item sx={{ height: "60px" }}>
                   <div>
                     {/* <div className="card flex justify-content-center"> */}
                     <Image
@@ -60,9 +81,15 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                   </div>
                 </Item>
               </Grid>
-              <Grid size={9}  >
-                <Item 
-                  sx={{ height: "60px", fontSize: "1.5rem", fontWeight: "bold",display:"grid",alignItems:"center"}}
+              <Grid size={9}>
+                <Item
+                  sx={{
+                    height: "60px",
+                    fontSize: "1.5rem",
+                    fontWeight: "bold",
+                    display: "grid",
+                    alignItems: "center",
+                  }}
                 >
                   Greenwave Solutions Pvt. Ltd.
                 </Item>
@@ -269,38 +296,21 @@ export default function SalarySlipPanelGrid({ salaryData }) {
                 <Item sx={{ fontWeight: "bold" }}>GROSS TOTAL EARNINGS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>
-                  {(
-                    (salaryData.earnedGross ?? 0) +
-                    (salaryData.earnedPhoneAllowane ?? 0) +
-                    (salaryData.earnedAssuredBonus ?? 0) +
-                    (salaryData.earnedPerformanceBonus ?? 0) +
-                    (salaryData.medicalAllowance ?? 0) +
-                    (salaryData.arrear ?? 0)
-                  ).toFixed(2)}
-                </Item>
+                <Item>{totalGrossSalary(salaryData).toFixed(2)}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>GROSS TOTAL DEDUCTIONS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>
-                  {(
-                    (salaryData.deductionAgainstLone ?? 0) +
-                    (salaryData.deductionAgainstPf ?? 0) +
-                    (salaryData.esi ?? 0) +
-                    (salaryData.tds ?? 0) +
-                    (salaryData.professionalTax ?? 0)
-                  ).toFixed(2)}
-                </Item>
+                <Item>{totalGrossDeductions(salaryData).toFixed(2)}</Item>
               </Grid>
 
               <Grid size={3}>
                 <Item sx={{ fontWeight: "bold" }}>NET PAYS</Item>
               </Grid>
               <Grid size={3}>
-                <Item>{salaryData.netpayable.toFixed(2)}</Item>
+                <Item>{netSalary(salaryData).toFixed(2)}</Item>
               </Grid>
 
               <Grid size={6}>
