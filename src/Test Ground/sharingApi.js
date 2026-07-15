@@ -373,6 +373,46 @@ export async function notifySharing(projectId, { type, userIds, categoryIds, mes
   });
 }
 
+
+/* ─── Add a co-assigner to a project ─── */
+export async function addCoAssigner(projectId, coAssignerData) {
+  if (!projectId) {
+    throw new ApiError("Project ID is required", 400, "INVALID_ARGUMENT");
+  }
+  if (!coAssignerData || !coAssignerData.userId) {
+    throw new ApiError(
+      "Co-assigner data with userId is required",
+      400,
+      "INVALID_ARGUMENT",
+    );
+  }
+
+  return apiRequest(
+    `activityTracker/projects/${encodeParam(projectId)}/co-assigners`,
+    {
+      method: "POST",
+      body: JSON.stringify(coAssignerData),
+    },
+  );
+}
+
+/* ─── Remove a co-assigner from a project ─── */
+export async function removeCoAssigner(projectId, userId) {
+  if (!projectId || !userId) {
+    throw new ApiError(
+      "Project ID and User ID are required",
+      400,
+      "INVALID_ARGUMENT",
+    );
+  }
+
+  return apiRequest(
+    `activityTracker/projects/${encodeParam(projectId)}/co-assigners/${encodeParam(userId)}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
 /* ═══════════════════════════════════════════════════════
    NOTE / CATEGORY / SNAPSHOT APIs
    ═══════════════════════════════════════════════════════ */

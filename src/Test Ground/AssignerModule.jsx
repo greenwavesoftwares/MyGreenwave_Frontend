@@ -99,6 +99,18 @@ import FeedbackModal from "./FeedbackModal";
 import GanttView from "./GanttView";
 import ProjectUpdatesView from "./ProjectUpdatesView";
 import { getUserData } from "../Modules/Login/Encrypt";
+import CoAssignerModal from "./CoAssignerModal";
+import {
+  computeProjectRole,
+  canEditProject,
+  canManageCoAssigners,
+  canDeleteProject,
+  canAccessActivitiesTab,
+  canAccessGanttTab,
+  computeProjectAccess,
+} from "./coAssignerHelpers";
+import * as sharingApi from "./sharingApi";
+import { Handshake, Crown } from "lucide-react";
 /* ─── Constants ─── */
 
 const STATUS_CONFIG = {
@@ -7385,7 +7397,8 @@ const ActivityRow = React.memo(function ActivityRow({
           }}
         >
           {/* ── Add row below (top-level pending only) ── */}
-          {row.sortOrder === 0 && (
+
+          {draft.status !== "closed" && row.sortOrder === 0 && (
             <button
               onClick={() => onAddRowBelow(row)}
               title={`Add row below in "${row.module || "module"}"`}
@@ -7463,7 +7476,7 @@ const ActivityRow = React.memo(function ActivityRow({
           )}
 
           {/* Redo button for completed tasks */}
-          {isCompleted && (
+          {draft.status !== "closed" && isCompleted && (
             <button
               onClick={() => onRedoReject(row)}
               title="Redo / Reject — needs to be redone"
@@ -7826,7 +7839,7 @@ function getModuleColor(moduleName, moduleColorMap) {
     }
   );
 }
-/* ─── Main Assigner Module ─── */
+/* ─── Main project Module ─── */
 function ProjectEditor({
   draft,
   groupLabels,
@@ -7837,7 +7850,22 @@ function ProjectEditor({
   onBack,
   showToast,
   currentUserId,
+  isUpdatesShared = false, // ← NEW prop
 }) {
+  const projectAccess = useMemo(
+    () => computeProjectAccess(draft, currentUserId, isUpdatesShared), // ← pass it
+    [draft, currentUserId, isUpdatesShared],
+  );
+  const {
+    role: currentUserProjectRole,
+    isOwner: isProjectOwner,
+    isCoAssigner,
+    canAccessActivities,
+    canAccessGantt,
+    canAccessUpdates,
+    canManageCoAssigners,
+    canManageProject,
+  } = projectAccess;
   const [moduleRegistry, setModuleRegistry] = useState(
     draft.moduleRegistry || {},
   );
@@ -7860,22 +7888,56 @@ function ProjectEditor({
     resource: [],
     status: [],
   });
+  // ─── Role-based access control ───
+  // const currentUserProjectRole = useMemo(
+  //   () => computeProjectRole(draft, currentUserId),
+  //   [draft, currentUserId],
+  // );
 
+  // const isProjectOwner = currentUserProjectRole === "owner";
+  // const isCoAssigner = currentUserProjectRole === "co-assigner";
+  const hasEditAccess = canEditProject(currentUserProjectRole);
+  // const canManageCoAssign = canManageCoAssigners(currentUserProjectRole);
   const [showGantt, setShowGantt] = useState(false);
-  const projectOwnerId = draft?.createdBy || currentUserId || "";
-  const isProjectOwner =
-    currentUserId &&
-    projectOwnerId &&
-    currentUserId.toLowerCase() === projectOwnerId.toLowerCase();
+  // const projectOwnerId = draft?.createdBy || currentUserId || "";
+  const projectOwnerId = draft?.createdBy || "";
   const isDraft = !draft?.status || draft?.status === "draft";
   const isNewProject = !draft?.createdBy;
+  const effectiveCanAccessActivities = canAccessActivities || isNewProject;
+  const effectiveCanAccessGantt = canAccessGantt || isNewProject;
+  const effectiveCanAccessUpdates = canAccessUpdates || isNewProject;
+  const effectiveCanManageProject = canManageProject || isNewProject;
   const effectiveIsOwner = isProjectOwner || isNewProject;
-  const activitiesGanttEnabled = isProjectOwner;
-  // ─── Default View ───
-  const [view, setView] = useState(
-    activitiesGanttEnabled ? "activities" : "updates",
-  );
+  const effectiveHasAccess = hasEditAccess || isNewProject;
+  const activitiesGanttEnabled = effectiveHasAccess;
 
+  // ─── Co-assigner state ───
+  const [coAssignerModalOpen, setCoAssignerModalOpen] = useState(false);
+  const [allUsersForCoAssigner, setAllUsersForCoAssigner] = useState([]);
+  const [loadingUsersForCoAssigner, setLoadingUsersForCoAssigner] =
+    useState(false);
+  const [usersErrorForCoAssigner, setUsersErrorForCoAssigner] = useState(null);
+  // ─── Default View ───
+  const defaultView = useMemo(() => {
+    if (effectiveCanAccessActivities) return "activities";
+    if (effectiveCanAccessUpdates) return "updates";
+    return "activities"; // fallback
+  }, [effectiveCanAccessActivities, effectiveCanAccessUpdates]);
+  const [view, setView] = useState(defaultView);
+  useEffect(() => {
+    if (view === "activities" && !effectiveCanAccessActivities) {
+      setView(effectiveCanAccessUpdates ? "updates" : "activities");
+    } else if (view === "gantt" && !effectiveCanAccessGantt) {
+      setView(effectiveCanAccessUpdates ? "updates" : "activities");
+    } else if (view === "updates" && !effectiveCanAccessUpdates) {
+      setView(effectiveCanAccessActivities ? "activities" : "updates");
+    }
+  }, [
+    view,
+    effectiveCanAccessActivities,
+    effectiveCanAccessGantt,
+    effectiveCanAccessUpdates,
+  ]);
   const [motionSubmitted, setMotionSubmitted] = useState(
     draft.status === "published",
   );
@@ -7974,7 +8036,24 @@ function ProjectEditor({
 
     return map;
   }, [rows]);
+  useEffect(() => {
+    if (!coAssignerModalOpen) return;
 
+    const loadUsers = async () => {
+      setLoadingUsersForCoAssigner(true);
+      setUsersErrorForCoAssigner(null);
+      try {
+        const data = await sharingApi.getUsersCached({ active: true });
+        setAllUsersForCoAssigner(data.users || []);
+      } catch (err) {
+        setUsersErrorForCoAssigner(err);
+      } finally {
+        setLoadingUsersForCoAssigner(false);
+      }
+    };
+
+    loadUsers();
+  }, [coAssignerModalOpen]);
   // Clear overlap highlights when rows change (user fixes overlaps)
   useEffect(() => {
     if (overlapRowIds.size > 0) {
@@ -8132,6 +8211,112 @@ function ProjectEditor({
     },
     [rejectRow, showToast],
   );
+
+  // ─── Add a co-assigner (single object POST) ───
+  const handleAddCoAssigner = useCallback(
+    async (user) => {
+      try {
+        // Build the co-assigner object (only what backend needs)
+        const coAssignerPayload = {
+          userId: user.userId,
+          userName: user.userName,
+          addedAt: new Date().toISOString(),
+          addedBy: currentUserId,
+        };
+
+        console.log("📤 Adding co-assigner:", coAssignerPayload);
+
+        // Call the dedicated API
+        const response = await sharingApi.addCoAssigner(
+          draft.id,
+          coAssignerPayload,
+        );
+
+        console.log("📥 Add co-assigner response:", response);
+
+        // Update local state optimistically
+        // Handle different response shapes: full co-assigner, boolean, or wrapped
+        const savedCoAssigner =
+          typeof response === "object" &&
+          response !== null &&
+          !("success" in response)
+            ? response.coAssigner || response.data || response
+            : coAssignerPayload; // Fall back to our payload if boolean response
+
+        const updatedDraft = {
+          ...draft,
+          coAssigners: [...(draft.coAssigners || []), savedCoAssigner],
+        };
+
+        // Update draft state via the save mechanism
+        // (this updates the parent state so modal reflects immediately)
+        await onSaveDraft(updatedDraft, { skipApiCall: true });
+
+        showToast(
+          "success",
+          "Co-assigner added",
+          `${user.userName} now has ownership rights.`,
+        );
+      } catch (err) {
+        console.error("Failed to add co-assigner:", err);
+        showToast(
+          "error",
+          "Failed to add co-assigner",
+          err.userMessage || err.message,
+        );
+        throw err;
+      }
+    },
+    [draft, currentUserId, onSaveDraft, showToast],
+  );
+
+  // ─── Remove a co-assigner (single DELETE with URL params) ───
+  const handleRemoveCoAssigner = useCallback(
+    async (userId) => {
+      try {
+        console.log("📤 Removing co-assigner:", {
+          projectId: draft.id,
+          userId,
+        });
+
+        // Find the user (for the success message)
+        const removedUser = (draft.coAssigners || []).find(
+          (ca) => ca.userId.toLowerCase() === userId.toLowerCase(),
+        );
+
+        // Call the dedicated DELETE API
+        await sharingApi.removeCoAssigner(draft.id, userId);
+
+        // Update local state
+        const updatedCoAssigners = (draft.coAssigners || []).filter(
+          (ca) => ca.userId.toLowerCase() !== userId.toLowerCase(),
+        );
+
+        const updatedDraft = {
+          ...draft,
+          coAssigners: updatedCoAssigners,
+        };
+
+        // Update draft state (skip full project save)
+        await onSaveDraft(updatedDraft, { skipApiCall: true });
+
+        showToast(
+          "success",
+          "Co-assigner removed",
+          `${removedUser?.userName || userId} no longer has access.`,
+        );
+      } catch (err) {
+        console.error("Failed to remove co-assigner:", err);
+        showToast(
+          "error",
+          "Failed to remove co-assigner",
+          err.userMessage || err.message,
+        );
+        throw err;
+      }
+    },
+    [draft, onSaveDraft, showToast],
+  );
   const buildProjectData = useCallback(() => {
     // Helper to convert datetime to ISO timestamp format
     const toTimestamp = (val) => {
@@ -8184,6 +8369,7 @@ function ProjectEditor({
           innovationComments: feedback.innovationComments,
           overallComments: feedback.overallComments,
           projectUserRatings: feedback.resourceRatings || [],
+          resourceRatings: feedback.resourceRatings || [],
           closedAt: new Date().toISOString(),
         };
 
@@ -8199,32 +8385,7 @@ function ProjectEditor({
     },
     [buildProjectData, onPublish, showToast],
   );
-  const handleSaveDraft = useCallback(async () => {
-    const data = buildProjectData();
-    setIsSaving(true);
-    try {
-      await onSaveDraft(data);
 
-      const ts = new Date().toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      setDraftTime(ts);
-
-      showToast(
-        "success",
-        "Draft saved",
-        `"${data.project || "Untitled"}" — ${data.rows.length} activit${data.rows.length === 1 ? "y" : "ies"} saved.`,
-      );
-    } catch (err) {
-      // Error toast already shown by parent
-    } finally {
-      setIsSaving(false);
-    }
-  }, [buildProjectData, onSaveDraft, showToast]);
   /* ─── Publish (after validation passes) ─── */
   const handleConfirmMotion = useCallback(async () => {
     setIsSaving(true);
@@ -8953,29 +9114,18 @@ function ProjectEditor({
             gap: 10,
           }}
         >
-          <button
-            onClick={onBack}
-            style={{
-              ...btnStyle,
-              background: "#F8FAFC",
-              color: "#475569",
-              fontWeight: 500,
-            }}
-          >
+          <button onClick={onBack} style={{ ...btnStyle }}>
             <ArrowLeft size={14} /> Back to Drafts
           </button>
-          <div
-            style={{
-              fontSize: 12,
-              color: "#64748B",
-              marginLeft: 4,
-            }}
-          >
+
+          <div style={{ fontSize: 12, color: "#64748B", marginLeft: 4 }}>
             Editing:{" "}
             <strong style={{ color: "#0F172A" }}>
               {project || "Untitled Project"}
             </strong>
           </div>
+
+          {/* Existing status badge */}
           <span
             style={{
               display: "inline-flex",
@@ -9022,8 +9172,65 @@ function ProjectEditor({
               </>
             )}
           </span>
+
+          {/* NEW: Role badge for co-assigners */}
+          {/* {isCoAssigner && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "3px 9px",
+                borderRadius: 999,
+                fontSize: 10,
+                fontWeight: 700,
+                background: "#DCFCE7",
+                color: "#15803D",
+                border: "1px solid #86EFAC",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+              title={`Owned by ${projectOwnerId}`}
+            >
+              <Handshake size={11} />
+              Co-Assigner
+            </span>
+          )} */}
+
+          {/* NEW: Co-Assigners button (visible when project exists) */}
+          {!isNewProject && draft.createdBy && (
+            <button
+              onClick={() => setCoAssignerModalOpen(true)}
+              style={{
+                ...btnStyle,
+                marginLeft: "auto",
+                background: "#F0FDF4",
+                color: "#15803D",
+                borderColor: "#86EFAC",
+                fontWeight: 600,
+              }}
+            >
+              <Handshake size={13} />
+              Co-Assigners
+              {(draft.coAssigners || []).length > 0 && (
+                <span
+                  style={{
+                    padding: "1px 7px",
+                    background: "#15803D",
+                    color: "#fff",
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {(draft.coAssigners || []).length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
         {/* ── Sub-Tab Bar ── */}
+        {/* ══ Sub-Tab Bar ══ */}
         <div
           style={{
             background: "#fff",
@@ -9044,34 +9251,41 @@ function ProjectEditor({
               label: "Activities",
               icon: <ClipboardList size={14} />,
               count: rows.length,
-              disabled: !effectiveIsOwner, // ← use effectiveIsOwner
-              disabledReason: "Only the project owner can access Activities",
+              enabled: effectiveCanAccessActivities,
+              disabledReason: !canAccessActivities
+                ? "Only owner or co-assigner can access Activities"
+                : "",
             },
             {
               key: "gantt",
               label: "Gantt",
               icon: <Calendar size={14} />,
               count: null,
-              disabled: !effectiveIsOwner, // ← use effectiveIsOwner
-              disabledReason: "Only the project owner can access Gantt",
+              enabled: effectiveCanAccessGantt,
+              disabledReason: !canAccessGantt
+                ? "Only owner or co-assigner can access Gantt"
+                : "",
             },
             {
               key: "updates",
               label: "Updates",
               icon: <FileText size={14} />,
               count: null,
-              disabled: false,
-              disabledReason: "",
+              enabled: effectiveCanAccessUpdates,
+              disabledReason: !canAccessUpdates
+                ? "You don't have access to any update categories"
+                : "",
             },
           ].map((tab) => {
             const active = view === tab.key;
+            const isDisabled = !tab.enabled;
 
             return (
               <button
                 key={tab.key}
-                onClick={() => !tab.disabled && setView(tab.key)}
-                disabled={tab.disabled}
-                title={tab.disabled ? tab.disabledReason : ""}
+                onClick={() => !isDisabled && setView(tab.key)}
+                disabled={isDisabled}
+                title={isDisabled ? tab.disabledReason : ""}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -9080,23 +9294,23 @@ function ProjectEditor({
                   borderRadius: 8,
                   border: "none",
                   background: active ? "#0F172A" : "transparent",
-                  color: active ? "#fff" : tab.disabled ? "#CBD5E1" : "#64748B",
-                  cursor: tab.disabled ? "not-allowed" : "pointer",
+                  color: active ? "#fff" : isDisabled ? "#CBD5E1" : "#64748B",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
                   fontSize: 12,
                   fontWeight: 600,
                   fontFamily: "Sora,sans-serif",
                   transition: "all .15s",
-                  opacity: tab.disabled ? 0.5 : 1,
+                  opacity: isDisabled ? 0.5 : 1,
                 }}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
 
-                {tab.disabled && (
+                {isDisabled && (
                   <Lock size={11} style={{ marginLeft: 2, opacity: 0.7 }} />
                 )}
 
-                {!tab.disabled && tab.count !== null && tab.count > 0 && (
+                {!isDisabled && tab.count !== null && tab.count > 0 && (
                   <span
                     style={{
                       display: "inline-flex",
@@ -9119,28 +9333,59 @@ function ProjectEditor({
             );
           })}
 
-          {/* ── "Shared with You" badge — only for EXISTING projects where user is NOT the owner ── */}
+          {/* Role badge for non-owners */}
           {!isProjectOwner && draft?.createdBy && (
             <div
               style={{
                 marginLeft: 10,
-                padding: "4px 10px",
-                background: "#DBEAFE",
-                color: "#1D4ED8",
-                border: "1px solid #93C5FD",
-                borderRadius: 999,
-                fontSize: 10.5,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                display: "inline-flex",
-                alignItems: "center",
+                display: "flex",
                 gap: 4,
               }}
-              title={`Project owned by ${projectOwnerId}`}
             >
-              <Users size={11} />
-              Shared with You
+              {isCoAssigner && (
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    background: "#DCFCE7",
+                    color: "#15803D",
+                    border: "1px solid #86EFAC",
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                  title="You are a co-assigner"
+                >
+                  <Handshake size={11} />
+                  Co-Assigner
+                </span>
+              )}
+              {isUpdatesShared && (
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    background: "#DBEAFE",
+                    color: "#1D4ED8",
+                    border: "1px solid #93C5FD",
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                  title="Updates are shared with you"
+                >
+                  <FileText size={11} />
+                  Updates Access
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -9149,25 +9394,28 @@ function ProjectEditor({
         {view === "activities" && (
           <>
             {/* Close Project button — only for published projects */}
-            {motionSubmitted && draft.status !== "closed" && allTasksDone && (
-              <button
-                onClick={() => setCloseProjectOpen(true)}
-                style={{
-                  ...btnStyle,
-                  marginLeft: "auto",
-                  background: "#FEF2F2",
-                  color: "#DC2626",
-                  borderColor: "#FCA5A5",
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                }}
-              >
-                <XCircle size={14} />
-                Close Project
-              </button>
-            )}
+            {motionSubmitted &&
+              draft.status !== "closed" &&
+              allTasksDone &&
+              canDeleteProject(currentUserProjectRole) && (
+                <button
+                  onClick={() => setCloseProjectOpen(true)}
+                  style={{
+                    ...btnStyle,
+                    marginLeft: "auto",
+                    background: "#FEF2F2",
+                    color: "#DC2626",
+                    borderColor: "#FCA5A5",
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  <XCircle size={14} />
+                  Close Project
+                </button>
+              )}
             {draft.status === "closed" && (
               <button
                 onClick={() => setCloseProjectOpen(true)}
@@ -9731,18 +9979,20 @@ function ProjectEditor({
                     >
                       <Download size={14} /> Export
                     </button>
-                    <button
-                      onClick={() => addRow()}
-                      style={{
-                        ...btnStyle,
-                        background: "#1D4ED8",
-                        color: "#fff",
-                        borderColor: "#1D4ED8",
-                        height: 32,
-                      }}
-                    >
-                      <Plus size={14} /> Add Module
-                    </button>
+                    {draft.status !== "closed" && (
+                      <button
+                        onClick={() => addRow()}
+                        style={{
+                          ...btnStyle,
+                          background: "#1D4ED8",
+                          color: "#fff",
+                          borderColor: "#1D4ED8",
+                          height: 32,
+                        }}
+                      >
+                        <Plus size={14} /> Add Module
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -10168,27 +10418,29 @@ function ProjectEditor({
                 </div>
 
                 {/* Add row button */}
-                <button
-                  onClick={() => addRow()}
-                  style={{
-                    width: "100%",
-                    padding: "11px",
-                    background: "none",
-                    border: "none",
-                    borderTop: "1px solid #F1F5F9",
-                    color: "#1D4ED8",
-                    fontFamily: "Sora,sans-serif",
-                    fontSize: 12,
-                    cursor: "pointer",
-                    fontWeight: 500,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Plus size={14} /> Add new module
-                </button>
+                {draft.status !== "closed" && (
+                  <button
+                    onClick={() => addRow()}
+                    style={{
+                      width: "100%",
+                      padding: "11px",
+                      background: "none",
+                      border: "none",
+                      borderTop: "1px solid #F1F5F9",
+                      color: "#1D4ED8",
+                      fontFamily: "Sora,sans-serif",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      fontWeight: 500,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Plus size={14} /> Add new module
+                  </button>
+                )}
               </div>
             )}
             {/* {showTable && showGantt && (
@@ -10281,8 +10533,9 @@ function ProjectEditor({
                   )}
                 </span>
               </div>
+              {/* ── Save Draft Button inside ProjectEditor Footer ── */}
               <button
-                onClick={handleSaveDraft}
+                onClick={() => onSaveDraft(buildProjectData())}
                 disabled={
                   isSaving || motionSubmitted || draft.status === "closed"
                 }
@@ -10535,7 +10788,7 @@ function ProjectEditor({
           setExistingComments={setExistingComments}
           newComment={newComment}
           setNewComment={setNewComment}
-          allowActions={true}
+          allowActions={draft.status === "closed" ? false : true}
         />
       )}
       {rejectRow && (
@@ -10575,6 +10828,23 @@ function ProjectEditor({
           savedFeedback={draft.status === "closed" ? draft : null}
         />
       )}
+      {coAssignerModalOpen && (
+        <CoAssignerModal
+          project={draft}
+          currentUserId={currentUserId}
+          currentUserRole={currentUserProjectRole}
+          allUsers={allUsersForCoAssigner}
+          isLoadingUsers={loadingUsersForCoAssigner}
+          usersError={usersErrorForCoAssigner}
+          onRetryLoadUsers={() => {
+            setCoAssignerModalOpen(false);
+            setTimeout(() => setCoAssignerModalOpen(true), 100);
+          }}
+          onClose={() => setCoAssignerModalOpen(false)}
+          onAddCoAssigner={handleAddCoAssigner} // ← NEW
+          onRemoveCoAssigner={handleRemoveCoAssigner} // ← NEW
+        />
+      )}
       {/* ── Toasts ── */}
       <Toast
         toasts={toasts}
@@ -10601,16 +10871,42 @@ function DraftProjectsList({
   // const [ownershipFilter, setOwnershipFilter] = useState("all"); // "all" | "mine" | "shared"
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all"); // ← NEW: "all" | "draft" | "published"
-  const statusCounts = useMemo(() => {
-    const isMine = (d) =>
+  // ── Helper functions ──
+  const isMineProject = useCallback(
+    (d) =>
       d.createdBy &&
       currentUserId &&
-      d.createdBy.toLowerCase() === currentUserId.toLowerCase();
+      d.createdBy.toLowerCase() === currentUserId.toLowerCase(),
+    [currentUserId],
+  );
 
+  const isCoAssignedProject = useCallback(
+    (d) => {
+      if (!currentUserId) return false;
+      return (d.coAssigners || []).some(
+        (ca) => ca.userId?.toLowerCase() === currentUserId.toLowerCase(),
+      );
+    },
+    [currentUserId],
+  );
+
+  // NEW: Check if user has updates access
+  const isUpdatesSharedProject = useCallback(
+    (d) => {
+      if (!currentUserId) return false;
+      const categories = d.updates?.categories || [];
+      return categories.some((cat) =>
+        (cat.sharedWith || []).some(
+          (s) => s.userId?.toLowerCase() === currentUserId.toLowerCase(),
+        ),
+      );
+    },
+    [currentUserId],
+  );
+  const statusCounts = useMemo(() => {
+    const isMine = (d) => isMineProject(d);
     const isShared = (d) =>
-      d.createdBy &&
-      currentUserId &&
-      d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
+      !isMine(d) && (isCoAssignedProject(d) || isUpdatesSharedProject(d));
 
     return {
       all: drafts.length,
@@ -10620,9 +10916,17 @@ function DraftProjectsList({
       published: drafts.filter((d) => isMine(d) && d.status === "published")
         .length,
       closed: drafts.filter((d) => isMine(d) && d.status === "closed").length,
+      coAssigned: drafts.filter((d) => !isMine(d) && isCoAssignedProject(d))
+        .length,
       sharedWithMe: drafts.filter((d) => isShared(d)).length,
     };
-  }, [drafts, currentUserId]);
+  }, [
+    drafts,
+    currentUserId,
+    isMineProject,
+    isCoAssignedProject,
+    isUpdatesSharedProject,
+  ]);
   // const ownershipCounts = useMemo(
   //   () => ({
   //     all: drafts.length,
@@ -10644,31 +10948,29 @@ function DraftProjectsList({
   const filtered = useMemo(() => {
     let result = drafts;
 
-    const isMine = (d) =>
-      d.createdBy &&
-      currentUserId &&
-      d.createdBy.toLowerCase() === currentUserId.toLowerCase();
-
-    const isShared = (d) =>
-      d.createdBy &&
-      currentUserId &&
-      d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
-
-    // ── Status/Ownership filter (unified) ──
     if (statusFilter === "draft") {
       result = result.filter(
-        (d) => isMine(d) && d.status !== "published" && d.status !== "closed",
+        (d) =>
+          isMineProject(d) && d.status !== "published" && d.status !== "closed",
       );
     } else if (statusFilter === "published") {
-      result = result.filter((d) => isMine(d) && d.status === "published");
+      result = result.filter(
+        (d) => isMineProject(d) && d.status === "published",
+      );
     } else if (statusFilter === "closed") {
-      result = result.filter((d) => isMine(d) && d.status === "closed");
+      result = result.filter((d) => isMineProject(d) && d.status === "closed");
+    } else if (statusFilter === "coAssigned") {
+      result = result.filter((d) => isCoAssignedProject(d));
     } else if (statusFilter === "sharedWithMe") {
-      result = result.filter((d) => isShared(d));
+      result = result.filter(
+        (d) =>
+          d.createdBy &&
+          currentUserId &&
+          d.createdBy.toLowerCase() !== currentUserId.toLowerCase() &&
+          !isCoAssignedProject(d),
+      );
     }
-    // "all" — no filter, show everything
 
-    // ── Search filter ──
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -10741,8 +11043,14 @@ function DraftProjectsList({
               color: "#475569",
             },
             {
+              key: "coAssigned", // ← NEW
+              label: "Co-Assigned",
+              icon: <Handshake size={14} />,
+              color: "#15803D",
+            },
+            {
               key: "sharedWithMe",
-              label: "Shared with Me",
+              label: "Shared Updates",
               icon: <Users size={14} />,
               color: "#1D4ED8",
             },
@@ -11146,6 +11454,9 @@ function DraftProjectsList({
               }}
             >
               {filtered.map((d) => {
+                const isMine = isMineProject(d);
+                const isCoAssigned = isCoAssignedProject(d);
+                const isUpdatesShared = isUpdatesSharedProject(d);
                 const moduleCount = new Set(
                   (d.rows || [])
                     .filter((r) => !r.parentId && r.module)
@@ -11159,11 +11470,60 @@ function DraftProjectsList({
                 ).length;
                 const status = d.status || "draft";
 
-                // ── NEW: Ownership check ──
+                // ── Ownership detection ──
                 const isSharedProject =
                   d.createdBy &&
                   currentUserId &&
                   d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
+                // const isCoAssigned = isCoAssignedProject(d);
+
+                // Priority: Co-Assigned > Shared > Own
+                const cardVariant = isCoAssigned
+                  ? "co-assigned"
+                  : isSharedProject
+                    ? "shared"
+                    : "own";
+
+                // Colors based on variant
+                const variantColors = {
+                  "co-assigned": {
+                    borderColor: "#86EFAC",
+                    leftBorder: "4px solid #15803D",
+                    shadow: "0 2px 6px rgba(21,128,61,0.08)",
+                    shadowHover: "0 6px 16px rgba(21,128,61,0.15)",
+                    hoverBorder: "#22C55E",
+                    openArrowColor: "#15803D",
+                    avatarBg: "#15803D",
+                    infoBg: "#F0FDF4",
+                    infoBorder: "#BBF7D0",
+                    infoLabelColor: "#15803D",
+                  },
+                  shared: {
+                    borderColor: "#93C5FD",
+                    leftBorder: "4px solid #1D4ED8",
+                    shadow: "0 2px 6px rgba(29,78,216,0.08)",
+                    shadowHover: "0 6px 16px rgba(29,78,216,0.15)",
+                    hoverBorder: "#3B82F6",
+                    openArrowColor: "#1D4ED8",
+                    avatarBg: "#1D4ED8",
+                    infoBg: "#F0F9FF",
+                    infoBorder: "#BAE6FD",
+                    infoLabelColor: "#0369A1",
+                  },
+                  own: {
+                    borderColor: "#E2E8F0",
+                    leftBorder: "1px solid #E2E8F0",
+                    shadow: "0 1px 3px rgba(0,0,0,0.05)",
+                    shadowHover: "0 4px 12px rgba(29,78,216,0.10)",
+                    hoverBorder: "#93C5FD",
+                    openArrowColor: "#7C3AED",
+                    avatarBg: "#7C3AED",
+                    infoBg: "#FAFBFC",
+                    infoBorder: "#E2E8F0",
+                    infoLabelColor: "#475569",
+                  },
+                };
+                const colors = variantColors[cardVariant];
 
                 return (
                   <div
@@ -11171,17 +11531,13 @@ function DraftProjectsList({
                     onClick={() => onOpen(d.id)}
                     style={{
                       background: "#fff",
-                      border: `1px solid ${isSharedProject ? "#93C5FD" : "#E2E8F0"}`,
-                      borderLeft: isSharedProject
-                        ? "4px solid #1D4ED8"
-                        : "1px solid #E2E8F0",
+                      border: `1px solid ${colors.borderColor}`,
+                      borderLeft: colors.leftBorder,
                       borderRadius: 12,
                       padding: 16,
                       cursor: "pointer",
                       transition: "all .15s",
-                      boxShadow: isSharedProject
-                        ? "0 2px 6px rgba(29,78,216,0.08)"
-                        : "0 1px 3px rgba(0,0,0,0.05)",
+                      boxShadow: colors.shadow,
                       display: "flex",
                       flexDirection: "column",
                       gap: 10,
@@ -11190,31 +11546,52 @@ function DraftProjectsList({
                       overflow: "hidden",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = isSharedProject
-                        ? "#3B82F6"
-                        : "#93C5FD";
-                      e.currentTarget.style.boxShadow = isSharedProject
-                        ? "0 6px 16px rgba(29,78,216,0.15)"
-                        : "0 4px 12px rgba(29,78,216,0.10)";
+                      e.currentTarget.style.borderColor = colors.hoverBorder;
+                      e.currentTarget.style.boxShadow = colors.shadowHover;
                       e.currentTarget.style.transform = "translateY(-2px)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = isSharedProject
-                        ? "#93C5FD"
-                        : "#E2E8F0";
-                      e.currentTarget.style.boxShadow = isSharedProject
-                        ? "0 2px 6px rgba(29,78,216,0.08)"
-                        : "0 1px 3px rgba(0,0,0,0.05)";
+                      e.currentTarget.style.borderColor = colors.borderColor;
+                      e.currentTarget.style.boxShadow = colors.shadow;
                       e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
-                    {/* ── NEW: Shared corner ribbon ── */}
-                    {isSharedProject && (
+                    {/* ── Corner Ribbon (Co-Assigned or Shared) ── */}
+                    {/* ── Corner Ribbon (Co-Assigned) ── */}
+                    {cardVariant === "co-assigned" && (
                       <div
                         style={{
                           position: "absolute",
-                          top: 10,
-                          right: -34,
+                          top: 18,
+                          right: -40,
+                          background:
+                            "linear-gradient(135deg, #15803D 0%, #166534 100%)",
+                          color: "#fff",
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: "0.5px",
+                          textTransform: "uppercase",
+                          padding: "4px 44px",
+                          transform: "rotate(40deg)",
+                          transformOrigin: "center",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                          zIndex: 1,
+                          whiteSpace: "nowrap",
+                          pointerEvents: "none",
+                          textAlign: "center",
+                          minWidth: 140,
+                        }}
+                      >
+                        Co-Assigned
+                      </div>
+                    )}
+
+                    {cardVariant === "shared" && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 18,
+                          right: -40,
                           background:
                             "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)",
                           color: "#fff",
@@ -11222,17 +11599,21 @@ function DraftProjectsList({
                           fontWeight: 700,
                           letterSpacing: "0.5px",
                           textTransform: "uppercase",
-                          padding: "3px 40px",
-                          transform: "rotate(35deg)",
+                          padding: "4px 44px",
+                          transform: "rotate(40deg)",
+                          transformOrigin: "center",
                           boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                           zIndex: 1,
+                          whiteSpace: "nowrap",
+                          pointerEvents: "none",
+                          textAlign: "center",
+                          minWidth: 140,
                         }}
                       >
                         Shared
                       </div>
                     )}
-
-                    {/* Status badge + delete */}
+                    {/* ── Status Badges + Delete Button Row ── */}
                     <div
                       style={{
                         display: "flex",
@@ -11242,7 +11623,12 @@ function DraftProjectsList({
                       }}
                     >
                       <div
-                        style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          flexWrap: "wrap",
+                          alignItems: "center",
+                        }}
                       >
                         {/* Status badge */}
                         <span
@@ -11295,8 +11681,76 @@ function DraftProjectsList({
                           )}
                         </span>
 
-                        {/* ── NEW: Shared badge (inline) ── */}
-                        {isSharedProject && (
+                        {/* Role badge — Co-Assigner */}
+                        {/* {cardVariant === "co-assigned" && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              padding: "3px 9px",
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              background: "#DCFCE7",
+                              color: "#15803D",
+                              border: "1px solid #86EFAC",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                            title={`You are a co-assigner (owned by ${d.createdBy})`}
+                          >
+                            <Handshake size={11} />
+                            Co-Assigner
+                          </span>
+                        )} */}
+                        {isCoAssigned && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              padding: "3px 9px",
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              background: "#DCFCE7",
+                              color: "#15803D",
+                              border: "1px solid #86EFAC",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                            title="You are a co-assigner"
+                          >
+                            <Handshake size={11} />
+                            Co-Assigner
+                          </span>
+                        )}
+                        {isUpdatesShared && !isMine && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              padding: "3px 9px",
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              background: "#DBEAFE",
+                              color: "#1D4ED8",
+                              border: "1px solid #93C5FD",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
+                            }}
+                            title="Updates are shared with you"
+                          >
+                            <FileText size={11} />
+                            Updates
+                          </span>
+                        )}
+
+                        {/* Role badge — Shared (Collaborator) */}
+                        {cardVariant === "shared" && (
                           <span
                             style={{
                               display: "inline-flex",
@@ -11320,10 +11774,10 @@ function DraftProjectsList({
                         )}
                       </div>
 
-                      {/* Delete button — hide for shared projects (collaborators can't delete) */}
+                      {/* Delete button — only for OWN drafts (not published, not closed, not co-assigned, not shared) */}
                       {d.status !== "published" &&
                         d.status !== "closed" &&
-                        !isSharedProject && (
+                        cardVariant === "own" && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -11376,7 +11830,7 @@ function DraftProjectsList({
                         )}
                     </div>
 
-                    {/* Project title */}
+                    {/* ── Project Title & Metadata ── */}
                     <div>
                       <div
                         style={{
@@ -11388,6 +11842,7 @@ function DraftProjectsList({
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                         }}
+                        title={d.project || "Untitled Project"}
                       >
                         {d.project || "Untitled Project"}
                       </div>
@@ -11414,14 +11869,14 @@ function DraftProjectsList({
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
                           }}
+                          title={d.site || "No site"}
                         >
                           {d.site || "No site"}
                         </span>
                       </div>
                     </div>
 
-                    {/* ── NEW: Owner info for shared projects ── */}
-                    {/* ── Created by info (shown for all projects) ── */}
+                    {/* ── Owner / Creator Info Box ── */}
                     {d.createdBy && (
                       <div
                         style={{
@@ -11429,8 +11884,8 @@ function DraftProjectsList({
                           alignItems: "center",
                           gap: 8,
                           padding: "6px 10px",
-                          background: isSharedProject ? "#F0F9FF" : "#FAFBFC",
-                          border: `1px solid ${isSharedProject ? "#BAE6FD" : "#E2E8F0"}`,
+                          background: colors.infoBg,
+                          border: `1px solid ${colors.infoBorder}`,
                           borderRadius: 6,
                           fontSize: 10.5,
                         }}
@@ -11440,7 +11895,7 @@ function DraftProjectsList({
                             width: 22,
                             height: 22,
                             borderRadius: "50%",
-                            background: isSharedProject ? "#1D4ED8" : "#7C3AED",
+                            background: colors.avatarBg,
                             color: "#fff",
                             display: "flex",
                             alignItems: "center",
@@ -11450,7 +11905,9 @@ function DraftProjectsList({
                             flexShrink: 0,
                           }}
                         >
-                          {(d.createdBy || "?").charAt(0).toUpperCase()}
+                          {cardVariant === "own"
+                            ? "Y" // For "You"
+                            : (d.createdBy || "?").charAt(0).toUpperCase()}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
@@ -11462,25 +11919,116 @@ function DraftProjectsList({
                               fontWeight: 600,
                             }}
                           >
-                            {isSharedProject ? "Owned by" : "Created by"}
+                            {cardVariant === "own" ? "Created by" : "Owned by"}
                           </div>
                           <div
                             style={{
-                              color: isSharedProject ? "#0369A1" : "#475569",
+                              color: colors.infoLabelColor,
                               fontWeight: 600,
                               fontSize: 11,
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                             }}
+                            title={
+                              cardVariant === "own"
+                                ? "You (the owner)"
+                                : d.createdBy
+                            }
                           >
-                            {isSharedProject ? d.createdBy : "You"}
+                            {cardVariant === "own" ? "You" : d.createdBy}
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Stats */}
+                    {/* ── Co-Assigners Count (only for OWN projects with co-assigners) ── */}
+                    {cardVariant === "own" &&
+                      (d.coAssigners || []).length > 0 && (
+                        <div
+                          style={{
+                            padding: "5px 10px",
+                            background: "#F0FDF4",
+                            border: "1px solid #86EFAC",
+                            borderRadius: 6,
+                            fontSize: 10.5,
+                            color: "#15803D",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                          title={`Co-assigners: ${(d.coAssigners || [])
+                            .map((ca) => ca.userName || ca.userId)
+                            .join(", ")}`}
+                        >
+                          <Handshake size={11} />
+                          <span>
+                            Shared with {(d.coAssigners || []).length}{" "}
+                            co-assigner
+                            {(d.coAssigners || []).length !== 1 ? "s" : ""}
+                          </span>
+                          <div
+                            style={{
+                              marginLeft: "auto",
+                              display: "flex",
+                              gap: -6,
+                            }}
+                          >
+                            {/* Avatar stack for first 3 co-assigners */}
+                            {(d.coAssigners || [])
+                              .slice(0, 3)
+                              .map((ca, idx) => (
+                                <div
+                                  key={ca.userId}
+                                  style={{
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: "50%",
+                                    background: "#15803D",
+                                    color: "#fff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontWeight: 700,
+                                    fontSize: 9,
+                                    border: "2px solid #F0FDF4",
+                                    marginLeft: idx > 0 ? -6 : 0,
+                                    zIndex: 3 - idx,
+                                  }}
+                                  title={ca.userName || ca.userId}
+                                >
+                                  {(ca.userName || ca.userId || "?")
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </div>
+                              ))}
+                            {(d.coAssigners || []).length > 3 && (
+                              <div
+                                style={{
+                                  width: 18,
+                                  height: 18,
+                                  borderRadius: "50%",
+                                  background: "#F1F5F9",
+                                  color: "#475569",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontWeight: 700,
+                                  fontSize: 8,
+                                  border: "2px solid #F0FDF4",
+                                  marginLeft: -6,
+                                }}
+                                title={`+${(d.coAssigners || []).length - 3} more`}
+                              >
+                                +{(d.coAssigners || []).length - 3}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* ── Stats Row (Modules, Tasks, Sub-tasks) ── */}
                     <div
                       style={{
                         display: "flex",
@@ -11504,7 +12052,7 @@ function DraftProjectsList({
                       )}
                     </div>
 
-                    {/* Groups */}
+                    {/* ── Groups ── */}
                     {(d.groups || []).length > 0 && (
                       <div
                         style={{ display: "flex", gap: 4, flexWrap: "wrap" }}
@@ -11533,7 +12081,7 @@ function DraftProjectsList({
                       </div>
                     )}
 
-                    {/* Timestamps */}
+                    {/* ── Timestamps + Open Arrow ── */}
                     <div
                       style={{
                         fontSize: 10.5,
@@ -11542,14 +12090,21 @@ function DraftProjectsList({
                         paddingTop: 8,
                         display: "flex",
                         justifyContent: "space-between",
+                        alignItems: "center",
                       }}
                     >
-                      <span>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
                         <Clock size={11} /> {fmtDate(d.updatedAt)}
                       </span>
                       <span
                         style={{
-                          color: isSharedProject ? "#1D4ED8" : "#7C3AED",
+                          color: colors.openArrowColor,
                           fontWeight: 600,
                         }}
                       >
@@ -11704,7 +12259,51 @@ export default function AssignerModule() {
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groupsError, setGroupsError] = useState(null);
   const [resourcesLoading, setResourcesLoading] = useState(false);
+  // In AssignerModule — add these:
 
+  const [isUpdatesSharedForCurrent, setIsUpdatesSharedForCurrent] =
+    useState(false);
+  const [updatesSharedLoading, setUpdatesSharedLoading] = useState(false);
+
+  // Fetch updates sharing whenever the current project changes
+  useEffect(() => {
+    // Reset immediately on project change
+    setIsUpdatesSharedForCurrent(false);
+
+    if (!currentProjectId || !currentUserId) return;
+
+    const project =
+      drafts.find((d) => d.id === currentProjectId) || pendingDraft;
+    if (!project) return;
+
+    // Owner always has access — skip API call
+    if (project.createdBy?.toLowerCase() === currentUserId.toLowerCase()) {
+      setIsUpdatesSharedForCurrent(false); // owner handled separately
+      return;
+    }
+
+    // Co-assigners don't need the updates check separately
+    // But we still fetch for non-owners to check updates-shared
+    const check = async () => {
+      setUpdatesSharedLoading(true);
+      try {
+        const data = await sharingApi.getProjectUpdates(currentProjectId);
+        const categories = data?.updates?.categories || data?.categories || [];
+        const uid = currentUserId.toLowerCase();
+        const shared = categories.some((cat) =>
+          (cat.sharedWith || []).some((s) => s.userId?.toLowerCase() === uid),
+        );
+        setIsUpdatesSharedForCurrent(shared);
+      } catch (err) {
+        console.warn("Could not check updates sharing:", err);
+        setIsUpdatesSharedForCurrent(false);
+      } finally {
+        setUpdatesSharedLoading(false);
+      }
+    };
+
+    check();
+  }, [currentProjectId, currentUserId, drafts, pendingDraft]);
   const showToast = useCallback((kind, title, msg, dur = 3800) => {
     const id = ++toastIdRef.current;
     setToasts((p) => [...p, { id, kind, title, msg }]);
@@ -11834,6 +12433,7 @@ export default function AssignerModule() {
       rows: [],
       //   nextId: 1,
       createdBy: currentUserId,
+      coAssigners: [],
       status: "draft",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -11876,8 +12476,11 @@ export default function AssignerModule() {
     [showToast, fetchProjects, currentProjectId],
   );
 
+  /* ─── Save Draft Handler (in AssignerModule) ─── */
   const handleSaveDraft = useCallback(
-    async (projectData) => {
+    async (projectData, options = {}) => {
+      const { skipApiCall = false } = options;
+
       const payload = {
         ...projectData,
         status: projectData.status === "published" ? "published" : "draft",
@@ -11886,13 +12489,14 @@ export default function AssignerModule() {
 
       setSavingProjectId(projectData.id);
       try {
-        // Use postActivityTree — handles full project + rows + comments in one call
+        // Only call API if skipApiCall is false (co-assigner add/remove calls API separately)
+        if (!skipApiCall) {
+          await activityTrackerApi.postActivityTree(payload);
+        }
 
-        const result = await activityTrackerApi.postActivityTree(payload);
-
-        // API returns boolean (true on success), so use our payload as the "saved" state
         const finalData = { ...payload };
 
+        // Update parent drafts list
         setDrafts((prev) => {
           const exists = prev.some((d) => d.id === finalData.id);
           return exists
@@ -12275,6 +12879,7 @@ export default function AssignerModule() {
           onBack={handleBackToList}
           showToast={showToast}
           currentUserId={currentUserId} // ← ADD THIS
+          isUpdatesShared={isUpdatesSharedForCurrent} // ← NEW
         />
       ) : (
         <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>
