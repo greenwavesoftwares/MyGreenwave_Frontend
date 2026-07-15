@@ -8353,6 +8353,20 @@ function ProjectEditor({
       status: draft.status === "published" ? "published" : "draft",
     };
   }, [draft, project, po, site, groups, rows, moduleRegistry]);
+  const handleSaveDraftClick = useCallback(async () => {
+    if (isSaving || motionSubmitted || draft.status === "closed") return;
+
+    setIsSaving(true);
+
+    try {
+      await onSaveDraft(buildProjectData());
+    } catch (err) {
+      // The parent handleSaveDraft already displays the error toast.
+      console.error("Draft save failed in ProjectEditor:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, motionSubmitted, draft.status, onSaveDraft, buildProjectData]);
   const handleCloseProject = useCallback(
     async (feedback) => {
       setIsClosingProject(true);
@@ -10535,7 +10549,7 @@ function ProjectEditor({
               </div>
               {/* ── Save Draft Button inside ProjectEditor Footer ── */}
               <button
-                onClick={() => onSaveDraft(buildProjectData())}
+                onClick={handleSaveDraftClick}
                 disabled={
                   isSaving || motionSubmitted || draft.status === "closed"
                 }
@@ -10573,22 +10587,12 @@ function ProjectEditor({
                       size={14}
                       style={{ animation: "spin 1s linear infinite" }}
                     />
-                    {" Saving..."}
-                  </>
-                ) : draft.status === "closed" ? (
-                  <>
-                    <Lock size={12} />
-                    {" Save Draft"}
-                  </>
-                ) : motionSubmitted ? (
-                  <>
-                    <Lock size={12} />
-                    {" Save Draft"}
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Save size={14} />
-                    {" Save Draft"}
+                    Save Draft
                   </>
                 )}
               </button>
@@ -10859,18 +10863,134 @@ function DraftProjectsList({
   loading,
   error,
   deletingProjectId,
-  groupLabels, // ← NEW
+  groupLabels,
   currentUserId,
   onOpen,
   onDelete,
   onNew,
   onRefresh,
+  dateRange, // ← NEW
+  onDateRangeChange, // ← NEW
 }) {
   //   const { groupLabels } = useData();
   const [search, setSearch] = useState("");
   // const [ownershipFilter, setOwnershipFilter] = useState("all"); // "all" | "mine" | "shared"
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all"); // ← NEW: "all" | "draft" | "published"
+  const customPickerRef = useRef(null);
+  const customToggleBtnRef = useRef(null);
+
+  const [lastAppliedCustom, setLastAppliedCustom] = useState(() => {
+    try {
+      const saved = localStorage.getItem("draftListCustomRange");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return { fromDate: dateRange.fromDate, toDate: dateRange.toDate };
+  });
+
+  // Save whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "draftListCustomRange",
+        JSON.stringify(lastAppliedCustom),
+      );
+    } catch (e) {}
+  }, [lastAppliedCustom]);
+  /* ─── Date range presets ─── */
+  const [dateMode, setDateMode] = useState("currentMonth");
+
+  // Tracks the last APPLIED custom range (persists across open/close)
+  // const [lastAppliedCustom, setLastAppliedCustom] = useState({
+  //   fromDate: dateRange.fromDate,
+  //   toDate: dateRange.toDate,
+  // });
+
+  // Working values inside the picker (editable, may be discarded)
+  const [customFrom, setCustomFrom] = useState(dateRange.fromDate);
+  const [customTo, setCustomTo] = useState(dateRange.toDate);
+  const [customOpen, setCustomOpen] = useState(false);
+  useEffect(() => {
+    if (!customOpen) return;
+
+    const handler = (e) => {
+      // Ignore clicks on the picker itself or the Custom tab button
+      if (customPickerRef.current?.contains(e.target)) return;
+      if (customToggleBtnRef.current?.contains(e.target)) return;
+      handleCustomCancel();
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customOpen, lastAppliedCustom]);
+  const toSimpleDate = (d) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const handleCurrentMonth = () => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const range = { fromDate: toSimpleDate(first), toDate: toSimpleDate(last) };
+    setDateMode("currentMonth");
+    setCustomOpen(false);
+    onDateRangeChange(range);
+  };
+
+  const handleLast3Months = () => {
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const range = { fromDate: toSimpleDate(from), toDate: toSimpleDate(to) };
+    setDateMode("last3Months");
+    setCustomOpen(false);
+    onDateRangeChange(range);
+  };
+
+  const handleCustomToggle = () => {
+    // Opening: restore the LAST APPLIED custom range into the editable fields
+    if (!customOpen) {
+      setCustomFrom(lastAppliedCustom.fromDate);
+      setCustomTo(lastAppliedCustom.toDate);
+    }
+    setDateMode("custom");
+    setCustomOpen((p) => !p);
+  };
+
+  const handleCustomApply = () => {
+    if (!customFrom || !customTo) return;
+    if (customFrom > customTo) {
+      alert("From date must be before To date");
+      return;
+    }
+    // Remember this range for future opens
+    setLastAppliedCustom({ fromDate: customFrom, toDate: customTo });
+    onDateRangeChange({ fromDate: customFrom, toDate: customTo });
+    setCustomOpen(false);
+  };
+
+  // Discard changes — restore last applied values
+  const handleCustomCancel = () => {
+    setCustomFrom(lastAppliedCustom.fromDate);
+    setCustomTo(lastAppliedCustom.toDate);
+    setCustomOpen(false);
+  };
+
+  const formatDateShort = (dateStr) => {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    return `${d}/${m}/${y.slice(2)}`;
+  };
   // ── Helper functions ──
   const isMineProject = useCallback(
     (d) =>
@@ -11102,6 +11222,7 @@ function DraftProjectsList({
           })}
         </div>
       )}
+      {/* ── Date Range Tabs + Search Row ── */}
       <div
         style={{
           background: "#fff",
@@ -11137,16 +11258,224 @@ function DraftProjectsList({
           </div>
           <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
             {drafts.length === 0
-              ? "No projects yet — create one to get started."
-              : `${drafts.length} project${drafts.length !== 1 ? "s" : ""} saved `}
+              ? "No projects found in this date range."
+              : `${drafts.length} project${drafts.length !== 1 ? "s" : ""} `}
+            <span style={{ color: "#94A3B8" }}>
+              ({formatDateShort(dateRange.fromDate)} →{" "}
+              {formatDateShort(dateRange.toDate)})
+            </span>
           </div>
         </div>
+
+        {/* ── Date Range Preset Tabs ── */}
         <div
           style={{
+            display: "flex",
+            gap: 2,
+            background: "#F1F5F9",
+            border: "1px solid #E2E8F0",
+            borderRadius: 8,
+            padding: 3,
             position: "relative",
-            width: 280,
           }}
         >
+          <button
+            onClick={handleCurrentMonth}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "none",
+              background:
+                dateMode === "currentMonth" ? "#1D4ED8" : "transparent",
+              color: dateMode === "currentMonth" ? "#fff" : "#64748B",
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Sora,sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Calendar size={12} />
+            Current Month
+          </button>
+          <button
+            onClick={handleLast3Months}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "none",
+              background:
+                dateMode === "last3Months" ? "#1D4ED8" : "transparent",
+              color: dateMode === "last3Months" ? "#fff" : "#64748B",
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Sora,sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Clock size={12} />
+            Last 3 Months
+          </button>
+          <button
+            ref={customToggleBtnRef}
+            onClick={handleCustomToggle}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "none",
+              background: dateMode === "custom" ? "#1D4ED8" : "transparent",
+              color: dateMode === "custom" ? "#fff" : "#64748B",
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "Sora,sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Filter size={12} />
+            Custom
+          </button>
+
+          {/* ── Inline Custom Date Picker (drops below the tab bar) ── */}
+          {customOpen && (
+            <div
+              ref={customPickerRef}
+              style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                right: 0,
+                background: "#fff",
+                border: "1px solid #CBD5E1",
+                borderRadius: 10,
+                padding: 12,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                zIndex: 100,
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 8,
+                fontFamily: "Sora,sans-serif",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: "#64748B",
+                    marginBottom: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  From
+                </label>
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  max={customTo || undefined}
+                  style={{
+                    height: 32,
+                    border: "1px solid #CBD5E1",
+                    borderRadius: 6,
+                    padding: "0 8px",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11.5,
+                    outline: "none",
+                    color: "#0F172A",
+                  }}
+                />
+              </div>
+
+              <span style={{ color: "#94A3B8", paddingBottom: 8 }}>→</span>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: "#64748B",
+                    marginBottom: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  To
+                </label>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  min={customFrom || undefined}
+                  style={{
+                    height: 32,
+                    border: "1px solid #CBD5E1",
+                    borderRadius: 6,
+                    padding: "0 8px",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11.5,
+                    outline: "none",
+                    color: "#0F172A",
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={handleCustomApply}
+                disabled={!customFrom || !customTo}
+                style={{
+                  height: 32,
+                  padding: "0 14px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: !customFrom || !customTo ? "#CBD5E1" : "#1D4ED8",
+                  color: "#fff",
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  cursor: !customFrom || !customTo ? "not-allowed" : "pointer",
+                  fontFamily: "Sora,sans-serif",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <Check size={12} />
+                Apply
+              </button>
+
+              <button
+                // onClick={() => setCustomOpen(false)}
+                onClick={handleCustomCancel}
+                style={{
+                  height: 32,
+                  padding: "0 10px",
+                  borderRadius: 6,
+                  border: "1px solid #CBD5E1",
+                  background: "#fff",
+                  color: "#64748B",
+                  fontSize: 11.5,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  fontFamily: "Sora,sans-serif",
+                }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Search Box ── */}
+        <div style={{ position: "relative", width: 240 }}>
           <Search
             size={14}
             style={{
@@ -11157,7 +11486,6 @@ function DraftProjectsList({
               color: "#94A3B8",
             }}
           />
-
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -11167,7 +11495,7 @@ function DraftProjectsList({
               width: "100%",
               border: "1px solid #CBD5E1",
               borderRadius: 8,
-              padding: "0 12px 0 32px", // left padding for icon
+              padding: "0 12px 0 32px",
               fontFamily: "Sora,sans-serif",
               fontSize: 12.5,
               outline: "none",
@@ -11175,6 +11503,7 @@ function DraftProjectsList({
             }}
           />
         </div>
+
         <button
           onClick={onRefresh}
           disabled={loading}
@@ -11195,6 +11524,7 @@ function DraftProjectsList({
           )}{" "}
           Refresh
         </button>
+
         <button
           onClick={onNew}
           style={{
@@ -11206,10 +11536,8 @@ function DraftProjectsList({
             fontWeight: 600,
           }}
         >
-          <>
-            <Plus size={20} />
-            {"New Project"}
-          </>
+          <Plus size={20} />
+          New Project
         </button>
       </div>
       {/* Loading state */}
@@ -12377,25 +12705,51 @@ export default function AssignerModule() {
     },
     [groupResources, showToast],
   );
-  /* ─── Load projects from API on mount ─── */
-  const fetchProjects = useCallback(async () => {
-    setDraftsLoading(true);
-    setDraftsError(null);
-    try {
-      const projects = await activityTrackerApi.getActivityTreeCreatedByUser();
-      setDrafts(Array.isArray(projects) ? projects : []);
-    } catch (err) {
-      console.error("Failed to load projects:", err);
-      setDraftsError(err.message);
-      showToast("error", "Failed to load projects", err.message);
-    } finally {
-      setDraftsLoading(false);
-    }
-  }, [showToast]);
+  /* ─── Load projects from API with date range ─── */
+  const fetchProjects = useCallback(
+    async (fromDate, toDate) => {
+      setDraftsLoading(true);
+      setDraftsError(null);
+      try {
+        const projects = await activityTrackerApi.getActivityTreeCreatedByUser(
+          fromDate,
+          toDate,
+        );
+        setDrafts(Array.isArray(projects) ? projects : []);
+      } catch (err) {
+        console.error("Failed to load projects:", err);
+        setDraftsError(err.message);
+        showToast("error", "Failed to load projects", err.message);
+      } finally {
+        setDraftsLoading(false);
+      }
+    },
+    [showToast],
+  );
+  /* ─── Date range state (default = current month) ─── */
+  const getCurrentMonthRange = () => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return {
+      fromDate: toSimpleDate(firstDay),
+      toDate: toSimpleDate(lastDay),
+    };
+  };
 
+  const toSimpleDate = (d) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const [dateRange, setDateRange] = useState(getCurrentMonthRange());
+
+  /* Load on mount and when date range changes */
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    fetchProjects(dateRange.fromDate, dateRange.toDate);
+  }, [fetchProjects, dateRange]);
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
@@ -12488,30 +12842,44 @@ export default function AssignerModule() {
       };
 
       setSavingProjectId(projectData.id);
+
       try {
-        // Only call API if skipApiCall is false (co-assigner add/remove calls API separately)
         if (!skipApiCall) {
           await activityTrackerApi.postActivityTree(payload);
         }
 
         const finalData = { ...payload };
 
-        // Update parent drafts list
         setDrafts((prev) => {
           const exists = prev.some((d) => d.id === finalData.id);
+
           return exists
             ? prev.map((d) => (d.id === finalData.id ? finalData : d))
             : [finalData, ...prev];
         });
 
-        setPendingDraft((prev) =>
-          prev && prev.id === projectData.id ? null : prev,
-        );
+        setPendingDraft((prev) => (prev?.id === projectData.id ? null : prev));
+
+        // Do not show this for co-assigner add/remove operations,
+        // because those handlers already display their own toast.
+        if (!skipApiCall) {
+          showToast(
+            "success",
+            "Draft saved",
+            `"${finalData.project || "Untitled Project"}" was saved successfully.`,
+          );
+        }
 
         return finalData;
       } catch (err) {
         console.error("Save failed:", err);
-        showToast("error", "Save failed", err.message);
+
+        showToast(
+          "error",
+          "Save failed",
+          err?.message || "The project draft could not be saved.",
+        );
+
         throw err;
       } finally {
         setSavingProjectId(null);
@@ -12597,8 +12965,8 @@ export default function AssignerModule() {
   const handleBackToList = useCallback(() => {
     setTab("drafts");
     setCurrentProjectId(null);
-    fetchProjects(); // ← Refresh on return
-  }, [fetchProjects]);
+    fetchProjects(dateRange.fromDate, dateRange.toDate);
+  }, [fetchProjects, dateRange]);
   // Show loading screen while fetching groups
   if (groupsLoading) {
     return (
@@ -12850,7 +13218,9 @@ export default function AssignerModule() {
           onOpen={handleOpenDraft}
           onDelete={handleDeleteDraft}
           onNew={handleNewProject}
-          onRefresh={fetchProjects}
+          onRefresh={() => fetchProjects(dateRange.fromDate, dateRange.toDate)}
+          dateRange={dateRange} // ← NEW
+          onDateRangeChange={setDateRange} // ← NEW
         />
       ) : tab === "gantt" ? (
         <div
