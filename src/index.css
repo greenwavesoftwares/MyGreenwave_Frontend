@@ -373,3 +373,56 @@ html {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
+/* --- TAG --- */
+.p-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.35rem !important;
+  padding: 0.3rem 0.6rem !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+}
+
+.p-tag .p-tag-icon {
+  font-size: 0.75rem !important;
+}
+
+.p-tag .p-tag-value {
+  font-size: 0.75rem !important;
+}
+
+/* Rounded variant */
+.p-tag.p-tag-rounded {
+  border-radius: 10rem !important;
+}
+
+/* Severity color variants */
+.p-tag.p-tag-success {
+  background: #22c55e !important;
+  color: #ffffff !important;
+}
+
+.p-tag.p-tag-info {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.p-tag.p-tag-warning {
+  background: #eab308 !important;
+  color: #ffffff !important;
+}
+
+.p-tag.p-tag-danger {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.p-tag.p-tag-secondary {
+  background: #6b7280 !important;
+  color: #ffffff !important;
+}
