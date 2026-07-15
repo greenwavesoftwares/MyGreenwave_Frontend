@@ -487,3 +487,17 @@ html {
   border-width: 0 0.25rem 0.25rem !important;
   border-bottom-color: #374151 !important;
 }
+/* ============================================
+   .card — Theme-Aware Fix (Light & Dark)
+   ============================================ */
+.light .card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--fontColor) !important;
+}
+
+.dark .card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--fontColor) !important;
+}
