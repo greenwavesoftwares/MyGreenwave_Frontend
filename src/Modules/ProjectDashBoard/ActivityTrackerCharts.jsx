@@ -36,8 +36,8 @@ const PALETTES = {
     barBorder: "#e2e8f0",
     barStripeBg: "rgba(148,163,184,0.045)",
     emptySlotBg: "rgba(148,163,184,0.06)",
-    barLabelColor: "rgba(255,255,255,0.95)",
-    barLabelShadow: "0 1px 1px rgba(0,0,0,0.35)",
+    barLabelColor: "#0f172a",
+    barLabelShadow: "0 1px 1px rgba(255,255,255,0.55)",
     axisText: "#94a3b8",
     dayLabelDate: "#64748b",
     dayLabelEmpty: "#cbd5e1",
@@ -596,10 +596,13 @@ export default function ActivityTrackerCharts() {
   const occupancyByResourceDate = useMemo(() => {
     const map = {};
     const todayMid = toMidnight(new Date());
+    const WORK_START_HR = 10;
+    const WORK_END_HR = 18;
+    const BLOCKS = WORK_END_HR - WORK_START_HR;
 
     function bucket(dk, rn) {
       if (!map[dk]) map[dk] = {};
-      if (!map[dk][rn]) map[dk][rn] = { hours: 0, delayedHours: 0, tasks: [] };
+      if (!map[dk][rn]) map[dk][rn] = { hours: 0, delayedHours: 0, tasks: [], hourly: new Array(BLOCKS).fill(0) };
       return map[dk][rn];
     }
 
@@ -613,31 +616,26 @@ export default function ActivityTrackerCharts() {
       const res = r.resourceName;
       const pDuration = plannedDurationHrs(r) || 0;
 
-      let start, end, totalHours, delayed;
+      let start, end, delayed;
 
       if (aStart) {
-        // Actual work: spread actual hours across the actual date range
         start = aStart;
         const aDuration = actualDurationHrs(r);
-        totalHours = aDuration != null ? aDuration : pDuration;
         if (aStop) {
           end = aStop;
         } else if (r.status === "Running" || r.status === "Paused") {
           end = new Date(aStart.getTime() + 3600000);
         } else {
-          end = new Date(aStart.getTime() + totalHours * 3600000);
+          end = new Date(aStart.getTime() + (aDuration != null ? aDuration : pDuration) * 3600000);
         }
         delayed = false;
       } else if (r.status === "Completed") {
         start = pStart;
         end = pStop || new Date(start.getTime() + pDuration * 3600000);
-        totalHours = pDuration;
         delayed = false;
       } else {
-        // Planned/future/delayed: spread planned hours across the planned window
         start = pStart;
         end = pStop || new Date(start.getTime() + pDuration * 3600000);
-        totalHours = pDuration;
         const pSM = toMidnight(start);
         const pEM = pStop ? toMidnight(pStop) : pSM;
         delayed = pSM <= todayMid && pEM < todayMid;
@@ -645,25 +643,44 @@ export default function ActivityTrackerCharts() {
 
       const startMid = toMidnight(start);
       const endMid = toMidnight(end);
-      const dayCount = Math.max(1, daysBetween(startMid, endMid) + 1);
-      const hoursPerDay = totalHours / dayCount;
-
       const cur = new Date(startMid);
       while (cur <= endMid) {
         const dk = cur.toDateString();
-        const b = bucket(dk, res);
-        b.hours += hoursPerDay;
-        if (delayed) b.delayedHours += hoursPerDay;
-        b.tasks.push({
-          row: r,
-          hours: hoursPerDay,
-          delayed,
-          delayDays: delayed && pStop ? daysBetween(toMidnight(pStop), todayMid) : 0,
-          daysFromStart: daysBetween(toMidnight(start), cur),
-          originalPlannedStart: pStart,
-          originalPlannedStop: pStop,
-          totalPlannedHrs: pDuration,
-        });
+        const dayStartWork = new Date(cur);
+        dayStartWork.setHours(WORK_START_HR, 0, 0, 0);
+        const dayEndWork = new Date(cur);
+        dayEndWork.setHours(WORK_END_HR, 0, 0, 0);
+
+        const segStart = new Date(Math.max(start.getTime(), dayStartWork.getTime()));
+        const segEnd = new Date(Math.min(end.getTime(), dayEndWork.getTime()));
+        const segHrs = Math.max(0, segEnd - segStart) / 3600000;
+
+        if (segHrs > 0) {
+          const b = bucket(dk, res);
+          b.hours += segHrs;
+          if (delayed) b.delayedHours += segHrs;
+
+          for (let h = 0; h < BLOCKS; h++) {
+            const blockStart = new Date(cur);
+            blockStart.setHours(WORK_START_HR + h, 0, 0, 0);
+            const blockEnd = new Date(cur);
+            blockEnd.setHours(WORK_START_HR + h + 1, 0, 0, 0);
+            const overlapMs = Math.max(0, Math.min(segEnd.getTime(), blockEnd.getTime()) - Math.max(segStart.getTime(), blockStart.getTime()));
+            if (overlapMs > 0) b.hourly[h] += overlapMs / 3600000;
+          }
+
+          b.tasks.push({
+            row: r,
+            hours: segHrs,
+            delayed,
+            delayDays: delayed && pStop ? daysBetween(toMidnight(pStop), todayMid) : 0,
+            daysFromStart: daysBetween(toMidnight(start), cur),
+            originalPlannedStart: pStart,
+            originalPlannedStop: pStop,
+            totalPlannedHrs: pDuration,
+          });
+        }
+
         cur.setDate(cur.getDate() + 1);
       }
     });
@@ -942,7 +959,106 @@ export default function ActivityTrackerCharts() {
           <div style={{ padding: 40, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No scheduled activity for this selection.</div>
         ) : (
           <>
-           <AccordionSection
+            {/* <AccordionSection
+              title={
+                <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span>Weekly Schedule &mdash; Planned vs Actual</span>
+                  {monthBlocks.length > 1 && mkNav(
+                    `${MONTH_NAMES[selectedMonthIndices[safeMonthBlockIndex]]} ${selectedYear}`,
+                    safeMonthBlockIndex,
+                    monthBlocks.length - 1,
+                    goToMonthBlock
+                  )}
+                  <span
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      display: "flex",
+                      background: t.inputBg,
+                      border: `1px solid ${t.inputBorder}`,
+                      borderRadius: 6,
+                      overflow: "hidden",
+                      marginLeft: 4,
+                    }}
+                  >
+                    {[{ key: "chart", icon: "\u2587\u2585\u2583" }, { key: "table", icon: "\u2630" }].map((v) => (
+                      <button
+                        key={v.key}
+                        type="button"
+                        onClick={() => setWeekViewMode(v.key)}
+                        style={{
+                          fontSize: 11,
+                          padding: "3px 8px",
+                          border: "none",
+                          cursor: "pointer",
+                          fontWeight: weekViewMode === v.key ? 700 : 400,
+                          background: weekViewMode === v.key ? t.btnPrimary : "transparent",
+                          color: weekViewMode === v.key ? "#fff" : t.textSecondary,
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {v.icon}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+              }
+              t={t}
+              defaultOpen
+            >
+              <div style={{ overflow: "hidden" }}>
+                {weekViewMode === "chart" ? (
+                  <div
+                    key={currentMonthBlock.key}
+                    className="wt-weeks-row"
+                    style={{
+                      display: "flex",
+                      flexWrap: "nowrap",
+                      alignItems: "stretch",
+                      animation: `${monthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease`,
+                    }}
+                  >
+                    {currentMonthBlock.weeks.map((days, wi) => (
+                      <div
+                        key={`${currentMonthBlock.key}-${wi}`}
+                        style={{
+                          flex: "1 1 0",
+                          minWidth: 0,
+                          padding: "0 10px",
+                          borderRight: wi < currentMonthBlock.weeks.length - 1 ? `1px solid ${t.weekBorder}` : "none",
+                        }}
+                      >
+                        <WeekCard
+                          weekIndex={wi}
+                          days={days}
+                          aggByDate={aggByDate}
+                          durationLabels={durationLabels}
+                          pctFromHrs={pctFromHrs}
+                          resourceColorMap={resourceColorMap}
+                          showHover={showHover}
+                          hideHover={hideHover}
+                          t={t}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    key={`${currentMonthBlock.key}-tbl`}
+                    style={{ animation: `${monthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease` }}
+                  >
+                    <WeekTableView
+                      weeks={currentMonthBlock.weeks}
+                      aggByDate={aggByDate}
+                      resourceColorMap={resourceColorMap}
+                      t={t}
+                      showHover={showHover}
+                      hideHover={hideHover}
+                    />
+                  </div>
+                )}
+              </div>
+            </AccordionSection> */}
+            <AccordionSection
               title={
                 <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <span>Resource Occupancy &mdash; Free vs Occupied</span>
@@ -963,7 +1079,7 @@ export default function ActivityTrackerCharts() {
                   style={{ animation: `${occMonthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease` }}
                 >
                   <ResourceOccupancyTimeline
-                    days={currentOccMonthBlock ? currentOccMonthBlock.weeks.flat() : []}
+                    weeks={currentOccMonthBlock ? currentOccMonthBlock.weeks : []}
                     resources={timelineResources}
                     occupancyByResourceDate={occupancyByResourceDate}
                     taskOccupancyByResourceDate={taskOccupancyByResourceDate}
@@ -985,7 +1101,6 @@ export default function ActivityTrackerCharts() {
               <GanttView projects={filteredProjectsData}/>
             </AccordionSection>
 
-         
           </>
         )}
 
@@ -1238,12 +1353,12 @@ function TooltipContent({ entry, kind, t }) {
                     Planned: {pS ? fmtDateTime(pS) : "\u2014"} &ndash; {pE ? fmtDateTime(pE) : "\u2014"}
                     {totalPlannedHrs != null && <> ({fmtDuration(totalPlannedHrs)})</>}
                   </div>
-                  {/* <div style={{ fontSize: 10, color: t.ttDelayBoldText, fontWeight: 700, marginTop: 2 }}>
+                  <div style={{ fontSize: 10, color: t.ttDelayBoldText, fontWeight: 700, marginTop: 2 }}>
                     {delayDays} day{delayDays !== 1 ? "s" : ""} past deadline &bull; day {daysFromStart} since planned start
-                  </div> */}
-                  {/* <div style={{ fontSize: 10, color: t.ttDelaySubText, marginTop: 1 }}>
-                    {fmtDurationCompact(hours)} still occupying
-                  </div> */}
+                  </div>
+                  <div style={{ fontSize: 10, color: t.ttDelaySubText, marginTop: 1 }}>
+                    {fmtDurationCompact(hours)} still occupying this day
+                  </div>
                 </div>
               );
             })}
@@ -1755,7 +1870,7 @@ const GANTT_NAME_WIDTH = 195;
 const GANTT_BAR_HEIGHT = 20;
 
 function ResourceOccupancyTimeline({
-  days,
+  weeks,
   resources,
   occupancyByResourceDate,
   taskOccupancyByResourceDate,
@@ -1770,6 +1885,29 @@ function ResourceOccupancyTimeline({
   isDark,
 }) {
   const todayKey = new Date().toDateString();
+
+  // Flatten to real (non-null / in-month) days only, tracking week boundaries
+  // so disabled/out-of-month slots are never rendered.
+  const { days, weekBoundaries } = useMemo(() => {
+    const flat = [];
+    const boundaries = [];
+    let count = 0;
+    (weeks || []).forEach((w) => {
+      const real = (w || []).filter(Boolean);
+      flat.push(...real);
+      count += real.length;
+      if (real.length > 0) boundaries.push(count);
+    });
+    return { days: flat, weekBoundaries: boundaries };
+  }, [weeks]);
+
+  function weekIndexForDay(i) {
+    for (let w = 0; w < weekBoundaries.length; w++) {
+      if (i < weekBoundaries[w]) return w;
+    }
+    return Math.max(weekBoundaries.length - 1, 0);
+  }
+
   const chartWidth = Math.max(days.length, 1) * GANTT_CELL_WIDTH;
 
   const resourceDailyData = useMemo(() => {
@@ -1791,6 +1929,7 @@ function ResourceOccupancyTimeline({
           delayedHours: dh,
           hasDelay: dh > 0,
           totalHours: th,
+          hourly: data ? data.hourly : new Array(8).fill(0),
         };
       });
     });
@@ -1822,9 +1961,7 @@ function ResourceOccupancyTimeline({
     return <div style={{ padding: 24, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No resource activity to show for this selection.</div>;
   }
 
-  const firstDay = days.find(Boolean);
-  const startOfMonth = firstDay ? new Date(firstDay.getFullYear(), firstDay.getMonth(), 1) : new Date();
-  const weekOverlay = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
+  const weekOverlay = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
   const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
@@ -1832,7 +1969,7 @@ function ResourceOccupancyTimeline({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500 }}>
           {resources.length} resource{resources.length !== 1 ? "s" : ""} &bull; {" "}
-          {days.filter(Boolean).length} day{days.filter(Boolean).length !== 1 ? "s" : ""} &bull; {capacityHrs}h daily capacity
+          {days.length} day{days.length !== 1 ? "s" : ""} &bull; {capacityHrs}h daily capacity
         </div>
       </div>
 
@@ -1860,8 +1997,10 @@ function ResourceOccupancyTimeline({
               }}
             />
             <div style={{ display: "flex", width: chartWidth }}>
-              {Array.from({ length: Math.ceil(days.length / 7) }).map((_, wi) => {
-                const weekDaysCount = Math.min(7, days.length - wi * 7);
+              {weekBoundaries.map((end, wi) => {
+                const start = wi === 0 ? 0 : weekBoundaries[wi - 1];
+                const weekDaysCount = end - start;
+                if (weekDaysCount <= 0) return null;
                 return (
                   <div
                     key={wi}
@@ -1872,17 +2011,24 @@ function ResourceOccupancyTimeline({
                       alignItems: "center",
                       justifyContent: "center",
                       padding: "5px 0",
+                      overflow: "visible",
+                      position: "relative",
+                      zIndex: 1,
                     }}
                   >
                     <span
                       style={{
                         fontSize: 10,
                         fontWeight: 700,
-                        color: t.textSecondary,
-                        background: t.inputBg,
-                        border: `1px solid ${t.inputBorder}`,
+                        letterSpacing: "0.4px",
+                        textTransform: "uppercase",
+                        color: t.btnPrimary,
+                        background: `${t.btnPrimary}1A`,
+                        border: `1px solid ${t.btnPrimary}40`,
                         borderRadius: 999,
-                        padding: "2px 8px",
+                        padding: "3px 10px",
+                        boxShadow: `0 1px 2px ${t.btnPrimary}14`,
+                        whiteSpace: "nowrap",
                       }}
                     >
                       Week {wi + 1}
@@ -1917,32 +2063,13 @@ function ResourceOccupancyTimeline({
 
             <div style={{ display: "flex", width: chartWidth }}>
               {days.map((d, i) => {
-                const isT = d && d.toDateString() === todayKey;
-                const wIdx = Math.floor(i / 7);
+                const isT = d.toDateString() === todayKey;
+                const wIdx = weekIndexForDay(i);
                 const isAltWeek = wIdx % 2 === 1;
+                const isLastInWeek = weekBoundaries[wIdx] - 1 === i;
+                const endOfWeek = isLastInWeek && i < days.length - 1;
                 const baseBg = isT ? t.occHeaderToday : t.occHeaderBg;
                 const bg = isAltWeek ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}` : baseBg;
-                const endOfWeek = (i + 1) % 7 === 0 && i < days.length - 1;
-
-                if (!d) {
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        width: GANTT_CELL_WIDTH,
-                        flexShrink: 0,
-                        textAlign: "center",
-                        padding: "4px 1px",
-                        borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : i < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
-                        background: bg,
-                        opacity: 0.5,
-                      }}
-                    >
-                      <div style={{ fontSize: 9, fontWeight: 600, color: t.textMuted, lineHeight: 1 }}>{DAY_LABELS[i % 7]}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, marginTop: 1 }}>&ndash;</div>
-                    </div>
-                  );
-                }
 
                 const isW = isWeekend(d);
                 return (
@@ -1953,7 +2080,7 @@ function ResourceOccupancyTimeline({
                       flexShrink: 0,
                       textAlign: "center",
                       padding: "4px 1px",
-                      borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : i < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
+                      borderRight: endOfWeek ? `2px solid ${t.cardBorder}` : i < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
                       background: bg,
                       boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
                     }}
@@ -2019,40 +2146,20 @@ function ResourceOccupancyTimeline({
 
                 <div style={{ width: chartWidth, display: "flex", height: 42, alignItems: "center" }}>
                   {days.map((d, di) => {
-                    const isT = d && d.toDateString() === todayKey;
-                    const wIdx = Math.floor(di / 7);
+                    const isT = d.toDateString() === todayKey;
+                    const wIdx = weekIndexForDay(di);
                     const isAltWeek = wIdx % 2 === 1;
-                    const baseBg = isT ? t.occCellToday : d && isWeekend(d) ? t.occCellWeekend : t.occCellBg;
+                    const isLastInWeek = weekBoundaries[wIdx] - 1 === di;
+                    const endOfWeek = isLastInWeek && di < days.length - 1;
+                    const baseBg = isT ? t.occCellToday : isWeekend(d) ? t.occCellWeekend : t.occCellBg;
                     const bg = isAltWeek ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}` : baseBg;
-                    const endOfWeek = (di + 1) % 7 === 0 && di < days.length - 1;
-
-                    if (!d) {
-                      return (
-                        <div
-                          key={di}
-                          style={{
-                            width: GANTT_CELL_WIDTH,
-                            flexShrink: 0,
-                            height: "100%",
-                            borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : di < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
-                            background: bg,
-                            opacity: 0.5,
-                          }}
-                        />
-                      );
-                    }
 
                     const k = d.toDateString();
-                    const data = daily[k] || { occupied: 0, free: capacityHrs, tasks: [], delayedHours: 0, hasDelay: false };
+                    const data = daily[k] || { occupied: 0, free: capacityHrs, tasks: [], delayedHours: 0, hasDelay: false, hourly: new Array(8).fill(0) };
                     const occ = data.occupied;
-                    const dH = data.delayedHours || 0;
-                    const nH = Math.max(0, occ - dH);
-                    const oP = clamp((occ / capacityHrs) * 100, 0, 100);
-                    const nP = clamp((nH / capacityHrs) * 100, 0, 100);
-                    const dP = clamp((dH / capacityHrs) * 100, 0, 100);
-                    const isW = isWeekend(d);
                     const hD = data.hasDelay;
                     const occColor = getOccupancyColor(occ);
+                    const hourly = data.hourly || new Array(8).fill(0);
 
                     return (
                       <div
@@ -2064,7 +2171,7 @@ function ResourceOccupancyTimeline({
                           width: GANTT_CELL_WIDTH,
                           flexShrink: 0,
                           height: "100%",
-                          borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : di < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
+                          borderRight: endOfWeek ? `2px solid ${t.cardBorder}` : di < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
                           background: bg,
                           boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
                           padding: "3px 3px",
@@ -2085,51 +2192,65 @@ function ResourceOccupancyTimeline({
                             overflow: "hidden",
                             border: hD ? `1px solid ${t.occAmberBorder}` : `1px solid ${t.occFreeBarBorder}`,
                             boxShadow: hD ? t.occAmberShadow : t.occFreeBarShadow,
+                            display: "flex",
+                            alignItems: "flex-end",
+                            gap: 1,
+                            padding: "0 1px",
                           }}
                         >
-                          {nH > 0 && (
+                          {hD && (
                             <div
                               style={{
                                 position: "absolute",
-                                left: 0,
-                                top: 0,
-                                height: "100%",
-                                width: `${nP}%`,
-                                background: occColor,
-                                borderRadius: 6,
-                                transition: "width 0.2s ease",
-                              }}
-                            />
-                          )}
-                          {dH > 0 && (
-                            <div
-                              style={{
-                                position: "absolute",
-                                left: `${nP}%`,
-                                top: 0,
-                                height: "100%",
-                                width: `${Math.min(dP, 100 - nP)}%`,
-                                backgroundColor: occColor,
+                                inset: 0,
                                 backgroundImage: "repeating-linear-gradient(135deg,rgba(255,255,255,0.35),rgba(255,255,255,0.35) 3px,transparent 3px,transparent 6px)",
-                                borderRadius: nH > 0 ? "0 6px 6px 0" : 6,
-                                transition: "width 0.2s ease",
                                 boxShadow: "inset 0 0 0 1px rgba(217,119,6,0.6)",
+                                zIndex: 1,
+                                pointerEvents: "none",
                               }}
                             />
                           )}
+                          {hourly.map((h, hi) => (
+                            <div
+                              key={hi}
+                              style={{
+                                flex: 1,
+                                height: "100%",
+                                background: "transparent",
+                                borderRadius: 2,
+                                position: "relative",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {h > 0 && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    height: `${Math.min(h, 1) * 100}%`,
+                                    background: occColor,
+                                    borderRadius: 2,
+                                  }}
+                                />
+                              )}
+                            </div>
+                          ))}
                           <div
                             style={{
                               position: "absolute",
                               left: "50%",
                               top: "50%",
                               transform: "translate(-50%, -50%)",
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: 700,
-                              color: occ > 0 ? "#fff" : t.occFreeLabel,
-                              textShadow: occ > 0 ? "0 1px 2px rgba(0,0,0,0.35)" : "none",
+                              color: occ > 0 ? "#1e293b" : t.occFreeLabel,
+                              textShadow: occ > 0 ? "0 1px 1.5px rgba(255,255,255,0.55)" : "none",
                               whiteSpace: "nowrap",
                               padding: "0 2px",
                               pointerEvents: "none",
+                              zIndex: 2,
                             }}
                           >
                             {fmtDurationCompact(occ > 0 ? occ : data.free)}
