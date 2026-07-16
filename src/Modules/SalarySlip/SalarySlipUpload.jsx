@@ -184,7 +184,8 @@ export default function SalarySlipUpload() {
                   ref={zipfileUploadRef}
                   name="zipFile"
                   accept=".zip"
-                  maxFileSize={1000000}
+                  maxFileSize={1024*1024*1024}
+
                   customUpload
                   uploadHandler={onZipUpload}
                   mode="basic"
@@ -196,7 +197,7 @@ export default function SalarySlipUpload() {
                   ref={fileUploadRef}
                   name="excel[]"
                   accept=".xls,.xlsx"
-                  maxFileSize={1000000}
+                  maxFileSize={1024*1024*1024}
                   customUpload
                   uploadHandler={onExcelUpload}
                   mode="basic"
