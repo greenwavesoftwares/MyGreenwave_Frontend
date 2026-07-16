@@ -4,7 +4,7 @@ import {
   DataTableComponent,
 } from "../../../components/DataTable/DataTableComponent";
 import {ProgressBarComponent} from "../../../components/ProgressBar/ProgressBarComponent"
-
+ 
 const cellStyle = { padding: "8px 12px" };
 import {
   getReviewedTourClaims,
@@ -14,7 +14,7 @@ import {
   ApprovedTourClaim,
   RejectTourClaim
 } from "../claimServices";
-
+ 
 import {
   showSuccessMessage,
   showErrorMessage,
@@ -25,7 +25,7 @@ import CustomDialog from "../../../components/Dialog/DialogComponent"
 import CustomButton from "../../../components/Button/Button";
 import { FilterMatchMode } from "primereact/api";
 import { InputText } from "primereact/inputtext";
-
+ 
 const HRTourClaimTable = () => {
   const toastRef = useRef(null);
   const [reviewedtourclaimData, setreviewedtourclaimData] = useState();
@@ -34,13 +34,13 @@ const HRTourClaimTable = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
   //const [reviewData, setreviewData] = useState([]);
-
-
+ 
+ 
    
          
          
          
-
+ 
     const [globalFilterValue, setGlobalFilterValue] =
               useState("");
               const [globalFilterRows, setGlobalFilterRows] = useState({
@@ -50,19 +50,19 @@ const HRTourClaimTable = () => {
               "Tour Details": { value: null, matchMode: FilterMatchMode.CONTAINS },
                "Claim Calculation": { value: null, matchMode: FilterMatchMode.CONTAINS },
                Expense: { value: null, matchMode: FilterMatchMode.CONTAINS },
-               status: { value: null, matchMode: FilterMatchMode.CONTAINS },           
+               status: { value: null, matchMode: FilterMatchMode.CONTAINS },          
             });
-          
+         
             const onGlobalFilterChange = (e) => {
               const value = e.target.value;
               let _globalFilterRows = { ...globalFilterRows };
-          
+         
               _globalFilterRows["global"].value = value;
-          
+         
               setGlobalFilterRows(_globalFilterRows);
               setGlobalFilterValue(value);
             };
-          
+         
             const renderHeaderForGlobalSearch = () => {
               return (
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
@@ -75,9 +75,9 @@ const HRTourClaimTable = () => {
                 </div>
               );
             };
-          
+         
              const dataTableHeader = renderHeaderForGlobalSearch();
-
+ 
   const datebody = (rowData) => {
     return (
       <div className="flex flex-col justify-center items-center">
@@ -87,7 +87,7 @@ const HRTourClaimTable = () => {
       </div>
     );
   };
-
+ 
   const tourDetailsBody = (rowData) => (
     <div
       className="test"
@@ -163,7 +163,7 @@ const HRTourClaimTable = () => {
       )}
     </div>
   );
-  
+ 
   const downloadExpense = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
       try {
@@ -177,13 +177,13 @@ const HRTourClaimTable = () => {
        
       }
     };
-
+ 
     const viewtable = async (claim_id) => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
         setviewtabledata(data.tourClaimRecords);
         console.log('data', data)
-
+ 
         setShowViewDialog(true);
       } catch (error) {
           showErrorMessage(
@@ -191,10 +191,10 @@ const HRTourClaimTable = () => {
                  "error",
                  "Failed to load table."
                 );
-        
+       
       }
     };
-
+ 
     return (
       <div className="flex justify-center items-center gap-2">
         <CustomButton
@@ -216,7 +216,7 @@ const HRTourClaimTable = () => {
       </div>
     );
   };
-
+ 
   const downloadSupportingDocument = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
       try {
@@ -230,7 +230,7 @@ const HRTourClaimTable = () => {
        
       }
     };
-
+ 
     return (
       <CustomButton
         icon="pi pi-download"
@@ -242,7 +242,7 @@ const HRTourClaimTable = () => {
       />
     );
   };
-
+ 
   const actionbody =  (rowData) => {
     // const [reason, setReason] = useState("");
     // const [settlementAmount, setSettlementAmount] = useState("");
@@ -254,17 +254,17 @@ const HRTourClaimTable = () => {
              showSuccessMessage(
                       toastRef,
                       "success",
-                      response.message 
+                      response.message
                     );
              
-            
+           
         }else{
             showErrorMessage(
           toastRef,
          "error",
           response.message
         );
-            
+           
         }
       } catch (error) {
         showErrorMessage(
@@ -272,10 +272,10 @@ const HRTourClaimTable = () => {
          "error",
          error?.message
         );
-        
+       
       }
     };
-
+ 
     const handleSubmitReject=async()=>{
      
       try {
@@ -287,8 +287,8 @@ const HRTourClaimTable = () => {
                       "Rejected",
                       response.message ,
                     );
-            
-            
+           
+           
         }else{
             showErrorMessage(
           toastRef,
@@ -305,20 +305,20 @@ const HRTourClaimTable = () => {
         );
       }
     }
-
+ 
     return (
       <div className="flex gap-2">
         <CustomButton
           label="Approve"
           size="small"
           severity="success"
-          onClick={() => handleApproveSubmit()} 
+          onClick={() => handleApproveSubmit()}
         />
         <CustomButton label="Reject" size="small" severity="danger"   onClick={() => handleSubmitReject()} />
       </div>
     );
   };
-
+ 
   useEffect(() => {
     const fetchreviewedtourclaim = async () => {
       try {
@@ -330,7 +330,7 @@ const HRTourClaimTable = () => {
          "error",
           result.message
         );
-          
+         
         }
         console.log('result.data', result.data)
         setreviewedtourclaimData(result.data);
@@ -340,7 +340,7 @@ const HRTourClaimTable = () => {
         setLoader(false);
       }
     };
-
+ 
     fetchreviewedtourclaim();
   }, [setreviewedtourclaimData]);
   const totals = Array.isArray(viewtabledata)
@@ -379,7 +379,7 @@ const HRTourClaimTable = () => {
         //   fontSize: "0.7rem",
         //   backgroundColor: "#e6f0ff",
         // }}
-
+ 
         header={dataTableHeader}
         filters={globalFilterRows}
         globalFilterFields={[
@@ -390,8 +390,8 @@ const HRTourClaimTable = () => {
           "Expense",
           "status"
         ]}
-
-
+ 
+ 
       >
         <CustomColumn
           field="name"
@@ -401,7 +401,7 @@ const HRTourClaimTable = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-
+ 
         <CustomColumn
           body={datebody}
           header="Claim Duration"
@@ -410,7 +410,7 @@ const HRTourClaimTable = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
-
+ 
         <CustomColumn
           body={tourDetailsBody}
           header="Tour Details"
@@ -420,7 +420,7 @@ const HRTourClaimTable = () => {
          
           bodyStyle={cellStyle}
         />
-
+ 
         <CustomColumn
           body={claimCalculationBody}
           header="Claim Calculation"
@@ -429,9 +429,9 @@ const HRTourClaimTable = () => {
           headerStyle={{ ...cellStyle, width: "200px", whiteSpace: "normal" }}
           bodyStyle={cellStyle}
         />
-        
+       
         {/* settlement_amount */}
-
+ 
         <CustomColumn
           field="Expense"
           header="Expense"
@@ -441,7 +441,7 @@ const HRTourClaimTable = () => {
            sortable={true}
           filter={true}
         />
-
+ 
         <CustomColumn
           field="supportingDocuments"
           header="Supporting Documents"
@@ -459,6 +459,18 @@ const HRTourClaimTable = () => {
           headerStyle={cellStyle}
           bodyStyle={cellStyle}
         />
+        <CustomColumn
+          field="reviewer_remarks"
+          header="Reviewer Remarks"
+          sortable={true}
+          filter={true}
+          headerStyle={cellStyle}
+          bodyStyle={cellStyle}
+        />
+       
+       
+ 
+ 
         {/* Action Columns */}
         <CustomColumn
           body={actionbody}
@@ -470,12 +482,12 @@ const HRTourClaimTable = () => {
         />
       </DataTableComponent>
       <CustomDialog
-      
+     
         header="Tour Claim Details"
         visible={showViewDialog}
         style={{ width: "90vw" }}
         onHide={() => setShowViewDialog(false)}
-        
+       
       >
         <DataTableComponent
           data={viewtabledata}
@@ -576,7 +588,7 @@ const HRTourClaimTable = () => {
             bodyStyle={cellStyle}
              footer={totals.total?.toFixed(2)}
           />
-          
+         
           <CustomColumn
             field="remarks"
             header="Remarks"
@@ -588,5 +600,7 @@ const HRTourClaimTable = () => {
     </div>
   );
 };
-
+ 
 export default HRTourClaimTable;
+ 
+ 

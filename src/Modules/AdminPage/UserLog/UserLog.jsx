@@ -119,7 +119,7 @@ const UserLog = ({
             >
               <Column
                 expander={(row) => {
-                  return row[0].data;
+                  return row[0]?.data;
                 }}
                 style={{width:'1px'}}
                 headerClassName="table-header-info"

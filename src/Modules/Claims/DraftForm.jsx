@@ -4,7 +4,7 @@ import {
   CustomColumn,
 } from "../../components/DataTable/DataTableComponent";
 import CustomDialog from "../../components/Dialog/DialogComponent";
-
+ 
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
 import CustomButton from "../../components/Button/Button";
@@ -30,7 +30,7 @@ const initialFormState = {
   Total: "",
   Remarks: "",
 };
-
+ 
 import {
   getTravelDropDown,
   uploadSupportingDocuments,
@@ -43,10 +43,10 @@ import {
   getTravelMode,
   downloadTourClaimExpanseDocument,
 } from "./claimServices";
-
+ 
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import LinearProgressMUI from "../../components/LinearProgressMUI";
-
+ 
 const DraftForm = ({
   draftData,
   setDraftData,
@@ -64,13 +64,14 @@ const DraftForm = ({
   const cellStyle = {};
   const toastRef = useRef(null);
   const [rowData, setRowData] = useState({});
-
+ 
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [selectedRowData, setSelectedRowData] = useState(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewtabledata, setviewtabledata] = useState();
-  const [uploadProgress, setUploadProgress] = useState(0);
-
+  const [uploadProgress, setUploadProgress] = useState({});
+  // const [loadingRows, setLoadingRows] = useState({});
+ 
   const handleDelete = async (claim_id, status) => {
     let response = await deleteDraftList(claim_id, status);
     if (!response.status) {
@@ -81,7 +82,7 @@ const DraftForm = ({
         "success",
         response.message || "One more draft data deleted",
       );
-
+ 
       setDraftData(response.data);
       if (response.data.length == 0) {
         settoggleNewClaim(true);
@@ -94,7 +95,7 @@ const DraftForm = ({
       settourclaimformData([]);
     }
   };
-
+ 
   const handleApplyApproval = async (claim_id, status) => {
     try {
       console.log();
@@ -107,7 +108,7 @@ const DraftForm = ({
           "success",
           "You have successfully applied for approval.",
         );
-
+ 
         setDraftData(response.data);
         if (response.data.length == 0) {
           settoggleNewClaim(true);
@@ -128,13 +129,13 @@ const DraftForm = ({
       );
     }
   };
-
+ 
   const handleEdit = async (claim_id, travel_id) => {
     try {
       const data = await getTourClaimTableDraftData(claim_id);
       const travelDropDown = await getTravelDropDown();
       console.log("travelDropDown", travelDropDown);
-
+ 
       let obj = travelDropDown.data;
       const matchedItem = obj.find((item) => item.value === data.travel_id);
       if (travel_id === "Long-Term-Local-Conveyance") {
@@ -150,7 +151,7 @@ const DraftForm = ({
       }
       let dates = await getlatestclaimtodate(travel_id);
       // console.log('dates',dates)
-
+ 
       // travel_id==='Long-Term-Local-Conveyance'?setselectedtravelMode(matchedItem):setselectedtravelMode({label:travelmode.data,value:travel_id})
       settourclaimformData({
         advance: 0,
@@ -167,7 +168,7 @@ const DraftForm = ({
         filename: data.filename,
         file_type: data.file_type,
       });
-
+ 
       const formattedRows = data.tourClaimRecords.map((row) => ({
         Date: row.date,
         Lodging: row.lodging,
@@ -185,14 +186,14 @@ const DraftForm = ({
         Remarks: row.remarks,
       }));
       console.log("formattedRows", formattedRows);
-
+ 
       settourClaimTableData(formattedRows);
       seteditableMode(true);
     } catch (error) {
       console.error("Fetch error:", error);
     }
   };
-
+ 
   const actionBodyTemplate = (rowData) => (
     <div className="flex gap-2">
       <CustomButton
@@ -224,7 +225,7 @@ const DraftForm = ({
       />
     </div>
   );
-
+ 
   const claimCalculationBody = (rowData) => (
     <div className="text-xs space-y-1 flex flex-col justify-center items-end">
       <div>
@@ -254,7 +255,7 @@ const DraftForm = ({
       )}
     </div>
   );
-
+ 
   const tourDetailsBody = (rowData) => (
     <div className="flex flex-col items-start justify-center space-y-1">
       <div>
@@ -271,13 +272,14 @@ const DraftForm = ({
       </div>
     </div>
   );
-
+ 
   const handleAddRow = () => {
     console.log("Add row clicked!");
     // You can add logic to add a new blank row if needed
   };
-
+ 
   const supportingDocumentBody = (rowData) => {
+    //const isLoading = loadingRows[rowData.claim_id];
     const [fileUploaded, setFileUploaded] = useState(
       rowData.filename ? true : false,
     );
@@ -295,54 +297,82 @@ const DraftForm = ({
       const file = event.files[0]; // Get the uploaded file
       setFileUploaded(true);
       settogglefileUpload(false);
-
-      //test
-      setUploadProgress(10); // start
-      // fake progress simulation
+ 
+      // //test
+      // setUploadProgress(10); // start
+      // // fake progress simulation
+      // const interval = setInterval(() => {
+      //   setUploadProgress((prev) => {
+      //     if (prev >= 90) return prev;
+      //     return prev + 10;
+      //   });
+      // }, 300);
+      // // test
+ 
+      // Start progress
+      setUploadProgress((prev) => ({
+        ...prev,
+        [rowData.claim_id]: 10,
+      }));
+ 
       const interval = setInterval(() => {
         setUploadProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + 10;
+          const current = prev[rowData.claim_id] || 0;
+          if (current >= 90) return prev;
+          return {
+            ...prev,
+            [rowData.claim_id]: current + 10,
+          };
         });
       }, 300);
-      // test
-
+ 
       const formData = new FormData();
       formData.append("file", file); // Append file to formData
-
+ 
       try {
         const response = await uploadSupportingDocuments(
           file,
           rowData.claim_id,
         ); // Adjust this call accordingly
-
+ 
         //test
-         clearInterval(interval);
-         setUploadProgress(100);
-         //test
-
+        clearInterval(interval);
+ 
+        setUploadProgress((prev) => ({
+          ...prev,
+          [rowData.claim_id]: 100,
+        }));
+ 
+        //test
+ 
         if (response == "File uploaded successfully") {
           showSuccessMessage(toastRef, "success", "File Uploaded");
           await refreshDraftData();
         }
       } catch (error) {
-
         //test
-           clearInterval(interval);
-            setUploadProgress(0);
-    //test
+        clearInterval(interval);
+ 
+        setUploadProgress((prev) => ({
+          ...prev,
+          [rowData.claim_id]: 0,
+        }));
+        //test
         showErrorMessage(toastRef, "error", "Upload failed");
-
+ 
         console.log(error);
         setFileUploaded(false);
         settogglefileUpload(true);
       }
     };
+ 
+    const progress = uploadProgress[rowData.claim_id] || 0;
+ 
     return (
       <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
-        {uploadProgress > 0 && uploadProgress < 100 && (
-  <LinearProgressMUI value={uploadProgress} />
-)}
+        {progress > 0 && progress < 100 && (
+          <LinearProgressMUI value={progress} />
+        )}
         {togglefileUpload ? (
           <FileUpload
             mode="basic"
@@ -355,7 +385,7 @@ const DraftForm = ({
             chooseLabel="Upload"
           />
         ) : null}
-
+ 
         {fileUploaded && (
           <div>
             <CustomButton
@@ -380,7 +410,7 @@ const DraftForm = ({
       </div>
     );
   };
-
+ 
   const downloadExpense = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
       try {
@@ -389,7 +419,7 @@ const DraftForm = ({
         showErrorMessage(toastRef, "error", "Something Wrong.");
       }
     };
-
+ 
     const viewtable = async (claim_id) => {
       try {
         let data = await getTourClaimTableDraftData(claim_id);
@@ -399,7 +429,7 @@ const DraftForm = ({
         showErrorMessage(toastRef, "error", "Failed to load table.");
       }
     };
-
+ 
     return (
       <div className="flex justify-center items-center gap-2">
         <CustomButton
@@ -437,7 +467,7 @@ const DraftForm = ({
       </div>
     );
   };
-
+ 
   const datebody = (rowData) => {
     return (
       <div className="flex flex-col justify-center items-center">
@@ -447,7 +477,7 @@ const DraftForm = ({
       </div>
     );
   };
-
+ 
   const totals = Array.isArray(viewtabledata)
     ? {
         lodging: viewtabledata.reduce(
@@ -485,7 +515,7 @@ const DraftForm = ({
         total: viewtabledata.reduce((s, r) => s + (Number(r.total) || 0), 0),
       }
     : {};
-
+ 
   return (
     <div>
       <Toast ref={toastRef} />
@@ -555,7 +585,7 @@ const DraftForm = ({
             filter={true}
           />
         </DataTableComponent>
-
+ 
         <CustomDialog
           header="Tour Claim Details"
           visible={showViewDialog}
@@ -576,7 +606,7 @@ const DraftForm = ({
             {/* </DataTableComponent> */}
             {/* <DataTable
                   value={viewtabledata}
-                  showGridlines 
+                  showGridlines
                 className="text-xs"
                 tableStyle={{ minWidth: "100%", fontSize: "0.7rem" }}
                 > */}
@@ -683,5 +713,7 @@ const DraftForm = ({
     </div>
   );
 };
-
+ 
 export default DraftForm;
+ 
+ 
