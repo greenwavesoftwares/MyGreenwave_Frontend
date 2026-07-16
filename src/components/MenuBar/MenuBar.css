@@ -1,17 +1,15 @@
-/* .drawer-root {
+.drawer-root {
   display: flex;
-  
+  overflow-x: hidden; /* prevent page-level horizontal scroll */
 }
 
 .main-content {
   flex-grow: 1;
   padding: 0.2px;
+  overflow-x: hidden;
 }
 
-/* .hidden {
-  display: none !important;
-} */
-.menu-icon .fa-person-hiking{
+.menu-icon .fa-person-hiking {
   font-size: 1.28rem !important;
 }
 
@@ -19,7 +17,7 @@
   min-height: 42px;
   justify-content: initial;
   padding-left: 4px !important;
-  /* background-color: #263238; */
+  overflow: hidden; /* clip any nowrap text instead of pushing width */
 }
 
 .menu-item.selected {
@@ -28,48 +26,62 @@
 
 .menu-icon {
   margin-right: 0.5px !important;
-  /* justify-content: center !important; */
   align-items: center !important;
-  color: white !important;
+  color: var(--FontAwesomeIcon) !important;
+  flex-shrink: 0; /* keep icon from being squeezed/overflowing */
 }
+
 .submenu-box {
   padding-left: 15px;
 }
-/* .css-b7dj7n-MuiList-root {
-    overflow-y: auto;
-    scrollbar-width: none;
-    height: 100vh;
-} */
-.menu-list{
-  overflow-y: auto;
-    scrollbar-width: none;
-    height: 100vh;
+
+/* ---- Drawer paper: single source of truth ---- */
+.MuiDrawer-paper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; /* clip children instead of letting them push page width/height */
 }
 
-.fixed-section {
-  flex-shrink: 0;
-  position: absolute;
-  bottom: 0;
-  z-index: 1;
-  width:100%
+.MuiDrawer-docked .MuiDrawer-paper {
+  background-color: var(--bg-drawer) !important;
 }
 
-
+/* ---- Sticky header ---- */
 .fixed-drawer {
   position: sticky;
   top: 0;
   left: 0;
-  /* background: #263238; */
   z-index: 1;
+  flex-shrink: 0; /* keep header height fixed */
+}
+
+/* ---- Scrollable middle section ---- */
+.menu-list {
+  flex: 1 1 auto;   /* take remaining space between header and footer */
+  min-height: 0;    /* critical: lets this shrink instead of forcing 100vh */
+  overflow-y: auto;
+  overflow-x: hidden; /* no sideways scroll from long labels */
+  scrollbar-width: none;
+}
+
+/* ---- Pinned footer (avatar/logout) ---- */
+.fixed-section {
+  flex-shrink: 0;   /* stays in normal flex flow, doesn't overlap menu-list */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  width: 100%;
+  background-color: var(--bg-drawer) !important;
 }
 
 .divider-top {
   position: sticky;
-  top: 10;
+  top: 0;
   left: 0;
-  /* background: #263238; */
   z-index: 1;
 }
+
 .avatar {
   width: 35px !important;
   height: 35px !important;
@@ -77,7 +89,8 @@
   background-color: #4097FF !important;
   color: white !important;
 }
-.avatar-mobile{
+
+.avatar-mobile {
   width: 28px !important;
   height: 28px !important;
   font-size: 0.8rem !important;
@@ -85,9 +98,8 @@
   color: white !important;
 }
 
-
 .username-avatar {
-   margin-left: 5px !important;
+  margin-left: 5px !important;
 }
 
 .tooltip-content {
@@ -100,7 +112,11 @@
 }
 
 .popover {
-  left: 2px !important
+  left: 2px !important;
+}
+
+.popover-menu-style .MuiPopover-paper {
+  background-color: var(--bg-drawer) !important;
 }
 
 .logout-box {
@@ -108,35 +124,38 @@
   color: white;
 }
 
-
-/* Shared menu text style */
-
-
-
-
-/* First nested */
-
+/* Nested level icon sizing */
 .menu-level-1.menu-item .menu-icon {
   font-size: 1rem !important;
 }
-
-/* Second nested */
 
 .menu-level-2.menu-item .menu-icon {
   font-size: 0.95rem !important;
 }
 
-/* Third nested */
-
 .menu-level-3.menu-item .menu-icon {
   font-size: 0.9rem !important;
 }
-.MuiList-root{
+
+.MuiList-root {
   padding: 0 !important;
 }
 
-.MuiDrawer-paper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+.menu-icon {
+  color: var(--FontAwesomeIcon) !important;
+}
+
+.menu-text {
+  color: var(--FontAwesomeIcon) !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* matches StyledDrawer's nowrap, but now clipped safely */
+  display: block;
+  max-width: 100%;
+}
+
+.mobile-menu-bg {
+  background-color: var(--bg-drawer-mobile) !important;
 }
