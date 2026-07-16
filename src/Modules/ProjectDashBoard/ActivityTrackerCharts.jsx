@@ -1,251 +1,358 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import Tooltip from "@mui/material/Tooltip";
 import GanttView from "../../Test Ground/GanttView";
 
-const EARLY_LATE_THRESHOLD_HRS = 0.25; // 15 minutes, expressed in hours
-
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-// Each resource gets one hue, spaced with the golden angle so that colors
-// stay well-separated no matter how many resources are in the dataset.
-// Planned and Actual bars for the SAME resource share this hue — planned is
-// rendered as a hatched/lighter version, actual as the solid, full-strength
-// version — so a person can visually match a resource across both stacks.
-const GOLDEN_ANGLE = 137.508;
-
-function hueForIndex(i) {
-  return Math.round((i * GOLDEN_ANGLE) % 360);
+/* ================================================================
+   THEME  –  reads localStorage "Theme" (light | dark)
+   ================================================================ */
+function getThemeMode() {
+  try { return localStorage.getItem("Theme") === "dark" ? "dark" : "light"; }
+  catch { return "light"; }
 }
 
+const PALETTES = {
+  light: {
+    rootBg: "#f8fafc",
+    cardBg: "#ffffff",
+    cardBorder: "#e2e8f0",
+    filterBarBg: "#ffffff",
+    filterBarBorder: "#e2e8f0",
+    textPrimary: "#334155",
+    textSecondary: "#64748b",
+    textMuted: "#94a3b8",
+    textInverse: "#f1f5f9",
+    textSubtle: "#475569",
+    inputBg: "#f8fafc",
+    inputBorder: "#cbd5e1",
+    inputText: "#334155",
+    btnPrimary: "#2563eb",
+    gridLine: "#f1f5f9",
+    gridLineMd: "#e2e8f0",
+    gridDash: "#cbd5e1",
+    gridDashLight: "#e2e8f0",
+    weekBorder: "#eef2f7",
+    barBg: "#fafafa",
+    barBorder: "#e2e8f0",
+    barStripeBg: "rgba(148,163,184,0.045)",
+    emptySlotBg: "rgba(148,163,184,0.06)",
+    barLabelColor: "rgba(255,255,255,0.95)",
+    barLabelShadow: "0 1px 1px rgba(0,0,0,0.35)",
+    axisText: "#94a3b8",
+    dayLabelDate: "#64748b",
+    dayLabelEmpty: "#cbd5e1",
+    occCellBg: "#fff",
+    occCellWeekend: "#f8fafc",
+    occCellToday: "#eff6ff",
+    occHeaderBg: "#f8fafc",
+    occHeaderToday: "#dbeafe",
+    occRowEven: "#ffffff",
+    occRowOdd: "#fafbfc",
+    occFreeBar: "#f1f5f9",
+    occFreeBarBorder: "#e2e8f0",
+    occFreeBarShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
+    occRedBar: "#fda4af",
+    occRedBarInner: "#f87171",
+    occRedLabel: "#9f1239",
+    occFreeLabel: "#64748b",
+    occAmberBorder: "#f59e0b",
+    occAmberShadow: "inset 0 1px 2px rgba(245,158,11,0.15)",
+    occAmberLabel: "#92400e",
+    resNameColor: "#1e293b",
+    todayDot: "#3b82f6",
+    todayText: "#1e40af",
+    earlyColor: "#059669",
+    lateColor: "#dc2626",
+    legendText: "#475569",
+    legendMuted: "#94a3b8",
+    accBg: "#ffffff",
+    accBorder: "#e2e8f0",
+    accTitle: "#334155",
+    accChevron: "#94a3b8",
+    swatchDefault: "#64748b",
+    pieBg: "#ffffff",
+    pieBorder: "#e2e8f0",
+    pieCenter: "#ffffff",
+    pieCenterShadow: "inset 0 0 0 1px #f1f5f9",
+    piePctColor: "#1e293b",
+    pieLabelColor: "#334155",
+    pieCompletedColor: "#059669",
+    piePendingColor: "#d97706",
+    piePendingMuted: "#94a3b8",
+    ttBg: "#0f172a",
+    ttText: "#f1f5f9",
+    ttMuted: "#94a3b8",
+    ttDivider: "#334155",
+    ttCardBg: "#1e2937",
+    ttCardBorder: "#334155",
+    ttChipBg: "#334155",
+    ttChipText: "#e0f2fe",
+    ttActualColor: "#67e8f9",
+    ttFreeBg: "#1e2937",
+    ttFreeText: "#4ade80",
+    ttOccupiedText: "#f87171",
+    ttDelayedText: "#fbbf24",
+    ttDelayCardBg: "#422006",
+    ttDelayCardBorder: "#92400e",
+    ttDelayChipBg: "#92400e",
+    ttDelayChipText: "#fef3c7",
+    ttDelayDateText: "#fcd34d",
+    ttDelayBoldText: "#f59e0b",
+    ttDelaySubText: "#d97706",
+    navBg: "#fff",
+    navBorder: "#cbd5e1",
+    navText: "#334155",
+    navLabel: "#64748b",
+    pickerBg: "#fff",
+    pickerBorder: "#cbd5e1",
+    pickerShadow: "0 10px 25px rgba(15,23,42,0.12)",
+    pickerText: "#334155",
+    pickerDivider: "#f1f5f9",
+    greenArrow: "#059669",
+    redArrow: "#dc2626",
+    loadingText: "#94a3b8",
+    errorText: "#dc2626",
+    emptyText: "#94a3b8",
+    rangeLabelText: "#64748b",
+  },
+  dark: {
+    rootBg: "#0f172a",
+    cardBg: "#1e293b",
+    cardBorder: "#334155",
+    filterBarBg: "#1e293b",
+    filterBarBorder: "#334155",
+    textPrimary: "#e2e8f0",
+    textSecondary: "#94a3b8",
+    textMuted: "#64748b",
+    textInverse: "#0f172a",
+    textSubtle: "#94a3b8",
+    inputBg: "#0f172a",
+    inputBorder: "#475569",
+    inputText: "#e2e8f0",
+    btnPrimary: "#3b82f6",
+    gridLine: "#1e293b",
+    gridLineMd: "#334155",
+    gridDash: "#475569",
+    gridDashLight: "#334155",
+    weekBorder: "#1e293b",
+    barBg: "#1e293b",
+    barBorder: "#334155",
+    barStripeBg: "rgba(148,163,184,0.06)",
+    emptySlotBg: "rgba(51,65,85,0.3)",
+    barLabelColor: "rgba(255,255,255,0.95)",
+    barLabelShadow: "0 1px 1px rgba(0,0,0,0.5)",
+    axisText: "#64748b",
+    dayLabelDate: "#94a3b8",
+    dayLabelEmpty: "#475569",
+    occCellBg: "#1e293b",
+    occCellWeekend: "#0f172a",
+    occCellToday: "#172554",
+    occHeaderBg: "#0f172a",
+    occHeaderToday: "#1e3a5f",
+    occRowEven: "#1e293b",
+    occRowOdd: "#162032",
+    occFreeBar: "#334155",
+    occFreeBarBorder: "#475569",
+    occFreeBarShadow: "inset 0 1px 2px rgba(0,0,0,0.2)",
+    occRedBar: "#be123c",
+    occRedBarInner: "#f43f5e",
+    occRedLabel: "#fda4af",
+    occFreeLabel: "#94a3b8",
+    occAmberBorder: "#d97706",
+    occAmberShadow: "inset 0 1px 2px rgba(245,158,11,0.2)",
+    occAmberLabel: "#fbbf24",
+    resNameColor: "#e2e8f0",
+    todayDot: "#60a5fa",
+    todayText: "#93c5fd",
+    earlyColor: "#34d399",
+    lateColor: "#f87171",
+    legendText: "#94a3b8",
+    legendMuted: "#64748b",
+    accBg: "#1e293b",
+    accBorder: "#334155",
+    accTitle: "#e2e8f0",
+    accChevron: "#64748b",
+    swatchDefault: "#94a3b8",
+    pieBg: "#1e293b",
+    pieBorder: "#334155",
+    pieCenter: "#1e293b",
+    pieCenterShadow: "inset 0 0 0 1px #334155",
+    piePctColor: "#e2e8f0",
+    pieLabelColor: "#cbd5e1",
+    pieCompletedColor: "#34d399",
+    piePendingColor: "#fbbf24",
+    piePendingMuted: "#64748b",
+    ttBg: "#0f172a",
+    ttText: "#f1f5f9",
+    ttMuted: "#94a3b8",
+    ttDivider: "#334155",
+    ttCardBg: "#1e2937",
+    ttCardBorder: "#334155",
+    ttChipBg: "#334155",
+    ttChipText: "#e0f2fe",
+    ttActualColor: "#67e8f9",
+    ttFreeBg: "#1e2937",
+    ttFreeText: "#4ade80",
+    ttOccupiedText: "#f87171",
+    ttDelayedText: "#fbbf24",
+    ttDelayCardBg: "#422006",
+    ttDelayCardBorder: "#92400e",
+    ttDelayChipBg: "#92400e",
+    ttDelayChipText: "#fef3c7",
+    ttDelayDateText: "#fcd34d",
+    ttDelayBoldText: "#f59e0b",
+    ttDelaySubText: "#d97706",
+    navBg: "#1e293b",
+    navBorder: "#475569",
+    navText: "#e2e8f0",
+    navLabel: "#94a3b8",
+    pickerBg: "#1e293b",
+    pickerBorder: "#475569",
+    pickerShadow: "0 10px 25px rgba(0,0,0,0.5)",
+    pickerText: "#e2e8f0",
+    pickerDivider: "#334155",
+    greenArrow: "#34d399",
+    redArrow: "#f87171",
+    loadingText: "#64748b",
+    errorText: "#f87171",
+    emptyText: "#64748b",
+    rangeLabelText: "#94a3b8",
+  },
+};
+
+function useTheme() {
+  const [mode, setMode] = useState(getThemeMode);
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key === "Theme") setMode(e.newValue === "dark" ? "dark" : "light");
+    }
+    window.addEventListener("storage", onStorage);
+    const interval = setInterval(() => {
+      const current = getThemeMode();
+      setMode((prev) => (prev !== current ? current : prev));
+    }, 500);
+    return () => { window.removeEventListener("storage", onStorage); clearInterval(interval); };
+  }, []);
+  return { mode, isDark: mode === "dark", t: PALETTES[mode] };
+}
+
+/* ================================================================ */
+const EARLY_LATE_THRESHOLD_HRS = 0.25;
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const GOLDEN_ANGLE = 137.508;
+const RESOURCE_DAILY_CAPACITY_HRS = 8;
+
+function hueForIndex(i) { return Math.round((i * GOLDEN_ANGLE) % 360); }
 function resourceBaseColor(index) {
   const hue = hueForIndex(index);
   return { hue, actual: `hsl(${hue}, 62%, 48%)`, planned: `hsl(${hue}, 62%, 48%)` };
 }
-
-// Color for an activity slice within a single project's pie chart. Uses the
-// same golden-angle spacing as resource colors so slices stay visually
-// distinct no matter how many activities a project has.
-function activityColor(i) {
-  const hue = hueForIndex(i);
-  return `hsl(${hue}, 60%, 52%)`;
-}
-
-// Muted/lightened version of the same hue, used for the PENDING portion of
-// an activity's slice — same hue as its completed (activityColor) portion
-// so the two read as "same task, different state" rather than unrelated
-// colors, while still being clearly lighter/less saturated at a glance.
-function activityColorPending(i) {
-  const hue = hueForIndex(i);
-  return `hsl(${hue}, 35%, 88%)`;
-}
-
-function parseDate(str) {
-  if (!str) return null;
-  return new Date(str);
-}
-
-function fmtTime(date) {
-  if (!date) return "--:--";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function fmtDate(date) {
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-// human-friendly duration for tooltips — "1d 2h 15m" / "3h" / "45m" instead
-// of a raw decimal like "4.1h"
+function activityColor(i) { return `hsl(${hueForIndex(i)}, 60%, 52%)`; }
+function activityColorPending(i) { return `hsl(${hueForIndex(i)}, 35%, 88%)`; }
+function parseDate(str) { if (!str) return null; return new Date(str); }
+function fmtTime(date) { if (!date) return "--:--"; return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+function fmtDate(date) { return date.toLocaleDateString([], { month: "short", day: "numeric" }); }
+function fmtDateTime(date) { if (!date) return "\u2014"; return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
 function fmtDuration(h) {
-  if (h == null) return "—";
+  if (h == null) return "\u2014";
   let totalMinutes = Math.round(h * 60);
-  const days = Math.floor(totalMinutes / (24 * 60));
-  totalMinutes -= days * 24 * 60;
-  const hrs = Math.floor(totalMinutes / 60);
-  const mins = totalMinutes % 60;
-
+  const days = Math.floor(totalMinutes / (24 * 60)); totalMinutes -= days * 24 * 60;
+  const hrs = Math.floor(totalMinutes / 60); const mins = totalMinutes % 60;
   const parts = [];
   if (days) parts.push(`${days}d`);
   if (hrs) parts.push(`${hrs}h`);
   if (mins || parts.length === 0) parts.push(`${mins}m`);
   return parts.join(" ");
 }
-
-// Compact duration label used INSIDE bar segments, where space is tight.
-// Prefers a short decimal-hour form ("1.5h") and only falls back to
-// minutes for sub-hour durations ("45m"), since "1h 30m" doesn't fit in a
-// narrow segment.
 function fmtDurationCompact(h) {
   if (h == null) return "";
-  if (h < 1) {
-    const mins = Math.round(h * 60);
-    return `${mins}m`;
-  }
-  const rounded = Math.round(h * 10) / 10;
-  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}h`;
+  if (h < 1) return `${Math.round(h * 60)}m`;
+  const r = Math.round(h * 10) / 10;
+  return `${r % 1 === 0 ? r.toFixed(0) : r.toFixed(1)}h`;
 }
-
-function clamp(n, lo, hi) {
-  return Math.max(lo, Math.min(hi, n));
-}
-
-// planned effort, in hours (falls back to computing it from the timestamps
-// if durationHrs wasn't supplied)
-function plannedDurationHrs(row) {
-  if (typeof row.durationHrs === "number") return row.durationHrs;
-  return (parseDate(row.plannedStop) - parseDate(row.plannedStart)) / 3600000;
-}
-
-// net hours actually consumed so far. For a finished task this is the real
-// elapsed time; for a task still Running/Paused it's the elapsed time up to
-// now (estimated) since there's no actualStop yet.
+function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+function plannedDurationHrs(row) { if (typeof row.durationHrs === "number") return row.durationHrs; return (parseDate(row.plannedStop) - parseDate(row.plannedStart)) / 3600000; }
 function actualDurationHrs(row) {
   if (!row.actualStart) return null;
-  const start = parseDate(row.actualStart);
-  const end = row.actualStop
-    ? parseDate(row.actualStop)
-    : row.status === "Running" || row.status === "Paused"
-    ? new Date(start.getTime() + 60 * 60000) // no stop yet — estimate 1hr elapsed
-    : null;
-  if (!end) return null;
-  return (end - start) / 3600000;
+  const s = parseDate(row.actualStart);
+  const e = row.actualStop ? parseDate(row.actualStop) : (row.status === "Running" || row.status === "Paused") ? new Date(s.getTime() + 3600000) : null;
+  if (!e) return null;
+  return (e - s) / 3600000;
 }
-
-// compares net hours actually used against the hours that were planned
+function occupiedHoursForRow(row) { const a = actualDurationHrs(row); if (a != null) return a; return plannedDurationHrs(row) || 0; }
 function finishedEarlyLateInfo(row) {
   if (!row.actualStop) return null;
-  const planned = plannedDurationHrs(row);
-  const actual = actualDurationHrs(row);
-  if (actual == null) return null;
-  const diffHrs = actual - planned;
-  if (diffHrs < -EARLY_LATE_THRESHOLD_HRS) {
-    return { type: "early", diff: Math.abs(diffHrs) };
-  }
-  if (diffHrs > EARLY_LATE_THRESHOLD_HRS) {
-    return { type: "late", diff: diffHrs };
-  }
-  return { type: "ontime", diff: diffHrs };
+  const p = plannedDurationHrs(row), a = actualDurationHrs(row);
+  if (a == null) return null;
+  const d = a - p;
+  if (d < -EARLY_LATE_THRESHOLD_HRS) return { type: "early", diff: Math.abs(d) };
+  if (d > EARLY_LATE_THRESHOLD_HRS) return { type: "late", diff: d };
+  return { type: "ontime", diff: d };
 }
-
-// Builds the week grid (7-day-window chunking) for an arbitrary
-// [year, monthIndex] pair. Shared across every selected month.
+function toMidnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function daysBetween(a, b) { return Math.round((toMidnight(b) - toMidnight(a)) / 86400000); }
 function weeksForMonth(year, monthIdx) {
-  const monthStart = new Date(year, monthIdx, 1);
-  const monthEnd = new Date(year, monthIdx + 1, 0); // last calendar day of the month
-  monthStart.setHours(0, 0, 0, 0);
-  monthEnd.setHours(0, 0, 0, 0);
-
-  const weeksArr = [];
-  let current = new Date(monthStart);
-
-  while (current <= monthEnd) {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(current);
-      d.setDate(current.getDate() + i);
-      if (d <= monthEnd) {
-        days.push(d);
-      }
-    }
-    if (days.length) weeksArr.push(days);
-    current.setDate(current.getDate() + 7);
+  const ms = new Date(year, monthIdx, 1), me = new Date(year, monthIdx + 1, 0); ms.setHours(0,0,0,0); me.setHours(0,0,0,0);
+  const sd = ms.getDay(), td = me.getDate(), w = []; let dn = 1;
+  const fw = [];
+  for (let i = 0; i < 7; i++) { if (i < sd) fw.push(null); else fw.push(new Date(year, monthIdx, dn++)); }
+  w.push(fw);
+  while (dn <= td) {
+    const wk = [];
+    for (let i = 0; i < 7; i++) { if (dn <= td) wk.push(new Date(year, monthIdx, dn++)); else wk.push(null); }
+    w.push(wk);
   }
-
-  return weeksArr;
+  return w;
 }
-
-// Groups a project's rows by task/activity name and sums planned/actual
-// hours per activity. `finished` is true if ANY row for that activity has
-// an actualStop; `started` is true if ANY row has an actualStart.
 function aggregateActivities(rows) {
-  const map = new Map();
+  const m = new Map();
   rows.forEach((r) => {
-    const key = r.task || "Untitled";
-    if (!map.has(key)) {
-      map.set(key, { activity: key, plannedHrs: 0, actualHrs: 0, finished: false, started: false });
-    }
-    const e = map.get(key);
+    const k = r.task || "Untitled";
+    if (!m.has(k)) m.set(k, { activity: k, plannedHrs: 0, actualHrs: 0, finished: false, started: false });
+    const e = m.get(k);
     e.plannedHrs += plannedDurationHrs(r) || 0;
     const a = actualDurationHrs(r);
     if (a != null) e.actualHrs += a;
     if (r.actualStop) e.finished = true;
     if (r.actualStart) e.started = true;
   });
-  return Array.from(map.values());
+  return Array.from(m.values());
 }
+function activityProgressPct(e) { if (e.finished) return 100; if (!e.started || !e.plannedHrs) return 0; return clamp(Math.round((e.actualHrs / e.plannedHrs) * 100), 0, 99); }
 
-// Progress % for a single activity:
-//  - 100% once it has finished (actualStop present on any of its rows)
-//  - actual/planned hours (capped just under 100%) while it's in progress
-//  - 0% if it hasn't started yet
-function activityProgressPct(entry) {
-  if (entry.finished) return 100;
-  if (!entry.started || !entry.plannedHrs) return 0;
-  return clamp(Math.round((entry.actualHrs / entry.plannedHrs) * 100), 0, 99);
+function getOccupancyColor(hours) {
+  if (hours < 4) return "#22c55e";      // < 4 h  – green
+  if (hours < 5) return "#84cc16";      // 4-5 h  – lime
+  if (hours < 6) return "#eab308";      // 5-6 h  – yellow
+  if (hours < 6.75) return "#f97316";   // 6 h    – orange
+  if (hours < 7.75) return "#ea580c";   // 7 h    – dark orange
+  return "#dc2626";                     // 8 h+   – red
 }
+function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
 
+/* ================================================================
+   MAIN COMPONENT
+   ================================================================ */
 export default function ActivityTrackerCharts() {
+  const { mode, isDark, t } = useTheme();
   const [hovered, setHovered] = useState(null);
   const hoverHideTimeout = useRef(null);
-  // Ref to the tooltip DOM node itself. Used by the outside-click effect
-  // below to tell "the user clicked the tooltip" apart from "the user
-  // clicked anywhere else" — replaces the old full-screen transparent
-  // overlay (see notes further down for why that overlay was the source
-  // of the hover/click bugs).
   const tooltipRef = useRef(null);
 
-  // Sticky hover: showHover cancels any pending hide and shows immediately.
-  // hideHover doesn't clear right away — it waits a beat so the cursor has
-  // time to travel from the bar segment onto the tooltip itself (or onto an
-  // adjacent segment) without the tooltip flickering closed in between.
   function showHover(data) {
-    if (hoverHideTimeout.current) {
-      clearTimeout(hoverHideTimeout.current);
-      hoverHideTimeout.current = null;
-    }
+    if (hoverHideTimeout.current) { clearTimeout(hoverHideTimeout.current); hoverHideTimeout.current = null; }
     setHovered(data);
   }
-
   function hideHover() {
     if (hoverHideTimeout.current) clearTimeout(hoverHideTimeout.current);
-    hoverHideTimeout.current = setTimeout(() => {
-      setHovered(null);
-      hoverHideTimeout.current = null;
-    }, 200);
+    hoverHideTimeout.current = setTimeout(() => { setHovered(null); hoverHideTimeout.current = null; }, 200);
   }
 
-  // Close the tooltip on outside click/tap.
-  //
-  // FIX: this used to be handled by a fixed, full-viewport transparent
-  // <div> stacked at zIndex 49, rendered as a sibling of the tooltip
-  // whenever `hovered` was set. That overlay sat ON TOP of the bar
-  // segments themselves (they have no explicit z-index, so they lose to
-  // anything with one), which caused two visible bugs:
-  //   1. Hovering a segment showed the tooltip, but the very act of the
-  //      overlay mounting on top of the cursor's position made the browser
-  //      treat the segment as no longer being hovered, firing its
-  //      onMouseLeave -> hideHover -> tooltip vanished ~200ms after
-  //      appearing ("details getting away").
-  //   2. After the first click opened a tooltip, the overlay covered every
-  //      other segment too, so the NEXT click on a different segment hit
-  //      the overlay (closing the tooltip) instead of reaching the segment
-  //      underneath (which would have opened a new tooltip for it).
-  //
-  // Removing the overlay and instead listening on `document` for clicks
-  // outside the tooltip's own bounds fixes both: it never sits on top of
-  // anything, so hover/click on the chart itself always reaches the real
-  // segment elements.
   useEffect(() => {
     if (!hovered) return;
-    function handleDocClick(e) {
-      if (tooltipRef.current && tooltipRef.current.contains(e.target)) return;
-      setHovered(null);
-    }
-    document.addEventListener("mousedown", handleDocClick);
-    return () => document.removeEventListener("mousedown", handleDocClick);
+    function h(e) { if (tooltipRef.current && tooltipRef.current.contains(e.target)) return; setHovered(null); }
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, [hovered]);
 
   const [apiLoading, setApiLoading] = useState(true);
@@ -256,112 +363,59 @@ export default function ActivityTrackerCharts() {
   const currentMonthIdx = new Date().getMonth();
 
   const [selectedYear, setSelectedYear] = useState(currentYear);
-
-  // multi-select months (by name, e.g. "January"): empty array === "all
-  // months of the selected year"
   const [selectedMonths, setSelectedMonths] = useState([MONTH_NAMES[currentMonthIdx]]);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const monthPickerRef = useRef(null);
 
-  // multi-select projects: empty array === "all projects"
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const projectPickerRef = useRef(null);
 
-  // multi-select resources: empty array === "all resources"
   const [selectedResources, setSelectedResources] = useState([]);
   const [resourcePickerOpen, setResourcePickerOpen] = useState(false);
   const resourcePickerRef = useRef(null);
 
-  // Which of the selected months is currently showing in the Weekly
-  // Schedule card, and which direction the last navigation went (used to
-  // pick the slide-in animation). Navigating months swaps the week grid in
-  // place instead of stacking every month underneath one another, so the
-  // page height stays constant regardless of how many months are selected.
   const [monthBlockIndex, setMonthBlockIndex] = useState(0);
   const [monthSlideDir, setMonthSlideDir] = useState(1);
 
-  // Tracks viewport width so the project-breakdown carousel can decide how
-  // many pie-chart cards fit in a single row (mirrors the breakpoints used
-  // by the CSS below: 480 / 900 / 1200).
-  const [viewportWidth, setViewportWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200
-  );
+  const [occMonthBlockIndex, setOccMonthBlockIndex] = useState(0);
+  const [occMonthSlideDir, setOccMonthSlideDir] = useState(1);
+
+  const [expandedResources, setExpandedResources] = useState({});
+
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   useEffect(() => {
-    function handleResize() {
-      setViewportWidth(window.innerWidth);
-    }
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    function h() { setViewportWidth(window.innerWidth); }
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
   }, []);
 
-  // Which page of projects is currently showing in the "Breakdown — By
-  // Project" card, and which direction the last navigation went (used to
-  // pick the slide-in animation) — same paging mechanism as the Weekly
-  // Schedule's month navigation, just for rows of pie charts instead of
-  // rows of weeks. This keeps the card's height constant (one row tall)
-  // instead of growing with the number of projects.
+  const [weekViewMode, setWeekViewMode] = useState("chart");
+
   const [projectPageIndex, setProjectPageIndex] = useState(0);
   const [projectSlideDir, setProjectSlideDir] = useState(1);
 
-  // Fetches the activity tree for a given year + comma-separated month
-  // selection. Defaults to whatever's currently selected so the "Refresh
-  // data" button can keep calling loadData() with no arguments.
-  function loadData(year = selectedYear, months = selectedMonths) {
-    setApiLoading(true);
-    setApiError(null);
-    fetchProjects(year, months);
-  }
+  function loadData(year = selectedYear, months = selectedMonths) { setApiLoading(true); setApiError(null); fetchProjects(year, months); }
 
   const fetchProjects = async (year, months) => {
-    console.log('Year & Month ',year,months)
     try {
-      const response = await activityTrackerApi.getActivityTreesByMonthAndDate(
-       months.length === 0 ? MONTH_NAMES.join(','): months.join(","), // e.g. "January,March" — empty string means "all months"
-        year,
-      );
-      console.log('Response : ',response)
-      setApiResponse(response ?? { data: [] });
-    } catch (err) {
-      setApiError(String(err?.message ?? err));
-    } finally {
-      setApiLoading(false);
-    }
+      const r = await activityTrackerApi.getActivityTreesByMonthAndDate(months.length === 0 ? MONTH_NAMES.join(",") : months.join(","), year);
+      setApiResponse(r ?? { data: [] });
+    } catch (e) { setApiError(String(e?.message ?? e)); } finally { setApiLoading(false); }
   };
 
-  // Refetch from the API whenever the Year or Month filter changes. This
-  // also covers the very first load, since selectedYear/selectedMonths
-  // already hold their initial values on mount — no separate mount-only
-  // effect is needed.
-  //
-  // selectedMonths.join(",") is used (rather than selectedMonths itself) as
-  // the dependency so the effect only re-fires when the actual month
-  // selection changes, not on every render where the array gets a new
-  // reference.
-  useEffect(() => {
-    loadData(selectedYear, selectedMonths);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, selectedMonths.join(",")]);
+  useEffect(() => { loadData(selectedYear, selectedMonths); }, [selectedYear, selectedMonths.join(",")]);
 
-  // close the month/project/resource pickers when clicking outside of them
   useEffect(() => {
-    function handleClickOutside(e) {
-      if (monthPickerRef.current && !monthPickerRef.current.contains(e.target)) {
-        setMonthPickerOpen(false);
-      }
-      if (projectPickerRef.current && !projectPickerRef.current.contains(e.target)) {
-        setProjectPickerOpen(false);
-      }
-      if (resourcePickerRef.current && !resourcePickerRef.current.contains(e.target)) {
-        setResourcePickerOpen(false);
-      }
+    function h(e) {
+      if (monthPickerRef.current && !monthPickerRef.current.contains(e.target)) setMonthPickerOpen(false);
+      if (projectPickerRef.current && !projectPickerRef.current.contains(e.target)) setProjectPickerOpen(false);
+      if (resourcePickerRef.current && !resourcePickerRef.current.contains(e.target)) setResourcePickerOpen(false);
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  // Be tolerant of the response envelope shape: prefer `.data`, but fall
-  // back to a bare array in case the API ever returns one directly.
   const projectsData = useMemo(() => {
     if (!apiResponse) return [];
     if (Array.isArray(apiResponse)) return apiResponse;
@@ -370,197 +424,88 @@ export default function ActivityTrackerCharts() {
   }, [apiResponse]);
 
   const flatRows = useMemo(() => {
-    const arr = [];
+    const a = [];
     projectsData.forEach((p) => {
-      (p.rows || []).forEach((r) => {
-       arr.push({ project: p.project, po: p.po, site: p.site, id: p.id, ...r });
-      });
+      (p.rows || []).forEach((r) => { a.push({ project: p.project, po: p.po, site: p.site, id: p.id, ...r }); });
     });
-    return arr;
+    return a;
   }, [projectsData]);
 
-  // Year options are loaded straight from the payload — no synthetic
-  // "current year + 5" range is injected, so the dropdown only ever offers
-  // years that actually have scheduled activity.
   const availableYears = useMemo(() => {
-    const set = new Set();
-    flatRows.forEach((r) => {
-      const d = parseDate(r.plannedStart);
-      if (d) set.add(d.getFullYear());
-    });
-    const years = Array.from(set).sort((a, b) => a - b);
-    return years.length ? years : [currentYear];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const s = new Set();
+    flatRows.forEach((r) => { const d = parseDate(r.plannedStart); if (d) s.add(d.getFullYear()); });
+    const y = Array.from(s).sort((a, b) => a - b);
+    return y.length ? y : [currentYear];
   }, [flatRows]);
 
-  // Full (unfiltered) project/resource name lists, straight from the
-  // payload. These stay stable regardless of the active filters — used for
-  // consistent color assignment, and to prune a selection that no longer
-  // exists in the data AT ALL once fresh data arrives.
   const allProjectNames = useMemo(() => {
-    const set = new Set(projectsData.map((p) => p.project));
-    return Array.from(set).sort();
+    const s = new Set(projectsData.map((p) => p.project));
+    return Array.from(s).sort();
   }, [projectsData]);
 
   const allResourceNames = useMemo(() => {
-    const set = new Set(flatRows.map((r) => r.resourceName));
-    return Array.from(set).sort();
+    const s = new Set(flatRows.map((r) => r.resourceName));
+    return Array.from(s).sort();
   }, [flatRows]);
 
-  // Stable color per resource — index comes from the FULL sorted resource
-  // list (not the filtered one) so a resource's color never shifts as
-  // filters change.
   const resourceColorMap = useMemo(() => {
-    const map = {};
-    allResourceNames.forEach((name, i) => {
-      map[name] = resourceBaseColor(i);
-    });
-    return map;
+    const m = {};
+    allResourceNames.forEach((n, i) => { m[n] = resourceBaseColor(i); });
+    return m;
   }, [allResourceNames]);
 
-  // --- Cascading dropdown options -------------------------------------
-  // Month/Project/Resource are interdependent: each one's option list is
-  // computed by filtering the payload against the YEAR plus the OTHER two
-  // active filters (never against its own selection). So picking a
-  // Project narrows which Months/Resources are offered, picking a Month
-  // narrows Projects/Resources, and so on.
   function rowMatchesFilters(row, { months, projects, resources }, skip) {
     const d = parseDate(row.plannedStart);
     if (!d || d.getFullYear() !== selectedYear) return false;
-    if (skip !== "month" && months.length && !months.includes(MONTH_NAMES[d.getMonth()])) {
-      return false;
-    }
-    if (skip !== "project" && projects.length && !projects.includes(row.project)) {
-      return false;
-    }
-    if (skip !== "resource" && resources.length && !resources.includes(row.resourceName)) {
-      return false;
-    }
+    if (skip !== "month" && months.length && !months.includes(MONTH_NAMES[d.getMonth()])) return false;
+    if (skip !== "project" && projects.length && !projects.includes(row.project)) return false;
+    if (skip !== "resource" && resources.length && !resources.includes(row.resourceName)) return false;
     return true;
   }
 
-  // Month options intentionally ignore the Project filter — they're only
-  // narrowed by Year (and Resource), so picking a project never hides a
-  // month that still has activity from other projects.
   const monthPickerOptions = useMemo(() => {
-    const set = new Set();
+    const s = new Set();
     flatRows.forEach((r) => {
-      if (rowMatchesFilters(r, { months: [], projects: [], resources: selectedResources }, "month")) {
-        const d = parseDate(r.plannedStart);
-        set.add(MONTH_NAMES[d.getMonth()]);
-      }
+      if (rowMatchesFilters(r, { months: [], projects: [], resources: selectedResources }, "month"))
+        s.add(MONTH_NAMES[parseDate(r.plannedStart).getMonth()]);
     });
-    return MONTH_NAMES.filter((m) => set.has(m));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return MONTH_NAMES.filter((m) => s.has(m));
   }, [flatRows, selectedYear, selectedResources]);
 
   const projectPickerOptions = useMemo(() => {
-    const set = new Set();
+    const s = new Set();
     flatRows.forEach((r) => {
-      if (rowMatchesFilters(r, { months: selectedMonths, projects: [], resources: selectedResources }, "project")) {
-        set.add(r.project);
-      }
+      if (rowMatchesFilters(r, { months: selectedMonths, projects: [], resources: selectedResources }, "project"))
+        s.add(r.project);
     });
-    return allProjectNames.filter((p) => set.has(p));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return allProjectNames.filter((p) => s.has(p));
   }, [flatRows, selectedYear, selectedMonths, selectedResources, allProjectNames]);
 
   const resourcePickerOptions = useMemo(() => {
-    const set = new Set();
+    const s = new Set();
     flatRows.forEach((r) => {
-      if (rowMatchesFilters(r, { months: selectedMonths, projects: selectedProjects, resources: [] }, "resource")) {
-        set.add(r.resourceName);
-      }
+      if (rowMatchesFilters(r, { months: selectedMonths, projects: selectedProjects, resources: [] }, "resource"))
+        s.add(r.resourceName);
     });
-    return allResourceNames.filter((r) => set.has(r));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return allResourceNames.filter((r) => s.has(r));
   }, [flatRows, selectedYear, selectedMonths, selectedProjects, allResourceNames]);
 
-  // NOTE: there used to be an "auto-default to whichever period the data
-  // actually starts in" effect here. It worked by inspecting the payload
-  // AFTER it came back and, if the current month had no data, jumping
-  // Year/Month to wherever the data did exist — which caused a SECOND API
-  // call (for the corrected period) right after the first one, since the
-  // fetch effect is keyed on [selectedYear, selectedMonths]. That auto-jump
-  // only made sense when the API always returned the full dataset and
-  // filtering happened client-side. Now that the API is filtered
-  // server-side per request, the payload for "July" will only ever contain
-  // July's data (or be empty) — there's no other period visible in it to
-  // "discover" and jump to. So this effect was removed: Year/Month now stay
-  // exactly as the user (or the initial default) set them, and a genuinely
-  // empty result just renders the "No scheduled activity" state instead of
-  // silently re-fetching a different period.
-
-  // Prune selections that fall outside the current cascading options — as
-  // filters narrow each other down, a previously-picked value can become
-  // unavailable and should drop out rather than silently filtering
-  // everything down to nothing.
-  //
-  // GUARD: apiResponse is null until the very first fetch resolves. Before
-  // that, flatRows is [] and every *PickerOptions list is also [] — not
-  // because the selected month/project/resource is actually unavailable,
-  // but because no data has loaded yet at all. Without this guard, that
-  // transient empty-options state gets treated as "nothing the user picked
-  // is valid," and the default month selection gets pruned down to []
-  // (rendered as "All months") before the API call even returns. So these
-  // effects are no-ops until apiResponse has arrived at least once.
-  //
-  // IMPORTANT: Array.prototype.filter() always returns a brand-new array,
-  // even when nothing was actually removed. Since Month/Project/Resource
-  // options cascade off of each other's *selections*, blindly calling
-  // setState with that new-but-equivalent array on every run created a
-  // feedback loop: selectedResources -> monthPickerOptions recomputes ->
-  // this effect fires -> setSelectedMonths gets a new reference ->
-  // projectPickerOptions recomputes -> its effect fires -> setSelectedProjects
-  // gets a new reference -> resourcePickerOptions recomputes -> its effect
-  // fires -> setSelectedResources gets a new reference -> back to the start,
-  // forever ("Maximum update depth exceeded"). Returning the *same* `prev`
-  // reference when nothing was actually pruned breaks that cycle.
   useEffect(() => {
     if (!apiResponse) return;
-    setSelectedMonths((prev) => {
-      const next = prev.filter((m) => monthPickerOptions.includes(m));
-      return next.length === prev.length ? prev : next;
-    });
+    setSelectedMonths((p) => { const n = p.filter((m) => monthPickerOptions.includes(m)); return n.length === p.length ? p : n; });
   }, [apiResponse, monthPickerOptions]);
-
   useEffect(() => {
     if (!apiResponse) return;
-    setSelectedProjects((prev) => {
-      const next = prev.filter((p) => projectPickerOptions.includes(p));
-      return next.length === prev.length ? prev : next;
-    });
+    setSelectedProjects((p) => { const n = p.filter((x) => projectPickerOptions.includes(x)); return n.length === p.length ? p : n; });
   }, [apiResponse, projectPickerOptions]);
-
   useEffect(() => {
     if (!apiResponse) return;
-    setSelectedResources((prev) => {
-      const next = prev.filter((r) => resourcePickerOptions.includes(r));
-      return next.length === prev.length ? prev : next;
-    });
+    setSelectedResources((p) => { const n = p.filter((x) => resourcePickerOptions.includes(x)); return n.length === p.length ? p : n; });
   }, [apiResponse, resourcePickerOptions]);
 
-  // Month indices (0-11) implied by the current selection.
-  //
-  // FIX: previously, when nothing was picked, this fell back to ALL 12
-  // MONTH_NAMES — so monthBlocks (below) rendered a WeekCard for every
-  // calendar month of the year, including ones with zero scheduled
-  // activity, even though monthPickerOptions (the Month dropdown) already
-  // correctly limited itself to months that actually have data. Now the
-  // "nothing selected" fallback uses monthPickerOptions instead, so
-  // monthBlocks and monthPickerOptions always agree: only months with
-  // data ever get a week grid.
-  //
-  // monthPickerOptions doesn't depend on selectedMonthIndices (it's
-  // filtered by Year + Resource only, computed straight from flatRows), so
-  // this doesn't introduce a circular dependency.
   const selectedMonthIndices = useMemo(() => {
-    if (selectedMonths.length === 0) {
-      return monthPickerOptions
-        .map((name) => MONTH_NAMES.indexOf(name))
-        .sort((a, b) => a - b);
-    }
-    return selectedMonths.map((name) => MONTH_NAMES.indexOf(name)).sort((a, b) => a - b);
+    if (selectedMonths.length === 0) return monthPickerOptions.map((n) => MONTH_NAMES.indexOf(n)).sort((a, b) => a - b);
+    return selectedMonths.map((n) => MONTH_NAMES.indexOf(n)).sort((a, b) => a - b);
   }, [selectedMonths, monthPickerOptions]);
 
   const rangeLabel = useMemo(() => {
@@ -570,242 +515,263 @@ export default function ActivityTrackerCharts() {
   }, [selectedMonths, selectedYear]);
 
   const filteredRows = useMemo(() => {
-    const monthSet = new Set(selectedMonthIndices);
+    const ms = new Set(selectedMonthIndices);
     return flatRows.filter((r) => {
       const d = parseDate(r.plannedStart);
-      const monthMatch = d && d.getFullYear() === selectedYear && monthSet.has(d.getMonth());
-      const projectMatch =
-        selectedProjects.length === 0 || selectedProjects.includes(r.project);
-      const resourceMatch =
-        selectedResources.length === 0 || selectedResources.includes(r.resourceName);
-      return monthMatch && projectMatch && resourceMatch;
+      return d && d.getFullYear() === selectedYear && ms.has(d.getMonth())
+        && (selectedProjects.length === 0 || selectedProjects.includes(r.project))
+        && (selectedResources.length === 0 || selectedResources.includes(r.resourceName));
     });
   }, [flatRows, selectedYear, selectedMonthIndices, selectedProjects, selectedResources]);
 
-  // Same shape as the API's project list ({ project, po, site, rows }),
-  // but rebuilt from filteredRows so the Gantt view (and the per-project
-  // pie charts) reflect whatever Year/Month/Project/Resource filters are
-  // currently active instead of always showing the full, unfiltered
-  // dataset.
   const filteredProjectsData = useMemo(() => {
-
-    console.log('Filtered Rows : ',filteredRows)
-    const map = new Map();
+    const m = new Map();
     filteredRows.forEach((r) => {
-      if (!map.has(r.project)) {
-        map.set(r.project, { project: r.project, po: r.po, site: r.site,id: r.id, rows: [] });
-      }
-      map.get(r.project).rows.push(r);
+      if (!m.has(r.project)) m.set(r.project, { project: r.project, po: r.po, site: r.site, id: r.id, rows: [] });
+      m.get(r.project).rows.push(r);
     });
-    return Array.from(map.values());
+    return Array.from(m.values());
   }, [filteredRows]);
 
-  // One block per selected month (a header + its own week grid). A single
-  // month renders without a header, matching the original look; picking
-  // several months lets the Weekly Schedule card page through each month's
-  // weeks via the arrows in its header, sliding between them in place
-  // instead of growing the page.
-  const monthBlocks = useMemo(() => {
-    return selectedMonthIndices.map((m) => ({
+  const monthBlocks = useMemo(() =>
+    selectedMonthIndices.map((m) => ({
       key: `${selectedYear}-${m}`,
       label: selectedMonthIndices.length > 1 ? `${MONTH_NAMES[m]} ${selectedYear}` : null,
+      monthIdx: m,
       weeks: weeksForMonth(selectedYear, m),
-    }));
-  }, [selectedYear, selectedMonthIndices]);
+    })),
+    [selectedYear, selectedMonthIndices]
+  );
 
-  // Reset to the first month whenever the underlying selection changes
-  // (new year, or months added/removed) so the arrows never point at a
-  // stale slot.
-  useEffect(() => {
-    setMonthBlockIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, selectedMonthIndices.join(",")]);
+  useEffect(() => { setMonthBlockIndex(0); setOccMonthBlockIndex(0); }, [selectedYear, selectedMonthIndices.join(",")]);
 
   const safeMonthBlockIndex = Math.min(monthBlockIndex, Math.max(monthBlocks.length - 1, 0));
   const currentMonthBlock = monthBlocks[safeMonthBlockIndex];
 
-  function goToMonthBlock(newIndex) {
-    if (newIndex < 0 || newIndex >= monthBlocks.length) return;
-    setMonthSlideDir(newIndex > safeMonthBlockIndex ? 1 : -1);
-    setMonthBlockIndex(newIndex);
+  function goToMonthBlock(i) {
+    if (i < 0 || i >= monthBlocks.length) return;
+    setMonthSlideDir(i > safeMonthBlockIndex ? 1 : -1);
+    setMonthBlockIndex(i);
   }
 
-  // Group rows by calendar day, then by resource within that day. Each
-  // day now produces two STACKS: a Planned stack and an Actual stack, each
-  // made of one segment per resource (summed across that resource's tasks
-  // for the day). Resources are kept in a stable alphabetical order so the
-  // stacking order lines up between the Planned stack and the Actual stack.
-  const aggByDate = useMemo(() => {
-    const byDate = {};
-    filteredRows.forEach((r) => {
-      const key = parseDate(r.plannedStart).toDateString();
-      if (!byDate[key]) byDate[key] = [];
-      byDate[key].push(r);
-    });
+  const safeOccMonthBlockIndex = Math.min(occMonthBlockIndex, Math.max(monthBlocks.length - 1, 0));
+  const currentOccMonthBlock = monthBlocks[safeOccMonthBlockIndex];
 
-    const result = {};
-    Object.entries(byDate).forEach(([dateKey, rows]) => {
-      const byResource = {};
+  function goToOccMonthBlock(i) {
+    if (i < 0 || i >= monthBlocks.length) return;
+    setOccMonthSlideDir(i > safeOccMonthBlockIndex ? 1 : -1);
+    setOccMonthBlockIndex(i);
+  }
+
+  const aggByDate = useMemo(() => {
+    const bd = {};
+    filteredRows.forEach((r) => {
+      const k = parseDate(r.plannedStart).toDateString();
+      if (!bd[k]) bd[k] = [];
+      bd[k].push(r);
+    });
+    const res = {};
+    Object.entries(bd).forEach(([dk, rows]) => {
+      const br = {};
       rows.forEach((row) => {
-        const name = row.resourceName;
-        if (!byResource[name]) {
-          byResource[name] = {
-            resourceName: name,
-            plannedHrs: 0,
-            actualHrs: 0,
-            tasks: [],
-            hasRunning: false,
-          };
-        }
+        const n = row.resourceName;
+        if (!br[n]) br[n] = { resourceName: n, plannedHrs: 0, actualHrs: 0, tasks: [], hasRunning: false };
         const p = plannedDurationHrs(row) || 0;
         const a = actualDurationHrs(row);
-        byResource[name].plannedHrs += p;
-        byResource[name].actualHrs += a || 0;
-        byResource[name].tasks.push({ row, plannedHrs: p, actualHrs: a });
-        if (row.status === "Running") byResource[name].hasRunning = true;
+        br[n].plannedHrs += p;
+        br[n].actualHrs += a || 0;
+        br[n].tasks.push({ row, plannedHrs: p, actualHrs: a });
+        if (row.status === "Running") br[n].hasRunning = true;
       });
-
-      const resources = Object.values(byResource).sort((x, y) =>
-        x.resourceName.localeCompare(y.resourceName)
-      );
-      const plannedTotal = resources.reduce((s, r) => s + r.plannedHrs, 0);
-      const actualTotal = resources.reduce((s, r) => s + r.actualHrs, 0);
-      result[dateKey] = { resources, plannedTotal, actualTotal };
+      const resources = Object.values(br).sort((x, y) => x.resourceName.localeCompare(y.resourceName));
+      res[dk] = {
+        resources,
+        plannedTotal: resources.reduce((s, r) => s + r.plannedHrs, 0),
+        actualTotal: resources.reduce((s, r) => s + r.actualHrs, 0),
+      };
     });
-    return result;
+    return res;
   }, [filteredRows]);
 
-  // y axis is "net hours" — scaled to the tallest stacked total (planned or
-  // actual) across the visible days, since stacking can now exceed any
-  // single task's duration.
+  const occupancyByResourceDate = useMemo(() => {
+    const map = {};
+    const todayMid = toMidnight(new Date());
+
+    function bucket(dk, rn) {
+      if (!map[dk]) map[dk] = {};
+      if (!map[dk][rn]) map[dk][rn] = { hours: 0, delayedHours: 0, tasks: [] };
+      return map[dk][rn];
+    }
+
+    filteredRows.forEach((r) => {
+      const pStart = parseDate(r.plannedStart);
+      if (!pStart) return;
+
+      const pStop = parseDate(r.plannedStop);
+      const aStart = parseDate(r.actualStart);
+      const aStop = parseDate(r.actualStop);
+      const res = r.resourceName;
+      const pDuration = plannedDurationHrs(r) || 0;
+
+      let start, end, totalHours, delayed;
+
+      if (aStart) {
+        // Actual work: spread actual hours across the actual date range
+        start = aStart;
+        const aDuration = actualDurationHrs(r);
+        totalHours = aDuration != null ? aDuration : pDuration;
+        if (aStop) {
+          end = aStop;
+        } else if (r.status === "Running" || r.status === "Paused") {
+          end = new Date(aStart.getTime() + 3600000);
+        } else {
+          end = new Date(aStart.getTime() + totalHours * 3600000);
+        }
+        delayed = false;
+      } else if (r.status === "Completed") {
+        start = pStart;
+        end = pStop || new Date(start.getTime() + pDuration * 3600000);
+        totalHours = pDuration;
+        delayed = false;
+      } else {
+        // Planned/future/delayed: spread planned hours across the planned window
+        start = pStart;
+        end = pStop || new Date(start.getTime() + pDuration * 3600000);
+        totalHours = pDuration;
+        const pSM = toMidnight(start);
+        const pEM = pStop ? toMidnight(pStop) : pSM;
+        delayed = pSM <= todayMid && pEM < todayMid;
+      }
+
+      const startMid = toMidnight(start);
+      const endMid = toMidnight(end);
+      const dayCount = Math.max(1, daysBetween(startMid, endMid) + 1);
+      const hoursPerDay = totalHours / dayCount;
+
+      const cur = new Date(startMid);
+      while (cur <= endMid) {
+        const dk = cur.toDateString();
+        const b = bucket(dk, res);
+        b.hours += hoursPerDay;
+        if (delayed) b.delayedHours += hoursPerDay;
+        b.tasks.push({
+          row: r,
+          hours: hoursPerDay,
+          delayed,
+          delayDays: delayed && pStop ? daysBetween(toMidnight(pStop), todayMid) : 0,
+          daysFromStart: daysBetween(toMidnight(start), cur),
+          originalPlannedStart: pStart,
+          originalPlannedStop: pStop,
+          totalPlannedHrs: pDuration,
+        });
+        cur.setDate(cur.getDate() + 1);
+      }
+    });
+
+    return map;
+  }, [filteredRows]);
+
+  const taskOccupancyByResourceDate = useMemo(() => {
+    const map = {};
+    const todayMid = toMidnight(new Date());
+    filteredRows.forEach((r) => {
+      const pS = parseDate(r.plannedStart);
+      if (!pS) return;
+      const pSt = parseDate(r.plannedStop), aS = parseDate(r.actualStart);
+      const rn = r.resourceName, tn = r.task || "Untitled";
+      if (!map[rn]) map[rn] = {};
+      if (!map[rn][tn]) map[rn][tn] = {};
+      const pSM = toMidnight(pS), pEM = pSt ? toMidnight(pSt) : pSM;
+      if (aS) {
+        const dk = toMidnight(aS).toDateString();
+        const hrs = actualDurationHrs(r) || plannedDurationHrs(r) || 0;
+        map[rn][tn][dk] = (map[rn][tn][dk] || 0) + hrs;
+      } else if (pSM <= todayMid && r.status !== "Completed") {
+        const th = plannedDurationHrs(r) || 0;
+        const c = new Date(pSM);
+        while (c <= todayMid) {
+          const dk = c.toDateString();
+          map[rn][tn][dk] = (map[rn][tn][dk] || 0) + th;
+          c.setDate(c.getDate() + 1);
+        }
+      } else {
+        const dk = pSM.toDateString();
+        map[rn][tn][dk] = (map[rn][tn][dk] || 0) + (plannedDurationHrs(r) || 0);
+      }
+    });
+    return map;
+  }, [filteredRows]);
+
+  const timelineResources = useMemo(() => {
+    const l = selectedResources.length ? selectedResources : resourcePickerOptions;
+    return [...l].sort();
+  }, [selectedResources, resourcePickerOptions]);
+
   const maxDurationHrs = useMemo(() => {
     let mx = 0;
-    Object.values(aggByDate).forEach((day) => {
-      if (day.plannedTotal > mx) mx = day.plannedTotal;
-      if (day.actualTotal > mx) mx = day.actualTotal;
+    Object.values(aggByDate).forEach((d) => {
+      if (d.plannedTotal > mx) mx = d.plannedTotal;
+      if (d.actualTotal > mx) mx = d.actualTotal;
     });
     if (mx <= 0) mx = 8;
-    return Math.ceil((mx + 1) / 2) * 2; // round up to a nice even number with a little headroom
+    return Math.ceil((mx + 1) / 2) * 2;
   }, [aggByDate]);
 
-  function pctFromHrs(hrs) {
-    if (hrs == null) return null;
-    const fraction = clamp(hrs / maxDurationHrs, 0, 1);
-    return (1 - fraction) * 100; // 0h renders at the bottom, maxDurationHrs at the top
-  }
+  function pctFromHrs(hrs) { if (hrs == null) return null; return (1 - clamp(hrs / maxDurationHrs, 0, 1)) * 100; }
 
   const durationLabels = useMemo(() => {
-    const step = maxDurationHrs / 5;
-    const labels = [];
-    for (let h = 0; h <= maxDurationHrs + 0.001; h += step) {
-      labels.push({ h, label: `${Math.round(h * 10) / 10}h` });
-    }
-    return labels;
+    const s = maxDurationHrs / 5;
+    const l = [];
+    for (let h = 0; h <= maxDurationHrs + 0.001; h += s)
+      l.push({ h, label: `${Math.round(h * 10) / 10}h` });
+    return l;
   }, [maxDurationHrs]);
 
-  function toggleMonth(name) {
-    setSelectedMonths((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  }
+  function toggleMonth(n) { setSelectedMonths((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]); }
+  function toggleProject(n) { setSelectedProjects((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]); }
+  function toggleResource(n) { setSelectedResources((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]); }
+  function toggleExpandedResource(n) { setExpandedResources((p) => ({ ...p, [n]: !p[n] })); }
 
-  function toggleProject(name) {
-    setSelectedProjects((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  }
+  const monthSummary = selectedMonths.length === 0 ? "All months" : selectedMonths.length === 1 ? selectedMonths[0] : `${selectedMonths.length} months selected`;
+  const projectSummary = selectedProjects.length === 0 ? "All projects" : selectedProjects.length === 1 ? selectedProjects[0] : `${selectedProjects.length} projects selected`;
+  const resourceSummary = selectedResources.length === 0 ? "All resources" : selectedResources.length === 1 ? selectedResources[0] : `${selectedResources.length} resources selected`;
 
-  function toggleResource(name) {
-    setSelectedResources((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  }
-
-    console.log('Filtered Project Data : ',filteredProjectsData)
-  const monthSummary =
-    selectedMonths.length === 0
-      ? "All months"
-      : selectedMonths.length === 1
-      ? selectedMonths[0]
-      : `${selectedMonths.length} months selected`;
-
-  const projectSummary =
-    selectedProjects.length === 0
-      ? "All projects"
-      : selectedProjects.length === 1
-      ? selectedProjects[0]
-      : `${selectedProjects.length} projects selected`;
-
-  const resourceSummary =
-    selectedResources.length === 0
-      ? "All resources"
-      : selectedResources.length === 1
-      ? selectedResources[0]
-      : `${selectedResources.length} resources selected`;
-      
-
-  const weeklyScheduleTitle = (
-    <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-      <span>Weekly Schedule — Planned vs Actual</span>
-      {monthBlocks.length > 1 && (
-        <span
-          onClick={(e) => e.stopPropagation()}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
-        >
-          <button
-            type="button"
-            onClick={() => goToMonthBlock(safeMonthBlockIndex - 1)}
-            disabled={safeMonthBlockIndex === 0}
-            aria-label="Previous month"
-            style={{
-              ...navArrowStyle,
-              opacity: safeMonthBlockIndex === 0 ? 0.4 : 1,
-              cursor: safeMonthBlockIndex === 0 ? "default" : "pointer",
-            }}
-          >
-            ‹
-          </button>
-          <span
-            className="wt-month-nav-label"
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#64748b",
-              minWidth: 110,
-              textAlign: "center",
-            }}
-          >
-            {MONTH_NAMES[selectedMonthIndices[safeMonthBlockIndex]]} {selectedYear}
-          </span>
-          <button
-            type="button"
-            onClick={() => goToMonthBlock(safeMonthBlockIndex + 1)}
-            disabled={safeMonthBlockIndex === monthBlocks.length - 1}
-            aria-label="Next month"
-            style={{
-              ...navArrowStyle,
-              opacity: safeMonthBlockIndex === monthBlocks.length - 1 ? 0.4 : 1,
-              cursor: safeMonthBlockIndex === monthBlocks.length - 1 ? "default" : "pointer",
-            }}
-          >
-            ›
-          </button>
-        </span>
-      )}
+  const dropdownStyle = {
+    fontSize: 12,
+    color: t.inputText,
+    border: `1px solid ${t.inputBorder}`,
+    borderRadius: 8,
+    padding: "6px 10px",
+    background: t.inputBg,
+    outline: "none",
+    minWidth: "var(--wt-dropdown-min-width,150px)",
+    height: 30,
+    boxSizing: "border-box",
+  };
+  const navArrowStyle = {
+    width: 22,
+    height: 22,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: `1px solid ${t.navBorder}`,
+    borderRadius: 6,
+    background: t.navBg,
+    color: t.navText,
+    fontSize: 13,
+    lineHeight: 1,
+    padding: 0,
+  };
+  const mkNav = (label, idx, max, go) => (
+    <span onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <button type="button" onClick={() => go(idx - 1)} disabled={idx === 0} style={{ ...navArrowStyle, opacity: idx === 0 ? 0.4 : 1, cursor: idx === 0 ? "default" : "pointer" }}>&lsaquo;</button>
+      <span style={{ fontSize: 12, fontWeight: 600, color: t.navLabel, minWidth: 110, textAlign: "center" }}>{label}</span>
+      <button type="button" onClick={() => go(idx + 1)} disabled={idx === max} style={{ ...navArrowStyle, opacity: idx === max ? 0.4 : 1, cursor: idx === max ? "default" : "pointer" }}>&rsaquo;</button>
     </span>
   );
 
-  // Key used to re-trigger the slide-in animation on the project breakdown
-  // card whenever the active filter combination changes — same mechanism
-  // as the Weekly Schedule's per-month remount, just driven by the whole
-  // filter set instead of a page index.
-  const projectBreakdownKey = `${selectedYear}|${selectedMonths.join(",")}|${selectedProjects.join(",")}|${selectedResources.join(",")}`;
+  const projectBreakdownKey = `${selectedYear}|${selectedMonths}|${selectedProjects}|${selectedResources}`;
 
-  // How many pie-chart cards fit in a single row at the current viewport
-  // width. Mirrors the breakpoints used elsewhere in this component (900 /
-  // 480) plus one extra step for very wide screens, so a "page" always
-  // corresponds to exactly one visual row of cards — the card grows/shrinks
-  // by count, never by wrapping into a second row.
   const projectsPerPage = useMemo(() => {
     if (viewportWidth <= 480) return 1;
     if (viewportWidth <= 900) return 2;
@@ -813,504 +779,264 @@ export default function ActivityTrackerCharts() {
     return 4;
   }, [viewportWidth]);
 
-  // Chunk the filtered project list into fixed-size pages, one page per
-  // row. Paging through them (via the arrows in the card header) slides
-  // the next row in from the side instead of appending more rows
-  // underneath — so the card's height never grows with the project count.
   const projectPages = useMemo(() => {
-    if (filteredProjectsData.length === 0) return [[]];
-    const pages = [];
-    for (let i = 0; i < filteredProjectsData.length; i += projectsPerPage) {
-      pages.push(filteredProjectsData.slice(i, i + projectsPerPage));
-    }
-    return pages;
+    if (!filteredProjectsData.length) return [[]];
+    const p = [];
+    for (let i = 0; i < filteredProjectsData.length; i += projectsPerPage)
+      p.push(filteredProjectsData.slice(i, i + projectsPerPage));
+    return p;
   }, [filteredProjectsData, projectsPerPage]);
 
-  // Reset to the first page whenever the underlying selection (or the
-  // number of cards that fit per row) changes, so the arrows never point
-  // at a stale slot.
-  useEffect(() => {
-    setProjectPageIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectBreakdownKey, projectsPerPage]);
+  useEffect(() => { setProjectPageIndex(0); }, [projectBreakdownKey, projectsPerPage]);
 
   const safeProjectPageIndex = Math.min(projectPageIndex, Math.max(projectPages.length - 1, 0));
-  const currentProjectPage = projectPages[safeProjectPageIndex] || [];
-
-  function goToProjectPage(newIndex) {
-    if (newIndex < 0 || newIndex >= projectPages.length) return;
-    setProjectSlideDir(newIndex > safeProjectPageIndex ? 1 : -1);
-    setProjectPageIndex(newIndex);
+  function goToProjectPage(i) {
+    if (i < 0 || i >= projectPages.length) return;
+    setProjectSlideDir(i > safeProjectPageIndex ? 1 : -1);
+    setProjectPageIndex(i);
   }
 
-  const projectBreakdownTitle = (
-    <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-      <span>Breakdown — By Project</span>
-      {projectPages.length > 1 && (
-        <span
-          onClick={(e) => e.stopPropagation()}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
-        >
-          <button
-            type="button"
-            onClick={() => goToProjectPage(safeProjectPageIndex - 1)}
-            disabled={safeProjectPageIndex === 0}
-            aria-label="Previous projects"
-            style={{
-              ...navArrowStyle,
-              opacity: safeProjectPageIndex === 0 ? 0.4 : 1,
-              cursor: safeProjectPageIndex === 0 ? "default" : "pointer",
-            }}
-          >
-            ‹
-          </button>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#64748b",
-              minWidth: 50,
-              textAlign: "center",
-            }}
-          >
-            {safeProjectPageIndex + 1} / {projectPages.length}
-          </span>
-          <button
-            type="button"
-            onClick={() => goToProjectPage(safeProjectPageIndex + 1)}
-            disabled={safeProjectPageIndex === projectPages.length - 1}
-            aria-label="Next projects"
-            style={{
-              ...navArrowStyle,
-              opacity: safeProjectPageIndex === projectPages.length - 1 ? 0.4 : 1,
-              cursor: safeProjectPageIndex === projectPages.length - 1 ? "default" : "pointer",
-            }}
-          >
-            ›
-          </button>
-        </span>
-      )}
-    </span>
-  );
-
   return (
-            <div className="container mx-auto px-4">
-          {/* <div className="w-full md:w-10/12 lg:w-10/12 mx-auto"> */}
-    <div
-      className="wt-root"
-      style={{ width: "100%", background: "#f8fafc", padding: 24, borderRadius: 16, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}
-    >
-      <style>{`
-        /* Sizes that scale down on smaller screens are exposed as CSS
-           custom properties on .wt-root, and read via var(...) from the
-           inline styles below — that way each breakpoint only has to be
-           declared once here instead of repeated next to every element
-           that uses it. */
-        .wt-root {
-          --wt-chart-height: 170px;
-          --wt-bar-max-width: 20px;
-          --wt-dropdown-min-width: 150px;
-          --wt-week-flex: 1 1 0;
-          --wt-week-min-width: 0px;
-          --wt-project-card-min: 280px;
-        }
+    <div className="container mx-auto px-4">
+      <div
+        className="wt-root"
+        style={{
+          width: "100%",
+          background: t.rootBg,
+          padding: 24,
+          borderRadius: 16,
+          fontFamily: "ui-sans-serif,system-ui,sans-serif",
+          color: t.textPrimary,
+          transition: "background 0.2s, color 0.2s",
+        }}
+      >
+        <style>{`
+          .wt-root{--wt-chart-height:170px;--wt-bar-max-width:20px;--wt-dropdown-min-width:150px;}
+          @keyframes wtSlideInRight{from{transform:translateX(28px);opacity:0}to{transform:translateX(0);opacity:1}}
+          @keyframes wtSlideInLeft{from{transform:translateX(-28px);opacity:0}to{transform:translateX(0);opacity:1}}
+          .wt-weeks-row{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+          @media(max-width:900px){.wt-root{padding:14px!important;border-radius:12px!important;--wt-chart-height:150px;}.wt-filter-bar{flex-direction:column!important;align-items:stretch!important;}.wt-filter-field{width:100%;}.wt-refresh-btn{width:100%;}}
+          .gantt-resource-row:hover{background:${t.occRowOdd};}
+        `}</style>
 
-        @keyframes wtSlideInRight {
-          from { transform: translateX(28px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes wtSlideInLeft {
-          from { transform: translateX(-28px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: t.rangeLabelText, margin: "2px 0 10px" }}>
+            {apiLoading && !apiResponse ? "Loading\u2026" : rangeLabel}
+          </p>
 
-        /* Weekly Schedule's week columns scroll horizontally instead of
-           squeezing down to nothing once they no longer fit side by side. */
-        .wt-weeks-row {
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
-        }
-        .wt-week-col {
-          scroll-snap-align: start;
-        }
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: t.textSubtle, fontWeight: 600 }}>
+              <PatternSwatch color={t.swatchDefault}/> P - Planned (left bar)
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: t.textSubtle, fontWeight: 600 }}>
+              <PatternSwatch color={t.swatchDefault}/> A - Actual (right bar)
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: t.textSubtle }}>
+              <span style={{ color: t.earlyColor }}>{"\u25B2"}</span> Under planned Hours
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: t.textSubtle }}>
+              <span style={{ color: t.lateColor }}>{"\u25BC"}</span> Over planned Hours
+            </span>
+          </div>
 
-        @media (max-width: 900px) {
-          .wt-root {
-            padding: 14px !important;
-            border-radius: 12px !important;
-            --wt-chart-height: 150px;
-            --wt-bar-max-width: 16px;
-            --wt-dropdown-min-width: 130px;
-            /* Below this width each week becomes a swipeable, snapping
-               page (~88% of the viewport) instead of an ever-thinner
-               column squeezed in alongside its siblings. */
-            --wt-week-flex: 0 0 88%;
-            --wt-week-min-width: 260px;
-            --wt-project-card-min: 240px;
-          }
-          .wt-filter-bar {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
-          .wt-filter-field {
-            width: 100%;
-          }
-          .wt-refresh-btn {
-            width: 100%;
-          }
-          .wt-weeks-row {
-            scroll-snap-type: x proximity;
-            padding-bottom: 6px;
-          }
-          .wt-picker-panel {
-            min-width: 0 !important;
-            width: 100%;
-            max-width: 92vw;
-          }
-        }
+          <div
+            className="wt-filter-bar"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+              alignItems: "center",
+              background: t.filterBarBg,
+              border: `1px solid ${t.filterBarBorder}`,
+              borderRadius: 12,
+              padding: "10px 14px",
+            }}
+          >
+            <FilterField label="Year" t={t}>
+              <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} disabled={apiLoading} style={dropdownStyle}>
+                {availableYears.map((y) => (<option key={y} value={y}>{y}</option>))}
+              </select>
+            </FilterField>
 
-        @media (max-width: 600px) {
-          .wt-legend {
-            gap: 8px !important;
-          }
-          .wt-legend span {
-            font-size: 10px !important;
-          }
-        }
+            <FilterField label="Month" t={t}>
+              <MultiSelectPicker
+                t={t}
+                pickerRef={monthPickerRef}
+                open={monthPickerOpen}
+                setOpen={setMonthPickerOpen}
+                disabled={apiLoading}
+                summary={monthSummary}
+                allLabel="All months"
+                allSelected={selectedMonths.length === 0}
+                onSelectAll={() => setSelectedMonths([])}
+                options={monthPickerOptions}
+                selected={selectedMonths}
+                onToggle={toggleMonth}
+                dropdownStyle={dropdownStyle}
+              />
+            </FilterField>
 
-        @media (max-width: 480px) {
-          .wt-root {
-            padding: 10px !important;
-            --wt-chart-height: 135px;
-            --wt-bar-max-width: 13px;
-            --wt-dropdown-min-width: 110px;
-            --wt-week-flex: 0 0 92%;
-            --wt-week-min-width: 230px;
-          }
-          .wt-month-nav-label {
-            min-width: 70px !important;
-            font-size: 11px !important;
-          }
-        }
-      `}</style>
+            <FilterField label="Project" t={t}>
+              <MultiSelectPicker
+                t={t}
+                pickerRef={projectPickerRef}
+                open={projectPickerOpen}
+                setOpen={setProjectPickerOpen}
+                disabled={apiLoading || !projectPickerOptions.length}
+                summary={projectSummary}
+                allLabel="All projects"
+                allSelected={selectedProjects.length === 0}
+                onSelectAll={() => setSelectedProjects([])}
+                options={projectPickerOptions}
+                selected={selectedProjects}
+                onToggle={toggleProject}
+                dropdownStyle={dropdownStyle}
+              />
+            </FilterField>
 
-      <div style={{ marginBottom: 16 }}>
-        <p style={{ fontSize: 13, color: "#64748b", margin: "2px 0 10px" }}>
-          {apiLoading && !apiResponse ? "Loading…" : rangeLabel}
-        </p>
+            <FilterField label="Resource" t={t}>
+              <MultiSelectPicker
+                t={t}
+                pickerRef={resourcePickerRef}
+                open={resourcePickerOpen}
+                setOpen={setResourcePickerOpen}
+                disabled={apiLoading || !resourcePickerOptions.length}
+                summary={resourceSummary}
+                allLabel="All resources"
+                allSelected={selectedResources.length === 0}
+                onSelectAll={() => setSelectedResources([])}
+                options={resourcePickerOptions}
+                selected={selectedResources}
+                onToggle={toggleResource}
+                dropdownStyle={dropdownStyle}
+              />
+            </FilterField>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10, flexWrap: "wrap" }} className="wt-legend">
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#475569", fontWeight: 600 }}>
-            <PatternSwatch color="#64748b" /> P - Planned (left bar)
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#475569", fontWeight: 600 }}>
-            <PatternSwatch color="#64748b" /> A - Actual (right bar)
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#475569" }}>
-            <span style={{ color: "#059669" }}>▲</span> Under planned Hours
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#475569" }}>
-            <span style={{ color: "#dc2626" }}>▼</span> Over planned Hours
-          </span>
-        </div>
+            <div style={{ flex: 1 }}/>
 
-        {/* filter bar */}
-        <div
-          className="wt-filter-bar"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-            alignItems: "center",
-            background: "#ffffff",
-            border: "1px solid #e2e8f0",
-            borderRadius: 12,
-            padding: "10px 14px",
-          }}
-        >
-          <FilterField label="Year">
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+            <button
+              onClick={() => loadData()}
               disabled={apiLoading}
-              style={dropdownStyle}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#fff",
+                background: t.btnPrimary,
+                border: "none",
+                borderRadius: 8,
+                padding: "7px 14px",
+                cursor: "pointer",
+              }}
+              className="wt-refresh-btn"
             >
-              {availableYears.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-
-          <FilterField label="Month">
-            <MultiSelectPicker
-              pickerRef={monthPickerRef}
-              open={monthPickerOpen}
-              setOpen={setMonthPickerOpen}
-              disabled={apiLoading}
-              summary={monthSummary}
-              allLabel="All months"
-              allSelected={selectedMonths.length === 0}
-              onSelectAll={() => setSelectedMonths([])}
-              options={monthPickerOptions}
-              selected={selectedMonths}
-              onToggle={toggleMonth}
-            />
-          </FilterField>
-
-          <FilterField label="Project">
-            <MultiSelectPicker
-              pickerRef={projectPickerRef}
-              open={projectPickerOpen}
-              setOpen={setProjectPickerOpen}
-              disabled={apiLoading || !projectPickerOptions.length}
-              summary={projectSummary}
-              allLabel="All projects"
-              allSelected={selectedProjects.length === 0}
-              onSelectAll={() => setSelectedProjects([])}
-              options={projectPickerOptions}
-              selected={selectedProjects}
-              onToggle={toggleProject}
-            />
-          </FilterField>
-
-          <FilterField label="Resource">
-            <MultiSelectPicker
-              pickerRef={resourcePickerRef}
-              open={resourcePickerOpen}
-              setOpen={setResourcePickerOpen}
-              disabled={apiLoading || !resourcePickerOptions.length}
-              summary={resourceSummary}
-              allLabel="All resources"
-              allSelected={selectedResources.length === 0}
-              onSelectAll={() => setSelectedResources([])}
-              options={resourcePickerOptions}
-              selected={selectedResources}
-              onToggle={toggleResource}
-            />
-          </FilterField>
-
-          <div style={{ flex: 1 }} />
-
-          <button onClick={() => loadData()} disabled={apiLoading} style={buttonStyle} className="wt-refresh-btn">
-            {apiLoading ? "Refreshing…" : "Refresh data"}
-          </button>
+              {apiLoading ? "Refreshing\u2026" : "Refresh data"}
+            </button>
+          </div>
         </div>
+
+        {apiLoading && !apiResponse ? (
+          <div style={{ padding: 40, textAlign: "center", color: t.loadingText, fontSize: 13 }}>Fetching schedule from API&hellip;</div>
+        ) : apiError ? (
+          <div style={{ padding: 40, textAlign: "center", color: t.errorText, fontSize: 13 }}>Failed to load schedule: {apiError}</div>
+        ) : filteredRows.length === 0 ? (
+          <div style={{ padding: 40, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No scheduled activity for this selection.</div>
+        ) : (
+          <>
+           <AccordionSection
+              title={
+                <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span>Resource Occupancy &mdash; Free vs Occupied</span>
+                  {monthBlocks.length > 1 && currentOccMonthBlock && mkNav(
+                    `${MONTH_NAMES[currentOccMonthBlock.monthIdx]} ${selectedYear}`,
+                    safeOccMonthBlockIndex,
+                    monthBlocks.length - 1,
+                    goToOccMonthBlock
+                  )}
+                </span>
+              }
+              t={t}
+              defaultOpen
+            >
+              <div style={{ overflow: "hidden" }}>
+                <div
+                  key={currentOccMonthBlock ? currentOccMonthBlock.key : "occ-empty"}
+                  style={{ animation: `${occMonthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease` }}
+                >
+                  <ResourceOccupancyTimeline
+                    days={currentOccMonthBlock ? currentOccMonthBlock.weeks.flat() : []}
+                    resources={timelineResources}
+                    occupancyByResourceDate={occupancyByResourceDate}
+                    taskOccupancyByResourceDate={taskOccupancyByResourceDate}
+                    resourceColorMap={resourceColorMap}
+                    capacityHrs={RESOURCE_DAILY_CAPACITY_HRS}
+                    expandedResources={expandedResources}
+                    onToggleExpand={toggleExpandedResource}
+                    showHover={showHover}
+                    hideHover={hideHover}
+                    filteredRows={filteredRows}
+                    t={t}
+                    isDark={isDark}
+                  />
+                </div>
+              </div>
+            </AccordionSection>
+
+            <AccordionSection title="Resource Gantt" t={t} defaultOpen>
+              <GanttView projects={filteredProjectsData}/>
+            </AccordionSection>
+
+         
+          </>
+        )}
+
+        {hovered && (
+          <div
+            ref={tooltipRef}
+            onMouseEnter={() => showHover(hovered)}
+            onMouseLeave={hideHover}
+            style={{
+              position: "fixed",
+              left: hovered.x,
+              top: hovered.y,
+              transform: hovered.side === "left" ? "translate(calc(-100% - 10px),-50%)" : "translate(10px,-50%)",
+              zIndex: 50,
+              background: t.ttBg,
+              color: t.ttText,
+              fontSize: 12,
+              borderRadius: 10,
+              padding: 12,
+              maxWidth: "min(280px,90vw)",
+              maxHeight: "min(320px,70vh)",
+              overflowY: "auto",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
+            }}
+          >
+            <TooltipContent entry={hovered.entry} kind={hovered.kind} t={t}/>
+          </div>
+        )}
       </div>
-
-      {apiLoading && !apiResponse ? (
-        <div style={{ padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
-          Fetching schedule from API…
-        </div>
-      ) : apiError ? (
-        <div style={{ padding: 40, textAlign: "center", color: "#dc2626", fontSize: 13 }}>
-          Failed to load schedule: {apiError}
-        </div>
-      ) : filteredRows.length === 0 ? (
-        <div style={{ padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
-          No scheduled activity for this selection.
-        </div>
-      ) : (
-        <>
-          <AccordionSection title={weeklyScheduleTitle} defaultOpen>
-            <div style={{ overflow: "hidden" }}>
-              <div
-                key={currentMonthBlock.key}
-                className="wt-weeks-row"
-                style={{
-                  display: "flex",
-                  flexWrap: "nowrap",
-                  alignItems: "stretch",
-                  animation: `${monthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease`,
-                }}
-              >
-                {currentMonthBlock.weeks.map((days, wi) => (
-                  <div
-                    key={`${currentMonthBlock.key}-${wi}`}
-                    className="wt-week-col"
-                    style={{
-                      // On desktop these vars default to "1 1 0" / "0px" —
-                      // weeks share the row evenly, same as before. Below
-                      // 900px they switch to a near-full-width, scroll-
-                      // snapping page instead (see .wt-root breakpoints).
-                      flex: "var(--wt-week-flex, 1 1 0)",
-                      minWidth: "var(--wt-week-min-width, 0px)",
-                      padding: "0 10px",
-                      borderRight: wi < currentMonthBlock.weeks.length - 1 ? "1px solid #eef2f7" : "none",
-                    }}
-                  >
-                    <WeekCard
-                      weekIndex={wi}
-                      days={days}
-                      aggByDate={aggByDate}
-                      durationLabels={durationLabels}
-                      pctFromHrs={pctFromHrs}
-                      resourceColorMap={resourceColorMap}
-                      showHover={showHover}
-                      hideHover={hideHover}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </AccordionSection>
-
-          <AccordionSection title="Resource Gantt" defaultOpen >
-            {console.log('Filtered Project Data component : ',filteredProjectsData)}
-            <GanttView projects={filteredProjectsData} />
-          </AccordionSection>
-
-          {/* <AccordionSection title={projectBreakdownTitle} defaultOpen>
-            <div style={{ overflow: "hidden" }}>
-              <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 14px" }}>
-                {filteredRows.length} task{filteredRows.length === 1 ? "" : "s"} across {rangeLabel}
-              </p>
-              <div
-                key={`${projectBreakdownKey}-${safeProjectPageIndex}`}
-                className="wt-project-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${projectsPerPage}, minmax(0, 1fr))`,
-                  gap: 16,
-                  animation: `${projectSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease`,
-                }}
-              >
-                {currentProjectPage.map((p) => (
-                  <ProjectActivityPieChart key={p.project} project={p.project} rows={p.rows} />
-                ))}
-              </div>
-            </div>
-          </AccordionSection> */}
-        </>
-      )}
-
-      {hovered && (
-        <div
-          ref={tooltipRef}
-          onMouseEnter={showHover.bind(null, hovered)}
-          onMouseLeave={hideHover}
-          style={{
-            position: "fixed",
-            left: hovered.x,
-            top: hovered.y,
-            transform: hovered.side === "left" ? "translate(calc(-100% - 10px), -50%)" : "translate(10px, -50%)",
-            zIndex: 50,
-            background: "#0f172a",
-            color: "#f1f5f9",
-            fontSize: 12,
-            borderRadius: 10,
-            padding: 12,
-            // min(...) keeps the tooltip from overflowing narrow phone
-            // viewports instead of always reserving a fixed 280/320px.
-            maxWidth: "min(280px, 90vw)",
-            maxHeight: "min(320px, 70vh)",
-            overflowY: "auto",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
-          }}
-        >
-          <TooltipContent entry={hovered.entry} kind={hovered.kind} />
-        </div>
-      )}
-    </div>
-    {/* </div> */}
     </div>
   );
 }
 
-// Shared visual style for every dropdown control in the filter bar — the
-// native Year <select> AND the custom Month/Project/Resource picker
-// buttons all use this same object so the whole row reads as one
-// consistent control style (same height, padding, border, radius, font,
-// and minimum width).
-const dropdownStyle = {
-  fontSize: 12,
-  color: "#334155",
-  border: "1px solid #cbd5e1",
-  borderRadius: 8,
-  padding: "6px 10px",
-  background: "#f8fafc",
-  outline: "none",
-  // CSS custom property so mobile/tablet breakpoints (declared once, on
-  // .wt-root) can shrink every dropdown's min-width together instead of
-  // needing per-element media query overrides.
-  minWidth: "var(--wt-dropdown-min-width, 150px)",
-  height: 30,
-  boxSizing: "border-box",
-};
-
-const buttonStyle = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#fff",
-  background: "#2563eb",
-  border: "none",
-  borderRadius: 8,
-  padding: "7px 14px",
-  cursor: "pointer",
-};
-
-// Small round prev/next buttons used to page between the selected months in
-// the Weekly Schedule card header (and between project pages in the
-// Breakdown — By Project card header).
-const navArrowStyle = {
-  width: 22,
-  height: 22,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "1px solid #cbd5e1",
-  borderRadius: 6,
-  background: "#fff",
-  color: "#334155",
-  fontSize: 13,
-  lineHeight: 1,
-  padding: 0,
-};
-
-function FilterField({ label, children }) {
+/* ── sub-components (all receive `t` for theming) ── */
+function FilterField({ label, children, t }) {
   return (
-    <label
-      className="wt-filter-field"
-      style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "#64748b", fontWeight: 600 }}
-    >
-      {label}
-      {children}
+    <label className="wt-filter-field" style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: t.textSecondary, fontWeight: 600 }}>
+      {label}{children}
     </label>
   );
 }
 
-// Collapsible card wrapper used for each of the three views (weekly
-// schedule, Gantt, project breakdown) so a person can collapse the ones
-// they aren't looking at right now. Uncontrolled per-section open/close
-// state — each section remembers its own toggle independently of the
-// others. The header is a div acting as a button (not a real <button>)
-// because the Weekly Schedule section needs to nest its own prev/next
-// <button>s inside the title, and real buttons can't be nested inside one
-// another.
-function AccordionSection({ title, defaultOpen = true, children }) {
+function AccordionSection({ title, defaultOpen = true, children, t }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div
-      style={{
-        background: "#ffffff",
-        borderRadius: 14,
-        border: "1px solid #e2e8f0",
-        marginTop: 16,
-        overflow: "hidden",
-      }}
-    >
+    <div style={{ background: t.accBg, borderRadius: 14, border: `1px solid ${t.accBorder}`, marginTop: 16, overflow: "hidden", transition: "background 0.2s" }}>
       <div
         role="button"
         tabIndex={0}
         onClick={() => setOpen((o) => !o)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen((o) => !o);
-          }
-        }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((o) => !o); } }}
         style={{
           width: "100%",
           display: "flex",
@@ -1324,18 +1050,18 @@ function AccordionSection({ title, defaultOpen = true, children }) {
           textAlign: "left",
         }}
       >
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#334155" }}>{title}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: t.accTitle }}>{title}</span>
         <span
           style={{
             fontSize: 11,
-            color: "#94a3b8",
+            color: t.accChevron,
             display: "inline-block",
             transition: "transform 0.15s ease",
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
             flexShrink: 0,
           }}
         >
-          ▼
+          {"\u25BC"}
         </span>
       </div>
       {open && <div style={{ padding: "0 18px 18px" }}>{children}</div>}
@@ -1343,79 +1069,32 @@ function AccordionSection({ title, defaultOpen = true, children }) {
   );
 }
 
-// Small icon used in the top legend. Planned and Actual are both solid —
-// the same color is reused for a resource in both stacks — so the only
-// thing distinguishing them here is the label ("Plan" / "Act") under each
-// day's pair of bars in the chart itself.
-function PatternSwatch({ color }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 16,
-        height: 12,
-        borderRadius: 3,
-        background: color,
-        border: `1px solid ${color}`,
-      }}
-    />
-  );
-}
+function PatternSwatch({ color }) { return <span style={{ display: "inline-block", width: 16, height: 12, borderRadius: 3, background: color, border: `1px solid ${color}` }}/>; }
 
-// Shared multi-select dropdown used for the Month, Project, and Resource
-// filters — a checkbox list with an "All ___" option pinned to the top.
-function MultiSelectPicker({
-  pickerRef,
-  open,
-  setOpen,
-  disabled,
-  summary,
-  allLabel,
-  allSelected,
-  onSelectAll,
-  options,
-  selected,
-  onToggle,
-}) {
+function MultiSelectPicker({ t, pickerRef, open, setOpen, disabled, summary, allLabel, allSelected, onSelectAll, options, selected, onToggle, dropdownStyle }) {
   return (
     <div ref={pickerRef} style={{ position: "relative" }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
-        style={{
-          ...dropdownStyle,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          cursor: "pointer",
-        }}
+        style={{ ...dropdownStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "pointer" }}
       >
-        <span
-          style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {summary}
-        </span>
-        <span style={{ fontSize: 9, color: "#94a3b8" }}>▼</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{summary}</span>
+        <span style={{ fontSize: 9, color: t.textMuted }}>{"\u25BC"}</span>
       </button>
 
       {open && (
         <div
-          className="wt-picker-panel"
           style={{
             position: "absolute",
             top: "calc(100% + 4px)",
             left: 0,
             zIndex: 40,
-            background: "#fff",
-            border: "1px solid #cbd5e1",
+            background: t.pickerBg,
+            border: `1px solid ${t.pickerBorder}`,
             borderRadius: 10,
-            boxShadow: "0 10px 25px rgba(15,23,42,0.12)",
+            boxShadow: t.pickerShadow,
             minWidth: 220,
             maxHeight: 260,
             overflowY: "auto",
@@ -1428,19 +1107,17 @@ function MultiSelectPicker({
               alignItems: "center",
               gap: 8,
               fontSize: 12,
-              color: "#334155",
+              color: t.pickerText,
               fontWeight: 600,
               padding: "6px 8px",
               borderRadius: 6,
               cursor: "pointer",
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: `1px solid ${t.pickerDivider}`,
               marginBottom: 2,
             }}
           >
-            <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
-            {allLabel}
+            <input type="checkbox" checked={allSelected} onChange={onSelectAll}/> {allLabel}
           </label>
-
           {options.map((name) => (
             <label
               key={name}
@@ -1449,18 +1126,13 @@ function MultiSelectPicker({
                 alignItems: "center",
                 gap: 8,
                 fontSize: 12,
-                color: "#334155",
+                color: t.pickerText,
                 padding: "6px 8px",
                 borderRadius: 6,
                 cursor: "pointer",
               }}
             >
-              <input
-                type="checkbox"
-                checked={selected.includes(name)}
-                onChange={() => onToggle(name)}
-              />
-              {name}
+              <input type="checkbox" checked={selected.includes(name)} onChange={() => onToggle(name)}/> {name}
             </label>
           ))}
         </div>
@@ -1469,40 +1141,229 @@ function MultiSelectPicker({
   );
 }
 
-function TooltipContent({ entry, kind }) {
+/* ── TOOLTIP ── */
+function TooltipContent({ entry, kind, t }) {
   if (!entry) return null;
+
+  if (kind === "gantt-task") {
+    return (
+      <div>
+        <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{entry.taskName}</div>
+        <div style={{ color: t.ttMuted, marginBottom: 4 }}>{entry.resourceName}</div>
+        <div style={{ fontSize: 12, marginBottom: 6 }}>
+          {entry.startDate.toLocaleDateString([], { month: "short", day: "numeric" })}
+          {entry.startDate.getTime() !== entry.endDate.getTime() && (
+            <> &ndash; {entry.endDate.toLocaleDateString([], { month: "short", day: "numeric" })}</>
+          )}
+          {" \u2022 "}
+          <span style={{ fontWeight: 600 }}>{entry.days} day{entry.days > 1 ? "s" : ""}</span>
+        </div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>{fmtDuration(entry.totalHours)}</div>
+        {entry.taskRows && entry.taskRows.length > 0 && (
+          <div style={{ borderTop: `1px solid ${t.ttDivider}`, paddingTop: 6, fontSize: 11 }}>
+            {entry.taskRows.map((row, idx) => (
+              <div key={idx} style={{ marginBottom: 4 }}>
+                <div style={{ color: "#cbd5e1" }}>{row.project} &bull; {row.status}</div>
+                <div style={{ fontSize: 10.5 }}>
+                  {fmtDateTime(parseDate(row.plannedStart))} &ndash; {fmtDateTime(parseDate(row.plannedStop))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (kind === "occupancy") {
+    const occupied = entry.hours ?? 0;
+    const free = entry.free ?? Math.max((entry.capacityHrs ?? 8) - occupied, 0);
+    const over = Math.max(occupied - (entry.capacityHrs ?? 8), 0);
+    const hasTasks = entry.tasks && entry.tasks.length > 0;
+    const delayedHours = entry.delayedHours ?? 0;
+    const hasDelay = delayedHours > 0;
+
+    const delayedTasks = hasTasks ? entry.tasks.filter((x) => x.delayed) : [];
+    const pendingInWindow = hasTasks ? entry.tasks.filter((x) => !x.delayed && !x.row.actualStart && x.originalPlannedStart) : [];
+    const normalTasks = hasTasks ? entry.tasks.filter((x) => !x.delayed && (x.row.actualStart || !x.originalPlannedStart)) : [];
+
+    return (
+      <div style={{ minWidth: 240 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: t.ttText }}>{entry.resourceName}</div>
+        <div style={{ color: t.ttMuted, fontSize: 11, marginBottom: 10 }}>
+          {entry.date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}
+        </div>
+
+        <div style={{ background: t.ttCardBg, borderRadius: 8, padding: "8px 10px", marginBottom: 10, display: "grid", gap: 6 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: t.ttOccupiedText, fontWeight: 600, fontSize: 12 }}>Occupied</span>
+            <span style={{ color: t.ttOccupiedText, fontWeight: 700, fontSize: 14 }}>{fmtDuration(occupied)}</span>
+          </div>
+          {hasDelay && (
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: t.ttDelayedText, fontWeight: 600, fontSize: 12 }}>{"\u26A0"} Delayed</span>
+              <span style={{ color: t.ttDelayedText, fontWeight: 700, fontSize: 14 }}>{fmtDuration(delayedHours)}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span style={{ color: t.ttFreeText, fontWeight: 600, fontSize: 12 }}>Free</span>
+            <span style={{ color: t.ttFreeText, fontWeight: 700, fontSize: 14 }}>{fmtDuration(free)}</span>
+          </div>
+          {over > 0 && (
+            <div style={{ color: t.ttOccupiedText, fontSize: 11, fontWeight: 600, marginTop: 2 }}>
+              Over by {fmtDuration(over)}
+            </div>
+          )}
+        </div>
+
+        {delayedTasks.length > 0 && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, color: t.ttDelayedText, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              {"\u26A0"} Delayed &mdash; Past planned deadline
+            </div>
+            {delayedTasks.map(({ row, hours, delayDays, daysFromStart, originalPlannedStart, originalPlannedStop, totalPlannedHrs }) => {
+              const pS = originalPlannedStart || parseDate(row.plannedStart);
+              const pE = originalPlannedStop || parseDate(row.plannedStop);
+              return (
+                <div key={row.id} style={{ background: t.ttDelayCardBg, border: `1px solid ${t.ttDelayCardBorder}`, borderRadius: 8, padding: "6px 9px", fontSize: 11, marginBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                    <span style={{ background: t.ttDelayChipBg, color: t.ttDelayChipText, fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 999, whiteSpace: "nowrap" }}>
+                      {row.project || "?"}
+                    </span>
+                    <span style={{ color: t.ttDelayChipText, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                      {row.task || "Untitled"}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: t.ttDelayDateText }}>
+                    Planned: {pS ? fmtDateTime(pS) : "\u2014"} &ndash; {pE ? fmtDateTime(pE) : "\u2014"}
+                    {totalPlannedHrs != null && <> ({fmtDuration(totalPlannedHrs)})</>}
+                  </div>
+                  {/* <div style={{ fontSize: 10, color: t.ttDelayBoldText, fontWeight: 700, marginTop: 2 }}>
+                    {delayDays} day{delayDays !== 1 ? "s" : ""} past deadline &bull; day {daysFromStart} since planned start
+                  </div> */}
+                  {/* <div style={{ fontSize: 10, color: t.ttDelaySubText, marginTop: 1 }}>
+                    {fmtDurationCompact(hours)} still occupying
+                  </div> */}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {pendingInWindow.length > 0 && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, color: t.ttMuted, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Pending &mdash; Within planned window
+            </div>
+            {pendingInWindow.map(({ row, hours, daysFromStart, originalPlannedStart, originalPlannedStop, totalPlannedHrs }) => {
+              const pS = originalPlannedStart || parseDate(row.plannedStart);
+              const pE = originalPlannedStop || parseDate(row.plannedStop);
+              return (
+                <div key={row.id} style={{ background: t.ttCardBg, border: `1px solid ${t.ttCardBorder}`, borderRadius: 8, padding: "6px 9px", fontSize: 11, marginBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                    <span style={{ background: t.ttChipBg, color: t.ttChipText, fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 999, whiteSpace: "nowrap" }}>
+                      {row.project || "?"}
+                    </span>
+                    <span style={{ color: t.ttText, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                      {row.task || "Untitled"}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: t.ttMuted }}>
+                    Planned: {pS ? fmtDateTime(pS) : "\u2014"} &ndash; {pE ? fmtDateTime(pE) : "\u2014"}
+                    {totalPlannedHrs != null && <> ({fmtDuration(totalPlannedHrs)})</>}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#cbd5e1", marginTop: 1 }}>
+                    Day {daysFromStart} &bull; {fmtDurationCompact(hours)} occupying &bull; Not started
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {normalTasks.length > 0 && (
+          <div>
+            <div style={{ fontSize: 10, color: t.textSecondary, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              {delayedTasks.length > 0 || pendingInWindow.length > 0 ? "Other tasks" : "Scheduled on this day"}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {normalTasks.map(({ row, hours }) => {
+                const pS = parseDate(row.plannedStart);
+                const pE = parseDate(row.plannedStop);
+                const aS = parseDate(row.actualStart);
+                const aE = parseDate(row.actualStop);
+                return (
+                  <div key={row.id} style={{ background: t.ttCardBg, border: `1px solid ${t.ttCardBorder}`, borderRadius: 8, padding: "6px 9px", fontSize: 11 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                      <span style={{ background: t.ttChipBg, color: t.ttChipText, fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 999, whiteSpace: "nowrap" }}>
+                        {row.project || "?"}
+                      </span>
+                      <span style={{ color: t.ttText, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                        {row.task || "Untitled"}
+                      </span>
+                      <span style={{ color: t.ttMuted, fontSize: 10, fontWeight: 500, whiteSpace: "nowrap" }}>
+                        {fmtDurationCompact(hours)}{row.status && row.status !== "Completed" ? ` \u00B7 ${row.status}` : ""}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 10, color: t.ttMuted }}>
+                      Planned: {pS ? fmtDateTime(pS) : "—"} &ndash; {pE ? fmtDateTime(pE) : "—"}
+                    </div>
+                    {aS && (
+                      <div style={{ fontSize: 10, color: t.ttActualColor, marginTop: 1 }}>
+                        Actual: {aS ? fmtDateTime(aS) : "—"} &ndash; {aE ? fmtDateTime(aE) : "…"}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!hasTasks && (
+          <div style={{ marginTop: 4, padding: "6px 10px", background: t.ttFreeBg, borderRadius: 6, color: t.ttFreeText, fontSize: 12, fontWeight: 600, textAlign: "center" }}>
+            {"\u2713"} Free all day
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (kind === "task-day") {
+    return (
+      <div>
+        <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.taskName}</div>
+        <div style={{ color: t.ttMuted }}>{entry.resourceName}</div>
+        <div style={{ color: t.ttMuted }}>{entry.date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</div>
+        <div style={{ marginTop: 6 }}>{fmtDuration(entry.hours)} on this task</div>
+      </div>
+    );
+  }
+
   const hrs = kind === "planned" ? entry.plannedHrs : entry.actualHrs;
   return (
     <div>
       <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.resourceName}</div>
-      <div style={{ color: "#94a3b8" }}>
-        {kind === "planned" ? "Planned" : "Actual"} · {fmtDuration(hrs)}
+      <div style={{ color: t.ttMuted }}>
+        {kind === "planned" ? "Planned" : "Actual"} &middot; {fmtDuration(hrs)}
       </div>
-      <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid #334155" }}>
+      <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${t.ttDivider}` }}>
         {entry.tasks.map(({ row, plannedHrs, actualHrs }) => {
-          const planned = parseDate(row.plannedStart);
-          const plannedStop = parseDate(row.plannedStop);
-          const actual = row.actualStart ? parseDate(row.actualStart) : null;
-          const actualStop = row.actualStop ? parseDate(row.actualStop) : null;
+          const p = parseDate(row.plannedStart);
+          const ps = parseDate(row.plannedStop);
+          const a = row.actualStart ? parseDate(row.actualStart) : null;
+          const as = row.actualStop ? parseDate(row.actualStop) : null;
           const info = finishedEarlyLateInfo(row);
           return (
             <div key={row.id} style={{ marginBottom: 8 }}>
-              <div style={{ fontWeight: 600, color: "#f1f5f9" }}>{row.task}</div>
-              <div style={{ color: "#94a3b8" }}>
-                {row.module} · {row.project}
-              </div>
-              <div>
-                Planned: {fmtTime(planned)} – {fmtTime(plannedStop)} ({fmtDuration(plannedHrs)})
-              </div>
-              <div>
-                Actual: {actual ? `${fmtTime(actual)} – ${actualStop ? fmtTime(actualStop) : "…"}` : "—"} ({fmtDuration(actualHrs)})
-              </div>
+              <div style={{ fontWeight: 600, color: t.ttText }}>{row.task}</div>
+              <div style={{ color: t.ttMuted }}>{row.module} &middot; {row.project}</div>
+              <div>Planned: {fmtDateTime(p)} &ndash; {fmtDateTime(ps)} ({fmtDuration(plannedHrs)})</div>
+              <div>Actual: {a ? `${fmtDateTime(a)} \u2013 ${as ? fmtDateTime(as) : "…"}` : "—"} ({fmtDuration(actualHrs)})</div>
               <div>Status: {row.status}</div>
               {info && info.type !== "ontime" && (
-                <div style={{ color: info.type === "early" ? "#34d399" : "#f87171" }}>
-                  {info.type === "early"
-                    ? `Finished ${fmtDuration(info.diff)} early`
-                    : `Finished ${fmtDuration(info.diff)} late`}
+                <div style={{ color: info.type === "early" ? t.earlyColor : t.lateColor }}>
+                  {info.type === "early" ? `Finished ${fmtDuration(info.diff)} early` : `Finished ${fmtDuration(info.diff)} late`}
                 </div>
               )}
             </div>
@@ -1513,362 +1374,595 @@ function TooltipContent({ entry, kind }) {
   );
 }
 
-// Turns a day's list of {resourceName, hrs} entries into cumulatively
-// stacked segments (top%/height% on the shared hours axis).
 function buildStack(resources, field, pctFromHrs) {
-  let cumulative = 0;
+  let c = 0;
   return resources
     .filter((r) => r[field] > 0)
     .map((r) => {
-      const bottomPct = pctFromHrs(cumulative);
-      cumulative += r[field];
-      const topPct = pctFromHrs(cumulative);
-      return { ...r, topPct, heightPct: Math.max(bottomPct - topPct, 0.6) };
+      const bp = pctFromHrs(c);
+      c += r[field];
+      const tp = pctFromHrs(c);
+      return { ...r, topPct: tp, heightPct: Math.max(bp - tp, 0.6) };
     });
 }
 
-// Donut chart built from a single CSS conic-gradient, so it needs no
-// external charting library and scales cleanly with its container.
-//
-// One of these is rendered PER PROJECT. Each slice is an ACTIVITY (task)
-// within that project — sized by its share of the project's planned hours
-// — and the legend next to it shows that activity's own progress %. The
-// center of the donut shows the project's overall progress, which is the
-// planned-hours-weighted average of its activities' progress percentages.
-//
-// "Progress" for a single activity (see activityProgressPct):
-//   - 100% once any of its rows has an actualStop (finished)
-//   - actual/planned hours (capped under 100%) once it has started
-//   - 0% if it hasn't started yet
-function ProjectActivityPieChart({ project, rows }) {
-  const activities = useMemo(() => {
-    const agg = aggregateActivities(rows);
-    const totalPlanned = agg.reduce((s, a) => s + a.plannedHrs, 0) || 1;
-    let cumulative = 0;
-    return agg
-      .sort((a, b) => b.plannedHrs - a.plannedHrs)
-      .map((a, i) => {
-        const weightPct = (a.plannedHrs / totalPlanned) * 100;
-
-        // Hours actually done vs still remaining, WITHIN this activity's
-        // own planned budget — this is what splits its donut slice (and
-        // its legend row) into a "completed" portion and a "pending"
-        // portion. A finished activity (any row has actualStop) always
-        // reads as fully completed, even if it wrapped up early/late and
-        // its real actualHrs differs from what was planned — same rule
-        // activityProgressPct already uses for the 100% case.
-        const completedHrs = a.finished ? a.plannedHrs : clamp(a.actualHrs, 0, a.plannedHrs);
-        const pendingHrs = Math.max(a.plannedHrs - completedHrs, 0);
-
-        const completedWeightPct = (completedHrs / totalPlanned) * 100;
-
-        const start = cumulative;
-        const completedEnd = start + completedWeightPct;
-        const end = start + weightPct;
-        cumulative = end;
-
-        return {
-          ...a,
-          weightPct,
-          completedHrs,
-          pendingHrs,
-          start,
-          completedEnd,
-          end,
-          progressPct: activityProgressPct(a),
-          color: activityColor(i),
-          pendingColor: activityColorPending(i),
-        };
-      });
-  }, [rows]);
-
-  const overallProgress = useMemo(() => {
-    const totalPlanned = activities.reduce((s, a) => s + a.plannedHrs, 0);
-    if (!totalPlanned) return 0;
-    const weighted = activities.reduce((s, a) => s + a.progressPct * a.plannedHrs, 0);
-    return Math.round(weighted / totalPlanned);
-  }, [activities]);
-
-  if (activities.length === 0) {
-    return (
-      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
-        <div style={{ fontWeight: 700, color: "#334155", marginBottom: 6 }}>{project}</div>
-        No activity to summarize for this selection.
-      </div>
-    );
-  }
-
-  // Each activity contributes TWO gradient stops instead of one: a solid
-  // segment sized by hours actually completed, then a lighter/muted
-  // segment (same hue) sized by the hours still pending — so the donut
-  // shows both "how big is this task" (slice width, from planned hours)
-  // and "how much of it is done" (solid vs muted split) at once.
-  const gradientStops = activities
-    .flatMap((a) => [
-      `${a.color} ${a.start}% ${a.completedEnd}%`,
-      `${a.pendingColor} ${a.completedEnd}% ${a.end}%`,
-    ])
-    .join(", ");
+/* ── WeekCard ── */
+function WeekCard({ weekIndex, days, aggByDate, durationLabels, pctFromHrs, resourceColorMap, showHover, hideHover, t }) {
+  const rD = days.filter(Boolean);
+  const sL = rD.length ? fmtDate(rD[0]) : "";
+  const eL = rD.length ? fmtDate(rD[rD.length - 1]) : "";
+  const rc = durationLabels.length;
+  const ch = "var(--wt-chart-height,170px)";
+  const ct = "repeat(7,minmax(0,1fr))";
+  const DL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 }}>
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          color: "#334155",
-          marginBottom: 10,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={project}
-      >
-        {project}
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: t.textPrimary, margin: 0 }}>Week {weekIndex + 1}</h3>
+        <span style={{ fontSize: 11, color: t.textMuted }}>{sL} &ndash; {eL}</span>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "center" }}>
-        <div style={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              background: `conic-gradient(${gradientStops})`,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              inset: 22,
-              borderRadius: "50%",
-              background: "#ffffff",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "inset 0 0 0 1px #f1f5f9",
-            }}
-          >
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{overallProgress}%</div>
-            <div style={{ fontSize: 9, color: "#94a3b8" }}>progress</div>
+      <div>
+        <div style={{ display: "flex", height: ch, marginTop: 4 }}>
+          <div style={{ width: 28, flexShrink: 0, position: "relative" }}>
+            {durationLabels.map((x, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  top: `${(1 - i / (rc - 1)) * 100}%`,
+                  transform: "translateY(-50%)",
+                  fontSize: 9,
+                  color: t.axisText,
+                }}
+              >
+                {x.label}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ flex: 1, display: "grid", gridTemplateColumns: ct, gap: 2, position: "relative", borderLeft: `1px solid ${t.gridLine}` }}>
+            {durationLabels.map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: `${(1 - i / (rc - 1)) * 100}%`,
+                  borderTop: `1px solid ${t.gridLine}`,
+                }}
+              />
+            ))}
+
+            {days.map((date, di) => {
+              if (!date) {
+                return (
+                  <div
+                    key={di}
+                    style={{
+                      position: "relative",
+                      borderRight: di < 6 ? `1.5px dashed ${t.gridDashLight}` : "none",
+                      background: t.emptySlotBg,
+                    }}
+                  />
+                );
+              }
+              const k = date.toDateString();
+              const agg = aggByDate[k] || { resources: [], plannedTotal: 0, actualTotal: 0 };
+              return (
+                <div
+                  key={di}
+                  style={{
+                    position: "relative",
+                    borderRight: di < 6 ? `1.5px dashed ${t.gridDash}` : "none",
+                    background: di % 2 === 0 ? "transparent" : t.barStripeBg,
+                  }}
+                >
+                  <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3, padding: "0 2px" }}>
+                    <StackedBar
+                      entries={buildStack(agg.resources, "plannedHrs", pctFromHrs)}
+                      field="plannedHrs"
+                      kind="planned"
+                      resourceColorMap={resourceColorMap}
+                      showHover={showHover}
+                      hideHover={hideHover}
+                      t={t}
+                    />
+                    <StackedBar
+                      entries={buildStack(agg.resources, "actualHrs", pctFromHrs)}
+                      field="actualHrs"
+                      kind="actual"
+                      resourceColorMap={resourceColorMap}
+                      showHover={showHover}
+                      hideHover={hideHover}
+                      showEarlyLate
+                      compareTotal={agg.plannedTotal}
+                      t={t}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            flex: 1,
-            minWidth: 160,
-            // Fixed to roughly the donut's height with its own scrollbar,
-            // so a project with many activities lengthens the legend's
-            // internal scroll instead of growing this card (and therefore
-            // the whole page) taller.
-            maxHeight: 130,
-            overflowY: "auto",
-            paddingRight: 4,
-          }}
-        >
-          {activities.map((a) => (
-            <div key={a.activity} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
-                <span style={{ width: 9, height: 9, borderRadius: 2, background: a.color, flexShrink: 0 }} />
-                <span
-                  style={{
-                    flex: 1,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={a.activity}
-                >
-                  {a.activity}
-                </span>
-              </div>
+        <div style={{ display: "flex", marginTop: 4 }}>
+          <div style={{ width: 28, flexShrink: 0 }}/>
+          <div style={{ flex: 1, display: "grid", gridTemplateColumns: ct, gap: 2 }}>
+            {days.map((date, di) => (
               <div
+                key={di}
                 style={{
-                  display: "flex",
-                  gap: 10,
-                  fontSize: 10.5,
-                  fontWeight: 600,
-                  fontVariantNumeric: "tabular-nums",
-                  paddingLeft: 17, // aligns under the activity name, past the swatch
+                  textAlign: "center",
+                  fontSize: 9,
+                  color: t.textMuted,
+                  lineHeight: 1.25,
+                  borderRight: di < 6 ? `1.5px dashed ${t.gridDash}` : "none",
                 }}
               >
-                <span style={{ color: "#059669" }}>Completed {fmtDurationCompact(a.completedHrs)}</span>
-                <span style={{ color: a.pendingHrs > 0 ? "#d97706" : "#94a3b8" }}>
-                  Pending {fmtDurationCompact(a.pendingHrs)}
-                </span>
+                {date ? (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 1 }}>
+                      <span>P</span>
+                      <span>A</span>
+                    </div>
+                    <div style={{ fontWeight: 600, color: t.dayLabelDate }}>{date.getDate()}</div>
+                    <div style={{ fontWeight: 600 }}>{date.toLocaleDateString("en-US", { weekday: "short" })}</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ marginTop: 1, height: 14 }}>&nbsp;</div>
+                    <div style={{ fontWeight: 600, color: t.dayLabelEmpty }}>&mdash;</div>
+                    <div style={{ fontWeight: 600, color: t.dayLabelEmpty }}>{DL[di]}</div>
+                  </>
+                )}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function WeekCard({
-  weekIndex,
+/* ── WeekTableView — tabular alternative to the bar-chart WeekCards ── */
+function WeekTableView({ weeks, aggByDate, resourceColorMap, t, showHover, hideHover }) {
+  const allDays = useMemo(() => weeks.flat().filter(Boolean), [weeks]);
+
+  const allResources = useMemo(() => {
+    const set = new Set();
+    allDays.forEach((d) => {
+      const agg = aggByDate[d.toDateString()];
+      if (agg) agg.resources.forEach((r) => set.add(r.resourceName));
+    });
+    return Array.from(set).sort();
+  }, [allDays, aggByDate]);
+
+  const lookup = useMemo(() => {
+    const m = {};
+    allResources.forEach((rn) => { m[rn] = {}; });
+    allDays.forEach((d) => {
+      const dk = d.toDateString();
+      const agg = aggByDate[dk];
+      if (!agg) return;
+      agg.resources.forEach((r) => { if (m[r.resourceName]) m[r.resourceName][dk] = r; });
+    });
+    return m;
+  }, [allResources, allDays, aggByDate]);
+
+  const todayKey = new Date().toDateString();
+  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  if (!allDays.length) return <div style={{ padding: 20, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No data for this month.</div>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {weeks.map((weekDays, wi) => {
+        const realDays = weekDays.filter(Boolean);
+        if (!realDays.length) return null;
+        const startLabel = fmtDate(realDays[0]);
+        const endLabel = fmtDate(realDays[realDays.length - 1]);
+
+        const weekResourceNames = (() => {
+          const set = new Set();
+          realDays.forEach((d) => {
+            const agg = aggByDate[d.toDateString()];
+            if (agg) agg.resources.forEach((r) => set.add(r.resourceName));
+          });
+          return Array.from(set).sort();
+        })();
+
+        const dayTotals = weekDays.map((d) => {
+          if (!d) return null;
+          const agg = aggByDate[d.toDateString()];
+          return agg ? { planned: agg.plannedTotal, actual: agg.actualTotal } : { planned: 0, actual: 0 };
+        });
+
+        return (
+          <div key={wi}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: t.textPrimary, margin: 0 }}>Week {wi + 1}</h3>
+              <span style={{ fontSize: 11, color: t.textMuted }}>{startLabel} &ndash; {endLabel}</span>
+            </div>
+
+            <div style={{ overflowX: "auto", border: `1px solid ${t.cardBorder}`, borderRadius: 10, background: t.cardBg }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 600 }}>
+                <thead>
+                  <tr>
+                    <th style={{
+                      position: "sticky", left: 0, zIndex: 2, background: t.occHeaderBg,
+                      borderBottom: `1px solid ${t.gridLineMd}`, borderRight: `1px solid ${t.gridLineMd}`,
+                      padding: "8px 10px", textAlign: "left", fontWeight: 700, fontSize: 10,
+                      color: t.textSecondary, textTransform: "uppercase", letterSpacing: "0.5px", minWidth: 140,
+                    }}>
+                      Resource
+                    </th>
+
+                    {weekDays.map((d, di) => {
+                      if (!d) {
+                        return (
+                          <th key={di} style={{
+                            padding: "6px 4px", borderBottom: `1px solid ${t.gridLineMd}`,
+                            borderRight: di < 6 ? `1px solid ${t.gridLineMd}` : "none",
+                            background: t.occHeaderBg, textAlign: "center", color: t.dayLabelEmpty,
+                            fontWeight: 600, minWidth: 72,
+                          }}>
+                            <div>{DAY_LABELS[di]}</div>
+                            <div>&mdash;</div>
+                          </th>
+                        );
+                      }
+                      const isToday = d.toDateString() === todayKey;
+                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                      return (
+                        <th key={di} style={{
+                          padding: "6px 4px", borderBottom: `1px solid ${t.gridLineMd}`,
+                          borderRight: di < 6 ? `1px solid ${t.gridLineMd}` : "none",
+                          background: isToday ? t.occHeaderToday : t.occHeaderBg,
+                          textAlign: "center", fontWeight: 700, minWidth: 72,
+                        }}>
+                          <div style={{ fontSize: 9, color: isToday ? t.todayText : isWeekend ? t.textMuted : t.textSecondary }}>
+                            {d.toLocaleDateString("en-US", { weekday: "short" })}
+                          </div>
+                          <div style={{ fontSize: 13, color: isToday ? t.todayText : t.textPrimary, fontWeight: isToday ? 800 : 700 }}>
+                            {d.getDate()}
+                          </div>
+                        </th>
+                      );
+                    })}
+
+                    <th style={{
+                      padding: "6px 8px", borderBottom: `1px solid ${t.gridLineMd}`,
+                      background: t.occHeaderBg, textAlign: "center", fontWeight: 700, fontSize: 10,
+                      color: t.textSecondary, textTransform: "uppercase", minWidth: 64,
+                    }}>
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {weekResourceNames.length === 0 ? (
+                    <tr><td colSpan={9} style={{ padding: 16, textAlign: "center", color: t.emptyText }}>No activity this week</td></tr>
+                  ) : weekResourceNames.map((rn, ri) => {
+                    const baseColor = resourceColorMap[rn] || resourceBaseColor(ri);
+                    let weekPlanned = 0, weekActual = 0;
+                    return (
+                      <tr key={rn} style={{ background: ri % 2 === 0 ? t.occRowEven : t.occRowOdd }}>
+                        <td style={{
+                          position: "sticky", left: 0, zIndex: 1,
+                          background: ri % 2 === 0 ? t.occRowEven : t.occRowOdd,
+                          borderBottom: `1px solid ${t.gridLine}`, borderRight: `1px solid ${t.gridLineMd}`,
+                          padding: "6px 10px", fontWeight: 600, color: t.resNameColor, whiteSpace: "nowrap",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{
+                              width: 18, height: 18, borderRadius: "50%", background: baseColor.actual,
+                              color: "#fff", fontSize: 8, fontWeight: 700, display: "flex",
+                              alignItems: "center", justifyContent: "center", flexShrink: 0,
+                            }}>
+                              {initialsFor(rn)}
+                            </div>
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }} title={rn}>{rn}</span>
+                          </div>
+                        </td>
+
+                        {weekDays.map((d, di) => {
+                          if (!d) {
+                            return <td key={di} style={{
+                              borderBottom: `1px solid ${t.gridLine}`,
+                              borderRight: di < 6 ? `1px solid ${t.gridLineMd}` : "none",
+                              background: t.emptySlotBg,
+                            }}/>;
+                          }
+                          const dk = d.toDateString();
+                          const data = lookup[rn] && lookup[rn][dk];
+                          const planned = data ? data.plannedHrs : 0;
+                          const actual = data ? data.actualHrs : 0;
+                          weekPlanned += planned;
+                          weekActual += actual;
+
+                          const isToday = dk === todayKey;
+                          const hasData = planned > 0 || actual > 0;
+                          const diff = actual - planned;
+                          const diffColor = !hasData || actual === 0 ? null : diff < -EARLY_LATE_THRESHOLD_HRS ? t.earlyColor : diff > EARLY_LATE_THRESHOLD_HRS ? t.lateColor : null;
+
+                          return (
+                            <td
+                              key={di}
+                              onMouseEnter={(e) => {
+                                if (!data) return;
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const side = (window.innerWidth - rect.right) < 300 ? "left" : "right";
+                                showHover({ x: side === "left" ? rect.left : rect.right, y: rect.top + rect.height / 2, side, entry: data, kind: "planned" });
+                              }}
+                              onMouseLeave={hideHover}
+                              style={{
+                                borderBottom: `1px solid ${t.gridLine}`,
+                                borderRight: di < 6 ? `1px solid ${t.gridLineMd}` : "none",
+                                padding: "5px 4px", textAlign: "center", verticalAlign: "middle",
+                                background: isToday ? t.occCellToday : "transparent",
+                                cursor: hasData ? "pointer" : "default",
+                              }}
+                            >
+                              {hasData ? (
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                    <span style={{ fontSize: 10, color: t.textMuted, fontWeight: 500 }}>P</span>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: t.textPrimary, fontVariantNumeric: "tabular-nums" }}>
+                                      {fmtDurationCompact(planned)}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                    <span style={{ fontSize: 10, color: t.textMuted, fontWeight: 500 }}>A</span>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: diffColor || t.textPrimary, fontVariantNumeric: "tabular-nums" }}>
+                                      {actual > 0 ? fmtDurationCompact(actual) : "\u2014"}
+                                    </span>
+                                    {diffColor && <span style={{ fontSize: 9, color: diffColor }}>{diff < 0 ? "\u25B2" : "\u25BC"}</span>}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span style={{ color: t.textMuted, fontSize: 10 }}>&mdash;</span>
+                              )}
+                            </td>
+                          );
+                        })}
+
+                        <td style={{ borderBottom: `1px solid ${t.gridLine}`, padding: "5px 6px", textAlign: "center", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                          <div style={{ fontSize: 10, color: t.textMuted }}>P {fmtDurationCompact(weekPlanned)}</div>
+                          <div style={{ fontSize: 10, color: weekActual > 0 ? t.textPrimary : t.textMuted }}>
+                            A {weekActual > 0 ? fmtDurationCompact(weekActual) : "\u2014"}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── ResourceOccupancyTimeline ── */
+const GANTT_CELL_WIDTH = 46;
+const GANTT_NAME_WIDTH = 195;
+const GANTT_BAR_HEIGHT = 20;
+
+function ResourceOccupancyTimeline({
   days,
-  aggByDate,
-  durationLabels,
-  pctFromHrs,
+  resources,
+  occupancyByResourceDate,
+  taskOccupancyByResourceDate,
   resourceColorMap,
+  capacityHrs = RESOURCE_DAILY_CAPACITY_HRS,
+  expandedResources,
+  onToggleExpand,
   showHover,
   hideHover,
+  filteredRows,
+  t,
+  isDark,
 }) {
-  const startLabel = fmtDate(days[0]);
-  const endLabel = fmtDate(days[days.length - 1]);
+  const todayKey = new Date().toDateString();
+  const chartWidth = Math.max(days.length, 1) * GANTT_CELL_WIDTH;
 
-  const rowCount = durationLabels.length;
-  // Reads the --wt-chart-height custom property set on .wt-root, which
-  // shrinks at the 900px/480px breakpoints — so the chart gets shorter on
-  // phones/tablets instead of forcing a 170px-tall row regardless of
-  // screen size.
-  const chartHeight = "var(--wt-chart-height, 170px)";
+  const resourceDailyData = useMemo(() => {
+    const m = {};
+    resources.forEach((name) => {
+      m[name] = {};
+      days.forEach((d) => {
+        if (!d) return;
+        const k = d.toDateString();
+        const data = occupancyByResourceDate[k] && occupancyByResourceDate[k][name];
+        const th = data ? data.hours : 0;
+        const occ = Math.min(th, capacityHrs);
+        const fr = Math.max(0, capacityHrs - th);
+        const dh = data ? data.delayedHours || 0 : 0;
+        m[name][k] = {
+          occupied: occ,
+          free: fr,
+          tasks: data ? data.tasks : [],
+          delayedHours: dh,
+          hasDelay: dh > 0,
+          totalHours: th,
+        };
+      });
+    });
+    return m;
+  }, [resources, days, occupancyByResourceDate, capacityHrs]);
 
-  const columnTemplate = days.map(() => "minmax(0, 1fr)").join(" ");
+  function activateDayCell(e, rn, date, data) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const side = window.innerWidth - rect.right < 320 ? "left" : "right";
+    showHover({
+      x: side === "left" ? rect.left : rect.right,
+      y: rect.top + rect.height / 2,
+      side,
+      kind: "occupancy",
+      entry: {
+        resourceName: rn,
+        date,
+        hours: data.occupied,
+        capacityHrs,
+        tasks: data.tasks,
+        free: data.free,
+        delayedHours: data.delayedHours || 0,
+        hasDelay: data.hasDelay || false,
+      },
+    });
+  }
+
+  if (!resources.length || !days.length) {
+    return <div style={{ padding: 24, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No resource activity to show for this selection.</div>;
+  }
+
+  const firstDay = days.find(Boolean);
+  const startOfMonth = firstDay ? new Date(firstDay.getFullYear(), firstDay.getMonth(), 1) : new Date();
+  const weekOverlay = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)";
+  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 8,
-        }}
-      >
-        <h3
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#334155",
-            margin: 0,
-          }}
-        >
-          Week {weekIndex + 1}
-        </h3>
-
-        <span
-          style={{
-            fontSize: 11,
-            color: "#94a3b8",
-          }}
-        >
-          {startLabel} – {endLabel}
-        </span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500 }}>
+          {resources.length} resource{resources.length !== 1 ? "s" : ""} &bull; {" "}
+          {days.filter(Boolean).length} day{days.filter(Boolean).length !== 1 ? "s" : ""} &bull; {capacityHrs}h daily capacity
+        </div>
       </div>
 
-      <div>
-        <div>
-          <div
-            style={{
-              display: "flex",
-              height: chartHeight,
-              marginTop: 4,
-            }}
-          >
-            {/* Y Axis */}
+      <div
+        style={{
+          overflowX: "auto",
+          border: `1px solid ${t.cardBorder}`,
+          borderRadius: 10,
+          background: t.cardBg,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+        }}
+      >
+        <div style={{ display: "inline-block", minWidth: "100%" }}>
+          {/* Week chips */}
+          <div style={{ display: "flex", borderBottom: `1px solid ${t.gridLineMd}`, background: t.occHeaderBg }}>
             <div
               style={{
-                width: 28,
+                width: GANTT_NAME_WIDTH,
                 flexShrink: 0,
-                position: "relative",
+                position: "sticky",
+                left: 0,
+                zIndex: 11,
+                background: t.occHeaderBg,
+                borderRight: `1px solid ${t.gridLineMd}`,
               }}
-            >
-              {durationLabels.map((t, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    top: `${(1 - i / (rowCount - 1)) * 100}%`,
-                    transform: "translateY(-50%)",
-                    fontSize: 9,
-                    color: "#94a3b8",
-                  }}
-                >
-                  {t.label}
-                </div>
-              ))}
-            </div>
-
-            {/* Grid */}
-            <div
-              style={{
-                flex: 1,
-                display: "grid",
-                gridTemplateColumns: columnTemplate,
-                gap: 2,
-                position: "relative",
-                borderLeft: "1px solid #f1f5f9",
-              }}
-            >
-              {durationLabels.map((t, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: `${(1 - i / (rowCount - 1)) * 100}%`,
-                    borderTop: "1px solid #f1f5f9",
-                  }}
-                />
-              ))}
-
-              {days.map((date, di) => {
-                const key = date.toDateString();
-                const agg = aggByDate[key] || { resources: [], plannedTotal: 0, actualTotal: 0 };
-
-                const plannedStack = buildStack(agg.resources, "plannedHrs", pctFromHrs);
-                const actualStack = buildStack(agg.resources, "actualHrs", pctFromHrs);
-
+            />
+            <div style={{ display: "flex", width: chartWidth }}>
+              {Array.from({ length: Math.ceil(days.length / 7) }).map((_, wi) => {
+                const weekDaysCount = Math.min(7, days.length - wi * 7);
                 return (
                   <div
-                    key={di}
+                    key={wi}
                     style={{
-                      position: "relative",
-                      borderRight: di < days.length - 1 ? "1.5px dashed #cbd5e1" : "none",
-                      background: di % 2 === 0 ? "transparent" : "rgba(148,163,184,0.045)",
+                      width: weekDaysCount * GANTT_CELL_WIDTH,
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "5px 0",
                     }}
                   >
-                    <div
+                    <span
                       style={{
-                        position: "relative",
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
-                        gap: 3,
-                        padding: "0 2px",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: t.textSecondary,
+                        background: t.inputBg,
+                        border: `1px solid ${t.inputBorder}`,
+                        borderRadius: 999,
+                        padding: "2px 8px",
                       }}
                     >
-                      {/* Planned stack */}
-                      <StackedBar
-                        entries={plannedStack}
-                        field="plannedHrs"
-                        kind="planned"
-                        resourceColorMap={resourceColorMap}
-                        showHover={showHover}
-                        hideHover={hideHover}
-                      />
+                      Week {wi + 1}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-                      {/* Actual stack */}
-                      <StackedBar
-                        entries={actualStack}
-                        field="actualHrs"
-                        kind="actual"
-                        resourceColorMap={resourceColorMap}
-                        showHover={showHover}
-                        hideHover={hideHover}
-                        showEarlyLate
-                        compareTotal={agg.plannedTotal}
-                      />
+          {/* Header row */}
+          <div style={{ display: "flex", borderBottom: `1px solid ${t.gridLineMd}`, background: t.occHeaderBg, paddingBottom: 4 }}>
+            <div
+              style={{
+                width: GANTT_NAME_WIDTH,
+                flexShrink: 0,
+                position: "sticky",
+                left: 0,
+                zIndex: 10,
+                background: t.occHeaderBg,
+                padding: "8px 12px 4px",
+                fontSize: 10,
+                fontWeight: 700,
+                color: t.textSecondary,
+                borderRight: `1px solid ${t.gridLineMd}`,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              RESOURCE
+            </div>
+
+            <div style={{ display: "flex", width: chartWidth }}>
+              {days.map((d, i) => {
+                const isT = d && d.toDateString() === todayKey;
+                const wIdx = Math.floor(i / 7);
+                const isAltWeek = wIdx % 2 === 1;
+                const baseBg = isT ? t.occHeaderToday : t.occHeaderBg;
+                const bg = isAltWeek ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}` : baseBg;
+                const endOfWeek = (i + 1) % 7 === 0 && i < days.length - 1;
+
+                if (!d) {
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        width: GANTT_CELL_WIDTH,
+                        flexShrink: 0,
+                        textAlign: "center",
+                        padding: "4px 1px",
+                        borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : i < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
+                        background: bg,
+                        opacity: 0.5,
+                      }}
+                    >
+                      <div style={{ fontSize: 9, fontWeight: 600, color: t.textMuted, lineHeight: 1 }}>{DAY_LABELS[i % 7]}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, marginTop: 1 }}>&ndash;</div>
+                    </div>
+                  );
+                }
+
+                const isW = isWeekend(d);
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: GANTT_CELL_WIDTH,
+                      flexShrink: 0,
+                      textAlign: "center",
+                      padding: "4px 1px",
+                      borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : i < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
+                      background: bg,
+                      boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
+                    }}
+                  >
+                    <div style={{ fontSize: 9, fontWeight: 600, color: isT ? t.todayText : isW ? t.textMuted : t.textSecondary, lineHeight: 1 }}>
+                      {d.toLocaleDateString("en-US", { weekday: "short" })}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: isT ? 800 : 700, color: isT ? t.todayText : t.textPrimary, marginTop: 1 }}>
+                      {d.getDate()}
                     </div>
                   </div>
                 );
@@ -1876,57 +1970,237 @@ function WeekCard({
             </div>
           </div>
 
-          {/* Footer */}
-          <div style={{ display: "flex", marginTop: 4 }}>
-            <div style={{ width: 28, flexShrink: 0 }} />
+          {/* Resource rows */}
+          {resources.map((resourceName, ri) => {
+            const baseColor = resourceColorMap[resourceName] || resourceBaseColor(ri);
+            const daily = resourceDailyData[resourceName] || {};
+            const rowBg = ri % 2 === 0 ? t.occRowEven : t.occRowOdd;
 
-            <div
-              style={{
-                flex: 1,
-                display: "grid",
-                gridTemplateColumns: columnTemplate,
-                gap: 2,
-              }}
-            >
-              {days.map((date, di) => (
+            return (
+              <div key={resourceName} style={{ display: "flex", borderBottom: `1px solid ${t.gridLine}`, background: rowBg, alignItems: "center" }}>
                 <div
-                  key={di}
                   style={{
-                    textAlign: "center",
-                    fontSize: 9,
-                    color: "#94a3b8",
-                    lineHeight: 1.25,
-                    borderRight: di < days.length - 1 ? "1.5px dashed #cbd5e1" : "none",
+                    width: GANTT_NAME_WIDTH,
+                    flexShrink: 0,
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 9,
+                    background: rowBg,
+                    borderRight: `1px solid ${t.gridLineMd}`,
+                    padding: "6px 10px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 1 }}>
-                    <span>P</span>
-                    <span>A</span>
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: baseColor.actual,
+                      color: "#fff",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {initialsFor(resourceName)}
                   </div>
-
-                  <div style={{ fontWeight: 600, color: "#64748b" }}>{date.getDate()}</div>
-                  <div>{date.toLocaleDateString("en-US", { weekday: "short" })}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: t.resNameColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.1 }} title={resourceName}>
+                      {resourceName}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                <div style={{ width: chartWidth, display: "flex", height: 42, alignItems: "center" }}>
+                  {days.map((d, di) => {
+                    const isT = d && d.toDateString() === todayKey;
+                    const wIdx = Math.floor(di / 7);
+                    const isAltWeek = wIdx % 2 === 1;
+                    const baseBg = isT ? t.occCellToday : d && isWeekend(d) ? t.occCellWeekend : t.occCellBg;
+                    const bg = isAltWeek ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}` : baseBg;
+                    const endOfWeek = (di + 1) % 7 === 0 && di < days.length - 1;
+
+                    if (!d) {
+                      return (
+                        <div
+                          key={di}
+                          style={{
+                            width: GANTT_CELL_WIDTH,
+                            flexShrink: 0,
+                            height: "100%",
+                            borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : di < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
+                            background: bg,
+                            opacity: 0.5,
+                          }}
+                        />
+                      );
+                    }
+
+                    const k = d.toDateString();
+                    const data = daily[k] || { occupied: 0, free: capacityHrs, tasks: [], delayedHours: 0, hasDelay: false };
+                    const occ = data.occupied;
+                    const dH = data.delayedHours || 0;
+                    const nH = Math.max(0, occ - dH);
+                    const oP = clamp((occ / capacityHrs) * 100, 0, 100);
+                    const nP = clamp((nH / capacityHrs) * 100, 0, 100);
+                    const dP = clamp((dH / capacityHrs) * 100, 0, 100);
+                    const isW = isWeekend(d);
+                    const hD = data.hasDelay;
+                    const occColor = getOccupancyColor(occ);
+
+                    return (
+                      <div
+                        key={di}
+                        onMouseEnter={(e) => activateDayCell(e, resourceName, d, data)}
+                        onMouseLeave={hideHover}
+                        onClick={(e) => { e.stopPropagation(); activateDayCell(e, resourceName, d, data); }}
+                        style={{
+                          width: GANTT_CELL_WIDTH,
+                          flexShrink: 0,
+                          height: "100%",
+                          borderRight: endOfWeek ? `2px solid ${t.gridLineMd}` : di < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
+                          background: bg,
+                          boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
+                          padding: "3px 3px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "100%",
+                            height: GANTT_BAR_HEIGHT,
+                            background: t.occFreeBar,
+                            borderRadius: 6,
+                            position: "relative",
+                            overflow: "hidden",
+                            border: hD ? `1px solid ${t.occAmberBorder}` : `1px solid ${t.occFreeBarBorder}`,
+                            boxShadow: hD ? t.occAmberShadow : t.occFreeBarShadow,
+                          }}
+                        >
+                          {nH > 0 && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: 0,
+                                top: 0,
+                                height: "100%",
+                                width: `${nP}%`,
+                                background: occColor,
+                                borderRadius: 6,
+                                transition: "width 0.2s ease",
+                              }}
+                            />
+                          )}
+                          {dH > 0 && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: `${nP}%`,
+                                top: 0,
+                                height: "100%",
+                                width: `${Math.min(dP, 100 - nP)}%`,
+                                backgroundColor: occColor,
+                                backgroundImage: "repeating-linear-gradient(135deg,rgba(255,255,255,0.35),rgba(255,255,255,0.35) 3px,transparent 3px,transparent 6px)",
+                                borderRadius: nH > 0 ? "0 6px 6px 0" : 6,
+                                transition: "width 0.2s ease",
+                                boxShadow: "inset 0 0 0 1px rgba(217,119,6,0.6)",
+                              }}
+                            />
+                          )}
+                          <div
+                            style={{
+                              position: "absolute",
+                              left: "50%",
+                              top: "50%",
+                              transform: "translate(-50%, -50%)",
+                              fontSize: 9,
+                              fontWeight: 700,
+                              color: occ > 0 ? "#fff" : t.occFreeLabel,
+                              textShadow: occ > 0 ? "0 1px 2px rgba(0,0,0,0.35)" : "none",
+                              whiteSpace: "nowrap",
+                              padding: "0 2px",
+                              pointerEvents: "none",
+                            }}
+                          >
+                            {fmtDurationCompact(occ > 0 ? occ : data.free)}
+                          </div>
+                        </div>
+
+                        {hD && (
+                          <div style={{ position: "absolute", top: -1, left: 1, fontSize: 7, color: t.occAmberBorder, lineHeight: 1, pointerEvents: "none" }}>
+                            {"⚠"}
+                          </div>
+                        )}
+
+                        {isT && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 1,
+                              right: 2,
+                              width: 4,
+                              height: 4,
+                              background: t.todayDot,
+                              borderRadius: "50%",
+                              boxShadow: "0 0 0 1.5px " + t.cardBg,
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap", fontSize: 11, color: t.legendText, paddingLeft: 2 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ width: 26, height: 10, background: t.occFreeBar, border: `1px solid ${t.occFreeBarBorder}`, borderRadius: 3 }}/>
+          Free capacity
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ width: 26, height: 10, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#dc2626)", borderRadius: 3 }}/>
+          Occupied (load)
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ width: 26, height: 10, background: "repeating-linear-gradient(135deg,#fbbf24,#fbbf24 3px,#f59e0b 3px,#f59e0b 6px)", border: "1px solid #d97706", borderRadius: 3 }}/>
+          Delayed
+        </span>
+        <span style={{ color: t.legendMuted, fontSize: 10 }}>
+          <span style={{ color: "#d97706" }}>{"⚠"}</span> = delayed &bull; Hover for details
+        </span>
       </div>
     </div>
   );
 }
 
-// One vertical stacked bar (either the "Planned" or "Actual" column for a
-// single day), made of one segment per resource.
-function StackedBar({ entries, field, kind, resourceColorMap, showHover, hideHover, showEarlyLate, compareTotal }) {
-  const total = entries.reduce((s, e) => s + e[field], 0);
 
-  let earlyLateGlow = null;
+function initialsFor(n) {
+  if (!n) return "?";
+  const p = n.trim().split(/\s+/);
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+  return (p[0][0] + p[1][0]).toUpperCase();
+}
+
+function StackedBar({ entries, field, kind, resourceColorMap, showHover, hideHover, showEarlyLate, compareTotal, t }) {
+  const total = entries.reduce((s, e) => s + e[field], 0);
+  let g = null;
   if (showEarlyLate && total > 0 && compareTotal > 0) {
-    const diff = total - compareTotal;
-    if (Math.abs(diff) > EARLY_LATE_THRESHOLD_HRS) {
-      earlyLateGlow = diff < 0 ? "early" : "late";
-    }
+    const d = total - compareTotal;
+    if (Math.abs(d) > EARLY_LATE_THRESHOLD_HRS) g = d < 0 ? "early" : "late";
   }
 
   return (
@@ -1934,94 +2208,54 @@ function StackedBar({ entries, field, kind, resourceColorMap, showHover, hideHov
       style={{
         position: "relative",
         flex: 1,
-        // Shrinks at smaller breakpoints (see --wt-bar-max-width on
-        // .wt-root) so P/A bar pairs don't get crushed together on phones.
-        maxWidth: "var(--wt-bar-max-width, 20px)",
+        maxWidth: "var(--wt-bar-max-width,20px)",
         height: "100%",
-        border: earlyLateGlow
-          ? `1.5px solid ${earlyLateGlow === "early" ? "#059669" : "#dc2626"}`
-          : "1px solid #e2e8f0",
+        border: g ? `1.5px solid ${g === "early" ? t.earlyColor : t.lateColor}` : `1px solid ${t.barBorder}`,
         borderRadius: 6,
-        background: "#fafafa",
+        background: t.barBg,
         overflow: "visible",
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: 5,
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ position: "absolute", inset: 0, borderRadius: 5, overflow: "hidden" }}>
         {entries.map((entry) => {
           const c = resourceColorMap[entry.resourceName] || resourceBaseColor(0);
-          const background = kind === "planned" ? c.planned : c.actual;
-          // The pulse is reserved for work that is ACTUALLY in progress right
-          // now — a resource's Actual segment only pulses while one of its
-          // tasks has status "Running". It's a slow pulse (2.8s) so it reads
-          // as "still going" rather than an alert.
-          const isLivePulse = kind === "actual" && entry.hasRunning;
-
-          // Shared by onMouseEnter (desktop hover) and onClick (touch —
-          // phones/tablets have no hover, so tapping a segment is the only
-          // way to see its tooltip there).
-          const activateSegment = (e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const spaceOnRight = window.innerWidth - rect.right;
-            const side = spaceOnRight < 300 ? "left" : "right";
-            showHover({
-              x: side === "left" ? rect.left : rect.right,
-              y: rect.top + rect.height / 2,
-              side,
-              entry,
-              kind,
-            });
+          const bg = kind === "planned" ? c.planned : c.actual;
+          const lp = kind === "actual" && entry.hasRunning;
+          const act = (e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            const s = (window.innerWidth - r.right) < 300 ? "left" : "right";
+            showHover({ x: s === "left" ? r.left : r.right, y: r.top + r.height / 2, side: s, entry, kind });
           };
-
           return (
             <div
               key={entry.resourceName}
-              onMouseEnter={activateSegment}
+              onMouseEnter={act}
               onMouseLeave={hideHover}
-              onClick={(e) => {
-                e.stopPropagation();
-                activateSegment(e);
-              }}
+              onClick={(e) => { e.stopPropagation(); act(e); }}
               style={{
                 position: "absolute",
                 left: 0,
                 right: 0,
                 top: `${entry.topPct}%`,
                 height: `${entry.heightPct}%`,
-                background,
+                background: bg,
                 borderTop: "1px solid rgba(255,255,255,0.6)",
                 cursor: "pointer",
-                animation: isLivePulse ? "beepPulseRunning 2.8s ease-in-out infinite" : "none",
+                animation: lp ? "beepPulseRunning 2.8s ease-in-out infinite" : "none",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
               }}
             >
-              {/* Duration label — only rendered once the segment has grown
-                  tall enough (roughly 3.5% of the bar's height, ~6px at the
-                  170px chart height used here) to hold a short label
-                  without visually overflowing into its neighbors. Always
-                  rendered rotated 90° (vertical) so it reads along the bar
-                  instead of across its ~20px width. */}
               {entry.heightPct >= 3.5 && (
                 <span
                   style={{
-                    // clamp(min, viewport-scaled, max) keeps the label
-                    // legible on wide screens without letting it grow past
-                    // what a ~20px-wide segment can actually hold on
-                    // narrow/mobile viewports.
-                    fontSize: "clamp(6px, 1.6vw, 8px)",
+                    fontSize: "clamp(6px,1.6vw,8px)",
                     lineHeight: 1,
                     fontWeight: 700,
-                    color: "rgba(255,255,255,0.95)",
-                    textShadow: "0 1px 1px rgba(0,0,0,0.35)",
+                    color: t.barLabelColor,
+                    textShadow: t.barLabelShadow,
                     whiteSpace: "nowrap",
                     transform: "rotate(-90deg)",
                     transformOrigin: "center",
@@ -2038,31 +2272,103 @@ function StackedBar({ entries, field, kind, resourceColorMap, showHover, hideHov
       </div>
 
       {showEarlyLate && total > 0 && compareTotal > 0 && (() => {
-        const diff = total - compareTotal;
-        if (Math.abs(diff) <= EARLY_LATE_THRESHOLD_HRS) return null;
-        const isEarly = diff < 0;
+        const d = total - compareTotal;
+        if (Math.abs(d) <= EARLY_LATE_THRESHOLD_HRS) return null;
+        const e = d < 0;
         return (
-          <Tooltip
-            title={isEarly ? "Under planned hours" : "Over planned hours"}
-            arrow
-          >
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                transform: "translate(-50%, -140%)",
-                fontSize: 12,
-                fontWeight: 700,
-                color: isEarly ? "#059669" : "#dc2626",
-                cursor: "pointer",
-              }}
-            >
-              {isEarly ? "▲" : "▼"}
+          <Tooltip title={e ? "Under planned hours" : "Over planned hours"} arrow>
+            <div style={{ position: "absolute", left: "50%", top: 0, transform: "translate(-50%,-140%)", fontSize: 12, fontWeight: 700, color: e ? t.earlyColor : t.lateColor, cursor: "pointer" }}>
+              {e ? "\u25B2" : "\u25BC"}
             </div>
           </Tooltip>
         );
       })()}
+    </div>
+  );
+}
+
+function ProjectActivityPieChart({ project, rows }) {
+  const activities = useMemo(() => {
+    const agg = aggregateActivities(rows);
+    const tp = agg.reduce((s, a) => s + a.plannedHrs, 0) || 1;
+    let c = 0;
+    return agg
+      .sort((a, b) => b.plannedHrs - a.plannedHrs)
+      .map((a, i) => {
+        const w = (a.plannedHrs / tp) * 100;
+        const ch = a.finished ? a.plannedHrs : clamp(a.actualHrs, 0, a.plannedHrs);
+        const ph = Math.max(a.plannedHrs - ch, 0);
+        const cw = (ch / tp) * 100;
+        const s = c;
+        const ce = s + cw;
+        const e = s + w;
+        c = e;
+        return {
+          ...a,
+          weightPct: w,
+          completedHrs: ch,
+          pendingHrs: ph,
+          start: s,
+          completedEnd: ce,
+          end: e,
+          progressPct: activityProgressPct(a),
+          color: activityColor(i),
+          pendingColor: activityColorPending(i),
+        };
+      });
+  }, [rows]);
+
+  const op = useMemo(() => {
+    const tp = activities.reduce((s, a) => s + a.plannedHrs, 0);
+    if (!tp) return 0;
+    return Math.round(activities.reduce((s, a) => s + a.progressPct * a.plannedHrs, 0) / tp);
+  }, [activities]);
+
+  if (!activities.length) {
+    return (
+      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+        <div style={{ fontWeight: 700, color: "#334155", marginBottom: 6 }}>{project}</div>
+        No activity to summarize.
+      </div>
+    );
+  }
+
+  const gs = activities
+    .flatMap((a) => [`${a.color} ${a.start}% ${a.completedEnd}%`, `${a.pendingColor} ${a.completedEnd}% ${a.end}%`])
+    .join(", ");
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={project}>
+        {project}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "center" }}>
+        <div style={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
+          <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: `conic-gradient(${gs})` }}/>
+          <div style={{
+            position: "absolute", inset: 22, borderRadius: "50%", background: "#fff",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            boxShadow: "inset 0 0 0 1px #f1f5f9",
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{op}%</div>
+            <div style={{ fontSize: 9, color: "#94a3b8" }}>progress</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1, minWidth: 160, maxHeight: 130, overflowY: "auto", paddingRight: 4 }}>
+          {activities.map((a) => (
+            <div key={a.activity} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#334155" }}>
+                <span style={{ width: 9, height: 9, borderRadius: 2, background: a.color, flexShrink: 0 }}/>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.activity}>{a.activity}</span>
+              </div>
+              <div style={{ display: "flex", gap: 10, fontSize: 10.5, fontWeight: 600, fontVariantNumeric: "tabular-nums", paddingLeft: 17 }}>
+                <span style={{ color: "#059669" }}>Completed {fmtDurationCompact(a.completedHrs)}</span>
+                <span style={{ color: a.pendingHrs > 0 ? "#d97706" : "#94a3b8" }}>Pending {fmtDurationCompact(a.pendingHrs)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
