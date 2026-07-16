@@ -25,12 +25,8 @@ import AssignerModule from "./AssignerModule";
 const ActivityAssigner = () => {
   return (
     <>
-      <div className="container mx-auto px-4">
-        <div className="w-full md:w-10/12 lg:w-10/12 mx-auto">
-          {/* <div className=" mt-4"> */}
-          <AssignerModule></AssignerModule>
-          {/* </div> */}
-        </div>
+      <div className="mx-auto px-4 max-w-[1270px]">
+        <AssignerModule />
       </div>
     </>
   );
