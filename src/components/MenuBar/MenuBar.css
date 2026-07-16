@@ -159,3 +159,99 @@
 .mobile-menu-bg {
   background-color: var(--bg-drawer-mobile) !important;
 }
+/* ============================================
+   MOBILE MENU BAR — target layout fixes
+   ============================================ */
+
+/* AppBar: keep it pinned to the top, above drawer + content */
+.mobile-menu-bg {
+  background-color: var(--bg-drawer-mobile, #1976D2) !important;
+  position: sticky;   /* stays visible while scrolling page content */
+  top: 0;
+  z-index: 1201;       /* above MUI Drawer's default 1200 */
+}
+
+.mobile-menu-bg .MuiToolbar-root {
+  min-height: 48px !important;  /* thin bar like screenshot, not full 64px */
+  padding-left: 8px;
+  padding-right: 12px;
+}
+
+.mobile-menu-bg .menu-icon,
+.mobile-menu-bg svg {
+  color: #fff !important; /* hamburger + icons visible on blue */
+}
+
+/* ---- Drawer on mobile: behave like an overlay, not a pushed panel ---- */
+/* "persistent" variant pushes content by default — override so it
+   overlays instead, matching typical mobile drawer UX */
+@media (max-width: 599px) {
+  .MuiDrawer-root .MuiDrawer-paper {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh !important;
+    width: 80vw !important;
+    max-width: 280px;
+    z-index: 1300;              /* above AppBar */
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* dim the background behind the drawer when open */
+  .MuiBackdrop-root {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+  }
+}
+
+/* ---- Main content area: full width, sits below the AppBar ---- */
+.main-content {
+  flex-grow: 1;
+  width: 100%;
+  padding: 0.75rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+@media (max-width: 599px) {
+  .drawer-root {
+    flex-direction: column;   /* stack AppBar above content, not side-by-side */
+    width: 100%;
+  }
+
+  .main-content {
+    padding: 0.5rem;
+  }
+}
+
+/* ---- Avatar / user chip on the right of the AppBar ---- */
+.avatar-mobile {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 0.8rem !important;
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* ---- Tables/cards inside main-content shouldn't overflow the viewport ---- */
+@media (max-width: 599px) {
+  .main-content table,
+  .main-content .MuiTableContainer-root {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ---- Tabs (Holidays / Leave Master) — keep them full-width & scrollable ---- */
+@media (max-width: 599px) {
+  .MuiTabs-root {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .MuiTab-root {
+    min-width: auto;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+}
