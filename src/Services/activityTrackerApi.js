@@ -29,10 +29,14 @@ const activityTrackerApi = {
   /**
    * GET /activityTracker/projects/assignee
    * Returns published projects assigned to the logged-in user with counts.
+   * Optionally filtered by a date range.
+   * @param {string} [fromDate] - Optional SQL Date (e.g., 'YYYY-MM-DD')
+   * @param {string} [toDate] - Optional SQL Date (e.g., 'YYYY-MM-DD')
    */
-  getProjectsByAssignee: async () => {
+  getProjectsByAssignee: async (fromDate, toDate) => {
     const response = await axios.get(`${apiEndPoint}/projects/assignee`, {
       headers: getHeaders(),
+      params: fromDate && toDate ? { fromDate, toDate } : undefined,
     });
     return response.data;
   },
@@ -1114,17 +1118,18 @@ const activityTrackerApi = {
    * Returns all ProjectTreeDTOs that were explicitly created by the logged-in user.
    * @returns Array of ProjectTreeDTO
    */
-  getActivityTreeCreatedByUser: async (fromDate,toDate) => {
+  getActivityTreeCreatedByUser: async (fromDate, toDate) => {
     console.log("From Date : ", fromDate);
     console.log("To Date : ", toDate);
     const response = await axios.get(
       `${apiEndPoint}/getActivityTreeCreatedByUser`,
-      { headers: getHeaders(),
-      params: {
-      fromDate: fromDate,
-      toDate: toDate,
-    },
-       },
+      {
+        headers: getHeaders(),
+        params: {
+          fromDate: fromDate,
+          toDate: toDate,
+        },
+      },
     );
     return response.data;
   },
