@@ -100,6 +100,8 @@ import GanttView from "./GanttView";
 import ProjectUpdatesView from "./ProjectUpdatesView";
 import { getUserData } from "../Modules/Login/Encrypt";
 import CoAssignerModal from "./CoAssignerModal";
+import { useTheme } from "./useTheme";
+import { Sun, Moon } from "lucide-react";
 import {
   computeProjectRole,
   canEditProject,
@@ -113,85 +115,89 @@ import * as sharingApi from "./sharingApi";
 import { Handshake, Crown } from "lucide-react";
 /* ─── Constants ─── */
 
-const STATUS_CONFIG = {
-  pending: {
-    label: "Pending",
-    Icon: Clock,
-    bg: "#F8FAFC",
-    color: "#64748B",
-    border: "#E2E8F0",
-  },
-  "not ready": {
-    label: "Not Ready",
-    Icon: AlertCircle,
-    bg: "#FEF3C7",
-    color: "#B45309",
-    border: "#FCD34D",
-  },
-  rejected: {
-    label: "Rejected",
-    Icon: XCircle,
-    bg: "#FEE2E2",
-    color: "#DC2626",
-    border: "#FCA5A5",
-  },
-  paused: {
-    label: "Paused",
-    Icon: PauseCircle,
-    bg: "#FFEDD5",
-    color: "#C2410C",
-    border: "#FDBA74",
-  },
-  running: {
-    label: "Running",
-    Icon: PlayCircle,
-    bg: "#DBEAFE",
-    color: "#1D4ED8",
-    border: "#93C5FD",
-    pulse: true, // ← pulsing animation
-  },
-  completed: {
-    label: "Completed",
-    Icon: CheckCircle2,
-    bg: "#DCFCE7",
-    color: "#15803D",
-    border: "#86EFAC",
-  },
-  loading: {
-    // bonus: for any loading state
-    label: "Loading",
-    Icon: Loader2,
-    bg: "#EDE9FE",
-    color: "#7C3AED",
-    border: "#DDD6FE",
-    spin: true, // ← spinning animation
-  },
-  finished: {
-    label: "Finished",
-    Icon: ShieldCheck,
-    bg: "#F0FDF4",
-    color: "#166534",
-    border: "#4ADE80",
-  },
-  closed: {
-    label: "Closed",
-    Icon: XCircle,
-    bg: "#F1F5F9",
-    color: "#475569",
-    border: "#CBD5E1",
-  },
-};
+/* ─── Status Config Factory (theme-aware) ─── */
+function makeStatusConfig(t) {
+  return {
+    pending: {
+      label: "Pending",
+      Icon: Clock,
+      bg: t.bgSubtle,
+      color: t.textMuted,
+      border: t.border,
+    },
+    "not ready": {
+      label: "Not Ready",
+      Icon: AlertCircle,
+      bg: t.warningBg,
+      color: t.warning,
+      border: t.warningBorder,
+    },
+    rejected: {
+      label: "Rejected",
+      Icon: XCircle,
+      bg: t.dangerBg,
+      color: t.danger,
+      border: t.dangerBorder,
+    },
+    paused: {
+      label: "Paused",
+      Icon: PauseCircle,
+      bg: "#FFEDD5", // Orange — kept as-is (semantic)
+      color: "#C2410C",
+      border: "#FDBA74",
+    },
+    running: {
+      label: "Running",
+      Icon: PlayCircle,
+      bg: t.primaryBg,
+      color: t.primary,
+      border: t.primaryBorder,
+      pulse: true,
+    },
+    completed: {
+      label: "Completed",
+      Icon: CheckCircle2,
+      bg: t.successBg,
+      color: t.success,
+      border: t.successBorder,
+    },
+    loading: {
+      label: "Loading",
+      Icon: Loader2,
+      bg: t.violetBg,
+      color: t.violet,
+      border: t.violetBorder,
+      spin: true,
+    },
+    finished: {
+      label: "Finished",
+      Icon: ShieldCheck,
+      bg: t.successBgSubtle,
+      color: t.success,
+      border: t.successBorder,
+    },
+    closed: {
+      label: "Closed",
+      Icon: XCircle,
+      bg: t.closedBg,
+      color: t.closedText,
+      border: t.closedBorder,
+    },
+  };
+}
 
-function getStatusConfig(status) {
-  if (!status) return STATUS_CONFIG.Pending;
+/* ─── Themed status config lookup ─── */
+function getStatusConfig(status, t) {
+  const CONFIG = makeStatusConfig(t);
+  if (!status) return CONFIG.pending;
   const key = String(status).toLowerCase().trim();
   return (
-    STATUS_CONFIG[key] || {
+    CONFIG[key] || {
       label: status,
       Icon: HelpCircle,
-      bg: "#F1F5F9",
-      color: "#94A3B8",
-      border: "#E2E8F0",
+      bg: t.bgMuted,
+      color: t.textFaint,
+      border: t.border,
     }
   );
 }
@@ -418,7 +424,9 @@ function nextWorkMoment(dt, userId, groupResources = {}) {
       d.setHours(WORK_START_HR, 0, 0, 0);
       continue;
     }
-    if (hr > WORK_END_HR) {
+    // ── FIX: >= instead of > ──
+    if (hr >= WORK_END_HR) {
+      // ← CHANGED from > to >=
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
       continue;
@@ -517,6 +525,183 @@ function defaultFirstStart(userId, groupResources = {}) {
 
   // nextWorkMoment will handle weekends/leaves
   return nextWorkMoment(baseDate, userId, groupResources);
+}
+/* ─── Auto Chain Computation (per-resource sequential) ─── */
+function recomputeAutoChains(rows, groupResources = {}) {
+  const updated = rows.map((r) => ({ ...r }));
+  const byId = new Map(updated.map((r) => [r.id, r]));
+
+  // ── Build parent → children map ──
+  const childrenMap = new Map();
+  updated.forEach((r) => {
+    const pid = r.parentId || "__ROOT__";
+    if (!childrenMap.has(pid)) childrenMap.set(pid, []);
+    childrenMap.get(pid).push(r);
+  });
+
+  const getChildren = (id) => childrenMap.get(id) || [];
+
+  // ── 1. Flatten rows in visible order (top → bottom, parents then children) ──
+  const ordered = flattenOrdered(updated);
+
+  // ── 2. Reset _isAnchor and _autoChained flags ──
+  updated.forEach((r) => {
+    r._isAnchor = false;
+    r._autoChained = false;
+  });
+
+  // ── 3. Group rows by resource (skip parents with children, skip non-pending) ──
+  const byResource = new Map();
+  const orderedIds = ordered.map((r) => r.id);
+
+  orderedIds.forEach((id) => {
+    const r = byId.get(id);
+    if (!r || !r.resource) return;
+    if (getChildren(r.id).length > 0) return; // skip parents
+    if (!isPending(r)) return;
+
+    if (!byResource.has(r.resource)) byResource.set(r.resource, []);
+    byResource.get(r.resource).push(r);
+  });
+
+  const warnings = [];
+
+  // ── 4. Chain each resource ──
+  byResource.forEach((chain, userId) => {
+    if (chain.length === 0) return;
+
+    const anchor = chain[0];
+    anchor._isAnchor = true;
+
+    if (!anchor.plannedStart) {
+      warnings.push({
+        userId,
+        taskName: anchor.task || anchor.module || "Untitled",
+      });
+      return; // skip this resource entirely
+    }
+
+    // Anchor: keep user's plannedStart, compute stop from duration
+    const anchorStart = parseISODateTime(anchor.plannedStart);
+    const anchorDur = Number(anchor.durationHrs);
+    const hasAnchorDur =
+      anchor.durationHrs !== "" &&
+      anchor.durationHrs !== null &&
+      anchor.durationHrs !== undefined &&
+      !isNaN(anchorDur);
+
+    if (hasAnchorDur && anchorDur > 0) {
+      const stop = addWorkHours(anchorStart, anchorDur, userId, groupResources);
+      anchor.plannedStop = isoDateTime(stop);
+    } else if (hasAnchorDur && anchorDur === 0) {
+      anchor.plannedStop = isoDateTime(anchorStart);
+    } else {
+      anchor.plannedStop = "";
+    }
+
+    let prevEnd = anchor.plannedStop
+      ? parseISODateTime(anchor.plannedStop)
+      : null;
+
+    // Chain the rest
+    for (let i = 1; i < chain.length; i++) {
+      const row = chain[i];
+      row._autoChained = true;
+
+      if (!prevEnd) {
+        row.plannedStart = "";
+        row.plannedStop = "";
+        continue;
+      }
+
+      const start = nextWorkMoment(new Date(prevEnd), userId, groupResources);
+      row.plannedStart = isoDateTime(start);
+
+      const dur = Number(row.durationHrs);
+      const hasDur =
+        row.durationHrs !== "" &&
+        row.durationHrs !== null &&
+        row.durationHrs !== undefined &&
+        !isNaN(dur);
+
+      if (hasDur && dur > 0) {
+        const stop = addWorkHours(start, dur, userId, groupResources);
+        row.plannedStop = isoDateTime(stop);
+        prevEnd = stop;
+      } else if (hasDur && dur === 0) {
+        row.plannedStop = row.plannedStart;
+        prevEnd = start;
+      } else {
+        row.plannedStop = "";
+        prevEnd = start;
+      }
+    }
+  });
+
+  // ── 5. Recompute parent rows from children (same as original) ──
+  const parentIds = Array.from(childrenMap.keys()).filter(
+    (k) => k !== "__ROOT__",
+  );
+  for (const pid of parentIds) {
+    const parent = byId.get(pid);
+    if (!parent || !isPending(parent)) continue;
+
+    const children = getChildren(pid);
+    const intervals = [];
+    const resourcesSet = new Set();
+
+    for (const c of children) {
+      if (!c.plannedStart || !c.plannedStop) continue;
+      const s = parseISODateTime(c.plannedStart);
+      const e = parseISODateTime(c.plannedStop);
+      if (!s || !e) continue;
+      if (e.getTime() <= s.getTime()) continue;
+      intervals.push({
+        start: s.getTime(),
+        end: e.getTime(),
+        resource: c.resource || "",
+      });
+      resourcesSet.add(c.resource || "");
+    }
+
+    if (intervals.length === 0) {
+      parent._autoDuration = false;
+      continue;
+    }
+
+    parent.plannedStart = isoDateTime(
+      new Date(Math.min(...intervals.map((i) => i.start))),
+    );
+    parent.plannedStop = isoDateTime(
+      new Date(Math.max(...intervals.map((i) => i.end))),
+    );
+
+    let parentMs = 0;
+    if (resourcesSet.size === 1) {
+      for (const it of intervals) parentMs += it.end - it.start;
+    } else {
+      const sorted = intervals
+        .map((i) => ({ s: i.start, e: i.end }))
+        .sort((a, b) => a.s - b.s);
+      let curS = sorted[0].s;
+      let curE = sorted[0].e;
+      for (let i = 1; i < sorted.length; i++) {
+        const it = sorted[i];
+        if (it.s <= curE) curE = Math.max(curE, it.e);
+        else {
+          parentMs += curE - curS;
+          curS = it.s;
+          curE = it.e;
+        }
+      }
+      parentMs += curE - curS;
+    }
+
+    parent.durationHrs = Math.round((parentMs / (1000 * 60 * 60)) * 100) / 100;
+    parent._autoDuration = true;
+  }
+
+  return { rows: updated, warnings };
 }
 
 /* ─── Chain computation ─── */
@@ -1133,6 +1318,8 @@ function runValidations(
 
 /* ─── Toast ─── */
 function Toast({ toasts, onDismiss }) {
+  const { t } = useTheme();
+
   return (
     <div
       style={{
@@ -1146,23 +1333,29 @@ function Toast({ toasts, onDismiss }) {
         maxWidth: 340,
       }}
     >
-      {toasts.map((t) => (
+      {toasts.map((toast) => (
         <div
-          key={t.id}
+          key={toast.id}
           style={{
             display: "flex",
             alignItems: "flex-start",
             gap: 10,
             background:
-              t.kind === "success"
-                ? "#F0FDF4"
-                : t.kind === "error"
-                  ? "#FEF2F2"
-                  : "#EFF6FF",
-            border: `1px solid ${t.kind === "success" ? "#86EFAC" : t.kind === "error" ? "#FCA5A5" : "#93C5FD"}`,
+              toast.kind === "success"
+                ? t.successBgSubtle
+                : toast.kind === "error"
+                  ? t.dangerBgSubtle
+                  : t.primaryBgSubtle,
+            border: `1px solid ${
+              toast.kind === "success"
+                ? t.successBorder
+                : toast.kind === "error"
+                  ? t.dangerBorder
+                  : t.primaryBorder
+            }`,
             borderRadius: 10,
             padding: "10px 14px",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
+            boxShadow: t.shadowMd,
             fontFamily: "Sora,sans-serif",
             fontSize: 12,
           }}
@@ -1172,49 +1365,56 @@ function Toast({ toasts, onDismiss }) {
               fontSize: 15,
               marginTop: 1,
               color:
-                t.kind === "success"
-                  ? "#16A34A"
-                  : t.kind === "error"
-                    ? "#DC2626"
-                    : "#2563EB",
+                toast.kind === "success"
+                  ? t.success
+                  : toast.kind === "error"
+                    ? t.danger
+                    : t.primary,
             }}
           >
-            {t.kind === "success" ? (
-              <CheckCircle2 size={16} color="#16A34A" />
-            ) : t.kind === "error" ? (
-              <AlertOctagon size={16} color="#DC2626" />
+            {toast.kind === "success" ? (
+              <CheckCircle2 size={16} color={t.success} />
+            ) : toast.kind === "error" ? (
+              <AlertOctagon size={16} color={t.danger} />
             ) : (
-              <Info size={16} color="#2563EB" />
+              <Info size={16} color={t.primary} />
             )}
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, color: "#1e293b" }}>{t.title}</div>
-            {t.msg && (
-              <div style={{ marginTop: 2, color: "#475569", lineHeight: 1.4 }}>
-                {t.msg}
+            <div style={{ fontWeight: 600, color: t.textPrimary }}>
+              {toast.title}
+            </div>
+            {toast.msg && (
+              <div
+                style={{
+                  marginTop: 2,
+                  color: t.textSecondary,
+                  lineHeight: 1.4,
+                }}
+              >
+                {toast.msg}
               </div>
             )}
           </div>
           <button
-            onClick={() => onDismiss(t.id)}
+            onClick={() => onDismiss(toast.id)}
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#94a3b8",
+              color: t.textFaint,
               fontSize: 13,
               padding: "0 2px",
               lineHeight: 1,
             }}
           >
-            <X size={13} color="#94a3b8" />
+            <X size={13} color={t.textFaint} />
           </button>
         </div>
       ))}
     </div>
   );
 }
-
 /* ─── Resource chip ─── */
 const TONE_COLORS = {
   1: { bg: "#DBEAFE", color: "#1D4ED8", border: "#93C5FD" }, // Blue
@@ -1230,6 +1430,22 @@ const TONE_COLORS = {
   empty: { bg: "#F1F5F9", color: "#94A3B8", border: "#CBD5E1" },
 };
 function ResChip({ code, tone, name, userId }) {
+  const { t } = useTheme();
+
+  const TONE_COLORS = {
+    1: { bg: "#DBEAFE", color: "#1D4ED8", border: "#93C5FD" },
+    2: { bg: "#EDE9FE", color: "#7C3AED", border: "#C4B5FD" },
+    3: { bg: "#DCFCE7", color: "#15803D", border: "#86EFAC" },
+    4: { bg: "#FEF3C7", color: "#B45309", border: "#FCD34D" },
+    5: { bg: "#CCFBF1", color: "#0F766E", border: "#5EEAD4" },
+    6: { bg: "#FCE7F3", color: "#BE185D", border: "#F9A8D4" },
+    7: { bg: "#FEE2E2", color: "#B91C1C", border: "#FCA5A5" },
+    8: { bg: "#E0F2FE", color: "#0369A1", border: "#7DD3FC" },
+    9: { bg: "#ECFCCB", color: "#4D7C0F", border: "#BEF264" },
+    10: { bg: "#F3E8FF", color: "#9333EA", border: "#D8B4FE" },
+    empty: { bg: t.bgMuted, color: t.textFaint, border: t.borderStrong },
+  };
+
   const c = TONE_COLORS[tone] || TONE_COLORS.empty;
   const title = [name, userId].filter(Boolean).join(" — ");
   const isEmpty = !code || code === "?";
@@ -1261,6 +1477,11 @@ function ResChip({ code, tone, name, userId }) {
 
 /* ─── Comments Modal ─── */
 function CommentsModal({ row, onClose, onUpdate }) {
+  const { t } = useTheme();
+  const labelStyle = makeLabelStyle(t);
+  const inputStyle = makeInputStyle(t);
+  const btnStyle = makeBtnStyle(t);
+
   const [desc, setDesc] = useState("");
   const [action, setAction] = useState("");
   const [resDate, setResDate] = useState("");
@@ -1313,7 +1534,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -1323,16 +1544,17 @@ function CommentsModal({ row, onClose, onUpdate }) {
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 860,
           maxHeight: "90vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          boxShadow: t.shadowXl,
           fontFamily: "Sora,sans-serif",
           overflow: "hidden",
+          color: t.textPrimary,
         }}
       >
         {/* Header */}
@@ -1342,8 +1564,8 @@ function CommentsModal({ row, onClose, onUpdate }) {
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#F8FAFC",
+            borderBottom: `1px solid ${t.border}`,
+            background: t.bgSubtle,
           }}
         >
           <div
@@ -1351,8 +1573,8 @@ function CommentsModal({ row, onClose, onUpdate }) {
               width: 36,
               height: 36,
               borderRadius: 9,
-              background: "#DBEAFE",
-              color: "#1D4ED8",
+              background: t.primaryBg,
+              color: t.primary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1363,10 +1585,12 @@ function CommentsModal({ row, onClose, onUpdate }) {
             💬
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
-              Comments &amp; Action Points
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
+              Comments & Action Points
             </div>
-            <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 1 }}>
+            <div style={{ fontSize: 11.5, color: t.textMuted, marginTop: 1 }}>
               {row.task || row.module || `Activity #${row.id}`}
             </div>
           </div>
@@ -1377,7 +1601,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#94A3B8",
+              color: t.textFaint,
               fontSize: 18,
               lineHeight: 1,
               padding: 4,
@@ -1388,13 +1612,13 @@ function CommentsModal({ row, onClose, onUpdate }) {
         </div>
 
         {/* List */}
-        <div style={{ flex: 1, overflow: "auto", padding: "0 0 0 0" }}>
+        <div style={{ flex: 1, overflow: "auto" }}>
           {!(row.comments || []).length ? (
             <div
               style={{
                 padding: "40px 20px",
                 textAlign: "center",
-                color: "#94A3B8",
+                color: t.textFaint,
                 fontSize: 12,
               }}
             >
@@ -1410,7 +1634,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
               }}
             >
               <thead>
-                <tr style={{ background: "#F8FAFC" }}>
+                <tr style={{ background: t.bgSubtle }}>
                   {[
                     "#",
                     "Description",
@@ -1427,8 +1651,8 @@ function CommentsModal({ row, onClose, onUpdate }) {
                         padding: "8px 10px",
                         textAlign: "left",
                         fontWeight: 600,
-                        color: "#64748B",
-                        borderBottom: "1px solid #E2E8F0",
+                        color: t.textMuted,
+                        borderBottom: `1px solid ${t.border}`,
                         fontSize: 10,
                         letterSpacing: "0.4px",
                         textTransform: "uppercase",
@@ -1445,14 +1669,14 @@ function CommentsModal({ row, onClose, onUpdate }) {
                   <tr
                     key={i}
                     style={{
-                      borderLeft: `3px solid ${i % 2 === 0 ? "#1D4ED8" : "#7C3AED"}`,
-                      borderBottom: "1px solid #F1F5F9",
+                      borderLeft: `3px solid ${i % 2 === 0 ? t.primary : t.violet}`,
+                      borderBottom: `1px solid ${t.borderSubtle}`,
                     }}
                   >
                     <td
                       style={{
                         padding: "8px 10px",
-                        color: "#94A3B8",
+                        color: t.textFaint,
                         fontWeight: 600,
                       }}
                     >
@@ -1462,7 +1686,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
                       style={{
                         padding: "8px 10px",
                         maxWidth: 180,
-                        color: "#0F172A",
+                        color: t.textPrimary,
                       }}
                     >
                       {c.description || "—"}
@@ -1471,11 +1695,11 @@ function CommentsModal({ row, onClose, onUpdate }) {
                       style={{
                         padding: "8px 10px",
                         maxWidth: 160,
-                        color: "#475569",
+                        color: t.textSecondary,
                       }}
                     >
                       {c.actionPoint || (
-                        <span style={{ color: "#CBD5E1" }}>—</span>
+                        <span style={{ color: t.textDisabled }}>—</span>
                       )}
                     </td>
                     <td
@@ -1484,6 +1708,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
                         fontFamily: "'JetBrains Mono',monospace",
                         fontSize: 11,
                         whiteSpace: "nowrap",
+                        color: t.textSecondary,
                       }}
                     >
                       {fmtDate(c.resolutionDate)}
@@ -1500,33 +1725,35 @@ function CommentsModal({ row, onClose, onUpdate }) {
                               borderRadius: 999,
                               fontSize: 10,
                               fontWeight: 600,
-                              background: v === "GW" ? "#DBEAFE" : "#FCE7F3",
-                              color: v === "GW" ? "#1D4ED8" : "#BE185D",
-                              border: `1px solid ${v === "GW" ? "#93C5FD" : "#F9A8D4"}`,
+                              background: v === "GW" ? t.primaryBg : "#FCE7F3",
+                              color: v === "GW" ? t.primary : "#BE185D",
+                              border: `1px solid ${v === "GW" ? t.primaryBorder : "#F9A8D4"}`,
                             }}
                           >
                             {v}
                           </span>
                         ))}
                         {!(c.responsibility || []).length && (
-                          <span style={{ color: "#CBD5E1" }}>—</span>
+                          <span style={{ color: t.textDisabled }}>—</span>
                         )}
                       </div>
                     </td>
                     <td
                       style={{
                         padding: "8px 10px",
-                        color: "#475569",
+                        color: t.textSecondary,
                         maxWidth: 120,
                       }}
                     >
-                      {c.others || <span style={{ color: "#CBD5E1" }}>—</span>}
+                      {c.others || (
+                        <span style={{ color: t.textDisabled }}>—</span>
+                      )}
                     </td>
                     <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
                       <div
                         style={{
                           fontWeight: 600,
-                          color: "#0F172A",
+                          color: t.textPrimary,
                           fontSize: 11,
                         }}
                       >
@@ -1534,7 +1761,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
                       </div>
                       <div
                         style={{
-                          color: "#94A3B8",
+                          color: t.textFaint,
                           fontSize: 10,
                           fontFamily: "'JetBrains Mono',monospace",
                         }}
@@ -1548,8 +1775,8 @@ function CommentsModal({ row, onClose, onUpdate }) {
                         title="Delete"
                         style={{
                           background: "none",
-                          border: "1px solid #FCA5A5",
-                          color: "#EF4444",
+                          border: `1px solid ${t.dangerBorder}`,
+                          color: t.danger,
                           borderRadius: 6,
                           padding: "3px 8px",
                           cursor: "pointer",
@@ -1569,16 +1796,16 @@ function CommentsModal({ row, onClose, onUpdate }) {
         {/* Form */}
         <div
           style={{
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             padding: "14px 20px",
-            background: "#F8FAFC",
+            background: t.bgSubtle,
           }}
         >
           <div
             style={{
               fontWeight: 600,
               fontSize: 12,
-              color: "#0F172A",
+              color: t.textPrimary,
               marginBottom: 10,
               display: "flex",
               alignItems: "center",
@@ -1598,7 +1825,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
           >
             <div>
               <label style={labelStyle}>
-                Description <span style={{ color: "#EF4444" }}>*</span>
+                Description <span style={{ color: t.danger }}>*</span>
               </label>
               <textarea
                 value={desc}
@@ -1642,7 +1869,7 @@ function CommentsModal({ row, onClose, onUpdate }) {
               <label style={labelStyle}>Responsibility</label>
               <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                 {[
-                  ["GW", "#1D4ED8", "#DBEAFE"],
+                  ["GW", t.primary, t.primaryBg],
                   ["Customer", "#BE185D", "#FCE7F3"],
                 ].map(([v, c, bg]) => (
                   <label
@@ -1672,9 +1899,11 @@ function CommentsModal({ row, onClose, onUpdate }) {
                         fontWeight: 600,
                         background: (v === "GW" ? respGW : respCust)
                           ? bg
-                          : "#F1F5F9",
-                        color: (v === "GW" ? respGW : respCust) ? c : "#94A3B8",
-                        border: `1.5px solid ${(v === "GW" ? respGW : respCust) ? c : "#E2E8F0"}`,
+                          : t.bgMuted,
+                        color: (v === "GW" ? respGW : respCust)
+                          ? c
+                          : t.textFaint,
+                        border: `1.5px solid ${(v === "GW" ? respGW : respCust) ? c : t.border}`,
                         cursor: "pointer",
                         transition: "all .12s",
                       }}
@@ -1701,16 +1930,16 @@ function CommentsModal({ row, onClose, onUpdate }) {
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button onClick={onClose} style={{ ...btnStyle }}>
+            <button onClick={onClose} style={btnStyle}>
               <X size={18} /> Cancel
             </button>
             <button
               onClick={handleAdd}
               style={{
                 ...btnStyle,
-                background: "#1D4ED8",
-                color: "#fff",
-                borderColor: "#1D4ED8",
+                background: t.primary,
+                color: t.textInverse,
+                borderColor: t.primary,
               }}
             >
               <Plus size={12} /> Add Entry
@@ -1725,12 +1954,15 @@ function CommentsModal({ row, onClose, onUpdate }) {
 /* ─── Validation Modal ─── */
 function ValidationModal({
   results,
-  warnings = [], // ← NEW prop
+  warnings = [],
   onClose,
   onConfirm,
   isSaving = false,
   isRepublish = false,
 }) {
+  const { t } = useTheme();
+  const btnStyle = makeBtnStyle(t);
+
   const allOk = results.every((r) => r.ok);
   const failCount = results.filter((r) => !r.ok).length;
   const hasWarnings = warnings.length > 0;
@@ -1741,7 +1973,7 @@ function ValidationModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -1751,27 +1983,28 @@ function ValidationModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 540,
           maxHeight: "90vh",
           fontFamily: "Sora,sans-serif",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
+          color: t.textPrimary,
         }}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#F8FAFC",
+            borderBottom: `1px solid ${t.border}`,
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
@@ -1784,11 +2017,11 @@ function ValidationModal({
               alignItems: "center",
               justifyContent: "center",
               background: !allOk
-                ? "#FEF2F2"
+                ? t.dangerBgSubtle
                 : hasWarnings
-                  ? "#FFFBEB"
-                  : "#DCFCE7",
-              color: !allOk ? "#DC2626" : hasWarnings ? "#B45309" : "#16A34A",
+                  ? t.warningBgSubtle
+                  : t.successBg,
+              color: !allOk ? t.danger : hasWarnings ? t.warning : t.success,
               flexShrink: 0,
             }}
           >
@@ -1802,10 +2035,12 @@ function ValidationModal({
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
               {isRepublish ? "Update Published Project" : "Submit for Motion"}
             </div>
-            <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 2 }}>
+            <div style={{ fontSize: 11.5, color: t.textMuted, marginTop: 2 }}>
               {!allOk && hasWarnings ? (
                 <>
                   {failCount} issue{failCount !== 1 ? "s" : ""} to resolve,{" "}
@@ -1840,7 +2075,7 @@ function ValidationModal({
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#94A3B8",
+              color: t.textFaint,
               padding: 4,
               display: "flex",
               alignItems: "center",
@@ -1852,16 +2087,16 @@ function ValidationModal({
           </button>
         </div>
 
-        {/* ── Scrollable body ── */}
+        {/* Body */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {/* ── WARNINGS (yellow banner) ── */}
+          {/* Warnings */}
           {hasWarnings && (
             <div
               style={{
                 margin: "14px 20px 0",
                 padding: 12,
-                background: "#FFFBEB",
-                border: "1px solid #FCD34D",
+                background: t.warningBgSubtle,
+                border: `1px solid ${t.warningBorder}`,
                 borderRadius: 10,
               }}
             >
@@ -1872,12 +2107,12 @@ function ValidationModal({
                   gap: 8,
                   marginBottom: 10,
                   paddingBottom: 8,
-                  borderBottom: "1px dashed #FCD34D",
+                  borderBottom: `1px dashed ${t.warningBorder}`,
                 }}
               >
-                <AlertTriangle size={16} color="#B45309" />
+                <AlertTriangle size={16} color={t.warning} />
                 <span
-                  style={{ fontWeight: 700, fontSize: 12.5, color: "#92400E" }}
+                  style={{ fontWeight: 700, fontSize: 12.5, color: t.warning }}
                 >
                   {warnings.length} Warning{warnings.length !== 1 ? "s" : ""}
                 </span>
@@ -1885,8 +2120,8 @@ function ValidationModal({
                   style={{
                     marginLeft: "auto",
                     padding: "2px 8px",
-                    background: "#FEF3C7",
-                    color: "#92400E",
+                    background: t.warningBg,
+                    color: t.warning,
                     borderRadius: 999,
                     fontSize: 9.5,
                     fontWeight: 700,
@@ -1904,8 +2139,8 @@ function ValidationModal({
                     key={i}
                     style={{
                       padding: "8px 10px",
-                      background: "#fff",
-                      border: "1px solid #FDE68A",
+                      background: t.bgCard,
+                      border: `1px solid ${t.warningBorder}`,
                       borderRadius: 6,
                     }}
                   >
@@ -1913,7 +2148,7 @@ function ValidationModal({
                       style={{
                         fontSize: 12,
                         fontWeight: 600,
-                        color: "#92400E",
+                        color: t.warning,
                         marginBottom: w.detail ? 4 : 0,
                       }}
                     >
@@ -1923,7 +2158,7 @@ function ValidationModal({
                       <div
                         style={{
                           fontSize: 11,
-                          color: "#78350F",
+                          color: t.textSecondary,
                           whiteSpace: "pre-line",
                           lineHeight: 1.5,
                         }}
@@ -1939,9 +2174,9 @@ function ValidationModal({
                 style={{
                   marginTop: 10,
                   paddingTop: 8,
-                  borderTop: "1px dashed #FCD34D",
+                  borderTop: `1px dashed ${t.warningBorder}`,
                   fontSize: 10.5,
-                  color: "#92400E",
+                  color: t.warning,
                   fontStyle: "italic",
                   display: "flex",
                   alignItems: "center",
@@ -1955,7 +2190,7 @@ function ValidationModal({
             </div>
           )}
 
-          {/* ── Validation Results ── */}
+          {/* Results */}
           <div
             style={{
               padding: "14px 20px",
@@ -1973,8 +2208,8 @@ function ValidationModal({
                   gap: 10,
                   padding: "10px 12px",
                   borderRadius: 8,
-                  background: r.ok ? "#F0FDF4" : "#FEF2F2",
-                  border: `1px solid ${r.ok ? "#86EFAC" : "#FCA5A5"}`,
+                  background: r.ok ? t.successBgSubtle : t.dangerBgSubtle,
+                  border: `1px solid ${r.ok ? t.successBorder : t.dangerBorder}`,
                 }}
               >
                 <div
@@ -1986,8 +2221,8 @@ function ValidationModal({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: r.ok ? "#DCFCE7" : "#FEE2E2",
-                    color: r.ok ? "#16A34A" : "#DC2626",
+                    background: r.ok ? t.successBg : t.dangerBg,
+                    color: r.ok ? t.success : t.danger,
                     marginTop: 1,
                   }}
                 >
@@ -2003,7 +2238,7 @@ function ValidationModal({
                     style={{
                       fontWeight: 600,
                       fontSize: 12.5,
-                      color: r.ok ? "#15803D" : "#DC2626",
+                      color: r.ok ? t.success : t.danger,
                       lineHeight: 1.4,
                     }}
                   >
@@ -2013,7 +2248,7 @@ function ValidationModal({
                     <div
                       style={{
                         fontSize: 11,
-                        color: "#64748B",
+                        color: t.textMuted,
                         marginTop: 4,
                         whiteSpace: "pre-line",
                         lineHeight: 1.5,
@@ -2028,15 +2263,15 @@ function ValidationModal({
           </div>
         </div>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div
           style={{
             padding: "12px 20px 16px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
@@ -2049,8 +2284,7 @@ function ValidationModal({
               gap: 5,
             }}
           >
-            <X size={13} />
-            Close
+            <X size={13} /> Close
           </button>
 
           {allOk && (
@@ -2059,17 +2293,14 @@ function ValidationModal({
               disabled={isSaving}
               style={{
                 ...btnStyle,
-                background: hasWarnings ? "#D97706" : "#1D4ED8",
-                color: "#fff",
-                borderColor: hasWarnings ? "#D97706" : "#1D4ED8",
+                background: hasWarnings ? t.warning : t.primary,
+                color: t.textInverse,
+                borderColor: hasWarnings ? t.warning : t.primary,
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
                 opacity: isSaving ? 0.6 : 1,
                 cursor: isSaving ? "not-allowed" : "pointer",
-                boxShadow: hasWarnings
-                  ? "0 2px 6px rgba(217,119,6,0.25)"
-                  : "0 2px 6px rgba(29,78,216,0.25)",
               }}
             >
               {isSaving ? (
@@ -2088,12 +2319,12 @@ function ValidationModal({
               ) : isRepublish ? (
                 <>
                   <RefreshCw size={14} />
-                  Confirm &amp; Re-publish
+                  Confirm & Re-publish
                 </>
               ) : (
                 <>
                   <Rocket size={14} />
-                  Confirm &amp; Put in Motion
+                  Confirm & Put in Motion
                 </>
               )}
             </button>
@@ -2141,30 +2372,142 @@ const btnStyle = {
   alignItems: "center",
   gap: 5,
 };
-function ModuleInput({ initialValue, onCommit }) {
+/* ─── Shared styles (theme-aware factories) ─── */
+const makeLabelStyle = (t) => ({
+  fontSize: 10,
+  fontWeight: 500,
+  color: t.textMuted,
+  letterSpacing: "0.3px",
+  display: "block",
+  marginBottom: 3,
+});
+
+const makeInputStyle = (t) => ({
+  width: "100%",
+  height: 34,
+  border: `1px solid ${t.borderStrong}`,
+  borderRadius: 6,
+  background: t.bgInput,
+  color: t.textPrimary,
+  padding: "0 10px",
+  fontFamily: "Sora,sans-serif",
+  fontSize: 12,
+  boxSizing: "border-box",
+  outline: "none",
+});
+
+const makeBtnStyle = (t) => ({
+  height: 32,
+  padding: "0 14px",
+  borderRadius: 7,
+  border: `1px solid ${t.borderStrong}`,
+  background: t.bgCard,
+  color: t.textSecondary,
+  fontFamily: "Sora,sans-serif",
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 5,
+});
+
+const makeIconBtn = (t) => ({
+  width: 28,
+  height: 28,
+  borderRadius: 6,
+  border: `1px solid ${t.border}`,
+  background: "transparent",
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 13,
+  transition: "all .12s",
+  position: "relative",
+  overflow: "visible",
+});
+
+const makeNavBtn = (t) => ({
+  width: 26,
+  height: 26,
+  borderRadius: 6,
+  border: `1px solid ${t.border}`,
+  background: t.bgSubtle,
+  cursor: "pointer",
+  fontSize: 14,
+  color: t.textSecondary,
+  fontWeight: 700,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+});
+
+const makeTimeSelect = (t) => ({
+  height: 26,
+  border: `1px solid ${t.borderStrong}`,
+  borderRadius: 5,
+  background: t.bgInput,
+  color: t.textPrimary,
+  fontFamily: "'JetBrains Mono',monospace",
+  fontSize: 11,
+  padding: "0 4px",
+  cursor: "pointer",
+  outline: "none",
+});
+
+const makePickerBtn = (t) => ({
+  height: 28,
+  padding: "0 12px",
+  borderRadius: 6,
+  border: `1px solid ${t.borderStrong}`,
+  background: t.bgCard,
+  color: t.textPrimary,
+  fontSize: 11,
+  fontWeight: 500,
+  cursor: "pointer",
+  fontFamily: "Sora,sans-serif",
+});
+function ModuleInput({ initialValue, onCommit, onCancel }) {
+  const { t } = useTheme();
   const [val, setVal] = useState(initialValue);
 
   useEffect(() => {
     setVal(initialValue);
   }, [initialValue]);
 
+  const handleBlur = () => {
+    const trimmed = val.trim();
+    if (trimmed && trimmed !== initialValue) {
+      onCommit(trimmed);
+    } else {
+      // No change or empty — just close the editor
+      onCancel?.();
+    }
+  };
+
   return (
     <input
       value={val}
       onChange={(e) => setVal(e.target.value)}
-      onBlur={() => {
-        if (val !== initialValue) onCommit(val);
-      }}
+      onBlur={handleBlur}
       onKeyDown={(e) => {
         if (e.key === "Enter") e.target.blur();
+        if (e.key === "Escape") {
+          setVal(initialValue); // revert
+          onCancel?.();
+        }
       }}
       placeholder="Module name…"
       autoFocus
-      style={{ ...inputStyle, height: 28, fontSize: 11.5 }}
+      title={val || ""}
+      style={{ ...makeInputStyle(t), height: 28, fontSize: 11.5 }}
     />
   );
 }
 function TaskInput({ initialValue, onCommit, placeholder, isSubActivity }) {
+  const { t } = useTheme();
   const [val, setVal] = useState(initialValue);
 
   useEffect(() => {
@@ -2183,7 +2526,7 @@ function TaskInput({ initialValue, onCommit, placeholder, isSubActivity }) {
       }}
       placeholder={placeholder}
       style={{
-        ...inputStyle,
+        ...makeInputStyle(t),
         height: 28,
         fontSize: 11.5,
         flex: 1,
@@ -2203,6 +2546,8 @@ function TimePickerSection({
   minute,
   setMinute,
 }) {
+  const { t } = useTheme();
+
   const isSameDay = (a, b) =>
     a &&
     b &&
@@ -2214,43 +2559,32 @@ function TimePickerSection({
   const nowHour = today.getHours();
   const nowMinute = today.getMinutes();
 
-  // Minimum hour: only restrict if selected date is TODAY
   const minHour = isSelectedToday
     ? Math.max(WORK_START_HR, nowHour)
     : WORK_START_HR;
 
-  // Available hours
   const hourOptions = Array.from(
     { length: WORK_END_HR - WORK_START_HR + 1 },
     (_, i) => WORK_START_HR + i,
   ).filter((h) => h >= minHour);
 
-  // Available minutes — only restrict if TODAY + current hour
   const minuteOptions = [
     0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59,
   ].filter((m) => {
-    if (hour === WORK_END_HR) return m === 0; // only 18:00 allowed
+    if (hour === WORK_END_HR) return m === 0;
     if (isSelectedToday && hour === nowHour) return m > nowMinute;
     return true;
   });
 
-  // Auto-correct invalid hour/minute when switching to TODAY
   useEffect(() => {
     if (!isSelectedToday) return;
-
     let newHour = hour;
     let newMinute = minute;
-
     if (newHour < minHour) {
       newHour = minHour;
       newMinute = 0;
     }
-
-    // If hour is 18, force minute to 0
-    if (newHour === WORK_END_HR && newMinute > 0) {
-      newMinute = 0;
-    }
-
+    if (newHour === WORK_END_HR && newMinute > 0) newMinute = 0;
     if (newHour === nowHour && newMinute <= nowMinute) {
       const nextValid = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59].find(
         (m) => {
@@ -2258,30 +2592,31 @@ function TimePickerSection({
           return m > nowMinute;
         },
       );
-      if (nextValid !== undefined) {
-        newMinute = nextValid;
-      } else if (newHour + 1 <= WORK_END_HR) {
+      if (nextValid !== undefined) newMinute = nextValid;
+      else if (newHour + 1 <= WORK_END_HR) {
         newHour = newHour + 1;
         newMinute = 0;
       }
     }
-
     if (newHour !== hour) setHour(newHour);
     if (newMinute !== minute) setMinute(newMinute);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [isSelectedToday]);
+
+  const timeSelect = makeTimeSelect(t);
+
   return (
     <div
       style={{
         marginTop: 12,
         paddingTop: 10,
-        borderTop: "1px solid #E2E8F0",
+        borderTop: `1px solid ${t.border}`,
         display: "flex",
         alignItems: "center",
         gap: 6,
       }}
     >
-      <span style={{ fontSize: 11, color: "#64748B", fontWeight: 600 }}>
+      <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 600 }}>
         Time:
       </span>
       <select
@@ -2295,7 +2630,7 @@ function TimePickerSection({
           </option>
         ))}
       </select>
-      <span style={{ fontWeight: 700, color: "#64748B" }}>:</span>
+      <span style={{ fontWeight: 700, color: t.textMuted }}>:</span>
       <select
         value={minute}
         onChange={(e) => setMinute(Number(e.target.value))}
@@ -2312,7 +2647,7 @@ function TimePickerSection({
           <option value="">—</option>
         )}
       </select>
-      <span style={{ fontSize: 10, color: "#94A3B8", marginLeft: 4 }}>
+      <span style={{ fontSize: 10, color: t.textFaint, marginLeft: 4 }}>
         (Work: {WORK_START_HR}:00–{WORK_END_HR}:00)
       </span>
     </div>
@@ -2327,10 +2662,11 @@ function WorkingDatePicker({
   onClose,
   anchorRef,
 }) {
+  const { t } = useTheme();
+
   const initial = value
     ? parseISODateTime(value)
     : new Date(2026, 4, 4, WORK_START_HR, 0);
-
   const [viewDate, setViewDate] = useState(
     new Date(initial.getFullYear(), initial.getMonth(), 1),
   );
@@ -2340,54 +2676,42 @@ function WorkingDatePicker({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const popupRef = useRef();
 
-  // Position the popup based on the anchor's bounding rect
   useEffect(() => {
     if (!anchorRef?.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    const popupWidth = 280;
     const popupHeight = 380;
-
+    const popupWidth = 280;
     let top = rect.bottom + window.scrollY + 4;
     let left = rect.left + window.scrollX;
-
-    // If popup goes off bottom, open upward
-    if (rect.bottom + popupHeight > window.innerHeight) {
+    if (rect.bottom + popupHeight > window.innerHeight)
       top = rect.top + window.scrollY - popupHeight - 4;
-    }
-    // If popup goes off right, align to right edge of anchor
-    if (left + popupWidth > window.innerWidth) {
+    if (left + popupWidth > window.innerWidth)
       left = rect.right + window.scrollX - popupWidth;
-    }
-
     setPosition({ top, left });
   }, [anchorRef]);
+
   useEffect(() => {
     const handler = () => onClose();
     window.addEventListener("scroll", handler, true);
     return () => window.removeEventListener("scroll", handler, true);
   }, [onClose]);
-  // Click-outside handler
+
   useEffect(() => {
     const handler = (e) => {
-      // Don't close if clicking inside the popup itself
       if (popupRef.current && popupRef.current.contains(e.target)) return;
-      // Don't close if clicking the anchor button (the one that opened it)
       if (anchorRef?.current && anchorRef.current.contains(e.target)) return;
       onClose();
     };
-
-    // Delay registration so the opening click doesn't immediately close it
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 50);
-
+    const timer = setTimeout(
+      () => document.addEventListener("mousedown", handler),
+      50,
+    );
     return () => {
       clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
     };
   }, [onClose, anchorRef]);
 
-  // Reposition on scroll/resize
   useEffect(() => {
     const reposition = () => {
       if (!anchorRef?.current) return;
@@ -2411,7 +2735,6 @@ function WorkingDatePicker({
   const lastDay = new Date(year, month + 1, 0);
   const startWeekday = firstDay.getDay();
   const daysInMonth = lastDay.getDate();
-
   const cells = [];
   for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
@@ -2430,8 +2753,6 @@ function WorkingDatePicker({
     if (!d) return;
     const isWknd = d.getDay() === 0 || d.getDay() === 6;
     const onLeave = leaveOnDay(resourceUserId, d, groupResources);
-
-    // ── NEW: Block past dates ──
     const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const startOfToday = new Date(
       today.getFullYear(),
@@ -2439,10 +2760,10 @@ function WorkingDatePicker({
       today.getDate(),
     );
     const isPast = startOfDay < startOfToday;
-
     if (isWknd || onLeave || isPast) return;
     setSelectedDate(d);
   };
+
   const handleConfirm = () => {
     const final = new Date(
       selectedDate.getFullYear(),
@@ -2451,24 +2772,22 @@ function WorkingDatePicker({
       hour,
       minute,
     );
-
-    // Block past selection
     if (final.getTime() < today.getTime()) {
       alert("Cannot select a date/time in the past.");
       return;
     }
-
-    // Block only time strictly after 18:00
     if (hour > WORK_END_HR || (hour === WORK_END_HR && minute > 0)) {
       alert("Cannot select time after 18:00.");
       return;
     }
-
     onChange(isoDateTime(final));
     onClose();
   };
 
-  // The actual popup JSX
+  const navBtn = makeNavBtn(t);
+  const timeSelect = makeTimeSelect(t);
+  const pickerBtn = makePickerBtn(t);
+
   const popup = (
     <div
       ref={popupRef}
@@ -2476,18 +2795,17 @@ function WorkingDatePicker({
         position: "absolute",
         top: position.top,
         left: position.left,
-        zIndex: 99999, // ← Always on top
-        background: "#fff",
-        border: "1px solid #CBD5E1",
+        zIndex: 99999,
+        background: t.bgCard,
+        border: `1px solid ${t.borderStrong}`,
         borderRadius: 10,
-        boxShadow: "0 16px 40px rgba(0,0,0,0.20)",
+        boxShadow: t.shadowLg,
         padding: 12,
         width: 280,
         fontFamily: "Sora,sans-serif",
       }}
     >
-      {/* Month nav */}
-      {/* Month + Year navigation */}
+      {/* Nav */}
       <div
         style={{
           display: "flex",
@@ -2497,7 +2815,6 @@ function WorkingDatePicker({
           gap: 4,
         }}
       >
-        {/* Previous Year */}
         <button
           type="button"
           onClick={(e) => {
@@ -2515,8 +2832,6 @@ function WorkingDatePicker({
         >
           «
         </button>
-
-        {/* Previous Month */}
         <button
           type="button"
           onClick={(e) => {
@@ -2541,7 +2856,6 @@ function WorkingDatePicker({
           ‹
         </button>
 
-        {/* Month + Year selectors */}
         <div
           style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}
         >
@@ -2572,7 +2886,6 @@ function WorkingDatePicker({
               "November",
               "December",
             ].map((m, i) => {
-              // Disable past months in current year
               const isPastMonth =
                 year === today.getFullYear() && i < today.getMonth();
               return (
@@ -2606,7 +2919,6 @@ function WorkingDatePicker({
           </select>
         </div>
 
-        {/* Next Month */}
         <button
           type="button"
           onClick={(e) => {
@@ -2619,8 +2931,6 @@ function WorkingDatePicker({
         >
           ›
         </button>
-
-        {/* Next Year */}
         <button
           type="button"
           onClick={(e) => {
@@ -2634,7 +2944,8 @@ function WorkingDatePicker({
           »
         </button>
       </div>
-      {/* Days grid */}
+
+      {/* Days */}
       <div
         style={{
           display: "grid",
@@ -2644,12 +2955,9 @@ function WorkingDatePicker({
       >
         {cells.map((d, i) => {
           if (!d) return <div key={i} />;
-
           const day = d.getDay();
           const isWknd = day === 0 || day === 6;
           const onLeave = leaveOnDay(resourceUserId, d, groupResources);
-
-          // ── NEW: Check if date is in the past ──
           const startOfDay = new Date(
             d.getFullYear(),
             d.getMonth(),
@@ -2661,39 +2969,37 @@ function WorkingDatePicker({
             today.getDate(),
           );
           const isPast = startOfDay < startOfToday;
-
           const disabled = isWknd || onLeave || isPast;
           const selected = isSameDay(d, selectedDate);
           const isToday = isSameDay(d, today);
 
           let bg = "transparent";
-          let color = "#0F172A";
+          let color = t.textPrimary;
           let border = "1px solid transparent";
           let cursor = "pointer";
 
           if (selected) {
-            bg = "#1D4ED8";
-            color = "#fff";
-            border = "1px solid #1D4ED8";
+            bg = t.primary;
+            color = t.textInverse;
+            border = `1px solid ${t.primary}`;
           } else if (isPast) {
-            // ── NEW: Past date styling ──
-            bg = "#F8FAFC";
-            color = "#CBD5E1";
+            bg = t.bgSubtle;
+            color = t.textDisabled;
             cursor = "not-allowed";
-            border = "1px solid #F1F5F9";
+            border = `1px solid ${t.borderSubtle}`;
           } else if (isWknd) {
-            bg = "#FEF2F2";
-            color = "#DC2626";
+            bg = t.dangerBgSubtle;
+            color = t.danger;
             cursor = "not-allowed";
-            border = "1px solid #FECACA";
+            border = `1px solid ${t.dangerBorder}`;
           } else if (onLeave) {
-            bg = "#FFFBEB";
-            color = "#B45309";
+            bg = t.warningBgSubtle;
+            color = t.warning;
             cursor = "not-allowed";
-            border = "1px solid #FCD34D";
+            border = `1px solid ${t.warningBorder}`;
           } else if (isToday) {
-            border = "1px solid #1D4ED8";
-            color = "#1D4ED8";
+            border = `1px solid ${t.primary}`;
+            color = t.primary;
           }
 
           return (
@@ -2737,7 +3043,7 @@ function WorkingDatePicker({
                     width: 4,
                     height: 4,
                     borderRadius: "50%",
-                    background: "#B45309",
+                    background: t.warning,
                   }}
                 />
               )}
@@ -2745,6 +3051,7 @@ function WorkingDatePicker({
           );
         })}
       </div>
+
       {/* Legend */}
       <div
         style={{
@@ -2752,7 +3059,7 @@ function WorkingDatePicker({
           display: "flex",
           gap: 8,
           fontSize: 9.5,
-          color: "#64748B",
+          color: t.textMuted,
           flexWrap: "wrap",
         }}
       >
@@ -2762,8 +3069,8 @@ function WorkingDatePicker({
               width: 9,
               height: 9,
               borderRadius: 2,
-              background: "#F8FAFC",
-              border: "1px solid #F1F5F9",
+              background: t.bgSubtle,
+              border: `1px solid ${t.borderSubtle}`,
             }}
           />
           Past
@@ -2774,8 +3081,8 @@ function WorkingDatePicker({
               width: 9,
               height: 9,
               borderRadius: 2,
-              background: "#FEF2F2",
-              border: "1px solid #FECACA",
+              background: t.dangerBgSubtle,
+              border: `1px solid ${t.dangerBorder}`,
             }}
           />
           Weekend
@@ -2786,8 +3093,8 @@ function WorkingDatePicker({
               width: 9,
               height: 9,
               borderRadius: 2,
-              background: "#FFFBEB",
-              border: "1px solid #FCD34D",
+              background: t.warningBgSubtle,
+              border: `1px solid ${t.warningBorder}`,
             }}
           />
           Leave
@@ -2798,14 +3105,13 @@ function WorkingDatePicker({
               width: 9,
               height: 9,
               borderRadius: 2,
-              background: "#1D4ED8",
+              background: t.primary,
             }}
           />
           Selected
         </span>
       </div>
 
-      {/* Time picker */}
       <TimePickerSection
         selectedDate={selectedDate}
         today={today}
@@ -2814,7 +3120,7 @@ function WorkingDatePicker({
         minute={minute}
         setMinute={setMinute}
       />
-      {/* Actions */}
+
       <div
         style={{
           marginTop: 10,
@@ -2830,9 +3136,9 @@ function WorkingDatePicker({
           onClick={handleConfirm}
           style={{
             ...pickerBtn,
-            background: "#1D4ED8",
-            color: "#fff",
-            borderColor: "#1D4ED8",
+            background: t.primary,
+            color: t.textInverse,
+            borderColor: t.primary,
           }}
         >
           Confirm
@@ -2841,7 +3147,6 @@ function WorkingDatePicker({
     </div>
   );
 
-  // Render into body via portal
   return createPortal(popup, document.body);
 }
 
@@ -2899,6 +3204,7 @@ function SearchableDropdown({
   renderOption,
   renderTrigger,
 }) {
+  const { t } = useTheme();
   // ─── 1. State ──────────────────────────────────────────
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -3077,7 +3383,7 @@ function SearchableDropdown({
   const triggerText = () => {
     if (selectedOptions.length === 0) {
       return (
-        <span style={{ color: "#94A3B8", fontSize: 12 }}>{placeholder}</span>
+        <span style={{ color: t.textFaint, fontSize: 12 }}>{placeholder}</span>
       );
     }
 
@@ -3100,7 +3406,7 @@ function SearchableDropdown({
               <span
                 key={`badge-${String(o.value)}`}
                 style={{
-                  background: "#DBEAFE",
+                  background: t.primaryBg,
                   color: "#1D4ED8",
                   border: "1px solid #93C5FD",
                   borderRadius: 4,
@@ -3123,7 +3429,7 @@ function SearchableDropdown({
         <span style={{ display: "flex", gap: 4 }}>
           <span
             style={{
-              background: "#DBEAFE",
+              background: t.primaryBg,
               color: "#1D4ED8",
               border: "1px solid #93C5FD",
               borderRadius: 4,
@@ -3181,31 +3487,30 @@ function SearchableDropdown({
         minWidth: position.width,
         width: "max-content",
         maxWidth: 360,
-        maxHeight: Math.min(420, window.innerHeight - 40), // ← cap height to viewport
-        background: "#fff",
-        border: "1px solid #CBD5E1",
+        maxHeight: Math.min(420, window.innerHeight - 40),
+        background: t.bgCard,
+        border: `1px solid ${t.borderStrong}`,
         borderRadius: 8,
-        boxShadow: "0 12px 28px rgba(0,0,0,0.15)",
+        boxShadow: t.shadowLg,
         zIndex: 99999,
-        overflow: "hidden", // ← important
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         fontFamily: "Sora,sans-serif",
       }}
     >
-      {/* Search bar */}
       {searchable && safeOptions.length > 5 && (
         <div
           style={{
             padding: "8px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#F8FAFC",
+            borderBottom: `1px solid ${t.border}`,
+            background: t.bgSubtle,
             position: "relative",
           }}
         >
           <Search
             size={13}
-            color="#94A3B8"
+            color={t.textFaint}
             style={{
               position: "absolute",
               left: 16,
@@ -3229,34 +3534,27 @@ function SearchableDropdown({
             style={{
               width: "100%",
               height: 30,
-              border: "1px solid #E2E8F0",
+              border: `1px solid ${t.border}`,
               borderRadius: 6,
               padding: "0 10px 0 28px",
               fontFamily: "Sora,sans-serif",
               fontSize: 12,
               outline: "none",
-              background: "#fff",
+              background: t.bgInput,
+              color: t.textPrimary,
               boxSizing: "border-box",
             }}
           />
         </div>
       )}
 
-      {/* Options list */}
-      <div
-        style={{
-          maxHeight,
-          overflowY: "auto",
-          scrollbarWidth: "thin",
-          scrollbarColor: "#CBD5E1 transparent",
-        }}
-      >
+      <div style={{ maxHeight, overflowY: "auto" }}>
         {filteredOptions.length === 0 ? (
           <div
             style={{
               padding: "24px 16px",
               textAlign: "center",
-              color: "#94A3B8",
+              color: t.textFaint,
               fontSize: 12,
             }}
           >
@@ -3271,11 +3569,11 @@ function SearchableDropdown({
                     padding: "6px 12px 4px",
                     fontSize: 9.5,
                     fontWeight: 700,
-                    color: "#94A3B8",
+                    color: t.textFaint,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
-                    background: "#FAFBFC",
-                    borderBottom: "1px solid #F1F5F9",
+                    background: t.bgSubtle,
+                    borderBottom: `1px solid ${t.borderSubtle}`,
                   }}
                 >
                   {groupName}
@@ -3284,7 +3582,6 @@ function SearchableDropdown({
               {opts.map((opt, oIdx) => {
                 const optKey = `opt-${gIdx}-${oIdx}-${String(opt.value)}`;
                 const selected = selectedValues.includes(String(opt.value));
-
                 return (
                   <div
                     key={optKey}
@@ -3295,22 +3592,20 @@ function SearchableDropdown({
                       gap: 9,
                       padding: "8px 12px",
                       cursor: opt.disabled ? "not-allowed" : "pointer",
-                      background: selected ? "#F0F9FF" : "transparent",
+                      background: selected ? t.primaryBgSubtle : "transparent",
                       opacity: opt.disabled ? 0.5 : 1,
                       transition: "background .1s",
                       borderLeft: selected
-                        ? "3px solid #1D4ED8"
+                        ? `3px solid ${t.primary}`
                         : "3px solid transparent",
                     }}
                     onMouseEnter={(e) => {
-                      if (!opt.disabled && !selected) {
-                        e.currentTarget.style.background = "#F8FAFC";
-                      }
+                      if (!opt.disabled && !selected)
+                        e.currentTarget.style.background = t.bgSubtle;
                     }}
                     onMouseLeave={(e) => {
-                      if (!selected) {
+                      if (!selected)
                         e.currentTarget.style.background = "transparent";
-                      }
                     }}
                   >
                     {multiple && (
@@ -3319,19 +3614,18 @@ function SearchableDropdown({
                           width: 16,
                           height: 16,
                           borderRadius: 4,
-                          border: `1.5px solid ${selected ? "#1D4ED8" : "#CBD5E1"}`,
-                          background: selected ? "#1D4ED8" : "#fff",
+                          border: `1.5px solid ${selected ? t.primary : t.borderStrong}`,
+                          background: selected ? t.primary : t.bgCard,
                           display: "inline-flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
-                          color: "#fff",
+                          color: t.textInverse,
                         }}
                       >
                         {selected && <Check size={11} strokeWidth={3} />}
                       </span>
                     )}
-
                     {renderOption ? (
                       renderOption(opt, selected)
                     ) : (
@@ -3340,7 +3634,7 @@ function SearchableDropdown({
                           style={{
                             fontSize: 12.5,
                             fontWeight: selected ? 600 : 500,
-                            color: "#0F172A",
+                            color: t.textPrimary,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -3352,7 +3646,7 @@ function SearchableDropdown({
                           <div
                             style={{
                               fontSize: 10.5,
-                              color: "#94A3B8",
+                              color: t.textFaint,
                               marginTop: 1,
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -3364,9 +3658,8 @@ function SearchableDropdown({
                         )}
                       </div>
                     )}
-
                     {!multiple && selected && (
-                      <Check size={14} color="#1D4ED8" strokeWidth={2.5} />
+                      <Check size={14} color={t.primary} strokeWidth={2.5} />
                     )}
                   </div>
                 );
@@ -3376,18 +3669,17 @@ function SearchableDropdown({
         )}
       </div>
 
-      {/* Multi-select footer */}
       {multiple && filteredOptions.length > 0 && (
         <div
           style={{
             padding: "6px 12px",
-            borderTop: "1px solid #E2E8F0",
-            background: "#FAFBFC",
+            borderTop: `1px solid ${t.border}`,
+            background: t.bgSubtle,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             fontSize: 10.5,
-            color: "#64748B",
+            color: t.textMuted,
           }}
         >
           <span>
@@ -3399,7 +3691,7 @@ function SearchableDropdown({
               style={{
                 background: "none",
                 border: "none",
-                color: "#EF4444",
+                color: t.danger,
                 cursor: "pointer",
                 fontSize: 10.5,
                 fontWeight: 600,
@@ -3417,17 +3709,21 @@ function SearchableDropdown({
   return (
     <div ref={containerRef} style={{ position: "relative", width }}>
       <button
-        ref={triggerRef} // ← ref attached
+        ref={triggerRef}
         type="button"
         onClick={() => !disabled && setOpen((p) => !p)}
         disabled={disabled}
         style={{
           width: "100%",
           height: 32,
-          border: `1px solid ${open ? "#3B82F6" : "#CBD5E1"}`,
+          border: `1px solid ${open ? t.borderFocus : t.borderStrong}`,
           borderRadius: 6,
-          background: disabled ? "#F8FAFC" : open ? "#F8FAFC" : "#fff",
-          color: "#0F172A",
+          background: disabled
+            ? t.bgInputDisabled
+            : open
+              ? t.bgSubtle
+              : t.bgInput,
+          color: t.textPrimary,
           padding: "0 8px 0 10px",
           fontFamily: "Sora,sans-serif",
           fontSize: 12,
@@ -3454,7 +3750,6 @@ function SearchableDropdown({
         >
           {triggerText()}
         </span>
-
         {selectedOptions.length > 0 && !disabled && (
           <span
             onClick={handleClear}
@@ -3462,29 +3757,28 @@ function SearchableDropdown({
             style={{
               padding: 2,
               borderRadius: 4,
-              color: "#94A3B8",
+              color: t.textFaint,
               display: "flex",
               alignItems: "center",
               cursor: "pointer",
               flexShrink: 0,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#F1F5F9";
-              e.currentTarget.style.color = "#475569";
+              e.currentTarget.style.background = t.bgMuted;
+              e.currentTarget.style.color = t.textSecondary;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#94A3B8";
+              e.currentTarget.style.color = t.textFaint;
             }}
           >
             <X size={12} />
           </span>
         )}
-
         <ChevronDown
           size={13}
           style={{
-            color: "#64748B",
+            color: t.textMuted,
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform .2s",
             flexShrink: 0,
@@ -3492,17 +3786,16 @@ function SearchableDropdown({
         />
       </button>
 
-      {/* ✅ Portal rendering — popup escapes all overflow containers */}
       {open && createPortal(popup, document.body)}
     </div>
   );
 }
 /* ─── Status Badge ─── */
 function StatusBadge({ status }) {
-  const cfg = getStatusConfig(status);
+  const { t } = useTheme();
+  const cfg = getStatusConfig(status, t); // ← pass t
   const { Icon, label, bg, color, border, pulse, spin } = cfg;
 
-  // Pick the right icon component
   let IconElement;
   if (spin) {
     IconElement = <SpinningIcon Icon={Icon} size={11} color={color} />;
@@ -3535,9 +3828,17 @@ function StatusBadge({ status }) {
     </span>
   );
 }
-
+function getStatusConfigThemed(status, t) {
+  const cfg = getStatusConfig(status);
+  // In dark mode, dim the backgrounds
+  // The status colors are semantic, keep the colors but adjust bg intensity
+  return cfg;
+}
 /* ─── Reject / Redo Reason Modal ─── */
 function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
+  const { t } = useTheme();
+  const btnStyle = makeBtnStyle(t);
+
   const [reason, setReason] = useState("");
   const [touched, setTouched] = useState(false);
   const textareaRef = useRef(null);
@@ -3561,7 +3862,7 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -3571,13 +3872,14 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 480,
           fontFamily: "Sora,sans-serif",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
+          color: t.textPrimary,
         }}
       >
         {/* Header */}
@@ -3587,8 +3889,8 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#FFFBEB",
+            borderBottom: `1px solid ${t.border}`,
+            background: t.warningBgSubtle,
           }}
         >
           <div
@@ -3596,8 +3898,8 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               width: 40,
               height: 40,
               borderRadius: 10,
-              background: "#FEF3C7",
-              color: "#B45309",
+              background: t.warningBg,
+              color: t.warning,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -3606,13 +3908,15 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
             <RotateCcw size={20} strokeWidth={2} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
               Redo / Reject Task
             </div>
             <div
               style={{
                 fontSize: 11.5,
-                color: "#64748B",
+                color: t.textMuted,
                 marginTop: 2,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -3629,7 +3933,7 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               background: "none",
               border: "none",
               cursor: isSubmitting ? "not-allowed" : "pointer",
-              color: "#94A3B8",
+              color: t.textFaint,
               padding: 4,
               opacity: isSubmitting ? 0.5 : 1,
               display: "flex",
@@ -3648,18 +3952,24 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               alignItems: "flex-start",
               gap: 8,
               padding: 10,
-              background: "#FEF2F2",
-              border: "1px solid #FCA5A5",
+              background: t.dangerBgSubtle,
+              border: `1px solid ${t.dangerBorder}`,
               borderRadius: 8,
               marginBottom: 14,
             }}
           >
             <AlertOctagon
               size={16}
-              color="#DC2626"
+              color={t.danger}
               style={{ flexShrink: 0, marginTop: 1 }}
             />
-            <div style={{ fontSize: 11.5, color: "#7F1D1D", lineHeight: 1.5 }}>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: t.dangerTextDeep,
+                lineHeight: 1.5,
+              }}
+            >
               This will mark the task as <strong>Rejected</strong> and notify
               the assignee that the work needs to be redone.
             </div>
@@ -3670,12 +3980,12 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               display: "block",
               fontSize: 11.5,
               fontWeight: 600,
-              color: "#0F172A",
+              color: t.textPrimary,
               marginBottom: 6,
             }}
           >
             Reason for Redo / Rejection
-            <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
+            <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
           </label>
 
           <textarea
@@ -3688,7 +3998,7 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
             rows={4}
             style={{
               width: "100%",
-              border: `1px solid ${touched && !isValid ? "#FCA5A5" : "#CBD5E1"}`,
+              border: `1px solid ${touched && !isValid ? t.dangerBorder : t.borderStrong}`,
               borderRadius: 8,
               padding: "10px 12px",
               fontFamily: "Sora,sans-serif",
@@ -3698,7 +4008,8 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               resize: "vertical",
               minHeight: 80,
               lineHeight: 1.5,
-              background: isSubmitting ? "#F8FAFC" : "#fff",
+              background: isSubmitting ? t.bgInputDisabled : t.bgInput,
+              color: t.textPrimary,
             }}
           />
 
@@ -3709,7 +4020,7 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               justifyContent: "space-between",
               marginTop: 6,
               fontSize: 10.5,
-              color: touched && !isValid ? "#DC2626" : "#94A3B8",
+              color: touched && !isValid ? t.danger : t.textFaint,
             }}
           >
             <span>
@@ -3720,7 +4031,7 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
             <span
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
-                color: trimmed.length > 0 ? "#475569" : "#CBD5E1",
+                color: trimmed.length > 0 ? t.textSecondary : t.textDisabled,
               }}
             >
               {trimmed.length} chars
@@ -3732,11 +4043,11 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
         <div
           style={{
             padding: "12px 20px 16px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
           }}
         >
           <button
@@ -3751,23 +4062,21 @@ function RejectReasonModal({ row, onClose, onConfirm, isSubmitting = false }) {
               cursor: isSubmitting ? "not-allowed" : "pointer",
             }}
           >
-            <X size={13} />
-            Cancel
+            <X size={13} /> Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!isValid || isSubmitting}
             style={{
               ...btnStyle,
-              background: isValid ? "#D97706" : "#F1F5F9",
-              color: isValid ? "#fff" : "#94A3B8",
-              borderColor: isValid ? "#D97706" : "#E2E8F0",
+              background: isValid ? t.warning : t.bgMuted,
+              color: isValid ? t.textInverse : t.textFaint,
+              borderColor: isValid ? t.warning : t.border,
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
               opacity: isSubmitting ? 0.6 : 1,
               cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
-              boxShadow: isValid ? "0 2px 6px rgba(217,119,6,0.25)" : "none",
             }}
           >
             {isSubmitting ? (
@@ -3799,6 +4108,8 @@ function CommentField({
   readOnly: isReadOnly,
   disabled,
 }) {
+  const { t } = useTheme();
+
   return (
     <div style={{ marginTop: 10 }}>
       <label
@@ -3806,7 +4117,7 @@ function CommentField({
           display: "block",
           fontSize: 10.5,
           fontWeight: 600,
-          color: "#64748B",
+          color: t.textMuted,
           marginBottom: 4,
         }}
       >
@@ -3816,14 +4127,14 @@ function CommentField({
         <div
           style={{
             width: "100%",
-            border: "1px solid #E2E8F0",
+            border: `1px solid ${t.border}`,
             borderRadius: 6,
             padding: "8px 10px",
             fontFamily: "Sora,sans-serif",
             fontSize: 11.5,
             lineHeight: 1.5,
-            color: "#475569",
-            background: "#F8FAFC",
+            color: t.textSecondary,
+            background: t.bgSubtle,
             minHeight: 36,
             boxSizing: "border-box",
             whiteSpace: "pre-wrap",
@@ -3840,7 +4151,7 @@ function CommentField({
           rows={2}
           style={{
             width: "100%",
-            border: "1px solid #E2E8F0",
+            border: `1px solid ${t.border}`,
             borderRadius: 6,
             padding: "8px 10px",
             fontFamily: "Sora,sans-serif",
@@ -3850,19 +4161,23 @@ function CommentField({
             resize: "vertical",
             minHeight: 48,
             lineHeight: 1.5,
-            background: disabled ? "#F8FAFC" : "#fff",
+            background: disabled ? t.bgInputDisabled : t.bgInput,
+            color: t.textPrimary,
           }}
         />
       )}
     </div>
   );
 }
-/* ─── Rating Bar (defined OUTSIDE FeedbackModal) ─── */
+
 function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
+  const { t } = useTheme();
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
       {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
         const active = n <= (disabled ? value : hover || value);
+
         const getColor = (rating) => {
           if (rating <= 3) return { fill: "#EF4444", border: "#FCA5A5" };
           if (rating <= 5) return { fill: "#F59E0B", border: "#FCD34D" };
@@ -3870,6 +4185,7 @@ function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
           return { fill: "#22C55E", border: "#86EFAC" };
         };
         const c = getColor(n);
+
         return (
           <button
             key={n}
@@ -3882,9 +4198,9 @@ function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
               width: 28,
               height: 28,
               borderRadius: 6,
-              border: `1.5px solid ${active ? c.border : "#E2E8F0"}`,
-              background: active ? c.fill : "#F8FAFC",
-              color: active ? "#fff" : "#94A3B8",
+              border: `1.5px solid ${active ? c.border : t.border}`,
+              background: active ? c.fill : t.bgSubtle,
+              color: active ? "#fff" : t.textFaint,
               fontSize: 11,
               fontWeight: 700,
               cursor: disabled ? "default" : "pointer",
@@ -5115,6 +5431,8 @@ function ProjectCloseModal({
   readOnly = false,
   savedFeedback = null,
 }) {
+  const { t } = useTheme();
+  const btnStyle = makeBtnStyle(t);
   // ── Only top-level tasks (no sub-tasks) ──
   const topLevelRows = useMemo(() => rows.filter((r) => !r.parentId), [rows]);
 
@@ -5382,7 +5700,8 @@ function ProjectCloseModal({
   };
   // ── Rating color helper ──
   const ratingColor = (val) => {
-    if (val <= 0) return { bg: "#F1F5F9", color: "#94A3B8", border: "#E2E8F0" };
+    if (val <= 0)
+      return { bg: t.bgMuted, color: t.textFaint, border: t.border };
     if (val <= 3) return { bg: "#FEE2E2", color: "#DC2626", border: "#FCA5A5" };
     if (val <= 5) return { bg: "#FEF3C7", color: "#B45309", border: "#FCD34D" };
     if (val <= 7) return { bg: "#DBEAFE", color: "#1D4ED8", border: "#93C5FD" };
@@ -5409,7 +5728,7 @@ function ProjectCloseModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -5419,16 +5738,17 @@ function ProjectCloseModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 720,
           maxHeight: "92vh",
           fontFamily: "Sora,sans-serif",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
+          color: t.textPrimary,
         }}
       >
         {/* ── Header ── */}
@@ -5438,8 +5758,8 @@ function ProjectCloseModal({
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: readOnly ? "#EDE9FE" : "#FEF2F2",
+            borderBottom: `1px solid ${t.border}`,
+            background: readOnly ? t.violetBg : t.dangerBgSubtle,
             flexShrink: 0,
           }}
         >
@@ -5448,27 +5768,29 @@ function ProjectCloseModal({
               width: 40,
               height: 40,
               borderRadius: 10,
-              background: readOnly ? "#DDD6FE" : "#FEE2E2",
-              color: readOnly ? "#7C3AED" : "#DC2626",
+              background: readOnly ? t.violetBg : t.dangerBg,
+              color: readOnly ? t.violet : t.danger,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
             {readOnly ? (
-              <Star size={20} strokeWidth={2} fill="#7C3AED" />
+              <Star size={20} strokeWidth={2} fill={t.violet} />
             ) : (
               <XCircle size={20} strokeWidth={2} />
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
               {readOnly ? "Project Feedback" : "Close Project"}
             </div>
             <div
               style={{
                 fontSize: 11.5,
-                color: "#64748B",
+                color: t.textMuted,
                 marginTop: 2,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -5486,9 +5808,9 @@ function ProjectCloseModal({
                 borderRadius: 999,
                 fontSize: 10,
                 fontWeight: 700,
-                background: "#EDE9FE",
-                color: "#7C3AED",
-                border: "1px solid #DDD6FE",
+                background: t.violetBg,
+                color: t.violet,
+                border: `1px solid ${t.violetBorder}`,
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
@@ -5504,7 +5826,7 @@ function ProjectCloseModal({
               background: "none",
               border: "none",
               cursor: isSubmitting ? "not-allowed" : "pointer",
-              color: "#94A3B8",
+              color: t.textFaint,
               padding: 4,
               opacity: isSubmitting ? 0.5 : 1,
               display: "flex",
@@ -5525,19 +5847,23 @@ function ProjectCloseModal({
                 alignItems: "flex-start",
                 gap: 8,
                 padding: 10,
-                background: "#FEF2F2",
-                border: "1px solid #FCA5A5",
+                background: t.dangerBgSubtle,
+                border: `1px solid ${t.dangerBorder}`,
                 borderRadius: 8,
                 marginBottom: 18,
               }}
             >
               <AlertOctagon
                 size={16}
-                color="#DC2626"
+                color={t.danger}
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <div
-                style={{ fontSize: 11.5, color: "#7F1D1D", lineHeight: 1.5 }}
+                style={{
+                  fontSize: 11.5,
+                  color: t.dangerTextDeep,
+                  lineHeight: 1.5,
+                }}
               >
                 This will permanently <strong>close</strong> the project. All
                 tasks will be finalized. This action cannot be undone.
@@ -5553,25 +5879,25 @@ function ProjectCloseModal({
                 alignItems: "flex-start",
                 gap: 8,
                 padding: 10,
-                background: "#FFFBEB",
-                border: "1px solid #FCD34D",
+                background: t.warningBgSubtle,
+                border: `1px solid ${t.warningBorder}`,
                 borderRadius: 8,
                 marginBottom: 18,
               }}
             >
               <AlertTriangle
                 size={16}
-                color="#B45309"
+                color={t.warning}
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <div
-                style={{ fontSize: 11.5, color: "#92400E", lineHeight: 1.5 }}
+                style={{ fontSize: 11.5, color: t.warning, lineHeight: 1.5 }}
               >
                 <strong>{unratedCount}</strong> of {topLevelRows.length}{" "}
-                top-level task{topLevelRows.length !== 1 ? "s" : ""} have not
-                been rated yet. ({finishedCount} finished,{" "}
-                {topLevelRows.length - finishedCount} remaining). Resource
-                averages below may be incomplete.
+                top-level task
+                {topLevelRows.length !== 1 ? "s" : ""} have not been rated yet.
+                ({finishedCount} finished, {topLevelRows.length - finishedCount}{" "}
+                remaining).
               </div>
             </div>
           )}
@@ -6686,11 +7012,11 @@ function ProjectCloseModal({
         <div
           style={{
             padding: "12px 20px 16px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
@@ -6704,8 +7030,7 @@ function ProjectCloseModal({
                 gap: 5,
               }}
             >
-              <X size={13} />
-              Close
+              <X size={13} /> Close
             </button>
           ) : (
             <>
@@ -6721,25 +7046,21 @@ function ProjectCloseModal({
                   cursor: isSubmitting ? "not-allowed" : "pointer",
                 }}
               >
-                <X size={13} />
-                Cancel
+                <X size={13} /> Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!isValid || isSubmitting}
                 style={{
                   ...btnStyle,
-                  background: isValid ? "#DC2626" : "#F1F5F9",
-                  color: isValid ? "#fff" : "#94A3B8",
-                  borderColor: isValid ? "#DC2626" : "#E2E8F0",
+                  background: isValid ? t.danger : t.bgMuted,
+                  color: isValid ? t.textInverse : t.textFaint,
+                  borderColor: isValid ? t.danger : t.border,
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
                   opacity: isSubmitting ? 0.6 : 1,
                   cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
-                  boxShadow: isValid
-                    ? "0 2px 6px rgba(220,38,38,0.25)"
-                    : "none",
                 }}
               >
                 {isSubmitting ? (
@@ -6776,29 +7097,33 @@ const ActivityRow = React.memo(function ActivityRow({
   moduleColor,
   isOverlapping,
   parentRow,
+  autoCalculate, // ← NEW
   onUpdate,
   onDelete,
   onAddSub,
   onAddRowBelow,
   onOpenComments,
   onRedoReject,
-  onFeedback, // ← ADD THIS
+  onFeedback,
 }) {
-  //  const { groupResources } = useData();
+  const { t } = useTheme();
+  const inputStyle = makeInputStyle(t);
+  const iconBtn = makeIconBtn(t);
+
   const res = row.resource
-    ? resources.find((r) => r.userId === row.resource) // ← lookup by userId
+    ? resources.find((r) => r.userId === row.resource)
     : null;
   const startDisplay = row.plannedStart ? fmtDisplay(row.plannedStart) : "";
   const stopDisplay = row.plannedStop ? fmtDisplay(row.plannedStop) : "";
-  // const commentCount = (row.comments || []).length;
   const commentCount = row.commentCount || 0;
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [isEditingModule, setIsEditingModule] = useState(false); // ← ADD THIS
   const dateBtnRef = useRef(null);
   const isPastStart = row.plannedStart
     ? new Date(parseISODateTime(row.plannedStart)) < new Date()
     : false;
+
   const handleField = (field, value) => {
-    // Fields that don't affect scheduling
     const TEXT_ONLY_FIELDS = ["module", "task"];
     const needsRecompute = !TEXT_ONLY_FIELDS.includes(field);
 
@@ -6808,9 +7133,6 @@ const ActivityRow = React.memo(function ActivityRow({
         field === "durationHrs" ? (value === "" ? "" : Number(value)) : value,
     };
 
-    // When a new resource is selected and there is no plannedStart,
-    // default the start using `defaultFirstStart`. Also set plannedStop
-    // if a duration exists.
     if (field === "resource" && value && !row.plannedStart) {
       try {
         const dt = defaultFirstStart(value, groupResources || {});
@@ -6826,37 +7148,37 @@ const ActivityRow = React.memo(function ActivityRow({
             updated.plannedStop = isoDateTime(stop);
           }
         }
-      } catch (e) {
-        // ignore and proceed without setting defaults
-      }
+      } catch (e) {}
     }
 
     onUpdate(updated, { recompute: needsRecompute });
   };
 
+  // Depth-based cell background (theme-aware)
   const cellBg = isOverlapping
-    ? "#FEF2F2"
+    ? t.dangerBgSubtle
     : row.sortOrder === 0
-      ? "#fff"
+      ? t.bgCard
       : row.sortOrder === 1
-        ? "#FAFAFE"
+        ? t.bgSubtle
         : row.sortOrder === 2
-          ? "#F5F3FF"
-          : "#F0EBFF";
+          ? t.violetBg
+          : t.bgMuted;
+
   const tdStyle = {
-    padding: "8px 10px", // ← Changed from "7px 10px"
-    borderBottom: "1px solid #F1F5F9",
+    padding: "8px 10px",
+    borderBottom: `1px solid ${t.borderSubtle}`,
     background: cellBg,
     verticalAlign: "middle",
-    fontSize: 12.5, // slightly increased for better look
+    fontSize: 12.5,
+    color: t.textPrimary,
   };
-  const moduleModules = row.module;
+
   const statusLower = String(row.status || "pending")
     .toLowerCase()
     .trim();
   const isCompleted = statusLower === "completed";
   const isRowPending = !row.status || statusLower === "pending";
-  // ── Lock sub-task if parent is not pending ──
   const isParentNotPending = parentRow
     ? String(parentRow.status || "pending")
         .toLowerCase()
@@ -6864,21 +7186,21 @@ const ActivityRow = React.memo(function ActivityRow({
     : false;
   const isLockedByParent = !!row.parentId && isParentNotPending;
   const isLocked = !isPending(row) || isLockedByParent;
+
   return (
     <tr
       style={{
         transition: "background .12s",
-        background: isOverlapping ? "#FEF2F2" : "transparent",
-        boxShadow: isOverlapping ? "inset 3px 0 0 0 #EF4444" : "none",
+        background: isOverlapping ? t.dangerBgSubtle : "transparent",
+        boxShadow: isOverlapping ? `inset 3px 0 0 0 ${t.danger}` : "none",
       }}
     >
       {/* # */}
-
       <td
         style={{
           ...tdStyle,
           textAlign: "center",
-          color: isOverlapping ? "#DC2626" : "#94A3B8",
+          color: isOverlapping ? t.danger : t.textFaint,
           fontWeight: 600,
           width: 44,
           fontSize: 11,
@@ -6899,7 +7221,7 @@ const ActivityRow = React.memo(function ActivityRow({
                 width: 8,
                 height: 8,
                 borderRadius: "50%",
-                background: "#EF4444",
+                background: t.danger,
                 flexShrink: 0,
                 animation: "pulse 1.5s infinite",
               }}
@@ -6910,12 +7232,18 @@ const ActivityRow = React.memo(function ActivityRow({
       </td>
 
       {/* Module */}
+      {/* Module */}
       <td style={{ ...tdStyle, width: 160 }}>
-        {row.module && !row._editingModule ? (
+        {row.module && !isEditingModule ? (
           <span
-            onClick={() => {
-              /* allow re-editing by clicking */
-            }}
+            onClick={() => !isLocked && setIsEditingModule(true)}
+            title={
+              isLocked
+                ? isLockedByParent
+                  ? "Locked — parent task is not pending"
+                  : "Locked — task not pending"
+                : `${row.module} (click to edit)`
+            }
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -6931,23 +7259,34 @@ const ActivityRow = React.memo(function ActivityRow({
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
-              cursor: "pointer",
+              cursor: isLocked ? "not-allowed" : "pointer",
+              opacity: isLocked ? 0.65 : 1,
             }}
-            title="Click to edit"
           >
             {row.module}
           </span>
-        ) : (
+        ) : !isLocked ? (
           <ModuleInput
             initialValue={row.module || ""}
-            onCommit={(val) => handleField("module", val)}
+            onCommit={(val) => {
+              handleField("module", val);
+              setIsEditingModule(false);
+            }}
+            onCancel={() => setIsEditingModule(false)}
           />
+        ) : (
+          // placeholder for locked empty modules
+          <span
+            style={{ fontSize: 11, color: t.textFaint, fontStyle: "italic" }}
+          >
+            — no module —
+          </span>
         )}
       </td>
+
       {/* Task */}
       <td style={{ ...tdStyle, width: 260 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {/* Indent based on depth */}
           {row.sortOrder > 0 && (
             <span
               style={{
@@ -6957,12 +7296,10 @@ const ActivityRow = React.memo(function ActivityRow({
               }}
             />
           )}
-
-          {/* Tree connector */}
           {row.sortOrder > 0 && (
             <span
               style={{
-                color: "#94A3B8",
+                color: t.textFaint,
                 fontFamily: "monospace",
                 fontSize: 13,
                 flexShrink: 0,
@@ -6971,29 +7308,27 @@ const ActivityRow = React.memo(function ActivityRow({
             >
               <CornerDownRight
                 size={13}
-                color="#94A3B8"
+                color={t.textFaint}
                 style={{ flexShrink: 0 }}
               />
             </span>
           )}
-
-          {/* Level badge */}
           {row.sortOrder > 0 && (
             <span
               style={{
                 background:
                   row.sortOrder === 1
-                    ? "#EDE9FE"
+                    ? t.violetBg
                     : row.sortOrder === 2
                       ? "#FCE7F3"
-                      : "#FEF3C7",
+                      : t.warningBg,
                 color:
                   row.sortOrder === 1
-                    ? "#7C3AED"
+                    ? t.violet
                     : row.sortOrder === 2
                       ? "#BE185D"
-                      : "#B45309",
-                border: `1px solid ${row.sortOrder === 1 ? "#DDD6FE" : row.sortOrder === 2 ? "#F9A8D4" : "#FCD34D"}`,
+                      : t.warning,
+                border: `1px solid ${row.sortOrder === 1 ? t.violetBorder : row.sortOrder === 2 ? "#F9A8D4" : t.warningBorder}`,
                 borderRadius: 4,
                 padding: "1px 5px",
                 fontSize: 9,
@@ -7007,12 +7342,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </span>
           )}
 
-          {/* <TaskInput
-            initialValue={row.task || ""}
-            onCommit={(val) => handleField("task", val)}
-            placeholder={row.parentId ? "Sub-activity…" : "Task name…"}
-            isSubActivity={!!row.parentId}
-          /> */}
           <input
             value={row.task || ""}
             onChange={(e) => !isLocked && handleField("task", e.target.value)}
@@ -7022,7 +7351,7 @@ const ActivityRow = React.memo(function ActivityRow({
                 ? isLockedByParent
                   ? "Locked — parent task is not pending"
                   : "Locked — task not pending"
-                : ""
+                : row.task || "" // ← show full task text on hover
             }
             style={{
               ...inputStyle,
@@ -7036,6 +7365,7 @@ const ActivityRow = React.memo(function ActivityRow({
           />
         </div>
       </td>
+
       {/* Resource */}
       <td style={{ ...tdStyle, width: 240 }}>
         <div
@@ -7062,13 +7392,6 @@ const ActivityRow = React.memo(function ActivityRow({
               value={row.resource || ""}
               onChange={(val) => handleField("resource", val)}
               disabled={!resources.length || isLocked}
-              title={
-                isLocked
-                  ? isLockedByParent
-                    ? "Locked — parent task is not pending"
-                    : "Locked — task not pending"
-                  : ""
-              }
               placeholder={
                 isLocked
                   ? "Locked"
@@ -7093,7 +7416,7 @@ const ActivityRow = React.memo(function ActivityRow({
               renderTrigger={(selected) => {
                 if (!selected) {
                   return (
-                    <span style={{ color: "#94A3B8", fontSize: 11.5 }}>
+                    <span style={{ color: t.textFaint, fontSize: 11.5 }}>
                       {resources.length
                         ? "Select resource..."
                         : "Pick group first"}
@@ -7104,14 +7427,14 @@ const ActivityRow = React.memo(function ActivityRow({
                   <span
                     style={{
                       fontSize: 11.5,
-                      color: "#0F172A",
+                      color: t.textPrimary,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                       fontWeight: 500,
                     }}
                   >
-                    <span style={{ color: "#64748B", fontWeight: 400 }}>
+                    <span style={{ color: t.textMuted, fontWeight: 400 }}>
                       {selected.code}
                     </span>
                     {" — "}
@@ -7135,7 +7458,7 @@ const ActivityRow = React.memo(function ActivityRow({
                       style={{
                         fontSize: 12,
                         fontWeight: selected ? 600 : 500,
-                        color: "#0F172A",
+                        color: t.textPrimary,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -7147,7 +7470,7 @@ const ActivityRow = React.memo(function ActivityRow({
                     <div
                       style={{
                         fontSize: 10,
-                        color: "#94A3B8",
+                        color: t.textFaint,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -7168,10 +7491,10 @@ const ActivityRow = React.memo(function ActivityRow({
       {/* Planned Start */}
       <td style={{ ...tdStyle, width: 180 }}>
         {hasChildren ? (
-          // Parent with subtasks: display auto-calculated start (read-only)
+          // Parent with subtasks
           !row.resource ? (
             <span
-              style={{ fontSize: 11, color: "#94A3B8", fontStyle: "italic" }}
+              style={{ fontSize: 11, color: t.textFaint, fontStyle: "italic" }}
             >
               Assign resource first
             </span>
@@ -7180,7 +7503,7 @@ const ActivityRow = React.memo(function ActivityRow({
               style={{
                 fontSize: 11,
                 fontFamily: "'JetBrains Mono',monospace",
-                color: "#475569",
+                color: t.textSecondary,
               }}
             >
               {startDisplay || "—"}
@@ -7188,9 +7511,9 @@ const ActivityRow = React.memo(function ActivityRow({
                 <span
                   style={{
                     marginLeft: 5,
-                    background: "#F0F9FF",
-                    color: "#0369A1",
-                    border: "1px solid #BAE6FD",
+                    background: t.infoBg,
+                    color: t.info,
+                    border: `1px solid ${t.infoBorder}`,
                     borderRadius: 3,
                     padding: "1px 5px",
                     fontSize: 9,
@@ -7202,86 +7525,161 @@ const ActivityRow = React.memo(function ActivityRow({
               )}
             </span>
           )
-        ) : // No children: allow user to pick date only if resource assigned AND task is pending
-        row.resource ? (
-          !isLocked ? (
-            <>
-              {isPastStart && draft.status === "draft" && (
+        ) : row.resource ? (
+          (() => {
+            // ── Determine mode ──
+            const isAnchor = !!row._isAnchor;
+            const isAutoChained = !!row._autoChained;
+            const isAutoLocked = autoCalculate && isAutoChained;
+            const canPickDate = !isLocked && !isAutoLocked;
+
+            // ── Auto-locked (chained, not anchor) ──
+            if (isAutoLocked) {
+              return (
                 <span
                   style={{
-                    marginLeft: 5,
-                    background: "#FEF2F2",
-                    color: "#DC2626",
-                    border: "1px solid #FCA5A5",
-                    borderRadius: 3,
-                    padding: "1px 5px",
-                    fontSize: 9,
-                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    fontSize: 11,
+                    fontFamily: "'JetBrains Mono',monospace",
+                    color: t.textSecondary,
+                    opacity: 0.9,
                   }}
                 >
-                  ⚠ PAST
-                </span>
-              )}
-              <button
-                ref={dateBtnRef} // ← Attach ref
-                onClick={() => setPickerOpen(true)}
-                style={{
-                  ...inputStyle,
-                  height: 28,
-                  fontSize: 11,
-                  fontFamily: "'JetBrains Mono',monospace",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  background: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                }}
-              >
-                <span style={{ fontSize: 12 }}>
-                  <Calendar size={12} />
-                </span>
-                <span style={{ flex: 1 }}>
                   {startDisplay || (
-                    <span style={{ color: "#94A3B8" }}>Pick date…</span>
+                    <span style={{ color: t.textFaint, fontStyle: "italic" }}>
+                      Waiting for previous task…
+                    </span>
+                  )}
+                  {startDisplay && (
+                    <span
+                      title="Auto-calculated from resource chain"
+                      style={{
+                        background: t.infoBg,
+                        color: t.info,
+                        border: `1px solid ${t.infoBorder}`,
+                        borderRadius: 3,
+                        padding: "1px 5px",
+                        fontSize: 9,
+                        fontWeight: 600,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      ⚡ AUTO
+                    </span>
                   )}
                 </span>
-              </button>
-              {pickerOpen && (
-                <WorkingDatePicker
-                  value={row.plannedStart}
-                  resourceUserId={row.resource}
-                  groupResources={groupResources} // ← Pass from context
-                  anchorRef={dateBtnRef}
-                  onChange={(val) => handleField("plannedStart", val)}
-                  onClose={() => setPickerOpen(false)}
-                />
-              )}
-            </>
-          ) : (
-            // Resource assigned but not pending: show read-only start
-            <span
-              style={{
-                fontSize: 11,
-                fontFamily: "'JetBrains Mono',monospace",
-                color: "#475569",
-                opacity: 0.9,
-              }}
-              title={
-                isLockedByParent
-                  ? "Locked — parent task is not pending"
-                  : "Locked — task not pending"
-              }
-            >
-              {startDisplay || "—"}
-            </span>
-          )
+              );
+            }
+
+            // ── Editable (manual mode OR anchor row in auto mode) ──
+            if (canPickDate) {
+              return (
+                <>
+                  {isPastStart && draft.status === "draft" && (
+                    <span
+                      style={{
+                        marginLeft: 5,
+                        background: t.dangerBgSubtle,
+                        color: t.danger,
+                        border: `1px solid ${t.dangerBorder}`,
+                        borderRadius: 3,
+                        padding: "1px 5px",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        marginBottom: 3,
+                        display: "inline-block",
+                      }}
+                    >
+                      ⚠ PAST
+                    </span>
+                  )}
+                  <button
+                    ref={dateBtnRef}
+                    onClick={() => setPickerOpen(true)}
+                    style={{
+                      ...inputStyle,
+                      height: 28,
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                    }}
+                  >
+                    <span style={{ fontSize: 12 }}>
+                      <Calendar size={12} />
+                    </span>
+                    <span style={{ flex: 1 }}>
+                      {startDisplay || (
+                        <span style={{ color: t.textFaint }}>Pick date…</span>
+                      )}
+                    </span>
+                    {false && isAnchor && autoCalculate && (
+                      <span
+                        title="Anchor row — first task for this resource"
+                        style={{
+                          background: t.successBg,
+                          color: t.success,
+                          border: `1px solid ${t.successBorder}`,
+                          borderRadius: 3,
+                          padding: "1px 5px",
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: "0.3px",
+                        }}
+                      >
+                        ⚓
+                      </span>
+                    )}
+                  </button>
+                  {pickerOpen && (
+                    <WorkingDatePicker
+                      value={row.plannedStart}
+                      resourceUserId={row.resource}
+                      groupResources={groupResources}
+                      anchorRef={dateBtnRef}
+                      onChange={(val) => handleField("plannedStart", val)}
+                      onClose={() => setPickerOpen(false)}
+                    />
+                  )}
+                </>
+              );
+            }
+
+            // ── Status-locked (not pending) ──
+            return (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontFamily: "'JetBrains Mono',monospace",
+                  color: t.textSecondary,
+                  opacity: 0.9,
+                }}
+                title={
+                  isLockedByParent
+                    ? "Locked — parent task is not pending"
+                    : "Locked — task not pending"
+                }
+              >
+                {startDisplay || "—"}
+              </span>
+            );
+          })()
         ) : (
-          <span style={{ fontSize: 11, color: "#94A3B8", fontStyle: "italic" }}>
+          <span
+            style={{ fontSize: 11, color: t.textFaint, fontStyle: "italic" }}
+          >
             Assign resource first
           </span>
         )}
       </td>
+
       {/* Duration */}
       <td style={{ ...tdStyle, width: 110, textAlign: "right" }}>
         {hasChildren && row._autoDuration ? (
@@ -7293,9 +7691,9 @@ const ActivityRow = React.memo(function ActivityRow({
               gap: 4,
               fontSize: 11.5,
               fontFamily: "'JetBrains Mono', monospace",
-              color: "#7C3AED",
-              background: "#EDE9FE",
-              border: "1px solid #DDD6FE",
+              color: t.violet,
+              background: t.violetBg,
+              border: `1px solid ${t.violetBorder}`,
               borderRadius: 5,
               padding: "4px 8px",
               fontWeight: 600,
@@ -7337,13 +7735,14 @@ const ActivityRow = React.memo(function ActivityRow({
           />
         )}
       </td>
+
       {/* Planned Stop */}
       <td style={{ ...tdStyle, width: 180 }}>
         <span
           style={{
             fontSize: 11,
             fontFamily: "'JetBrains Mono',monospace",
-            color: "#475569",
+            color: t.textSecondary,
           }}
         >
           {stopDisplay || "—"}
@@ -7351,9 +7750,9 @@ const ActivityRow = React.memo(function ActivityRow({
             <span
               style={{
                 marginLeft: 5,
-                background: "#F0F9FF",
-                color: "#0369A1",
-                border: "1px solid #BAE6FD",
+                background: t.infoBg,
+                color: t.info,
+                border: `1px solid ${t.infoBorder}`,
                 borderRadius: 3,
                 padding: "1px 5px",
                 fontSize: 9,
@@ -7363,29 +7762,14 @@ const ActivityRow = React.memo(function ActivityRow({
               AUTO
             </span>
           )}
-          {/* {row.parentId && stopDisplay && (
-            <span
-              style={{
-                marginLeft: 4,
-                background: "#EDE9FE",
-                color: "#7C3AED",
-                border: "1px solid #DDD6FE",
-                borderRadius: 3,
-                padding: "1px 5px",
-                fontSize: 9,
-                fontWeight: 700,
-              }}
-              title="Bounded by parent task window"
-            >
-              🔗 BOUNDED
-            </span>
-          )} */}
         </span>
       </td>
+
       {/* Status */}
       <td style={{ ...tdStyle, width: 110, textAlign: "center" }}>
         <StatusBadge status={row.status} />
       </td>
+
       {/* Actions */}
       <td style={{ ...tdStyle, width: 160, textAlign: "center" }}>
         <div
@@ -7396,25 +7780,23 @@ const ActivityRow = React.memo(function ActivityRow({
             gap: 4,
           }}
         >
-          {/* ── Add row below (top-level pending only) ── */}
-
+          {/* Add row below */}
           {draft.status !== "closed" && row.sortOrder === 0 && (
             <button
               onClick={() => onAddRowBelow(row)}
               title={`Add row below in "${row.module || "module"}"`}
               style={{
                 ...iconBtn,
-                color: "#1D4ED8",
-                borderColor: "#93C5FD",
-                background: "#EFF6FF",
+                color: t.primary,
+                borderColor: t.primaryBorder,
+                background: t.primaryBgSubtle,
               }}
             >
               <Plus size={13} />
             </button>
           )}
 
-          {/* Comments button (always shown) */}
-          {/* {commentCount > 0 && ( */}
+          {/* Comments */}
           <button
             onClick={() => onOpenComments(row)}
             title={
@@ -7424,9 +7806,9 @@ const ActivityRow = React.memo(function ActivityRow({
             }
             style={{
               ...iconBtn,
-              background: commentCount > 0 ? "#EDE9FE" : "transparent",
-              color: commentCount > 0 ? "#7C3AED" : "#94A3B8",
-              borderColor: commentCount > 0 ? "#DDD6FE" : "#E2E8F0",
+              background: commentCount > 0 ? t.violetBg : "transparent",
+              color: commentCount > 0 ? t.violet : t.textFaint,
+              borderColor: commentCount > 0 ? t.violetBorder : t.border,
               position: "relative",
               overflow: "visible",
             }}
@@ -7441,16 +7823,16 @@ const ActivityRow = React.memo(function ActivityRow({
                   minWidth: 16,
                   height: 16,
                   padding: "0 4px",
-                  background: "#7C3AED",
-                  color: "#fff",
+                  background: t.violet,
+                  color: t.textInverse,
                   borderRadius: 999,
                   fontSize: 9,
                   fontWeight: 700,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "2px solid #fff",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  border: `2px solid ${t.bgCard}`,
+                  boxShadow: t.shadowSm,
                   lineHeight: 1,
                 }}
               >
@@ -7458,68 +7840,70 @@ const ActivityRow = React.memo(function ActivityRow({
               </span>
             )}
           </button>
-          {/* )} */}
-          {/* Add sub-activity (only for pending top-level) */}
+
+          {/* Add sub-activity */}
           {row.sortOrder === 0 && isRowPending && !isLockedByParent && (
             <button
               onClick={() => onAddSub(row)}
               title="Add sub-activity"
               style={{
                 ...iconBtn,
-                color: "#7C3AED",
-                borderColor: "#DDD6FE",
-                background: "#FAF5FF",
+                color: t.violet,
+                borderColor: t.violetBorder,
+                background: t.violetBg,
               }}
             >
               <CornerDownRight size={13} />
             </button>
           )}
 
-          {/* Redo button for completed tasks */}
+          {/* Redo */}
           {draft.status !== "closed" && isCompleted && (
             <button
               onClick={() => onRedoReject(row)}
               title="Redo / Reject — needs to be redone"
               style={{
                 ...iconBtn,
-                color: "#D97706",
-                borderColor: "#FCD34D",
-                background: "#FFFBEB",
+                color: t.warning,
+                borderColor: t.warningBorder,
+                background: t.warningBgSubtle,
               }}
             >
               <RotateCcw size={13} />
             </button>
           )}
 
-          {/* Feedback button for completed OR finished tasks */}
+          {/* Feedback */}
           {(isCompleted || statusLower === "finished") && (
             <button
               onClick={() => onFeedback(row)}
               title={isCompleted ? "Rate & Finish task" : "View feedback"}
               style={{
                 ...iconBtn,
-                color: statusLower === "finished" ? "#7C3AED" : "#15803D",
-                borderColor: statusLower === "finished" ? "#DDD6FE" : "#86EFAC",
-                background: statusLower === "finished" ? "#EDE9FE" : "#F0FDF4",
+                color: statusLower === "finished" ? t.violet : t.success,
+                borderColor:
+                  statusLower === "finished" ? t.violetBorder : t.successBorder,
+                background:
+                  statusLower === "finished" ? t.violetBg : t.successBgSubtle,
               }}
             >
               <Star
                 size={13}
-                fill={statusLower === "finished" ? "#7C3AED" : "none"}
+                fill={statusLower === "finished" ? t.violet : "none"}
               />
             </button>
           )}
 
-          {/* Delete (only for pending, not locked by parent) */}
+          {/* Delete */}
           {isRowPending && !isLockedByParent && (
             <button
               onClick={() => onDelete(row)}
               title="Delete row"
               style={{
                 ...iconBtn,
-                color: "#EF4444",
-                borderColor: "#FCA5A5",
-                background: "#FEF2F2",
+                color: t.danger,
+                borderColor: t.dangerBorder,
+                background: t.dangerBgSubtle,
               }}
             >
               <Trash2 size={13} />
@@ -7552,6 +7936,7 @@ function ColumnFilterDropdown({
   onChange,
   type = "multi",
 }) {
+  const { t } = useTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
@@ -7584,7 +7969,7 @@ function ColumnFilterDropdown({
           padding: 2,
           display: "flex",
           alignItems: "center",
-          color: isActive ? "#1D4ED8" : "#94A3B8",
+          color: isActive ? t.primary : t.textFaint,
           position: "relative",
         }}
       >
@@ -7598,8 +7983,8 @@ function ColumnFilterDropdown({
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: "#1D4ED8",
-              border: "1.5px solid #fff",
+              background: t.primary,
+              border: `1.5px solid ${t.bgCard}`,
             }}
           />
         )}
@@ -7613,27 +7998,28 @@ function ColumnFilterDropdown({
             left: 0,
             marginTop: 4,
             width: 220,
-            background: "#fff",
-            border: "1px solid #CBD5E1",
+            background: t.bgCard,
+            border: `1px solid ${t.borderStrong}`,
             borderRadius: 8,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            boxShadow: t.shadowLg,
             zIndex: 999,
             fontFamily: "Sora,sans-serif",
             overflow: "hidden",
           }}
         >
-          {/* Header */}
           <div
             style={{
               padding: "8px 10px",
-              borderBottom: "1px solid #E2E8F0",
-              background: "#F8FAFC",
+              borderBottom: `1px solid ${t.border}`,
+              background: t.bgSubtle,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+            <span
+              style={{ fontSize: 11, fontWeight: 700, color: t.textPrimary }}
+            >
               Filter: {label}
             </span>
             {isActive && (
@@ -7645,7 +8031,7 @@ function ColumnFilterDropdown({
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#EF4444",
+                  color: t.danger,
                   cursor: "pointer",
                   fontSize: 10,
                   fontWeight: 600,
@@ -7657,10 +8043,12 @@ function ColumnFilterDropdown({
             )}
           </div>
 
-          {/* Search */}
           {type === "multi" && options.length > 5 && (
             <div
-              style={{ padding: "6px 8px", borderBottom: "1px solid #F1F5F9" }}
+              style={{
+                padding: "6px 8px",
+                borderBottom: `1px solid ${t.borderSubtle}`,
+              }}
             >
               <input
                 value={search}
@@ -7670,19 +8058,20 @@ function ColumnFilterDropdown({
                 style={{
                   width: "100%",
                   height: 28,
-                  border: "1px solid #E2E8F0",
+                  border: `1px solid ${t.border}`,
                   borderRadius: 5,
                   padding: "0 8px",
                   fontSize: 11,
                   fontFamily: "Sora,sans-serif",
                   outline: "none",
                   boxSizing: "border-box",
+                  background: t.bgInput,
+                  color: t.textPrimary,
                 }}
               />
             </div>
           )}
 
-          {/* Text input for task filter */}
           {type === "text" && (
             <div style={{ padding: "8px" }}>
               <input
@@ -7693,19 +8082,20 @@ function ColumnFilterDropdown({
                 style={{
                   width: "100%",
                   height: 30,
-                  border: "1px solid #E2E8F0",
+                  border: `1px solid ${t.border}`,
                   borderRadius: 5,
                   padding: "0 8px",
                   fontSize: 11.5,
                   fontFamily: "Sora,sans-serif",
                   outline: "none",
                   boxSizing: "border-box",
+                  background: t.bgInput,
+                  color: t.textPrimary,
                 }}
               />
             </div>
           )}
 
-          {/* Options list */}
           {type === "multi" && (
             <div
               style={{ maxHeight: 200, overflowY: "auto", padding: "4px 0" }}
@@ -7715,7 +8105,7 @@ function ColumnFilterDropdown({
                   style={{
                     padding: "12px",
                     textAlign: "center",
-                    color: "#94A3B8",
+                    color: t.textFaint,
                     fontSize: 11,
                   }}
                 >
@@ -7726,32 +8116,31 @@ function ColumnFilterDropdown({
                   const value = typeof opt === "string" ? opt : opt.value;
                   const label = typeof opt === "string" ? opt : opt.label;
                   const checked = selected.includes(value);
-
                   return (
                     <div
                       key={value}
-                      onClick={() => {
+                      onClick={() =>
                         onChange(
                           checked
                             ? selected.filter((v) => v !== value)
                             : [...selected, value],
-                        );
-                      }}
+                        )
+                      }
                       style={{
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
                         padding: "6px 10px",
                         cursor: "pointer",
-                        background: checked ? "#F0F9FF" : "transparent",
+                        background: checked ? t.primaryBgSubtle : "transparent",
                         borderLeft: checked
-                          ? "3px solid #1D4ED8"
+                          ? `3px solid ${t.primary}`
                           : "3px solid transparent",
                         transition: "background .1s",
                       }}
                       onMouseEnter={(e) => {
                         if (!checked)
-                          e.currentTarget.style.background = "#F8FAFC";
+                          e.currentTarget.style.background = t.bgSubtle;
                       }}
                       onMouseLeave={(e) => {
                         if (!checked)
@@ -7763,13 +8152,13 @@ function ColumnFilterDropdown({
                           width: 16,
                           height: 16,
                           borderRadius: 4,
-                          border: `1.5px solid ${checked ? "#1D4ED8" : "#CBD5E1"}`,
-                          background: checked ? "#1D4ED8" : "#fff",
+                          border: `1.5px solid ${checked ? t.primary : t.borderStrong}`,
+                          background: checked ? t.primary : t.bgCard,
                           display: "inline-flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
-                          color: "#fff",
+                          color: t.textInverse,
                         }}
                       >
                         {checked && <Check size={11} strokeWidth={3} />}
@@ -7777,7 +8166,7 @@ function ColumnFilterDropdown({
                       <span
                         style={{
                           fontSize: 11.5,
-                          color: "#0F172A",
+                          color: t.textPrimary,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -7793,15 +8182,14 @@ function ColumnFilterDropdown({
             </div>
           )}
 
-          {/* Footer count */}
           {type === "multi" && selected.length > 0 && (
             <div
               style={{
                 padding: "6px 10px",
-                borderTop: "1px solid #E2E8F0",
-                background: "#FAFBFC",
+                borderTop: `1px solid ${t.border}`,
+                background: t.bgSubtle,
                 fontSize: 10,
-                color: "#64748B",
+                color: t.textMuted,
                 textAlign: "center",
               }}
             >
@@ -7852,6 +8240,11 @@ function ProjectEditor({
   currentUserId,
   isUpdatesShared = false, // ← NEW prop
 }) {
+  const { t } = useTheme();
+  const [autoCalculate, setAutoCalculate] = useState(false); // OFF by default, session-only
+  const labelStyle = makeLabelStyle(t);
+  const inputStyle = makeInputStyle(t);
+  const btnStyle = makeBtnStyle(t);
   const projectAccess = useMemo(
     () => computeProjectAccess(draft, currentUserId, isUpdatesShared), // ← pass it
     [draft, currentUserId, isUpdatesShared],
@@ -7980,6 +8373,7 @@ function ProjectEditor({
   //     setToasts((p) => [...p, { id, kind, title, msg }]);
   //     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), dur);
   //   }, []);
+
   const isResourcesReady = useMemo(() => {
     if (groups.length === 0) return true; // no groups → ready
     return groups.every((g) => g in groupResources);
@@ -8099,7 +8493,38 @@ function ProjectEditor({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+  useEffect(() => {
+    setRows((prev) => recomputeRows(prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCalculate]);
+  const recomputeRows = useCallback(
+    (rowsToProcess) => {
+      if (autoCalculate) {
+        const { rows: computed, warnings } = recomputeAutoChains(
+          rowsToProcess,
+          groupResources,
+        );
 
+        // Show toast for missing anchors
+        if (warnings.length > 0) {
+          const resourceNames = warnings.map((w) => {
+            const res = getResourceByUserId(w.userId, groups, groupResources);
+            return res?.name || w.userId;
+          });
+          showToast(
+            "warning",
+            "Missing anchor start dates",
+            `Please set the first planned start for: ${resourceNames.join(", ")}`,
+          );
+        }
+
+        return computed;
+      } else {
+        return recomputeChains(rowsToProcess, groupResources);
+      }
+    },
+    [autoCalculate, groupResources, groups, showToast],
+  );
   const onOpenCommentBox = useCallback(
     async (projectId, activityId, moduleId) => {
       try {
@@ -8425,7 +8850,7 @@ function ProjectEditor({
           resource:
             r.resource && validUserIds.has(r.resource) ? r.resource : "",
         }));
-        updated = recomputeChains(updated, groupResources);
+        updated = recomputeRows(updated, groupResources);
         return updated;
       });
       setGroups(newGroups);
@@ -8434,6 +8859,7 @@ function ProjectEditor({
   );
 
   /* CRUD */
+  // Example — addRow
   const addRow = useCallback(
     (moduleName) => {
       const name = typeof moduleName === "string" ? moduleName : "";
@@ -8445,7 +8871,7 @@ function ProjectEditor({
         id: generateRowId(),
         parentId: null,
         module: name,
-        moduleId, // ← New field
+        moduleId,
         task: "",
         resource: "",
         plannedStart: "",
@@ -8454,11 +8880,10 @@ function ProjectEditor({
         status: "Pending",
         comments: [],
       };
-      console.log("➕ New row:", newRow.id);
       setModuleRegistry(newRegistry);
-      setRows((prev) => recomputeChains([...prev, newRow], groupResources));
+      setRows((prev) => recomputeRows([...prev, newRow])); // ← use recomputeRows
     },
-    [moduleRegistry, groupResources],
+    [moduleRegistry, recomputeRows],
   );
 
   // ✅ AFTER
@@ -8476,7 +8901,7 @@ function ProjectEditor({
       status: "Pending",
       comments: [],
     };
-    setRows((prev) => recomputeChains([...prev, newRow], groupResources));
+    setRows((prev) => recomputeRows([...prev, newRow], groupResources));
   }, []);
   const addRowBelow = useCallback(
     (referenceRow) => {
@@ -8532,7 +8957,7 @@ function ProjectEditor({
           ...prev.slice(insertIndex),
         ];
 
-        return recomputeChains(updated, groupResources);
+        return recomputeRows(updated, groupResources);
       });
     },
     [moduleRegistry, groupResources],
@@ -8551,13 +8976,13 @@ function ProjectEditor({
           replaced = synced.rows;
         }
 
-        // ✅ Safe recompute
+        // ✅ Use recomputeRows (dispatches based on autoCalculate)
         return recompute && isResourcesReady
-          ? recomputeChains(replaced, groupResources)
+          ? recomputeRows(replaced) // ← changed from recomputeChains
           : replaced;
       });
     },
-    [moduleRegistry, groupResources, isResourcesReady],
+    [moduleRegistry, recomputeRows, isResourcesReady], // ← updated deps
   );
   const deleteRow = useCallback(
     (row) => {
@@ -8580,7 +9005,7 @@ function ProjectEditor({
         const synced = syncModuleIds(filtered, moduleRegistry);
         setModuleRegistry(synced.registry);
 
-        return recomputeChains(synced.rows, groupResources);
+        return recomputeRows(synced.rows, groupResources);
       });
     },
     [moduleRegistry, groupResources],
@@ -8651,6 +9076,7 @@ function ProjectEditor({
             "UserId",
             "Email",
             "resource",
+            "resource ID",
           ]),
         ).trim();
 
@@ -9108,8 +9534,8 @@ function ProjectEditor({
       style={{
         fontFamily: "Sora,sans-serif",
         minHeight: "100vh",
-        background: "#F1F5F9",
-        color: "#0F172A",
+        background: t.bgApp, // ← was #F1F5F9
+        color: t.textPrimary,
       }}
     >
       <div
@@ -9118,7 +9544,7 @@ function ProjectEditor({
         {/* Back button banner */}
         <div
           style={{
-            background: "#fff",
+            background: t.bgCard,
             border: "1px solid #E2E8F0",
             borderRadius: 12,
             padding: "10px 16px",
@@ -9151,22 +9577,22 @@ function ProjectEditor({
               fontWeight: 700,
               background:
                 draft.status === "closed"
-                  ? "#F1F5F9"
+                  ? t.closedBg
                   : motionSubmitted
-                    ? "#DCFCE7"
-                    : "#FEF3C7",
+                    ? t.successBg
+                    : t.warningBg,
               color:
                 draft.status === "closed"
-                  ? "#475569"
+                  ? t.closedText
                   : motionSubmitted
-                    ? "#15803D"
-                    : "#B45309",
+                    ? t.success
+                    : t.warning,
               border: `1px solid ${
                 draft.status === "closed"
-                  ? "#CBD5E1"
+                  ? t.closedBorder
                   : motionSubmitted
-                    ? "#86EFAC"
-                    : "#FCD34D"
+                    ? t.successBorder
+                    : t.warningBorder
               }`,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -9188,7 +9614,7 @@ function ProjectEditor({
           </span>
 
           {/* NEW: Role badge for co-assigners */}
-          {/* {isCoAssigner && (
+          {false && isCoAssigner && (
             <span
               style={{
                 display: "inline-flex",
@@ -9198,18 +9624,17 @@ function ProjectEditor({
                 borderRadius: 999,
                 fontSize: 10,
                 fontWeight: 700,
-                background: "#DCFCE7",
-                color: "#15803D",
-                border: "1px solid #86EFAC",
+                background: t.successBg,
+                color: t.success,
+                border: `1px solid ${t.successBorder}`,
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
-              title={`Owned by ${projectOwnerId}`}
             >
               <Handshake size={11} />
               Co-Assigner
             </span>
-          )} */}
+          )}
 
           {/* NEW: Co-Assigners button (visible when project exists) */}
           {!isNewProject && draft.createdBy && (
@@ -9218,9 +9643,9 @@ function ProjectEditor({
               style={{
                 ...btnStyle,
                 marginLeft: "auto",
-                background: "#F0FDF4",
-                color: "#15803D",
-                borderColor: "#86EFAC",
+                background: t.successBgSubtle,
+                color: t.success,
+                borderColor: t.successBorder,
                 fontWeight: 600,
               }}
             >
@@ -9230,8 +9655,8 @@ function ProjectEditor({
                 <span
                   style={{
                     padding: "1px 7px",
-                    background: "#15803D",
-                    color: "#fff",
+                    background: t.success,
+                    color: t.textInverse,
                     borderRadius: 999,
                     fontSize: 10,
                     fontWeight: 700,
@@ -9243,18 +9668,17 @@ function ProjectEditor({
             </button>
           )}
         </div>
-        {/* ── Sub-Tab Bar ── */}
         {/* ══ Sub-Tab Bar ══ */}
         <div
           style={{
-            background: "#fff",
-            border: "1px solid #E2E8F0",
+            background: t.bgCard,
+            border: `1px solid ${t.border}`,
             borderRadius: 12,
             padding: 4,
             marginBottom: 12,
             display: "flex",
             gap: 2,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            boxShadow: t.shadowSm,
             width: "fit-content",
             alignItems: "center",
           }}
@@ -9307,8 +9731,12 @@ function ProjectEditor({
                   padding: "8px 16px",
                   borderRadius: 8,
                   border: "none",
-                  background: active ? "#0F172A" : "transparent",
-                  color: active ? "#fff" : isDisabled ? "#CBD5E1" : "#64748B",
+                  background: active ? t.textPrimary : "transparent",
+                  color: active
+                    ? t.bgCard
+                    : isDisabled
+                      ? t.textDisabled
+                      : t.textMuted,
                   cursor: isDisabled ? "not-allowed" : "pointer",
                   fontSize: 12,
                   fontWeight: 600,
@@ -9334,8 +9762,8 @@ function ProjectEditor({
                       height: 18,
                       padding: "0 6px",
                       borderRadius: 999,
-                      background: active ? "rgba(255,255,255,0.2)" : "#F1F5F9",
-                      color: active ? "#fff" : "#64748B",
+                      background: active ? "rgba(255,255,255,0.2)" : t.bgMuted,
+                      color: active ? t.bgCard : t.textMuted,
                       fontSize: 10,
                       fontWeight: 700,
                     }}
@@ -9453,12 +9881,12 @@ function ProjectEditor({
             {/* ── Setup Card ── */}
             <div
               style={{
-                background: "#fff",
-                border: "1px solid #E2E8F0",
+                background: t.bgCard,
+                border: `1px solid ${t.border}`,
                 borderRadius: 12,
                 padding: "18px 20px",
                 marginBottom: 16,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                boxShadow: t.shadowSm,
               }}
             >
               <div
@@ -9469,14 +9897,18 @@ function ProjectEditor({
                   marginBottom: 14,
                 }}
               >
-                <Settings size={15} />
+                <Settings size={15} color={t.textPrimary} />
                 <span
-                  style={{ fontWeight: 700, fontSize: 13.5, color: "#0F172A" }}
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 13.5,
+                    color: t.textPrimary,
+                  }}
                 >
                   Project Setup
                 </span>
                 <span
-                  style={{ fontSize: 11.5, color: "#94A3B8", marginLeft: 4 }}
+                  style={{ fontSize: 11.5, color: t.textFaint, marginLeft: 4 }}
                 >
                   Fill details, pick group, upload sheet — table appears below.
                 </span>
@@ -9491,7 +9923,7 @@ function ProjectEditor({
               >
                 {/* Project Name */}
                 <div>
-                  <label style={labelStyle}>
+                  <label style={makeLabelStyle(t)}>
                     Project Name <span style={{ color: "#EF4444" }}>*</span>
                   </label>
                   <input
@@ -9506,13 +9938,13 @@ function ProjectEditor({
                       ...inputStyle,
                       opacity: !isEditable ? 0.65 : 1,
                       cursor: !isEditable ? "not-allowed" : "text",
-                      background: !isEditable ? "#F8FAFC" : "#fff",
+                      background: !isEditable ? t.bgInputDisabled : t.bgInput,
                     }}
                   />
                 </div>
                 {/* PO No */}
                 <div>
-                  <label style={labelStyle}>
+                  <label style={makeLabelStyle(t)}>
                     PO No <span style={{ color: "#EF4444" }}>*</span>
                   </label>
                   <input
@@ -9524,16 +9956,16 @@ function ProjectEditor({
                       !isEditable ? "Cannot edit — project is not a draft" : ""
                     }
                     style={{
-                      ...inputStyle,
+                      ...makeInputStyle(t),
                       opacity: !isEditable ? 0.65 : 1,
                       cursor: !isEditable ? "not-allowed" : "text",
-                      background: !isEditable ? "#F8FAFC" : "#fff",
+                      background: !isEditable ? t.bgInputDisabled : t.bgInput,
                     }}
                   />
                 </div>
                 {/* Site */}
                 <div>
-                  <label style={labelStyle}>
+                  <label style={makeLabelStyle(t)}>
                     Site / Customer <span style={{ color: "#EF4444" }}>*</span>
                   </label>
                   <input
@@ -9545,16 +9977,16 @@ function ProjectEditor({
                       !isEditable ? "Cannot edit — project is not a draft" : ""
                     }
                     style={{
-                      ...inputStyle,
+                      ...makeInputStyle(t),
                       opacity: !isEditable ? 0.65 : 1,
                       cursor: !isEditable ? "not-allowed" : "text",
-                      background: !isEditable ? "#F8FAFC" : "#fff",
+                      background: !isEditable ? t.bgInputDisabled : t.bgInput,
                     }}
                   />
                 </div>
                 {/* Groups multi-select */}
                 <div>
-                  <label style={labelStyle}>
+                  <label style={makeLabelStyle(t)}>
                     Group(s) <span style={{ color: "#EF4444" }}>*</span>
                   </label>
                   {console.log(
@@ -9586,16 +10018,16 @@ function ProjectEditor({
                 </div>
                 {/* Template */}
                 <div>
-                  <label style={labelStyle}>Template</label>
+                  <label style={makeLabelStyle(t)}>Template</label>
                   <button
                     onClick={handleDownloadTemplate}
                     style={{
                       width: "100%",
                       height: 34,
-                      border: "1px solid #CBD5E1",
+                      border: `1px solid ${t.borderStrong}`,
                       borderRadius: 6,
-                      background: "#F8FAFC",
-                      color: "#475569",
+                      background: t.bgSubtle,
+                      color: t.textSecondary,
                       fontFamily: "Sora,sans-serif",
                       fontSize: 12,
                       cursor: "pointer",
@@ -9610,7 +10042,7 @@ function ProjectEditor({
                 </div>
                 {/* Upload */}
                 <div>
-                  <label style={labelStyle}>Activity Sheet</label>
+                  <label style={makeLabelStyle(t)}>Activity Sheet</label>
                   <button
                     onClick={() => {
                       if (!isEditable) return;
@@ -9634,10 +10066,12 @@ function ProjectEditor({
                     style={{
                       width: "100%",
                       height: 34,
-                      border: `1px dashed ${!isEditable ? "#CBD5E1" : "#93C5FD"}`,
+                      border: `1px dashed ${!isEditable ? t.borderStrong : t.primaryBorder}`,
                       borderRadius: 6,
-                      background: !isEditable ? "#F8FAFC" : "#EFF6FF",
-                      color: !isEditable ? "#94A3B8" : "#1D4ED8",
+                      background: !isEditable
+                        ? t.bgInputDisabled
+                        : t.primaryBgSubtle,
+                      color: !isEditable ? t.textFaint : t.primary,
                       fontFamily: "Sora,sans-serif",
                       fontSize: 12,
                       cursor: !isEditable ? "not-allowed" : "pointer",
@@ -9680,15 +10114,23 @@ function ProjectEditor({
                   borderRadius: 7,
                   background:
                     uploadStatus.type === "ok"
-                      ? "#F0FDF4"
+                      ? t.successBgSubtle
                       : uploadStatus.type === "warn"
-                        ? "#FFFBEB"
+                        ? t.warningBgSubtle
                         : uploadStatus.type === "err"
-                          ? "#FEF2F2"
-                          : "#F0F9FF",
-                  border: `1px solid ${uploadStatus.type === "ok" ? "#86EFAC" : uploadStatus.type === "warn" ? "#FCD34D" : uploadStatus.type === "err" ? "#FCA5A5" : "#BAE6FD"}`,
+                          ? t.dangerBgSubtle
+                          : t.infoBg,
+                  border: `1px solid ${
+                    uploadStatus.type === "ok"
+                      ? t.successBorder
+                      : uploadStatus.type === "warn"
+                        ? t.warningBorder
+                        : uploadStatus.type === "err"
+                          ? t.dangerBorder
+                          : t.infoBorder
+                  }`,
                   fontSize: 11.5,
-                  color: "#475569",
+                  color: t.textSecondary,
                 }}
               >
                 <span style={{ flexShrink: 0, fontSize: 13 }}>
@@ -9710,8 +10152,8 @@ function ProjectEditor({
             {showEmpty && (
               <div
                 style={{
-                  background: "#fff",
-                  border: "1px dashed #CBD5E1",
+                  background: t.bgCard,
+                  border: `1px dashed ${t.borderDashed}`,
                   borderRadius: 12,
                   padding: "60px 20px",
                   textAlign: "center",
@@ -9723,12 +10165,11 @@ function ProjectEditor({
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "#DBEAFE",
-                    color: "#1D4ED8",
+                    background: t.primaryBg,
+                    color: t.primary,
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 26,
                     marginBottom: 14,
                   }}
                 >
@@ -9738,7 +10179,7 @@ function ProjectEditor({
                   style={{
                     fontWeight: 700,
                     fontSize: 15,
-                    color: "#0F172A",
+                    color: t.textPrimary,
                     marginBottom: 4,
                   }}
                 >
@@ -9747,15 +10188,14 @@ function ProjectEditor({
                 <div
                   style={{
                     fontSize: 12,
-                    color: "#64748B",
+                    color: t.textMuted,
                     maxWidth: 420,
                     margin: "0 auto 16px",
                     lineHeight: 1.6,
                   }}
                 >
                   Fill in the project details above, pick the responsible group,
-                  then upload your Excel activity sheet — the editable activity
-                  table will appear here.
+                  then upload your Excel activity sheet.
                 </div>
                 <div
                   style={{
@@ -9782,7 +10222,7 @@ function ProjectEditor({
                           display: "inline-flex",
                           alignItems: "center",
                           gap: 5,
-                          color: a ? "#1D4ED8" : "#94A3B8",
+                          color: a ? t.primary : t.textFaint,
                         }}
                       >
                         <span
@@ -9790,8 +10230,8 @@ function ProjectEditor({
                             width: 20,
                             height: 20,
                             borderRadius: "50%",
-                            background: a ? "#1D4ED8" : "#E2E8F0",
-                            color: a ? "#fff" : "#94A3B8",
+                            background: a ? t.primary : t.border,
+                            color: a ? t.textInverse : t.textFaint,
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -9804,7 +10244,7 @@ function ProjectEditor({
                         {l}
                       </span>
                       {i < arr.length - 1 && (
-                        <span style={{ color: "#CBD5E1" }}>›</span>
+                        <span style={{ color: t.textDisabled }}>›</span>
                       )}
                     </span>
                   ))}
@@ -9816,11 +10256,11 @@ function ProjectEditor({
             {showTable && (
               <div
                 style={{
-                  background: "#fff",
-                  border: "1px solid #E2E8F0",
+                  background: t.bgCard,
+                  border: `1px solid ${t.border}`,
                   borderRadius: 12,
                   marginBottom: 16,
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  boxShadow: t.shadowSm,
                   overflow: "hidden",
                 }}
               >
@@ -9831,7 +10271,7 @@ function ProjectEditor({
                     alignItems: "center",
                     gap: 10,
                     padding: "12px 18px",
-                    borderBottom: "1px solid #E2E8F0",
+                    borderBottom: `1px solid ${t.border}`,
                     flexWrap: "wrap",
                   }}
                 >
@@ -9842,18 +10282,15 @@ function ProjectEditor({
                       gap: 7,
                       fontWeight: 700,
                       fontSize: 13.5,
-                      color: "#0F172A",
+                      color: t.textPrimary,
                     }}
                   >
-                    <span style={{ color: "#1D4ED8", fontSize: 16 }}>
-                      <CheckCircle2 size={16} />
-                    </span>{" "}
-                    Activities
+                    <CheckCircle2 size={16} color={t.primary} /> Activities
                     <span
                       style={{
-                        background: "#F1F5F9",
-                        color: "#64748B",
-                        border: "1px solid #E2E8F0",
+                        background: t.bgMuted,
+                        color: t.textMuted,
+                        border: `1px solid ${t.border}`,
                         borderRadius: 6,
                         padding: "1px 8px",
                         fontSize: 11,
@@ -9926,7 +10363,7 @@ function ProjectEditor({
                           left: 10,
                           top: "50%",
                           transform: "translateY(-50%)",
-                          color: "#94A3B8",
+                          color: t.textFaint,
                           pointerEvents: "none",
                         }}
                       />
@@ -9938,13 +10375,14 @@ function ProjectEditor({
                         style={{
                           width: "100%",
                           height: 32,
-                          border: "1px solid #E2E8F0",
+                          border: `1px solid ${t.border}`,
                           borderRadius: 7,
                           padding: "0 10px 0 32px",
                           fontFamily: "Sora,sans-serif",
                           fontSize: 12,
                           outline: "none",
-                          color: "#0F172A",
+                          color: t.textPrimary,
+                          background: t.bgInput,
                           boxSizing: "border-box",
                         }}
                       />
@@ -9965,9 +10403,9 @@ function ProjectEditor({
                         style={{
                           ...btnStyle,
                           height: 32,
-                          color: "#EF4444",
-                          borderColor: "#FCA5A5",
-                          background: "#FEF2F2",
+                          color: t.danger,
+                          borderColor: t.dangerBorder,
+                          background: t.dangerBgSubtle,
                           fontWeight: 600,
                         }}
                       >
@@ -9998,9 +10436,9 @@ function ProjectEditor({
                         onClick={() => addRow()}
                         style={{
                           ...btnStyle,
-                          background: "#1D4ED8",
-                          color: "#fff",
-                          borderColor: "#1D4ED8",
+                          background: t.primary,
+                          color: t.textInverse,
+                          borderColor: t.primary,
                           height: 32,
                         }}
                       >
@@ -10022,7 +10460,7 @@ function ProjectEditor({
                     }}
                   >
                     <thead>
-                      <tr style={{ background: "#F8FAFC" }}>
+                      <tr style={{ background: t.bgSubtle }}>
                         {[
                           {
                             label: "#",
@@ -10053,6 +10491,7 @@ function ProjectEditor({
                             width: 175,
                             align: "left",
                             filterKey: null,
+                            isPlannedStart: true, // ← ADD THIS FLAG
                           },
                           {
                             label: "DURATION (HRS)",
@@ -10086,13 +10525,13 @@ function ProjectEditor({
                               textAlign: col.align,
                               padding: "11px 10px",
                               fontWeight: 600,
-                              color: "#64748B",
+                              color: t.textMuted,
                               fontSize: "10.5px",
                               letterSpacing: "0.5px",
                               textTransform: "uppercase",
-                              borderBottom: "2px solid #CBD5E1",
+                              borderBottom: `2px solid ${t.borderStrong}`,
                               whiteSpace: "nowrap",
-                              background: "#F8FAFC",
+                              background: t.bgSubtle,
                               position: "sticky",
                               top: 0,
                               zIndex: 10,
@@ -10112,7 +10551,97 @@ function ProjectEditor({
                               }}
                             >
                               <span>{col.label}</span>
+                              {col.isPlannedStart && (
+                                <div
+                                  onClick={() => setAutoCalculate((p) => !p)}
+                                  title={
+                                    autoCalculate
+                                      ? "Auto-calculating start times per resource chain"
+                                      : "Enable auto-calculation of start times"
+                                  }
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    marginLeft: 0,
+                                    padding: "0px 0px",
+                                    borderRadius: 999,
+                                    background: autoCalculate
+                                      ? t.primaryBgSubtle
+                                      : "transparent",
+                                    cursor: "pointer",
+                                    userSelect: "none",
+                                    transition: "all .15s",
+                                  }}
+                                >
+                                  <span style={{ fontSize: 10 }}>⚡</span>
 
+                                  {/* Toggle Switch */}
+                                  <span
+                                    style={{
+                                      position: "relative",
+                                      display: "inline-block",
+                                      width: 26,
+                                      height: 14,
+                                      background: autoCalculate
+                                        ? t.primary
+                                        : t.borderStrong,
+                                      borderRadius: 999,
+                                      transition: "background .2s",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        position: "absolute",
+                                        top: 2,
+                                        left: autoCalculate ? 14 : 2,
+                                        width: 10,
+                                        height: 10,
+                                        background: "#fff",
+                                        borderRadius: "50%",
+                                        transition: "left .2s",
+                                        boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                                      }}
+                                    />
+                                  </span>
+                                </div>
+                              )}
+                              {false && col.isPlannedStart && (
+                                <button
+                                  onClick={() => setAutoCalculate((p) => !p)}
+                                  title={
+                                    autoCalculate
+                                      ? "Auto-calculating start times per resource chain"
+                                      : "Enable auto-calculation of start times"
+                                  }
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    marginLeft: 6,
+                                    padding: "2px 8px",
+                                    borderRadius: 999,
+                                    border: `1px solid ${autoCalculate ? t.primary : t.borderStrong}`,
+                                    background: autoCalculate
+                                      ? t.primary
+                                      : t.bgCard,
+                                    color: autoCalculate
+                                      ? t.textInverse
+                                      : t.textMuted,
+                                    fontSize: 9.5,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    fontFamily: "Sora,sans-serif",
+                                    textTransform: "none",
+                                    letterSpacing: "0.3px",
+                                    transition: "all .15s",
+                                  }}
+                                >
+                                  <span style={{ fontSize: 11 }}>⚡</span>
+                                  Auto: {autoCalculate ? "ON" : "OFF"}
+                                </button>
+                              )}
                               {/* Module filter */}
                               {col.filterKey === "module" && (
                                 <ColumnFilterDropdown
@@ -10190,7 +10719,7 @@ function ProjectEditor({
                             style={{
                               padding: "48px 20px",
                               textAlign: "center",
-                              color: "#94A3B8",
+                              color: t.textFaint,
                               fontSize: 12,
                             }}
                           >
@@ -10199,13 +10728,12 @@ function ProjectEditor({
                                 width: 56,
                                 height: 56,
                                 borderRadius: "50%",
-                                background: "#EEF2FF",
-                                color: "#4F46E5",
+                                background: t.primaryBgSubtle,
+                                color: t.primary,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 margin: "0 auto 12px",
-                                // boxShadow: "0 2px 8px rgba(79, 70, 229, 0.12)",
                               }}
                             >
                               <Plus size={28} strokeWidth={2.5} />
@@ -10213,7 +10741,7 @@ function ProjectEditor({
                             <div
                               style={{
                                 fontWeight: 600,
-                                color: "#0F172A",
+                                color: t.textPrimary,
                                 marginBottom: 3,
                               }}
                             >
@@ -10227,9 +10755,9 @@ function ProjectEditor({
                               onClick={() => addRow()}
                               style={{
                                 ...btnStyle,
-                                background: "#1D4ED8",
-                                color: "#fff",
-                                borderColor: "#1D4ED8",
+                                background: t.primary,
+                                color: t.textInverse,
+                                borderColor: t.primary,
                                 marginTop: 12,
                               }}
                             >
@@ -10335,6 +10863,7 @@ function ProjectEditor({
                                     key={r.id}
                                     row={r}
                                     idx={displayIdx}
+                                    autoCalculate={autoCalculate}
                                     isFirstInChain={isFirstInChain(r)}
                                     resources={resources}
                                     groupResources={groupResources}
@@ -10440,8 +10969,8 @@ function ProjectEditor({
                       padding: "11px",
                       background: "none",
                       border: "none",
-                      borderTop: "1px solid #F1F5F9",
-                      color: "#1D4ED8",
+                      borderTop: `1px solid ${t.borderSubtle}`,
+                      color: t.primary,
                       fontFamily: "Sora,sans-serif",
                       fontSize: 12,
                       cursor: "pointer",
@@ -10472,15 +11001,15 @@ function ProjectEditor({
 
             <div
               style={{
-                background: "#fff",
-                border: "1px solid #E2E8F0",
+                background: t.bgCard,
+                border: `1px solid ${t.border}`,
                 borderRadius: 12,
                 padding: "12px 18px",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
                 flexWrap: "wrap",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                boxShadow: t.shadowSm,
               }}
             >
               <div
@@ -10489,18 +11018,18 @@ function ProjectEditor({
                   alignItems: "center",
                   gap: 6,
                   fontSize: 11.5,
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   flex: 1,
                   minWidth: 0,
                   flexWrap: "wrap",
                 }}
               >
-                <span>
-                  <Clock size={11} />
-                </span>
+                <Clock size={11} />
                 <span>Saved as draft:</span>
-                <strong style={{ color: "#0F172A" }}>{draftTime || "—"}</strong>
-                <span style={{ color: "#E2E8F0", margin: "0 4px" }}>|</span>
+                <strong style={{ color: t.textPrimary }}>
+                  {draftTime || "—"}
+                </strong>
+                <span style={{ color: t.border, margin: "0 4px" }}>|</span>
                 <span
                   style={{
                     display: "inline-flex",
@@ -10512,22 +11041,22 @@ function ProjectEditor({
                     fontWeight: 500,
                     background:
                       draft.status === "closed"
-                        ? "#F1F5F9"
+                        ? t.closedBg
                         : motionSubmitted
-                          ? "#DCFCE7"
-                          : "#F1F5F9",
+                          ? t.successBg
+                          : t.bgMuted,
                     color:
                       draft.status === "closed"
-                        ? "#475569"
+                        ? t.closedText
                         : motionSubmitted
-                          ? "#16A34A"
-                          : "#64748B",
+                          ? t.success
+                          : t.textMuted,
                     border: `1px solid ${
                       draft.status === "closed"
-                        ? "#CBD5E1"
+                        ? t.closedBorder
                         : motionSubmitted
-                          ? "#86EFAC"
-                          : "#E2E8F0"
+                          ? t.successBorder
+                          : t.border
                     }`,
                   }}
                 >
@@ -10599,17 +11128,12 @@ function ProjectEditor({
               <button
                 onClick={handleSubmitMotion}
                 disabled={isSaving || draft.status === "closed"}
-                title={
-                  draft.status === "closed"
-                    ? "Cannot submit — project is closed"
-                    : ""
-                }
                 style={{
                   ...btnStyle,
-                  background: draft.status === "closed" ? "#F1F5F9" : "#1D4ED8",
-                  color: draft.status === "closed" ? "#94A3B8" : "#fff",
-                  borderColor:
-                    draft.status === "closed" ? "#E2E8F0" : "#1D4ED8",
+                  background: draft.status === "closed" ? t.bgMuted : t.primary,
+                  color:
+                    draft.status === "closed" ? t.textFaint : t.textInverse,
+                  borderColor: draft.status === "closed" ? t.border : t.primary,
                   height: 36,
                   opacity: isSaving || draft.status === "closed" ? 0.5 : 1,
                   cursor:
@@ -10655,8 +11179,8 @@ function ProjectEditor({
                       {` ${total} task${total !== 1 ? "s" : ""}`}
                     </>
                   ),
-                  bg: "#F1F5F9",
-                  color: "#475569",
+                  bg: t.bgMuted,
+                  color: t.textSecondary,
                 },
                 {
                   label: (
@@ -10665,8 +11189,8 @@ function ProjectEditor({
                       {` ${assigned} assigned`}
                     </>
                   ),
-                  bg: "#DCFCE7",
-                  color: "#15803D",
+                  bg: t.successBg,
+                  color: t.success,
                 },
                 {
                   label: (
@@ -10675,8 +11199,8 @@ function ProjectEditor({
                       {` ${unassigned} unassigned`}
                     </>
                   ),
-                  bg: "#F1F5F9",
-                  color: "#64748B",
+                  bg: t.bgMuted,
+                  color: t.textMuted,
                 },
                 {
                   label: (
@@ -10685,8 +11209,8 @@ function ProjectEditor({
                       {` ${totalComments} comment${totalComments !== 1 ? "s" : ""}`}
                     </>
                   ),
-                  bg: "#EDE9FE",
-                  color: "#7C3AED",
+                  bg: t.violetBg,
+                  color: t.violet,
                 },
               ].map((s) => (
                 <span
@@ -10701,7 +11225,7 @@ function ProjectEditor({
                     color: s.color,
                     fontSize: 11.5,
                     fontWeight: 500,
-                    border: "1px solid rgba(0,0,0,0.06)",
+                    border: `1px solid ${t.border}`,
                   }}
                 >
                   {s.label}
@@ -10745,12 +11269,12 @@ function ProjectEditor({
             ) : (
               <div
                 style={{
-                  background: "#fff",
-                  border: "1px dashed #CBD5E1",
+                  background: t.bgCard,
+                  border: `1px dashed ${t.borderDashed}`,
                   borderRadius: 12,
                   padding: "60px 20px",
                   textAlign: "center",
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   fontSize: 13,
                 }}
               >
@@ -10760,7 +11284,11 @@ function ProjectEditor({
                   style={{ marginBottom: 12, opacity: 0.5 }}
                 />
                 <div
-                  style={{ fontWeight: 600, color: "#0F172A", marginBottom: 4 }}
+                  style={{
+                    fontWeight: 600,
+                    color: t.textPrimary,
+                    marginBottom: 4,
+                  }}
                 >
                   No activities to display
                 </div>
@@ -10869,67 +11397,28 @@ function DraftProjectsList({
   onDelete,
   onNew,
   onRefresh,
-  dateRange, // ← NEW
-  onDateRangeChange, // ← NEW
+  dateRange,
+  onDateRangeChange,
 }) {
-  //   const { groupLabels } = useData();
+  const { t } = useTheme();
+
   const [search, setSearch] = useState("");
-  // const [ownershipFilter, setOwnershipFilter] = useState("all"); // "all" | "mine" | "shared"
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all"); // ← NEW: "all" | "draft" | "published"
-  const customPickerRef = useRef(null);
-  const customToggleBtnRef = useRef(null);
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const [lastAppliedCustom, setLastAppliedCustom] = useState(() => {
-    try {
-      const saved = localStorage.getItem("draftListCustomRange");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return { fromDate: dateRange.fromDate, toDate: dateRange.toDate };
-  });
-
-  // Save whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "draftListCustomRange",
-        JSON.stringify(lastAppliedCustom),
-      );
-    } catch (e) {}
-  }, [lastAppliedCustom]);
-  /* ─── Date range presets ─── */
+  // Date range state
   const [dateMode, setDateMode] = useState("currentMonth");
-
-  // Tracks the last APPLIED custom range (persists across open/close)
-  // const [lastAppliedCustom, setLastAppliedCustom] = useState({
-  //   fromDate: dateRange.fromDate,
-  //   toDate: dateRange.toDate,
-  // });
-
-  // Working values inside the picker (editable, may be discarded)
+  const [lastAppliedCustom, setLastAppliedCustom] = useState({
+    fromDate: dateRange.fromDate,
+    toDate: dateRange.toDate,
+  });
   const [customFrom, setCustomFrom] = useState(dateRange.fromDate);
   const [customTo, setCustomTo] = useState(dateRange.toDate);
   const [customOpen, setCustomOpen] = useState(false);
-  useEffect(() => {
-    if (!customOpen) return;
 
-    const handler = (e) => {
-      // Ignore clicks on the picker itself or the Custom tab button
-      if (customPickerRef.current?.contains(e.target)) return;
-      if (customToggleBtnRef.current?.contains(e.target)) return;
-      handleCustomCancel();
-    };
+  const customPickerRef = useRef(null);
+  const customToggleBtnRef = useRef(null);
 
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 0);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", handler);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customOpen, lastAppliedCustom]);
   const toSimpleDate = (d) => {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -10941,24 +11430,27 @@ function DraftProjectsList({
     const now = new Date();
     const first = new Date(now.getFullYear(), now.getMonth(), 1);
     const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const range = { fromDate: toSimpleDate(first), toDate: toSimpleDate(last) };
     setDateMode("currentMonth");
     setCustomOpen(false);
-    onDateRangeChange(range);
+    onDateRangeChange({
+      fromDate: toSimpleDate(first),
+      toDate: toSimpleDate(last),
+    });
   };
 
   const handleLast3Months = () => {
     const now = new Date();
     const from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const range = { fromDate: toSimpleDate(from), toDate: toSimpleDate(to) };
     setDateMode("last3Months");
     setCustomOpen(false);
-    onDateRangeChange(range);
+    onDateRangeChange({
+      fromDate: toSimpleDate(from),
+      toDate: toSimpleDate(to),
+    });
   };
 
   const handleCustomToggle = () => {
-    // Opening: restore the LAST APPLIED custom range into the editable fields
     if (!customOpen) {
       setCustomFrom(lastAppliedCustom.fromDate);
       setCustomTo(lastAppliedCustom.toDate);
@@ -10973,25 +11465,41 @@ function DraftProjectsList({
       alert("From date must be before To date");
       return;
     }
-    // Remember this range for future opens
     setLastAppliedCustom({ fromDate: customFrom, toDate: customTo });
     onDateRangeChange({ fromDate: customFrom, toDate: customTo });
     setCustomOpen(false);
   };
 
-  // Discard changes — restore last applied values
   const handleCustomCancel = () => {
     setCustomFrom(lastAppliedCustom.fromDate);
     setCustomTo(lastAppliedCustom.toDate);
     setCustomOpen(false);
   };
 
+  useEffect(() => {
+    if (!customOpen) return;
+    const handler = (e) => {
+      if (customPickerRef.current?.contains(e.target)) return;
+      if (customToggleBtnRef.current?.contains(e.target)) return;
+      handleCustomCancel();
+    };
+    const timer = setTimeout(
+      () => document.addEventListener("mousedown", handler),
+      0,
+    );
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+    // eslint-disable-next-line
+  }, [customOpen, lastAppliedCustom]);
+
   const formatDateShort = (dateStr) => {
     if (!dateStr) return "";
     const [y, m, d] = dateStr.split("-");
     return `${d}/${m}/${y.slice(2)}`;
   };
-  // ── Helper functions ──
+
   const isMineProject = useCallback(
     (d) =>
       d.createdBy &&
@@ -11010,7 +11518,6 @@ function DraftProjectsList({
     [currentUserId],
   );
 
-  // NEW: Check if user has updates access
   const isUpdatesSharedProject = useCallback(
     (d) => {
       if (!currentUserId) return false;
@@ -11023,6 +11530,7 @@ function DraftProjectsList({
     },
     [currentUserId],
   );
+
   const statusCounts = useMemo(() => {
     const isMine = (d) => isMineProject(d);
     const isShared = (d) =>
@@ -11040,31 +11548,8 @@ function DraftProjectsList({
         .length,
       sharedWithMe: drafts.filter((d) => isShared(d)).length,
     };
-  }, [
-    drafts,
-    currentUserId,
-    isMineProject,
-    isCoAssignedProject,
-    isUpdatesSharedProject,
-  ]);
-  // const ownershipCounts = useMemo(
-  //   () => ({
-  //     all: drafts.length,
-  //     mine: drafts.filter(
-  //       (d) =>
-  //         d.createdBy &&
-  //         currentUserId &&
-  //         d.createdBy.toLowerCase() === currentUserId.toLowerCase(),
-  //     ).length,
-  //     shared: drafts.filter(
-  //       (d) =>
-  //         d.createdBy &&
-  //         currentUserId &&
-  //         d.createdBy.toLowerCase() !== currentUserId.toLowerCase(),
-  //     ).length,
-  //   }),
-  //   [drafts, currentUserId],
-  // );
+  }, [drafts, isMineProject, isCoAssignedProject, isUpdatesSharedProject]);
+
   const filtered = useMemo(() => {
     let result = drafts;
 
@@ -11100,9 +11585,16 @@ function DraftProjectsList({
           (d.site || "").toLowerCase().includes(q),
       );
     }
-
     return result;
-  }, [drafts, search, statusFilter, currentUserId]);
+  }, [
+    drafts,
+    search,
+    statusFilter,
+    currentUserId,
+    isMineProject,
+    isCoAssignedProject,
+  ]);
+
   const fmtDate = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -11115,24 +11607,39 @@ function DraftProjectsList({
     });
   };
 
+  // Themed button style helper
+  const themedBtn = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
+
   return (
     <div
       style={{ padding: "16px 20px 32px", maxWidth: 1600, margin: "0 auto" }}
     >
-      {/* Header */}
-      {/* ── Status Filter Tabs ── */}
-      {/* ── Status Filter Tabs (5 tabs) ── */}
+      {/* Status Filter Tabs */}
       {!loading && !error && drafts.length > 0 && (
         <div
           style={{
             display: "flex",
             gap: 2,
             marginBottom: 16,
-            background: "#fff",
-            border: "1px solid #E2E8F0",
+            background: t.bgCard,
+            border: `1px solid ${t.border}`,
             borderRadius: 10,
             padding: 4,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            boxShadow: t.shadowSm,
             width: "fit-content",
             flexWrap: "wrap",
           }}
@@ -11142,42 +11649,41 @@ function DraftProjectsList({
               key: "all",
               label: "All Projects",
               icon: <Briefcase size={14} />,
-              color: "#475569",
+              color: t.textSecondary,
             },
             {
               key: "draft",
               label: "Drafts",
               icon: <FileText size={11} />,
-              color: "#B45309",
+              color: t.warning,
             },
             {
               key: "published",
               label: "Published",
               icon: <Rocket size={11} />,
-              color: "#15803D",
+              color: t.success,
             },
             {
               key: "closed",
               label: "Closed",
               icon: <Lock size={11} />,
-              color: "#475569",
+              color: t.textSecondary,
             },
             {
-              key: "coAssigned", // ← NEW
+              key: "coAssigned",
               label: "Co-Assigned",
               icon: <Handshake size={14} />,
-              color: "#15803D",
+              color: t.success,
             },
             {
               key: "sharedWithMe",
-              label: "Shared Updates",
+              label: "Shared with Me",
               icon: <Users size={14} />,
-              color: "#1D4ED8",
+              color: t.primary,
             },
           ].map((tab) => {
             const active = statusFilter === tab.key;
             const count = statusCounts[tab.key];
-
             return (
               <button
                 key={tab.key}
@@ -11189,8 +11695,8 @@ function DraftProjectsList({
                   padding: "8px 14px",
                   borderRadius: 7,
                   border: "none",
-                  background: active ? "#0F172A" : "transparent",
-                  color: active ? "#fff" : tab.color,
+                  background: active ? t.textPrimary : "transparent",
+                  color: active ? t.bgCard : tab.color,
                   cursor: "pointer",
                   fontSize: 12,
                   fontWeight: 600,
@@ -11209,8 +11715,8 @@ function DraftProjectsList({
                     height: 18,
                     padding: "0 6px",
                     borderRadius: 999,
-                    background: active ? "rgba(255,255,255,0.2)" : "#F1F5F9",
-                    color: active ? "#fff" : "#64748B",
+                    background: active ? "rgba(255,255,255,0.2)" : t.bgMuted,
+                    color: active ? t.bgCard : t.textMuted,
                     fontSize: 10,
                     fontWeight: 700,
                   }}
@@ -11222,15 +11728,16 @@ function DraftProjectsList({
           })}
         </div>
       )}
-      {/* ── Date Range Tabs + Search Row ── */}
+
+      {/* Header + Date Tabs + Search + Actions */}
       <div
         style={{
-          background: "#fff",
-          border: "1px solid #E2E8F0",
+          background: t.bgCard,
+          border: `1px solid ${t.border}`,
           borderRadius: 12,
           padding: "18px 20px",
           marginBottom: 16,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          boxShadow: t.shadowSm,
           display: "flex",
           alignItems: "center",
           gap: 14,
@@ -11242,38 +11749,37 @@ function DraftProjectsList({
             width: 44,
             height: 44,
             borderRadius: 10,
-            background: "#FEF3C7",
-            color: "#B45309",
+            background: t.warningBg,
+            color: t.warning,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 20,
           }}
         >
           <Briefcase size={16} />
         </div>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: t.textPrimary }}>
             Projects
           </div>
-          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
             {drafts.length === 0
               ? "No projects found in this date range."
               : `${drafts.length} project${drafts.length !== 1 ? "s" : ""} `}
-            <span style={{ color: "#94A3B8" }}>
+            <span style={{ color: t.textFaint }}>
               ({formatDateShort(dateRange.fromDate)} →{" "}
               {formatDateShort(dateRange.toDate)})
             </span>
           </div>
         </div>
 
-        {/* ── Date Range Preset Tabs ── */}
+        {/* Date Range Preset Tabs */}
         <div
           style={{
             display: "flex",
             gap: 2,
-            background: "#F1F5F9",
-            border: "1px solid #E2E8F0",
+            background: t.bgMuted,
+            border: `1px solid ${t.border}`,
             borderRadius: 8,
             padding: 3,
             position: "relative",
@@ -11286,8 +11792,8 @@ function DraftProjectsList({
               borderRadius: 6,
               border: "none",
               background:
-                dateMode === "currentMonth" ? "#1D4ED8" : "transparent",
-              color: dateMode === "currentMonth" ? "#fff" : "#64748B",
+                dateMode === "currentMonth" ? t.primary : "transparent",
+              color: dateMode === "currentMonth" ? t.textInverse : t.textMuted,
               fontSize: 11.5,
               fontWeight: 600,
               cursor: "pointer",
@@ -11307,8 +11813,8 @@ function DraftProjectsList({
               borderRadius: 6,
               border: "none",
               background:
-                dateMode === "last3Months" ? "#1D4ED8" : "transparent",
-              color: dateMode === "last3Months" ? "#fff" : "#64748B",
+                dateMode === "last3Months" ? t.primary : "transparent",
+              color: dateMode === "last3Months" ? t.textInverse : t.textMuted,
               fontSize: 11.5,
               fontWeight: 600,
               cursor: "pointer",
@@ -11328,8 +11834,8 @@ function DraftProjectsList({
               padding: "6px 12px",
               borderRadius: 6,
               border: "none",
-              background: dateMode === "custom" ? "#1D4ED8" : "transparent",
-              color: dateMode === "custom" ? "#fff" : "#64748B",
+              background: dateMode === "custom" ? t.primary : "transparent",
+              color: dateMode === "custom" ? t.textInverse : t.textMuted,
               fontSize: 11.5,
               fontWeight: 600,
               cursor: "pointer",
@@ -11343,7 +11849,6 @@ function DraftProjectsList({
             Custom
           </button>
 
-          {/* ── Inline Custom Date Picker (drops below the tab bar) ── */}
           {customOpen && (
             <div
               ref={customPickerRef}
@@ -11351,11 +11856,11 @@ function DraftProjectsList({
                 position: "absolute",
                 top: "calc(100% + 6px)",
                 right: 0,
-                background: "#fff",
-                border: "1px solid #CBD5E1",
+                background: t.bgCard,
+                border: `1px solid ${t.borderStrong}`,
                 borderRadius: 10,
                 padding: 12,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                boxShadow: t.shadowLg,
                 zIndex: 100,
                 display: "flex",
                 alignItems: "flex-end",
@@ -11369,7 +11874,7 @@ function DraftProjectsList({
                     display: "block",
                     fontSize: 10,
                     fontWeight: 600,
-                    color: "#64748B",
+                    color: t.textMuted,
                     marginBottom: 4,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
@@ -11384,18 +11889,19 @@ function DraftProjectsList({
                   max={customTo || undefined}
                   style={{
                     height: 32,
-                    border: "1px solid #CBD5E1",
+                    border: `1px solid ${t.borderStrong}`,
                     borderRadius: 6,
                     padding: "0 8px",
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 11.5,
                     outline: "none",
-                    color: "#0F172A",
+                    color: t.textPrimary,
+                    background: t.bgInput,
                   }}
                 />
               </div>
 
-              <span style={{ color: "#94A3B8", paddingBottom: 8 }}>→</span>
+              <span style={{ color: t.textFaint, paddingBottom: 8 }}>→</span>
 
               <div>
                 <label
@@ -11403,7 +11909,7 @@ function DraftProjectsList({
                     display: "block",
                     fontSize: 10,
                     fontWeight: 600,
-                    color: "#64748B",
+                    color: t.textMuted,
                     marginBottom: 4,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
@@ -11418,13 +11924,14 @@ function DraftProjectsList({
                   min={customFrom || undefined}
                   style={{
                     height: 32,
-                    border: "1px solid #CBD5E1",
+                    border: `1px solid ${t.borderStrong}`,
                     borderRadius: 6,
                     padding: "0 8px",
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 11.5,
                     outline: "none",
-                    color: "#0F172A",
+                    color: t.textPrimary,
+                    background: t.bgInput,
                   }}
                 />
               </div>
@@ -11437,8 +11944,9 @@ function DraftProjectsList({
                   padding: "0 14px",
                   borderRadius: 6,
                   border: "none",
-                  background: !customFrom || !customTo ? "#CBD5E1" : "#1D4ED8",
-                  color: "#fff",
+                  background:
+                    !customFrom || !customTo ? t.borderStrong : t.primary,
+                  color: t.textInverse,
                   fontSize: 11.5,
                   fontWeight: 600,
                   cursor: !customFrom || !customTo ? "not-allowed" : "pointer",
@@ -11453,15 +11961,14 @@ function DraftProjectsList({
               </button>
 
               <button
-                // onClick={() => setCustomOpen(false)}
                 onClick={handleCustomCancel}
                 style={{
                   height: 32,
                   padding: "0 10px",
                   borderRadius: 6,
-                  border: "1px solid #CBD5E1",
-                  background: "#fff",
-                  color: "#64748B",
+                  border: `1px solid ${t.borderStrong}`,
+                  background: t.bgCard,
+                  color: t.textMuted,
                   fontSize: 11.5,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -11474,7 +11981,7 @@ function DraftProjectsList({
           )}
         </div>
 
-        {/* ── Search Box ── */}
+        {/* Search */}
         <div style={{ position: "relative", width: 240 }}>
           <Search
             size={14}
@@ -11483,7 +11990,7 @@ function DraftProjectsList({
               left: 10,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#94A3B8",
+              color: t.textFaint,
             }}
           />
           <input
@@ -11493,13 +12000,15 @@ function DraftProjectsList({
             style={{
               height: 36,
               width: "100%",
-              border: "1px solid #CBD5E1",
+              border: `1px solid ${t.borderStrong}`,
               borderRadius: 8,
               padding: "0 12px 0 32px",
               fontFamily: "Sora,sans-serif",
               fontSize: 12.5,
               outline: "none",
               boxSizing: "border-box",
+              background: t.bgInput,
+              color: t.textPrimary,
             }}
           />
         </div>
@@ -11508,11 +12017,7 @@ function DraftProjectsList({
           onClick={onRefresh}
           disabled={loading}
           title="Refresh"
-          style={{
-            ...btnStyle,
-            height: 36,
-            opacity: loading ? 0.6 : 1,
-          }}
+          style={{ ...themedBtn, height: 36, opacity: loading ? 0.6 : 1 }}
         >
           {loading ? (
             <Loader2
@@ -11528,11 +12033,11 @@ function DraftProjectsList({
         <button
           onClick={onNew}
           style={{
-            ...btnStyle,
+            ...themedBtn,
             height: 36,
-            background: "#1D4ED8",
-            color: "#fff",
-            borderColor: "#1D4ED8",
+            background: t.primary,
+            color: t.textInverse,
+            borderColor: t.primary,
             fontWeight: 600,
           }}
         >
@@ -11540,16 +12045,17 @@ function DraftProjectsList({
           New Project
         </button>
       </div>
-      {/* Loading state */}
+
+      {/* Loading */}
       {loading && (
         <div
           style={{
-            background: "#fff",
-            border: "1px solid #E2E8F0",
+            background: t.bgCard,
+            border: `1px solid ${t.border}`,
             borderRadius: 12,
             padding: "60px 20px",
             textAlign: "center",
-            color: "#64748B",
+            color: t.textMuted,
             fontSize: 13,
           }}
         >
@@ -11557,120 +12063,87 @@ function DraftProjectsList({
           Loading projects from server...
         </div>
       )}
-      {/* Error state */}
-      {error &&
-        !loading &&
-        (() => {
-          // Detect error type from message
-          let ErrorIcon = AlertOctagon;
-          let title = "Failed to load projects";
 
-          if (error.includes("401")) {
-            ErrorIcon = ShieldAlert;
-            title = "Unauthorized — Please log in again";
-          } else if (error.includes("403")) {
-            ErrorIcon = ShieldX;
-            title = "Access denied";
-          } else if (error.includes("404")) {
-            ErrorIcon = SearchX;
-            title = "Resource not found";
-          } else if (
-            error.includes("500") ||
-            error.includes("502") ||
-            error.includes("503")
-          ) {
-            ErrorIcon = ServerCrash;
-            title = "Server error — please try again";
-          } else if (
-            error.toLowerCase().includes("network") ||
-            error.toLowerCase().includes("fetch")
-          ) {
-            ErrorIcon = WifiOff;
-            title = "Network error — check your connection";
-          }
-
-          return (
+      {/* Error */}
+      {error && !loading && (
+        <div
+          style={{
+            background: t.dangerBgSubtle,
+            border: `1px solid ${t.dangerBorder}`,
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: t.dangerBg,
+              color: t.danger,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <AlertOctagon size={22} strokeWidth={2} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                background: "#FEF2F2",
-                border: "1px solid #FCA5A5",
-                borderRadius: 12,
-                padding: 20,
-                marginBottom: 16,
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
+                fontWeight: 700,
+                color: t.danger,
+                fontSize: 13.5,
+                marginBottom: 3,
               }}
             >
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  background: "#FEE2E2",
-                  color: "#DC2626",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <ErrorIcon size={22} strokeWidth={2} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    color: "#DC2626",
-                    fontSize: 13.5,
-                    marginBottom: 3,
-                  }}
-                >
-                  {title}
-                </div>
-                <div
-                  style={{
-                    color: "#7F1D1D",
-                    fontSize: 11.5,
-                    lineHeight: 1.5,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    background: "rgba(255,255,255,0.5)",
-                    padding: "4px 8px",
-                    borderRadius: 5,
-                    border: "1px solid #FECACA",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {error}
-                </div>
-              </div>
-              <button
-                onClick={onRefresh}
-                style={{
-                  ...btnStyle,
-                  background: "#DC2626",
-                  color: "#fff",
-                  borderColor: "#DC2626",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  flexShrink: 0,
-                }}
-              >
-                <RefreshCw size={14} />
-                Retry
-              </button>
+              Failed to load projects
             </div>
-          );
-        })()}
-      {/* Empty state */}
+            <div
+              style={{
+                color: t.dangerTextDeep,
+                fontSize: 11.5,
+                lineHeight: 1.5,
+                fontFamily: "'JetBrains Mono', monospace",
+                background: "rgba(255,255,255,0.5)",
+                padding: "4px 8px",
+                borderRadius: 5,
+                border: `1px solid ${t.dangerBorder}`,
+                wordBreak: "break-word",
+              }}
+            >
+              {error}
+            </div>
+          </div>
+          <button
+            onClick={onRefresh}
+            style={{
+              ...themedBtn,
+              background: t.danger,
+              color: t.textInverse,
+              borderColor: t.danger,
+              flexShrink: 0,
+            }}
+          >
+            <RefreshCw size={14} />
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Empty */}
       {!loading && !error && (
         <>
           {filtered.length === 0 ? (
             <div
               style={{
-                background: "#fff",
-                border: "1px dashed #CBD5E1",
+                background: t.bgCard,
+                border: `1px dashed ${t.borderDashed}`,
                 borderRadius: 12,
                 padding: "60px 20px",
                 textAlign: "center",
@@ -11683,24 +12156,23 @@ function DraftProjectsList({
                   borderRadius: "50%",
                   background:
                     statusFilter === "sharedWithMe"
-                      ? "#DBEAFE"
+                      ? t.primaryBg
                       : statusFilter === "published"
-                        ? "#DCFCE7"
+                        ? t.successBg
                         : statusFilter === "closed"
-                          ? "#F1F5F9"
-                          : "#FEF3C7",
+                          ? t.closedBg
+                          : t.warningBg,
                   color:
                     statusFilter === "sharedWithMe"
-                      ? "#1D4ED8"
+                      ? t.primary
                       : statusFilter === "published"
-                        ? "#15803D"
+                        ? t.success
                         : statusFilter === "closed"
-                          ? "#475569"
-                          : "#B45309",
+                          ? t.closedText
+                          : t.warning,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 26,
                   marginBottom: 14,
                 }}
               >
@@ -11718,7 +12190,7 @@ function DraftProjectsList({
                 style={{
                   fontWeight: 700,
                   fontSize: 15,
-                  color: "#0F172A",
+                  color: t.textPrimary,
                   marginBottom: 4,
                 }}
               >
@@ -11737,22 +12209,14 @@ function DraftProjectsList({
               <div
                 style={{
                   fontSize: 12,
-                  color: "#64748B",
+                  color: t.textMuted,
                   maxWidth: 420,
                   margin: "0 auto 16px",
                 }}
               >
                 {search
                   ? "Try a different search term or filter."
-                  : statusFilter === "sharedWithMe"
-                    ? "Projects shared with you by other users will appear here."
-                    : statusFilter === "published"
-                      ? "Publish a draft project to see it here."
-                      : statusFilter === "closed"
-                        ? "Close a published project to see it here."
-                        : statusFilter === "draft"
-                          ? "Create a new project to get started."
-                          : "Create your first project to get started."}
+                  : "Create a new project to get started."}
               </div>
               {!search &&
                 statusFilter !== "sharedWithMe" &&
@@ -11761,10 +12225,10 @@ function DraftProjectsList({
                   <button
                     onClick={onNew}
                     style={{
-                      ...btnStyle,
-                      background: "#1D4ED8",
-                      color: "#fff",
-                      borderColor: "#1D4ED8",
+                      ...themedBtn,
+                      background: t.primary,
+                      color: t.textInverse,
+                      borderColor: t.primary,
                     }}
                   >
                     <Plus size={16} style={{ marginRight: 8 }} />
@@ -11773,7 +12237,6 @@ function DraftProjectsList({
                 )}
             </div>
           ) : (
-            /* Grid of draft cards */
             <div
               style={{
                 display: "grid",
@@ -11798,57 +12261,53 @@ function DraftProjectsList({
                 ).length;
                 const status = d.status || "draft";
 
-                // ── Ownership detection ──
                 const isSharedProject =
                   d.createdBy &&
                   currentUserId &&
                   d.createdBy.toLowerCase() !== currentUserId.toLowerCase();
-                // const isCoAssigned = isCoAssignedProject(d);
 
-                // Priority: Co-Assigned > Shared > Own
                 const cardVariant = isCoAssigned
                   ? "co-assigned"
                   : isSharedProject
                     ? "shared"
                     : "own";
 
-                // Colors based on variant
                 const variantColors = {
                   "co-assigned": {
-                    borderColor: "#86EFAC",
-                    leftBorder: "4px solid #15803D",
-                    shadow: "0 2px 6px rgba(21,128,61,0.08)",
-                    shadowHover: "0 6px 16px rgba(21,128,61,0.15)",
-                    hoverBorder: "#22C55E",
-                    openArrowColor: "#15803D",
-                    avatarBg: "#15803D",
-                    infoBg: "#F0FDF4",
-                    infoBorder: "#BBF7D0",
-                    infoLabelColor: "#15803D",
+                    borderColor: t.successBorder,
+                    leftBorder: `4px solid ${t.success}`,
+                    shadow: t.shadowSm,
+                    shadowHover: t.shadowMd,
+                    hoverBorder: t.success,
+                    openArrowColor: t.success,
+                    avatarBg: t.success,
+                    infoBg: t.successBgSubtle,
+                    infoBorder: t.successBorder,
+                    infoLabelColor: t.success,
                   },
                   shared: {
-                    borderColor: "#93C5FD",
-                    leftBorder: "4px solid #1D4ED8",
-                    shadow: "0 2px 6px rgba(29,78,216,0.08)",
-                    shadowHover: "0 6px 16px rgba(29,78,216,0.15)",
-                    hoverBorder: "#3B82F6",
-                    openArrowColor: "#1D4ED8",
-                    avatarBg: "#1D4ED8",
-                    infoBg: "#F0F9FF",
-                    infoBorder: "#BAE6FD",
-                    infoLabelColor: "#0369A1",
+                    borderColor: t.primaryBorder,
+                    leftBorder: `4px solid ${t.primary}`,
+                    shadow: t.shadowSm,
+                    shadowHover: t.shadowMd,
+                    hoverBorder: t.primary,
+                    openArrowColor: t.primary,
+                    avatarBg: t.primary,
+                    infoBg: t.primaryBgSubtle,
+                    infoBorder: t.primaryBorder,
+                    infoLabelColor: t.primary,
                   },
                   own: {
-                    borderColor: "#E2E8F0",
-                    leftBorder: "1px solid #E2E8F0",
-                    shadow: "0 1px 3px rgba(0,0,0,0.05)",
-                    shadowHover: "0 4px 12px rgba(29,78,216,0.10)",
-                    hoverBorder: "#93C5FD",
-                    openArrowColor: "#7C3AED",
-                    avatarBg: "#7C3AED",
-                    infoBg: "#FAFBFC",
-                    infoBorder: "#E2E8F0",
-                    infoLabelColor: "#475569",
+                    borderColor: t.border,
+                    leftBorder: `1px solid ${t.border}`,
+                    shadow: t.shadowSm,
+                    shadowHover: t.shadowMd,
+                    hoverBorder: t.primaryBorder,
+                    openArrowColor: t.violet,
+                    avatarBg: t.violet,
+                    infoBg: t.bgSubtle,
+                    infoBorder: t.border,
+                    infoLabelColor: t.textSecondary,
                   },
                 };
                 const colors = variantColors[cardVariant];
@@ -11858,7 +12317,7 @@ function DraftProjectsList({
                     key={d.id}
                     onClick={() => onOpen(d.id)}
                     style={{
-                      background: "#fff",
+                      background: t.bgCard,
                       border: `1px solid ${colors.borderColor}`,
                       borderLeft: colors.leftBorder,
                       borderRadius: 12,
@@ -11884,17 +12343,15 @@ function DraftProjectsList({
                       e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
-                    {/* ── Corner Ribbon (Co-Assigned or Shared) ── */}
-                    {/* ── Corner Ribbon (Co-Assigned) ── */}
+                    {/* Corner ribbons */}
                     {cardVariant === "co-assigned" && (
                       <div
                         style={{
                           position: "absolute",
                           top: 18,
                           right: -40,
-                          background:
-                            "linear-gradient(135deg, #15803D 0%, #166534 100%)",
-                          color: "#fff",
+                          background: `linear-gradient(135deg, ${t.success} 0%, ${t.success} 100%)`,
+                          color: t.textInverse,
                           fontSize: 9,
                           fontWeight: 700,
                           letterSpacing: "0.5px",
@@ -11902,7 +12359,7 @@ function DraftProjectsList({
                           padding: "4px 44px",
                           transform: "rotate(40deg)",
                           transformOrigin: "center",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                          boxShadow: t.shadowSm,
                           zIndex: 1,
                           whiteSpace: "nowrap",
                           pointerEvents: "none",
@@ -11913,16 +12370,14 @@ function DraftProjectsList({
                         Co-Assigned
                       </div>
                     )}
-
                     {cardVariant === "shared" && (
                       <div
                         style={{
                           position: "absolute",
                           top: 18,
                           right: -40,
-                          background:
-                            "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)",
-                          color: "#fff",
+                          background: `linear-gradient(135deg, ${t.primary} 0%, ${t.primaryHover} 100%)`,
+                          color: t.textInverse,
                           fontSize: 9,
                           fontWeight: 700,
                           letterSpacing: "0.5px",
@@ -11930,7 +12385,7 @@ function DraftProjectsList({
                           padding: "4px 44px",
                           transform: "rotate(40deg)",
                           transformOrigin: "center",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                          boxShadow: t.shadowSm,
                           zIndex: 1,
                           whiteSpace: "nowrap",
                           pointerEvents: "none",
@@ -11941,7 +12396,8 @@ function DraftProjectsList({
                         Shared
                       </div>
                     )}
-                    {/* ── Status Badges + Delete Button Row ── */}
+
+                    {/* Status + delete */}
                     <div
                       style={{
                         display: "flex",
@@ -11958,7 +12414,6 @@ function DraftProjectsList({
                           alignItems: "center",
                         }}
                       >
-                        {/* Status badge */}
                         <span
                           style={{
                             display: "inline-flex",
@@ -11970,22 +12425,22 @@ function DraftProjectsList({
                             fontWeight: 700,
                             background:
                               status === "closed"
-                                ? "#F1F5F9"
+                                ? t.closedBg
                                 : status === "published"
-                                  ? "#DCFCE7"
-                                  : "#FEF3C7",
+                                  ? t.successBg
+                                  : t.warningBg,
                             color:
                               status === "closed"
-                                ? "#475569"
+                                ? t.closedText
                                 : status === "published"
-                                  ? "#15803D"
-                                  : "#B45309",
+                                  ? t.success
+                                  : t.warning,
                             border: `1px solid ${
                               status === "closed"
-                                ? "#CBD5E1"
+                                ? t.closedBorder
                                 : status === "published"
-                                  ? "#86EFAC"
-                                  : "#FCD34D"
+                                  ? t.successBorder
+                                  : t.warningBorder
                             }`,
                             textTransform: "uppercase",
                             letterSpacing: "0.5px",
@@ -11993,45 +12448,19 @@ function DraftProjectsList({
                         >
                           {status === "closed" ? (
                             <>
-                              <Lock size={11} />
-                              Closed
+                              <Lock size={11} /> Closed
                             </>
                           ) : status === "published" ? (
                             <>
-                              <Rocket size={11} />
-                              Published
+                              <Rocket size={11} /> Published
                             </>
                           ) : (
                             <>
-                              <FileText size={11} />
-                              Draft
+                              <FileText size={11} /> Draft
                             </>
                           )}
                         </span>
 
-                        {/* Role badge — Co-Assigner */}
-                        {/* {cardVariant === "co-assigned" && (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                              padding: "3px 9px",
-                              borderRadius: 999,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              background: "#DCFCE7",
-                              color: "#15803D",
-                              border: "1px solid #86EFAC",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                            title={`You are a co-assigner (owned by ${d.createdBy})`}
-                          >
-                            <Handshake size={11} />
-                            Co-Assigner
-                          </span>
-                        )} */}
                         {isCoAssigned && (
                           <span
                             style={{
@@ -12042,18 +12471,17 @@ function DraftProjectsList({
                               borderRadius: 999,
                               fontSize: 10,
                               fontWeight: 700,
-                              background: "#DCFCE7",
-                              color: "#15803D",
-                              border: "1px solid #86EFAC",
+                              background: t.successBg,
+                              color: t.success,
+                              border: `1px solid ${t.successBorder}`,
                               textTransform: "uppercase",
                               letterSpacing: "0.5px",
                             }}
-                            title="You are a co-assigner"
                           >
-                            <Handshake size={11} />
-                            Co-Assigner
+                            <Handshake size={11} /> Co-Assigner
                           </span>
                         )}
+
                         {isUpdatesShared && !isMine && (
                           <span
                             style={{
@@ -12064,81 +12492,46 @@ function DraftProjectsList({
                               borderRadius: 999,
                               fontSize: 10,
                               fontWeight: 700,
-                              background: "#DBEAFE",
-                              color: "#1D4ED8",
-                              border: "1px solid #93C5FD",
+                              background: t.primaryBg,
+                              color: t.primary,
+                              border: `1px solid ${t.primaryBorder}`,
                               textTransform: "uppercase",
                               letterSpacing: "0.5px",
                             }}
-                            title="Updates are shared with you"
                           >
-                            <FileText size={11} />
-                            Updates
-                          </span>
-                        )}
-
-                        {/* Role badge — Shared (Collaborator) */}
-                        {cardVariant === "shared" && (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                              padding: "3px 9px",
-                              borderRadius: 999,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              background: "#DBEAFE",
-                              color: "#1D4ED8",
-                              border: "1px solid #93C5FD",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                            title={`Shared by ${d.createdBy}`}
-                          >
-                            <Users size={11} />
-                            Collaborator
+                            <FileText size={11} /> Updates
                           </span>
                         )}
                       </div>
 
-                      {/* Delete button — only for OWN drafts (not published, not closed, not co-assigned, not shared) */}
                       {d.status !== "published" &&
                         d.status !== "closed" &&
                         cardVariant === "own" && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (deletingProjectId !== d.id) {
+                              if (deletingProjectId !== d.id)
                                 setConfirmDelete(d);
-                              }
                             }}
                             disabled={deletingProjectId === d.id}
-                            title={
-                              deletingProjectId === d.id
-                                ? "Deleting..."
-                                : "Delete project"
-                            }
                             style={{
                               width: 26,
                               height: 26,
                               borderRadius: 6,
-                              border: "1px solid #FCA5A5",
+                              border: `1px solid ${t.dangerBorder}`,
                               background:
                                 deletingProjectId === d.id
-                                  ? "#F1F5F9"
-                                  : "#FEF2F2",
+                                  ? t.bgMuted
+                                  : t.dangerBgSubtle,
                               color:
                                 deletingProjectId === d.id
-                                  ? "#94A3B8"
-                                  : "#EF4444",
+                                  ? t.textFaint
+                                  : t.danger,
                               cursor:
                                 deletingProjectId === d.id
                                   ? "not-allowed"
                                   : "pointer",
-                              fontSize: 12,
                               opacity: deletingProjectId === d.id ? 0.6 : 1,
-                              transition: "all .12s",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -12158,13 +12551,13 @@ function DraftProjectsList({
                         )}
                     </div>
 
-                    {/* ── Project Title & Metadata ── */}
+                    {/* Title */}
                     <div>
                       <div
                         style={{
                           fontWeight: 700,
                           fontSize: 14,
-                          color: "#0F172A",
+                          color: t.textPrimary,
                           marginBottom: 3,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -12177,7 +12570,7 @@ function DraftProjectsList({
                       <div
                         style={{
                           fontSize: 11.5,
-                          color: "#64748B",
+                          color: t.textMuted,
                           display: "flex",
                           alignItems: "center",
                           gap: 6,
@@ -12186,25 +12579,24 @@ function DraftProjectsList({
                       >
                         <span>
                           PO:{" "}
-                          <strong style={{ color: "#475569" }}>
+                          <strong style={{ color: t.textSecondary }}>
                             {d.po || "—"}
                           </strong>
                         </span>
-                        <span style={{ color: "#CBD5E1" }}>•</span>
+                        <span style={{ color: t.textDisabled }}>•</span>
                         <span
                           style={{
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
                           }}
-                          title={d.site || "No site"}
                         >
                           {d.site || "No site"}
                         </span>
                       </div>
                     </div>
 
-                    {/* ── Owner / Creator Info Box ── */}
+                    {/* Owner info */}
                     {d.createdBy && (
                       <div
                         style={{
@@ -12224,7 +12616,7 @@ function DraftProjectsList({
                             height: 22,
                             borderRadius: "50%",
                             background: colors.avatarBg,
-                            color: "#fff",
+                            color: t.textInverse,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -12234,13 +12626,13 @@ function DraftProjectsList({
                           }}
                         >
                           {cardVariant === "own"
-                            ? "Y" // For "You"
+                            ? "Y"
                             : (d.createdBy || "?").charAt(0).toUpperCase()}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
-                              color: "#64748B",
+                              color: t.textMuted,
                               fontSize: 9.5,
                               textTransform: "uppercase",
                               letterSpacing: "0.4px",
@@ -12258,11 +12650,6 @@ function DraftProjectsList({
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                             }}
-                            title={
-                              cardVariant === "own"
-                                ? "You (the owner)"
-                                : d.createdBy
-                            }
                           >
                             {cardVariant === "own" ? "You" : d.createdBy}
                           </div>
@@ -12270,25 +12657,22 @@ function DraftProjectsList({
                       </div>
                     )}
 
-                    {/* ── Co-Assigners Count (only for OWN projects with co-assigners) ── */}
+                    {/* Co-assigner count */}
                     {cardVariant === "own" &&
                       (d.coAssigners || []).length > 0 && (
                         <div
                           style={{
                             padding: "5px 10px",
-                            background: "#F0FDF4",
-                            border: "1px solid #86EFAC",
+                            background: t.successBgSubtle,
+                            border: `1px solid ${t.successBorder}`,
                             borderRadius: 6,
                             fontSize: 10.5,
-                            color: "#15803D",
+                            color: t.success,
                             fontWeight: 600,
                             display: "flex",
                             alignItems: "center",
                             gap: 6,
                           }}
-                          title={`Co-assigners: ${(d.coAssigners || [])
-                            .map((ca) => ca.userName || ca.userId)
-                            .join(", ")}`}
                         >
                           <Handshake size={11} />
                           <span>
@@ -12296,67 +12680,10 @@ function DraftProjectsList({
                             co-assigner
                             {(d.coAssigners || []).length !== 1 ? "s" : ""}
                           </span>
-                          <div
-                            style={{
-                              marginLeft: "auto",
-                              display: "flex",
-                              gap: -6,
-                            }}
-                          >
-                            {/* Avatar stack for first 3 co-assigners */}
-                            {(d.coAssigners || [])
-                              .slice(0, 3)
-                              .map((ca, idx) => (
-                                <div
-                                  key={ca.userId}
-                                  style={{
-                                    width: 18,
-                                    height: 18,
-                                    borderRadius: "50%",
-                                    background: "#15803D",
-                                    color: "#fff",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontWeight: 700,
-                                    fontSize: 9,
-                                    border: "2px solid #F0FDF4",
-                                    marginLeft: idx > 0 ? -6 : 0,
-                                    zIndex: 3 - idx,
-                                  }}
-                                  title={ca.userName || ca.userId}
-                                >
-                                  {(ca.userName || ca.userId || "?")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-                              ))}
-                            {(d.coAssigners || []).length > 3 && (
-                              <div
-                                style={{
-                                  width: 18,
-                                  height: 18,
-                                  borderRadius: "50%",
-                                  background: "#F1F5F9",
-                                  color: "#475569",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontWeight: 700,
-                                  fontSize: 8,
-                                  border: "2px solid #F0FDF4",
-                                  marginLeft: -6,
-                                }}
-                                title={`+${(d.coAssigners || []).length - 3} more`}
-                              >
-                                +{(d.coAssigners || []).length - 3}
-                              </div>
-                            )}
-                          </div>
                         </div>
                       )}
 
-                    {/* ── Stats Row (Modules, Tasks, Sub-tasks) ── */}
+                    {/* Stats */}
                     <div
                       style={{
                         display: "flex",
@@ -12365,22 +12692,30 @@ function DraftProjectsList({
                         marginTop: "auto",
                       }}
                     >
-                      <span style={statChip("#F0F9FF", "#0369A1", "#BAE6FD")}>
+                      <span style={statChip(t.infoBg, t.info, t.infoBorder)}>
                         <Package size={11} /> {moduleCount}{" "}
                         {moduleCount === 1 ? "module" : "modules"}
                       </span>
-                      <span style={statChip("#F0FDF4", "#15803D", "#86EFAC")}>
+                      <span
+                        style={statChip(
+                          t.successBgSubtle,
+                          t.success,
+                          t.successBorder,
+                        )}
+                      >
                         <CheckCircle2 size={11} /> {taskCount}{" "}
                         {taskCount === 1 ? "task" : "tasks"}
                       </span>
                       {subTaskCount > 0 && (
-                        <span style={statChip("#EDE9FE", "#7C3AED", "#DDD6FE")}>
+                        <span
+                          style={statChip(t.violetBg, t.violet, t.violetBorder)}
+                        >
                           └─ {subTaskCount} subs
                         </span>
                       )}
                     </div>
 
-                    {/* ── Groups ── */}
+                    {/* Groups */}
                     {(d.groups || []).length > 0 && (
                       <div
                         style={{ display: "flex", gap: 4, flexWrap: "wrap" }}
@@ -12390,9 +12725,9 @@ function DraftProjectsList({
                             key={g}
                             style={{
                               padding: "2px 7px",
-                              background: "#DBEAFE",
-                              color: "#1D4ED8",
-                              border: "1px solid #93C5FD",
+                              background: t.primaryBg,
+                              color: t.primary,
+                              border: `1px solid ${t.primaryBorder}`,
                               borderRadius: 4,
                               fontSize: 10,
                               fontWeight: 600,
@@ -12402,19 +12737,19 @@ function DraftProjectsList({
                           </span>
                         ))}
                         {d.groups.length > 3 && (
-                          <span style={{ fontSize: 10, color: "#94A3B8" }}>
+                          <span style={{ fontSize: 10, color: t.textFaint }}>
                             +{d.groups.length - 3}
                           </span>
                         )}
                       </div>
                     )}
 
-                    {/* ── Timestamps + Open Arrow ── */}
+                    {/* Footer */}
                     <div
                       style={{
                         fontSize: 10.5,
-                        color: "#94A3B8",
-                        borderTop: "1px solid #F1F5F9",
+                        color: t.textFaint,
+                        borderTop: `1px solid ${t.borderSubtle}`,
                         paddingTop: 8,
                         display: "flex",
                         justifyContent: "space-between",
@@ -12446,17 +12781,18 @@ function DraftProjectsList({
           )}
         </>
       )}
+
       {/* Delete confirmation */}
       {confirmDelete && (
         <div
           onClick={(e) => {
-            if (deletingProjectId) return; // ← Block closing while deleting
+            if (deletingProjectId) return;
             e.target === e.currentTarget && setConfirmDelete(null);
           }}
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.45)",
+            background: t.bgOverlay,
             zIndex: 1000,
             display: "flex",
             alignItems: "center",
@@ -12466,12 +12802,14 @@ function DraftProjectsList({
         >
           <div
             style={{
-              background: "#fff",
+              background: t.bgCard,
               borderRadius: 12,
               padding: 20,
               width: "100%",
               maxWidth: 400,
               fontFamily: "Sora,sans-serif",
+              color: t.textPrimary,
+              boxShadow: t.shadowXl,
             }}
           >
             <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -12480,23 +12818,28 @@ function DraftProjectsList({
                   width: 40,
                   height: 40,
                   borderRadius: 8,
-                  background: "#FEF2F2",
-                  color: "#DC2626",
+                  background: t.dangerBgSubtle,
+                  color: t.danger,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 18,
                 }}
               >
                 <AlertTriangle size={18} />
               </div>
               <div>
                 <div
-                  style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: t.textPrimary,
+                  }}
                 >
                   Delete this draft?
                 </div>
-                <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 4 }}>
+                <div
+                  style={{ fontSize: 11.5, color: t.textMuted, marginTop: 4 }}
+                >
                   <strong>{confirmDelete.project || "Untitled"}</strong> will be
                   permanently removed. This cannot be undone.
                 </div>
@@ -12505,21 +12848,21 @@ function DraftProjectsList({
             <div
               style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
             >
-              <button onClick={() => setConfirmDelete(null)} style={btnStyle}>
+              <button onClick={() => setConfirmDelete(null)} style={themedBtn}>
                 Cancel
               </button>
               <button
                 onClick={async () => {
                   await onDelete(confirmDelete.id);
-                  setConfirmDelete(null); // ← Child closes its OWN modal
+                  setConfirmDelete(null);
                 }}
-                disabled={deletingProjectId === confirmDelete?.id} // ← Add this
+                disabled={deletingProjectId === confirmDelete?.id}
                 style={{
-                  ...btnStyle,
-                  background: "#DC2626",
-                  color: "#fff",
-                  borderColor: "#DC2626",
-                  opacity: deletingProjectId === confirmDelete?.id ? 0.6 : 1, // ← Add this
+                  ...themedBtn,
+                  background: t.danger,
+                  color: t.textInverse,
+                  borderColor: t.danger,
+                  opacity: deletingProjectId === confirmDelete?.id ? 0.6 : 1,
                 }}
               >
                 {deletingProjectId === confirmDelete?.id ? (
@@ -12528,11 +12871,11 @@ function DraftProjectsList({
                       size={14}
                       style={{ animation: "spin 1s linear infinite" }}
                     />
-                    {"Deleting..."}
+                    Deleting...
                   </>
                 ) : (
                   <>
-                    <Trash2 size={14} /> {"Delete"}
+                    <Trash2 size={14} /> Delete
                   </>
                 )}
               </button>
@@ -12543,6 +12886,19 @@ function DraftProjectsList({
     </div>
   );
 }
+
+// const statChip = (bg, color, border) => ({
+//   display: "inline-flex",
+//   alignItems: "center",
+//   gap: 4,
+//   padding: "2px 8px",
+//   borderRadius: 4,
+//   fontSize: 10.5,
+//   fontWeight: 600,
+//   background: bg,
+//   color,
+//   border: `1px solid ${border}`,
+// });
 
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
@@ -12565,11 +12921,11 @@ const DataContext = createContext({
 
 /* ─── Top-level App with Tab Navigation ─── */
 export default function AssignerModule() {
+  const { t, isDark, toggle } = useTheme();
   const currentUserId = getUserData()?.userDetails?.userId || null;
-  console.log("Current user ID : ", currentUserId);
 
   const [deletingProjectId, setDeletingProjectId] = useState(null);
-  const [tab, setTab] = useState("drafts"); // "drafts" | "editor" | "gantt"
+  const [tab, setTab] = useState("drafts");
   const [drafts, setDrafts] = useState([]);
   const [draftsLoading, setDraftsLoading] = useState(true);
   const [draftsError, setDraftsError] = useState(null);
@@ -12587,56 +12943,30 @@ export default function AssignerModule() {
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groupsError, setGroupsError] = useState(null);
   const [resourcesLoading, setResourcesLoading] = useState(false);
-  // In AssignerModule — add these:
 
-  const [isUpdatesSharedForCurrent, setIsUpdatesSharedForCurrent] =
-    useState(false);
-  const [updatesSharedLoading, setUpdatesSharedLoading] = useState(false);
+  // Date range state (default = current month)
+  const toSimpleDate = (d) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
-  // Fetch updates sharing whenever the current project changes
-  useEffect(() => {
-    // Reset immediately on project change
-    setIsUpdatesSharedForCurrent(false);
+  const getCurrentMonthRange = () => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { fromDate: toSimpleDate(first), toDate: toSimpleDate(last) };
+  };
 
-    if (!currentProjectId || !currentUserId) return;
+  const [dateRange, setDateRange] = useState(getCurrentMonthRange());
 
-    const project =
-      drafts.find((d) => d.id === currentProjectId) || pendingDraft;
-    if (!project) return;
-
-    // Owner always has access — skip API call
-    if (project.createdBy?.toLowerCase() === currentUserId.toLowerCase()) {
-      setIsUpdatesSharedForCurrent(false); // owner handled separately
-      return;
-    }
-
-    // Co-assigners don't need the updates check separately
-    // But we still fetch for non-owners to check updates-shared
-    const check = async () => {
-      setUpdatesSharedLoading(true);
-      try {
-        const data = await sharingApi.getProjectUpdates(currentProjectId);
-        const categories = data?.updates?.categories || data?.categories || [];
-        const uid = currentUserId.toLowerCase();
-        const shared = categories.some((cat) =>
-          (cat.sharedWith || []).some((s) => s.userId?.toLowerCase() === uid),
-        );
-        setIsUpdatesSharedForCurrent(shared);
-      } catch (err) {
-        console.warn("Could not check updates sharing:", err);
-        setIsUpdatesSharedForCurrent(false);
-      } finally {
-        setUpdatesSharedLoading(false);
-      }
-    };
-
-    check();
-  }, [currentProjectId, currentUserId, drafts, pendingDraft]);
   const showToast = useCallback((kind, title, msg, dur = 3800) => {
     const id = ++toastIdRef.current;
     setToasts((p) => [...p, { id, kind, title, msg }]);
-    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), dur);
+    setTimeout(() => setToasts((p) => p.filter((tt) => tt.id !== id)), dur);
   }, []);
+
   const fetchGroups = useCallback(async () => {
     setGroupsLoading(true);
     setGroupsError(null);
@@ -12644,13 +12974,13 @@ export default function AssignerModule() {
       const groups = await activityTrackerApi.getAllGroups();
       setGroupLabels(Array.isArray(groups) ? groups : []);
     } catch (err) {
-      console.error("Failed to load groups:", err);
       setGroupsError(err.message);
       showToast("error", "Failed to load groups", err.message);
     } finally {
       setGroupsLoading(false);
     }
   }, [showToast]);
+
   const handleGanttOpenComments = useCallback(
     async (row) => {
       try {
@@ -12659,28 +12989,25 @@ export default function AssignerModule() {
             row._projectId,
             row.id,
           );
-
         const newCommentBody = addComment(row._projectId, row.id, row.moduleId);
-
         setGanttExistingComments(existingCommentsResp || []);
         setGanttNewComment(newCommentBody);
         setGanttCommentOpen(true);
       } catch (err) {
-        console.error("Failed to load comments:", err);
         showToast("error", "Failed to load comments", err.message);
       }
     },
     [showToast],
   );
+
   const handleGanttViewFeedback = useCallback((row) => {
-    // Only show for finished tasks (read-only view)
     const status = String(row.status || "")
       .toLowerCase()
       .trim();
     if (status !== "finished") return;
-
     setGanttFeedbackRow(row);
   }, []);
+
   const fetchResourcesForGroups = useCallback(
     async (groupIds) => {
       if (!groupIds || groupIds.length === 0) return {};
@@ -12696,7 +13023,6 @@ export default function AssignerModule() {
         setGroupResources(merged);
         return merged;
       } catch (err) {
-        console.error("Failed to load resources:", err);
         showToast("error", "Failed to load resources", err.message);
         return groupResources;
       } finally {
@@ -12705,7 +13031,7 @@ export default function AssignerModule() {
     },
     [groupResources, showToast],
   );
-  /* ─── Load projects from API with date range ─── */
+
   const fetchProjects = useCallback(
     async (fromDate, toDate) => {
       setDraftsLoading(true);
@@ -12717,7 +13043,6 @@ export default function AssignerModule() {
         );
         setDrafts(Array.isArray(projects) ? projects : []);
       } catch (err) {
-        console.error("Failed to load projects:", err);
         setDraftsError(err.message);
         showToast("error", "Failed to load projects", err.message);
       } finally {
@@ -12726,50 +13051,16 @@ export default function AssignerModule() {
     },
     [showToast],
   );
-  /* ─── Date range state (default = current month) ─── */
-  const getCurrentMonthRange = () => {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return {
-      fromDate: toSimpleDate(firstDay),
-      toDate: toSimpleDate(lastDay),
-    };
-  };
 
-  const toSimpleDate = (d) => {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  const [dateRange, setDateRange] = useState(getCurrentMonthRange());
-
-  /* Load on mount and when date range changes */
   useEffect(() => {
     fetchProjects(dateRange.fromDate, dateRange.toDate);
   }, [fetchProjects, dateRange]);
+
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
-  //   useEffect(() => {
-  //     fetchProjects();
-  //   }, [fetchProjects]);
-  // Save drafts to localStorage whenever they change
-  //   useEffect(() => {
-  //     saveDrafts(drafts);
-  //   }, [drafts]);
-  //   useEffect(() => {
-  //     const fetchDrafts = async () => {
-  //       const data = await loadDrafts(); // ✅ wait for API
-  //       setDrafts(data); // now it's an array
-  //     };
 
-  //     fetchDrafts();
-  //   }, []);
   const currentDraft = useMemo(() => {
-    console.log("drafts.find : ", drafts);
     const saved = drafts?.find((d) => d.id === currentProjectId);
     if (saved) return saved;
     if (pendingDraft && pendingDraft.id === currentProjectId)
@@ -12785,7 +13076,6 @@ export default function AssignerModule() {
       site: "",
       groups: [],
       rows: [],
-      //   nextId: 1,
       createdBy: currentUserId,
       coAssigners: [],
       status: "draft",
@@ -12796,6 +13086,7 @@ export default function AssignerModule() {
     setCurrentProjectId(newProject.id);
     setTab("editor");
   }, [currentUserId]);
+
   const handleOpenDraft = (id) => {
     setCurrentProjectId(id);
     setTab("editor");
@@ -12806,35 +13097,29 @@ export default function AssignerModule() {
       setDeletingProjectId(id);
       try {
         await activityTrackerApi.deleteProject(id);
-
         setDrafts((prev) => prev.filter((d) => d.id !== id));
-
         if (currentProjectId === id) {
           setCurrentProjectId(null);
           setTab("drafts");
         }
-
         showToast(
           "success",
           "Project deleted",
           "The project has been permanently removed.",
         );
       } catch (err) {
-        console.error("Delete failed:", err);
         showToast("error", "Delete failed", err.message);
-        fetchProjects(); // refresh in case of partial failure
+        fetchProjects(dateRange.fromDate, dateRange.toDate);
       } finally {
         setDeletingProjectId(null);
       }
     },
-    [showToast, fetchProjects, currentProjectId],
+    [showToast, fetchProjects, currentProjectId, dateRange],
   );
 
-  /* ─── Save Draft Handler (in AssignerModule) ─── */
   const handleSaveDraft = useCallback(
     async (projectData, options = {}) => {
       const { skipApiCall = false } = options;
-
       const payload = {
         ...projectData,
         status: projectData.status === "published" ? "published" : "draft",
@@ -12842,26 +13127,19 @@ export default function AssignerModule() {
       };
 
       setSavingProjectId(projectData.id);
-
       try {
         if (!skipApiCall) {
           await activityTrackerApi.postActivityTree(payload);
         }
-
         const finalData = { ...payload };
-
         setDrafts((prev) => {
           const exists = prev.some((d) => d.id === finalData.id);
-
           return exists
             ? prev.map((d) => (d.id === finalData.id ? finalData : d))
             : [finalData, ...prev];
         });
-
         setPendingDraft((prev) => (prev?.id === projectData.id ? null : prev));
 
-        // Do not show this for co-assigner add/remove operations,
-        // because those handlers already display their own toast.
         if (!skipApiCall) {
           showToast(
             "success",
@@ -12869,17 +13147,9 @@ export default function AssignerModule() {
             `"${finalData.project || "Untitled Project"}" was saved successfully.`,
           );
         }
-
         return finalData;
       } catch (err) {
-        console.error("Save failed:", err);
-
-        showToast(
-          "error",
-          "Save failed",
-          err?.message || "The project draft could not be saved.",
-        );
-
+        showToast("error", "Save failed", err?.message || "Save failed");
         throw err;
       } finally {
         setSavingProjectId(null);
@@ -12887,6 +13157,7 @@ export default function AssignerModule() {
     },
     [showToast],
   );
+
   const handlePublish = useCallback(
     async (projectData) => {
       const isUpdate = projectData.status === "published";
@@ -12908,44 +13179,38 @@ export default function AssignerModule() {
       setSavingProjectId(projectData.id);
       try {
         await activityTrackerApi.postActivityTree(payload);
-
         const finalData = { ...payload };
-
         setDrafts((prev) => {
           const exists = prev.some((d) => d.id === finalData.id);
           return exists
             ? prev.map((d) => (d.id === finalData.id ? finalData : d))
             : [finalData, ...prev];
         });
-
-        setPendingDraft((prev) =>
-          prev && prev.id === projectData.id ? null : prev,
-        );
+        setPendingDraft((prev) => (prev?.id === projectData.id ? null : prev));
 
         if (isClose) {
           showToast(
             "success",
             "Project Closed 🔒",
-            `"${finalData.project || "Project"}" has been closed with feedback.`,
+            `"${finalData.project}" has been closed.`,
           );
         } else if (isUpdate) {
           showToast(
             "success",
             "Project Updated 🔄",
-            `"${finalData.project || "Project"}" has been updated.`,
+            `"${finalData.project}" has been updated.`,
           );
         } else {
           showToast(
             "success",
             "Project Published 🚀",
-            `"${finalData.project || "Project"}" is now live.`,
+            `"${finalData.project}" is now live.`,
           );
         }
 
         setTab("drafts");
         setCurrentProjectId(null);
       } catch (err) {
-        console.error(isClose ? "Close failed:" : "Publish failed:", err);
         showToast(
           "error",
           isClose
@@ -12962,12 +13227,14 @@ export default function AssignerModule() {
     },
     [showToast],
   );
+
   const handleBackToList = useCallback(() => {
     setTab("drafts");
     setCurrentProjectId(null);
     fetchProjects(dateRange.fromDate, dateRange.toDate);
   }, [fetchProjects, dateRange]);
-  // Show loading screen while fetching groups
+
+  // Loading screen
   if (groupsLoading) {
     return (
       <div
@@ -12977,10 +13244,10 @@ export default function AssignerModule() {
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "Sora,sans-serif",
-          background: "#F1F5F9",
+          background: t.bgApp,
         }}
       >
-        <div style={{ textAlign: "center", color: "#64748B" }}>
+        <div style={{ textAlign: "center", color: t.textMuted }}>
           <Loader2 size={32} style={{ animation: "spin 1s linear infinite" }} />
           <div style={{ marginTop: 12, fontSize: 13 }}>
             Loading workspace...
@@ -12990,7 +13257,7 @@ export default function AssignerModule() {
     );
   }
 
-  // Show error screen if groups failed to load
+  // Error screen
   if (groupsError) {
     return (
       <div
@@ -13001,12 +13268,13 @@ export default function AssignerModule() {
           justifyContent: "center",
           padding: 24,
           fontFamily: "Sora,sans-serif",
+          background: t.bgApp,
         }}
       >
         <div
           style={{
-            background: "#FEF2F2",
-            border: "1px solid #FCA5A5",
+            background: t.dangerBgSubtle,
+            border: `1px solid ${t.dangerBorder}`,
             borderRadius: 12,
             padding: 24,
             maxWidth: 480,
@@ -13015,22 +13283,33 @@ export default function AssignerModule() {
         >
           <AlertOctagon
             size={36}
-            color="#DC2626"
+            color={t.danger}
             style={{ marginBottom: 12 }}
           />
-          <div style={{ fontWeight: 700, color: "#DC2626", marginBottom: 6 }}>
+          <div style={{ fontWeight: 700, color: t.danger, marginBottom: 6 }}>
             Cannot load workspace
           </div>
-          <div style={{ color: "#7F1D1D", fontSize: 12, marginBottom: 16 }}>
+          <div
+            style={{ color: t.dangerTextDeep, fontSize: 12, marginBottom: 16 }}
+          >
             {groupsError}
           </div>
           <button
             onClick={fetchGroups}
             style={{
-              ...btnStyle,
-              background: "#DC2626",
-              color: "#fff",
-              borderColor: "#DC2626",
+              height: 32,
+              padding: "0 14px",
+              borderRadius: 7,
+              background: t.danger,
+              color: t.textInverse,
+              border: `1px solid ${t.danger}`,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: "Sora,sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
             <RefreshCw size={14} /> Retry
@@ -13039,26 +13318,27 @@ export default function AssignerModule() {
       </div>
     );
   }
+
   return (
     <div
       style={{
         fontFamily: "Sora,sans-serif",
         minHeight: "100vh",
-        background: "#F1F5F9",
-        color: "#0F172A",
+        background: t.bgApp,
+        color: t.textPrimary,
+        transition: "background .2s, color .2s",
       }}
     >
       {/* ── Top Nav ── */}
-
       <nav
         style={{
           height: 48,
-          background: "#0F172A",
+          background: t.navBg,
           display: "flex",
           alignItems: "center",
           padding: "0 20px",
           gap: 10,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          boxShadow: t.shadowMd,
           position: "sticky",
           top: 0,
           zIndex: 100,
@@ -13069,29 +13349,12 @@ export default function AssignerModule() {
             display: "flex",
             alignItems: "center",
             gap: 8,
-            color: "#F8FAFC",
+            color: t.navText,
             fontWeight: 700,
             fontSize: 14,
           }}
-        >
-          {/* <span style={{ fontSize: 16 }}>💼</span> ESS Portal */}
-        </div>
-        <div
-          style={{
-            marginLeft: 8,
-            color: "#64748B",
-            fontSize: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
-          {/* <span>🏠</span> <span style={{ color: "#475569" }}>›</span>
-          <span>Projects</span> <span style={{ color: "#475569" }}>›</span>
-          <span style={{ color: "#94A3B8" }}>
-            {tab === "drafts" ? "Draft Projects" : "Activity Tracker"}
-          </span> */}
-        </div>
+        />
+
         <div
           style={{
             marginLeft: "auto",
@@ -13104,18 +13367,18 @@ export default function AssignerModule() {
           <div
             style={{
               display: "flex",
-              background: "#1E293B",
+              background: t.navTabBg,
               borderRadius: 8,
               overflow: "hidden",
-              border: "1px solid #334155",
+              border: `1px solid ${t.navTabBorder}`,
             }}
           >
             <button
               onClick={handleBackToList}
               style={{
                 padding: "6px 14px",
-                background: tab === "drafts" ? "#1D4ED8" : "transparent",
-                color: tab === "drafts" ? "#fff" : "#94A3B8",
+                background: tab === "drafts" ? t.navActive : "transparent",
+                color: tab === "drafts" ? t.textInverse : t.navMuted,
                 fontSize: 11.5,
                 fontWeight: 600,
                 border: "none",
@@ -13132,8 +13395,10 @@ export default function AssignerModule() {
                 <span
                   style={{
                     background:
-                      tab === "drafts" ? "rgba(255,255,255,0.25)" : "#475569",
-                    color: "#fff",
+                      tab === "drafts"
+                        ? "rgba(255,255,255,0.25)"
+                        : t.borderStrong,
+                    color: t.textInverse,
                     borderRadius: 999,
                     padding: "1px 6px",
                     fontSize: 9,
@@ -13164,13 +13429,13 @@ export default function AssignerModule() {
               disabled={!currentDraft}
               style={{
                 padding: "6px 14px",
-                background: tab === "editor" ? "#1D4ED8" : "transparent",
+                background: tab === "editor" ? t.navActive : "transparent",
                 color:
                   tab === "editor"
-                    ? "#fff"
+                    ? t.textInverse
                     : currentDraft
-                      ? "#94A3B8"
-                      : "#475569",
+                      ? t.navMuted
+                      : t.textDisabled,
                 fontSize: 11.5,
                 fontWeight: 600,
                 border: "none",
@@ -13184,13 +13449,12 @@ export default function AssignerModule() {
               <Settings size={14} /> Assigner
             </button>
 
-            {/* ── NEW: Gantt Tab ── */}
             <button
               onClick={() => setTab("gantt")}
               style={{
                 padding: "6px 14px",
-                background: tab === "gantt" ? "#1D4ED8" : "transparent",
-                color: tab === "gantt" ? "#fff" : "#94A3B8",
+                background: tab === "gantt" ? t.navActive : "transparent",
+                color: tab === "gantt" ? t.textInverse : t.navMuted,
                 fontSize: 11.5,
                 fontWeight: 600,
                 border: "none",
@@ -13219,8 +13483,8 @@ export default function AssignerModule() {
           onDelete={handleDeleteDraft}
           onNew={handleNewProject}
           onRefresh={() => fetchProjects(dateRange.fromDate, dateRange.toDate)}
-          dateRange={dateRange} // ← NEW
-          onDateRangeChange={setDateRange} // ← NEW
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
         />
       ) : tab === "gantt" ? (
         <div
@@ -13248,16 +13512,16 @@ export default function AssignerModule() {
           onPublish={handlePublish}
           onBack={handleBackToList}
           showToast={showToast}
-          currentUserId={currentUserId} // ← ADD THIS
-          isUpdatesShared={isUpdatesSharedForCurrent} // ← NEW
+          currentUserId={currentUserId}
         />
       ) : (
-        <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>
+        <div style={{ padding: 40, textAlign: "center", color: t.textFaint }}>
           No project selected.{" "}
           <button onClick={handleBackToList}>Back to drafts</button>
         </div>
       )}
-      {/* Gantt Comments Dialog */}
+
+      {/* Modals */}
       {ganttCommentOpen && ganttNewComment && (
         <CommentsActionDialog
           open={ganttCommentOpen}
@@ -13268,7 +13532,6 @@ export default function AssignerModule() {
           setNewComment={setGanttNewComment}
         />
       )}
-      {/* Gantt Feedback Modal (Read-Only for Finished tasks) */}
       {ganttFeedbackRow && (
         <FeedbackModal
           row={ganttFeedbackRow}
@@ -13278,10 +13541,9 @@ export default function AssignerModule() {
         />
       )}
 
-      {/* Global Toasts */}
       <Toast
         toasts={toasts}
-        onDismiss={(id) => setToasts((p) => p.filter((t) => t.id !== id))}
+        onDismiss={(id) => setToasts((p) => p.filter((tt) => tt.id !== id))}
       />
     </div>
   );

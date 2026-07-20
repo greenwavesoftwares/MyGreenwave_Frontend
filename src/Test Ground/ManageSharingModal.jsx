@@ -23,27 +23,11 @@ import {
 } from "lucide-react";
 import * as sharingApi from "./sharingApi";
 import { getUsersCached } from "./sharingApi";
-
-/* ─── Shared Styles ─── */
-const btnStyle = {
-  height: 32,
-  padding: "0 14px",
-  borderRadius: 7,
-  border: "1px solid #CBD5E1",
-  background: "#fff",
-  color: "#475569",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-  transition: "all .12s",
-};
+import { useTheme } from "./useTheme";
 
 /* ─── Multi-Select Filter Dropdown ─── */
 function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
+  const { t } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef();
 
@@ -57,16 +41,32 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
 
   const isActive = selected.length > 0;
 
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    transition: "all .12s",
+  };
+
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen((p) => !p)}
         style={{
           ...btnStyle,
-          height: 32,
-          background: isActive ? "#EFF6FF" : "#fff",
-          borderColor: isActive ? "#93C5FD" : "#CBD5E1",
-          color: isActive ? "#1D4ED8" : "#475569",
+          background: isActive ? t.primaryBgSubtle : t.bgCard,
+          borderColor: isActive ? t.primaryBorder : t.borderStrong,
+          color: isActive ? t.primary : t.textSecondary,
           fontWeight: isActive ? 600 : 500,
         }}
       >
@@ -76,8 +76,8 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
           <span
             style={{
               padding: "1px 6px",
-              background: "#1D4ED8",
-              color: "#fff",
+              background: t.primary,
+              color: t.textInverse,
               borderRadius: 999,
               fontSize: 10,
               fontWeight: 700,
@@ -103,10 +103,10 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
             top: "calc(100% + 4px)",
             left: 0,
             width: 220,
-            background: "#fff",
-            border: "1px solid #CBD5E1",
+            background: t.bgCard,
+            border: `1px solid ${t.borderStrong}`,
             borderRadius: 8,
-            boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
+            boxShadow: t.shadowLg,
             zIndex: 100,
             overflow: "hidden",
             fontFamily: "Sora,sans-serif",
@@ -115,14 +115,16 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
           <div
             style={{
               padding: "8px 12px",
-              background: "#F8FAFC",
-              borderBottom: "1px solid #E2E8F0",
+              background: t.bgSubtle,
+              borderBottom: `1px solid ${t.border}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+            <span
+              style={{ fontSize: 11, fontWeight: 700, color: t.textPrimary }}
+            >
               Filter by {label}
             </span>
             {isActive && (
@@ -131,7 +133,7 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#EF4444",
+                  color: t.danger,
                   cursor: "pointer",
                   fontSize: 10,
                   fontWeight: 600,
@@ -148,7 +150,7 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
                 style={{
                   padding: 16,
                   textAlign: "center",
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   fontSize: 11,
                 }}
               >
@@ -173,14 +175,14 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
                       gap: 8,
                       padding: "7px 12px",
                       cursor: "pointer",
-                      background: checked ? "#F0F9FF" : "transparent",
+                      background: checked ? t.primaryBgSubtle : "transparent",
                       borderLeft: checked
-                        ? "3px solid #1D4ED8"
+                        ? `3px solid ${t.primary}`
                         : "3px solid transparent",
                     }}
                     onMouseEnter={(e) => {
                       if (!checked)
-                        e.currentTarget.style.background = "#F8FAFC";
+                        e.currentTarget.style.background = t.bgSubtle;
                     }}
                     onMouseLeave={(e) => {
                       if (!checked)
@@ -192,13 +194,13 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
                         width: 16,
                         height: 16,
                         borderRadius: 4,
-                        border: `1.5px solid ${checked ? "#1D4ED8" : "#CBD5E1"}`,
-                        background: checked ? "#1D4ED8" : "#fff",
+                        border: `1.5px solid ${checked ? t.primary : t.borderStrong}`,
+                        background: checked ? t.primary : t.bgCard,
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
-                        color: "#fff",
+                        color: t.textInverse,
                       }}
                     >
                       {checked && <Check size={10} strokeWidth={3} />}
@@ -206,7 +208,7 @@ function FilterDropdown({ label, options, selected, onChange, icon: Icon }) {
                     <span
                       style={{
                         fontSize: 12,
-                        color: "#0F172A",
+                        color: t.textPrimary,
                         fontWeight: checked ? 600 : 400,
                       }}
                     >
@@ -232,6 +234,7 @@ function AddUserPanel({
   error,
   onRetry,
 }) {
+  const { t } = useTheme();
   const [search, setSearch] = useState("");
   const [selectedDepts, setSelectedDepts] = useState([]);
   const searchRef = useRef();
@@ -277,12 +280,28 @@ function AddUserPanel({
       }, {});
   }, [filteredUsers]);
 
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
+
   return (
     <div
       style={{
         padding: 16,
-        background: "#F8FAFC",
-        borderBottom: "1px solid #E2E8F0",
+        background: t.bgSubtle,
+        borderBottom: `1px solid ${t.border}`,
       }}
     >
       <div
@@ -300,10 +319,10 @@ function AddUserPanel({
             gap: 8,
             fontSize: 12.5,
             fontWeight: 700,
-            color: "#0F172A",
+            color: t.textPrimary,
           }}
         >
-          <UserPlus size={14} color="#1D4ED8" />
+          <UserPlus size={14} color={t.primary} />
           Add Users to Matrix
         </div>
         <button
@@ -312,7 +331,7 @@ function AddUserPanel({
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "#94A3B8",
+            color: t.textFaint,
             padding: 4,
           }}
         >
@@ -320,61 +339,53 @@ function AddUserPanel({
         </button>
       </div>
 
-      {/* Loading state */}
       {isLoading && (
         <div
           style={{
             padding: 30,
             textAlign: "center",
-            background: "#fff",
+            background: t.bgCard,
             borderRadius: 8,
-            border: "1px solid #E2E8F0",
+            border: `1px solid ${t.border}`,
           }}
         >
           <Loader2
             size={22}
             style={{
               animation: "spin 1s linear infinite",
-              color: "#1D4ED8",
+              color: t.primary,
               marginBottom: 8,
             }}
           />
-          <div style={{ fontSize: 11.5, color: "#64748B" }}>
+          <div style={{ fontSize: 11.5, color: t.textMuted }}>
             Loading users...
           </div>
         </div>
       )}
 
-      {/* Error state */}
       {error && !isLoading && (
         <div
           style={{
             padding: 16,
-            background: "#FEF2F2",
-            border: "1px solid #FCA5A5",
+            background: t.dangerBgSubtle,
+            border: `1px solid ${t.dangerBorder}`,
             borderRadius: 8,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "flex-start",
-            }}
-          >
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
             <AlertTriangle
               size={16}
-              color="#DC2626"
+              color={t.danger}
               style={{ flexShrink: 0, marginTop: 2 }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 12, color: "#DC2626" }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: t.danger }}>
                 Failed to load users
               </div>
               <div
                 style={{
                   fontSize: 11,
-                  color: "#7F1D1D",
+                  color: t.dangerTextDeep,
                   marginTop: 3,
                   marginBottom: 8,
                 }}
@@ -387,9 +398,9 @@ function AddUserPanel({
                   ...btnStyle,
                   height: 26,
                   fontSize: 11,
-                  background: "#DC2626",
-                  color: "#fff",
-                  borderColor: "#DC2626",
+                  background: t.danger,
+                  color: t.textInverse,
+                  borderColor: t.danger,
                 }}
               >
                 Retry
@@ -399,7 +410,6 @@ function AddUserPanel({
         </div>
       )}
 
-      {/* Main content */}
       {!isLoading && !error && (
         <>
           {/* Search + Filter */}
@@ -412,7 +422,7 @@ function AddUserPanel({
                   left: 10,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   pointerEvents: "none",
                 }}
               />
@@ -425,14 +435,15 @@ function AddUserPanel({
                 style={{
                   width: "100%",
                   height: 34,
-                  border: "1px solid #CBD5E1",
+                  border: `1px solid ${t.borderStrong}`,
                   borderRadius: 7,
                   padding: "0 10px 0 32px",
                   fontFamily: "Sora,sans-serif",
                   fontSize: 12,
                   outline: "none",
                   boxSizing: "border-box",
-                  background: "#fff",
+                  background: t.bgInput,
+                  color: t.textPrimary,
                 }}
               />
               {search && (
@@ -446,7 +457,7 @@ function AddUserPanel({
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: "#94A3B8",
+                    color: t.textFaint,
                     padding: 2,
                   }}
                 >
@@ -465,11 +476,10 @@ function AddUserPanel({
             )}
           </div>
 
-          {/* Results count */}
           <div
             style={{
               fontSize: 11,
-              color: "#64748B",
+              color: t.textMuted,
               marginBottom: 8,
               display: "flex",
               alignItems: "center",
@@ -484,13 +494,12 @@ function AddUserPanel({
             </span>
           </div>
 
-          {/* User List */}
           <div
             style={{
               maxHeight: 260,
               overflowY: "auto",
-              background: "#fff",
-              border: "1px solid #E2E8F0",
+              background: t.bgCard,
+              border: `1px solid ${t.border}`,
               borderRadius: 8,
             }}
           >
@@ -499,7 +508,7 @@ function AddUserPanel({
                 style={{
                   padding: 24,
                   textAlign: "center",
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   fontSize: 12,
                 }}
               >
@@ -520,13 +529,13 @@ function AddUserPanel({
                   <div
                     style={{
                       padding: "6px 12px",
-                      background: "#FAFBFC",
+                      background: t.bgSubtle,
                       fontSize: 10,
                       fontWeight: 700,
-                      color: "#64748B",
+                      color: t.textMuted,
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
-                      borderBottom: "1px solid #F1F5F9",
+                      borderBottom: `1px solid ${t.borderSubtle}`,
                       position: "sticky",
                       top: 0,
                       zIndex: 1,
@@ -544,7 +553,7 @@ function AddUserPanel({
                       onClick={() => onAdd(user)}
                       style={{
                         padding: "10px 12px",
-                        borderBottom: "1px solid #F1F5F9",
+                        borderBottom: `1px solid ${t.borderSubtle}`,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -552,7 +561,7 @@ function AddUserPanel({
                         transition: "background .1s",
                       }}
                       onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = "#F0F9FF")
+                        (e.currentTarget.style.background = t.primaryBgSubtle)
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.background = "transparent")
@@ -563,8 +572,8 @@ function AddUserPanel({
                           width: 32,
                           height: 32,
                           borderRadius: "50%",
-                          background: "#DBEAFE",
-                          color: "#1D4ED8",
+                          background: t.primaryBg,
+                          color: t.primary,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -580,7 +589,7 @@ function AddUserPanel({
                           style={{
                             fontSize: 12,
                             fontWeight: 600,
-                            color: "#0F172A",
+                            color: t.textPrimary,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -591,7 +600,7 @@ function AddUserPanel({
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#94A3B8",
+                            color: t.textFaint,
                             fontFamily: "'JetBrains Mono', monospace",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -603,7 +612,7 @@ function AddUserPanel({
                         <div
                           style={{
                             fontSize: 10,
-                            color: "#64748B",
+                            color: t.textMuted,
                             marginTop: 2,
                             display: "flex",
                             alignItems: "center",
@@ -616,16 +625,16 @@ function AddUserPanel({
                       </div>
                       <div
                         style={{
-                          color: "#1D4ED8",
+                          color: t.primary,
                           fontSize: 11,
                           fontWeight: 600,
                           display: "inline-flex",
                           alignItems: "center",
                           gap: 3,
                           padding: "4px 8px",
-                          background: "#EFF6FF",
+                          background: t.primaryBgSubtle,
                           borderRadius: 5,
-                          border: "1px solid #BFDBFE",
+                          border: `1px solid ${t.primaryBorder}`,
                         }}
                       >
                         <Plus size={11} /> Add
@@ -641,7 +650,6 @@ function AddUserPanel({
     </div>
   );
 }
-
 /* ═══════════════════════════════════════════════════════
    Main Manage Sharing Modal
    ═══════════════════════════════════════════════════════ */
@@ -652,11 +660,29 @@ export default function ManageSharingModal({
   onClose,
   onSave,
 }) {
+  const { t } = useTheme();
+
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    transition: "all .12s",
+  };
+
   const [showAddUser, setShowAddUser] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
-  const [sharingFilter, setSharingFilter] = useState("all"); // "all" | "shared" | "unshared"
+  const [sharingFilter, setSharingFilter] = useState("all");
 
-  // Users API state
   const [allUsers, setAllUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState(null);
@@ -669,7 +695,6 @@ export default function ManageSharingModal({
     };
   }, []);
 
-  /* ─── Load users ─── */
   const loadUsers = async () => {
     setIsLoadingUsers(true);
     setUsersError(null);
@@ -689,7 +714,6 @@ export default function ManageSharingModal({
     loadUsers();
   }, []);
 
-  /* ─── Initial users in matrix (from categories) ─── */
   const initialMatrixUsers = useMemo(() => {
     if (allUsers.length === 0) return [];
     const set = new Set();
@@ -704,7 +728,6 @@ export default function ManageSharingModal({
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [initialized, setInitialized] = useState(false);
 
-  // Initialize selectedUsers once users are loaded
   useEffect(() => {
     if (!initialized && initialMatrixUsers.length > 0) {
       setSelectedUsers(initialMatrixUsers);
@@ -714,7 +737,6 @@ export default function ManageSharingModal({
     }
   }, [initialMatrixUsers, allUsers, initialized]);
 
-  /* ─── Sharing matrix ─── */
   const [sharingMatrix, setSharingMatrix] = useState(() => {
     const matrix = {};
     categories.forEach((cat) => {
@@ -727,7 +749,6 @@ export default function ManageSharingModal({
 
   const [hasChanges, setHasChanges] = useState(false);
 
-  /* ─── Cell toggle ─── */
   const toggleCell = (categoryId, userId) => {
     if (isSaving) return;
     setSharingMatrix((prev) => {
@@ -742,7 +763,6 @@ export default function ManageSharingModal({
     setHasChanges(true);
   };
 
-  /* ─── Row toggle (select all users for a category) ─── */
   const toggleRowAll = (categoryId) => {
     if (isSaving) return;
     setSharingMatrix((prev) => {
@@ -763,7 +783,6 @@ export default function ManageSharingModal({
     setHasChanges(true);
   };
 
-  /* ─── Column toggle (share user across all rows) ─── */
   const toggleColumnAll = (userId) => {
     if (isSaving) return;
     const uid = userId.toLowerCase();
@@ -783,7 +802,6 @@ export default function ManageSharingModal({
     setHasChanges(true);
   };
 
-  /* ─── Add user to matrix ─── */
   const addUserToMatrix = (user) => {
     setSelectedUsers((prev) => {
       if (
@@ -795,7 +813,6 @@ export default function ManageSharingModal({
     setShowAddUser(false);
   };
 
-  /* ─── Remove user from matrix ─── */
   const removeUserFromMatrix = (userId) => {
     if (isSaving) return;
     const uid = userId.toLowerCase();
@@ -814,7 +831,6 @@ export default function ManageSharingModal({
     setHasChanges(true);
   };
 
-  /* ─── Bulk actions ─── */
   const handleClearAll = () => {
     if (isSaving) return;
     if (!window.confirm("Remove all sharing across all categories?")) return;
@@ -844,7 +860,6 @@ export default function ManageSharingModal({
     setHasChanges(true);
   };
 
-  /* ─── Save ─── */
   const handleSave = () => {
     const result = {};
     categories.forEach((cat) => {
@@ -853,7 +868,6 @@ export default function ManageSharingModal({
     onSave(result);
   };
 
-  /* ─── Available users (not yet in matrix) ─── */
   const availableUsersToAdd = useMemo(() => {
     const excludeSet = new Set([
       currentUserId.toLowerCase(),
@@ -864,7 +878,6 @@ export default function ManageSharingModal({
     );
   }, [allUsers, currentUserId, selectedUsers]);
 
-  /* ─── Filter categories ─── */
   const filteredCategories = useMemo(() => {
     const q = categorySearch.toLowerCase().trim();
     return categories.filter((cat) => {
@@ -876,7 +889,6 @@ export default function ManageSharingModal({
     });
   }, [categories, categorySearch, sharingFilter, sharingMatrix]);
 
-  /* ─── Stats ─── */
   const stats = useMemo(() => {
     let checkedCells = 0;
     let sharedCategories = 0;
@@ -898,7 +910,7 @@ export default function ManageSharingModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.55)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -909,26 +921,27 @@ export default function ManageSharingModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 1100,
           maxHeight: "92vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
+          color: t.textPrimary,
         }}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "linear-gradient(135deg, #EDE9FE 0%, #F5F3FF 100%)",
+            borderBottom: `1px solid ${t.border}`,
+            background: `linear-gradient(135deg, ${t.violetBg} 0%, ${t.bgSubtle} 100%)`,
             flexShrink: 0,
           }}
         >
@@ -937,12 +950,12 @@ export default function ManageSharingModal({
               width: 44,
               height: 44,
               borderRadius: 11,
-              background: "#7C3AED",
-              color: "#fff",
+              background: t.violet,
+              color: t.textInverse,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(124,58,237,0.3)",
+              boxShadow: t.shadowSm,
             }}
           >
             <Grid3x3 size={22} strokeWidth={2} />
@@ -952,7 +965,7 @@ export default function ManageSharingModal({
               style={{
                 fontWeight: 700,
                 fontSize: 15,
-                color: "#0F172A",
+                color: t.textPrimary,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -963,9 +976,9 @@ export default function ManageSharingModal({
                 <span
                   style={{
                     padding: "2px 8px",
-                    background: "#FEF3C7",
-                    color: "#B45309",
-                    border: "1px solid #FCD34D",
+                    background: t.warningBg,
+                    color: t.warning,
+                    border: `1px solid ${t.warningBorder}`,
                     borderRadius: 999,
                     fontSize: 9.5,
                     fontWeight: 700,
@@ -977,7 +990,7 @@ export default function ManageSharingModal({
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 3 }}>
+            <div style={{ fontSize: 11.5, color: t.textMuted, marginTop: 3 }}>
               Bulk manage access across all categories and users
             </div>
           </div>
@@ -985,10 +998,10 @@ export default function ManageSharingModal({
             onClick={onClose}
             disabled={isSaving}
             style={{
-              background: "rgba(255,255,255,0.6)",
-              border: "1px solid #DDD6FE",
+              background: t.bgCard,
+              border: `1px solid ${t.violetBorder}`,
               cursor: isSaving ? "not-allowed" : "pointer",
-              color: "#7C3AED",
+              color: t.violet,
               padding: 6,
               borderRadius: 7,
               display: "flex",
@@ -1000,14 +1013,14 @@ export default function ManageSharingModal({
           </button>
         </div>
 
-        {/* ── Stats Bar ── */}
+        {/* Stats Bar */}
         <div
           style={{
             display: "flex",
             gap: 12,
             padding: "12px 20px",
-            background: "#FAFBFC",
-            borderBottom: "1px solid #E2E8F0",
+            background: t.bgSubtle,
+            borderBottom: `1px solid ${t.border}`,
             flexShrink: 0,
           }}
         >
@@ -1016,29 +1029,29 @@ export default function ManageSharingModal({
               label: "Categories",
               value: categories.length,
               icon: Grid3x3,
-              color: "#7C3AED",
-              bg: "#EDE9FE",
+              color: t.violet,
+              bg: t.violetBg,
             },
             {
               label: "Users",
               value: selectedUsers.length,
               icon: Users,
-              color: "#1D4ED8",
-              bg: "#DBEAFE",
+              color: t.primary,
+              bg: t.primaryBg,
             },
             {
               label: "Shared",
               value: `${stats.sharedCategories}/${categories.length}`,
               icon: UserCheck,
-              color: "#15803D",
-              bg: "#DCFCE7",
+              color: t.success,
+              bg: t.successBg,
             },
             {
               label: "Access Grants",
               value: stats.checkedCells,
               icon: Check,
-              color: "#0369A1",
-              bg: "#F0F9FF",
+              color: t.info,
+              bg: t.infoBg,
             },
           ].map((s) => (
             <div
@@ -1046,8 +1059,8 @@ export default function ManageSharingModal({
               style={{
                 flex: 1,
                 padding: "10px 12px",
-                background: "#fff",
-                border: "1px solid #E2E8F0",
+                background: t.bgCard,
+                border: `1px solid ${t.border}`,
                 borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
@@ -1074,13 +1087,13 @@ export default function ManageSharingModal({
                   style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: "#0F172A",
+                    color: t.textPrimary,
                     lineHeight: 1,
                   }}
                 >
                   {s.value}
                 </div>
-                <div style={{ fontSize: 10, color: "#64748B", marginTop: 3 }}>
+                <div style={{ fontSize: 10, color: t.textMuted, marginTop: 3 }}>
                   {s.label}
                 </div>
               </div>
@@ -1088,12 +1101,12 @@ export default function ManageSharingModal({
           ))}
         </div>
 
-        {/* ── Toolbar ── */}
+        {/* Toolbar */}
         <div
           style={{
             padding: "12px 20px",
-            background: "#fff",
-            borderBottom: "1px solid #E2E8F0",
+            background: t.bgCard,
+            borderBottom: `1px solid ${t.border}`,
             display: "flex",
             gap: 8,
             alignItems: "center",
@@ -1101,7 +1114,6 @@ export default function ManageSharingModal({
             flexShrink: 0,
           }}
         >
-          {/* Category Search */}
           <div style={{ position: "relative", width: 260 }}>
             <Search
               size={14}
@@ -1110,7 +1122,7 @@ export default function ManageSharingModal({
                 left: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94A3B8",
+                color: t.textFaint,
                 pointerEvents: "none",
               }}
             />
@@ -1122,13 +1134,15 @@ export default function ManageSharingModal({
               style={{
                 width: "100%",
                 height: 32,
-                border: "1px solid #CBD5E1",
+                border: `1px solid ${t.borderStrong}`,
                 borderRadius: 7,
                 padding: "0 30px 0 32px",
                 fontFamily: "Sora,sans-serif",
                 fontSize: 12,
                 outline: "none",
                 boxSizing: "border-box",
+                background: t.bgInput,
+                color: t.textPrimary,
               }}
             />
             {categorySearch && (
@@ -1142,7 +1156,7 @@ export default function ManageSharingModal({
                   background: "none",
                   border: "none",
                   cursor: "pointer",
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   padding: 2,
                 }}
               >
@@ -1155,7 +1169,7 @@ export default function ManageSharingModal({
           <div
             style={{
               display: "flex",
-              background: "#F1F5F9",
+              background: t.bgMuted,
               borderRadius: 7,
               padding: 3,
               gap: 2,
@@ -1175,8 +1189,8 @@ export default function ManageSharingModal({
                     padding: "5px 12px",
                     borderRadius: 5,
                     border: "none",
-                    background: active ? "#fff" : "transparent",
-                    color: active ? "#0F172A" : "#64748B",
+                    background: active ? t.bgCard : "transparent",
+                    color: active ? t.textPrimary : t.textMuted,
                     fontSize: 11,
                     fontWeight: active ? 700 : 500,
                     cursor: "pointer",
@@ -1184,7 +1198,7 @@ export default function ManageSharingModal({
                     alignItems: "center",
                     gap: 4,
                     fontFamily: "Sora,sans-serif",
-                    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                    boxShadow: active ? t.shadowSm : "none",
                     transition: "all .12s",
                   }}
                 >
@@ -1195,17 +1209,15 @@ export default function ManageSharingModal({
             })}
           </div>
 
-          {/* Right side actions */}
           <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
             <button
               onClick={() => setShowAddUser(!showAddUser)}
               disabled={isSaving}
               style={{
                 ...btnStyle,
-                height: 32,
-                background: showAddUser ? "#1D4ED8" : "#EFF6FF",
-                color: showAddUser ? "#fff" : "#1D4ED8",
-                borderColor: "#1D4ED8",
+                background: showAddUser ? t.primary : t.primaryBgSubtle,
+                color: showAddUser ? t.textInverse : t.primary,
+                borderColor: t.primary,
                 fontWeight: 600,
                 opacity: isSaving ? 0.5 : 1,
               }}
@@ -1221,10 +1233,9 @@ export default function ManageSharingModal({
                   title="Grant all users access to all categories"
                   style={{
                     ...btnStyle,
-                    height: 32,
-                    background: "#F0FDF4",
-                    color: "#15803D",
-                    borderColor: "#86EFAC",
+                    background: t.successBgSubtle,
+                    color: t.success,
+                    borderColor: t.successBorder,
                   }}
                 >
                   <Sparkles size={13} />
@@ -1235,10 +1246,9 @@ export default function ManageSharingModal({
                   title="Remove all sharing"
                   style={{
                     ...btnStyle,
-                    height: 32,
-                    background: "#FEF2F2",
-                    color: "#DC2626",
-                    borderColor: "#FCA5A5",
+                    background: t.dangerBgSubtle,
+                    color: t.danger,
+                    borderColor: t.dangerBorder,
                   }}
                 >
                   <Trash2 size={13} />
@@ -1249,7 +1259,7 @@ export default function ManageSharingModal({
           </div>
         </div>
 
-        {/* ── Add User Panel ── */}
+        {/* Add User Panel */}
         {showAddUser && (
           <AddUserPanel
             availableUsers={availableUsersToAdd}
@@ -1261,22 +1271,17 @@ export default function ManageSharingModal({
           />
         )}
 
-        {/* ── Body ── */}
-        <div style={{ flex: 1, overflow: "auto", background: "#F8FAFC" }}>
+        {/* Body */}
+        <div style={{ flex: 1, overflow: "auto", background: t.bgSubtle }}>
           {isLoadingUsers && !initialized ? (
-            /* Loading users initially */
             <div
-              style={{
-                padding: 60,
-                textAlign: "center",
-                color: "#64748B",
-              }}
+              style={{ padding: 60, textAlign: "center", color: t.textMuted }}
             >
               <Loader2
                 size={32}
                 style={{
                   animation: "spin 1s linear infinite",
-                  color: "#7C3AED",
+                  color: t.violet,
                   marginBottom: 12,
                 }}
               />
@@ -1285,24 +1290,23 @@ export default function ManageSharingModal({
               </div>
             </div>
           ) : usersError && selectedUsers.length === 0 ? (
-            /* Users load failed */
             <div style={{ padding: 30 }}>
               <div
                 style={{
-                  background: "#FEF2F2",
-                  border: "1px solid #FCA5A5",
+                  background: t.dangerBgSubtle,
+                  border: `1px solid ${t.dangerBorder}`,
                   borderRadius: 10,
                   padding: 20,
                   display: "flex",
                   gap: 12,
                 }}
               >
-                <AlertTriangle size={24} color="#DC2626" />
+                <AlertTriangle size={24} color={t.danger} />
                 <div style={{ flex: 1 }}>
                   <div
                     style={{
                       fontWeight: 700,
-                      color: "#DC2626",
+                      color: t.danger,
                       fontSize: 13,
                       marginBottom: 4,
                     }}
@@ -1312,7 +1316,7 @@ export default function ManageSharingModal({
                   <div
                     style={{
                       fontSize: 11.5,
-                      color: "#7F1D1D",
+                      color: t.dangerTextDeep,
                       marginBottom: 10,
                     }}
                   >
@@ -1322,9 +1326,9 @@ export default function ManageSharingModal({
                     onClick={loadUsers}
                     style={{
                       ...btnStyle,
-                      background: "#DC2626",
-                      color: "#fff",
-                      borderColor: "#DC2626",
+                      background: t.danger,
+                      color: t.textInverse,
+                      borderColor: t.danger,
                     }}
                   >
                     Retry
@@ -1333,15 +1337,16 @@ export default function ManageSharingModal({
               </div>
             </div>
           ) : selectedUsers.length === 0 ? (
-            /* No users in matrix */
-            <div style={{ padding: 60, textAlign: "center", color: "#64748B" }}>
+            <div
+              style={{ padding: 60, textAlign: "center", color: t.textMuted }}
+            >
               <div
                 style={{
                   width: 64,
                   height: 64,
                   borderRadius: "50%",
-                  background: "#EDE9FE",
-                  color: "#7C3AED",
+                  background: t.violetBg,
+                  color: t.violet,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1354,7 +1359,7 @@ export default function ManageSharingModal({
                 style={{
                   fontWeight: 700,
                   fontSize: 14,
-                  color: "#0F172A",
+                  color: t.textPrimary,
                   marginBottom: 4,
                 }}
               >
@@ -1370,9 +1375,9 @@ export default function ManageSharingModal({
                 onClick={() => setShowAddUser(true)}
                 style={{
                   ...btnStyle,
-                  background: "#1D4ED8",
-                  color: "#fff",
-                  borderColor: "#1D4ED8",
+                  background: t.primary,
+                  color: t.textInverse,
+                  borderColor: t.primary,
                   height: 36,
                 }}
               >
@@ -1380,15 +1385,20 @@ export default function ManageSharingModal({
               </button>
             </div>
           ) : filteredCategories.length === 0 ? (
-            /* No matching categories */
-            <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>
+            <div
+              style={{ padding: 40, textAlign: "center", color: t.textFaint }}
+            >
               <Filter
                 size={32}
                 strokeWidth={1.5}
                 style={{ marginBottom: 12, opacity: 0.5 }}
               />
               <div
-                style={{ fontWeight: 600, color: "#0F172A", marginBottom: 4 }}
+                style={{
+                  fontWeight: 600,
+                  color: t.textPrimary,
+                  marginBottom: 4,
+                }}
               >
                 No categories match your filters
               </div>
@@ -1411,10 +1421,10 @@ export default function ManageSharingModal({
                   borderCollapse: "separate",
                   borderSpacing: 0,
                   fontSize: 12,
-                  background: "#fff",
+                  background: t.bgCard,
                   borderRadius: 10,
                   overflow: "hidden",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                  boxShadow: t.shadowSm,
                 }}
               >
                 <thead>
@@ -1422,8 +1432,8 @@ export default function ManageSharingModal({
                     <th
                       style={{
                         padding: "12px 14px",
-                        background: "#1E293B",
-                        color: "#fff",
+                        background: t.navBg,
+                        color: t.navText,
                         textAlign: "left",
                         fontSize: 11,
                         fontWeight: 700,
@@ -1460,8 +1470,8 @@ export default function ManageSharingModal({
                           key={user.userId}
                           style={{
                             padding: "10px 8px",
-                            background: "#1E293B",
-                            color: "#fff",
+                            background: t.navBg,
+                            color: t.navText,
                             fontSize: 10,
                             fontWeight: 600,
                             minWidth: 130,
@@ -1483,8 +1493,7 @@ export default function ManageSharingModal({
                                 width: 34,
                                 height: 34,
                                 borderRadius: "50%",
-                                background:
-                                  "linear-gradient(135deg, #3B82F6, #1D4ED8)",
+                                background: `linear-gradient(135deg, ${t.primary}, ${t.primaryHover})`,
                                 display: "inline-flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -1567,7 +1576,7 @@ export default function ManageSharingModal({
                                       : "rgba(255,255,255,0.3)"
                                   }`,
                                   borderRadius: 4,
-                                  color: "#fff",
+                                  color: t.navText,
                                   cursor: isSaving ? "not-allowed" : "pointer",
                                   fontFamily: "Sora,sans-serif",
                                   fontWeight: 600,
@@ -1589,7 +1598,7 @@ export default function ManageSharingModal({
                                   background: "rgba(220,38,38,0.25)",
                                   border: "1px solid rgba(252,165,165,0.5)",
                                   borderRadius: 4,
-                                  color: "#fff",
+                                  color: t.navText,
                                   cursor: isSaving ? "not-allowed" : "pointer",
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -1615,19 +1624,19 @@ export default function ManageSharingModal({
                       <tr
                         key={cat.id}
                         style={{
-                          background: idx % 2 === 0 ? "#fff" : "#FAFBFC",
+                          background: idx % 2 === 0 ? t.bgCard : t.bgSubtle,
                         }}
                       >
                         <td
                           style={{
                             padding: "12px 14px",
                             fontWeight: 600,
-                            color: "#0F172A",
-                            borderBottom: "1px solid #F1F5F9",
-                            borderRight: "2px solid #E2E8F0",
+                            color: t.textPrimary,
+                            borderBottom: `1px solid ${t.borderSubtle}`,
+                            borderRight: `2px solid ${t.border}`,
                             position: "sticky",
                             left: 0,
-                            background: idx % 2 === 0 ? "#fff" : "#FAFBFC",
+                            background: idx % 2 === 0 ? t.bgCard : t.bgSubtle,
                             zIndex: 1,
                           }}
                         >
@@ -1642,19 +1651,23 @@ export default function ManageSharingModal({
                               style={{
                                 width: 4,
                                 height: 24,
-                                background: isShared ? "#15803D" : "#CBD5E1",
+                                background: isShared
+                                  ? t.success
+                                  : t.borderStrong,
                                 borderRadius: 2,
                                 flexShrink: 0,
                               }}
                             />
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 12.5, color: "#0F172A" }}>
+                              <div
+                                style={{ fontSize: 12.5, color: t.textPrimary }}
+                              >
                                 {cat.name}
                               </div>
                               <div
                                 style={{
                                   fontSize: 10,
-                                  color: isShared ? "#15803D" : "#94A3B8",
+                                  color: isShared ? t.success : t.textFaint,
                                   marginTop: 2,
                                   fontWeight: 500,
                                   display: "flex",
@@ -1689,18 +1702,18 @@ export default function ManageSharingModal({
                                 padding: "3px 8px",
                                 background:
                                   rowSharedCount === selectedUsers.length
-                                    ? "#FEF2F2"
-                                    : "#F1F5F9",
+                                    ? t.dangerBgSubtle
+                                    : t.bgMuted,
                                 border: `1px solid ${
                                   rowSharedCount === selectedUsers.length
-                                    ? "#FCA5A5"
-                                    : "#CBD5E1"
+                                    ? t.dangerBorder
+                                    : t.borderStrong
                                 }`,
                                 borderRadius: 4,
                                 color:
                                   rowSharedCount === selectedUsers.length
-                                    ? "#DC2626"
-                                    : "#475569",
+                                    ? t.danger
+                                    : t.textSecondary,
                                 cursor: isSaving ? "not-allowed" : "pointer",
                                 fontFamily: "Sora,sans-serif",
                                 fontWeight: 600,
@@ -1727,16 +1740,18 @@ export default function ManageSharingModal({
                               style={{
                                 padding: "10px",
                                 textAlign: "center",
-                                borderBottom: "1px solid #F1F5F9",
-                                borderLeft: "1px solid #F1F5F9",
+                                borderBottom: `1px solid ${t.borderSubtle}`,
+                                borderLeft: `1px solid ${t.borderSubtle}`,
                                 cursor: isSaving ? "not-allowed" : "pointer",
                                 transition: "background .1s",
-                                background: checked ? "#F0F9FF" : "transparent",
+                                background: checked
+                                  ? t.primaryBgSubtle
+                                  : "transparent",
                                 opacity: isSaving ? 0.6 : 1,
                               }}
                               onMouseEnter={(e) => {
                                 if (!checked && !isSaving)
-                                  e.currentTarget.style.background = "#F8FAFC";
+                                  e.currentTarget.style.background = t.bgSubtle;
                               }}
                               onMouseLeave={(e) => {
                                 if (!checked)
@@ -1750,17 +1765,13 @@ export default function ManageSharingModal({
                                   width: 24,
                                   height: 24,
                                   borderRadius: 6,
-                                  border: `2px solid ${
-                                    checked ? "#1D4ED8" : "#CBD5E1"
-                                  }`,
-                                  background: checked ? "#1D4ED8" : "#fff",
+                                  border: `2px solid ${checked ? t.primary : t.borderStrong}`,
+                                  background: checked ? t.primary : t.bgCard,
                                   alignItems: "center",
                                   justifyContent: "center",
-                                  color: "#fff",
+                                  color: t.textInverse,
                                   transition: "all .12s",
-                                  boxShadow: checked
-                                    ? "0 2px 4px rgba(29,78,216,0.25)"
-                                    : "none",
+                                  boxShadow: checked ? t.shadowSm : "none",
                                 }}
                               >
                                 {checked && (
@@ -1781,11 +1792,11 @@ export default function ManageSharingModal({
                 style={{
                   marginTop: 12,
                   padding: "8px 12px",
-                  background: "#EFF6FF",
-                  border: "1px solid #BAE6FD",
+                  background: t.infoBg,
+                  border: `1px solid ${t.infoBorder}`,
                   borderRadius: 8,
                   fontSize: 11,
-                  color: "#0369A1",
+                  color: t.info,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
@@ -1802,23 +1813,23 @@ export default function ManageSharingModal({
           )}
         </div>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div
           style={{
             padding: "14px 20px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
           <div
             style={{
               fontSize: 11.5,
-              color: "#64748B",
+              color: t.textMuted,
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -1830,23 +1841,23 @@ export default function ManageSharingModal({
                   size={13}
                   style={{
                     animation: "spin 1s linear infinite",
-                    color: "#1D4ED8",
+                    color: t.primary,
                   }}
                 />
-                <span style={{ color: "#1D4ED8", fontWeight: 600 }}>
+                <span style={{ color: t.primary, fontWeight: 600 }}>
                   Saving changes...
                 </span>
               </>
             ) : hasChanges ? (
               <>
-                <AlertTriangle size={13} color="#B45309" />
-                <span style={{ color: "#B45309", fontWeight: 600 }}>
+                <AlertTriangle size={13} color={t.warning} />
+                <span style={{ color: t.warning, fontWeight: 600 }}>
                   You have unsaved changes
                 </span>
               </>
             ) : (
               <>
-                <Check size={13} color="#15803D" />
+                <Check size={13} color={t.success} />
                 <span>All changes saved</span>
               </>
             )}
@@ -1868,14 +1879,10 @@ export default function ManageSharingModal({
               disabled={!hasChanges || isSaving}
               style={{
                 ...btnStyle,
-                background: hasChanges && !isSaving ? "#1D4ED8" : "#F1F5F9",
-                color: hasChanges && !isSaving ? "#fff" : "#94A3B8",
-                borderColor: hasChanges && !isSaving ? "#1D4ED8" : "#E2E8F0",
+                background: hasChanges && !isSaving ? t.primary : t.bgMuted,
+                color: hasChanges && !isSaving ? t.textInverse : t.textFaint,
+                borderColor: hasChanges && !isSaving ? t.primary : t.border,
                 cursor: hasChanges && !isSaving ? "pointer" : "not-allowed",
-                boxShadow:
-                  hasChanges && !isSaving
-                    ? "0 2px 8px rgba(29,78,216,0.3)"
-                    : "none",
                 fontWeight: 600,
               }}
             >

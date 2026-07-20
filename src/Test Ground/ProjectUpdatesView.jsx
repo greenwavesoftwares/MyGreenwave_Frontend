@@ -35,6 +35,7 @@ import ManageSharingModal from "./ManageSharingModal";
 import * as sharingApi from "./sharingApi";
 import { useOptimisticSharing } from "./useOptimisticSharing";
 import { findUserById } from "./updatesHelpers";
+import { useTheme } from "./useTheme";
 
 /* ─── Default Template Categories ─── */
 const DEFAULT_CATEGORIES = [
@@ -96,47 +97,16 @@ function readFileAsBase64(file) {
   });
 }
 
-/* ─── Shared Styles ─── */
-const btnStyle = {
-  height: 32,
-  padding: "0 14px",
-  borderRadius: 7,
-  border: "1px solid #CBD5E1",
-  background: "#fff",
-  color: "#475569",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-  transition: "all .12s",
-};
-
-const inputStyle = {
-  width: "100%",
-  height: 34,
-  border: "1px solid #CBD5E1",
-  borderRadius: 6,
-  background: "#fff",
-  color: "#0F172A",
-  padding: "0 10px",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  boxSizing: "border-box",
-  outline: "none",
-};
-
 /* ═══════════════════════════════════════════════════════
    Loading Skeleton
    ═══════════════════════════════════════════════════════ */
 function LoadingSkeleton() {
+  const { t } = useTheme();
   return (
     <div
       style={{
-        background: "#fff",
-        border: "1px solid #E2E8F0",
+        background: t.bgCard,
+        border: `1px solid ${t.border}`,
         borderRadius: 12,
         padding: 20,
         fontFamily: "Sora,sans-serif",
@@ -154,15 +124,12 @@ function LoadingSkeleton() {
       >
         <Loader2
           size={32}
-          style={{
-            animation: "spin 1s linear infinite",
-            color: "#1D4ED8",
-          }}
+          style={{ animation: "spin 1s linear infinite", color: t.primary }}
         />
-        <div style={{ fontSize: 13, color: "#64748B", fontWeight: 500 }}>
+        <div style={{ fontSize: 13, color: t.textMuted, fontWeight: 500 }}>
           Loading updates...
         </div>
-        <div style={{ fontSize: 11, color: "#94A3B8" }}>
+        <div style={{ fontSize: 11, color: t.textFaint }}>
           Fetching categories, snapshots, and sharing info
         </div>
       </div>
@@ -174,16 +141,17 @@ function LoadingSkeleton() {
    Error State
    ═══════════════════════════════════════════════════════ */
 function ErrorState({ error, onRetry }) {
+  const { t } = useTheme();
   const isNetwork = error?.isNetworkError;
   const isPermission = error?.isPermissionError;
   const isNotFound = error?.isNotFound;
 
   let Icon = AlertCircle;
   let title = "Failed to load updates";
-  let bgColor = "#FEF2F2";
-  let borderColor = "#FCA5A5";
-  let iconColor = "#DC2626";
-  let iconBg = "#FEE2E2";
+  let bgColor = t.dangerBgSubtle;
+  let borderColor = t.dangerBorder;
+  let iconColor = t.danger;
+  let iconBg = t.dangerBg;
 
   if (isNetwork) {
     Icon = WifiOff;
@@ -191,10 +159,10 @@ function ErrorState({ error, onRetry }) {
   } else if (isPermission) {
     Icon = Lock;
     title = "Access Denied";
-    bgColor = "#FFFBEB";
-    borderColor = "#FCD34D";
-    iconColor = "#B45309";
-    iconBg = "#FEF3C7";
+    bgColor = t.warningBgSubtle;
+    borderColor = t.warningBorder;
+    iconColor = t.warning;
+    iconBg = t.warningBg;
   } else if (isNotFound) {
     Icon = AlertCircle;
     title = "Not Found";
@@ -233,7 +201,7 @@ function ErrorState({ error, onRetry }) {
           style={{
             fontWeight: 700,
             fontSize: 14,
-            color: "#0F172A",
+            color: t.textPrimary,
             marginBottom: 4,
           }}
         >
@@ -242,7 +210,7 @@ function ErrorState({ error, onRetry }) {
         <div
           style={{
             fontSize: 12,
-            color: "#475569",
+            color: t.textSecondary,
             marginBottom: 12,
             lineHeight: 1.5,
           }}
@@ -254,11 +222,11 @@ function ErrorState({ error, onRetry }) {
             style={{
               display: "inline-block",
               padding: "3px 8px",
-              background: "rgba(0,0,0,0.05)",
+              background: t.bgMuted,
               borderRadius: 4,
               fontSize: 10,
               fontFamily: "'JetBrains Mono', monospace",
-              color: "#64748B",
+              color: t.textMuted,
               marginBottom: 12,
             }}
           >
@@ -269,10 +237,19 @@ function ErrorState({ error, onRetry }) {
           <button
             onClick={onRetry}
             style={{
-              ...btnStyle,
-              background: "#DC2626",
-              color: "#fff",
-              borderColor: "#DC2626",
+              height: 32,
+              padding: "0 14px",
+              borderRadius: 7,
+              background: t.danger,
+              color: t.textInverse,
+              border: `1px solid ${t.danger}`,
+              fontFamily: "Sora,sans-serif",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
             }}
           >
             <RefreshCw size={13} /> Retry
@@ -287,6 +264,7 @@ function ErrorState({ error, onRetry }) {
    Inline Saving Badge
    ═══════════════════════════════════════════════════════ */
 function InlineSaving({ show, label = "Saving..." }) {
+  const { t } = useTheme();
   if (!show) return null;
   return (
     <div
@@ -295,9 +273,9 @@ function InlineSaving({ show, label = "Saving..." }) {
         alignItems: "center",
         gap: 5,
         padding: "3px 8px",
-        background: "#F0F9FF",
-        color: "#0369A1",
-        border: "1px solid #BAE6FD",
+        background: t.infoBg,
+        color: t.info,
+        border: `1px solid ${t.infoBorder}`,
         borderRadius: 5,
         fontSize: 10.5,
         fontWeight: 600,
@@ -314,6 +292,7 @@ function InlineSaving({ show, label = "Saving..." }) {
    File Attachment Badge
    ═══════════════════════════════════════════════════════ */
 function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
+  const { t } = useTheme();
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!file) return null;
@@ -322,15 +301,12 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
 
   const handleDownload = async (e) => {
     e.stopPropagation();
-
-    // If file has MinIO key, download from server
     if (file.key) {
       setIsDownloading(true);
       try {
         await sharingApi.downloadAndSaveFile(file.key, file.name);
       } catch (err) {
         console.error("Download failed:", err);
-        // Show error via global toast if available
         if (window.__showToast) {
           window.__showToast(
             "error",
@@ -343,8 +319,6 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
       }
       return;
     }
-
-    // If file has raw base64 data (still being uploaded, not yet saved)
     if (file.data) {
       const link = document.createElement("a");
       link.href = file.data;
@@ -363,11 +337,11 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
         alignItems: "center",
         gap: 6,
         padding: isSmall ? "3px 8px" : "5px 10px",
-        background: "#F0F9FF",
-        border: "1px solid #BAE6FD",
+        background: t.infoBg,
+        border: `1px solid ${t.infoBorder}`,
         borderRadius: 6,
         fontSize: isSmall ? 10.5 : 11.5,
-        color: "#0369A1",
+        color: t.info,
         maxWidth: "100%",
         opacity: isDownloading ? 0.6 : 1,
       }}
@@ -375,10 +349,7 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
       {isDownloading ? (
         <Loader2
           size={isSmall ? 11 : 13}
-          style={{
-            flexShrink: 0,
-            animation: "spin 1s linear infinite",
-          }}
+          style={{ flexShrink: 0, animation: "spin 1s linear infinite" }}
         />
       ) : (
         <FileIcon size={isSmall ? 11 : 13} style={{ flexShrink: 0 }} />
@@ -399,7 +370,7 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
         {isDownloading ? "Downloading..." : file.name}
       </span>
       {!isSmall && file.size && (
-        <span style={{ color: "#64748B", fontSize: 10 }}>
+        <span style={{ color: t.textMuted, fontSize: 10 }}>
           ({formatFileSize(file.size)})
         </span>
       )}
@@ -415,8 +386,8 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
             height: 16,
             borderRadius: 3,
             border: "none",
-            background: "rgba(220,38,38,0.1)",
-            color: "#DC2626",
+            background: t.dangerBgSubtle,
+            color: t.danger,
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
@@ -443,6 +414,7 @@ function NoteEditor({
   showToast,
   isSaving = false,
 }) {
+  const { t } = useTheme();
   const [text, setText] = useState(initialText || "");
   const [file, setFile] = useState(initialFile);
   const [isUploading, setIsUploading] = useState(false);
@@ -493,6 +465,22 @@ function NoteEditor({
 
   const isDisabled = isSaving || isUploading;
 
+  const btnStyle = {
+    height: 28,
+    padding: "0 10px",
+    borderRadius: 6,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 11,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
+
   return (
     <div
       onClick={(e) => e.stopPropagation()}
@@ -506,12 +494,9 @@ function NoteEditor({
               disabled={isDisabled}
               style={{
                 ...btnStyle,
-                height: 28,
-                fontSize: 11,
-                padding: "0 10px",
-                color: "#0369A1",
-                borderColor: "#BAE6FD",
-                background: "#F0F9FF",
+                color: t.info,
+                borderColor: t.infoBorder,
+                background: t.infoBg,
                 opacity: isDisabled ? 0.6 : 1,
                 cursor: isDisabled ? "not-allowed" : "pointer",
               }}
@@ -521,7 +506,7 @@ function NoteEditor({
                   <Loader2
                     size={11}
                     style={{ animation: "spin 1s linear infinite" }}
-                  />
+                  />{" "}
                   Uploading...
                 </>
               ) : (
@@ -555,14 +540,19 @@ function NoteEditor({
         rows={4}
         disabled={isDisabled}
         style={{
-          ...inputStyle,
-          height: "auto",
+          width: "100%",
           minHeight: 80,
-          resize: "vertical",
-          paddingTop: 8,
+          border: `1px solid ${t.borderStrong}`,
+          borderRadius: 6,
+          padding: "8px 10px",
+          fontFamily: "Sora,sans-serif",
           fontSize: 12,
           lineHeight: 1.5,
-          background: isDisabled ? "#F8FAFC" : "#fff",
+          outline: "none",
+          boxSizing: "border-box",
+          resize: "vertical",
+          background: isDisabled ? t.bgInputDisabled : t.bgInput,
+          color: t.textPrimary,
         }}
       />
 
@@ -572,8 +562,6 @@ function NoteEditor({
           disabled={isDisabled}
           style={{
             ...btnStyle,
-            height: 28,
-            fontSize: 11,
             opacity: isDisabled ? 0.6 : 1,
             cursor: isDisabled ? "not-allowed" : "pointer",
           }}
@@ -585,11 +573,9 @@ function NoteEditor({
           disabled={!text.trim() || isDisabled}
           style={{
             ...btnStyle,
-            height: 28,
-            fontSize: 11,
-            background: text.trim() && !isDisabled ? "#1D4ED8" : "#F1F5F9",
-            color: text.trim() && !isDisabled ? "#fff" : "#94A3B8",
-            borderColor: text.trim() && !isDisabled ? "#1D4ED8" : "#E2E8F0",
+            background: text.trim() && !isDisabled ? t.primary : t.bgMuted,
+            color: text.trim() && !isDisabled ? t.textInverse : t.textFaint,
+            borderColor: text.trim() && !isDisabled ? t.primary : t.border,
             cursor: text.trim() && !isDisabled ? "pointer" : "not-allowed",
           }}
         >
@@ -598,7 +584,7 @@ function NoteEditor({
               <Loader2
                 size={11}
                 style={{ animation: "spin 1s linear infinite" }}
-              />
+              />{" "}
               Saving...
             </>
           ) : (
@@ -616,6 +602,7 @@ function NoteEditor({
    Note Display
    ═══════════════════════════════════════════════════════ */
 function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
+  const { t } = useTheme();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {
@@ -659,10 +646,10 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
               width: 22,
               height: 22,
               borderRadius: 4,
-              border: `1px solid ${copied ? "#86EFAC" : "#E2E8F0"}`,
-              background: copied ? "#DCFCE7" : "#fff",
+              border: `1px solid ${copied ? t.successBorder : t.border}`,
+              background: copied ? t.successBg : t.bgCard,
               cursor: "pointer",
-              color: copied ? "#15803D" : "#64748B",
+              color: copied ? t.success : t.textMuted,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -683,10 +670,10 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
                   width: 22,
                   height: 22,
                   borderRadius: 4,
-                  border: "1px solid #E2E8F0",
-                  background: "#fff",
+                  border: `1px solid ${t.border}`,
+                  background: t.bgCard,
                   cursor: "pointer",
-                  color: "#64748B",
+                  color: t.textMuted,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -705,10 +692,10 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
                   width: 22,
                   height: 22,
                   borderRadius: 4,
-                  border: "1px solid #FCA5A5",
-                  background: "#FEF2F2",
+                  border: `1px solid ${t.dangerBorder}`,
+                  background: t.dangerBgSubtle,
                   cursor: "pointer",
-                  color: "#EF4444",
+                  color: t.danger,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -725,7 +712,7 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
       <div
         style={{
           fontSize: 12,
-          color: "#0F172A",
+          color: t.textPrimary,
           lineHeight: 1.5,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
@@ -742,7 +729,7 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
         <div
           style={{
             fontSize: 9.5,
-            color: "#94A3B8",
+            color: t.textFaint,
             display: "flex",
             alignItems: "center",
             gap: 4,
@@ -754,8 +741,8 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
               width: 14,
               height: 14,
               borderRadius: "50%",
-              background: "#DBEAFE",
-              color: "#1D4ED8",
+              background: t.primaryBg,
+              color: t.primary,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -778,9 +765,9 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
             alignItems: "center",
             gap: 4,
             padding: "2px 6px",
-            background: "#F1F5F9",
-            color: "#64748B",
-            border: "1px solid #CBD5E1",
+            background: t.bgMuted,
+            color: t.textMuted,
+            border: `1px solid ${t.borderStrong}`,
             borderRadius: 4,
             fontSize: 9.5,
             fontWeight: 600,
@@ -794,7 +781,6 @@ function NoteDisplay({ note, canEdit, isPastSnapshot, onEdit, onDelete }) {
     </div>
   );
 }
-
 /* ═══════════════════════════════════════════════════════
    Confirm Delete Modal
    ═══════════════════════════════════════════════════════ */
@@ -805,13 +791,31 @@ function ConfirmDeleteModal({
   onConfirm,
   isDeleting = false,
 }) {
+  const { t } = useTheme();
+
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
+
   return (
     <div
       onClick={(e) => !isDeleting && e.target === e.currentTarget && onClose()}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1001,
         display: "flex",
         alignItems: "center",
@@ -821,12 +825,14 @@ function ConfirmDeleteModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 12,
           padding: 20,
           width: "100%",
           maxWidth: 400,
           fontFamily: "Sora,sans-serif",
+          color: t.textPrimary,
+          boxShadow: t.shadowXl,
         }}
       >
         <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -835,8 +841,8 @@ function ConfirmDeleteModal({
               width: 40,
               height: 40,
               borderRadius: 8,
-              background: "#FEF2F2",
-              color: "#DC2626",
+              background: t.dangerBgSubtle,
+              color: t.danger,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -846,10 +852,12 @@ function ConfirmDeleteModal({
             <AlertTriangle size={18} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
               {title}
             </div>
-            <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 4 }}>
+            <div style={{ fontSize: 11.5, color: t.textMuted, marginTop: 4 }}>
               {message}
             </div>
           </div>
@@ -871,9 +879,9 @@ function ConfirmDeleteModal({
             disabled={isDeleting}
             style={{
               ...btnStyle,
-              background: "#DC2626",
-              color: "#fff",
-              borderColor: "#DC2626",
+              background: t.danger,
+              color: t.textInverse,
+              borderColor: t.danger,
               opacity: isDeleting ? 0.7 : 1,
               cursor: isDeleting ? "not-allowed" : "pointer",
             }}
@@ -883,7 +891,7 @@ function ConfirmDeleteModal({
                 <Loader2
                   size={13}
                   style={{ animation: "spin 1s linear infinite" }}
-                />
+                />{" "}
                 Deleting...
               </>
             ) : (
@@ -907,9 +915,40 @@ function AddSnapshotModal({
   onConfirm,
   isSaving = false,
 }) {
+  const { t } = useTheme();
   const [date, setDate] = useState(todayISO());
   const [label, setLabel] = useState("");
   const [error, setError] = useState("");
+
+  const inputStyle = {
+    width: "100%",
+    height: 34,
+    border: `1px solid ${t.borderStrong}`,
+    borderRadius: 6,
+    background: t.bgInput,
+    color: t.textPrimary,
+    padding: "0 10px",
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    boxSizing: "border-box",
+    outline: "none",
+  };
+
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
 
   const handleSubmit = () => {
     if (!date) return setError("Please select a date");
@@ -924,7 +963,7 @@ function AddSnapshotModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -934,11 +973,14 @@ function AddSnapshotModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 12,
           width: "100%",
           maxWidth: 420,
           fontFamily: "Sora,sans-serif",
+          color: t.textPrimary,
+          boxShadow: t.shadowXl,
+          overflow: "hidden",
         }}
       >
         <div
@@ -947,8 +989,8 @@ function AddSnapshotModal({
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#F8FAFC",
+            borderBottom: `1px solid ${t.border}`,
+            background: t.bgSubtle,
           }}
         >
           <div
@@ -956,8 +998,8 @@ function AddSnapshotModal({
               width: 36,
               height: 36,
               borderRadius: 9,
-              background: "#DBEAFE",
-              color: "#1D4ED8",
+              background: t.primaryBg,
+              color: t.primary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -966,8 +1008,12 @@ function AddSnapshotModal({
             <Calendar size={18} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>Add Update Date</div>
-            <div style={{ fontSize: 11.5, color: "#64748B", marginTop: 2 }}>
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
+              Add Update Date
+            </div>
+            <div style={{ fontSize: 11.5, color: t.textMuted, marginTop: 2 }}>
               Create a new column
             </div>
           </div>
@@ -977,6 +1023,7 @@ function AddSnapshotModal({
             style={{
               background: "none",
               border: "none",
+              color: t.textFaint,
               cursor: isSaving ? "not-allowed" : "pointer",
               opacity: isSaving ? 0.5 : 1,
             }}
@@ -991,11 +1038,11 @@ function AddSnapshotModal({
               display: "block",
               fontSize: 11,
               fontWeight: 600,
-              color: "#64748B",
+              color: t.textMuted,
               marginBottom: 6,
             }}
           >
-            Date <span style={{ color: "#EF4444" }}>*</span>
+            Date <span style={{ color: t.danger }}>*</span>
           </label>
           <input
             type="date"
@@ -1013,7 +1060,7 @@ function AddSnapshotModal({
               display: "block",
               fontSize: 11,
               fontWeight: 600,
-              color: "#64748B",
+              color: t.textMuted,
               marginBottom: 6,
               marginTop: 14,
             }}
@@ -1034,11 +1081,11 @@ function AddSnapshotModal({
               style={{
                 marginTop: 10,
                 padding: "8px 10px",
-                background: "#FEF2F2",
-                border: "1px solid #FCA5A5",
+                background: t.dangerBgSubtle,
+                border: `1px solid ${t.dangerBorder}`,
                 borderRadius: 6,
                 fontSize: 11.5,
-                color: "#DC2626",
+                color: t.danger,
               }}
             >
               {error}
@@ -1049,11 +1096,11 @@ function AddSnapshotModal({
         <div
           style={{
             padding: "12px 20px 16px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
           }}
         >
           <button onClick={onClose} disabled={isSaving} style={btnStyle}>
@@ -1064,9 +1111,9 @@ function AddSnapshotModal({
             disabled={isSaving}
             style={{
               ...btnStyle,
-              background: "#1D4ED8",
-              color: "#fff",
-              borderColor: "#1D4ED8",
+              background: t.primary,
+              color: t.textInverse,
+              borderColor: t.primary,
               opacity: isSaving ? 0.7 : 1,
             }}
           >
@@ -1075,7 +1122,7 @@ function AddSnapshotModal({
                 <Loader2
                   size={13}
                   style={{ animation: "spin 1s linear infinite" }}
-                />
+                />{" "}
                 Adding...
               </>
             ) : (
@@ -1099,6 +1146,7 @@ function AddCategoryModal({
   onConfirm,
   isSaving = false,
 }) {
+  const { t } = useTheme();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const inputRef = useRef();
@@ -1106,6 +1154,36 @@ function AddCategoryModal({
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
+
+  const inputStyle = {
+    width: "100%",
+    height: 34,
+    border: `1px solid ${t.borderStrong}`,
+    borderRadius: 6,
+    background: t.bgInput,
+    color: t.textPrimary,
+    padding: "0 10px",
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    boxSizing: "border-box",
+    outline: "none",
+  };
+
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
 
   const handleSubmit = () => {
     const trimmed = name.trim();
@@ -1125,7 +1203,7 @@ function AddCategoryModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -1135,11 +1213,14 @@ function AddCategoryModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 12,
           width: "100%",
           maxWidth: 420,
           fontFamily: "Sora,sans-serif",
+          color: t.textPrimary,
+          boxShadow: t.shadowXl,
+          overflow: "hidden",
         }}
       >
         <div
@@ -1148,8 +1229,8 @@ function AddCategoryModal({
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#F8FAFC",
+            borderBottom: `1px solid ${t.border}`,
+            background: t.bgSubtle,
           }}
         >
           <div
@@ -1157,8 +1238,8 @@ function AddCategoryModal({
               width: 36,
               height: 36,
               borderRadius: 9,
-              background: "#EDE9FE",
-              color: "#7C3AED",
+              background: t.violetBg,
+              color: t.violet,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1167,7 +1248,11 @@ function AddCategoryModal({
             <ClipboardList size={18} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>Add Category</div>
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
+              Add Category
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -1175,6 +1260,7 @@ function AddCategoryModal({
             style={{
               background: "none",
               border: "none",
+              color: t.textFaint,
               cursor: isSaving ? "not-allowed" : "pointer",
               opacity: isSaving ? 0.5 : 1,
             }}
@@ -1189,11 +1275,11 @@ function AddCategoryModal({
               display: "block",
               fontSize: 11,
               fontWeight: 600,
-              color: "#64748B",
+              color: t.textMuted,
               marginBottom: 6,
             }}
           >
-            Category Name <span style={{ color: "#EF4444" }}>*</span>
+            Category Name <span style={{ color: t.danger }}>*</span>
           </label>
           <input
             ref={inputRef}
@@ -1214,11 +1300,11 @@ function AddCategoryModal({
               style={{
                 marginTop: 10,
                 padding: "8px 10px",
-                background: "#FEF2F2",
-                border: "1px solid #FCA5A5",
+                background: t.dangerBgSubtle,
+                border: `1px solid ${t.dangerBorder}`,
                 borderRadius: 6,
                 fontSize: 11.5,
-                color: "#DC2626",
+                color: t.danger,
               }}
             >
               {error}
@@ -1229,11 +1315,11 @@ function AddCategoryModal({
         <div
           style={{
             padding: "12px 20px 16px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
           }}
         >
           <button onClick={onClose} disabled={isSaving} style={btnStyle}>
@@ -1244,9 +1330,9 @@ function AddCategoryModal({
             disabled={isSaving}
             style={{
               ...btnStyle,
-              background: "#7C3AED",
-              color: "#fff",
-              borderColor: "#7C3AED",
+              background: t.violet,
+              color: t.textInverse,
+              borderColor: t.violet,
               opacity: isSaving ? 0.7 : 1,
             }}
           >
@@ -1255,7 +1341,7 @@ function AddCategoryModal({
                 <Loader2
                   size={13}
                   style={{ animation: "spin 1s linear infinite" }}
-                />
+                />{" "}
                 Adding...
               </>
             ) : (
@@ -1274,6 +1360,7 @@ function AddCategoryModal({
    Category Name Editor
    ═══════════════════════════════════════════════════════ */
 function CategoryNameEditor({ value, onSave, onCancel }) {
+  const { t } = useTheme();
   const [text, setText] = useState(value);
   const inputRef = useRef();
 
@@ -1295,7 +1382,20 @@ function CategoryNameEditor({ value, onSave, onCancel }) {
         if (e.key === "Enter") e.target.blur();
         if (e.key === "Escape") onCancel();
       }}
-      style={{ ...inputStyle, height: 26, fontSize: 12, fontWeight: 600 }}
+      style={{
+        width: "100%",
+        height: 26,
+        border: `1px solid ${t.borderStrong}`,
+        borderRadius: 6,
+        background: t.bgInput,
+        color: t.textPrimary,
+        padding: "0 10px",
+        fontFamily: "Sora,sans-serif",
+        fontSize: 12,
+        fontWeight: 600,
+        boxSizing: "border-box",
+        outline: "none",
+      }}
     />
   );
 }
@@ -1315,6 +1415,7 @@ function UpdateCell({
   currentUserId,
   isSaving,
 }) {
+  const { t } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [localDeleting, setLocalDeleting] = useState(false);
@@ -1323,14 +1424,9 @@ function UpdateCell({
 
   const handleSave = async (data) => {
     try {
-      await onSaveNote({
-        text: data.text,
-        file: data.file,
-      });
+      await onSaveNote({ text: data.text, file: data.file });
       setIsEditing(false);
-    } catch (err) {
-      // Keep editor open on error, error toast already shown
-    }
+    } catch (err) {}
   };
 
   const handleDelete = async () => {
@@ -1339,7 +1435,6 @@ function UpdateCell({
       await onDeleteNote();
       setConfirmDelete(false);
     } catch (err) {
-      // Error toast already shown
     } finally {
       setLocalDeleting(false);
     }
@@ -1351,14 +1446,20 @@ function UpdateCell({
     }
   };
 
+  // Alternating row backgrounds
+  const evenBg = t.bgCard;
+  const oddBg = t.bgSubtle;
+  const lockedBg = t.bgSubtle;
+  const hoverBg = t.primaryBgSubtle;
+
   return (
     <>
       <td
         onClick={handleCellClick}
         style={{
           padding: "10px 12px",
-          borderBottom: "1px solid #F1F5F9",
-          borderRight: "1px solid #E2E8F0",
+          borderBottom: `1px solid ${t.borderSubtle}`,
+          borderRight: `1px solid ${t.border}`,
           verticalAlign: "top",
           cursor:
             canEdit && !isPastSnapshot && !hasNote && !isEditing && !isSaving
@@ -1367,21 +1468,13 @@ function UpdateCell({
           transition: "background .12s",
           minWidth: 240,
           maxWidth: 340,
-          background: isLocked
-            ? "#F8FAFC"
-            : isPastSnapshot
-              ? catIdx % 2 === 0
-                ? "#FAFBFC"
-                : "#F5F7FA"
-              : catIdx % 2 === 0
-                ? "#fff"
-                : "#FAFBFC",
+          background: isLocked ? lockedBg : catIdx % 2 === 0 ? evenBg : oddBg,
           opacity: isLocked ? 0.75 : isPastSnapshot ? 0.92 : 1,
           position: "relative",
         }}
         onMouseEnter={(e) => {
           if (canEdit && !isPastSnapshot && !hasNote && !isEditing) {
-            e.currentTarget.style.background = "#F0F9FF";
+            e.currentTarget.style.background = hoverBg;
           }
           const actions = e.currentTarget.querySelectorAll(".note-actions");
           actions.forEach((el) => (el.style.opacity = "1"));
@@ -1389,7 +1482,7 @@ function UpdateCell({
         onMouseLeave={(e) => {
           if (canEdit && !isPastSnapshot && !hasNote && !isEditing) {
             e.currentTarget.style.background =
-              catIdx % 2 === 0 ? "#fff" : "#FAFBFC";
+              catIdx % 2 === 0 ? evenBg : oddBg;
           }
           const actions = e.currentTarget.querySelectorAll(".note-actions");
           actions.forEach((el) => (el.style.opacity = "0"));
@@ -1419,7 +1512,7 @@ function UpdateCell({
           <div
             style={{
               fontSize: 11,
-              color: "#CBD5E1",
+              color: t.textDisabled,
               fontStyle: "italic",
               textAlign: "center",
               padding: "12px 0",
@@ -1442,7 +1535,7 @@ function UpdateCell({
                 <Loader2
                   size={11}
                   style={{ animation: "spin 1s linear infinite" }}
-                />
+                />{" "}
                 Saving...
               </>
             ) : (
@@ -1473,22 +1566,24 @@ function UpdateCell({
 export default function ProjectUpdatesView({
   projectId,
   currentUserId,
-  projectOwnerId: propsProjectOwnerId, // ← NEW PROP
+  projectOwnerId: propsProjectOwnerId,
   showToast,
   readOnly = false,
   projectName = "",
 }) {
-  // ─── Data State ───
+  const { t } = useTheme();
+
+  // Data state
   const [updates, setUpdates] = useState(null);
   const [projectOwnerId, setProjectOwnerId] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState("viewer");
 
-  // ─── Loading States ───
+  // Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(null);
 
-  // ─── Modal States ───
+  // Modal states
   const [addSnapshotOpen, setAddSnapshotOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
@@ -1496,77 +1591,79 @@ export default function ProjectUpdatesView({
   const [shareCategoryId, setShareCategoryId] = useState(null);
   const [manageSharingOpen, setManageSharingOpen] = useState(false);
 
-  // ─── Per-Action Loading States ───
+  // Per-action loading
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
   const [deletingItem, setDeletingItem] = useState(false);
   const [savingCellKeys, setSavingCellKeys] = useState(new Set());
 
-  // ─── Refs ───
   const abortRef = useRef(null);
   const mountedRef = useRef(true);
 
-  // ─── Cleanup on unmount ───
+  // Themed button style
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
+      if (abortRef.current) abortRef.current.abort();
     };
   }, []);
-  /* ─── Compute the top-level user role ─── */
+
   const computeCurrentUserRole = useCallback((userId, ownerId, categories) => {
     if (!userId || !ownerId) return "viewer";
-
-    // Case-insensitive comparison
-    if (userId.toLowerCase() === ownerId.toLowerCase()) {
-      return "owner";
-    }
-
-    // Check if user is in ANY category's sharedWith
+    if (userId.toLowerCase() === ownerId.toLowerCase()) return "owner";
     const hasAnyShare = categories.some((cat) =>
       (cat.sharedWith || []).some(
         (s) => s.userId?.toLowerCase() === userId.toLowerCase(),
       ),
     );
-
     return hasAnyShare ? "collaborator" : "viewer";
   }, []);
 
-  /* ─── Compute per-category user role ─── */
   const computeCategoryRole = useCallback((category, userId, ownerId) => {
     if (!userId || !ownerId) return "viewer";
-
-    // Owner has access to everything
-    if (userId.toLowerCase() === ownerId.toLowerCase()) {
-      return "owner";
-    }
-
-    // Check if user is in this specific category's sharedWith
+    if (userId.toLowerCase() === ownerId.toLowerCase()) return "owner";
     const isShared = (category.sharedWith || []).some(
       (s) => s.userId?.toLowerCase() === userId.toLowerCase(),
     );
-
     return isShared ? "collaborator" : "viewer";
   }, []);
-  /* ─── Normalize entries from API response ─── */
+
+  function extractFileNameFromKey(key) {
+    if (!key) return "attachment";
+    const parts = key.split("/");
+    const lastPart = parts[parts.length - 1];
+    const underscoreIndex = lastPart.indexOf("_");
+    if (underscoreIndex === -1) return lastPart;
+    return lastPart.substring(underscoreIndex + 1);
+  }
+
   const normalizeEntries = useCallback((entriesArray) => {
     const map = {};
     (entriesArray || []).forEach((entry) => {
       const key = `${entry.categoryId}_${entry.snapshotId}`;
       let note = null;
-
-      if (entry.notes && entry.notes.length > 0) {
-        note = entry.notes[0];
-      } else if (entry.note) {
-        note = entry.note;
-      }
+      if (entry.notes && entry.notes.length > 0) note = entry.notes[0];
+      else if (entry.note) note = entry.note;
 
       if (note) {
-        // ── Convert backend format to frontend format ──
         const normalizedNote = {
           id: note.id || note.noteId,
           categoryId: note.categoryId,
@@ -1576,8 +1673,7 @@ export default function ProjectUpdatesView({
           authorName: note.authorName,
           createdAt: note.createdAt,
           updatedAt: note.updatedAt,
-          noteFile: note.noteFile, // MinIO key
-          // If noteFile exists, build file object for UI
+          noteFile: note.noteFile,
           file: note.noteFile
             ? {
                 name: extractFileNameFromKey(note.noteFile),
@@ -1591,71 +1687,31 @@ export default function ProjectUpdatesView({
     return map;
   }, []);
 
-  // Helper: Extract original filename from MinIO key
-  // e.g. "notes/2026/07/xyz-uuid-site-report.pdf" → "site-report.pdf"
-  /* ─── Extract filename from MinIO key ─── */
-  // Format: "uuid_filename.ext"
-  // e.g. "4e9caede-f0e8-4fd0-b475-907dc38062be_assigneer.png" → "assigneer.png"
-  function extractFileNameFromKey(key) {
-    if (!key) return "attachment";
-
-    // Handle case where key might have folders (e.g., "notes/2026/07/uuid_file.pdf")
-    const parts = key.split("/");
-    const lastPart = parts[parts.length - 1];
-
-    // Split on first underscore to remove UUID prefix
-    const underscoreIndex = lastPart.indexOf("_");
-    if (underscoreIndex === -1) {
-      // No underscore found — return as-is
-      return lastPart;
-    }
-
-    // Return everything after the first underscore
-    return lastPart.substring(underscoreIndex + 1);
-  }
-
-  /* ─── Fetch updates from API ─── */
-  /* ─── Fetch updates from API ─── */
   const fetchUpdates = useCallback(
     async (isInitial = false) => {
       if (!projectId) return;
-
-      // Cancel any in-flight request
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
+      if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
-      if (isInitial) {
-        setIsLoading(true);
-      } else {
-        setIsRefreshing(true);
-      }
+      if (isInitial) setIsLoading(true);
+      else setIsRefreshing(true);
       setLoadError(null);
 
       try {
         const data = await sharingApi.getProjectUpdates(projectId);
-
         if (controller.signal.aborted || !mountedRef.current) return;
 
-        // ── Determine project owner ──
-        // Priority: 1) API response, 2) Prop from parent, 3) Derive from first category
         let ownerId = data.projectOwnerId || propsProjectOwnerId;
-
         if (!ownerId && data.categories?.length > 0) {
-          // Fallback: use createdBy of first category
           ownerId = data.categories[0].createdBy;
         }
 
-        // ── Compute current user role (frontend logic) ──
         const userRole = computeCurrentUserRole(
           currentUserId,
           ownerId,
           data.categories || [],
         );
-
-        // ── Enrich categories with per-category userRole ──
         const enrichedCategories = (data.categories || []).map((cat) => ({
           ...cat,
           userRole: computeCategoryRole(cat, currentUserId, ownerId),
@@ -1668,16 +1724,6 @@ export default function ProjectUpdatesView({
         });
         setProjectOwnerId(ownerId);
         setCurrentUserRole(userRole);
-
-        console.log("🔍 Role computation:", {
-          currentUserId,
-          projectOwnerId: ownerId,
-          currentUserRole: userRole,
-          categoryRoles: enrichedCategories.map((c) => ({
-            name: c.name,
-            role: c.userRole,
-          })),
-        });
       } catch (err) {
         if (err.name === "AbortError" || !mountedRef.current) return;
         setLoadError(err);
@@ -1701,15 +1747,15 @@ export default function ProjectUpdatesView({
       propsProjectOwnerId,
       showToast,
       normalizeEntries,
+      computeCurrentUserRole,
+      computeCategoryRole,
     ],
   );
 
-  /* ─── Initial load ─── */
   useEffect(() => {
     fetchUpdates(true);
   }, [fetchUpdates]);
 
-  /* ─── Optimistic sharing hook ─── */
   const applyCategorySharingUpdate = useCallback((update) => {
     setUpdates((prev) => {
       if (!prev) return prev;
@@ -1724,19 +1770,17 @@ export default function ProjectUpdatesView({
     });
   }, []);
 
-  // ─── Update the hook call ───
   const {
     shareCategory: apiShareCategory,
     bulkUpdate: apiBulkUpdate,
     isOperationPending: isSharingPending,
   } = useOptimisticSharing({
     projectId,
-    currentUserId, // ← ADD THIS
+    currentUserId,
     onUpdate: applyCategorySharingUpdate,
     showToast,
   });
 
-  /* ─── Computed values ─── */
   const categories = updates?.categories || [];
   const snapshots = updates?.snapshots || [];
   const entries = updates?.entries || {};
@@ -1770,14 +1814,9 @@ export default function ProjectUpdatesView({
   const getCellNote = (catId, snapId) =>
     entries[cellKey(catId, snapId)]?.note || null;
 
-  /* ═══════════════════════════════════════════════════════
-     HANDLERS (API-integrated with optimistic updates)
-     ═══════════════════════════════════════════════════════ */
-
-  /* ─── Use Template ─── */
+  // ── All handlers (unchanged logic) ──
   const handleUseTemplate = async () => {
     setLoadingTemplate(true);
-
     const categoriesToCreate = DEFAULT_CATEGORIES.map((name, index) => ({
       id: `temp_cat_${Date.now()}${index}`,
       name,
@@ -1785,28 +1824,21 @@ export default function ProjectUpdatesView({
       sharedWith: [],
       userRole: "owner",
       _pending: true,
-      projectId: projectId,
+      projectId,
     }));
-
-    // Optimistic add
     setUpdates((prev) => ({
       ...prev,
       categories: [...(prev?.categories || []), ...categoriesToCreate],
     }));
-
     try {
       await sharingApi.loadTemplate(projectId, categoriesToCreate);
-
       if (!mountedRef.current) return;
-
-      // Mark all as confirmed
       const confirmedCategories = categoriesToCreate.map((c) => ({
         ...c,
         _pending: false,
         createdAt: new Date().toISOString(),
         createdBy: currentUserId,
       }));
-
       const tempIds = new Set(categoriesToCreate.map((c) => c.id));
       setUpdates((prev) => ({
         ...prev,
@@ -1815,7 +1847,6 @@ export default function ProjectUpdatesView({
           ...confirmedCategories,
         ],
       }));
-
       showToast?.(
         "success",
         "Template loaded",
@@ -1840,11 +1871,9 @@ export default function ProjectUpdatesView({
       if (mountedRef.current) setLoadingTemplate(false);
     }
   };
-  /* ─── Add Snapshot ─── */
+
   const handleAddSnapshot = async ({ date, label }) => {
     setSavingSnapshot(true);
-
-    // Build complete snapshot object with all fields
     const snapshotToCreate = {
       id: `temp_snap_${Date.now()}`,
       date,
@@ -1852,29 +1881,19 @@ export default function ProjectUpdatesView({
       createdAt: new Date().toISOString(),
       createdBy: currentUserId,
       _pending: true,
-      projectId: projectId,
+      projectId,
     };
-
-    // Optimistic add
     setUpdates((prev) => ({
       ...prev,
       snapshots: [...prev.snapshots, snapshotToCreate],
     }));
-
     try {
       const response = await sharingApi.createSnapshot(
         projectId,
         snapshotToCreate,
       );
-
-      console.log("📥 API response for createSnapshot:", response);
-
       if (!mountedRef.current) return;
-
-      // Handle different response shapes defensively
       const created = response?.snapshot || response?.data || response || {};
-
-      // Merge server response with our known data
       const finalSnapshot = {
         id: created.id || snapshotToCreate.id,
         date: created.date || date,
@@ -1882,19 +1901,15 @@ export default function ProjectUpdatesView({
         createdAt: created.createdAt || snapshotToCreate.createdAt,
         createdBy: created.createdBy || currentUserId,
       };
-
-      // Replace temp with real
       setUpdates((prev) => ({
         ...prev,
         snapshots: prev.snapshots.map((s) =>
           s.id === snapshotToCreate.id ? finalSnapshot : s,
         ),
       }));
-
       setAddSnapshotOpen(false);
       showToast?.("success", "Snapshot added", `${formatDate(date)} created.`);
     } catch (err) {
-      // Rollback
       if (mountedRef.current) {
         setUpdates((prev) => ({
           ...prev,
@@ -1911,7 +1926,6 @@ export default function ProjectUpdatesView({
     }
   };
 
-  /* ─── Add Category ─── */
   const handleAddCategory = async (name) => {
     setSavingCategory(true);
     const tempId = `temp_cat_${Date.now()}`;
@@ -1923,27 +1937,20 @@ export default function ProjectUpdatesView({
       userRole: "owner",
       _pending: true,
     };
-
-    // Optimistic add
     setUpdates((prev) => ({
       ...prev,
       categories: [...prev.categories, tempCategory],
     }));
-
     try {
-      // Backend returns true on success, so we just need to know it succeeded
       await sharingApi.createCategory(projectId, {
         id: tempId,
         name,
         order: categories.length,
         sharedWith: [],
         userRole: "owner",
-        projectId: projectId,
+        projectId,
       });
-
       if (!mountedRef.current) return;
-
-      // Build the confirmed category from what we already know
       const confirmedCategory = {
         id: tempId,
         name,
@@ -1952,21 +1959,17 @@ export default function ProjectUpdatesView({
         userRole: "owner",
         createdAt: new Date().toISOString(),
         createdBy: currentUserId,
-        _pending: false, // Remove pending state
+        _pending: false,
       };
-
-      // Replace temp with confirmed
       setUpdates((prev) => ({
         ...prev,
         categories: prev.categories.map((c) =>
           c.id === tempId ? confirmedCategory : c,
         ),
       }));
-
       setAddCategoryOpen(false);
       showToast?.("success", "Category added", `"${name}" created.`);
     } catch (err) {
-      // Rollback on failure
       if (mountedRef.current) {
         setUpdates((prev) => ({
           ...prev,
@@ -1983,12 +1986,9 @@ export default function ProjectUpdatesView({
     }
   };
 
-  /* ─── Rename Category ─── */
   const handleRenameCategory = async (categoryId, newName) => {
     const original = categories.find((c) => c.id === categoryId);
     if (!original) return;
-
-    // Optimistic update
     setUpdates((prev) => ({
       ...prev,
       categories: prev.categories.map((c) =>
@@ -1996,7 +1996,6 @@ export default function ProjectUpdatesView({
       ),
     }));
     setEditingCategoryId(null);
-
     try {
       await sharingApi.renameCategory(
         projectId,
@@ -2006,7 +2005,6 @@ export default function ProjectUpdatesView({
       );
       showToast?.("success", "Category renamed", "");
     } catch (err) {
-      // Rollback
       if (mountedRef.current) {
         setUpdates((prev) => ({
           ...prev,
@@ -2019,7 +2017,6 @@ export default function ProjectUpdatesView({
     }
   };
 
-  /* ─── Delete Category ─── */
   const handleDeleteCategory = async (categoryId) => {
     setDeletingItem(true);
     try {
@@ -2045,7 +2042,6 @@ export default function ProjectUpdatesView({
     }
   };
 
-  /* ─── Delete Snapshot ─── */
   const handleDeleteSnapshot = async (snapshotId) => {
     const snapshot = snapshots.find((s) => s.id === snapshotId);
     if (isSnapshotPast(snapshot?.date)) {
@@ -2057,7 +2053,6 @@ export default function ProjectUpdatesView({
       setConfirmDelete(null);
       return;
     }
-
     setDeletingItem(true);
     try {
       await sharingApi.deleteSnapshot(projectId, snapshotId);
@@ -2082,54 +2077,34 @@ export default function ProjectUpdatesView({
     }
   };
 
-  /* ─── Save Note ─── */
   const handleSaveNote = async (catId, snapId, noteData) => {
     const key = cellKey(catId, snapId);
     const existingNote = getCellNote(catId, snapId);
-
-    // ── Detect Update vs Create ──
-    // It's an update if a saved note already exists in this cell
     const isUpdate = existingNote?.id && !existingNote._pending;
-
-    console.log(
-      "🎯 Note operation:",
-      isUpdate ? "UPDATE (PUT)" : "CREATE (POST)",
-      {
-        existingNote,
-      },
-    );
-
     setSavingCellKeys((prev) => new Set([...prev, key]));
 
-    // ── Detect file state ──
-    const isNewFileUpload = !!noteData.file?.data; // Has raw base64 data (fresh upload)
-    const hasExistingFile = !!existingNote?.noteFile;
-
-    // ── Extract Base64 (only for NEW file uploads) ──
+    const isNewFileUpload = !!noteData.file?.data;
     let attachmentBase64 = null;
     let attachmentName = null;
-
     if (isNewFileUpload) {
-      // Strip data URL prefix
       attachmentBase64 = noteData.file.data.includes(",")
         ? noteData.file.data.split(",")[1]
         : noteData.file.data;
       attachmentName = noteData.file.name;
     }
 
-    // ── Build optimistic note for UI ──
     const optimisticNote = {
       id: existingNote?.id || `temp_note_${Date.now()}`,
       categoryId: catId,
       snapshotId: snapId,
       text: noteData.text,
       file: isNewFileUpload
-        ? noteData.file // New upload
+        ? noteData.file
         : noteData.file
-          ? existingNote?.file // Kept existing
-          : null, // Removed
+          ? existingNote?.file
+          : null,
       noteFile: isNewFileUpload
-        ? null // Will be replaced by backend
+        ? null
         : noteData.file
           ? existingNote?.noteFile
           : null,
@@ -2140,7 +2115,6 @@ export default function ProjectUpdatesView({
       _pending: true,
     };
 
-    // ── Build API payload ──
     const apiPayload = {
       id: optimisticNote.id,
       noteId: optimisticNote.id,
@@ -2148,71 +2122,45 @@ export default function ProjectUpdatesView({
       categoryId: catId,
       snapshotId: snapId,
       text: noteData.text,
-      note: noteData.text, // Backend uses "note" field
+      note: noteData.text,
       notedDate:
         existingNote?.notedDate || new Date().toISOString().split("T")[0],
       author: optimisticNote.author,
       authorName: optimisticNote.authorName || null,
     };
-
-    // Only include attachment fields for NEW file uploads
     if (isNewFileUpload) {
       apiPayload.attachmentBase64 = attachmentBase64;
       apiPayload.attachmentName = attachmentName;
     }
 
-    // ── Optimistic UI update ──
     setUpdates((prev) => ({
       ...prev,
-      entries: {
-        ...prev.entries,
-        [key]: { note: optimisticNote },
-      },
+      entries: { ...prev.entries, [key]: { note: optimisticNote } },
     }));
 
     try {
       let response;
-
-      if (isUpdate) {
-        // ── UPDATE (PUT) ──
-        console.log("📤 PUT payload:", apiPayload);
+      if (isUpdate)
         response = await sharingApi.updateNote(
           projectId,
           existingNote.id,
           apiPayload,
         );
-      } else {
-        // ── CREATE (POST) ──
-        console.log("📤 POST payload:", apiPayload);
-        response = await sharingApi.createNote(projectId, apiPayload);
-      }
-
-      console.log(
-        `📥 Response for ${isUpdate ? "UPDATE" : "CREATE"}:`,
-        response,
-      );
-
+      else response = await sharingApi.createNote(projectId, apiPayload);
       if (!mountedRef.current) return response;
 
-      // ── Handle response ──
       const isSuccess =
         response === true ||
         response?.success === true ||
         (typeof response === "object" && response !== null);
+      if (!isSuccess) throw new Error("Note save failed on server");
 
-      if (!isSuccess) {
-        throw new ApiError("Note save failed on server", 500, "SAVE_FAILED");
-      }
-
-      // ── Build final note (backend returns boolean, so we use optimistic + refetch) ──
       let finalNote = { ...optimisticNote, _pending: false };
-
       if (
         typeof response === "object" &&
         response !== null &&
         !("success" in response)
       ) {
-        // Backend returned actual note data
         const savedNote = response?.note || response?.data || response;
         finalNote = {
           ...optimisticNote,
@@ -2229,31 +2177,21 @@ export default function ProjectUpdatesView({
           updatedAt: savedNote.updatedAt || optimisticNote.updatedAt,
         };
       } else if (isNewFileUpload) {
-        // Backend returned boolean, but we uploaded a file — refetch to get new MinIO key
-        console.log("📥 Refetching to get new MinIO key...");
         setTimeout(() => fetchUpdates(false), 300);
       }
 
       setUpdates((prev) => ({
         ...prev,
-        entries: {
-          ...prev.entries,
-          [key]: { note: finalNote },
-        },
+        entries: { ...prev.entries, [key]: { note: finalNote } },
       }));
-
       showToast?.("success", isUpdate ? "Note updated" : "Note created", "");
       return finalNote;
     } catch (err) {
-      // ── Rollback ──
       if (mountedRef.current) {
         setUpdates((prev) => {
           const newEntries = { ...prev.entries };
-          if (existingNote) {
-            newEntries[key] = { note: existingNote };
-          } else {
-            delete newEntries[key];
-          }
+          if (existingNote) newEntries[key] = { note: existingNote };
+          else delete newEntries[key];
           return { ...prev, entries: newEntries };
         });
       }
@@ -2274,36 +2212,26 @@ export default function ProjectUpdatesView({
     }
   };
 
-  /* ─── Delete Note ─── */
   const handleDeleteNote = async (catId, snapId) => {
     const key = cellKey(catId, snapId);
     const existingNote = getCellNote(catId, snapId);
     if (!existingNote) return;
-
     setSavingCellKeys((prev) => new Set([...prev, key]));
-
-    // Optimistic remove
     setUpdates((prev) => {
       const newEntries = { ...prev.entries };
       delete newEntries[key];
       return { ...prev, entries: newEntries };
     });
-
     try {
-      // If it's a temp note (never saved to server), just remove locally
       if (!String(existingNote.id).startsWith("temp_")) {
         await sharingApi.deleteNote(projectId, existingNote.id);
       }
       showToast?.("success", "Note deleted", "");
     } catch (err) {
-      // Rollback
       if (mountedRef.current) {
         setUpdates((prev) => ({
           ...prev,
-          entries: {
-            ...prev.entries,
-            [key]: { note: existingNote },
-          },
+          entries: { ...prev.entries, [key]: { note: existingNote } },
         }));
       }
       showToast?.("error", "Delete failed", err.userMessage || err.message);
@@ -2319,64 +2247,48 @@ export default function ProjectUpdatesView({
     }
   };
 
-  // ─── Update handleShareCategory ───
   const handleShareCategory = async (categoryId, newSharedWith) => {
     const category = categories.find((c) => c.id === categoryId);
     if (!category) return;
-
     const userIds = newSharedWith.map((u) => u.userId);
-
     try {
       await apiShareCategory(
         categoryId,
         userIds,
         category.sharedWith,
-        category.name, // ← Pass category name for full payload
+        category.name,
       );
       setShareCategoryId(null);
-    } catch (err) {
-      // Error already shown by hook
-    }
+    } catch (err) {}
   };
-  // ─── Update handleBulkShareUpdate ───
+
   const handleBulkShareUpdate = async (sharingResult) => {
     try {
       await apiBulkUpdate(sharingResult, categories);
       setManageSharingOpen(false);
-    } catch (err) {
-      // Error already shown by hook
-    }
+    } catch (err) {}
   };
 
-  /* ═══════════════════════════════════════════════════════
-     RENDER
-     ═══════════════════════════════════════════════════════ */
-
-  // Initial loading
-  if (isLoading && !updates) {
-    return <LoadingSkeleton />;
-  }
-
-  // Load error (no cached data)
-  if (loadError && !updates) {
+  // ══ RENDER ══
+  if (isLoading && !updates) return <LoadingSkeleton />;
+  if (loadError && !updates)
     return <ErrorState error={loadError} onRetry={() => fetchUpdates(true)} />;
-  }
-
   if (!updates) return null;
 
   const isEmpty = categories.length === 0 && snapshots.length === 0;
 
-  /* ─── Empty State ─── */
+  // Empty state
   if (isEmpty) {
     return (
       <div
         style={{
-          background: "#fff",
-          border: "1px dashed #CBD5E1",
+          background: t.bgCard,
+          border: `1px dashed ${t.borderDashed}`,
           borderRadius: 12,
           padding: "60px 20px",
           textAlign: "center",
           fontFamily: "Sora,sans-serif",
+          color: t.textPrimary,
         }}
       >
         <div
@@ -2384,8 +2296,8 @@ export default function ProjectUpdatesView({
             width: 64,
             height: 64,
             borderRadius: "50%",
-            background: isOwner ? "#FEF3C7" : "#F1F5F9",
-            color: isOwner ? "#B45309" : "#94A3B8",
+            background: isOwner ? t.warningBg : t.bgMuted,
+            color: isOwner ? t.warning : t.textFaint,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2394,13 +2306,20 @@ export default function ProjectUpdatesView({
         >
           {isOwner ? <ClipboardList size={30} /> : <Lock size={30} />}
         </div>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: 16,
+            marginBottom: 6,
+            color: t.textPrimary,
+          }}
+        >
           {isOwner ? "Track Project Progress Updates" : "No Updates Available"}
         </div>
         <div
           style={{
             fontSize: 12.5,
-            color: "#64748B",
+            color: t.textMuted,
             maxWidth: 460,
             margin: "0 auto 20px",
           }}
@@ -2417,10 +2336,10 @@ export default function ProjectUpdatesView({
               disabled={loadingTemplate}
               style={{
                 ...btnStyle,
-                background: "#1D4ED8",
-                color: "#fff",
-                borderColor: "#1D4ED8",
                 height: 38,
+                background: t.primary,
+                color: t.textInverse,
+                borderColor: t.primary,
                 opacity: loadingTemplate ? 0.7 : 1,
                 cursor: loadingTemplate ? "not-allowed" : "pointer",
               }}
@@ -2430,7 +2349,7 @@ export default function ProjectUpdatesView({
                   <Loader2
                     size={14}
                     style={{ animation: "spin 1s linear infinite" }}
-                  />
+                  />{" "}
                   Loading...
                 </>
               ) : (
@@ -2465,10 +2384,15 @@ export default function ProjectUpdatesView({
     );
   }
 
-  /* ─── Main Matrix View ─── */
+  // Main matrix view
   return (
-    <div style={{ fontFamily: "Sora,sans-serif", position: "relative" }}>
-      {/* Refresh indicator */}
+    <div
+      style={{
+        fontFamily: "Sora,sans-serif",
+        position: "relative",
+        color: t.textPrimary,
+      }}
+    >
       {isRefreshing && (
         <div
           style={{
@@ -2477,16 +2401,16 @@ export default function ProjectUpdatesView({
             right: 0,
             zIndex: 10,
             padding: "4px 10px",
-            background: "#F0F9FF",
-            border: "1px solid #BAE6FD",
+            background: t.infoBg,
+            border: `1px solid ${t.infoBorder}`,
             borderRadius: 999,
             fontSize: 10.5,
-            color: "#0369A1",
+            color: t.info,
             fontWeight: 600,
             display: "flex",
             alignItems: "center",
             gap: 5,
-            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            boxShadow: t.shadowSm,
           }}
         >
           <Loader2 size={11} style={{ animation: "spin 1s linear infinite" }} />
@@ -2497,8 +2421,8 @@ export default function ProjectUpdatesView({
       {/* Toolbar */}
       <div
         style={{
-          background: "#fff",
-          border: "1px solid #E2E8F0",
+          background: t.bgCard,
+          border: `1px solid ${t.border}`,
           borderRadius: 12,
           padding: "12px 18px",
           marginBottom: 12,
@@ -2506,7 +2430,7 @@ export default function ProjectUpdatesView({
           alignItems: "center",
           gap: 12,
           flexWrap: "wrap",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          boxShadow: t.shadowSm,
         }}
       >
         <div
@@ -2516,12 +2440,13 @@ export default function ProjectUpdatesView({
             gap: 7,
             fontWeight: 700,
             fontSize: 13.5,
+            color: t.textPrimary,
           }}
         >
-          <ClipboardList size={16} color="#B45309" />
+          <ClipboardList size={16} color={t.warning} />
           Progress Updates
         </div>
-        <div style={{ fontSize: 11.5, color: "#64748B" }}>
+        <div style={{ fontSize: 11.5, color: t.textMuted }}>
           {categories.length} categor{categories.length !== 1 ? "ies" : "y"} ·{" "}
           {snapshots.length} snapshot{snapshots.length !== 1 ? "s" : ""} ·{" "}
           {totalNotes} note{totalNotes !== 1 ? "s" : ""}
@@ -2533,11 +2458,7 @@ export default function ProjectUpdatesView({
               onClick={() => fetchUpdates(false)}
               disabled={isRefreshing}
               title="Refresh"
-              style={{
-                ...btnStyle,
-                height: 32,
-                opacity: isRefreshing ? 0.6 : 1,
-              }}
+              style={{ ...btnStyle, opacity: isRefreshing ? 0.6 : 1 }}
             >
               <RefreshCw
                 size={13}
@@ -2554,10 +2475,9 @@ export default function ProjectUpdatesView({
                   onClick={() => setAddCategoryOpen(true)}
                   style={{
                     ...btnStyle,
-                    height: 32,
-                    background: "#EDE9FE",
-                    color: "#7C3AED",
-                    borderColor: "#DDD6FE",
+                    background: t.violetBg,
+                    color: t.violet,
+                    borderColor: t.violetBorder,
                   }}
                 >
                   <Plus size={13} /> Add Category
@@ -2567,10 +2487,9 @@ export default function ProjectUpdatesView({
                     onClick={() => setManageSharingOpen(true)}
                     style={{
                       ...btnStyle,
-                      height: 32,
-                      background: "#F0FDF4",
-                      color: "#15803D",
-                      borderColor: "#86EFAC",
+                      background: t.successBgSubtle,
+                      color: t.success,
+                      borderColor: t.successBorder,
                     }}
                   >
                     <Users size={13} /> Manage Sharing
@@ -2583,10 +2502,9 @@ export default function ProjectUpdatesView({
                 onClick={() => setAddSnapshotOpen(true)}
                 style={{
                   ...btnStyle,
-                  height: 32,
-                  background: "#1D4ED8",
-                  color: "#fff",
-                  borderColor: "#1D4ED8",
+                  background: t.primary,
+                  color: t.textInverse,
+                  borderColor: t.primary,
                 }}
               >
                 <Calendar size={13} /> Add Update
@@ -2596,20 +2514,20 @@ export default function ProjectUpdatesView({
         )}
       </div>
 
-      {/* Role Banner */}
+      {/* Role banner */}
       {!readOnly && !isOwner && (
         <div
           style={{
             padding: "10px 14px",
-            background: editableCount > 0 ? "#F0F9FF" : "#FFFBEB",
-            border: `1px solid ${editableCount > 0 ? "#BAE6FD" : "#FCD34D"}`,
+            background: editableCount > 0 ? t.infoBg : t.warningBgSubtle,
+            border: `1px solid ${editableCount > 0 ? t.infoBorder : t.warningBorder}`,
             borderRadius: 8,
             marginBottom: 12,
             display: "flex",
             alignItems: "center",
             gap: 8,
             fontSize: 12,
-            color: editableCount > 0 ? "#0369A1" : "#92400E",
+            color: editableCount > 0 ? t.info : t.warning,
           }}
         >
           {editableCount > 0 ? (
@@ -2637,19 +2555,15 @@ export default function ProjectUpdatesView({
       {/* Matrix */}
       <div
         style={{
-          background: "#fff",
-          border: "1px solid #E2E8F0",
+          background: t.bgCard,
+          border: `1px solid ${t.border}`,
           borderRadius: 12,
           overflow: "hidden",
         }}
       >
         <div style={{ overflowX: "auto" }}>
           <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              minWidth: 600,
-            }}
+            style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}
           >
             <thead>
               <tr>
@@ -2658,8 +2572,8 @@ export default function ProjectUpdatesView({
                     width: 240,
                     minWidth: 240,
                     padding: "12px 16px",
-                    background: "#1E40AF",
-                    color: "#fff",
+                    background: t.primary,
+                    color: t.textInverse,
                     fontWeight: 700,
                     fontSize: 11.5,
                     letterSpacing: "0.5px",
@@ -2681,8 +2595,8 @@ export default function ProjectUpdatesView({
                       style={{
                         minWidth: 240,
                         padding: "10px 14px",
-                        background: isPast ? "#334155" : "#1E40AF",
-                        color: "#fff",
+                        background: isPast ? t.textSecondary : t.primary,
+                        color: t.textInverse,
                         fontWeight: 700,
                         fontSize: 12,
                         textAlign: "center",
@@ -2701,9 +2615,7 @@ export default function ProjectUpdatesView({
                         {snap._pending ? (
                           <Loader2
                             size={11}
-                            style={{
-                              animation: "spin 1s linear infinite",
-                            }}
+                            style={{ animation: "spin 1s linear infinite" }}
                           />
                         ) : isPast ? (
                           <Lock size={11} style={{ opacity: 0.8 }} />
@@ -2750,7 +2662,7 @@ export default function ProjectUpdatesView({
                                 border: "1px solid rgba(255,255,255,0.3)",
                                 background: "rgba(255,255,255,0.15)",
                                 cursor: "pointer",
-                                color: "#fff",
+                                color: t.textInverse,
                                 display: "inline-flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -2803,18 +2715,18 @@ export default function ProjectUpdatesView({
                     <td
                       style={{
                         padding: "12px 16px",
-                        borderBottom: "1px solid #F1F5F9",
-                        borderRight: "1px solid #E2E8F0",
+                        borderBottom: `1px solid ${t.borderSubtle}`,
+                        borderRight: `1px solid ${t.border}`,
                         fontSize: 12.5,
                         fontWeight: 600,
-                        color: isLocked ? "#94A3B8" : "#0F172A",
+                        color: isLocked ? t.textFaint : t.textPrimary,
                         position: "sticky",
                         left: 0,
                         background: isLocked
-                          ? "#F8FAFC"
+                          ? t.bgSubtle
                           : catIdx % 2 === 0
-                            ? "#fff"
-                            : "#FAFBFC",
+                            ? t.bgCard
+                            : t.bgSubtle,
                         zIndex: 1,
                         verticalAlign: "top",
                         opacity: isLocked ? 0.75 : 1,
@@ -2833,11 +2745,11 @@ export default function ProjectUpdatesView({
                             size={12}
                             style={{
                               animation: "spin 1s linear infinite",
-                              color: "#1D4ED8",
+                              color: t.primary,
                             }}
                           />
                         ) : isLocked ? (
-                          <Lock size={12} color="#94A3B8" />
+                          <Lock size={12} color={t.textFaint} />
                         ) : null}
 
                         {editingCategoryId === cat.id ? (
@@ -2864,17 +2776,13 @@ export default function ProjectUpdatesView({
                                   padding: "2px 6px",
                                   background:
                                     role === "collaborator"
-                                      ? "#DBEAFE"
-                                      : "#DCFCE7",
+                                      ? t.primaryBg
+                                      : t.successBg,
                                   color:
                                     role === "collaborator"
-                                      ? "#1D4ED8"
-                                      : "#15803D",
-                                  border: `1px solid ${
-                                    role === "collaborator"
-                                      ? "#93C5FD"
-                                      : "#86EFAC"
-                                  }`,
+                                      ? t.primary
+                                      : t.success,
+                                  border: `1px solid ${role === "collaborator" ? t.primaryBorder : t.successBorder}`,
                                   borderRadius: 999,
                                   fontSize: 9.5,
                                   fontWeight: 700,
@@ -2894,10 +2802,10 @@ export default function ProjectUpdatesView({
                                     width: 22,
                                     height: 22,
                                     borderRadius: 4,
-                                    border: "1px solid #86EFAC",
-                                    background: "#F0FDF4",
+                                    border: `1px solid ${t.successBorder}`,
+                                    background: t.successBgSubtle,
                                     cursor: "pointer",
-                                    color: "#15803D",
+                                    color: t.success,
                                     display: "inline-flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -2912,10 +2820,10 @@ export default function ProjectUpdatesView({
                                     width: 22,
                                     height: 22,
                                     borderRadius: 4,
-                                    border: "1px solid #E2E8F0",
-                                    background: "#fff",
+                                    border: `1px solid ${t.border}`,
+                                    background: t.bgCard,
                                     cursor: "pointer",
-                                    color: "#64748B",
+                                    color: t.textMuted,
                                     display: "inline-flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -2936,10 +2844,10 @@ export default function ProjectUpdatesView({
                                     width: 22,
                                     height: 22,
                                     borderRadius: 4,
-                                    border: "1px solid #FCA5A5",
-                                    background: "#FEF2F2",
+                                    border: `1px solid ${t.dangerBorder}`,
+                                    background: t.dangerBgSubtle,
                                     cursor: "pointer",
-                                    color: "#EF4444",
+                                    color: t.danger,
                                     display: "inline-flex",
                                     alignItems: "center",
                                     justifyContent: "center",

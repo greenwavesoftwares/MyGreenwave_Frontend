@@ -17,47 +17,18 @@ import {
 import * as sharingApi from "./sharingApi";
 import { getUsersCached } from "./sharingApi";
 import { timeAgo } from "./updatesHelpers";
-
-/* ─── Shared Styles ─── */
-const btnStyle = {
-  height: 32,
-  padding: "0 14px",
-  borderRadius: 7,
-  border: "1px solid #CBD5E1",
-  background: "#fff",
-  color: "#475569",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-  transition: "all .12s",
-};
-
-const inputStyle = {
-  width: "100%",
-  height: 36,
-  border: "1px solid #CBD5E1",
-  borderRadius: 6,
-  background: "#fff",
-  color: "#0F172A",
-  padding: "0 10px",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  boxSizing: "border-box",
-  outline: "none",
-};
+import { useTheme } from "./useTheme";
 
 /* ─── User Avatar ─── */
 function UserAvatar({ user, size = 36, selected = false, owner = false }) {
+  const { t } = useTheme();
+
   const bgColor = owner
-    ? "linear-gradient(135deg, #DC2626, #B91C1C)"
+    ? `linear-gradient(135deg, ${t.danger}, ${t.danger})`
     : selected
-      ? "linear-gradient(135deg, #1D4ED8, #1E40AF)"
-      : "linear-gradient(135deg, #DBEAFE, #BFDBFE)";
-  const textColor = owner || selected ? "#fff" : "#1D4ED8";
+      ? `linear-gradient(135deg, ${t.primary}, ${t.primaryHover})`
+      : `linear-gradient(135deg, ${t.primaryBg}, ${t.primaryBorder})`;
+  const textColor = owner || selected ? t.textInverse : t.primary;
 
   return (
     <div
@@ -73,7 +44,7 @@ function UserAvatar({ user, size = 36, selected = false, owner = false }) {
         fontWeight: 700,
         fontSize: Math.round(size * 0.4),
         flexShrink: 0,
-        boxShadow: selected || owner ? "0 2px 6px rgba(0,0,0,0.15)" : "none",
+        boxShadow: selected || owner ? t.shadowSm : "none",
       }}
     >
       {(user?.userName || "?").charAt(0).toUpperCase()}
@@ -83,6 +54,8 @@ function UserAvatar({ user, size = 36, selected = false, owner = false }) {
 
 /* ─── Currently Shared User Row ─── */
 function SharedUserRow({ user, onRemove, isRemoving }) {
+  const { t } = useTheme();
+
   return (
     <div
       style={{
@@ -90,8 +63,8 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
         alignItems: "center",
         gap: 12,
         padding: "10px 12px",
-        background: "linear-gradient(90deg, #F0FDF4 0%, #FFFFFF 100%)",
-        border: "1px solid #86EFAC",
+        background: `linear-gradient(90deg, ${t.successBgSubtle} 0%, ${t.bgCard} 100%)`,
+        border: `1px solid ${t.successBorder}`,
         borderRadius: 8,
         transition: "all .15s",
         opacity: isRemoving ? 0.5 : 1,
@@ -103,7 +76,7 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
           style={{
             fontWeight: 600,
             fontSize: 12.5,
-            color: "#0F172A",
+            color: t.textPrimary,
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -113,9 +86,9 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
           <span
             style={{
               padding: "1px 6px",
-              background: "#DCFCE7",
-              color: "#15803D",
-              border: "1px solid #86EFAC",
+              background: t.successBg,
+              color: t.success,
+              border: `1px solid ${t.successBorder}`,
               borderRadius: 999,
               fontSize: 9,
               fontWeight: 700,
@@ -129,7 +102,7 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
         <div
           style={{
             fontSize: 10.5,
-            color: "#64748B",
+            color: t.textMuted,
             fontFamily: "'JetBrains Mono', monospace",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -146,7 +119,7 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
             gap: 10,
             marginTop: 4,
             fontSize: 10,
-            color: "#94A3B8",
+            color: t.textFaint,
           }}
         >
           {user.department && (
@@ -165,7 +138,7 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
             <span
               style={{
                 fontStyle: "italic",
-                color: "#15803D",
+                color: t.success,
                 marginLeft: "auto",
               }}
             >
@@ -182,9 +155,9 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
           width: 30,
           height: 30,
           borderRadius: 7,
-          border: "1px solid #FCA5A5",
-          background: "#FEF2F2",
-          color: "#DC2626",
+          border: `1px solid ${t.dangerBorder}`,
+          background: t.dangerBgSubtle,
+          color: t.danger,
           cursor: isRemoving ? "not-allowed" : "pointer",
           display: "inline-flex",
           alignItems: "center",
@@ -206,6 +179,8 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
 
 /* ─── Available User Card ─── */
 function AvailableUserCard({ user, isSelected, onToggle }) {
+  const { t } = useTheme();
+
   return (
     <div
       onClick={() => onToggle(user)}
@@ -215,21 +190,21 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
         gap: 10,
         padding: "9px 11px",
         borderRadius: 8,
-        border: `1.5px solid ${isSelected ? "#93C5FD" : "#E2E8F0"}`,
-        background: isSelected ? "#F0F9FF" : "#fff",
+        border: `1.5px solid ${isSelected ? t.primaryBorder : t.border}`,
+        background: isSelected ? t.primaryBgSubtle : t.bgCard,
         cursor: "pointer",
         transition: "all .12s",
       }}
       onMouseEnter={(e) => {
         if (!isSelected) {
-          e.currentTarget.style.background = "#F8FAFC";
-          e.currentTarget.style.borderColor = "#CBD5E1";
+          e.currentTarget.style.background = t.bgSubtle;
+          e.currentTarget.style.borderColor = t.borderStrong;
         }
       }}
       onMouseLeave={(e) => {
         if (!isSelected) {
-          e.currentTarget.style.background = "#fff";
-          e.currentTarget.style.borderColor = "#E2E8F0";
+          e.currentTarget.style.background = t.bgCard;
+          e.currentTarget.style.borderColor = t.border;
         }
       }}
     >
@@ -239,7 +214,7 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
           style={{
             fontWeight: isSelected ? 700 : 600,
             fontSize: 12,
-            color: "#0F172A",
+            color: t.textPrimary,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -250,7 +225,7 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
         <div
           style={{
             fontSize: 10,
-            color: "#64748B",
+            color: t.textMuted,
             fontFamily: "'JetBrains Mono', monospace",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -266,7 +241,7 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
             gap: 8,
             marginTop: 3,
             fontSize: 9.5,
-            color: "#94A3B8",
+            color: t.textFaint,
           }}
         >
           {user.department && (
@@ -288,15 +263,15 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
           width: 22,
           height: 22,
           borderRadius: 6,
-          border: `2px solid ${isSelected ? "#1D4ED8" : "#CBD5E1"}`,
-          background: isSelected ? "#1D4ED8" : "#fff",
+          border: `2px solid ${isSelected ? t.primary : t.borderStrong}`,
+          background: isSelected ? t.primary : t.bgCard,
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          color: "#fff",
+          color: t.textInverse,
           transition: "all .12s",
-          boxShadow: isSelected ? "0 2px 4px rgba(29,78,216,0.25)" : "none",
+          boxShadow: isSelected ? t.shadowSm : "none",
         }}
       >
         {isSelected && <Check size={12} strokeWidth={3.5} />}
@@ -307,19 +282,17 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
 
 /* ─── Loading State ─── */
 function LoadingUsers() {
+  const { t } = useTheme();
+
   return (
     <div
-      style={{
-        padding: "40px 20px",
-        textAlign: "center",
-        color: "#64748B",
-      }}
+      style={{ padding: "40px 20px", textAlign: "center", color: t.textMuted }}
     >
       <Loader2
         size={28}
         style={{
           animation: "spin 1s linear infinite",
-          color: "#1D4ED8",
+          color: t.primary,
           marginBottom: 10,
         }}
       />
@@ -330,12 +303,14 @@ function LoadingUsers() {
 
 /* ─── Error State ─── */
 function ErrorUsers({ error, onRetry }) {
+  const { t } = useTheme();
+
   return (
     <div
       style={{
         padding: 20,
-        background: "#FEF2F2",
-        border: "1px solid #FCA5A5",
+        background: t.dangerBgSubtle,
+        border: `1px solid ${t.dangerBorder}`,
         borderRadius: 10,
         display: "flex",
         alignItems: "flex-start",
@@ -347,8 +322,8 @@ function ErrorUsers({ error, onRetry }) {
           width: 32,
           height: 32,
           borderRadius: 7,
-          background: "#FEE2E2",
-          color: "#DC2626",
+          background: t.dangerBg,
+          color: t.danger,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -358,13 +333,13 @@ function ErrorUsers({ error, onRetry }) {
         <AlertTriangle size={16} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, color: "#DC2626", fontSize: 12.5 }}>
+        <div style={{ fontWeight: 700, color: t.danger, fontSize: 12.5 }}>
           Failed to load users
         </div>
         <div
           style={{
             fontSize: 11,
-            color: "#7F1D1D",
+            color: t.dangerTextDeep,
             marginTop: 4,
             marginBottom: 10,
           }}
@@ -374,12 +349,19 @@ function ErrorUsers({ error, onRetry }) {
         <button
           onClick={onRetry}
           style={{
-            ...btnStyle,
-            background: "#DC2626",
-            color: "#fff",
-            borderColor: "#DC2626",
             height: 28,
+            padding: "0 14px",
+            borderRadius: 7,
+            background: t.danger,
+            color: t.textInverse,
+            border: `1px solid ${t.danger}`,
+            fontFamily: "Sora,sans-serif",
             fontSize: 11,
+            fontWeight: 500,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
           }}
         >
           Retry
@@ -399,7 +381,39 @@ export default function ShareModal({
   onClose,
   onSave,
 }) {
-  // Selected user IDs
+  const { t } = useTheme();
+
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    transition: "all .12s",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    height: 36,
+    border: `1px solid ${t.borderStrong}`,
+    borderRadius: 6,
+    background: t.bgInput,
+    color: t.textPrimary,
+    padding: "0 10px",
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    boxSizing: "border-box",
+    outline: "none",
+  };
+
   const [selectedUserIds, setSelectedUserIds] = useState(
     () =>
       new Set((category?.sharedWith || []).map((u) => u.userId.toLowerCase())),
@@ -409,7 +423,6 @@ export default function ShareModal({
   const searchRef = useRef();
   const mountedRef = useRef(true);
 
-  // Users API state
   const [allUsers, setAllUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState(null);
@@ -425,7 +438,6 @@ export default function ShareModal({
     setTimeout(() => searchRef.current?.focus(), 100);
   }, []);
 
-  /* ─── Load users from API ─── */
   const loadUsers = async () => {
     setIsLoadingUsers(true);
     setUsersError(null);
@@ -445,7 +457,6 @@ export default function ShareModal({
     loadUsers();
   }, []);
 
-  /* ─── Currently shared users (with metadata) ─── */
   const alreadySharedUsers = useMemo(() => {
     return (category?.sharedWith || []).map((s) => {
       const user = allUsers.find(
@@ -462,13 +473,11 @@ export default function ShareModal({
     });
   }, [category?.sharedWith, allUsers]);
 
-  /* ─── Available departments for filter ─── */
   const departments = useMemo(() => {
     const set = new Set(allUsers.map((u) => u.department).filter(Boolean));
     return Array.from(set).sort();
   }, [allUsers]);
 
-  /* ─── Available users (excluding self and filtered) ─── */
   const availableUsers = useMemo(() => {
     const q = search.toLowerCase().trim();
     return allUsers.filter((u) => {
@@ -485,7 +494,6 @@ export default function ShareModal({
     });
   }, [allUsers, search, selectedDept, currentUserId]);
 
-  /* ─── Group available users by department ─── */
   const groupedUsers = useMemo(() => {
     const groups = {};
     availableUsers.forEach((u) => {
@@ -493,7 +501,6 @@ export default function ShareModal({
       if (!groups[dept]) groups[dept] = [];
       groups[dept].push(u);
     });
-    // Sort departments alphabetically
     return Object.keys(groups)
       .sort()
       .reduce((acc, key) => {
@@ -502,7 +509,6 @@ export default function ShareModal({
       }, {});
   }, [availableUsers]);
 
-  /* ─── Actions ─── */
   const toggleUser = (user) => {
     if (isSaving) return;
     const uid = user.userId.toLowerCase();
@@ -528,7 +534,6 @@ export default function ShareModal({
     const existingMap = new Map(
       (category?.sharedWith || []).map((s) => [s.userId.toLowerCase(), s]),
     );
-
     const newSharedWith = Array.from(selectedUserIds)
       .map((uid) => {
         const user = allUsers.find((u) => u.userId.toLowerCase() === uid);
@@ -542,14 +547,12 @@ export default function ShareModal({
         };
       })
       .filter(Boolean);
-
     onSave(newSharedWith);
   };
 
   const selectedCount = selectedUserIds.size;
   const originalCount = (category?.sharedWith || []).length;
 
-  /* ─── Check if changes exist ─── */
   const hasChanges = useMemo(() => {
     if (selectedCount !== originalCount) return true;
     const originalIds = new Set(
@@ -567,7 +570,7 @@ export default function ShareModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -578,26 +581,27 @@ export default function ShareModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 600,
           maxHeight: "92vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
+          color: t.textPrimary,
         }}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 14,
             padding: "18px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "linear-gradient(135deg, #F0F9FF 0%, #DBEAFE 100%)",
+            borderBottom: `1px solid ${t.border}`,
+            background: `linear-gradient(135deg, ${t.infoBg} 0%, ${t.primaryBg} 100%)`,
             flexShrink: 0,
           }}
         >
@@ -606,12 +610,12 @@ export default function ShareModal({
               width: 44,
               height: 44,
               borderRadius: 11,
-              background: "#1D4ED8",
-              color: "#fff",
+              background: t.primary,
+              color: t.textInverse,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(29,78,216,0.3)",
+              boxShadow: t.shadowSm,
             }}
           >
             <Share2 size={20} strokeWidth={2} />
@@ -621,7 +625,7 @@ export default function ShareModal({
               style={{
                 fontWeight: 700,
                 fontSize: 15,
-                color: "#0F172A",
+                color: t.textPrimary,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -632,9 +636,9 @@ export default function ShareModal({
                 <span
                   style={{
                     padding: "2px 8px",
-                    background: "#FEF3C7",
-                    color: "#B45309",
-                    border: "1px solid #FCD34D",
+                    background: t.warningBg,
+                    color: t.warning,
+                    border: `1px solid ${t.warningBorder}`,
                     borderRadius: 999,
                     fontSize: 9.5,
                     fontWeight: 700,
@@ -649,7 +653,7 @@ export default function ShareModal({
             <div
               style={{
                 fontSize: 12,
-                color: "#475569",
+                color: t.textSecondary,
                 marginTop: 3,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -664,10 +668,10 @@ export default function ShareModal({
             onClick={onClose}
             disabled={isSaving}
             style={{
-              background: "rgba(255,255,255,0.7)",
-              border: "1px solid #BFDBFE",
+              background: t.bgCard,
+              border: `1px solid ${t.primaryBorder}`,
               cursor: isSaving ? "not-allowed" : "pointer",
-              color: "#1D4ED8",
+              color: t.primary,
               padding: 7,
               borderRadius: 7,
               display: "flex",
@@ -679,17 +683,14 @@ export default function ShareModal({
           </button>
         </div>
 
-        {/* ── Body ── */}
+        {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-          {/* Loading state */}
           {isLoadingUsers && <LoadingUsers />}
 
-          {/* Error state */}
           {usersError && !isLoadingUsers && (
             <ErrorUsers error={usersError} onRetry={loadUsers} />
           )}
 
-          {/* Main content */}
           {!isLoadingUsers && !usersError && (
             <>
               {/* Currently Shared Section */}
@@ -703,12 +704,12 @@ export default function ShareModal({
                       marginBottom: 10,
                     }}
                   >
-                    <Users size={14} color="#15803D" />
+                    <Users size={14} color={t.success} />
                     <span
                       style={{
                         fontSize: 11,
                         fontWeight: 700,
-                        color: "#0F172A",
+                        color: t.textPrimary,
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
                       }}
@@ -718,8 +719,8 @@ export default function ShareModal({
                     <span
                       style={{
                         padding: "1px 8px",
-                        background: "#DCFCE7",
-                        color: "#15803D",
+                        background: t.successBg,
+                        color: t.success,
                         borderRadius: 999,
                         fontSize: 10,
                         fontWeight: 700,
@@ -728,26 +729,6 @@ export default function ShareModal({
                       {alreadySharedUsers.length}
                     </span>
                   </div>
-                  {false && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6,
-                      }}
-                    >
-                      {alreadySharedUsers.map((user) => (
-                        <SharedUserRow
-                          key={user.userId}
-                          user={user}
-                          onRemove={removeUser}
-                          isRemoving={
-                            !selectedUserIds.has(user.userId.toLowerCase())
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -761,12 +742,12 @@ export default function ShareModal({
                     marginBottom: 10,
                   }}
                 >
-                  <UserPlus size={14} color="#1D4ED8" />
+                  <UserPlus size={14} color={t.primary} />
                   <span
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
-                      color: "#0F172A",
+                      color: t.textPrimary,
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
                     }}
@@ -775,7 +756,7 @@ export default function ShareModal({
                   </span>
                 </div>
 
-                {/* Search + Department Filter */}
+                {/* Search + Filter */}
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   <div style={{ position: "relative", flex: 1 }}>
                     <Search
@@ -785,7 +766,7 @@ export default function ShareModal({
                         left: 10,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94A3B8",
+                        color: t.textFaint,
                         pointerEvents: "none",
                       }}
                     />
@@ -808,7 +789,7 @@ export default function ShareModal({
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: "#94A3B8",
+                          color: t.textFaint,
                           padding: 2,
                         }}
                       >
@@ -824,9 +805,13 @@ export default function ShareModal({
                         ...inputStyle,
                         width: 150,
                         cursor: "pointer",
-                        background: selectedDept ? "#EFF6FF" : "#fff",
-                        color: selectedDept ? "#1D4ED8" : "#0F172A",
-                        borderColor: selectedDept ? "#93C5FD" : "#CBD5E1",
+                        background: selectedDept
+                          ? t.primaryBgSubtle
+                          : t.bgInput,
+                        color: selectedDept ? t.primary : t.textPrimary,
+                        borderColor: selectedDept
+                          ? t.primaryBorder
+                          : t.borderStrong,
                         fontWeight: selectedDept ? 600 : 400,
                       }}
                     >
@@ -845,7 +830,7 @@ export default function ShareModal({
                   <div
                     style={{
                       fontSize: 10.5,
-                      color: "#64748B",
+                      color: t.textMuted,
                       marginBottom: 8,
                     }}
                   >
@@ -872,11 +857,11 @@ export default function ShareModal({
                       style={{
                         padding: 30,
                         textAlign: "center",
-                        color: "#94A3B8",
+                        color: t.textFaint,
                         fontSize: 12,
-                        background: "#FAFBFC",
+                        background: t.bgSubtle,
                         borderRadius: 8,
-                        border: "1px dashed #E2E8F0",
+                        border: `1px dashed ${t.border}`,
                       }}
                     >
                       <UserX
@@ -898,7 +883,7 @@ export default function ShareModal({
                             padding: "4px 10px",
                             fontSize: 9.5,
                             fontWeight: 700,
-                            color: "#64748B",
+                            color: t.textMuted,
                             textTransform: "uppercase",
                             letterSpacing: "0.5px",
                             display: "flex",
@@ -910,12 +895,7 @@ export default function ShareModal({
                         >
                           <Building2 size={10} />
                           {dept}
-                          <span
-                            style={{
-                              color: "#94A3B8",
-                              fontWeight: 500,
-                            }}
-                          >
+                          <span style={{ color: t.textFaint, fontWeight: 500 }}>
                             · {users.length}
                           </span>
                         </div>
@@ -946,23 +926,23 @@ export default function ShareModal({
           )}
         </div>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div
           style={{
             padding: "14px 20px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
           <div
             style={{
               fontSize: 11,
-              color: "#64748B",
+              color: t.textMuted,
               display: "flex",
               alignItems: "center",
               gap: 6,
@@ -990,14 +970,10 @@ export default function ShareModal({
               disabled={!hasChanges || isSaving}
               style={{
                 ...btnStyle,
-                background: hasChanges && !isSaving ? "#1D4ED8" : "#F1F5F9",
-                color: hasChanges && !isSaving ? "#fff" : "#94A3B8",
-                borderColor: hasChanges && !isSaving ? "#1D4ED8" : "#E2E8F0",
+                background: hasChanges && !isSaving ? t.primary : t.bgMuted,
+                color: hasChanges && !isSaving ? t.textInverse : t.textFaint,
+                borderColor: hasChanges && !isSaving ? t.primary : t.border,
                 cursor: hasChanges && !isSaving ? "pointer" : "not-allowed",
-                boxShadow:
-                  hasChanges && !isSaving
-                    ? "0 2px 6px rgba(29,78,216,0.25)"
-                    : "none",
                 fontWeight: 600,
               }}
             >

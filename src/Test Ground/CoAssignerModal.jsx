@@ -15,46 +15,18 @@ import {
   Info,
 } from "lucide-react";
 import { timeAgoShort } from "./coAssignerHelpers";
-
-const btnStyle = {
-  height: 34,
-  padding: "0 14px",
-  borderRadius: 7,
-  border: "1px solid #CBD5E1",
-  background: "#fff",
-  color: "#475569",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-  transition: "all .12s",
-};
-
-const inputStyle = {
-  width: "100%",
-  height: 36,
-  border: "1px solid #CBD5E1",
-  borderRadius: 6,
-  background: "#fff",
-  color: "#0F172A",
-  padding: "0 10px",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  boxSizing: "border-box",
-  outline: "none",
-};
+import { useTheme } from "./useTheme";
 
 /* ═══════════════════════════════════════════════════════
    User Avatar
    ═══════════════════════════════════════════════════════ */
 function Avatar({ name, size = 36, variant = "default" }) {
+  const { t } = useTheme();
+
   const gradients = {
-    owner: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-    "co-assigner": "linear-gradient(135deg, #15803D, #166534)",
-    default: "linear-gradient(135deg, #64748B, #475569)",
+    owner: `linear-gradient(135deg, ${t.violet}, ${t.violetBorder})`,
+    "co-assigner": `linear-gradient(135deg, ${t.success}, ${t.successBorder})`,
+    default: `linear-gradient(135deg, ${t.textMuted}, ${t.textSecondary})`,
   };
 
   return (
@@ -64,14 +36,14 @@ function Avatar({ name, size = 36, variant = "default" }) {
         height: size,
         borderRadius: "50%",
         background: gradients[variant] || gradients.default,
-        color: "#fff",
+        color: t.textInverse,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontWeight: 700,
         fontSize: Math.round(size * 0.4),
         flexShrink: 0,
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        boxShadow: t.shadowSm,
       }}
     >
       {(name || "?").charAt(0).toUpperCase()}
@@ -80,17 +52,18 @@ function Avatar({ name, size = 36, variant = "default" }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Person Row (Owner + Co-Assigners)
+   Person Row
    ═══════════════════════════════════════════════════════ */
 function PersonRow({
   user,
-  variant, // "owner" | "co-assigner"
+  variant,
   isCurrentUser,
   canRemove,
   isRemoving,
   onRemove,
   addedAt,
 }) {
+  const { t } = useTheme();
   const isOwner = variant === "owner";
 
   return (
@@ -100,14 +73,15 @@ function PersonRow({
         alignItems: "center",
         gap: 12,
         padding: "10px 12px",
-        background: isOwner ? "#FAFAF9" : "#F0FDF4",
-        border: `1px solid ${isOwner ? "#E7E5E4" : "#86EFAC"}`,
+        background: isOwner ? t.bgSubtle : t.successBgSubtle,
+        border: `1px solid ${isOwner ? t.border : t.successBorder}`,
         borderRadius: 8,
         transition: "all .12s",
         opacity: isRemoving ? 0.5 : 1,
       }}
     >
       <Avatar name={user.userName} size={38} variant={variant} />
+
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
@@ -122,7 +96,7 @@ function PersonRow({
             style={{
               fontWeight: 700,
               fontSize: 13,
-              color: "#0F172A",
+              color: t.textPrimary,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -130,11 +104,12 @@ function PersonRow({
           >
             {user.userName}
           </span>
+
           {isCurrentUser && (
             <span
               style={{
                 fontSize: 10,
-                color: isOwner ? "#7C3AED" : "#15803D",
+                color: isOwner ? t.violet : t.success,
                 fontWeight: 600,
                 fontStyle: "italic",
               }}
@@ -142,12 +117,13 @@ function PersonRow({
               (You)
             </span>
           )}
+
           <span
             style={{
               padding: "2px 7px",
-              background: isOwner ? "#EDE9FE" : "#DCFCE7",
-              color: isOwner ? "#7C3AED" : "#15803D",
-              border: `1px solid ${isOwner ? "#C4B5FD" : "#86EFAC"}`,
+              background: isOwner ? t.violetBg : t.successBg,
+              color: isOwner ? t.violet : t.success,
+              border: `1px solid ${isOwner ? t.violetBorder : t.successBorder}`,
               borderRadius: 999,
               fontSize: 9,
               fontWeight: 700,
@@ -162,10 +138,11 @@ function PersonRow({
             {isOwner ? "Owner" : "Co-Assigner"}
           </span>
         </div>
+
         <div
           style={{
             fontSize: 11,
-            color: "#64748B",
+            color: t.textMuted,
             fontFamily: "'JetBrains Mono', monospace",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -174,13 +151,14 @@ function PersonRow({
         >
           {user.userId}
         </div>
+
         <div
           style={{
             display: "flex",
             gap: 10,
             marginTop: 4,
             fontSize: 10,
-            color: "#94A3B8",
+            color: t.textFaint,
             flexWrap: "wrap",
           }}
         >
@@ -203,7 +181,7 @@ function PersonRow({
           {addedAt && (
             <span
               style={{
-                color: "#15803D",
+                color: t.success,
                 fontStyle: "italic",
                 marginLeft: "auto",
               }}
@@ -213,6 +191,7 @@ function PersonRow({
           )}
         </div>
       </div>
+
       {canRemove && (
         <button
           onClick={() => onRemove(user.userId)}
@@ -222,9 +201,9 @@ function PersonRow({
             width: 32,
             height: 32,
             borderRadius: 7,
-            border: "1px solid #FCA5A5",
-            background: "#FEF2F2",
-            color: "#DC2626",
+            border: `1px solid ${t.dangerBorder}`,
+            background: t.dangerBgSubtle,
+            color: t.danger,
             cursor: isRemoving ? "not-allowed" : "pointer",
             display: "flex",
             alignItems: "center",
@@ -236,14 +215,14 @@ function PersonRow({
           }}
           onMouseEnter={(e) => {
             if (!isRemoving) {
-              e.currentTarget.style.background = "#FEE2E2";
-              e.currentTarget.style.borderColor = "#EF4444";
+              e.currentTarget.style.background = t.dangerBg;
+              e.currentTarget.style.borderColor = t.danger;
             }
           }}
           onMouseLeave={(e) => {
             if (!isRemoving) {
-              e.currentTarget.style.background = "#FEF2F2";
-              e.currentTarget.style.borderColor = "#FCA5A5";
+              e.currentTarget.style.background = t.dangerBgSubtle;
+              e.currentTarget.style.borderColor = t.dangerBorder;
             }
           }}
         >
@@ -262,9 +241,11 @@ function PersonRow({
 }
 
 /* ═══════════════════════════════════════════════════════
-   Available User Item (for the add list)
+   Available User Item
    ═══════════════════════════════════════════════════════ */
 function AvailableUserItem({ user, isAdding, onAdd }) {
+  const { t } = useTheme();
+
   return (
     <div
       onClick={() => !isAdding && onAdd(user)}
@@ -274,32 +255,33 @@ function AvailableUserItem({ user, isAdding, onAdd }) {
         gap: 10,
         padding: "9px 12px",
         borderRadius: 7,
-        border: "1px solid #E2E8F0",
-        background: isAdding ? "#F0FDF4" : "#fff",
+        border: `1px solid ${t.border}`,
+        background: isAdding ? t.successBgSubtle : t.bgCard,
         cursor: isAdding ? "wait" : "pointer",
         transition: "all .12s",
         opacity: isAdding ? 0.75 : 1,
       }}
       onMouseEnter={(e) => {
         if (!isAdding) {
-          e.currentTarget.style.background = "#F0FDF4";
-          e.currentTarget.style.borderColor = "#86EFAC";
+          e.currentTarget.style.background = t.successBgSubtle;
+          e.currentTarget.style.borderColor = t.successBorder;
         }
       }}
       onMouseLeave={(e) => {
         if (!isAdding) {
-          e.currentTarget.style.background = "#fff";
-          e.currentTarget.style.borderColor = "#E2E8F0";
+          e.currentTarget.style.background = t.bgCard;
+          e.currentTarget.style.borderColor = t.border;
         }
       }}
     >
       <Avatar name={user.userName} size={32} variant="default" />
+
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
             fontWeight: 600,
             fontSize: 12,
-            color: "#0F172A",
+            color: t.textPrimary,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -307,10 +289,11 @@ function AvailableUserItem({ user, isAdding, onAdd }) {
         >
           {user.userName}
         </div>
+
         <div
           style={{
             fontSize: 10,
-            color: "#64748B",
+            color: t.textMuted,
             fontFamily: "'JetBrains Mono', monospace",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -320,13 +303,14 @@ function AvailableUserItem({ user, isAdding, onAdd }) {
         >
           {user.userId}
         </div>
+
         <div
           style={{
             display: "flex",
             gap: 6,
             marginTop: 3,
             fontSize: 9.5,
-            color: "#94A3B8",
+            color: t.textFaint,
           }}
         >
           {user.department && (
@@ -347,12 +331,13 @@ function AvailableUserItem({ user, isAdding, onAdd }) {
           )}
         </div>
       </div>
+
       <button
         disabled={isAdding}
         style={{
           padding: "5px 10px",
-          background: isAdding ? "#86EFAC" : "#15803D",
-          color: "#fff",
+          background: isAdding ? t.successBorder : t.success,
+          color: t.textInverse,
           border: "none",
           borderRadius: 5,
           fontSize: 10.5,
@@ -390,15 +375,17 @@ function AvailableUserItem({ user, isAdding, onAdd }) {
    Loading Skeleton
    ═══════════════════════════════════════════════════════ */
 function LoadingUsers() {
+  const { t } = useTheme();
+
   return (
     <div
-      style={{ padding: "40px 20px", textAlign: "center", color: "#64748B" }}
+      style={{ padding: "40px 20px", textAlign: "center", color: t.textMuted }}
     >
       <Loader2
         size={26}
         style={{
           animation: "spin 1s linear infinite",
-          color: "#15803D",
+          color: t.success,
           marginBottom: 10,
         }}
       />
@@ -411,12 +398,14 @@ function LoadingUsers() {
    Error State
    ═══════════════════════════════════════════════════════ */
 function ErrorState({ error, onRetry }) {
+  const { t } = useTheme();
+
   return (
     <div
       style={{
         padding: 16,
-        background: "#FEF2F2",
-        border: "1px solid #FCA5A5",
+        background: t.dangerBgSubtle,
+        border: `1px solid ${t.dangerBorder}`,
         borderRadius: 8,
         display: "flex",
         gap: 12,
@@ -427,8 +416,8 @@ function ErrorState({ error, onRetry }) {
           width: 32,
           height: 32,
           borderRadius: 7,
-          background: "#FEE2E2",
-          color: "#DC2626",
+          background: t.dangerBg,
+          color: t.danger,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -437,14 +426,15 @@ function ErrorState({ error, onRetry }) {
       >
         <AlertTriangle size={16} />
       </div>
+
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, color: "#DC2626", fontSize: 12.5 }}>
+        <div style={{ fontWeight: 700, color: t.danger, fontSize: 12.5 }}>
           Failed to load users
         </div>
         <div
           style={{
             fontSize: 11,
-            color: "#7F1D1D",
+            color: t.dangerTextDeep,
             marginTop: 4,
             marginBottom: 10,
           }}
@@ -454,12 +444,19 @@ function ErrorState({ error, onRetry }) {
         <button
           onClick={onRetry}
           style={{
-            ...btnStyle,
-            background: "#DC2626",
-            color: "#fff",
-            borderColor: "#DC2626",
             height: 28,
+            padding: "0 14px",
+            borderRadius: 7,
+            background: t.danger,
+            color: t.textInverse,
+            border: `1px solid ${t.danger}`,
+            fontFamily: "Sora,sans-serif",
             fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
           }}
         >
           Retry
@@ -481,16 +478,16 @@ export default function CoAssignerModal({
   usersError = null,
   onRetryLoadUsers,
   onClose,
-  onAddCoAssigner, // Async function: (user) => Promise
-  onRemoveCoAssigner, // Async function: (userId) => Promise
+  onAddCoAssigner,
+  onRemoveCoAssigner,
 }) {
+  const { t } = useTheme();
   const isReadOnly = currentUserRole !== "owner";
 
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
   const searchRef = useRef();
 
-  // Track in-flight operations per user
   const [addingUserIds, setAddingUserIds] = useState(new Set());
   const [removingUserIds, setRemovingUserIds] = useState(new Set());
 
@@ -500,10 +497,8 @@ export default function CoAssignerModal({
     }
   }, [isReadOnly]);
 
-  // Current co-assigners (from project prop — live data)
   const currentCoAssigners = project?.coAssigners || [];
 
-  /* ─── Owner info ─── */
   const owner = useMemo(() => {
     const found = allUsers.find(
       (u) => u.userId?.toLowerCase() === project.createdBy?.toLowerCase(),
@@ -518,7 +513,6 @@ export default function CoAssignerModal({
     );
   }, [allUsers, project.createdBy]);
 
-  /* ─── Enriched co-assigners (with department/designation) ─── */
   const enrichedCoAssigners = useMemo(() => {
     return currentCoAssigners.map((ca) => {
       const userInfo = allUsers.find(
@@ -535,18 +529,15 @@ export default function CoAssignerModal({
     });
   }, [currentCoAssigners, allUsers]);
 
-  /* ─── Departments for filter dropdown ─── */
   const departments = useMemo(() => {
     const set = new Set(allUsers.map((u) => u.department).filter(Boolean));
     return Array.from(set).sort();
   }, [allUsers]);
 
-  /* ─── Set of selected user IDs for quick lookup ─── */
   const selectedUserIds = useMemo(() => {
     return new Set(currentCoAssigners.map((ca) => ca.userId.toLowerCase()));
   }, [currentCoAssigners]);
 
-  /* ─── Available users to add ─── */
   const availableUsers = useMemo(() => {
     const q = search.toLowerCase().trim();
     return allUsers.filter((u) => {
@@ -565,7 +556,6 @@ export default function CoAssignerModal({
     });
   }, [allUsers, project.createdBy, selectedUserIds, search, selectedDept]);
 
-  /* ─── Group available users by department ─── */
   const groupedAvailable = useMemo(() => {
     const groups = {};
     availableUsers.forEach((u) => {
@@ -581,20 +571,14 @@ export default function CoAssignerModal({
       }, {});
   }, [availableUsers]);
 
-  /* ─── Actions ─── */
   const handleAddUser = async (user) => {
     if (isReadOnly) return;
     const uid = user.userId.toLowerCase();
-
-    // Mark as being added
     setAddingUserIds((prev) => new Set([...prev, uid]));
-
     try {
       await onAddCoAssigner(user);
-      // Parent will update project.coAssigners, which will re-render the modal
     } catch (err) {
       console.error("Failed to add co-assigner:", err);
-      // Error toast handled by parent
     } finally {
       setAddingUserIds((prev) => {
         const next = new Set(prev);
@@ -607,9 +591,7 @@ export default function CoAssignerModal({
   const handleRemoveUser = async (userId) => {
     if (isReadOnly) return;
     const uid = userId.toLowerCase();
-
     setRemovingUserIds((prev) => new Set([...prev, uid]));
-
     try {
       await onRemoveCoAssigner(userId);
     } catch (err) {
@@ -627,6 +609,37 @@ export default function CoAssignerModal({
   const isAnyOperationInProgress =
     addingUserIds.size > 0 || removingUserIds.size > 0;
 
+  const btnStyle = {
+    height: 34,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    transition: "all .12s",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    height: 36,
+    border: `1px solid ${t.borderStrong}`,
+    borderRadius: 6,
+    background: t.bgInput,
+    color: t.textPrimary,
+    padding: "0 10px",
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    boxSizing: "border-box",
+    outline: "none",
+  };
+
   return (
     <div
       onClick={(e) =>
@@ -635,7 +648,7 @@ export default function CoAssignerModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -646,15 +659,16 @@ export default function CoAssignerModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 640,
           maxHeight: "92vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.25)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
+          color: t.textPrimary,
         }}
       >
         {/* ══════ HEADER ══════ */}
@@ -664,8 +678,8 @@ export default function CoAssignerModal({
             alignItems: "center",
             gap: 14,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)",
+            borderBottom: `1px solid ${t.border}`,
+            background: `linear-gradient(135deg, ${t.successBgSubtle} 0%, ${t.successBg} 100%)`,
             flexShrink: 0,
           }}
         >
@@ -674,36 +688,38 @@ export default function CoAssignerModal({
               width: 42,
               height: 42,
               borderRadius: 10,
-              background: "#15803D",
-              color: "#fff",
+              background: t.success,
+              color: t.textInverse,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 10px rgba(21,128,61,0.3)",
+              boxShadow: t.shadowSm,
               flexShrink: 0,
             }}
           >
             <Handshake size={20} strokeWidth={2} />
           </div>
+
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 fontWeight: 700,
                 fontSize: 15,
-                color: "#0F172A",
+                color: t.textPrimary,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
               }}
             >
               {isReadOnly ? "Co-Assigners" : "Manage Co-Assigners"}
+
               {isReadOnly && (
                 <span
                   style={{
                     padding: "2px 8px",
-                    background: "#F1F5F9",
-                    color: "#64748B",
-                    border: "1px solid #CBD5E1",
+                    background: t.bgMuted,
+                    color: t.textMuted,
+                    border: `1px solid ${t.borderStrong}`,
                     borderRadius: 999,
                     fontSize: 9.5,
                     fontWeight: 700,
@@ -714,6 +730,7 @@ export default function CoAssignerModal({
                   View Only
                 </span>
               )}
+
               {isAnyOperationInProgress && (
                 <span
                   style={{
@@ -721,9 +738,9 @@ export default function CoAssignerModal({
                     alignItems: "center",
                     gap: 4,
                     padding: "2px 8px",
-                    background: "#DBEAFE",
-                    color: "#1D4ED8",
-                    border: "1px solid #93C5FD",
+                    background: t.primaryBg,
+                    color: t.primary,
+                    border: `1px solid ${t.primaryBorder}`,
                     borderRadius: 999,
                     fontSize: 9.5,
                     fontWeight: 700,
@@ -739,10 +756,11 @@ export default function CoAssignerModal({
                 </span>
               )}
             </div>
+
             <div
               style={{
                 fontSize: 12,
-                color: "#475569",
+                color: t.textSecondary,
                 marginTop: 3,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -753,13 +771,14 @@ export default function CoAssignerModal({
               people
             </div>
           </div>
+
           <button
             onClick={onClose}
             style={{
-              background: "rgba(255,255,255,0.7)",
-              border: "1px solid #86EFAC",
+              background: t.bgCard,
+              border: `1px solid ${t.successBorder}`,
               cursor: "pointer",
-              color: "#15803D",
+              color: t.success,
               padding: 7,
               borderRadius: 7,
               display: "flex",
@@ -774,10 +793,10 @@ export default function CoAssignerModal({
         <div
           style={{
             padding: "10px 20px",
-            background: isReadOnly ? "#F1F5F9" : "#F0FDF4",
-            borderBottom: "1px solid #E2E8F0",
+            background: isReadOnly ? t.bgMuted : t.successBgSubtle,
+            borderBottom: `1px solid ${t.border}`,
             fontSize: 11.5,
-            color: isReadOnly ? "#475569" : "#166534",
+            color: isReadOnly ? t.textSecondary : t.success,
             display: "flex",
             alignItems: "flex-start",
             gap: 8,
@@ -818,12 +837,12 @@ export default function CoAssignerModal({
                 marginBottom: 10,
               }}
             >
-              <Users size={13} color="#0F172A" />
+              <Users size={13} color={t.textPrimary} />
               <span
                 style={{
                   fontSize: 11,
                   fontWeight: 700,
-                  color: "#0F172A",
+                  color: t.textPrimary,
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                 }}
@@ -833,7 +852,6 @@ export default function CoAssignerModal({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {/* Owner */}
               <PersonRow
                 user={owner}
                 variant="owner"
@@ -843,7 +861,6 @@ export default function CoAssignerModal({
                 canRemove={false}
               />
 
-              {/* Co-Assigners */}
               {enrichedCoAssigners.length > 0 ? (
                 enrichedCoAssigners.map((ca) => (
                   <PersonRow
@@ -863,11 +880,11 @@ export default function CoAssignerModal({
                 <div
                   style={{
                     padding: "20px 16px",
-                    background: "#FAFBFC",
-                    border: "1px dashed #CBD5E1",
+                    background: t.bgSubtle,
+                    border: `1px dashed ${t.borderStrong}`,
                     borderRadius: 8,
                     textAlign: "center",
-                    color: "#94A3B8",
+                    color: t.textFaint,
                     fontSize: 11.5,
                   }}
                 >
@@ -876,7 +893,7 @@ export default function CoAssignerModal({
                     strokeWidth={1.5}
                     style={{ marginBottom: 6, opacity: 0.6 }}
                   />
-                  <div style={{ fontWeight: 600, color: "#64748B" }}>
+                  <div style={{ fontWeight: 600, color: t.textMuted }}>
                     No co-assigners yet
                   </div>
                   <div style={{ fontSize: 10.5, marginTop: 2 }}>
@@ -889,7 +906,7 @@ export default function CoAssignerModal({
             </div>
           </div>
 
-          {/* ─── ADD PEOPLE SECTION (owner only) ─── */}
+          {/* ─── ADD PEOPLE SECTION ─── */}
           {!isReadOnly && (
             <div>
               <div
@@ -900,12 +917,12 @@ export default function CoAssignerModal({
                   marginBottom: 10,
                 }}
               >
-                <UserPlus size={13} color="#1D4ED8" />
+                <UserPlus size={13} color={t.primary} />
                 <span
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    color: "#0F172A",
+                    color: t.textPrimary,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
                   }}
@@ -932,7 +949,7 @@ export default function CoAssignerModal({
                           left: 10,
                           top: "50%",
                           transform: "translateY(-50%)",
-                          color: "#94A3B8",
+                          color: t.textFaint,
                           pointerEvents: "none",
                         }}
                       />
@@ -955,7 +972,7 @@ export default function CoAssignerModal({
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            color: "#94A3B8",
+                            color: t.textFaint,
                             padding: 2,
                           }}
                         >
@@ -963,6 +980,7 @@ export default function CoAssignerModal({
                         </button>
                       )}
                     </div>
+
                     {departments.length > 0 && (
                       <select
                         value={selectedDept}
@@ -971,9 +989,13 @@ export default function CoAssignerModal({
                           ...inputStyle,
                           width: 150,
                           cursor: "pointer",
-                          background: selectedDept ? "#EFF6FF" : "#fff",
-                          color: selectedDept ? "#1D4ED8" : "#0F172A",
-                          borderColor: selectedDept ? "#93C5FD" : "#CBD5E1",
+                          background: selectedDept
+                            ? t.primaryBgSubtle
+                            : t.bgInput,
+                          color: selectedDept ? t.primary : t.textPrimary,
+                          borderColor: selectedDept
+                            ? t.primaryBorder
+                            : t.borderStrong,
                           fontWeight: selectedDept ? 600 : 400,
                         }}
                       >
@@ -987,12 +1009,11 @@ export default function CoAssignerModal({
                     )}
                   </div>
 
-                  {/* Results count */}
                   {availableUsers.length > 0 && (
                     <div
                       style={{
                         fontSize: 10.5,
-                        color: "#64748B",
+                        color: t.textMuted,
                         marginBottom: 8,
                       }}
                     >
@@ -1001,7 +1022,6 @@ export default function CoAssignerModal({
                     </div>
                   )}
 
-                  {/* User list */}
                   <div
                     style={{
                       display: "flex",
@@ -1016,11 +1036,11 @@ export default function CoAssignerModal({
                         style={{
                           padding: 24,
                           textAlign: "center",
-                          color: "#94A3B8",
+                          color: t.textFaint,
                           fontSize: 11.5,
-                          background: "#FAFBFC",
+                          background: t.bgSubtle,
                           borderRadius: 8,
-                          border: "1px dashed #E2E8F0",
+                          border: `1px dashed ${t.border}`,
                         }}
                       >
                         <UserX
@@ -1028,7 +1048,7 @@ export default function CoAssignerModal({
                           strokeWidth={1.5}
                           style={{ marginBottom: 8, opacity: 0.5 }}
                         />
-                        <div style={{ fontWeight: 600, color: "#64748B" }}>
+                        <div style={{ fontWeight: 600, color: t.textMuted }}>
                           {search || selectedDept
                             ? "No users match your filters"
                             : "No more users to add"}
@@ -1042,12 +1062,12 @@ export default function CoAssignerModal({
                             style={{
                               marginTop: 8,
                               padding: "5px 10px",
-                              background: "#fff",
-                              border: "1px solid #CBD5E1",
+                              background: t.bgCard,
+                              border: `1px solid ${t.borderStrong}`,
                               borderRadius: 5,
                               fontSize: 10.5,
                               fontWeight: 600,
-                              color: "#475569",
+                              color: t.textSecondary,
                               cursor: "pointer",
                               fontFamily: "Sora,sans-serif",
                             }}
@@ -1064,7 +1084,7 @@ export default function CoAssignerModal({
                               padding: "4px 8px",
                               fontSize: 9.5,
                               fontWeight: 700,
-                              color: "#64748B",
+                              color: t.textMuted,
                               textTransform: "uppercase",
                               letterSpacing: "0.5px",
                               display: "flex",
@@ -1076,7 +1096,9 @@ export default function CoAssignerModal({
                           >
                             <Building2 size={10} />
                             {dept}
-                            <span style={{ color: "#94A3B8", fontWeight: 500 }}>
+                            <span
+                              style={{ color: t.textFaint, fontWeight: 500 }}
+                            >
                               · {users.length}
                             </span>
                           </div>
@@ -1108,23 +1130,23 @@ export default function CoAssignerModal({
           )}
         </div>
 
-        {/* ══════ FOOTER (Simplified — just Close button) ══════ */}
+        {/* ══════ FOOTER ══════ */}
         <div
           style={{
             padding: "12px 20px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
           <div
             style={{
               fontSize: 11,
-              color: "#64748B",
+              color: t.textMuted,
               display: "flex",
               alignItems: "center",
               gap: 6,
@@ -1136,16 +1158,16 @@ export default function CoAssignerModal({
                   size={12}
                   style={{
                     animation: "spin 1s linear infinite",
-                    color: "#1D4ED8",
+                    color: t.primary,
                   }}
                 />
-                <span style={{ color: "#1D4ED8", fontWeight: 600 }}>
+                <span style={{ color: t.primary, fontWeight: 600 }}>
                   Saving changes...
                 </span>
               </>
             ) : (
               <>
-                <Check size={12} color="#15803D" />
+                <Check size={12} color={t.success} />
                 <span>
                   {currentCoAssigners.length === 0
                     ? "Only you have ownership"
@@ -1154,13 +1176,14 @@ export default function CoAssignerModal({
               </>
             )}
           </div>
+
           <button
             onClick={onClose}
             style={{
               ...btnStyle,
-              background: "#15803D",
-              color: "#fff",
-              borderColor: "#15803D",
+              background: t.success,
+              color: t.textInverse,
+              borderColor: t.success,
               fontWeight: 600,
             }}
           >

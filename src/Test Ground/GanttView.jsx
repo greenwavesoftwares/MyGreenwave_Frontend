@@ -20,6 +20,8 @@ import {
   Briefcase,
   Filter,
 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { useTheme } from "./useTheme";
 
 /* ─── Constants ─── */
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -28,17 +30,18 @@ const WEEK_MS = 7 * DAY_MS;
 const ROW_HEIGHT = 44;
 const SUB_HEADER_HEIGHT = 32;
 const HEADER_HEIGHT = 56;
-const LEFT_PANEL_WIDTH_COLLAPSED = 300; // ← Renamed
+const LEFT_PANEL_WIDTH_COLLAPSED = 300;
 const LEFT_PANEL_WIDTH_EXPANDED = 480;
 const MIN_COL_WIDTH = 20;
 const MAX_COL_WIDTH = 200;
-// ── Column widths for the left panel ──
-const COL_TASK_WIDTH = 240; // Task name column
-const COL_MODULE_WIDTH = 120; // Module column
-const COL_RESOURCE_WIDTH = 130; // Resource column
-const COL_STATUS_WIDTH = 100; // Status column
+
+const COL_TASK_WIDTH = 240;
+const COL_MODULE_WIDTH = 120;
+const COL_RESOURCE_WIDTH = 130;
+const COL_STATUS_WIDTH = 100;
 const LEFT_PANEL_WIDTH =
   COL_TASK_WIDTH + COL_MODULE_WIDTH + COL_RESOURCE_WIDTH + COL_STATUS_WIDTH;
+
 /* ─── Zoom Config ─── */
 const ZOOM_CONFIGS = {
   hour: {
@@ -81,66 +84,69 @@ const ZOOM_CONFIGS = {
   },
 };
 
-/* ─── Status Colors ─── */
-const STATUS_COLORS = {
-  pending: {
-    bg: "#F1F5F9",
-    color: "#64748B",
-    border: "#CBD5E1",
-    bar: "#94A3B8",
-  },
-  "not ready": {
-    bg: "#FEF3C7",
-    color: "#B45309",
-    border: "#FCD34D",
-    bar: "#F59E0B",
-  },
-  rejected: {
-    bg: "#FEE2E2",
-    color: "#DC2626",
-    border: "#FCA5A5",
-    bar: "#EF4444",
-  },
-  paused: {
-    bg: "#FFEDD5",
-    color: "#C2410C",
-    border: "#FDBA74",
-    bar: "#F97316",
-  },
-  running: {
-    bg: "#DBEAFE",
-    color: "#1D4ED8",
-    border: "#93C5FD",
-    bar: "#3B82F6",
-  },
-  completed: {
-    bg: "#DCFCE7",
-    color: "#15803D",
-    border: "#86EFAC",
-    bar: "#22C55E",
-  },
-  finished: {
-    bg: "#EDE9FE",
-    color: "#7C3AED",
-    border: "#DDD6FE",
-    bar: "#8B5CF6",
-  },
-  closed: {
-    bg: "#F1F5F9",
-    color: "#475569",
-    border: "#CBD5E1",
-    bar: "#64748B",
-  },
-};
+/* ─── Status Colors Factory (theme-aware) ─── */
+function makeStatusColors(t) {
+  return {
+    pending: {
+      bg: t.bgMuted,
+      color: t.textMuted,
+      border: t.borderStrong,
+      bar: t.textFaint,
+    },
+    "not ready": {
+      bg: t.warningBg,
+      color: t.warning,
+      border: t.warningBorder,
+      bar: "#F59E0B",
+    },
+    rejected: {
+      bg: t.dangerBg,
+      color: t.danger,
+      border: t.dangerBorder,
+      bar: "#EF4444",
+    },
+    paused: {
+      bg: "#FFEDD5",
+      color: "#C2410C",
+      border: "#FDBA74",
+      bar: "#F97316",
+    },
+    running: {
+      bg: t.primaryBg,
+      color: t.primary,
+      border: t.primaryBorder,
+      bar: "#3B82F6",
+    },
+    completed: {
+      bg: t.successBg,
+      color: t.success,
+      border: t.successBorder,
+      bar: "#22C55E",
+    },
+    finished: {
+      bg: t.violetBg,
+      color: t.violet,
+      border: t.violetBorder,
+      bar: "#8B5CF6",
+    },
+    closed: {
+      bg: t.closedBg,
+      color: t.closedText,
+      border: t.closedBorder,
+      bar: "#64748B",
+    },
+  };
+}
 
-const getStatusColor = (status) => {
+function getStatusColor(status, t) {
+  const STATUS_COLORS = makeStatusColors(t);
   const key = String(status || "pending")
     .toLowerCase()
     .trim();
   return STATUS_COLORS[key] || STATUS_COLORS.pending;
-};
+}
 
-/* ─── Helpers ─── */
+/* ─── Helpers (pure, no theme) ─── */
 function parseDt(val) {
   if (!val) return null;
   const d = new Date(val);
@@ -193,7 +199,7 @@ function generateMajorTicks(startMs, endMs) {
   return ticks;
 }
 
-/* ─── Project Color Palette ─── */
+/* ─── Project Color Palette (kept vibrant for identity) ─── */
 const PROJECT_COLORS = [
   "#1D4ED8",
   "#15803D",
@@ -209,16 +215,90 @@ const PROJECT_COLORS = [
   "#115E59",
 ];
 
-/* ─── Tooltip ─── */
+/* ─── Delay Detection ─── */
+function isDelayed(row) {
+  const status = String(row.status || "")
+    .toLowerCase()
+    .trim();
+  if (status !== "completed" && status !== "finished") return false;
+  const plannedStop = parseDt(row.plannedStop);
+  const actualStop = parseDt(row.actualStop);
+  if (!plannedStop || !actualStop) return false;
+  return actualStop.getTime() > plannedStop.getTime();
+}
+
+function getDelayedColor(t) {
+  return {
+    bg: t.dangerBg,
+    color: t.danger,
+    border: t.dangerBorder,
+    bar: "#EF4444",
+  };
+}
+
+/* ─── Lane Assignment ─── */
+function assignLanes(tasks) {
+  const sorted = tasks
+    .map((t) => {
+      const start = parseDt(t.plannedStart);
+      const end = parseDt(t.plannedStop);
+      const actualStart = parseDt(t.actualStart);
+      const actualEnd = parseDt(t.actualStop);
+      const effectiveStart =
+        start && actualStart
+          ? Math.min(start.getTime(), actualStart.getTime())
+          : (start || actualStart)?.getTime() || 0;
+      const effectiveEnd =
+        end && actualEnd
+          ? Math.max(end.getTime(), actualEnd.getTime())
+          : (end || actualEnd)?.getTime() || 0;
+      return {
+        ...t,
+        _effectiveStart: effectiveStart,
+        _effectiveEnd: effectiveEnd,
+      };
+    })
+    .filter((t) => t._effectiveStart && t._effectiveEnd)
+    .sort((a, b) => a._effectiveStart - b._effectiveStart);
+
+  const lanes = [];
+  sorted.forEach((task) => {
+    let placed = false;
+    for (let i = 0; i < lanes.length; i++) {
+      if (task._effectiveStart >= lanes[i]) {
+        lanes[i] = task._effectiveEnd;
+        task._lane = i;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      task._lane = lanes.length;
+      lanes.push(task._effectiveEnd);
+    }
+  });
+
+  tasks.forEach((t) => {
+    const found = sorted.find((s) => s.id === t.id);
+    t._lane = found ? found._lane : 0;
+  });
+
+  return {
+    tasks: tasks.map((t) => {
+      const found = sorted.find((s) => s.id === t.id);
+      return { ...t, _lane: found ? found._lane : 0 };
+    }),
+    laneCount: Math.max(lanes.length, 1),
+  };
+}
+
+/* ─── Themed Tooltip ─── */
 function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
+  const { t } = useTheme();
   const ref = useRef(null);
   const delayed = isDelayed(row);
-  const sc = delayed ? DELAYED_COLOR : getStatusColor(row.status);
+  const sc = delayed ? getDelayedColor(t) : getStatusColor(row.status, t);
   const hasActual = row.actualStart || row.actualStop;
-  const isCompleted =
-    String(row.status || "")
-      .toLowerCase()
-      .trim() === "completed";
   const isFinished =
     String(row.status || "")
       .toLowerCase()
@@ -240,16 +320,15 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
         left: Math.min(x, window.innerWidth - 300),
         top: Math.min(y + 10, window.innerHeight - 380),
         width: 280,
-        background: "#fff",
-        border: "1px solid #E2E8F0",
+        background: t.bgCard,
+        border: `1px solid ${t.border}`,
         borderRadius: 10,
-        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+        boxShadow: t.shadowLg,
         zIndex: 9999,
         fontFamily: "Sora,sans-serif",
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <div
         style={{
           padding: "10px 12px",
@@ -266,7 +345,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
             style={{
               fontWeight: 700,
               fontSize: 12.5,
-              color: "#0F172A",
+              color: t.textPrimary,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -274,7 +353,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
           >
             {row.task || "—"}
           </div>
-          <div style={{ fontSize: 10.5, color: "#64748B", marginTop: 2 }}>
+          <div style={{ fontSize: 10.5, color: t.textMuted, marginTop: 2 }}>
             {row.module || "—"} {row._projectName && `• ${row._projectName}`}
           </div>
         </div>
@@ -301,16 +380,16 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
           >
             {row.status || "Pending"}
           </span>
-          {isDelayed(row) && (
+          {delayed && (
             <span
               style={{
                 padding: "2px 8px",
                 borderRadius: 999,
                 fontSize: 9,
                 fontWeight: 700,
-                background: "#FEE2E2",
-                color: "#DC2626",
-                border: "1px solid #FCA5A5",
+                background: t.dangerBg,
+                color: t.danger,
+                border: `1px solid ${t.dangerBorder}`,
                 whiteSpace: "nowrap",
                 textTransform: "uppercase",
                 letterSpacing: "0.3px",
@@ -330,7 +409,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "#94A3B8",
+            color: t.textFaint,
             padding: 0,
             display: "flex",
             alignItems: "center",
@@ -341,9 +420,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
         </button>
       </div>
 
-      {/* Body */}
       <div style={{ padding: "10px 12px" }}>
-        {/* Resource */}
         <div
           style={{
             display: "flex",
@@ -352,19 +429,18 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
             marginBottom: 8,
           }}
         >
-          <Users size={12} color="#64748B" />
-          <span style={{ fontSize: 11.5, color: "#475569" }}>
+          <Users size={12} color={t.textMuted} />
+          <span style={{ fontSize: 11.5, color: t.textSecondary }}>
             {row.resourceName || row.resource || "Unassigned"}
           </span>
         </div>
 
-        {/* Planned Dates */}
         <div style={{ marginBottom: 8 }}>
           <div
             style={{
               fontSize: 9.5,
               fontWeight: 700,
-              color: "#1D4ED8",
+              color: t.primary,
               marginBottom: 4,
               textTransform: "uppercase",
               letterSpacing: "0.3px",
@@ -378,19 +454,19 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
             <div
               style={{
                 padding: "4px 6px",
-                background: "#F0F9FF",
-                border: "1px solid #BAE6FD",
+                background: t.primaryBgSubtle,
+                border: `1px solid ${t.primaryBorder}`,
                 borderRadius: 4,
               }}
             >
-              <div style={{ fontSize: 8.5, color: "#0369A1", fontWeight: 600 }}>
+              <div style={{ fontSize: 8.5, color: t.primary, fontWeight: 600 }}>
                 START
               </div>
               <div
                 style={{
                   fontSize: 9.5,
                   fontFamily: "'JetBrains Mono',monospace",
-                  color: "#0F172A",
+                  color: t.textPrimary,
                 }}
               >
                 {fmtDisplay(row.plannedStart)}
@@ -399,19 +475,19 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
             <div
               style={{
                 padding: "4px 6px",
-                background: "#F0F9FF",
-                border: "1px solid #BAE6FD",
+                background: t.primaryBgSubtle,
+                border: `1px solid ${t.primaryBorder}`,
                 borderRadius: 4,
               }}
             >
-              <div style={{ fontSize: 8.5, color: "#0369A1", fontWeight: 600 }}>
+              <div style={{ fontSize: 8.5, color: t.primary, fontWeight: 600 }}>
                 STOP
               </div>
               <div
                 style={{
                   fontSize: 9.5,
                   fontFamily: "'JetBrains Mono',monospace",
-                  color: "#0F172A",
+                  color: t.textPrimary,
                 }}
               >
                 {fmtDisplay(row.plannedStop)}
@@ -420,14 +496,13 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
           </div>
         </div>
 
-        {/* Actual Dates */}
         {hasActual && (
           <div style={{ marginBottom: 8 }}>
             <div
               style={{
                 fontSize: 9.5,
                 fontWeight: 700,
-                color: "#15803D",
+                color: t.success,
                 marginBottom: 4,
                 textTransform: "uppercase",
                 letterSpacing: "0.3px",
@@ -445,13 +520,13 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
               <div
                 style={{
                   padding: "4px 6px",
-                  background: "#F0FDF4",
-                  border: "1px solid #86EFAC",
+                  background: t.successBgSubtle,
+                  border: `1px solid ${t.successBorder}`,
                   borderRadius: 4,
                 }}
               >
                 <div
-                  style={{ fontSize: 8.5, color: "#15803D", fontWeight: 600 }}
+                  style={{ fontSize: 8.5, color: t.success, fontWeight: 600 }}
                 >
                   START
                 </div>
@@ -459,7 +534,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
                   style={{
                     fontSize: 9.5,
                     fontFamily: "'JetBrains Mono',monospace",
-                    color: "#0F172A",
+                    color: t.textPrimary,
                   }}
                 >
                   {fmtDisplay(row.actualStart)}
@@ -468,13 +543,13 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
               <div
                 style={{
                   padding: "4px 6px",
-                  background: "#F0FDF4",
-                  border: "1px solid #86EFAC",
+                  background: t.successBgSubtle,
+                  border: `1px solid ${t.successBorder}`,
                   borderRadius: 4,
                 }}
               >
                 <div
-                  style={{ fontSize: 8.5, color: "#15803D", fontWeight: 600 }}
+                  style={{ fontSize: 8.5, color: t.success, fontWeight: 600 }}
                 >
                   STOP
                 </div>
@@ -482,7 +557,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
                   style={{
                     fontSize: 9.5,
                     fontFamily: "'JetBrains Mono',monospace",
-                    color: "#0F172A",
+                    color: t.textPrimary,
                   }}
                 >
                   {fmtDisplay(row.actualStop)}
@@ -492,7 +567,6 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
           </div>
         )}
 
-        {/* Duration */}
         <div
           style={{
             display: "flex",
@@ -500,13 +574,13 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
             gap: 6,
             marginBottom: 10,
             padding: "4px 8px",
-            background: "#F8FAFC",
-            border: "1px solid #E2E8F0",
+            background: t.bgSubtle,
+            border: `1px solid ${t.border}`,
             borderRadius: 5,
           }}
         >
-          <Clock size={11} color="#64748B" />
-          <span style={{ fontSize: 11, color: "#475569" }}>
+          <Clock size={11} color={t.textMuted} />
+          <span style={{ fontSize: 11, color: t.textSecondary }}>
             Planned: <strong>{fmtHrMin(row.durationHrs)}</strong>
             {row.actualElapsedHrs != null && (
               <>
@@ -518,7 +592,6 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
           </span>
         </div>
 
-        {/* Actions */}
         <div style={{ display: "flex", gap: 6 }}>
           {row.commentCount > 0 && (
             <button
@@ -529,10 +602,10 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
               style={{
                 flex: 1,
                 height: 28,
-                border: "1px solid #DDD6FE",
+                border: `1px solid ${t.violetBorder}`,
                 borderRadius: 6,
-                background: "#EDE9FE",
-                color: "#7C3AED",
+                background: t.violetBg,
+                color: t.violet,
                 fontSize: 11,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -556,10 +629,10 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
               style={{
                 flex: 1,
                 height: 28,
-                border: "1px solid #DDD6FE",
+                border: `1px solid ${t.violetBorder}`,
                 borderRadius: 6,
-                background: "#EDE9FE",
-                color: "#7C3AED",
+                background: t.violetBg,
+                color: t.violet,
                 fontSize: 11,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -570,7 +643,7 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
                 fontFamily: "Sora,sans-serif",
               }}
             >
-              <Star size={11} fill="#7C3AED" />
+              <Star size={11} fill={t.violet} />
               View Rating
             </button>
           )}
@@ -579,93 +652,10 @@ function GanttTooltip({ row, x, y, onClose, onOpenComments, onFeedback }) {
     </div>
   );
 }
-/* ─── Lane Assignment: Stack overlapping bars ─── */
-function assignLanes(tasks) {
-  // Sort by start time
-  const sorted = tasks
-    .map((t) => {
-      const start = parseDt(t.plannedStart);
-      const end = parseDt(t.plannedStop);
-      const actualStart = parseDt(t.actualStart);
-      const actualEnd = parseDt(t.actualStop);
 
-      // Use the earliest start and latest end across planned + actual
-      const effectiveStart =
-        start && actualStart
-          ? Math.min(start.getTime(), actualStart.getTime())
-          : (start || actualStart)?.getTime() || 0;
-      const effectiveEnd =
-        end && actualEnd
-          ? Math.max(end.getTime(), actualEnd.getTime())
-          : (end || actualEnd)?.getTime() || 0;
-
-      return {
-        ...t,
-        _effectiveStart: effectiveStart,
-        _effectiveEnd: effectiveEnd,
-      };
-    })
-    .filter((t) => t._effectiveStart && t._effectiveEnd)
-    .sort((a, b) => a._effectiveStart - b._effectiveStart);
-
-  // Greedy lane assignment
-  const lanes = []; // Each lane tracks its "end time"
-
-  sorted.forEach((task) => {
-    let placed = false;
-    for (let i = 0; i < lanes.length; i++) {
-      // If this task starts after (or at) the lane's current end, place here
-      if (task._effectiveStart >= lanes[i]) {
-        lanes[i] = task._effectiveEnd;
-        task._lane = i;
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      // Need a new lane
-      task._lane = lanes.length;
-      lanes.push(task._effectiveEnd);
-    }
-  });
-
-  // Tasks without dates get lane 0
-  tasks.forEach((t) => {
-    const found = sorted.find((s) => s.id === t.id);
-    t._lane = found ? found._lane : 0;
-  });
-
-  return {
-    tasks: tasks.map((t) => {
-      const found = sorted.find((s) => s.id === t.id);
-      return { ...t, _lane: found ? found._lane : 0 };
-    }),
-    laneCount: Math.max(lanes.length, 1),
-  };
-}
-/* ─── Detect Delay: completed task that finished after planned stop ─── */
-function isDelayed(row) {
-  const status = String(row.status || "")
-    .toLowerCase()
-    .trim();
-  if (status !== "completed" && status !== "finished") return false;
-
-  const plannedStop = parseDt(row.plannedStop);
-  const actualStop = parseDt(row.actualStop);
-
-  if (!plannedStop || !actualStop) return false;
-
-  return actualStop.getTime() > plannedStop.getTime();
-}
-
-/* ─── Delayed Color Override ─── */
-const DELAYED_COLOR = {
-  bg: "#FEE2E2",
-  color: "#DC2626",
-  border: "#FCA5A5",
-  bar: "#EF4444",
-};
+/* ─── Themed Filter Dropdown (Global toolbar) ─── */
 function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
+  const { t } = useTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
@@ -695,9 +685,9 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
           height: 30,
           padding: "0 10px",
           borderRadius: 6,
-          border: `1px solid ${isActive ? "#1D4ED8" : "#CBD5E1"}`,
-          background: isActive ? "#EFF6FF" : "#fff",
-          color: isActive ? "#1D4ED8" : "#475569",
+          border: `1px solid ${isActive ? t.primary : t.borderStrong}`,
+          background: isActive ? t.primaryBgSubtle : t.bgCard,
+          color: isActive ? t.primary : t.textSecondary,
           fontFamily: "Sora,sans-serif",
           fontSize: 11.5,
           fontWeight: 500,
@@ -715,8 +705,8 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
             style={{
               padding: "1px 6px",
               borderRadius: 999,
-              background: "#1D4ED8",
-              color: "#fff",
+              background: t.primary,
+              color: t.textInverse,
               fontSize: 9,
               fontWeight: 700,
             }}
@@ -741,10 +731,10 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
             left: 0,
             marginTop: 4,
             width: 240,
-            background: "#fff",
-            border: "1px solid #CBD5E1",
+            background: t.bgCard,
+            border: `1px solid ${t.borderStrong}`,
             borderRadius: 8,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            boxShadow: t.shadowLg,
             zIndex: 999,
             fontFamily: "Sora,sans-serif",
             overflow: "hidden",
@@ -753,14 +743,16 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
           <div
             style={{
               padding: "8px 10px",
-              borderBottom: "1px solid #E2E8F0",
-              background: "#F8FAFC",
+              borderBottom: `1px solid ${t.border}`,
+              background: t.bgSubtle,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+            <span
+              style={{ fontSize: 11, fontWeight: 700, color: t.textPrimary }}
+            >
               Filter by {label}
             </span>
             {isActive && (
@@ -769,7 +761,7 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#EF4444",
+                  color: t.danger,
                   cursor: "pointer",
                   fontSize: 10,
                   fontWeight: 600,
@@ -785,7 +777,7 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
             <div
               style={{
                 padding: "6px 8px",
-                borderBottom: "1px solid #F1F5F9",
+                borderBottom: `1px solid ${t.borderSubtle}`,
               }}
             >
               <input
@@ -796,13 +788,15 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
                 style={{
                   width: "100%",
                   height: 28,
-                  border: "1px solid #E2E8F0",
+                  border: `1px solid ${t.border}`,
                   borderRadius: 5,
                   padding: "0 8px",
                   fontSize: 11,
                   fontFamily: "Sora,sans-serif",
                   outline: "none",
                   boxSizing: "border-box",
+                  background: t.bgInput,
+                  color: t.textPrimary,
                 }}
               />
             </div>
@@ -814,7 +808,7 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
                 style={{
                   padding: "12px",
                   textAlign: "center",
-                  color: "#94A3B8",
+                  color: t.textFaint,
                   fontSize: 11,
                 }}
               >
@@ -839,15 +833,15 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
                       gap: 8,
                       padding: "6px 10px",
                       cursor: "pointer",
-                      background: checked ? "#F0F9FF" : "transparent",
+                      background: checked ? t.primaryBgSubtle : "transparent",
                       borderLeft: checked
-                        ? "3px solid #1D4ED8"
+                        ? `3px solid ${t.primary}`
                         : "3px solid transparent",
                       transition: "background .1s",
                     }}
                     onMouseEnter={(e) => {
                       if (!checked)
-                        e.currentTarget.style.background = "#F8FAFC";
+                        e.currentTarget.style.background = t.bgSubtle;
                     }}
                     onMouseLeave={(e) => {
                       if (!checked)
@@ -859,13 +853,13 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
                         width: 16,
                         height: 16,
                         borderRadius: 4,
-                        border: `1.5px solid ${checked ? "#1D4ED8" : "#CBD5E1"}`,
-                        background: checked ? "#1D4ED8" : "#fff",
+                        border: `1.5px solid ${checked ? t.primary : t.borderStrong}`,
+                        background: checked ? t.primary : t.bgCard,
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
-                        color: "#fff",
+                        color: t.textInverse,
                         fontSize: 10,
                         fontWeight: 700,
                       }}
@@ -886,7 +880,7 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
                     <span
                       style={{
                         fontSize: 11.5,
-                        color: "#0F172A",
+                        color: t.textPrimary,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -907,10 +901,10 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
             <div
               style={{
                 padding: "6px 10px",
-                borderTop: "1px solid #E2E8F0",
-                background: "#FAFBFC",
+                borderTop: `1px solid ${t.border}`,
+                background: t.bgSubtle,
                 fontSize: 10,
-                color: "#64748B",
+                color: t.textMuted,
                 textAlign: "center",
               }}
             >
@@ -922,622 +916,8 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
     </div>
   );
 }
-/* ─── Compact Per-Project Filter Dropdown ─── */
-import { createPortal } from "react-dom";
 
-/* ─── Compact Per-Project Filter Dropdown (with Portal) ─── */
-function CompactFilterDropdown({
-  label,
-  icon,
-  options,
-  selected,
-  onChange,
-  color = "#1D4ED8",
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const buttonRef = useRef(null);
-  const popupRef = useRef(null);
-
-  // ── Calculate dropdown position ──
-  const updatePosition = useCallback(() => {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const popupWidth = 240;
-    const popupHeight = 320;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const spacing = 4;
-
-    // Vertical positioning
-    let top = rect.bottom + spacing;
-    if (top + popupHeight > viewportHeight - 20) {
-      // Open upward if not enough space below
-      top = rect.top - popupHeight - spacing;
-    }
-
-    // Horizontal positioning — align to right edge of button
-    let left = rect.right - popupWidth;
-    if (left < 10) {
-      left = 10; // Prevent going off-screen left
-    }
-    if (left + popupWidth > viewportWidth - 10) {
-      left = viewportWidth - popupWidth - 10;
-    }
-
-    setPosition({ top, left });
-  }, []);
-
-  // ── Update position when opened ──
-  useEffect(() => {
-    if (!open) return;
-    updatePosition();
-
-    const handleReposition = () => updatePosition();
-    window.addEventListener("scroll", handleReposition, true);
-    window.addEventListener("resize", handleReposition);
-    return () => {
-      window.removeEventListener("scroll", handleReposition, true);
-      window.removeEventListener("resize", handleReposition);
-    };
-  }, [open, updatePosition]);
-
-  // ── Click outside handler ──
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (buttonRef.current?.contains(e.target)) return;
-      if (popupRef.current?.contains(e.target)) return;
-      setOpen(false);
-      setSearch("");
-    };
-    // Delay so opening click doesn't immediately close
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 50);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", handler);
-    };
-  }, [open]);
-
-  const filtered = options.filter((o) =>
-    (o.label || "").toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const isActive = selected.length > 0;
-
-  // ── Dropdown popup (rendered via portal) ──
-  const popup = open ? (
-    <div
-      ref={popupRef}
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        position: "fixed",
-        top: position.top,
-        left: position.left,
-        width: 240,
-        background: "#fff",
-        border: "1px solid #CBD5E1",
-        borderRadius: 8,
-        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
-        zIndex: 99999,
-        fontFamily: "Sora,sans-serif",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "8px 12px",
-          borderBottom: "1px solid #E2E8F0",
-          background: "#F8FAFC",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
-          Filter: {label}
-        </span>
-        {isActive && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onChange([]);
-            }}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#EF4444",
-              cursor: "pointer",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: 0,
-            }}
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* Search */}
-      {options.length > 5 && (
-        <div
-          style={{
-            padding: "6px 10px",
-            borderBottom: "1px solid #F1F5F9",
-          }}
-        >
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
-            autoFocus
-            style={{
-              width: "100%",
-              height: 26,
-              border: "1px solid #E2E8F0",
-              borderRadius: 5,
-              padding: "0 8px",
-              fontSize: 11,
-              fontFamily: "Sora,sans-serif",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
-      )}
-
-      {/* Options */}
-      <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 0" }}>
-        {filtered.length === 0 ? (
-          <div
-            style={{
-              padding: "12px",
-              textAlign: "center",
-              color: "#94A3B8",
-              fontSize: 11,
-            }}
-          >
-            No options
-          </div>
-        ) : (
-          filtered.map((opt) => {
-            const checked = selected.includes(opt.value);
-            return (
-              <div
-                key={opt.value}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange(
-                    checked
-                      ? selected.filter((v) => v !== opt.value)
-                      : [...selected, opt.value],
-                  );
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  background: checked ? `${color}15` : "transparent",
-                  borderLeft: checked
-                    ? `3px solid ${color}`
-                    : "3px solid transparent",
-                  transition: "background 0.1s",
-                }}
-                onMouseEnter={(e) => {
-                  if (!checked) e.currentTarget.style.background = "#F8FAFC";
-                }}
-                onMouseLeave={(e) => {
-                  if (!checked)
-                    e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span
-                  style={{
-                    width: 15,
-                    height: 15,
-                    borderRadius: 4,
-                    border: `1.5px solid ${checked ? color : "#CBD5E1"}`,
-                    background: checked ? color : "#fff",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    color: "#fff",
-                    fontSize: 9,
-                    fontWeight: 700,
-                  }}
-                >
-                  {checked && "✓"}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11.5,
-                    color: "#0F172A",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    fontWeight: checked ? 600 : 400,
-                    flex: 1,
-                  }}
-                  title={opt.label}
-                >
-                  {opt.label}
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Footer */}
-      {selected.length > 0 && (
-        <div
-          style={{
-            padding: "6px 12px",
-            borderTop: "1px solid #E2E8F0",
-            background: "#FAFBFC",
-            fontSize: 10,
-            color: "#64748B",
-            textAlign: "center",
-          }}
-        >
-          {selected.length} of {options.length} selected
-        </div>
-      )}
-    </div>
-  ) : null;
-
-  return (
-    <>
-      <button
-        ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((p) => !p);
-        }}
-        title={`Filter by ${label}`}
-        style={{
-          height: 22,
-          padding: "0 6px",
-          borderRadius: 4,
-          border: `1px solid ${isActive ? color : "#E2E8F0"}`,
-          background: isActive ? `${color}15` : "#fff",
-          color: isActive ? color : "#64748B",
-          fontFamily: "Sora,sans-serif",
-          fontSize: 9.5,
-          fontWeight: isActive ? 600 : 500,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 3,
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-        <span>{label}</span>
-        {isActive && (
-          <span
-            style={{
-              padding: "0 4px",
-              borderRadius: 999,
-              background: color,
-              color: "#fff",
-              fontSize: 8.5,
-              fontWeight: 700,
-              minWidth: 12,
-              textAlign: "center",
-            }}
-          >
-            {selected.length}
-          </span>
-        )}
-      </button>
-
-      {/* Portal renders popup at document.body level */}
-      {open && createPortal(popup, document.body)}
-    </>
-  );
-}
-/* ─── Column Header Filter Button (with portal) ─── */
-function ColumnFilterButton({
-  columnKey,
-  color,
-  filterOptions,
-  selected,
-  onChange,
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const buttonRef = useRef(null);
-  const popupRef = useRef(null);
-
-  const updatePosition = useCallback(() => {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const popupWidth = 220;
-    const popupHeight = 320;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const spacing = 4;
-
-    let top = rect.bottom + spacing;
-    if (top + popupHeight > viewportHeight - 20) {
-      top = rect.top - popupHeight - spacing;
-    }
-
-    let left = rect.right - popupWidth;
-    if (left < 10) left = 10;
-    if (left + popupWidth > viewportWidth - 10) {
-      left = viewportWidth - popupWidth - 10;
-    }
-
-    setPosition({ top, left });
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updatePosition();
-    const reposition = () => updatePosition();
-    window.addEventListener("scroll", reposition, true);
-    window.addEventListener("resize", reposition);
-    return () => {
-      window.removeEventListener("scroll", reposition, true);
-      window.removeEventListener("resize", reposition);
-    };
-  }, [open, updatePosition]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (buttonRef.current?.contains(e.target)) return;
-      if (popupRef.current?.contains(e.target)) return;
-      setOpen(false);
-      setSearch("");
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 50);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", handler);
-    };
-  }, [open]);
-
-  const filtered = filterOptions.filter((o) =>
-    (o.label || "").toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const isActive = selected.length > 0;
-
-  const popup = open ? (
-    <div
-      ref={popupRef}
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        position: "fixed",
-        top: position.top,
-        left: position.left,
-        width: 220,
-        background: "#fff",
-        border: "1px solid #CBD5E1",
-        borderRadius: 8,
-        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
-        zIndex: 99999,
-        fontFamily: "Sora,sans-serif",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          padding: "8px 12px",
-          borderBottom: "1px solid #E2E8F0",
-          background: "#F8FAFC",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
-          Filter {columnKey.charAt(0).toUpperCase() + columnKey.slice(1)}
-        </span>
-        {isActive && (
-          <button
-            onClick={() => onChange([])}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#EF4444",
-              cursor: "pointer",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: 0,
-            }}
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {filterOptions.length > 5 && (
-        <div style={{ padding: "6px 10px", borderBottom: "1px solid #F1F5F9" }}>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search…"
-            autoFocus
-            style={{
-              width: "100%",
-              height: 26,
-              border: "1px solid #E2E8F0",
-              borderRadius: 5,
-              padding: "0 8px",
-              fontSize: 11,
-              fontFamily: "Sora,sans-serif",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
-      )}
-
-      <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 0" }}>
-        {filtered.length === 0 ? (
-          <div
-            style={{
-              padding: "12px",
-              textAlign: "center",
-              color: "#94A3B8",
-              fontSize: 11,
-            }}
-          >
-            No options
-          </div>
-        ) : (
-          filtered.map((opt) => {
-            const checked = selected.includes(opt.value);
-            return (
-              <div
-                key={opt.value}
-                onClick={() => {
-                  onChange(
-                    checked
-                      ? selected.filter((v) => v !== opt.value)
-                      : [...selected, opt.value],
-                  );
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  background: checked ? `${color}15` : "transparent",
-                  borderLeft: checked
-                    ? `3px solid ${color}`
-                    : "3px solid transparent",
-                }}
-                onMouseEnter={(e) => {
-                  if (!checked) e.currentTarget.style.background = "#F8FAFC";
-                }}
-                onMouseLeave={(e) => {
-                  if (!checked)
-                    e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span
-                  style={{
-                    width: 15,
-                    height: 15,
-                    borderRadius: 4,
-                    border: `1.5px solid ${checked ? color : "#CBD5E1"}`,
-                    background: checked ? color : "#fff",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    color: "#fff",
-                    fontSize: 9,
-                    fontWeight: 700,
-                  }}
-                >
-                  {checked && "✓"}
-                </span>
-                <span
-                  style={{
-                    fontSize: 11.5,
-                    color: "#0F172A",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    fontWeight: checked ? 600 : 400,
-                    flex: 1,
-                  }}
-                  title={opt.label}
-                >
-                  {opt.label}
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {selected.length > 0 && (
-        <div
-          style={{
-            padding: "6px 12px",
-            borderTop: "1px solid #E2E8F0",
-            background: "#FAFBFC",
-            fontSize: 10,
-            color: "#64748B",
-            textAlign: "center",
-          }}
-        >
-          {selected.length} of {filterOptions.length} selected
-        </div>
-      )}
-    </div>
-  ) : null;
-
-  return (
-    <>
-      <button
-        ref={buttonRef}
-        onClick={() => setOpen((p) => !p)}
-        title={`Filter ${columnKey}`}
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 4,
-          border: `1px solid ${isActive ? color : "#E2E8F0"}`,
-          background: isActive ? `${color}15` : "#fff",
-          color: isActive ? color : "#94A3B8",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 0,
-          position: "relative",
-          flexShrink: 0,
-        }}
-      >
-        <Filter size={11} />
-        {isActive && (
-          <span
-            style={{
-              position: "absolute",
-              top: -4,
-              right: -4,
-              minWidth: 14,
-              height: 14,
-              padding: "0 3px",
-              borderRadius: 999,
-              background: color,
-              color: "#fff",
-              fontSize: 8.5,
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "1.5px solid #fff",
-            }}
-          >
-            {selected.length}
-          </span>
-        )}
-      </button>
-      {open && createPortal(popup, document.body)}
-    </>
-  );
-}
-/* ─── Project Column Filter Button (with portal) ─── */
+/* ─── Themed Project Column Filter Button (Portal) ─── */
 function ProjectColumnFilterButton({
   color,
   columnKey,
@@ -1545,6 +925,7 @@ function ProjectColumnFilterButton({
   selected,
   onChange,
 }) {
+  const { t } = useTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -1561,16 +942,12 @@ function ProjectColumnFilterButton({
     const spacing = 4;
 
     let top = rect.bottom + spacing;
-    if (top + popupHeight > viewportHeight - 20) {
+    if (top + popupHeight > viewportHeight - 20)
       top = rect.top - popupHeight - spacing;
-    }
-
     let left = rect.right - popupWidth;
     if (left < 10) left = 10;
-    if (left + popupWidth > viewportWidth - 10) {
+    if (left + popupWidth > viewportWidth - 10)
       left = viewportWidth - popupWidth - 10;
-    }
-
     setPosition({ top, left });
   }, []);
 
@@ -1594,9 +971,10 @@ function ProjectColumnFilterButton({
       setOpen(false);
       setSearch("");
     };
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 50);
+    const timer = setTimeout(
+      () => document.addEventListener("mousedown", handler),
+      50,
+    );
     return () => {
       clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
@@ -1618,10 +996,10 @@ function ProjectColumnFilterButton({
         top: position.top,
         left: position.left,
         width: 220,
-        background: "#fff",
-        border: "1px solid #CBD5E1",
+        background: t.bgCard,
+        border: `1px solid ${t.borderStrong}`,
         borderRadius: 8,
-        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+        boxShadow: t.shadowLg,
         zIndex: 99999,
         fontFamily: "Sora,sans-serif",
         overflow: "hidden",
@@ -1630,14 +1008,14 @@ function ProjectColumnFilterButton({
       <div
         style={{
           padding: "8px 12px",
-          borderBottom: "1px solid #E2E8F0",
-          background: "#F8FAFC",
+          borderBottom: `1px solid ${t.border}`,
+          background: t.bgSubtle,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#0F172A" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: t.textPrimary }}>
           Filter {columnKey.charAt(0).toUpperCase() + columnKey.slice(1)}
         </span>
         {isActive && (
@@ -1646,7 +1024,7 @@ function ProjectColumnFilterButton({
             style={{
               background: "none",
               border: "none",
-              color: "#EF4444",
+              color: t.danger,
               cursor: "pointer",
               fontSize: 10,
               fontWeight: 600,
@@ -1659,7 +1037,12 @@ function ProjectColumnFilterButton({
       </div>
 
       {options.length > 5 && (
-        <div style={{ padding: "6px 10px", borderBottom: "1px solid #F1F5F9" }}>
+        <div
+          style={{
+            padding: "6px 10px",
+            borderBottom: `1px solid ${t.borderSubtle}`,
+          }}
+        >
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -1668,13 +1051,15 @@ function ProjectColumnFilterButton({
             style={{
               width: "100%",
               height: 26,
-              border: "1px solid #E2E8F0",
+              border: `1px solid ${t.border}`,
               borderRadius: 5,
               padding: "0 8px",
               fontSize: 11,
               fontFamily: "Sora,sans-serif",
               outline: "none",
               boxSizing: "border-box",
+              background: t.bgInput,
+              color: t.textPrimary,
             }}
           />
         </div>
@@ -1686,7 +1071,7 @@ function ProjectColumnFilterButton({
             style={{
               padding: "12px",
               textAlign: "center",
-              color: "#94A3B8",
+              color: t.textFaint,
               fontSize: 11,
             }}
           >
@@ -1711,13 +1096,13 @@ function ProjectColumnFilterButton({
                   gap: 8,
                   padding: "6px 12px",
                   cursor: "pointer",
-                  background: checked ? `${color}15` : "transparent",
+                  background: checked ? `${color}20` : "transparent",
                   borderLeft: checked
                     ? `3px solid ${color}`
                     : "3px solid transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (!checked) e.currentTarget.style.background = "#F8FAFC";
+                  if (!checked) e.currentTarget.style.background = t.bgSubtle;
                 }}
                 onMouseLeave={(e) => {
                   if (!checked)
@@ -1729,13 +1114,13 @@ function ProjectColumnFilterButton({
                     width: 15,
                     height: 15,
                     borderRadius: 4,
-                    border: `1.5px solid ${checked ? color : "#CBD5E1"}`,
-                    background: checked ? color : "#fff",
+                    border: `1.5px solid ${checked ? color : t.borderStrong}`,
+                    background: checked ? color : t.bgCard,
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    color: "#fff",
+                    color: t.textInverse,
                     fontSize: 9,
                     fontWeight: 700,
                   }}
@@ -1745,7 +1130,7 @@ function ProjectColumnFilterButton({
                 <span
                   style={{
                     fontSize: 11.5,
-                    color: "#0F172A",
+                    color: t.textPrimary,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -1766,10 +1151,10 @@ function ProjectColumnFilterButton({
         <div
           style={{
             padding: "6px 12px",
-            borderTop: "1px solid #E2E8F0",
-            background: "#FAFBFC",
+            borderTop: `1px solid ${t.border}`,
+            background: t.bgSubtle,
             fontSize: 10,
-            color: "#64748B",
+            color: t.textMuted,
             textAlign: "center",
           }}
         >
@@ -1789,9 +1174,9 @@ function ProjectColumnFilterButton({
           width: 20,
           height: 20,
           borderRadius: 4,
-          border: `1px solid ${isActive ? color : "#E2E8F0"}`,
-          background: isActive ? `${color}15` : "#fff",
-          color: isActive ? color : "#94A3B8",
+          border: `1px solid ${isActive ? color : t.border}`,
+          background: isActive ? `${color}20` : t.bgCard,
+          color: isActive ? color : t.textFaint,
           cursor: "pointer",
           display: "inline-flex",
           alignItems: "center",
@@ -1813,13 +1198,13 @@ function ProjectColumnFilterButton({
               padding: "0 3px",
               borderRadius: 999,
               background: color,
-              color: "#fff",
+              color: t.textInverse,
               fontSize: 8,
               fontWeight: 700,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "1.5px solid #fff",
+              border: `1.5px solid ${t.bgCard}`,
             }}
           >
             {selected.length}
@@ -1837,7 +1222,8 @@ export default function GanttView({
   onFeedback,
   showGlobalFilters = false,
 }) {
-  console.log("project : ", projects);
+  const { t } = useTheme();
+
   const [viewMode, setViewMode] = useState("task");
   const [zoom, setZoom] = useState("day");
   const [colWidthPx, setColWidthPx] = useState(
@@ -1855,7 +1241,6 @@ export default function GanttView({
   const timelineRef = useRef(null);
   const leftPanelRef = useRef(null);
   const [projectFilters, setProjectFilters] = useState({});
-  // ── Column filter state (global across all projects) ──
   const [columnFilters, setColumnFilters] = useState({
     module: [],
     resource: [],
@@ -1865,13 +1250,9 @@ export default function GanttView({
   // ── Filter projects ──
   const filteredProjects = useMemo(() => {
     let result = projects;
-
-    // Project filter
     if (projectFilter.length > 0) {
       result = result.filter((p) => projectFilter.includes(p.id));
     }
-
-    // Apply row-level filters (module, resource, status)
     if (
       moduleFilter.length > 0 ||
       resourceFilter.length > 0 ||
@@ -1883,25 +1264,20 @@ export default function GanttView({
             if (
               moduleFilter.length > 0 &&
               !moduleFilter.includes(r.module || "")
-            ) {
+            )
               return false;
-            }
             if (
               resourceFilter.length > 0 &&
               !resourceFilter.includes(r.resource || "")
-            ) {
+            )
               return false;
-            }
             if (
               statusFilter.length > 0 &&
               !statusFilter.includes(r.status || "Pending")
-            ) {
+            )
               return false;
-            }
             return true;
           });
-
-          // Include ancestors of filtered rows
           const finalIds = new Set(filteredRows.map((r) => r.id));
           filteredRows.forEach((r) => {
             let cur = (p.rows || []).find((x) => x.id === r.parentId);
@@ -1910,100 +1286,29 @@ export default function GanttView({
               cur = (p.rows || []).find((x) => x.id === cur.parentId);
             }
           });
-
           return {
             ...p,
             rows: (p.rows || []).filter((r) => finalIds.has(r.id)),
           };
         })
-        .filter((p) => p.rows.length > 0); // Only show projects with matching rows
+        .filter((p) => p.rows.length > 0);
     }
-
     return result;
   }, [projects, projectFilter, moduleFilter, resourceFilter, statusFilter]);
-  // Add this near your other computed values in GanttView
+
   const leftPanelWidth = useMemo(() => {
-    // Expand width if any project is expanded (needs room for filter buttons)
     const anyExpanded = filteredProjects.some((p) =>
       expandedProjects.has(p.id),
     );
     return anyExpanded ? LEFT_PANEL_WIDTH_EXPANDED : LEFT_PANEL_WIDTH_COLLAPSED;
   }, [filteredProjects, expandedProjects]);
-  // ── Flatten all rows across projects ──
-  // ── Compute options for column filters (cascading) ──
-  const globalColumnFilterOptions = useMemo(() => {
-    // All rows from all filtered projects
-    const allRows = filteredProjects.flatMap((p) => p.rows || []);
 
-    // Helper: does row match all filters EXCEPT the given one?
-    const matchesExcept = (row, excludeKey) => {
-      if (
-        excludeKey !== "module" &&
-        columnFilters.module.length > 0 &&
-        !columnFilters.module.includes(row.module || "")
-      ) {
-        return false;
-      }
-      if (
-        excludeKey !== "resource" &&
-        columnFilters.resource.length > 0 &&
-        !columnFilters.resource.includes(row.resource || "")
-      ) {
-        return false;
-      }
-      if (
-        excludeKey !== "status" &&
-        columnFilters.status.length > 0 &&
-        !columnFilters.status.includes(row.status || "Pending")
-      ) {
-        return false;
-      }
-      return true;
-    };
-
-    // Modules
-    const modules = [
-      ...new Set(
-        allRows
-          .filter((r) => matchesExcept(r, "module") && r.module)
-          .map((r) => r.module),
-      ),
-    ].sort();
-    const moduleOpts = modules.map((m) => ({ value: m, label: m }));
-
-    // Resources
-    const resourcesMap = new Map();
-    allRows
-      .filter((r) => matchesExcept(r, "resource") && r.resource)
-      .forEach((r) => {
-        if (!resourcesMap.has(r.resource)) {
-          resourcesMap.set(r.resource, {
-            value: r.resource,
-            label: r.resourceName || r.resource,
-          });
-        }
-      });
-    const resourceOpts = Array.from(resourcesMap.values()).sort((a, b) =>
-      a.label.localeCompare(b.label),
-    );
-
-    // Statuses
-    const statuses = [
-      ...new Set(
-        allRows
-          .filter((r) => matchesExcept(r, "status"))
-          .map((r) => r.status || "Pending"),
-      ),
-    ].sort();
-    const statusOpts = statuses.map((s) => ({ value: s, label: s }));
-
-    return { moduleOpts, resourceOpts, statusOpts };
-  }, [filteredProjects, columnFilters]);
   const syncScroll = useCallback((e) => {
     if (leftPanelRef.current)
       leftPanelRef.current.scrollTop = e.target.scrollTop;
   }, []);
-  // ── Resource view ──
+
+  // ── Resource view data ──
   const resourceViewData = useMemo(() => {
     const map = new Map();
     filteredProjects.forEach((project) => {
@@ -2025,13 +1330,12 @@ export default function GanttView({
           });
         });
     });
-
-    // Assign lanes for each resource
     return Array.from(map.values()).map((res) => {
       const { tasks, laneCount } = assignLanes(res.tasks);
       return { ...res, tasks, laneCount };
     });
   }, [filteredProjects]);
+
   // ── Date range ──
   const { projectStart, projectEnd, totalMs } = useMemo(() => {
     const allDates = [];
@@ -2117,38 +1421,27 @@ export default function GanttView({
     });
     return map;
   }, [filteredProjects]);
-  // ── Filter options from all projects ──
+
   const filterOptions = useMemo(() => {
-    // ── 1. Project options: always full list ──
     const projectOpts = projects.map((p) => ({
       value: p.id,
       label: p.project || "Untitled",
       color: projectColorMap[p.id],
     }));
-
-    // ── 2. Filter projects by current project filter ──
     const projectsForOpts =
       projectFilter.length > 0
         ? projects.filter((p) => projectFilter.includes(p.id))
         : projects;
-
-    // ── 3. All rows from filtered projects ──
     let scopedRows = projectsForOpts.flatMap((p) => p.rows || []);
-
-    // ── 4. Module options: filter by selected projects ──
     const modules = [
       ...new Set(scopedRows.filter((r) => r.module).map((r) => r.module)),
     ].sort();
     const moduleOpts = modules.map((m) => ({ value: m, label: m }));
-
-    // ── 5. Filter rows by module selection (for resource/status options) ──
     if (moduleFilter.length > 0) {
       scopedRows = scopedRows.filter((r) =>
         moduleFilter.includes(r.module || ""),
       );
     }
-
-    // ── 6. Resource options: filter by projects + modules ──
     const resourcesMap = new Map();
     scopedRows
       .filter((r) => r.resource)
@@ -2163,53 +1456,38 @@ export default function GanttView({
     const resourceOpts = Array.from(resourcesMap.values()).sort((a, b) =>
       a.label.localeCompare(b.label),
     );
-
-    // ── 7. Filter rows by resource selection (for status options) ──
     if (resourceFilter.length > 0) {
       scopedRows = scopedRows.filter((r) =>
         resourceFilter.includes(r.resource || ""),
       );
     }
-
-    // ── 8. Status options: filter by projects + modules + resources ──
     const statuses = [
       ...new Set(scopedRows.map((r) => r.status || "Pending")),
     ].sort();
     const statusOpts = statuses.map((s) => ({ value: s, label: s }));
-
     return { projectOpts, moduleOpts, resourceOpts, statusOpts };
   }, [projects, projectColorMap, projectFilter, moduleFilter, resourceFilter]);
-  // ═══════════════════════════════════════════════════════
-  // 1. Reset column width when zoom changes
-  // ═══════════════════════════════════════════════════════
+
   useEffect(() => {
     setColWidthPx(ZOOM_CONFIGS[zoom].defaultColWidth);
   }, [zoom]);
 
-  // ═══════════════════════════════════════════════════════
-  // 2. Auto-clean invalid per-project filter selections
-  // (Fixed: no infinite loop)
-  // ═══════════════════════════════════════════════════════
   useEffect(() => {
     setProjectFilters((prevFilters) => {
       let hasChanges = false;
       const newFilters = { ...prevFilters };
-
       filteredProjects.forEach((project) => {
         const currentFilter = prevFilters[project.id];
         if (!currentFilter) return;
-
         const isEmpty =
           currentFilter.module.length === 0 &&
           currentFilter.resource.length === 0 &&
           currentFilter.status.length === 0;
         if (isEmpty) return;
-
         const opts = getProjectFilterOptions(project, currentFilter);
         const validModules = new Set(opts.moduleOpts.map((o) => o.value));
         const validResources = new Set(opts.resourceOpts.map((o) => o.value));
         const validStatuses = new Set(opts.statusOpts.map((o) => o.value));
-
         const cleanedModule = currentFilter.module.filter((m) =>
           validModules.has(m),
         );
@@ -2219,12 +1497,10 @@ export default function GanttView({
         const cleanedStatus = currentFilter.status.filter((s) =>
           validStatuses.has(s),
         );
-
         const changed =
           cleanedModule.length !== currentFilter.module.length ||
           cleanedResource.length !== currentFilter.resource.length ||
           cleanedStatus.length !== currentFilter.status.length;
-
         if (changed) {
           hasChanges = true;
           newFilters[project.id] = {
@@ -2234,31 +1510,23 @@ export default function GanttView({
           };
         }
       });
-
-      // CRITICAL: Return same reference if nothing changed (prevents infinite loop)
       return hasChanges ? newFilters : prevFilters;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredProjects]); // ← Only depend on filteredProjects, NOT projectFilters
+    // eslint-disable-next-line
+  }, [filteredProjects]);
 
-  // ═══════════════════════════════════════════════════════
-  // 3. Auto-clean invalid GLOBAL filter selections
-  // ═══════════════════════════════════════════════════════
   useEffect(() => {
     const validModuleValues = filterOptions.moduleOpts.map((o) => o.value);
     const validResourceValues = filterOptions.resourceOpts.map((o) => o.value);
     const validStatusValues = filterOptions.statusOpts.map((o) => o.value);
-
     setModuleFilter((prev) => {
       const filtered = prev.filter((m) => validModuleValues.includes(m));
       return filtered.length === prev.length ? prev : filtered;
     });
-
     setResourceFilter((prev) => {
       const filtered = prev.filter((r) => validResourceValues.includes(r));
       return filtered.length === prev.length ? prev : filtered;
     });
-
     setStatusFilter((prev) => {
       const filtered = prev.filter((s) => validStatusValues.includes(s));
       return filtered.length === prev.length ? prev : filtered;
@@ -2270,11 +1538,10 @@ export default function GanttView({
   ]);
 
   const hasChildren = useCallback(
-    (rowId) => {
-      return filteredProjects.some((p) =>
+    (rowId) =>
+      filteredProjects.some((p) =>
         (p.rows || []).some((r) => r.parentId === rowId),
-      );
-    },
+      ),
     [filteredProjects],
   );
 
@@ -2283,13 +1550,14 @@ export default function GanttView({
     setTooltip({ row, x: e.clientX, y: e.clientY });
   };
 
+  // Themed button style
   const btnStyle = {
     height: 30,
     padding: "0 12px",
     borderRadius: 6,
-    border: "1px solid #CBD5E1",
-    background: "#fff",
-    color: "#475569",
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
     fontFamily: "Sora,sans-serif",
     fontSize: 11.5,
     fontWeight: 500,
@@ -2298,29 +1566,20 @@ export default function GanttView({
     alignItems: "center",
     gap: 5,
   };
-  // Get filters for a specific project
+
   const getProjectFilter = (projectId) => {
     return (
-      projectFilters[projectId] || {
-        module: [],
-        resource: [],
-        status: [],
-      }
+      projectFilters[projectId] || { module: [], resource: [], status: [] }
     );
   };
 
-  // Update a specific filter for a project
   const updateProjectFilter = (projectId, filterKey, values) => {
     setProjectFilters((prev) => ({
       ...prev,
-      [projectId]: {
-        ...getProjectFilter(projectId),
-        [filterKey]: values,
-      },
+      [projectId]: { ...getProjectFilter(projectId), [filterKey]: values },
     }));
   };
 
-  // Clear all filters for a specific project
   const clearProjectFilters = (projectId) => {
     setProjectFilters((prev) => {
       const next = { ...prev };
@@ -2329,11 +1588,8 @@ export default function GanttView({
     });
   };
 
-  // Get filter options for a specific project
-  // Get filter options for a specific project (with dependent filtering)
   const getProjectFilterOptions = useCallback((project, currentFilter) => {
     const allRows = project.rows || [];
-
     const matchesFilters = (row, excludeKey) => {
       if (
         excludeKey !== "module" &&
@@ -2355,12 +1611,10 @@ export default function GanttView({
         return false;
       return true;
     };
-
     const rowsForModules = allRows.filter((r) => matchesFilters(r, "module"));
     const modules = [
       ...new Set(rowsForModules.filter((r) => r.module).map((r) => r.module)),
     ].sort();
-
     const rowsForResources = allRows.filter((r) =>
       matchesFilters(r, "resource"),
     );
@@ -2378,35 +1632,31 @@ export default function GanttView({
     const resources = Array.from(resourcesMap.values()).sort((a, b) =>
       a.label.localeCompare(b.label),
     );
-
     const rowsForStatuses = allRows.filter((r) => matchesFilters(r, "status"));
     const statuses = [
       ...new Set(rowsForStatuses.map((r) => r.status || "Pending")),
     ].sort();
-
     return {
       moduleOpts: modules.map((m) => ({ value: m, label: m })),
       resourceOpts: resources,
       statusOpts: statuses.map((s) => ({ value: s, label: s })),
     };
   }, []);
-  // Check if project has active filters
+
   const hasProjectFilters = (projectId) => {
     const f = getProjectFilter(projectId);
     return f.module.length > 0 || f.resource.length > 0 || f.status.length > 0;
   };
+
   const allRows = useMemo(() => {
     const result = [];
     filteredProjects.forEach((project, pIdx) => {
       let rows = project.rows || [];
-
-      // ── Apply per-project filters ──
       const pFilter = getProjectFilter(project.id);
       const hasAnyFilter =
         pFilter.module.length > 0 ||
         pFilter.resource.length > 0 ||
         pFilter.status.length > 0;
-
       if (hasAnyFilter) {
         const filteredRows = rows.filter((r) => {
           if (
@@ -2426,8 +1676,6 @@ export default function GanttView({
             return false;
           return true;
         });
-
-        // Include ancestors
         const finalIds = new Set(filteredRows.map((r) => r.id));
         filteredRows.forEach((r) => {
           let cur = rows.find((x) => x.id === r.parentId);
@@ -2436,17 +1684,14 @@ export default function GanttView({
             cur = rows.find((x) => x.id === cur.parentId);
           }
         });
-
         rows = rows.filter((r) => finalIds.has(r.id));
       }
-
       const childrenMap = new Map();
       rows.forEach((r) => {
         const key = r.parentId || "__ROOT__";
         if (!childrenMap.has(key)) childrenMap.set(key, []);
         childrenMap.get(key).push(r);
       });
-
       const walk = (parentKey, depth) => {
         const children = childrenMap.get(parentKey) || [];
         children.forEach((node) => {
@@ -2463,7 +1708,6 @@ export default function GanttView({
           }
         });
       };
-
       if (expandedProjects.has(project.id)) {
         walk("__ROOT__", 0);
       }
@@ -2475,14 +1719,15 @@ export default function GanttView({
     <div
       style={{
         fontFamily: "Sora,sans-serif",
-        background: "#fff",
-        border: "1px solid #E2E8F0",
+        background: t.bgCard,
+        border: `1px solid ${t.border}`,
         borderRadius: 12,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         height: "calc(100vh - 140px)",
         minHeight: 400,
+        color: t.textPrimary,
       }}
     >
       {/* ══ TOOLBAR ══ */}
@@ -2492,8 +1737,8 @@ export default function GanttView({
           alignItems: "center",
           gap: 10,
           padding: "10px 16px",
-          borderBottom: "1px solid #E2E8F0",
-          background: "#F8FAFC",
+          borderBottom: `1px solid ${t.border}`,
+          background: t.bgSubtle,
           flexShrink: 0,
           flexWrap: "wrap",
         }}
@@ -2502,7 +1747,7 @@ export default function GanttView({
         <div
           style={{
             display: "flex",
-            background: "#E2E8F0",
+            background: t.bgMuted,
             borderRadius: 7,
             padding: 2,
             gap: 2,
@@ -2525,12 +1770,11 @@ export default function GanttView({
               onClick={() => setViewMode(v.key)}
               style={{
                 ...btnStyle,
-                background: viewMode === v.key ? "#fff" : "transparent",
+                background: viewMode === v.key ? t.bgCard : "transparent",
                 border: "none",
-                color: viewMode === v.key ? "#0F172A" : "#64748B",
+                color: viewMode === v.key ? t.textPrimary : t.textMuted,
                 fontWeight: viewMode === v.key ? 700 : 500,
-                boxShadow:
-                  viewMode === v.key ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                boxShadow: viewMode === v.key ? t.shadowSm : "none",
               }}
             >
               {v.icon} {v.label}
@@ -2538,13 +1782,13 @@ export default function GanttView({
           ))}
         </div>
 
-        <div style={{ width: 1, height: 20, background: "#E2E8F0" }} />
+        <div style={{ width: 1, height: 20, background: t.border }} />
 
         {/* Zoom Level */}
         <div
           style={{
             display: "flex",
-            background: "#E2E8F0",
+            background: t.bgMuted,
             borderRadius: 7,
             padding: 2,
             gap: 2,
@@ -2556,11 +1800,11 @@ export default function GanttView({
               onClick={() => setZoom(key)}
               style={{
                 ...btnStyle,
-                background: zoom === key ? "#fff" : "transparent",
+                background: zoom === key ? t.bgCard : "transparent",
                 border: "none",
-                color: zoom === key ? "#0F172A" : "#64748B",
+                color: zoom === key ? t.textPrimary : t.textMuted,
                 fontWeight: zoom === key ? 700 : 500,
-                boxShadow: zoom === key ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                boxShadow: zoom === key ? t.shadowSm : "none",
                 padding: "0 10px",
               }}
             >
@@ -2584,13 +1828,8 @@ export default function GanttView({
           <ZoomIn size={13} />
         </button>
 
-        <div style={{ width: 1, height: 20, background: "#E2E8F0" }} />
+        <div style={{ width: 1, height: 20, background: t.border }} />
 
-        {/* Project Filter */}
-        {/* Divider */}
-        <div style={{ width: 1, height: 20, background: "#E2E8F0" }} />
-
-        {/* Filters */}
         {showGlobalFilters && (
           <>
             <div
@@ -2604,7 +1843,7 @@ export default function GanttView({
               <span
                 style={{
                   fontSize: 10,
-                  color: "#64748B",
+                  color: t.textMuted,
                   fontWeight: 600,
                   textTransform: "uppercase",
                   letterSpacing: "0.3px",
@@ -2612,7 +1851,6 @@ export default function GanttView({
               >
                 Filters:
               </span>
-
               <GanttFilterDropdown
                 label="Project"
                 icon={<Briefcase size={11} />}
@@ -2620,7 +1858,6 @@ export default function GanttView({
                 selected={projectFilter}
                 onChange={setProjectFilter}
               />
-
               {viewMode === "task" && (
                 <GanttFilterDropdown
                   label="Module"
@@ -2630,7 +1867,6 @@ export default function GanttView({
                   onChange={setModuleFilter}
                 />
               )}
-
               <GanttFilterDropdown
                 label="Resource"
                 icon={<Users size={11} />}
@@ -2638,7 +1874,6 @@ export default function GanttView({
                 selected={resourceFilter}
                 onChange={setResourceFilter}
               />
-
               <GanttFilterDropdown
                 label="Status"
                 icon={<Filter size={11} />}
@@ -2646,7 +1881,6 @@ export default function GanttView({
                 selected={statusFilter}
                 onChange={setStatusFilter}
               />
-
               {(projectFilter.length > 0 ||
                 moduleFilter.length > 0 ||
                 resourceFilter.length > 0 ||
@@ -2662,9 +1896,9 @@ export default function GanttView({
                     height: 30,
                     padding: "0 10px",
                     borderRadius: 6,
-                    border: "1px solid #FCA5A5",
-                    background: "#FEF2F2",
-                    color: "#DC2626",
+                    border: `1px solid ${t.dangerBorder}`,
+                    background: t.dangerBgSubtle,
+                    color: t.danger,
                     fontFamily: "Sora,sans-serif",
                     fontSize: 11,
                     fontWeight: 600,
@@ -2685,7 +1919,7 @@ export default function GanttView({
                 alignItems: "center",
                 gap: 4,
                 fontSize: 11,
-                color: "#64748B",
+                color: t.textMuted,
                 marginLeft: 6,
               }}
             >
@@ -2697,6 +1931,7 @@ export default function GanttView({
             </div>
           </>
         )}
+
         {/* Legend */}
         <div
           style={{
@@ -2705,7 +1940,7 @@ export default function GanttView({
             alignItems: "center",
             gap: 10,
             fontSize: 10,
-            color: "#64748B",
+            color: t.textMuted,
             flexWrap: "wrap",
           }}
         >
@@ -2718,7 +1953,7 @@ export default function GanttView({
                 background: "#3B82F6",
                 display: "inline-block",
               }}
-            />{" "}
+            />
             Planned
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -2731,7 +1966,7 @@ export default function GanttView({
                 display: "inline-block",
                 border: "1px dashed #15803D",
               }}
-            />{" "}
+            />
             Actual
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -2743,7 +1978,7 @@ export default function GanttView({
                 background: "#EF4444",
                 display: "inline-block",
               }}
-            />{" "}
+            />
             Delayed
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -2752,11 +1987,11 @@ export default function GanttView({
                 width: 12,
                 height: 12,
                 borderRadius: 2,
-                background: "#F1F5F9",
-                border: "1px solid #E2E8F0",
+                background: t.bgMuted,
+                border: `1px solid ${t.border}`,
                 display: "inline-block",
               }}
-            />{" "}
+            />
             Weekend
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -2764,10 +1999,10 @@ export default function GanttView({
               style={{
                 width: 2,
                 height: 12,
-                background: "#EF4444",
+                background: t.danger,
                 display: "inline-block",
               }}
-            />{" "}
+            />
             Today
           </span>
         </div>
@@ -2780,29 +2015,27 @@ export default function GanttView({
           style={{
             width: LEFT_PANEL_WIDTH,
             flexShrink: 0,
-            borderRight: "1px solid #E2E8F0",
+            borderRight: `1px solid ${t.border}`,
             display: "flex",
             flexDirection: "column",
-            background: "#fff",
+            background: t.bgCard,
             zIndex: 20,
           }}
         >
-          {/* ══ COLUMN HEADERS ══ */}
           <div
             style={{
               height: HEADER_HEIGHT,
-              borderBottom: "1px solid #E2E8F0",
-              background: "#F8FAFC",
+              borderBottom: `1px solid ${t.border}`,
+              background: t.bgSubtle,
               display: "flex",
               flexShrink: 0,
             }}
           >
-            {/* ══ Main Column Header ══ */}
             <div
               style={{
                 height: HEADER_HEIGHT,
-                borderBottom: "1px solid #E2E8F0",
-                background: "#F8FAFC",
+                borderBottom: `1px solid ${t.border}`,
+                background: t.bgSubtle,
                 display: "flex",
                 alignItems: "flex-end",
                 padding: "0 12px 8px",
@@ -2813,7 +2046,7 @@ export default function GanttView({
                 style={{
                   fontSize: 10.5,
                   fontWeight: 700,
-                  color: "#64748B",
+                  color: t.textMuted,
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                 }}
@@ -2828,11 +2061,10 @@ export default function GanttView({
               <>
                 {filteredProjects.map((project, pIdx) => {
                   const isExpanded = expandedProjects.has(project.id);
-                  const pc = projectColorMap[project.id] || "#64748B";
+                  const pc = projectColorMap[project.id] || t.textMuted;
                   const projectRows = allRows.filter(
                     (r) => r._projectId === project.id,
                   );
-
                   const projectFilter = getProjectFilter(project.id);
                   const projectFilterOpts = getProjectFilterOptions(
                     project,
@@ -2842,7 +2074,7 @@ export default function GanttView({
 
                   return (
                     <React.Fragment key={project.id}>
-                      {/* ══ Project header row (full width) ══ */}
+                      {/* Project header */}
                       <div
                         onClick={() => {
                           setExpandedProjects((prev) => {
@@ -2857,8 +2089,10 @@ export default function GanttView({
                           display: "flex",
                           alignItems: "center",
                           padding: "0 8px",
-                          borderBottom: "1px solid #E2E8F0",
-                          background: hasFilters ? "#F0F9FF" : "#F8FAFC",
+                          borderBottom: `1px solid ${t.border}`,
+                          background: hasFilters
+                            ? t.primaryBgSubtle
+                            : t.bgSubtle,
                           cursor: "pointer",
                           gap: 6,
                           borderLeft: `4px solid ${pc}`,
@@ -2868,13 +2102,13 @@ export default function GanttView({
                         {isExpanded ? (
                           <ChevronDown
                             size={13}
-                            color="#64748B"
+                            color={t.textMuted}
                             style={{ flexShrink: 0 }}
                           />
                         ) : (
                           <ChevronRight
                             size={13}
-                            color="#64748B"
+                            color={t.textMuted}
                             style={{ flexShrink: 0 }}
                           />
                         )}
@@ -2889,7 +2123,7 @@ export default function GanttView({
                             style={{
                               fontSize: 12,
                               fontWeight: 700,
-                              color: "#0F172A",
+                              color: t.textPrimary,
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -2901,7 +2135,7 @@ export default function GanttView({
                           <div
                             style={{
                               fontSize: 9.5,
-                              color: "#94A3B8",
+                              color: t.textFaint,
                               display: "flex",
                               alignItems: "center",
                               gap: 4,
@@ -2922,7 +2156,7 @@ export default function GanttView({
                                 <span>•</span>
                                 <span
                                   style={{
-                                    color: "#1D4ED8",
+                                    color: t.primary,
                                     fontWeight: 700,
                                     display: "inline-flex",
                                     alignItems: "center",
@@ -2937,7 +2171,6 @@ export default function GanttView({
                           </div>
                         </div>
 
-                        {/* Clear filters button */}
                         {isExpanded && hasFilters && (
                           <button
                             onClick={(e) => {
@@ -2949,9 +2182,9 @@ export default function GanttView({
                               height: 22,
                               padding: "0 8px",
                               borderRadius: 4,
-                              border: "1px solid #FCA5A5",
-                              background: "#FEF2F2",
-                              color: "#EF4444",
+                              border: `1px solid ${t.dangerBorder}`,
+                              background: t.dangerBgSubtle,
+                              color: t.danger,
                               cursor: "pointer",
                               display: "inline-flex",
                               alignItems: "center",
@@ -2966,32 +2199,32 @@ export default function GanttView({
                         )}
                       </div>
 
-                      {/* ══ Sub-header (only when expanded): Column headers with filters ══ */}
+                      {/* Sub-header with column filters */}
                       {isExpanded && (
                         <div
                           style={{
                             height: SUB_HEADER_HEIGHT,
                             display: "flex",
-                            borderBottom: "1px solid #E2E8F0",
-                            background: "#FAFBFC",
-                            borderLeft: `4px solid ${pc}80`, // Semi-transparent
+                            borderBottom: `1px solid ${t.border}`,
+                            background: t.bgSubtle,
+                            borderLeft: `4px solid ${pc}80`,
                           }}
                         >
-                          {/* Task name sub-header */}
+                          {/* Task */}
                           <div
                             style={{
                               width: COL_TASK_WIDTH - 4,
                               padding: "0 12px",
                               display: "flex",
                               alignItems: "center",
-                              borderRight: "1px solid #E2E8F0",
+                              borderRight: `1px solid ${t.border}`,
                             }}
                           >
                             <span
                               style={{
                                 fontSize: 9.5,
                                 fontWeight: 700,
-                                color: "#94A3B8",
+                                color: t.textFaint,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.4px",
                               }}
@@ -3000,7 +2233,7 @@ export default function GanttView({
                             </span>
                           </div>
 
-                          {/* Module sub-header */}
+                          {/* Module */}
                           <div
                             style={{
                               width: COL_MODULE_WIDTH,
@@ -3008,14 +2241,14 @@ export default function GanttView({
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "space-between",
-                              borderRight: "1px solid #E2E8F0",
+                              borderRight: `1px solid ${t.border}`,
                             }}
                           >
                             <span
                               style={{
                                 fontSize: 9.5,
                                 fontWeight: 700,
-                                color: "#94A3B8",
+                                color: t.textFaint,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.4px",
                               }}
@@ -3023,7 +2256,7 @@ export default function GanttView({
                               Module
                             </span>
                             <ProjectColumnFilterButton
-                              color="#7C3AED"
+                              color={t.violet}
                               columnKey="module"
                               options={projectFilterOpts.moduleOpts}
                               selected={projectFilter.module}
@@ -3033,7 +2266,7 @@ export default function GanttView({
                             />
                           </div>
 
-                          {/* Resource sub-header */}
+                          {/* Resource */}
                           <div
                             style={{
                               width: COL_RESOURCE_WIDTH,
@@ -3041,14 +2274,14 @@ export default function GanttView({
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "space-between",
-                              borderRight: "1px solid #E2E8F0",
+                              borderRight: `1px solid ${t.border}`,
                             }}
                           >
                             <span
                               style={{
                                 fontSize: 9.5,
                                 fontWeight: 700,
-                                color: "#94A3B8",
+                                color: t.textFaint,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.4px",
                               }}
@@ -3056,7 +2289,7 @@ export default function GanttView({
                               Resource
                             </span>
                             <ProjectColumnFilterButton
-                              color="#15803D"
+                              color={t.success}
                               columnKey="resource"
                               options={projectFilterOpts.resourceOpts}
                               selected={projectFilter.resource}
@@ -3070,7 +2303,7 @@ export default function GanttView({
                             />
                           </div>
 
-                          {/* Status sub-header */}
+                          {/* Status */}
                           <div
                             style={{
                               width: COL_STATUS_WIDTH,
@@ -3084,7 +2317,7 @@ export default function GanttView({
                               style={{
                                 fontSize: 9.5,
                                 fontWeight: 700,
-                                color: "#94A3B8",
+                                color: t.textFaint,
                                 textTransform: "uppercase",
                                 letterSpacing: "0.4px",
                               }}
@@ -3092,7 +2325,7 @@ export default function GanttView({
                               Status
                             </span>
                             <ProjectColumnFilterButton
-                              color="#B45309"
+                              color={t.warning}
                               columnKey="status"
                               options={projectFilterOpts.statusOpts}
                               selected={projectFilter.status}
@@ -3104,12 +2337,12 @@ export default function GanttView({
                         </div>
                       )}
 
-                      {/* ══ Task rows with column cells ══ */}
+                      {/* Task rows */}
                       {isExpanded &&
                         projectRows.map((row) => {
                           const isParent = hasChildren(row.id);
                           const isRowExpanded = expandedRows.has(row.id);
-                          const sc = getStatusColor(row.status);
+                          const sc = getStatusColor(row.status, t);
 
                           return (
                             <div
@@ -3117,7 +2350,7 @@ export default function GanttView({
                               style={{
                                 height: ROW_HEIGHT,
                                 display: "flex",
-                                borderBottom: "1px solid #F1F5F9",
+                                borderBottom: `1px solid ${t.borderSubtle}`,
                               }}
                             >
                               {/* Task cell */}
@@ -3129,7 +2362,7 @@ export default function GanttView({
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 6,
-                                  borderRight: "1px solid #F1F5F9",
+                                  borderRight: `1px solid ${t.borderSubtle}`,
                                 }}
                               >
                                 {isParent ? (
@@ -3148,7 +2381,7 @@ export default function GanttView({
                                       border: "none",
                                       cursor: "pointer",
                                       padding: 0,
-                                      color: "#94A3B8",
+                                      color: t.textFaint,
                                       display: "flex",
                                       alignItems: "center",
                                       flexShrink: 0,
@@ -3169,7 +2402,7 @@ export default function GanttView({
                                     style={{
                                       fontSize: 11,
                                       fontWeight: row.depth === 0 ? 600 : 400,
-                                      color: "#0F172A",
+                                      color: t.textPrimary,
                                       overflow: "hidden",
                                       textOverflow: "ellipsis",
                                       whiteSpace: "nowrap",
@@ -3188,7 +2421,7 @@ export default function GanttView({
                                   padding: "0 10px",
                                   display: "flex",
                                   alignItems: "center",
-                                  borderRight: "1px solid #F1F5F9",
+                                  borderRight: `1px solid ${t.borderSubtle}`,
                                   overflow: "hidden",
                                 }}
                               >
@@ -3197,9 +2430,9 @@ export default function GanttView({
                                     style={{
                                       padding: "2px 7px",
                                       borderRadius: 4,
-                                      background: "#EDE9FE",
-                                      color: "#7C3AED",
-                                      border: "1px solid #DDD6FE",
+                                      background: t.violetBg,
+                                      color: t.violet,
+                                      border: `1px solid ${t.violetBorder}`,
                                       fontSize: 10,
                                       fontWeight: 600,
                                       overflow: "hidden",
@@ -3214,7 +2447,7 @@ export default function GanttView({
                                 ) : (
                                   <span
                                     style={{
-                                      color: "#CBD5E1",
+                                      color: t.textDisabled,
                                       fontStyle: "italic",
                                       fontSize: 10,
                                     }}
@@ -3232,7 +2465,7 @@ export default function GanttView({
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 6,
-                                  borderRight: "1px solid #F1F5F9",
+                                  borderRight: `1px solid ${t.borderSubtle}`,
                                   overflow: "hidden",
                                 }}
                               >
@@ -3243,8 +2476,8 @@ export default function GanttView({
                                         width: 20,
                                         height: 20,
                                         borderRadius: "50%",
-                                        background: "#DBEAFE",
-                                        color: "#1D4ED8",
+                                        background: t.primaryBg,
+                                        color: t.primary,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
@@ -3263,7 +2496,7 @@ export default function GanttView({
                                         textOverflow: "ellipsis",
                                         whiteSpace: "nowrap",
                                         fontSize: 10.5,
-                                        color: "#475569",
+                                        color: t.textSecondary,
                                         fontWeight: 500,
                                       }}
                                       title={row.resourceName || row.resource}
@@ -3274,7 +2507,7 @@ export default function GanttView({
                                 ) : (
                                   <span
                                     style={{
-                                      color: "#CBD5E1",
+                                      color: t.textDisabled,
                                       fontStyle: "italic",
                                       fontSize: 10,
                                     }}
@@ -3318,25 +2551,25 @@ export default function GanttView({
                           );
                         })}
 
-                      {/* Empty state when filters exclude everything */}
+                      {/* Empty state */}
                       {isExpanded && hasFilters && projectRows.length === 0 && (
                         <div
                           style={{
                             padding: "16px 12px",
                             textAlign: "center",
-                            borderBottom: "1px solid #F1F5F9",
-                            background: "#FAFBFC",
+                            borderBottom: `1px solid ${t.borderSubtle}`,
+                            background: t.bgSubtle,
                           }}
                         >
                           <Filter
                             size={18}
-                            color="#CBD5E1"
+                            color={t.textDisabled}
                             style={{ marginBottom: 6 }}
                           />
                           <div
                             style={{
                               fontSize: 11,
-                              color: "#64748B",
+                              color: t.textMuted,
                               fontWeight: 600,
                               marginBottom: 3,
                             }}
@@ -3352,9 +2585,9 @@ export default function GanttView({
                               height: 22,
                               padding: "0 8px",
                               borderRadius: 4,
-                              border: "1px solid #CBD5E1",
-                              background: "#fff",
-                              color: "#64748B",
+                              border: `1px solid ${t.borderStrong}`,
+                              background: t.bgCard,
+                              color: t.textMuted,
                               fontSize: 10,
                               fontWeight: 600,
                               cursor: "pointer",
@@ -3374,10 +2607,9 @@ export default function GanttView({
                 })}
               </>
             ) : (
-              /* ══ RESOURCE VIEW — unchanged ══ */
+              /* Resource view */
               resourceViewData.map((res) => {
                 const rowHeight = ROW_HEIGHT * res.laneCount;
-
                 return (
                   <div
                     key={res.userId}
@@ -3386,18 +2618,17 @@ export default function GanttView({
                       display: "flex",
                       alignItems: "center",
                       padding: "0 12px",
-                      borderBottom: "1px solid #F1F5F9",
+                      borderBottom: `1px solid ${t.borderSubtle}`,
                       gap: 8,
                     }}
                   >
-                    {/* Avatar */}
                     <div
                       style={{
                         width: 26,
                         height: 26,
                         borderRadius: "50%",
-                        background: "#DBEAFE",
-                        color: "#1D4ED8",
+                        background: t.primaryBg,
+                        color: t.primary,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -3413,7 +2644,7 @@ export default function GanttView({
                         style={{
                           fontSize: 11.5,
                           fontWeight: 600,
-                          color: "#0F172A",
+                          color: t.textPrimary,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -3421,7 +2652,7 @@ export default function GanttView({
                       >
                         {res.name}
                       </div>
-                      <div style={{ fontSize: 9.5, color: "#94A3B8" }}>
+                      <div style={{ fontSize: 9.5, color: t.textFaint }}>
                         {res.tasks.length} task
                         {res.tasks.length !== 1 ? "s" : ""}
                       </div>
@@ -3445,22 +2676,22 @@ export default function GanttView({
           onScroll={syncScroll}
         >
           <div style={{ width: totalChartWidth, position: "relative" }}>
-            {/* Header */}
+            {/* Timeline header */}
             <div
               style={{
                 height: HEADER_HEIGHT,
                 position: "sticky",
                 top: 0,
                 zIndex: 15,
-                background: "#F8FAFC",
-                borderBottom: "1px solid #E2E8F0",
+                background: t.bgSubtle,
+                borderBottom: `1px solid ${t.border}`,
               }}
             >
               <div
                 style={{
                   height: 24,
                   position: "relative",
-                  borderBottom: "1px solid #E2E8F0",
+                  borderBottom: `1px solid ${t.border}`,
                 }}
               >
                 {majorTicks.map((tick, i) => {
@@ -3480,9 +2711,9 @@ export default function GanttView({
                         paddingLeft: 6,
                         fontSize: 10,
                         fontWeight: 700,
-                        color: "#475569",
+                        color: t.textSecondary,
                         whiteSpace: "nowrap",
-                        borderLeft: "1px solid #E2E8F0",
+                        borderLeft: `1px solid ${t.border}`,
                       }}
                     >
                       {ZOOM_CONFIGS[zoom].majorFormat(tick)}
@@ -3509,9 +2740,9 @@ export default function GanttView({
                         paddingLeft: 4,
                         fontSize: 9.5,
                         fontWeight: isWeekend ? 700 : 400,
-                        color: isWeekend ? "#DC2626" : "#64748B",
+                        color: isWeekend ? t.danger : t.textMuted,
                         whiteSpace: "nowrap",
-                        borderLeft: "1px solid #E2E8F0",
+                        borderLeft: `1px solid ${t.border}`,
                         minWidth: colWidthPx,
                       }}
                     >
@@ -3522,7 +2753,7 @@ export default function GanttView({
               </div>
             </div>
 
-            {/* Chart Area */}
+            {/* Chart area */}
             <div style={{ position: "relative" }}>
               {/* Weekend shading */}
               {weekendShades.map((s, i) => (
@@ -3534,8 +2765,8 @@ export default function GanttView({
                     top: 0,
                     bottom: 0,
                     width: s.width,
-                    background: "rgba(241,245,249,0.85)",
-                    borderLeft: "1px solid #E2E8F0",
+                    background: `${t.bgMuted}CC`,
+                    borderLeft: `1px solid ${t.border}`,
                     pointerEvents: "none",
                     zIndex: 1,
                   }}
@@ -3551,7 +2782,7 @@ export default function GanttView({
                     top: 0,
                     bottom: 0,
                     width: 2,
-                    background: "#EF4444",
+                    background: t.danger,
                     zIndex: 10,
                     pointerEvents: "none",
                   }}
@@ -3561,8 +2792,8 @@ export default function GanttView({
                       position: "absolute",
                       top: 2,
                       left: -16,
-                      background: "#EF4444",
-                      color: "#fff",
+                      background: t.danger,
+                      color: t.textInverse,
                       fontSize: 8,
                       fontWeight: 700,
                       padding: "1px 4px",
@@ -3588,7 +2819,7 @@ export default function GanttView({
                       top: 0,
                       bottom: 0,
                       width: 1,
-                      background: "#F1F5F9",
+                      background: t.borderSubtle,
                       pointerEvents: "none",
                       zIndex: 0,
                     }}
@@ -3596,11 +2827,11 @@ export default function GanttView({
                 );
               })}
 
-              {/* ── TASK VIEW ── */}
+              {/* Task view bars */}
               {viewMode === "task" &&
                 filteredProjects.map((project) => {
                   const isExpanded = expandedProjects.has(project.id);
-                  const pc = projectColorMap[project.id] || "#64748B";
+                  const pc = projectColorMap[project.id] || t.textMuted;
                   const projectRows = allRows.filter(
                     (r) => r._projectId === project.id,
                   );
@@ -3608,28 +2839,28 @@ export default function GanttView({
 
                   return (
                     <React.Fragment key={project.id}>
-                      {/* Project header row */}
                       <div
                         style={{
                           height: ROW_HEIGHT,
                           position: "relative",
-                          borderBottom: "1px solid #E2E8F0",
-                          background: hasFilters ? "#F0F9FF" : "#F8FAFC",
+                          borderBottom: `1px solid ${t.border}`,
+                          background: hasFilters
+                            ? t.primaryBgSubtle
+                            : t.bgSubtle,
                         }}
                       />
 
-                      {/* Sub-header row (matches left panel's sub-header) */}
                       {isExpanded && (
                         <div
                           style={{
                             height: SUB_HEADER_HEIGHT,
                             position: "relative",
-                            borderBottom: "1px solid #E2E8F0",
-                            background: "#FAFBFC",
+                            borderBottom: `1px solid ${t.border}`,
+                            background: t.bgSubtle,
                           }}
                         />
                       )}
-                      {/* Task bars */}
+
                       {isExpanded &&
                         projectRows.map((row) => {
                           const plannedBar = getBarPosition(
@@ -3640,7 +2871,7 @@ export default function GanttView({
                             row.actualStart,
                             row.actualStop,
                           );
-                          const sc = getStatusColor(row.status);
+                          const sc = getStatusColor(row.status, t);
                           const isRunning =
                             String(row.status || "")
                               .toLowerCase()
@@ -3652,8 +2883,8 @@ export default function GanttView({
                               style={{
                                 height: ROW_HEIGHT,
                                 position: "relative",
-                                borderBottom: "1px solid #F1F5F9",
-                                minHeight: 24, // Top row (chevron + name)
+                                borderBottom: `1px solid ${t.borderSubtle}`,
+                                minHeight: 24,
                                 paddingBottom: 4,
                               }}
                             >
@@ -3676,7 +2907,7 @@ export default function GanttView({
                                     alignItems: "center",
                                     paddingLeft: 6,
                                     overflow: "hidden",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                                    boxShadow: t.shadowSm,
                                     transition: "opacity 0.12s",
                                   }}
                                   onMouseEnter={(e) =>
@@ -3686,7 +2917,6 @@ export default function GanttView({
                                     (e.currentTarget.style.opacity = "1")
                                   }
                                 >
-                                  {/* Project color stripe */}
                                   <div
                                     style={{
                                       position: "absolute",
@@ -3698,8 +2928,6 @@ export default function GanttView({
                                       borderRadius: "3px 0 0 3px",
                                     }}
                                   />
-
-                                  {/* Running animation */}
                                   {isRunning && (
                                     <div
                                       style={{
@@ -3712,8 +2940,6 @@ export default function GanttView({
                                       }}
                                     />
                                   )}
-
-                                  {/* Label */}
                                   {plannedBar.width > 50 && (
                                     <span
                                       style={{
@@ -3743,7 +2969,7 @@ export default function GanttView({
                                 </div>
                               )}
 
-                              {/* Actual bar (below planned) */}
+                              {/* Actual bar */}
                               {actualBar &&
                                 (() => {
                                   const delayed = isDelayed(row);
@@ -3764,7 +2990,7 @@ export default function GanttView({
                                         borderRadius: 3,
                                         cursor: "pointer",
                                         zIndex: 6,
-                                        boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                        boxShadow: t.shadowSm,
                                         display: "flex",
                                         alignItems: "center",
                                         paddingLeft: 6,
@@ -3810,7 +3036,7 @@ export default function GanttView({
                                     top: "50%",
                                     transform: "translateY(-50%)",
                                     fontSize: 10,
-                                    color: "#CBD5E1",
+                                    color: t.textDisabled,
                                     fontStyle: "italic",
                                   }}
                                 >
@@ -3824,7 +3050,7 @@ export default function GanttView({
                   );
                 })}
 
-              {/* ── RESOURCE VIEW ── */}
+              {/* Resource view bars */}
               {viewMode === "resource" &&
                 resourceViewData.map((res) => {
                   const rowHeight = ROW_HEIGHT * res.laneCount;
@@ -3839,10 +3065,9 @@ export default function GanttView({
                       style={{
                         height: rowHeight,
                         position: "relative",
-                        borderBottom: "1px solid #F1F5F9",
+                        borderBottom: `1px solid ${t.borderSubtle}`,
                       }}
                     >
-                      {/* Lane separators */}
                       {res.laneCount > 1 &&
                         Array.from({ length: res.laneCount - 1 }, (_, i) => (
                           <div
@@ -3853,7 +3078,7 @@ export default function GanttView({
                               right: 0,
                               top: (i + 1) * LANE_HEIGHT,
                               height: 1,
-                              background: "#F1F5F9",
+                              background: t.borderSubtle,
                               pointerEvents: "none",
                               zIndex: 2,
                             }}
@@ -3871,15 +3096,15 @@ export default function GanttView({
                         );
                         const delayed = isDelayed(row);
                         const sc = delayed
-                          ? DELAYED_COLOR
-                          : getStatusColor(row.status);
-                        const pc = projectColorMap[row._projectId] || "#64748B";
+                          ? getDelayedColor(t)
+                          : getStatusColor(row.status, t);
+                        const pc =
+                          projectColorMap[row._projectId] || t.textMuted;
                         const lane = row._lane || 0;
                         const laneTop = lane * LANE_HEIGHT;
 
                         return (
                           <React.Fragment key={row.id}>
-                            {/* Planned bar */}
                             {plannedBar && (
                               <div
                                 onClick={(e) => handleBarClick(e, row)}
@@ -3898,7 +3123,7 @@ export default function GanttView({
                                   alignItems: "center",
                                   paddingLeft: 6,
                                   overflow: "hidden",
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                                  boxShadow: t.shadowSm,
                                   transition: "opacity 0.12s",
                                 }}
                                 onMouseEnter={(e) =>
@@ -3908,7 +3133,6 @@ export default function GanttView({
                                   (e.currentTarget.style.opacity = "1")
                                 }
                               >
-                                {/* Project color stripe */}
                                 <div
                                   style={{
                                     position: "absolute",
@@ -3920,8 +3144,6 @@ export default function GanttView({
                                     borderRadius: "3px 0 0 3px",
                                   }}
                                 />
-
-                                {/* Label */}
                                 {plannedBar.width > 50 && (
                                   <span
                                     style={{
@@ -3948,14 +3170,13 @@ export default function GanttView({
                               </div>
                             )}
 
-                            {/* Actual bar — below planned, same lane */}
                             {actualBar &&
                               (() => {
-                                const delayed = isDelayed(row);
+                                const isTaskDelayed = isDelayed(row);
                                 return (
                                   <div
                                     onClick={(e) => handleBarClick(e, row)}
-                                    title={`${row.task} — ${row._projectName} (Actual)${delayed ? " ⚠ DELAYED" : ""}`}
+                                    title={`${row.task} — ${row._projectName} (Actual)${isTaskDelayed ? " ⚠ DELAYED" : ""}`}
                                     style={{
                                       position: "absolute",
                                       left: actualBar.left,
@@ -3966,10 +3187,10 @@ export default function GanttView({
                                         BAR_HEIGHT_PLANNED +
                                         BAR_GAP,
                                       height: BAR_HEIGHT_ACTUAL,
-                                      background: delayed
+                                      background: isTaskDelayed
                                         ? "rgba(239,68,68,0.2)"
                                         : "rgba(34,197,94,0.2)",
-                                      border: `2px solid ${delayed ? "#EF4444" : "#22C55E"}`,
+                                      border: `2px solid ${isTaskDelayed ? "#EF4444" : "#22C55E"}`,
                                       borderRadius: 3,
                                       cursor: "pointer",
                                       zIndex: 6,
@@ -3984,7 +3205,7 @@ export default function GanttView({
                                         style={{
                                           fontSize: 8.5,
                                           fontWeight: 600,
-                                          color: delayed
+                                          color: isTaskDelayed
                                             ? "#DC2626"
                                             : "#15803D",
                                           overflow: "hidden",
@@ -4001,7 +3222,8 @@ export default function GanttView({
                                             opacity: 0.8,
                                           }}
                                         >
-                                          (Actual){delayed && " ⚠ DELAYED"}
+                                          (Actual)
+                                          {isTaskDelayed && " ⚠ DELAYED"}
                                         </span>
                                       </span>
                                     )}
