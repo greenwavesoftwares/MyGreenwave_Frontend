@@ -535,20 +535,20 @@ function fmtDurationCompact(h) {
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
 function plannedDurationHrs(row) { if (typeof row.durationHrs === "number") return row.durationHrs; return (parseDate(row.plannedStop) - parseDate(row.plannedStart)) / 3600000; }
-
 function actualDurationHrs(row) {
-
   if (!row.actualStart) return null;
 
   const s = parseDate(row.actualStart);
-
-  const e = row.actualStop ? parseDate(row.actualStop) : (row.status === "Running" || row.status === "Paused") ? new Date(s.getTime() + 3600000) : null;
+  const e = row.actualStop
+    ? parseDate(row.actualStop)
+    : isTaskStatus(row.status, "running", "paused")
+      ? new Date(s.getTime() + 3600000)
+      : null;
 
   if (!e) return null;
-
   return (e - s) / 3600000;
-
 }
+
 
 function occupiedHoursForRow(row) { const a = actualDurationHrs(row); if (a != null) return a; return plannedDurationHrs(row) || 0; }
 
@@ -1072,7 +1072,7 @@ export default function ActivityTrackerCharts() {
 
         br[n].tasks.push({ row, plannedHrs: p, actualHrs: a });
 
-        if (row.status === "Running") br[n].hasRunning = true;
+        if (isTaskStatus(row.status, "running")) br[n].hasRunning = true;
 
       });
 
@@ -1130,41 +1130,28 @@ export default function ActivityTrackerCharts() {
 
       const pDuration = plannedDurationHrs(r) || 0;
 
-      let start, end;
+  let start, end;
 
-      if (aStart) {
+if (aStart) {
+  start = aStart;
+  const aDuration = actualDurationHrs(r);
 
-        start = aStart;
-
-        const aDuration = actualDurationHrs(r);
-
-        if (aStop) {
-
-          end = aStop;
-
-        } else if (r.status === "Running" || r.status === "Paused") {
-
-          end = new Date(aStart.getTime() + 3600000);
-
-        } else {
-
-          end = new Date(aStart.getTime() + (aDuration != null ? aDuration : pDuration) * 3600000);
-
-        }
-
-      } else if (r.status === "Completed") {
-
-        start = pStart;
-
-        end = pStop || new Date(start.getTime() + pDuration * 3600000);
-
-      } else {
-
-        start = pStart;
-
-        end = pStop || new Date(start.getTime() + pDuration * 3600000);
-
-      }
+  if (aStop) {
+    end = aStop;
+  } else if (isTaskStatus(r.status, "running", "paused")) {
+    end = new Date(aStart.getTime() + 3600000);
+  } else {
+    end = new Date(
+      aStart.getTime() + (aDuration != null ? aDuration : pDuration) * 3600000
+    );
+  }
+} else if (isTaskStatus(r.status, "completed", "finished")) {
+  start = pStart;
+  end = pStop || new Date(start.getTime() + pDuration * 3600000);
+} else {
+  start = pStart;
+  end = pStop || new Date(start.getTime() + pDuration * 3600000);
+}
 
       const startMid = toMidnight(start);
 
@@ -1472,21 +1459,17 @@ export default function ActivityTrackerCharts() {
 
       >
 
-        <style>{`
-
-          .wt-root{--wt-chart-height:170px;--wt-bar-max-width:20px;--wt-dropdown-min-width:150px;}
-
-          @keyframes wtSlideInRight{from{transform:translateX(28px);opacity:0}to{transform:translateX(0);opacity:1}}
-
-          @keyframes wtSlideInLeft{from{transform:translateX(-28px);opacity:0}to{transform:translateX(0);opacity:1}}
-
-          .wt-weeks-row{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
-
-          @media(max-width:900px){.wt-root{padding:14px!important;border-radius:12px!important;--wt-chart-height:150px;}.wt-filter-bar{flex-direction:column!important;align-items:stretch!important;}.wt-filter-field{width:100%;}.wt-refresh-btn{width:100%;}}
-
-          .gantt-resource-row:hover{background:${t.occRowOdd};}
-
-        `}</style>
+        <style>
+  {`
+    .wt-root{--wt-chart-height:170px;--wt-bar-max-width:20px;--wt-dropdown-min-width:150px;}
+    @keyframes wtSlideInRight{from{transform:translateX(28px);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes wtSlideInLeft{from{transform:translateX(-28px);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes wtStatusPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.45}}
+    .wt-weeks-row{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+    @media(max-width:900px){.wt-root{padding:14px!important;border-radius:12px!important;--wt-chart-height:150px;}.wt-filter-bar{flex-direction:column!important;align-items:stretch!important;}.wt-filter-field{width:100%;}.wt-refresh-btn{width:100%;}}
+    .gantt-resource-row:hover{background:${t.occRowOdd};}
+  `}
+</style>
 
         <div style={{ marginBottom: 16 }}>
 
@@ -2096,298 +2079,387 @@ function MultiSelectPicker({ t, pickerRef, open, setOpen, disabled, summary, all
 
 }
 
+function normalizeStatus(status) {
+  return String(status || "").trim().toLowerCase();
+}
+
+function isTaskStatus(status, ...values) {
+  return values.includes(normalizeStatus(status));
+}
+
+function getTaskStatusMeta(status) {
+  const s = normalizeStatus(status);
+
+  if (s === "running") {
+    return {
+      label: "Running",
+      color: "#22c55e",
+      bg: "rgba(34,197,94,0.14)",
+      borderColor: "rgba(34,197,94,0.4)",
+      borderStyle: "solid",
+      pulse: true,
+      icon: null,
+    };
+  }
+
+  if (s === "completed" || s === "finished") {
+    return {
+      label: s === "finished" ? "Finished" : "Completed",
+      color: "#16a34a",
+      bg: "rgba(34,197,94,0.14)",
+      borderColor: "rgba(34,197,94,0.4)",
+      borderStyle: "solid",
+      pulse: false,
+      icon: "✔",
+    };
+  }
+
+  if (s === "paused") {
+    return {
+      label: "Paused",
+      color: "#f59e0b",
+      bg: "rgba(245,158,11,0.14)",
+      borderColor: "rgba(245,158,11,0.45)",
+      borderStyle: "dashed",
+      pulse: false,
+      icon: "⏸",
+    };
+  }
+
+  return {
+    label: status || "Unknown",
+    color: "#94a3b8",
+    bg: "transparent",
+    borderColor: "rgba(148,163,184,0.35)",
+    borderStyle: "solid",
+    pulse: false,
+    icon: "•",
+  };
+}
+
+function TaskStatusBadge({ status }) {
+  const meta = getTaskStatusMeta(status);
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "2px 7px",
+        borderRadius: 999,
+        fontSize: 10,
+        fontWeight: 700,
+        color: meta.color,
+        background: meta.bg,
+        border: `1px ${meta.borderStyle} ${meta.borderColor}`,
+        whiteSpace: "nowrap",
+        lineHeight: 1.1,
+      }}
+    >
+      {meta.pulse ? (
+        <span
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: "50%",
+            background: meta.color,
+            display: "inline-block",
+            animation: "wtStatusPulse 1s ease-in-out infinite",
+            boxShadow: `0 0 0 2px ${meta.bg}`,
+          }}
+        />
+      ) : (
+        <span style={{ lineHeight: 1 }}>{meta.icon}</span>
+      )}
+      {meta.label}
+    </span>
+  );
+}
+
 /* ── TOOLTIP ── */
 
 function TooltipContent({ entry, kind, t }) {
-
   if (!entry) return null;
 
   if (kind === "gantt-task") {
-
     return (
-
       <div>
-
-        <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>{entry.taskName}</div>
-
-        <div style={{ color: t.ttMuted, marginBottom: 4 }}>{entry.resourceName}</div>
-
+        <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>
+          {entry.taskName}
+        </div>
+        <div style={{ color: t.ttMuted, marginBottom: 4 }}>
+          {entry.resourceName}
+        </div>
         <div style={{ fontSize: 12, marginBottom: 6 }}>
-
           {entry.startDate.toLocaleDateString([], { month: "short", day: "numeric" })}
-
           {entry.startDate.getTime() !== entry.endDate.getTime() && (
-
             <> &ndash; {entry.endDate.toLocaleDateString([], { month: "short", day: "numeric" })}</>
-
           )}
-
-          {" \u2022 "}
-
-          <span style={{ fontWeight: 600 }}>{entry.days} day{entry.days > 1 ? "s" : ""}</span>
-
+          {" • "}
+          <span style={{ fontWeight: 600 }}>
+            {entry.days} day{entry.days > 1 ? "s" : ""}
+          </span>
+        </div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+          {fmtDuration(entry.totalHours)}
         </div>
 
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>{fmtDuration(entry.totalHours)}</div>
-
         {entry.taskRows && entry.taskRows.length > 0 && (
-
           <div style={{ borderTop: `1px solid ${t.ttDivider}`, paddingTop: 6, fontSize: 11 }}>
-
             {entry.taskRows.map((row, idx) => (
-
               <div key={idx} style={{ marginBottom: 4 }}>
-
-                <div style={{ color: "#cbd5e1" }}>{row.project} &bull; {row.status}</div>
-
-                <div style={{ fontSize: 10.5 }}>
-
-                  {fmtDateTime(parseDate(row.plannedStart))} &ndash; {fmtDateTime(parseDate(row.plannedStop))}
-
+                <div style={{ color: "#cbd5e1" }}>
+                  {row.project} • {row.status}
                 </div>
-
+                <div style={{ fontSize: 10.5 }}>
+                  {fmtDateTime(parseDate(row.plannedStart))} &ndash; {fmtDateTime(parseDate(row.plannedStop))}
+                </div>
               </div>
-
             ))}
-
           </div>
-
         )}
-
       </div>
-
     );
-
   }
 
   if (kind === "occupancy") {
-
     const occupied = entry.hours ?? 0;
-
     const free = entry.free ?? Math.max((entry.capacityHrs ?? 8) - occupied, 0);
-
     const over = Math.max(occupied - (entry.capacityHrs ?? 8), 0);
-
     const hasTasks = entry.tasks && entry.tasks.length > 0;
 
     return (
-
       <div style={{ minWidth: 240 }}>
-
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: t.ttText }}>{entry.resourceName}</div>
-
-        <div style={{ color: t.ttMuted, fontSize: 11, marginBottom: 10 }}>
-
-          {entry.date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}
-
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2, color: t.ttText }}>
+          {entry.resourceName}
         </div>
 
-        <div style={{ background: t.ttCardBg, borderRadius: 8, padding: "8px 10px", marginBottom: 10, display: "grid", gap: 6 }}>
+        <div style={{ color: t.ttMuted, fontSize: 11, marginBottom: 10 }}>
+          {entry.date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}
+        </div>
 
+        <div
+          style={{
+            background: t.ttCardBg,
+            borderRadius: 8,
+            padding: "8px 10px",
+            marginBottom: 10,
+            display: "grid",
+            gap: 6,
+          }}
+        >
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-
-            <span style={{ color: t.ttOccupiedText, fontWeight: 600, fontSize: 12 }}>Occupied</span>
-
-            <span style={{ color: t.ttOccupiedText, fontWeight: 700, fontSize: 14 }}>{fmtDuration(occupied)}</span>
-
+            <span style={{ color: t.ttOccupiedText, fontWeight: 600, fontSize: 12 }}>
+              Occupied
+            </span>
+            <span style={{ color: t.ttOccupiedText, fontWeight: 700, fontSize: 14 }}>
+              {fmtDuration(occupied)}
+            </span>
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-
-            <span style={{ color: t.ttFreeText, fontWeight: 600, fontSize: 12 }}>Free</span>
-
-            <span style={{ color: t.ttFreeText, fontWeight: 700, fontSize: 14 }}>{fmtDuration(free)}</span>
-
+            <span style={{ color: t.ttFreeText, fontWeight: 600, fontSize: 12 }}>
+              Free
+            </span>
+            <span style={{ color: t.ttFreeText, fontWeight: 700, fontSize: 14 }}>
+              {fmtDuration(free)}
+            </span>
           </div>
 
           {over > 0 && (
-
             <div style={{ color: t.ttOccupiedText, fontSize: 11, fontWeight: 600, marginTop: 2 }}>
-
               Over by {fmtDuration(over)}
-
             </div>
-
           )}
-
         </div>
 
         {hasTasks && (
-
           <div>
-
-            <div style={{ fontSize: 10, color: t.textSecondary, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-
+            <div
+              style={{
+                fontSize: 10,
+                color: t.textSecondary,
+                fontWeight: 600,
+                marginBottom: 6,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               Scheduled on this day
-
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-
-              {entry.tasks.map(({ row, hours }) => {
-
+              {entry.tasks.map(({ row, hours }, idx) => {
                 const pS = parseDate(row.plannedStart);
-
                 const pE = parseDate(row.plannedStop);
-
                 const aS = parseDate(row.actualStart);
-
                 const aE = parseDate(row.actualStop);
 
                 return (
-
-                  <div key={row.id} style={{ background: t.ttCardBg, border: `1px solid ${t.ttCardBorder}`, borderRadius: 8, padding: "6px 9px", fontSize: 11 }}>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-
-                      <span style={{ background: t.ttChipBg, color: t.ttChipText, fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 999, whiteSpace: "nowrap" }}>
-
+                  <div
+                    key={row.id ?? `${row.task || "task"}-${idx}`}
+                    style={{
+                      background: t.ttCardBg,
+                      border: `1px solid ${t.ttCardBorder}`,
+                      borderRadius: 8,
+                      padding: "6px 9px",
+                      fontSize: 11,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 3,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          background: t.ttChipBg,
+                          color: t.ttChipText,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: "1px 6px",
+                          borderRadius: 999,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {row.project || "?"}
-
                       </span>
 
-                      <span style={{ color: t.ttText, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-
+                      <span
+                        style={{
+                          color: t.ttText,
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
+                          minWidth: 80,
+                        }}
+                      >
                         {row.task || "Untitled"}
-
                       </span>
 
-                      <span style={{ color: t.ttMuted, fontSize: 10, fontWeight: 500, whiteSpace: "nowrap" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginLeft: "auto",
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: t.ttMuted,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {fmtDurationCompact(hours)}
+                        </span>
 
-                        {fmtDurationCompact(hours)}{row.status && row.status !== "Completed" ? `\u00B7 ${row.status}` : ""}
-
-                      </span>
-
+                        <TaskStatusBadge status={row.status} />
+                      </div>
                     </div>
 
                     <div style={{ fontSize: 10, color: t.ttMuted }}>
-
                       Planned: {pS ? fmtDateTime(pS) : "—"} &ndash; {pE ? fmtDateTime(pE) : "—"}
-
                     </div>
 
                     {aS && (
-
                       <div style={{ fontSize: 10, color: t.ttActualColor, marginTop: 1 }}>
-
                         Actual: {aS ? fmtDateTime(aS) : "—"} &ndash; {aE ? fmtDateTime(aE) : "…"}
-
                       </div>
-
                     )}
-
                   </div>
-
                 );
-
               })}
-
             </div>
-
           </div>
-
         )}
 
         {!hasTasks && (
-
-          <div style={{ marginTop: 4, padding: "6px 10px", background: t.ttFreeBg, borderRadius: 6, color: t.ttFreeText, fontSize: 12, fontWeight: 600, textAlign: "center" }}>
-
-            {"\u2713"} Free all day
-
+          <div
+            style={{
+              marginTop: 4,
+              padding: "6px 10px",
+              background: t.ttFreeBg,
+              borderRadius: 6,
+              color: t.ttFreeText,
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: "center",
+            }}
+          >
+            {"✓"} Free all day
           </div>
-
         )}
-
       </div>
-
     );
-
   }
 
   if (kind === "task-day") {
-
     return (
-
       <div>
-
         <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.taskName}</div>
-
         <div style={{ color: t.ttMuted }}>{entry.resourceName}</div>
-
-        <div style={{ color: t.ttMuted }}>{entry.date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}</div>
-
+        <div style={{ color: t.ttMuted }}>
+          {entry.date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })}
+        </div>
         <div style={{ marginTop: 6 }}>{fmtDuration(entry.hours)} on this task</div>
-
       </div>
-
     );
-
   }
 
   const hrs = kind === "planned" ? entry.plannedHrs : entry.actualHrs;
 
   return (
-
     <div>
-
       <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.resourceName}</div>
-
       <div style={{ color: t.ttMuted }}>
-
         {kind === "planned" ? "Planned" : "Actual"} &middot; {fmtDuration(hrs)}
-
       </div>
 
       <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${t.ttDivider}` }}>
-
         {entry.tasks.map(({ row, plannedHrs, actualHrs }) => {
-
           const p = parseDate(row.plannedStart);
-
           const ps = parseDate(row.plannedStop);
-
           const a = row.actualStart ? parseDate(row.actualStart) : null;
-
           const as = row.actualStop ? parseDate(row.actualStop) : null;
-
           const info = finishedEarlyLateInfo(row);
 
           return (
-
             <div key={row.id} style={{ marginBottom: 8 }}>
-
               <div style={{ fontWeight: 600, color: t.ttText }}>{row.task}</div>
-
-              <div style={{ color: t.ttMuted }}>{row.module} &middot; {row.project}</div>
-
-              <div>Planned: {fmtDateTime(p)} &ndash; {fmtDateTime(ps)} ({fmtDuration(plannedHrs)})</div>
-
-              <div>Actual: {a ? `${fmtDateTime(a)} \u2013 ${as ? fmtDateTime(as) : "…"}` : "—"} ({fmtDuration(actualHrs)})</div>
-
+              <div style={{ color: t.ttMuted }}>
+                {row.module} &middot; {row.project}
+              </div>
+              <div>
+                Planned: {fmtDateTime(p)} &ndash; {fmtDateTime(ps)} ({fmtDuration(plannedHrs)})
+              </div>
+              <div>
+                Actual: {a ? `${fmtDateTime(a)} – ${as ? fmtDateTime(as) : "…"}` : "—"} ({fmtDuration(actualHrs)})
+              </div>
               <div>Status: {row.status}</div>
 
               {info && info.type !== "ontime" && (
-
                 <div style={{ color: info.type === "early" ? t.earlyColor : t.lateColor }}>
-
-                  {info.type === "early" ? `Finished ${fmtDuration(info.diff)} early` : `Finished ${fmtDuration(info.diff)} late`}
-
+                  {info.type === "early"
+                    ? `Finished ${fmtDuration(info.diff)} early`
+                    : `Finished ${fmtDuration(info.diff)} late`}
                 </div>
-
               )}
-
             </div>
-
           );
-
         })}
-
       </div>
-
     </div>
-
   );
-
 }
 
 function buildStack(resources, field, pctFromHrs) {
@@ -2415,783 +2487,560 @@ function buildStack(resources, field, pctFromHrs) {
 /* ── ResourceOccupancyTimeline ── */
 
 const GANTT_CELL_WIDTH = 46;
-
 const GANTT_NAME_WIDTH = 195;
-
 const GANTT_BAR_HEIGHT = 20;
 
+const OCC_WEEK_HEADER_HEIGHT = 38;
+const OCC_DAY_HEADER_HEIGHT = 46;
+const OCC_SCROLL_MAX_HEIGHT = 520;
+
 function ResourceOccupancyTimeline({
-
   weeks,
-
   resources,
-
   occupancyByResourceDate,
-
   taskOccupancyByResourceDate,
-
   resourceColorMap,
-
   capacityHrs = RESOURCE_DAILY_CAPACITY_HRS,
-
   expandedResources,
-
   onToggleExpand,
-
   showHover,
-
   hideHover,
-
   filteredRows,
-
   t,
-
   isDark,
-
 }) {
-
   const todayKey = new Date().toDateString();
 
   const { days, weekBoundaries } = useMemo(() => {
-
     const flat = [];
-
     const boundaries = [];
-
     let count = 0;
 
     (weeks || []).forEach((w) => {
-
       const real = (w || []).filter(Boolean);
-
       flat.push(...real);
-
       count += real.length;
-
       if (real.length > 0) boundaries.push(count);
-
     });
 
     return { days: flat, weekBoundaries: boundaries };
-
   }, [weeks]);
 
   function weekIndexForDay(i) {
-
     for (let w = 0; w < weekBoundaries.length; w++) {
-
       if (i < weekBoundaries[w]) return w;
-
     }
-
     return Math.max(weekBoundaries.length - 1, 0);
-
   }
 
   const chartWidth = Math.max(days.length, 1) * GANTT_CELL_WIDTH;
 
   const resourceDailyData = useMemo(() => {
-
     const m = {};
 
     resources.forEach((name) => {
-
       m[name] = {};
 
       days.forEach((d) => {
-
         if (!d) return;
 
         const k = d.toDateString();
-
         const data = occupancyByResourceDate[k] && occupancyByResourceDate[k][name];
-
         const th = data ? data.hours : 0;
-
         const occ = Math.min(th, capacityHrs);
-
         const fr = Math.max(0, capacityHrs - th);
 
         m[name][k] = {
-
           occupied: occ,
-
           free: fr,
-
           tasks: data ? data.tasks : [],
-
           totalHours: th,
-
           hourly: data ? data.hourly : new Array(8).fill(0),
-
         };
-
       });
-
     });
 
     return m;
-
   }, [resources, days, occupancyByResourceDate, capacityHrs]);
 
   function activateDayCell(e, rn, date, data) {
-
     const rect = e.currentTarget.getBoundingClientRect();
-
     const side = window.innerWidth - rect.right < 320 ? "left" : "right";
 
     showHover({
-
       x: side === "left" ? rect.left : rect.right,
-
       y: rect.top + rect.height / 2,
-
       side,
-
       kind: "occupancy",
-
       entry: {
-
         resourceName: rn,
-
         date,
-
         hours: data.occupied,
-
         capacityHrs,
-
         tasks: data.tasks,
-
         free: data.free,
-
       },
-
     });
-
   }
 
   if (!resources.length || !days.length) {
-
-    return <div style={{ padding: 24, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No resource activity to show for this selection.</div>;
-
+    return (
+      <div style={{ padding: 24, textAlign: "center", color: t.emptyText, fontSize: 13 }}>
+        No resource activity to show for this selection.
+      </div>
+    );
   }
 
   const weekOverlay = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
 
-  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
   return (
-
     <div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
+      >
         <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500 }}>
-
-          {resources.length} resource{resources.length !== 1 ? "s" : ""} &bull; {" "}
-
+          {resources.length} resource{resources.length !== 1 ? "s" : ""} &bull;{" "}
           {days.length} day{days.length !== 1 ? "s" : ""} &bull; {capacityHrs}h daily capacity
-
         </div>
-
       </div>
 
       <div
-
         style={{
-
-          overflowX: "auto",
-
           border: `1px solid ${t.cardBorder}`,
-
           borderRadius: 10,
-
           background: t.cardBg,
-
           boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-
+          overflow: "auto",
+          maxHeight: OCC_SCROLL_MAX_HEIGHT,
+          position: "relative",
         }}
-
       >
-
-        <div style={{ display: "inline-block", minWidth: "100%" }}>
-
-          {/* Week chips */}
-
-          <div style={{ display: "flex", borderBottom: `1px solid ${t.gridLineMd}`, background: t.occHeaderBg }}>
-
+        <div
+          style={{
+            width: GANTT_NAME_WIDTH + chartWidth,
+            minWidth: "100%",
+            position: "relative",
+          }}
+        >
+          {/* Sticky week header */}
+          <div
+            style={{
+              display: "flex",
+              position: "sticky",
+              top: 0,
+              zIndex: 30,
+              background: t.occHeaderBg,
+              borderBottom: `1px solid ${t.gridLineMd}`,
+            }}
+          >
             <div
-
               style={{
-
                 width: GANTT_NAME_WIDTH,
-
                 flexShrink: 0,
-
                 position: "sticky",
-
                 left: 0,
-
-                zIndex: 11,
-
+                top: 0,
+                zIndex: 35,
                 background: t.occHeaderBg,
-
                 borderRight: `1px solid ${t.gridLineMd}`,
-
+                height: OCC_WEEK_HEADER_HEIGHT,
               }}
-
             />
 
-            <div style={{ display: "flex", width: chartWidth }}>
-
+            <div
+              style={{
+                display: "flex",
+                width: chartWidth,
+                minHeight: OCC_WEEK_HEADER_HEIGHT,
+              }}
+            >
               {weekBoundaries.map((end, wi) => {
-
                 const start = wi === 0 ? 0 : weekBoundaries[wi - 1];
-
                 const weekDaysCount = end - start;
-
                 if (weekDaysCount <= 0) return null;
 
                 return (
-
                   <div
-
                     key={wi}
-
                     style={{
-
                       width: weekDaysCount * GANTT_CELL_WIDTH,
-
                       flexShrink: 0,
-
                       display: "flex",
-
                       alignItems: "center",
-
                       justifyContent: "center",
-
                       padding: "5px 0",
-
-                      overflow: "visible",
-
-                      position: "relative",
-
-                      zIndex: 1,
-
                     }}
-
                   >
-
                     <span
-
                       style={{
-
                         fontSize: 10,
-
                         fontWeight: 700,
-
                         letterSpacing: "0.4px",
-
                         textTransform: "uppercase",
-
                         color: t.btnPrimary,
-
                         background: `${t.btnPrimary}1A`,
-
                         border: `1px solid ${t.btnPrimary}40`,
-
                         borderRadius: 999,
-
                         padding: "3px 10px",
-
                         boxShadow: `0 1px 2px ${t.btnPrimary}14`,
-
                         whiteSpace: "nowrap",
-
                       }}
-
                     >
-
                       Week {wi + 1}
-
                     </span>
-
                   </div>
-
                 );
-
               })}
-
             </div>
-
           </div>
 
-          {/* Header row */}
-
-          <div style={{ display: "flex", borderBottom: `1px solid ${t.gridLineMd}`, background: t.occHeaderBg, paddingBottom: 4 }}>
-
+          {/* Sticky day/date header */}
+          <div
+            style={{
+              display: "flex",
+              position: "sticky",
+              top: OCC_WEEK_HEADER_HEIGHT,
+              zIndex: 29,
+              background: t.occHeaderBg,
+              borderBottom: `1px solid ${t.gridLineMd}`,
+              paddingBottom: 4,
+            }}
+          >
             <div
-
               style={{
-
                 width: GANTT_NAME_WIDTH,
-
                 flexShrink: 0,
-
                 position: "sticky",
-
                 left: 0,
-
-                zIndex: 10,
-
+                top: OCC_WEEK_HEADER_HEIGHT,
+                zIndex: 34,
                 background: t.occHeaderBg,
-
                 padding: "8px 12px 4px",
-
                 fontSize: 10,
-
                 fontWeight: 700,
-
                 color: t.textSecondary,
-
                 borderRight: `1px solid ${t.gridLineMd}`,
-
                 textTransform: "uppercase",
-
                 letterSpacing: "0.5px",
-
+                boxSizing: "border-box",
+                minHeight: OCC_DAY_HEADER_HEIGHT,
               }}
-
             >
-
               RESOURCE
-
             </div>
 
             <div style={{ display: "flex", width: chartWidth }}>
-
               {days.map((d, i) => {
-
                 const isT = d.toDateString() === todayKey;
-
                 const wIdx = weekIndexForDay(i);
-
                 const isAltWeek = wIdx % 2 === 1;
-
                 const isLastInWeek = weekBoundaries[wIdx] - 1 === i;
-
                 const endOfWeek = isLastInWeek && i < days.length - 1;
-
                 const baseBg = isT ? t.occHeaderToday : t.occHeaderBg;
-
-                const bg = isAltWeek ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}` : baseBg;
-
+                const bg = isAltWeek
+                  ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}`
+                  : baseBg;
                 const isW = isWeekend(d);
 
                 return (
-
                   <div
-
                     key={i}
-
                     style={{
-
                       width: GANTT_CELL_WIDTH,
-
                       flexShrink: 0,
-
                       textAlign: "center",
-
                       padding: "4px 1px",
-
-                      borderRight: endOfWeek ? `2px solid ${t.cardBorder}` : i < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
-
+                      borderRight: endOfWeek
+                        ? `2px solid ${t.cardBorder}`
+                        : i < days.length - 1
+                        ? `1px solid ${t.gridLineMd}`
+                        : "none",
                       background: bg,
-
                       boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
-
                     }}
-
                   >
-
-                    <div style={{ fontSize: 9, fontWeight: 600, color: isT ? t.todayText : isW ? t.textMuted : t.textSecondary, lineHeight: 1 }}>
-
+                    <div
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 600,
+                        color: isT ? t.todayText : isW ? t.textMuted : t.textSecondary,
+                        lineHeight: 1,
+                      }}
+                    >
                       {d.toLocaleDateString("en-US", { weekday: "short" })}
-
                     </div>
-
-                    <div style={{ fontSize: 13, fontWeight: isT ? 800 : 700, color: isT ? t.todayText : t.textPrimary, marginTop: 1 }}>
-
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: isT ? 800 : 700,
+                        color: isT ? t.todayText : t.textPrimary,
+                        marginTop: 1,
+                      }}
+                    >
                       {d.getDate()}
-
                     </div>
-
                   </div>
-
                 );
-
               })}
-
             </div>
-
           </div>
 
-          {/* Resource rows */}
-
+          {/* Scrollable resource rows */}
           {resources.map((resourceName, ri) => {
-
             const baseColor = resourceColorMap[resourceName] || resourceBaseColor(ri);
-
             const daily = resourceDailyData[resourceName] || {};
-
             const rowBg = ri % 2 === 0 ? t.occRowEven : t.occRowOdd;
 
             return (
-
-              <div key={resourceName} style={{ display: "flex", borderBottom: `1px solid ${t.gridLine}`, background: rowBg, alignItems: "center" }}>
-
+              <div
+                key={resourceName}
+                style={{
+                  display: "flex",
+                  borderBottom: `1px solid ${t.gridLine}`,
+                  background: rowBg,
+                  alignItems: "center",
+                }}
+              >
                 <div
-
                   style={{
-
                     width: GANTT_NAME_WIDTH,
-
                     flexShrink: 0,
-
                     position: "sticky",
-
                     left: 0,
-
-                    zIndex: 9,
-
+                    zIndex: 10,
                     background: rowBg,
-
                     borderRight: `1px solid ${t.gridLineMd}`,
-
                     padding: "6px 10px",
-
                     display: "flex",
-
                     alignItems: "center",
-
                     gap: 8,
-
                   }}
-
                 >
-
                   <div
-
                     style={{
-
                       width: 20,
-
                       height: 20,
-
                       borderRadius: "50%",
-
                       background: baseColor.actual,
-
                       color: "#fff",
-
                       fontSize: 9,
-
                       fontWeight: 700,
-
                       display: "flex",
-
                       alignItems: "center",
-
                       justifyContent: "center",
-
                       flexShrink: 0,
-
                     }}
-
                   >
-
                     {initialsFor(resourceName)}
-
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: t.resNameColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.1 }} title={resourceName}>
-
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: t.resNameColor,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        lineHeight: 1.1,
+                      }}
+                      title={resourceName}
+                    >
                       {resourceName}
-
                     </div>
-
                   </div>
-
                 </div>
 
                 <div style={{ width: chartWidth, display: "flex", height: 42, alignItems: "center" }}>
-
                   {days.map((d, di) => {
-
                     const isT = d.toDateString() === todayKey;
-
                     const wIdx = weekIndexForDay(di);
-
                     const isAltWeek = wIdx % 2 === 1;
-
                     const isLastInWeek = weekBoundaries[wIdx] - 1 === di;
-
                     const endOfWeek = isLastInWeek && di < days.length - 1;
-
-                    const baseBg = isT ? t.occCellToday : isWeekend(d) ? t.occCellWeekend : t.occCellBg;
-
-                    const bg = isAltWeek ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}` : baseBg;
+                    const baseBg = isT
+                      ? t.occCellToday
+                      : isWeekend(d)
+                      ? t.occCellWeekend
+                      : t.occCellBg;
+                    const bg = isAltWeek
+                      ? `linear-gradient(${weekOverlay}, ${weekOverlay}), ${baseBg}`
+                      : baseBg;
 
                     const k = d.toDateString();
-
-                    const data = daily[k] || { occupied: 0, free: capacityHrs, tasks: [], hourly: new Array(8).fill(0) };
+                    const data =
+                      daily[k] || {
+                        occupied: 0,
+                        free: capacityHrs,
+                        tasks: [],
+                        hourly: new Array(8).fill(0),
+                      };
 
                     const occ = data.occupied;
-
                     const occColor = getOccupancyColor(occ);
-
                     const hourly = data.hourly || new Array(8).fill(0);
 
                     return (
-
                       <div
-
                         key={di}
-
                         onMouseEnter={(e) => activateDayCell(e, resourceName, d, data)}
-
                         onMouseLeave={hideHover}
-
-                        onClick={(e) => { e.stopPropagation(); activateDayCell(e, resourceName, d, data); }}
-
-                        style={{
-
-                          width: GANTT_CELL_WIDTH,
-
-                          flexShrink: 0,
-
-                          height: "100%",
-
-                          borderRight: endOfWeek ? `2px solid ${t.cardBorder}` : di < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none",
-
-                          background: bg,
-
-                          boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
-
-                          padding: "3px 3px",
-
-                          cursor: "pointer",
-
-                          display: "flex",
-
-                          alignItems: "center",
-
-                          justifyContent: "center",
-
-                          position: "relative",
-
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          activateDayCell(e, resourceName, d, data);
                         }}
-
+                        style={{
+                          width: GANTT_CELL_WIDTH,
+                          flexShrink: 0,
+                          height: "100%",
+                          borderRight: endOfWeek
+                            ? `2px solid ${t.cardBorder}`
+                            : di < days.length - 1
+                            ? `1px solid ${t.gridLineMd}`
+                            : "none",
+                          background: bg,
+                          boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
+                          padding: "3px 3px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                        }}
                       >
-
                         <div
-
                           style={{
-
                             width: "100%",
-
                             height: GANTT_BAR_HEIGHT,
-
                             background: t.occFreeBar,
-
                             borderRadius: 6,
-
                             position: "relative",
-
                             overflow: "hidden",
-
                             border: `1px solid ${t.occFreeBarBorder}`,
-
                             boxShadow: t.occFreeBarShadow,
-
                             display: "flex",
-
                             alignItems: "flex-end",
-
                             gap: 1,
-
                             padding: "0 1px",
-
                           }}
-
                         >
-
                           {hourly.map((h, hi) => (
-
                             <div
-
                               key={hi}
-
                               style={{
-
                                 flex: 1,
-
                                 height: "100%",
-
                                 background: "transparent",
-
                                 borderRadius: 2,
-
                                 position: "relative",
-
                                 overflow: "hidden",
-
                               }}
-
                             >
-
                               {h > 0 && (
-
                                 <div
-
                                   style={{
-
                                     position: "absolute",
-
                                     left: 0,
-
                                     right: 0,
-
                                     bottom: 0,
-
                                     height: `${Math.min(h, 1) * 100}%`,
-
                                     background: occColor,
-
                                     borderRadius: 2,
-
                                   }}
-
                                 />
-
                               )}
-
                             </div>
-
                           ))}
 
                           <div
-
                             style={{
-
                               position: "absolute",
-
                               left: "50%",
-
                               top: "50%",
-
                               transform: "translate(-50%, -50%)",
-
                               fontSize: 8,
-
                               fontWeight: 700,
-
                               color: occ > 0 ? "#1e293b" : t.occFreeLabel,
-
                               textShadow: occ > 0 ? "0 1px 1.5px rgba(255,255,255,0.55)" : "none",
-
                               whiteSpace: "nowrap",
-
                               padding: "0 2px",
-
                               pointerEvents: "none",
-
                               zIndex: 2,
-
                             }}
-
                           >
-
                             {fmtDurationCompact(occ > 0 ? occ : data.free)}
-
                           </div>
-
                         </div>
 
                         {isT && (
-
                           <div
-
                             style={{
-
                               position: "absolute",
-
                               top: 1,
-
                               right: 2,
-
                               width: 4,
-
                               height: 4,
-
                               background: t.todayDot,
-
                               borderRadius: "50%",
-
                               boxShadow: "0 0 0 1.5px " + t.cardBg,
-
                             }}
-
                           />
-
                         )}
-
                       </div>
-
                     );
-
                   })}
-
                 </div>
-
               </div>
-
             );
-
           })}
-
         </div>
-
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap", fontSize: 11, color: t.legendText, paddingLeft: 2 }}>
-
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          marginTop: 10,
+          flexWrap: "wrap",
+          fontSize: 11,
+          color: t.legendText,
+          paddingLeft: 2,
+        }}
+      >
         <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-
-          <span style={{ width: 26, height: 10, background: t.occFreeBar, border: `1px solid ${t.occFreeBarBorder}`, borderRadius: 3 }}/>
-
+          <span
+            style={{
+              width: 26,
+              height: 10,
+              background: t.occFreeBar,
+              border: `1px solid ${t.occFreeBarBorder}`,
+              borderRadius: 3,
+            }}
+          />
           Free capacity
-
         </span>
 
         <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-
-          <span style={{ width: 26, height: 10, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#dc2626)", borderRadius: 3 }}/>
-
+          <span
+            style={{
+              width: 26,
+              height: 10,
+              background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#dc2626)",
+              borderRadius: 3,
+            }}
+          />
           Occupied (load)
-
         </span>
-
       </div>
-
     </div>
-
   );
-
 }
-
 function initialsFor(n) {
 
   if (!n) return "?";
