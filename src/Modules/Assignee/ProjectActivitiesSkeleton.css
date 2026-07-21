@@ -1,0 +1,145 @@
+/* ==========================================================
+   PROJECT ACTIVITIES SKELETON
+   Reuses the .pai-page design tokens from ProjectActivityInfo.css
+   (--pj-page-bg, --pj-surface, --pj-border, etc.) so it always
+   matches the real page exactly, in both themes.
+
+   LIGHT / DARK SEGREGATION
+   Skeleton "pulse" blocks need their own tokens (border colors are
+   too subtle to read as a loading block). Defined once for light,
+   then explicitly overridden in the same four dark selectors the
+   rest of the file uses — never guessed from opacity tricks.
+   ========================================================== */
+
+.pai-page {
+  --pj-skel-block:      #E2E8F0; /* pulse block, light */
+  --pj-skel-block-soft: #EDF1F6; /* faint pulse (header row), light */
+  --pj-skel-shimmer:    rgba(255, 255, 255, 0.6);
+}
+
+.dark .pai-page,
+[data-theme="dark"] .pai-page,
+.pai-page.dark,
+.pai-page[data-theme="dark"] {
+  --pj-skel-block:      #334155; /* pulse block, dark */
+  --pj-skel-block-soft: #1E293B; /* faint pulse (header row), dark */
+  --pj-skel-shimmer:    rgba(255, 255, 255, 0.07);
+}
+
+/* ── base pulse block ── */
+.pai-page .pai-skel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--pj-skel-block);
+}
+
+.pai-page .pai-skel-soft {
+  background: var(--pj-skel-block-soft);
+}
+
+.pai-page .pai-skel-pill {
+  border-radius: 999px;
+}
+
+.pai-page .pai-skel-circle {
+  border-radius: 50%;
+}
+
+/* shimmer sweep */
+.pai-page .pai-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--pj-skel-shimmer) 50%,
+    transparent 100%
+  );
+  animation: pai-skel-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes pai-skel-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pai-page .pai-skel::after { animation: none; }
+}
+
+/* ── layout pieces ── */
+.pai-page .pai-skel-info-card {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.pai-page .pai-skel-info-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 28px;
+  border-right: 1px solid var(--pj-border-subtle);
+  min-width: 140px;
+}
+
+.pai-page .pai-skel-info-field:first-child { padding-left: 0; }
+.pai-page .pai-skel-info-field:last-child  { border-right: none; }
+
+.pai-page .pai-skel-card {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pai-page .pai-skel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--pj-border-subtle);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pai-page .pai-skel-header-left,
+.pai-page .pai-skel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pai-page .pai-skel-module-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--pj-surface-2);
+  border-bottom: 1px solid var(--pj-border-subtle);
+}
+
+.pai-page .pai-skel-row-highlight {
+  background: linear-gradient(
+    90deg,
+    var(--pj-highlight-grad-start) 0%,
+    var(--pj-highlight-grad-end) 100%
+  );
+  border-left: 3px solid var(--pj-warning-border);
+}
+
+.pai-page .pai-skel-row-highlight td:first-child {
+  padding-left: 11px !important;
+}
+
+.pai-page .pai-skel-cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

@@ -21,6 +21,7 @@ import { ArrowLeft } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
 import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
+import PauseReasonDialog from "./PauseReasonDialog";
 
 dayjs.extend(isBetween); // ← add this
 /* ── helpers ── */
@@ -53,6 +54,7 @@ export default function ProjectActivityInfo({
   const currentUserName = getUserData()?.userDetails?.userName;
   const [resourceColor, setResourceColor] = useState({});
   const [loading, setLoading] = useState(true);
+  const [pauseTarget, setPauseTarget] = useState(null); // { activityId, activity }
   const WORK_START = 10;
   const WORK_END = 18;
   const WEEK_END = [0, 6];
@@ -375,7 +377,7 @@ export default function ProjectActivityInfo({
 
     return Math.max(0, totalWorkingHours);
   };
-  const updateStatusOfActivity = async (activityId, status, activity) => {
+  const updateStatusOfActivity = async (activityId, status, activity, reason) => {
     try{
     const actualTime = new Date();
     let duration = 0;
@@ -384,6 +386,9 @@ export default function ProjectActivityInfo({
       return;
     }
     const statusPayload = { status, actualTime, duration };
+    if (status === "Paused") {
+      statusPayload.reason = reason;
+    }
 
     const response = await activityTrackerApi.updateActivityStatus(
       activityId,
@@ -395,6 +400,23 @@ export default function ProjectActivityInfo({
     showToast("error","Error","Error in status update")
     
   }
+  };
+
+  // Opens the pause-reason dialog instead of pausing immediately.
+  const handlePauseRequest = (activityId, activity) => {
+    setPauseTarget({ activityId, activity });
+  };
+
+  const handlePauseConfirm = (reason) => {
+    if (pauseTarget) {
+      updateStatusOfActivity(
+        pauseTarget.activityId,
+        "Paused",
+        pauseTarget.activity,
+        reason,
+      );
+    }
+    setPauseTarget(null);
   };
   const totalTasks = useMemo(
     () => countTasks(activityInfo?.activities),
@@ -749,6 +771,7 @@ export default function ProjectActivityInfo({
                   projectId={activityInfo.projectId}
                   currentUserId={currentUserId}
                   updateStatusOfActivity={updateStatusOfActivity}
+                  onPauseRequest={handlePauseRequest}
                   onOpenCommentBox={onOpenCommentBox}
                   deleteNode={deleteNode}
                   onOpenFeedbackForm={onOpenFeedbackForm}
@@ -759,6 +782,12 @@ export default function ProjectActivityInfo({
           </Table>
         </div>
       </div>
+      <PauseReasonDialog
+        open={!!pauseTarget}
+        activityName={pauseTarget?.activity?.name}
+        onConfirm={handlePauseConfirm}
+        onCancel={() => setPauseTarget(null)}
+      />
       <CommentsActionDialog
         existingComments={existingComments}
         setExistingComments={setExistingComments}

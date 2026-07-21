@@ -52,6 +52,7 @@ export default function TreeRows({
   moduleId,
   projectId,
   updateStatusOfActivity,
+  onPauseRequest,
   onOpenCommentBox,
   onOpenFeedbackForm,
   deleteNode,
@@ -120,7 +121,7 @@ export default function TreeRows({
         <Tooltip key="pause" title="Pause">
           <button
             className="icon-button icon-btn--pause"
-            onClick={() => updateStatusOfActivity(id, "Paused",node)}
+            onClick={() => onPauseRequest(id, node)}
           >
             <PauseIcon sx={{ fontSize: 14 }} className="pause-icon" />
           </button>
@@ -307,6 +308,7 @@ export default function TreeRows({
                 submitAddedNode={submitAddedNode}
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
+                onPauseRequest={onPauseRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 onOpenFeedbackForm={onOpenFeedbackForm}
@@ -471,6 +473,7 @@ export default function TreeRows({
                 projectId={projectId}
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
+                onPauseRequest={onPauseRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 fetchColor={fetchColor}

@@ -5,27 +5,30 @@
    ========================================================== */
 
 :root {
-  --primary:        #3b5bdb;
-  --primary-50:     #edf2ff;
-  --primary-100:    #dbe4ff;
-  --primary-600:    #3351c8;
+  /* Brand blue — mirrors the app's own accent (--avatar-bg is identical
+     in both .light/.dark themes) */
+  --primary:        var(--avatar-bg, #3b5bdb);
+  --primary-50:     var(--icon-blue-bg, #edf2ff);
+  --primary-100:    var(--icon-blue-bg, #dbe4ff);
+  --primary-600:    #3351c8; /* no app equivalent — overridden below for dark */
 
-  --neutral-0:    #ffffff;
-  --neutral-50:   #f8f9fb;
-  --neutral-100:  #f1f3f7;
-  --neutral-200:  #e4e8f0;
-  --neutral-300:  #cdd4e0;
-  --neutral-400:  #9aa3b5;
-  --neutral-500:  #6b7589;
-  --neutral-700:  #374151;
-  --neutral-900:  #111827;
+  --neutral-0:    var(--dialogBG, #ffffff);
+  --neutral-50:   var(--tableOddRow, #f8f9fb);
+  --neutral-100:  var(--tableOuterBorder, #f1f3f7);
+  --neutral-200:  var(--divider-color, #e4e8f0);
+  --neutral-300:  var(--tableHeaderIcon, #cdd4e0);
+  --neutral-400:  var(--tittleFontColor, #9aa3b5);
+  --neutral-500:  var(--FontAwesomeIcon, #6b7589);
+  --neutral-700:  var(--fontColor, #374151);
+  --neutral-900:  var(--menu-text, #111827);
 
-  --danger:       #dc2626;
-  --danger-50:    #fef2f2;
+  --danger:       var(--redFontColor, #dc2626);
+  --danger-50:    var(--meal-app-red, #fef2f2);
 
-  --shadow-1: 0 1px 3px rgba(17,24,39,.06), 0 1px 2px rgba(17,24,39,.04);
-  --shadow-2: 0 4px 12px rgba(17,24,39,.08), 0 1px 4px rgba(17,24,39,.04);
-  --shadow-3: 0 12px 32px rgba(17,24,39,.10), 0 4px 12px rgba(17,24,39,.06);
+  /* boxShadowPaper already carries its own alpha per theme */
+  --shadow-1: 0 1px 3px var(--boxShadowPaper, rgba(17,24,39,.06)), 0 1px 2px var(--boxShadowPaper, rgba(17,24,39,.04));
+  --shadow-2: 0 4px 12px var(--boxShadowPaper, rgba(17,24,39,.08)), 0 1px 4px var(--boxShadowPaper, rgba(17,24,39,.04));
+  --shadow-3: 0 12px 32px var(--boxShadowPaper, rgba(17,24,39,.10)), 0 4px 12px var(--boxShadowPaper, rgba(17,24,39,.06));
 
   --r-sm:  6px;
   --r-md:  10px;
@@ -34,11 +37,41 @@
 
   --ease: cubic-bezier(.4,0,.2,1);
 
-  --av-1: #3b5bdb; --av-1-bg: #edf2ff;
+  /* Avatar accent rail — av-1 mirrors the app's brand blue everywhere;
+     av-2..5 have no theme equivalent, so they keep bespoke values
+     (overridden for dark below). */
+  --av-1: var(--avatar-bg, #3b5bdb); --av-1-bg: var(--icon-blue-bg, #edf2ff);
   --av-2: #0d9488; --av-2-bg: #f0fdfa;
   --av-3: #d97706; --av-3-bg: #fffbeb;
-  --av-4: #9333ea; --av-4-bg: #faf5ff;
+  --av-4: #9333ea; --av-4-bg: var(--icon-purple-bg, #faf5ff);
   --av-5: #0284c7; --av-5-bg: #f0f9ff;
+
+  --on-primary: #ffffff;
+  --row-hover: var(--hoverText, #f9faff);
+  --tab-count-overlay: rgba(255,255,255,.25);
+  --table-head-grad-start: var(--dropdownBG-Header, #f4f6fb);
+  --table-head-grad-end: var(--tableOddRow, #eef1f7);
+  --table-head-text: var(--tittleFontColor, #4b5568);
+  --table-head-border: var(--divider-color, #dde3ee);
+  --table-head-muted: var(--tableHeaderIcon, #9aa5bb);
+}
+
+/* ==========================================================
+   DARK MODE — only for tokens with no matching app variable.
+   Everything above resolves automatically once an ancestor
+   carries the app's own .light / .dark class, since it already
+   defines --avatar-bg, --dialogBG, --fontColor, etc. per theme.
+   ========================================================== */
+
+[data-theme="dark"], .dark {
+  --primary-600: #6d8dff;
+
+  --av-2: #2dd4bf; --av-2-bg: #0f2b28;
+  --av-3: #fbbf24; --av-3-bg: #332006;
+  --av-4: #c084fc;
+  --av-5: #38bdf8; --av-5-bg: #0c2536;
+
+  --tab-count-overlay: rgba(255,255,255,.12);
 }
 
 /* ==========================================================
@@ -285,7 +318,7 @@
 }
 
 .comments-table .MuiTableBody-root .MuiTableRow-root:hover {
-  background: #f9faff;
+  background: var(--row-hover);
 }
 
 .comments-table .MuiTableBody-root .MuiTableRow-root:last-child .MuiTableCell-root {
@@ -420,7 +453,7 @@
   padding: 0 4px;
   border-radius: 999px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 9px;
   font-weight: 700;
   margin-left: 5px;
@@ -744,7 +777,7 @@
 
 .comments-dialog .MuiButton-contained {
   background: var(--primary) !important;
-  color: #fff !important;
+  color: var(--on-primary) !important;
   box-shadow: 0 1px 3px rgba(59,91,219,.3), 0 1px 2px rgba(59,91,219,.2) !important;
 }
 
@@ -787,7 +820,7 @@
 
 .comments-dialog .MuiChip-filled.MuiChip-colorPrimary {
   background: var(--primary) !important;
-  color: #fff !important;
+  color: var(--on-primary) !important;
 }
 
 .comments-dialog .MuiChip-filled.MuiChip-colorPrimary:hover {
@@ -867,7 +900,7 @@
   .mobile-view-tab.active {
     background: var(--primary);
     border-color: var(--primary);
-    color: #fff;
+    color: var(--on-primary);
     box-shadow: 0 1px 3px rgba(59,91,219,.3);
   }
 
@@ -879,7 +912,7 @@
     height: 16px;
     padding: 0 4px;
     border-radius: 999px;
-    background: rgba(255,255,255,.25);
+    background: var(--tab-count-overlay);
     font-size: 10px;
     font-weight: 700;
   }
@@ -917,7 +950,7 @@
 
 /* Head row background — one clean stripe */
 .comments-table .MuiTableHead-root {
-  background: linear-gradient(180deg, #f4f6fb 0%, #eef1f7 100%);
+  background: linear-gradient(180deg, var(--table-head-grad-start) 0%, var(--table-head-grad-end) 100%);
 }
 
 /* Individual header cells */
@@ -925,12 +958,12 @@
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: #4b5568;
+  color: var(--table-head-text);
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
   padding: 11px 14px;
-  border-bottom: 1.5px solid #dde3ee;
+  border-bottom: 1.5px solid var(--table-head-border);
   position: relative;
   user-select: none;
 }
@@ -943,14 +976,14 @@
   top: 25%;
   height: 50%;
   width: 1px;
-  background: #dde3ee;
+  background: var(--table-head-border);
 }
 
 /* # column — smaller, centered, muted */
 .comments-table .MuiTableCell-head:first-child {
   width: 36px;
   text-align: center;
-  color: #9aa5bb;
+  color: var(--table-head-muted);
   font-size: 11px;
   padding-right: 8px;
 }

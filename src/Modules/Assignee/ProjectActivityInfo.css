@@ -1,10 +1,137 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+/* ==========================================================
+   DESIGN TOKENS — shared "pj-" palette
+   Wired to the app's real .light/.dark theme variables
+   (--bg-main, --card-bg, --fontColor, --avatar-bg, etc.) with
+   the original design's hex values kept only as fallbacks, in
+   case those variables aren't present on an ancestor.
 
-/* ── Reset & base ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+   NOTE ON SCOPING: everything in this file is now scoped under
+   `.pai-page` (instead of `:root`, `*`, or bare classnames) so it
+   can no longer leak out and override the rest of the app.
+   ========================================================== */
 
 .pai-page {
-  background: #F1F5F9;
+  --pj-page-bg:        var(--bg-main, #F1F5F9);
+  --pj-border-subtle:  var(--tableOuterBorder, #F1F5F9);
+  --pj-surface:        var(--card-bg, #FFFFFF);
+  --pj-surface-2:      var(--tableOddRow, #F8FAFC);
+  --pj-border:         var(--divider-color, #E2E8F0);
+  --pj-border-strong:  var(--calBorder, #CBD5E1);
+
+  --pj-text-primary:   var(--menu-text, #0F172A);
+  --pj-text-secondary: var(--fontColor, #475569);
+  --pj-text-muted:     var(--tittleFontColor, #64748B);
+  --pj-text-faint:     var(--FontAwesomeIcon, #94A3B8);
+  --pj-on-color:       #FFFFFF;
+
+  /* Fixed brand bar — intentionally theme-invariant, overridden for
+     dark below with a slightly deeper shade rather than tied to an
+     app variable (no navbar-specific token exists in the theme). */
+  --pj-navbar-bg:      #0F172A;
+
+  /* Brand blue — mirrors the app's own accent */
+  --pj-primary:        var(--avatar-bg, #1D4ED8);
+  --pj-primary-hover:  #1E40AF;
+  --pj-primary-bg:     var(--blueBG, #DBEAFE);
+  --pj-primary-bg-2:   var(--icon-blue-bg, #BFDBFE);
+  --pj-primary-border: #93C5FD;
+
+  --pj-danger:          var(--redFontColor, #DC2626);
+  --pj-danger-bg:       var(--meal-app-red, #FEE2E2);
+  --pj-danger-bg-2:     var(--meal-app-red, #FEF2F2);
+  --pj-danger-border:   var(--redBorder, #FCA5A5);
+  --pj-danger-border-2: var(--redBorder, #FECACA);
+
+  /* NOTE: the app's --greenBG / --greenFontColor variables are
+     mistyped in both theme files (literal "green"/"blue" keywords,
+     not real colors) — success stays on bespoke, tested values
+     rather than inheriting that bug. --greenBorder is a real color
+     and is safe to use. */
+  --pj-success:          #15803D;
+  --pj-success-hover:    #16A34A;
+  --pj-success-bg:       var(--icon-green-bg, #DCFCE7);
+  --pj-success-border:   var(--greenBorder, #86EFAC);
+  --pj-success-border-2: var(--greenBorder, #BBF7D0);
+
+  --pj-warning:          #B45309;
+  --pj-warning-hover:    #D97706;
+  --pj-warning-bg:       #FEF3C7;
+  --pj-warning-bg-2:     #FFFBEB;
+  --pj-warning-border:   #FCD34D;
+  --pj-warning-border-2: #FDE68A;
+
+  --pj-purple:            #7C3AED;
+  --pj-purple-bg:         var(--icon-purple-bg, #EDE9FE);
+  --pj-purple-bg-2:       #F5F3FF;
+  --pj-purple-border:     #DDD6FE;
+  --pj-purple-strong-bg:  #c5b8fc;
+
+  --pj-highlight-grad-start: hsl(48, 100%, 93%);
+  --pj-highlight-grad-end:   #faf7eb;
+
+  --pj-notice-bg:     #F4F2EC;
+  --pj-notice-border: #EFEDE6;
+}
+
+/* ==========================================================
+   DARK MODE — only for tokens with no matching app variable.
+   Scoped so it only fires when `.pai-page` itself is inside (or
+   carries) the app's dark theme class, never for the app at large.
+   ========================================================== */
+
+.dark .pai-page,
+[data-theme="dark"] .pai-page,
+.pai-page.dark,
+.pai-page[data-theme="dark"] {
+  --pj-navbar-bg:      #05070c;
+
+  --pj-primary-hover:  #6d8dff;
+  --pj-primary-border: #3a5a99;
+
+  --pj-danger-border:   #7a3838;
+  --pj-danger-border-2: #5a2626;
+
+  --pj-success:          #4ade80;
+  --pj-success-hover:    #22c55e;
+  --pj-success-border-2: #1c4f30;
+
+  --pj-warning:          #fbbf24;
+  --pj-warning-hover:    #f59e0b;
+  --pj-warning-bg:       #3a2a06;
+  --pj-warning-bg-2:     #2c2004;
+  --pj-warning-border:   #8a6a1c;
+  --pj-warning-border-2: #6b5418;
+
+  --pj-purple:            #a78bfa;
+  --pj-purple-bg-2:       #1c1533;
+  --pj-purple-border:     #4c3d80;
+  --pj-purple-strong-bg:  #6650b8;
+
+  --pj-highlight-grad-start: hsl(48, 60%, 15%);
+  --pj-highlight-grad-end:   #2c260f;
+
+  --pj-notice-bg:     #262420;
+  --pj-notice-border: #35322b;
+}
+
+
+/* ── Reset & base ──
+   Scoped to `.pai-page` and its descendants ONLY.
+   This is the change that matters most: the old `*, *::before, *::after`
+   reset had no ancestor and was zeroing margin/padding + forcing
+   border-box on every element in the whole app. */
+.pai-page,
+.pai-page *,
+.pai-page *::before,
+.pai-page *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.pai-page {
+  background: var(--pj-page-bg);
   min-height: 100vh;
   padding: 24px 28px;
   font-family: 'Sora', sans-serif;
@@ -16,53 +143,53 @@
 /* ══════════════════════════════════════
    TOPBAR / BREADCRUMB
 ══════════════════════════════════════ */
-.pai-topbar {
+.pai-page .pai-topbar {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.pai-back-btn {
+.pai-page .pai-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: 'Sora', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: #1D4ED8;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  color: var(--pj-primary);
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
   border-radius: 8px;
   padding: 7px 14px;
   cursor: pointer;
   transition: background 0.15s, box-shadow 0.15s;
 }
 
-.pai-back-btn:hover {
-  background: #DBEAFE;
+.pai-page .pai-back-btn:hover {
+  background: var(--pj-primary-bg);
   box-shadow: 0 1px 4px rgba(59, 91, 219, 0.12);
 }
 
-.pai-back-btn svg { flex-shrink: 0; }
+.pai-page .pai-back-btn svg { flex-shrink: 0; }
 
-.pai-breadcrumb-sep {
-  color: #94A3B8;
+.pai-page .pai-breadcrumb-sep {
+  color: var(--pj-text-faint);
   display: flex;
   align-items: center;
 }
 
-.pai-breadcrumb-current {
+.pai-page .pai-breadcrumb-current {
   font-size: 12px;
   font-weight: 600;
-  color: #0F172A;
+  color: var(--pj-text-primary);
 }
 
 /* ══════════════════════════════════════
    PROJECT INFO CARD
 ══════════════════════════════════════ */
-.pai-info-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+.pai-page .pai-info-card {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
   border-radius: 12px;
   padding: 20px 24px;
   display: flex;
@@ -71,58 +198,58 @@
   animation: fadeUp 0.3s ease both;
 }
 
-.pai-project-avatar {
+.pai-page .pai-project-avatar {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: #1D4ED8;
+  background: var(--pj-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
-  color: #FFF;
+  color: var(--pj-on-color);
   flex-shrink: 0;
   letter-spacing: 0.03em;
 }
 
-.pai-info-fields {
+.pai-page .pai-info-fields {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
   flex: 1;
 }
 
-.pai-info-field {
+.pai-page .pai-info-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 0 28px;
-  border-right: 1px solid #F1F5F9;
+  border-right: 1px solid var(--pj-border-subtle);
   min-width: 140px;
 }
 
-.pai-info-field:first-child { padding-left: 0; }
-.pai-info-field:last-child  { border-right: none; }
+.pai-page .pai-info-field:first-child { padding-left: 0; }
+.pai-page .pai-info-field:last-child  { border-right: none; }
 
-.pai-field-label {
+.pai-page .pai-field-label {
   font-size: 10.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #94A3B8;
+  color: var(--pj-text-faint);
 }
 
-.pai-field-value {
+.pai-page .pai-field-value {
   font-size: 12.5px;
   font-weight: 600;
-  color: #0F172A;
+  color: var(--pj-text-primary);
 }
 
 /* ══════════════════════════════════════
    STATUS PILLS
 ══════════════════════════════════════ */
-.status-pill {
+.pai-page .status-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -134,27 +261,27 @@
   margin-top: 2px;
 }
 
-.pill-dot {
+.pai-page .pill-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.pill-active      { color: #15803D; background: #DCFCE7; }
-.pill-active .pill-dot { background: #15803D; animation: blink 2s ease-in-out infinite; }
+.pai-page .pill-active      { color: var(--pj-success); background: var(--pj-success-bg); }
+.pai-page .pill-active .pill-dot { background: var(--pj-success); animation: blink 2s ease-in-out infinite; }
 
-.pill-running     { color: #1D4ED8; background: #DBEAFE; }
-.pill-running .pill-dot { background: #1D4ED8; animation: blink 1.5s ease-in-out infinite; }
+.pai-page .pill-running     { color: var(--pj-primary); background: var(--pj-primary-bg); }
+.pai-page .pill-running .pill-dot { background: var(--pj-primary); animation: blink 1.5s ease-in-out infinite; }
 
-.pill-paused      { color: #B45309; background: #FEF3C7; }
-.pill-paused .pill-dot { background: #B45309; }
+.pai-page .pill-paused      { color: var(--pj-warning); background: var(--pj-warning-bg); }
+.pai-page .pill-paused .pill-dot { background: var(--pj-warning); }
 
-.pill-not-started { color: #64748B; background: #F8FAFC; }
-.pill-not-started .pill-dot { background: #94A3B8; }
+.pai-page .pill-not-started { color: var(--pj-text-muted); background: var(--pj-surface-2); }
+.pai-page .pill-not-started .pill-dot { background: var(--pj-text-faint); }
 
-.pill-closed      { color: #64748B; background: #F8FAFC; }
-.pill-closed .pill-dot { background: #94A3B8; }
+.pai-page .pill-closed      { color: var(--pj-text-muted); background: var(--pj-surface-2); }
+.pai-page .pill-closed .pill-dot { background: var(--pj-text-faint); }
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
@@ -164,34 +291,34 @@
 /* ══════════════════════════════════════
    ACTIVITIES CARD
 ══════════════════════════════════════ */
-.pai-activity-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+.pai-page .pai-activity-card {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
   border-radius: 12px;
   overflow: hidden;
   animation: fadeUp 0.35s ease 0.06s both;
 }
 
-.pai-activity-header {
+.pai-page .pai-activity-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid var(--pj-border-subtle);
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.pai-header-left {
+.pai-page .pai-header-left {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.pai-section-icon {
+.pai-page .pai-section-icon {
   width: 28px;
   height: 28px;
-  background: #DBEAFE;
+  background: var(--pj-primary-bg);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -199,47 +326,47 @@
   flex-shrink: 0;
 }
 
-.pai-section-title {
+.pai-page .pai-section-title {
   font-size: 14px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--pj-text-primary);
 }
 
-.pai-counter {
+.pai-page .pai-counter {
   font-size: 11.5px;
   font-weight: 600;
-  color: #1D4ED8;
-  background: #DBEAFE;
-  border: 1px solid #93C5FD;
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+  border: 1px solid var(--pj-primary-border);
   border-radius: 20px;
   padding: 2px 9px;
 }
 
-.pai-header-right {
+.pai-page .pai-header-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.pai-search-wrap {
+.pai-page .pai-search-wrap {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.pai-search-wrap svg {
+.pai-page .pai-search-wrap svg {
   position: absolute;
   left: 10px;
-  color: #94A3B8;
+  color: var(--pj-text-faint);
   pointer-events: none;
 }
 
-.pai-search {
+.pai-page .pai-search {
   font-family: 'Sora', sans-serif;
   font-size: 12.5px;
-  color: #0F172A;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  color: var(--pj-text-primary);
+  background: var(--pj-surface-2);
+  border: 1px solid var(--pj-border);
   border-radius: 8px;
   padding: 8px 12px 8px 32px;
   outline: none;
@@ -247,23 +374,23 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.pai-search::placeholder { color: #94A3B8; }
+.pai-page .pai-search::placeholder { color: var(--pj-text-faint); }
 
-.pai-search:focus {
-  border-color: #93C5FD;
+.pai-page .pai-search:focus {
+  border-color: var(--pj-primary-border);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
-  background: #FFF;
+  background: var(--pj-surface);
 }
 
-.pai-add-btn {
+.pai-page .pai-add-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: 'Sora', sans-serif;
   font-size: 12.5px;
   font-weight: 600;
-  color: #FFFFFF;
-  background: #1D4ED8;
+  color: var(--pj-on-color);
+  background: var(--pj-primary);
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -272,94 +399,98 @@
   white-space: nowrap;
 }
 
-.pai-add-btn:hover {
-  background: #1E40AF;
+.pai-page .pai-add-btn:hover {
+  background: var(--pj-primary-hover);
   box-shadow: 0 2px 8px rgba(59, 91, 219, 0.25);
 }
 
-.pai-refresh-btn {
+.pai-page .pai-refresh-btn {
   width: 34px;
   height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-family: 'Sora', sans-serif;
-  color: #475569;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  color: var(--pj-text-secondary);
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
   border-radius: 8px;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.3s;
 }
 
-.pai-refresh-btn:hover {
-  background: #F1F5F9;
-  border-color: #CBD5E1;
+.pai-page .pai-refresh-btn:hover {
+  background: var(--pj-page-bg);
+  border-color: var(--pj-border-strong);
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
-.pai-refresh-btn:active {
+.pai-page .pai-refresh-btn:active {
   transform: rotate(180deg);
-  background: #E2E8F0;
+  background: var(--pj-border);
 }
 
 /* ══════════════════════════════════════
    TABLE
+   NOTE: MUI classnames (.MuiTableCell-root etc.) are global by
+   design in MUI. They stay prefixed with `.pai-page .pai-table`
+   so they only ever match tables rendered inside this component,
+   never other MUI tables elsewhere in the app.
 ══════════════════════════════════════ */
-.pai-table-wrapper {
+.pai-page .pai-table-wrapper {
   overflow-x: auto;
 }
 
-.pai-table {
+.pai-page .pai-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 1100px;
 }
 
-/* Override MUI padding on our table */
-.pai-table .MuiTableCell-root {
+/* Override MUI padding on our table only */
+.pai-page .pai-table .MuiTableCell-root {
   font-family: 'Sora', sans-serif;
-  border-bottom: 1px solid #F8FAFC;
+  border-bottom: 1px solid var(--pj-surface-2);
   padding: 0;
 }
 
-.pai-thead-row {
-  background: #F8FAFC;
+.pai-page .pai-thead-row {
+  background: var(--pj-surface-2);
 }
 
-.pai-thead-row .MuiTableCell-root {
-  border-bottom: 1px solid #F1F5F9;
+.pai-page .pai-thead-row .MuiTableCell-root {
+  border-bottom: 1px solid var(--pj-border-subtle);
 }
 
-.pai-th {
+.pai-page .pai-th {
   font-size: 10.5px !important;
   font-weight: 700 !important;
-  color: #94A3B8 !important;
+  color: var(--pj-text-faint) !important;
   letter-spacing: 0.07em !important;
   text-transform: uppercase !important;
   padding: 12px 14px !important;
   white-space: nowrap;
-  background: #F8FAFC;
+  background: var(--pj-surface-2);
 }
 
-.pai-th-toggle {
+.pai-page .pai-th-toggle {
   width: 36px !important;
   padding: 12px 8px !important;
 }
 
 /* Body rows — TreeRows component will inherit these via MUI overrides */
-.pai-table .MuiTableBody-root .MuiTableRow-root {
+.pai-page .pai-table .MuiTableBody-root .MuiTableRow-root {
   transition: background 0.12s;
 }
 
-.pai-table .MuiTableBody-root .MuiTableRow-root:hover {
-  background: #F8FAFC;
+.pai-page .pai-table .MuiTableBody-root .MuiTableRow-root:hover {
+  background: var(--pj-surface-2);
 }
 
-.pai-table .MuiTableBody-root .MuiTableCell-root {
+.pai-page .pai-table .MuiTableBody-root .MuiTableCell-root {
   font-size: 12.5px;
-  color: #64748B;
+  color: var(--pj-text-muted);
   padding: 12px 14px;
 }
 
@@ -369,62 +500,66 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.my-activity-row {
-  background: linear-gradient(90deg, hsl(48, 100%, 93%) 0%, #faf7eb 100%);
-  border-left: 3px solid #FCD34D !important;
+.pai-page .my-activity-row {
+  background: linear-gradient(90deg, var(--pj-highlight-grad-start) 0%, var(--pj-highlight-grad-end) 100%);
+  border-left: 3px solid var(--pj-warning-border) !important;
   position: relative;
 }
 
-.my-activity-row td:first-child {
+.pai-page .my-activity-row td:first-child {
   padding-left: 11px !important;
 }
 
-.my-activity-row:hover {
-  background: linear-gradient(90deg, #FEF3C7 0%, #FFFBEB 100%) !important;
+.pai-page .my-activity-row:hover {
+  background: linear-gradient(90deg, var(--pj-warning-bg) 0%, var(--pj-warning-bg-2) 100%) !important;
 }
 
-.other-activity-row {
-  background:#FFFFFF;
+.pai-page .other-activity-row {
+  background: var(--pj-surface);
   border-left: 3px solid transparent !important;
   opacity: 0.72;
   filter: grayscale(0.25);
 }
 
-.other-activity-row:hover {
-  background: #FFFFFF !important;
+.pai-page .other-activity-row:hover {
+  background: var(--pj-surface) !important;
 }
 
-
-.custom-datepicker-input {
+.pai-page .custom-datepicker-input {
   font-size: 0.8rem;
   padding: 5px 8px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--pj-border);
   border-radius: 6px;
   width: 150px;
   outline: none;
-  color: #0F172A;
+  color: var(--pj-text-primary);
 }
 
-.custom-datepicker-input:focus {
-  border-color: #1D4ED8;
+.pai-page .custom-datepicker-input:focus {
+  border-color: var(--pj-primary);
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
 }
 
+/* react-datepicker renders its calendar into a portal attached to
+   <body>, OUTSIDE the .pai-page DOM subtree — so these rules are
+   intentionally left unscoped. Their classnames (react-datepicker__*)
+   are namespaced by the library itself, so the collision risk with
+   the rest of the app is already low. */
 .react-datepicker {
   font-family: inherit;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--pj-border);
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
 
 .react-datepicker__header {
-  background-color: #FFF;
-  border-bottom: 1px solid #E2E8F0;
+  background-color: var(--pj-surface);
+  border-bottom: 1px solid var(--pj-border);
   border-radius: 10px 10px 0 0;
 }
 
 .react-datepicker__day--selected {
-  background-color: #1D4ED8;
+  background-color: var(--pj-primary);
   border-radius: 50%;
 }
 
@@ -432,15 +567,15 @@
   border-radius: 50%;
 }
 
-.back-to-draft {
+.pai-page .back-to-draft {
   height: 32px;
   padding: 0 14px;
 
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--pj-border-strong);
   border-radius: 7px;
 
-  background: #FFFFFF;
-  color: #475569;
+  background: var(--pj-surface);
+  color: var(--pj-text-secondary);
 
   font-family: 'Sora', sans-serif;
   font-size: 12px;
@@ -456,19 +591,19 @@
 /* ══════════════════════════════════════
    ACTION ICON BUTTONS (comment / subtask / redo / delete)
 ══════════════════════════════════════ */
-.action-container {
+.pai-page .action-container {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.icon-button {
+.pai-page .icon-button {
   width: 32px !important;
   height: 32px !important;
   border-radius: 10px !important;
-  border: 1px solid #E2E8F0 !important;
-  background: #FFFFFF !important;
-  color: #64748B !important;
+  border: 1px solid var(--pj-border) !important;
+  background: var(--pj-surface) !important;
+  color: var(--pj-text-muted) !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -480,117 +615,118 @@
   overflow: visible !important;
 }
 
-.icon-button:hover {
+.pai-page .icon-button:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
 }
 
-.icon-button:disabled {
+.pai-page .icon-button:disabled {
   opacity: 0.45 !important;
   cursor: not-allowed !important;
   transform: none !important;
 }
 
 /* Comment */
-.icon-btn--comment {
-  background: #FFFFFF !important;
-  color: #64748B !important;
-  border-color: #E2E8F0 !important;
+.pai-page .icon-btn--comment {
+  background: var(--pj-surface) !important;
+  color: var(--pj-text-muted) !important;
+  border-color: var(--pj-border) !important;
 }
 
-.icon-btn--comment:hover {
-  background: #F8FAFC !important;
+.pai-page .icon-btn--comment:hover {
+  background: var(--pj-surface-2) !important;
 }
 
 /* Add Sub Activity */
-.icon-btn--subtask {
-  background: #F5F3FF !important;
-  color: #7C3AED !important;
-  border-color: #DDD6FE !important;
+.pai-page .icon-btn--subtask {
+  background: var(--pj-purple-bg-2) !important;
+  color: var(--pj-purple) !important;
+  border-color: var(--pj-purple-border) !important;
 }
 
-.icon-btn--subtask:hover {
-  background: #EDE9FE !important;
-}
-
-/* Redo / Submit */
-.icon-btn--submit {
-  background: #DCFCE7 !important;
-  color: #15803D !important;
-  border-color: #86EFAC !important;
-}
-
-.icon-btn--submit:hover {
-  background: #BBF7D0 !important;
+.pai-page .icon-btn--subtask:hover {
+  background: var(--pj-purple-bg) !important;
 }
 
 /* Redo / Submit */
-.icon-btn--feedback {
-  color:  #7C3AED !important;
-                border-color: #DDD6FE !important ;
-                background: #EDE9FE !important;
+.pai-page .icon-btn--submit {
+  background: var(--pj-success-bg) !important;
+  color: var(--pj-success) !important;
+  border-color: var(--pj-success-border) !important;
 }
 
-.icon-btn--feedback:hover {
-  background: #c5b8fc !important;
+.pai-page .icon-btn--submit:hover {
+  background: var(--pj-success-border-2) !important;
 }
+
+/* Feedback */
+.pai-page .icon-btn--feedback {
+  color: var(--pj-purple) !important;
+  border-color: var(--pj-purple-border) !important;
+  background: var(--pj-purple-bg) !important;
+}
+
+.pai-page .icon-btn--feedback:hover {
+  background: var(--pj-purple-strong-bg) !important;
+}
+
 /* Delete */
-.icon-btn--delete {
-  background: #FEF2F2 !important;
-  color: #DC2626 !important;
-  border-color: #FCA5A5 !important;
+.pai-page .icon-btn--delete {
+  background: var(--pj-danger-bg-2) !important;
+  color: var(--pj-danger) !important;
+  border-color: var(--pj-danger-border) !important;
 }
 
-.icon-btn--delete:hover {
-  background: #FEE2E2 !important;
+.pai-page .icon-btn--delete:hover {
+  background: var(--pj-danger-bg) !important;
 }
 
 /* Start */
-.icon-btn--start {
-  background: #DCFCE7 !important;
-  color: #15803D !important;
-  border-color: #86EFAC !important;
+.pai-page .icon-btn--start {
+  background: var(--pj-success-bg) !important;
+  color: var(--pj-success) !important;
+  border-color: var(--pj-success-border) !important;
 }
 
-.icon-btn--start:hover {
-  background: #BBF7D0 !important;
+.pai-page .icon-btn--start:hover {
+  background: var(--pj-success-border-2) !important;
 }
 
 /* Pause */
-.icon-btn--pause {
-  background: #FEF3C7 !important;
-  color: #B45309 !important;
-  border-color: #FCD34D !important;
+.pai-page .icon-btn--pause {
+  background: var(--pj-warning-bg) !important;
+  color: var(--pj-warning) !important;
+  border-color: var(--pj-warning-border) !important;
 }
 
-.icon-btn--pause:hover {
-  background: #FDE68A !important;
+.pai-page .icon-btn--pause:hover {
+  background: var(--pj-warning-border-2) !important;
 }
 
 /* Resume */
-.icon-btn--resume {
-  background: #DBEAFE !important;
-  color: #1D4ED8 !important;
-  border-color: #93C5FD !important;
+.pai-page .icon-btn--resume {
+  background: var(--pj-primary-bg) !important;
+  color: var(--pj-primary) !important;
+  border-color: var(--pj-primary-border) !important;
 }
 
-.icon-btn--resume:hover {
-  background: #BFDBFE !important;
+.pai-page .icon-btn--resume:hover {
+  background: var(--pj-primary-bg-2) !important;
 }
 
 /* Stop / Complete */
-.icon-btn--stop {
-  background: #FEE2E2 !important;
-  color: #DC2626 !important;
-  border-color: #FCA5A5 !important;
+.pai-page .icon-btn--stop {
+  background: var(--pj-danger-bg) !important;
+  color: var(--pj-danger) !important;
+  border-color: var(--pj-danger-border) !important;
 }
 
-.icon-btn--stop:hover {
-  background: #FECACA !important;
+.pai-page .icon-btn--stop:hover {
+  background: var(--pj-danger-border-2) !important;
 }
 
 /* Comment Count Badge */
-.icon-btn-badge {
+.pai-page .icon-btn-badge {
   position: absolute;
   top: -6px;
   right: -6px;
@@ -599,11 +735,11 @@
   height: 16px;
   padding: 0 4px;
 
-  background: #7C3AED;
-  color: #FFFFFF;
+  background: var(--pj-purple);
+  color: var(--pj-on-color);
 
   border-radius: 999px;
-  border: 2px solid #FFFFFF;
+  border: 2px solid var(--pj-on-color);
 
   font-size: 9px;
   font-weight: 700;
@@ -616,7 +752,7 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
-.avatar-resource {
+.pai-page .avatar-resource {
   width: 28px;
   height: 28px;
 
@@ -641,7 +777,7 @@
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
-.avatar-resource.disabled {
+.pai-page .avatar-resource.disabled {
   opacity: 0.85;
   filter: saturate(90%);
 }
@@ -649,19 +785,19 @@
 /* ══════════════════════════════════════
    ACTIVITY TIMER
 ══════════════════════════════════════ */
-.duration-cell {
+.pai-page .duration-cell {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.duration-hrs {
+.pai-page .duration-hrs {
   font-size: 12.5px;
   font-weight: 600;
-  color: #0F172A;
+  color: var(--pj-text-primary);
 }
 
-.activity-timer {
+.pai-page .activity-timer {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -675,36 +811,188 @@
   white-space: nowrap;
 }
 
-.timer-dot {
+.pai-page .timer-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.timer-countdown {
-  color: #1D4ED8;
-  background: #DBEAFE;
-  border: 1px solid #93C5FD;
+.pai-page .timer-countdown {
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+  border: 1px solid var(--pj-primary-border);
 }
 
-.timer-countdown .timer-dot {
-  background: #1D4ED8;
+.pai-page .timer-countdown .timer-dot {
+  background: var(--pj-primary);
   animation: blink 1.5s ease-in-out infinite;
 }
 
-.timer-overdue {
-  color: #DC2626;
-  background: #FEE2E2;
-  border: 1px solid #FCA5A5;
+.pai-page .timer-overdue {
+  color: var(--pj-danger);
+  background: var(--pj-danger-bg);
+  border: 1px solid var(--pj-danger-border);
 }
 
-.timer-overdue .timer-dot {
-  background: #DC2626;
+.pai-page .timer-overdue .timer-dot {
+  background: var(--pj-danger);
   animation: blink 0.8s ease-in-out infinite;
 }
 
-.timer-dash {
-  color: #94A3B8;
+.pai-page .timer-dash {
+  color: var(--pj-text-faint);
   font-size: 12px;
+}
+
+/* ══════════════════════════════════════
+   TREE ROWS (module / task tree)
+   Restored: these are used by TreeRows.jsx, which renders inside
+   this component's tree, not ProjectsInfo.jsx. They previously
+   lived in ProjectsInfo.css as unscoped global rules; moved here
+   and scoped under .pai-page since that's where TreeRows actually
+   mounts.
+══════════════════════════════════════ */
+.pai-page .module-row td {
+  padding: 0 !important;
+}
+
+.pai-page .module-header {
+  background: var(--pj-notice-bg);
+  min-height: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 14px;
+  width: 100%;
+  border-top: 1px solid var(--pj-notice-border);
+  border-bottom: 1px solid var(--pj-notice-border);
+}
+
+.pai-page .module-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pai-page .module-right {
+  display: flex;
+  align-items: center;
+}
+
+.pai-page .module-tag {
+  background: var(--pj-primary-bg);
+  color: var(--pj-primary);
+  border: 1px solid var(--pj-primary-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.pai-page .tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pai-page .subtree-line {
+  color: var(--pj-text-faint);
+  font-weight: 700;
+}
+
+.pai-page .task-pill {
+  background: var(--pj-surface-2);
+  border: 1px solid var(--pj-border);
+  color: var(--pj-text-muted);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   EXPAND BUTTON
+══════════════════════════════════════ */
+.pai-page .expand-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--pj-border);
+  background: var(--pj-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.pai-page .expand-btn.small {
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+}
+
+.pai-page .expand-btn:hover {
+  background: var(--pj-surface-2);
+}
+
+/* ══════════════════════════════════════
+   RESOURCE / ADD ROW / TASK NAME INPUT
+══════════════════════════════════════ */
+.pai-page .resource-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pai-page .add-row-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px dashed var(--pj-primary);
+  border-radius: 16px;
+  background: var(--pj-surface);
+  color: var(--pj-primary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pai-page .add-row-chip:hover {
+  background: var(--pj-primary-bg);
+  border-color: var(--pj-primary-hover);
+}
+
+.pai-page .add-row-chip svg {
+  font-size: 13px;
+}
+
+.pai-page .task-name-input {
+  width: 220px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--pj-border);
+  border-radius: 8px;
+  background: var(--pj-surface);
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.pai-page .task-name-input:hover {
+  border-color: var(--pj-primary-border);
+}
+
+.pai-page .task-name-input:focus {
+  border-color: var(--pj-primary);
 }
