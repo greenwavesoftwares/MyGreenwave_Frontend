@@ -361,7 +361,7 @@ const AdminPage = () => {
                 stripedRows
                 dataKey="userId"
                 filters={adminTable.filterStructure}
-                globalFilterFields={["userName", "userId", "phoneNumber"]}
+                globalFilterFields={["userName", "userId", "phoneNumber","groupNames"]}
                 emptyMessage={ loader ? <LinearProgress color="inherit" /> : "No Data Found" }
               >
                 <Column
