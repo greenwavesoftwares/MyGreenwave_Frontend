@@ -2494,6 +2494,7 @@ const OCC_WEEK_HEADER_HEIGHT = 38;
 const OCC_DAY_HEADER_HEIGHT = 46;
 const OCC_SCROLL_MAX_HEIGHT = 520;
 
+
 function ResourceOccupancyTimeline({
   weeks,
   resources,
@@ -2761,7 +2762,10 @@ function ResourceOccupancyTimeline({
                         ? `1px solid ${t.gridLineMd}`
                         : "none",
                       background: bg,
-                      boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
+                      // Highlights top, left, and right sides of today's header cell
+                      boxShadow: isT
+                        ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}, inset 0 2px 0 0 ${t.earlyColor}`
+                        : "none",
                     }}
                   >
                     <div
@@ -2884,7 +2888,19 @@ function ResourceOccupancyTimeline({
 
                     const occ = data.occupied;
                     const occColor = getOccupancyColor(occ);
-                    const hourly = data.hourly || new Array(8).fill(0);
+                    const fillPercentage = Math.min((occ / capacityHrs) * 100, 100);
+
+                    // Continuous outline conditional styles
+                    let cellBoxShadow = "none";
+                    if (isT) {
+                      if (ri === resources.length - 1) {
+                        // Last row cell gets: left, right, and bottom borders
+                        cellBoxShadow = `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}, inset 0 -2px 0 0 ${t.earlyColor}`;
+                      } else {
+                        // Middle rows get: left and right borders only
+                        cellBoxShadow = `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}`;
+                      }
+                    }
 
                     return (
                       <div
@@ -2905,7 +2921,7 @@ function ResourceOccupancyTimeline({
                             ? `1px solid ${t.gridLineMd}`
                             : "none",
                           background: bg,
-                          boxShadow: isT ? `inset 0 0 0 2px ${t.earlyColor}` : "none",
+                          boxShadow: cellBoxShadow,
                           padding: "3px 3px",
                           cursor: "pointer",
                           display: "flex",
@@ -2924,40 +2940,24 @@ function ResourceOccupancyTimeline({
                             overflow: "hidden",
                             border: `1px solid ${t.occFreeBarBorder}`,
                             boxShadow: t.occFreeBarShadow,
-                            display: "flex",
-                            alignItems: "flex-end",
-                            gap: 1,
-                            padding: "0 1px",
                           }}
                         >
-                          {hourly.map((h, hi) => (
+                          {/* Continuous progress bar representation */}
+                          {occ > 0 && (
                             <div
-                              key={hi}
                               style={{
-                                flex: 1,
-                                height: "100%",
-                                background: "transparent",
-                                borderRadius: 2,
-                                position: "relative",
-                                overflow: "hidden",
+                                position: "absolute",
+                                left: 0,
+                                top: 0,
+                                bottom: 0,
+                                width: `${fillPercentage}%`,
+                                background: occColor,
+                                borderRadius: "inherit",
                               }}
-                            >
-                              {h > 0 && (
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    height: `${Math.min(h, 1) * 100}%`,
-                                    background: occColor,
-                                    borderRadius: 2,
-                                  }}
-                                />
-                              )}
-                            </div>
-                          ))}
+                            />
+                          )}
 
+                          {/* Centered Compact Duration Label */}
                           <div
                             style={{
                               position: "absolute",
@@ -3041,6 +3041,9 @@ function ResourceOccupancyTimeline({
     </div>
   );
 }
+
+
+
 function initialsFor(n) {
 
   if (!n) return "?";

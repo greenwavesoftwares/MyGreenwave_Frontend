@@ -26,7 +26,7 @@
   --pj-text-secondary: var(--fontColor, #475569);
   --pj-text-muted:     var(--tittleFontColor, #64748B);
   --pj-text-faint:     var(--FontAwesomeIcon, #94A3B8);
-  --pj-on-color:       #FFFFFF;
+  --pj-on-color:       var(--menu-selected);
 
   /* Fixed brand bar — intentionally theme-invariant, overridden for
      dark below with a slightly deeper shade rather than tied to an
