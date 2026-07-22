@@ -13,7 +13,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 
-const PauseReasonDialog = ({ open, activityName, onConfirm, onCancel }) => {
+const PauseReasonDialog = ({ open, activityName, onConfirm, onCancel, pauseDelayType }) => {
+  console.log("Type of pause delay::",pauseDelayType)
   const [reason, setReason] = useState("");
   const [error, setError] = useState(false);
 
@@ -77,7 +78,7 @@ const PauseReasonDialog = ({ open, activityName, onConfirm, onCancel }) => {
         </Box>
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
-            Pause Activity
+            {pauseDelayType==='Paused' && <>Pause Activity</>}{pauseDelayType==='StartDelay' && <>Start Activity</>}{pauseDelayType==='StopDelay' && <>Stop Activity</>}
           </Typography>
           <Typography
             variant="caption"
@@ -133,7 +134,7 @@ const PauseReasonDialog = ({ open, activityName, onConfirm, onCancel }) => {
                 </Typography>
               </Box>
               <Typography variant="body2" fontWeight={700} color="#1E3A8A">
-                Running
+                {pauseDelayType==='Paused' && <>Running</>}{pauseDelayType==='StartDelay' && <>Pending</>}{pauseDelayType==='StopDelay' && <>Running</>}
               </Typography>
             </Box>
 
@@ -162,7 +163,8 @@ const PauseReasonDialog = ({ open, activityName, onConfirm, onCancel }) => {
                 </Typography>
               </Box>
               <Typography variant="body2" fontWeight={700} color="#7C4700">
-                Paused
+                {pauseDelayType==='Paused' && <>Paused</>}{pauseDelayType==='StartDelay' && <>Running</>}{pauseDelayType==='StopDelay' && <>Completed</>}
+              
               </Typography>
             </Box>
           </Box>
@@ -170,10 +172,10 @@ const PauseReasonDialog = ({ open, activityName, onConfirm, onCancel }) => {
 
         {/* ── REASON ── */}
         <Typography variant="body2" fontWeight={700} sx={{ mb: 0.25 }}>
-          Reason for pausing *
+          {pauseDelayType==='Paused' && <>Reason for pausing *</>}{pauseDelayType!=='Paused' && <>Reason of Delay *</>}
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: "block" }}>
-          Write the reason for pausing
+          Write the reason {pauseDelayType==='Paused' && <> for pausing *</>}{pauseDelayType!=='Paused' && <> of delay *</>}
         </Typography>
 
         <TextField

@@ -52,7 +52,7 @@ export default function TreeRows({
   moduleId,
   projectId,
   updateStatusOfActivity,
-  onPauseRequest,
+  onPauseDelayRequest,
   onOpenCommentBox,
   onOpenFeedbackForm,
   deleteNode,
@@ -109,7 +109,17 @@ export default function TreeRows({
           <button
             className="icon-button icon-btn--start"
             onClick={() => {
-              updateStatusOfActivity(id, "Running",node);
+              const minutesLeft = dayjs().diff(dayjs(plannedStart), "minute");
+              console.log("Minutes left::",minutesLeft)
+                if (minutesLeft >= 15) {
+                  // 15 minutes or less remaining
+
+                  onPauseDelayRequest(id, node, "StartDelay");
+                }
+                else{
+                  
+                updateStatusOfActivity(id, "Running",node);
+                }
             }}
           >
             <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
@@ -121,7 +131,7 @@ export default function TreeRows({
         <Tooltip key="pause" title="Pause">
           <button
             className="icon-button icon-btn--pause"
-            onClick={() => onPauseRequest(id, node)}
+            onClick={() => onPauseDelayRequest(id, node, "Paused")}
           >
             <PauseIcon sx={{ fontSize: 14 }} className="pause-icon" />
           </button>
@@ -140,7 +150,17 @@ export default function TreeRows({
                   );
                   return;
                 }
+                const minutesLeft = dayjs().diff(dayjs(plannedStop), "minute");
+                console.log("Minutes left:::",minutesLeft)
+                if (minutesLeft >= 15) {
+                  // 15 minutes or less remaining
+
+                  onPauseDelayRequest(id, node, "StopDelay");
+                }
+                else{
+                  
                 updateStatusOfActivity(id, "Completed",node);
+                }
               }}
             >
               <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
@@ -153,7 +173,7 @@ export default function TreeRows({
         <Tooltip key="restart" title="Restart">
           <button
             className="icon-button icon-btn--start"
-            onClick={() => updateStatusOfActivity(id, "Running",node)}
+            onClick={() => updateStatusOfActivity(id, "Running", node)}
           >
             <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
           </button>
@@ -164,7 +184,7 @@ export default function TreeRows({
         <Tooltip key="resume" title="Resume">
           <button
             className="icon-button icon-btn--resume"
-            onClick={() => updateStatusOfActivity(id, "Running",node)}
+            onClick={() => updateStatusOfActivity(id, "Running", node)}
           >
             <FastForwardIcon sx={{ fontSize: 14 }} className="resume-icon" />
           </button>
@@ -308,7 +328,7 @@ export default function TreeRows({
                 submitAddedNode={submitAddedNode}
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
-                onPauseRequest={onPauseRequest}
+                onPauseDelayRequest={onPauseDelayRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 onOpenFeedbackForm={onOpenFeedbackForm}
@@ -399,10 +419,8 @@ export default function TreeRows({
                 : "-"}
             </TableCell>
 
-             <TableCell>
-              <div className="duration-cell">{durationHrs ?? "—"}
-               
-              </div>
+            <TableCell>
+              <div className="duration-cell">{durationHrs ?? "—"}</div>
             </TableCell>
             <TableCell>
               {plannedStop && dayjs(plannedStop).isValid()
@@ -473,7 +491,7 @@ export default function TreeRows({
                 projectId={projectId}
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
-                onPauseRequest={onPauseRequest}
+                onPauseDelayRequest={onPauseDelayRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 fetchColor={fetchColor}

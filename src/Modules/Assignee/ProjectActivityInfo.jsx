@@ -54,7 +54,7 @@ export default function ProjectActivityInfo({
   const currentUserName = getUserData()?.userDetails?.userName;
   const [resourceColor, setResourceColor] = useState({});
   const [loading, setLoading] = useState(true);
-  const [pauseTarget, setPauseTarget] = useState(null); // { activityId, activity }
+  const [pauseDelayTarget, setPauseDelayTarget] = useState(null); // { activityId, activity }
   const WORK_START = 10;
   const WORK_END = 18;
   const WEEK_END = [0, 6];
@@ -341,6 +341,7 @@ export default function ProjectActivityInfo({
     );
   };
   const calculateDuration = async (activity, actualTime) => {
+    console.log("Inside calculate duration")
     const leavesOfEmployee =
       await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
 
@@ -352,6 +353,7 @@ export default function ProjectActivityInfo({
       leaves,
     );
 
+    console.log("After calculating hours")
     const activityPauses = await activityTrackerApi.getActivityPauses(
       activity.id,
     );
@@ -367,6 +369,7 @@ export default function ProjectActivityInfo({
           )
         );
       }, 0) ?? 0;
+      console.log("After calculating pause hours")
     const totalRejections = await activityTrackerApi.getActivityRejections(
       activity.id,
     );
@@ -379,11 +382,13 @@ export default function ProjectActivityInfo({
   };
   const updateStatusOfActivity = async (activityId, status, activity, reason) => {
     try{
+      console.log("Inside updateStatus")
     const actualTime = new Date();
     let duration = 0;
     if (status.toLowerCase() === "completed") {
       duration = await calculateDuration(activity, actualTime);
-      return;
+      
+    console.log("After duration calculation")
     }
     const statusPayload = { status, actualTime, duration };
     if (status === "Paused") {
@@ -403,20 +408,28 @@ export default function ProjectActivityInfo({
   };
 
   // Opens the pause-reason dialog instead of pausing immediately.
-  const handlePauseRequest = (activityId, activity) => {
-    setPauseTarget({ activityId, activity });
+  const handlePauseDelayRequest = (activityId, activity,pauseDelayType) => {
+    console.log("type::",pauseDelayType)
+    setPauseDelayTarget({ activityId, activity,pauseDelayType });
   };
 
-  const handlePauseConfirm = (reason) => {
-    if (pauseTarget) {
+  const handlePauseDelayConfirm = (reason) => {
+    let status=null
+    if(pauseDelayTarget.pauseDelayType==='StartDelay')
+      status='Running'
+    else if(pauseDelayTarget.pauseDelayType==='StopDelay')
+      status='Completed'
+    else if(pauseDelayTarget.pauseDelayType==='Paused')
+      status='Paused'
+    if (pauseDelayTarget) {
       updateStatusOfActivity(
-        pauseTarget.activityId,
-        "Paused",
-        pauseTarget.activity,
+        pauseDelayTarget.activityId,
+        status,
+        pauseDelayTarget.activity,
         reason,
       );
     }
-    setPauseTarget(null);
+    setPauseDelayTarget(null);
   };
   const totalTasks = useMemo(
     () => countTasks(activityInfo?.activities),
@@ -771,7 +784,7 @@ export default function ProjectActivityInfo({
                   projectId={activityInfo.projectId}
                   currentUserId={currentUserId}
                   updateStatusOfActivity={updateStatusOfActivity}
-                  onPauseRequest={handlePauseRequest}
+                  onPauseDelayRequest={handlePauseDelayRequest}
                   onOpenCommentBox={onOpenCommentBox}
                   deleteNode={deleteNode}
                   onOpenFeedbackForm={onOpenFeedbackForm}
@@ -783,10 +796,11 @@ export default function ProjectActivityInfo({
         </div>
       </div>
       <PauseReasonDialog
-        open={!!pauseTarget}
-        activityName={pauseTarget?.activity?.name}
-        onConfirm={handlePauseConfirm}
-        onCancel={() => setPauseTarget(null)}
+        open={!!pauseDelayTarget}
+        activityName={pauseDelayTarget?.activity?.name}
+        pauseDelayType={pauseDelayTarget?.pauseDelayType}
+        onConfirm={handlePauseDelayConfirm}
+        onCancel={() => setPauseDelayTarget(null)}
       />
       <CommentsActionDialog
         existingComments={existingComments}
