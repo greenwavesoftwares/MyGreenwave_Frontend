@@ -60,6 +60,7 @@ const ThemeToggle = () => {
     const html = document.documentElement;
     html.classList.remove("light", "dark");
     html.classList.add(theme);
+    localStorage.setItem("Theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {
