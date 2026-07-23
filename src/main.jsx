@@ -11,6 +11,15 @@ import { BrowserRouter } from "react-router-dom";
 import '../main.scss';
 import ErrorBoundary from './ErrorBoundary.jsx'
 import ToastProvider from "./Modules/Assignee/ToastProvider.jsx";
+
+const logsVisible = import.meta.env.VITE_ENVIRONMENT;
+if (logsVisible === "production") {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+}
+
+
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
   <BrowserRouter>

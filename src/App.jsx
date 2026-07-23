@@ -36,24 +36,7 @@ function App() {
       window.removeEventListener("mousemove", setLastActionTime);
     };
   }, []);
-  useEffect(() => {
-    const originalError = console.error;
-    console.error = (...args) => {
-      // Suppress known extension noise
-      const message = args[0];
-      if (
-        typeof message === "string" &&
-        (message.includes("disconnected port") ||
-          message.includes("Extension context invalidated"))
-      ) {
-        return;
-      }
-      originalError.apply(console, args);
-    };
-    return () => {
-      console.error = originalError;
-    };
-  }, []);
+
   return (
     <Routes>
       {/* This will be only accessible for public */}
