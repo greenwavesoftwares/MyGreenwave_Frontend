@@ -5,25 +5,30 @@
    ========================================================== */
 
 .comments-dialog {
-  /* Brand blue — mirrors the app's own accent (--avatar-bg is identical
-     in both .light/.dark themes) */
-  --primary:        var(--avatar-bg, #3b5bdb);
-  --primary-50:     var(--icon-blue-bg, #edf2ff);
-  --primary-100:    var(--icon-blue-bg, #dbe4ff);
-  --primary-600:    #3351c8; /* no app equivalent — overridden below for dark */
+  /* Reuses the exact same --pj-* palette PauseReasonDialog reads from
+     (defined on `.pai-page` in ProjectActivityInfo.css, with its own
+     dark-mode overrides there). That means this dialog's dark theme
+     is guaranteed to match PauseReasonDialog's — they're pulling from
+     the same source of truth, not two palettes kept in sync by hand.
+     Original bespoke hex values are kept only as fallbacks, in case
+     this dialog is ever rendered outside `.pai-page`. */
+  --primary:        var(--pj-primary, #3b5bdb);
+  --primary-50:     var(--pj-primary-bg, #edf2ff);
+  --primary-100:    var(--pj-primary-bg-2, #dbe4ff);
+  --primary-600:    var(--pj-primary-hover, #3351c8);
 
-  --neutral-0:    var(--dialogBG, #ffffff);
-  --neutral-50:   var(--tableOddRow, #f8f9fb);
-  --neutral-100:  var(--tableOuterBorder, #f1f3f7);
-  --neutral-200:  var(--divider-color, #e4e8f0);
-  --neutral-300:  var(--tableHeaderIcon, #cdd4e0);
-  --neutral-400:  var(--tittleFontColor, #9aa3b5);
-  --neutral-500:  var(--FontAwesomeIcon, #6b7589);
-  --neutral-700:  var(--fontColor, #374151);
-  --neutral-900:  var(--menu-text, #111827);
+  --neutral-0:    var(--bg-drawer, #ffffff);
+  --neutral-50:   var(--pj-surface-2, #f8f9fb);
+  --neutral-100:  var(--pj-border-subtle, #f1f3f7);
+  --neutral-200:  var(--pj-border, #e4e8f0);
+  --neutral-300:  var(--pj-border-strong, #cdd4e0);
+  --neutral-400:  var(--pj-text-faint, #9aa3b5);
+  --neutral-500:  var(--pj-text-muted, #6b7589);
+  --neutral-700:  var(--pj-text-secondary, #374151);
+  --neutral-900:  var(--pj-text-primary, #111827);
 
-  --danger:       var(--redFontColor, #dc2626);
-  --danger-50:    var(--meal-app-red, #fef2f2);
+  --danger:       var(--pj-danger, #dc2626);
+  --danger-50:    var(--pj-danger-bg-2, #fef2f2);
 
   /* boxShadowPaper already carries its own alpha per theme */
   --shadow-1: 0 1px 3px var(--boxShadowPaper, rgba(17,24,39,.06)), 0 1px 2px var(--boxShadowPaper, rgba(17,24,39,.04));
@@ -37,41 +42,51 @@
 
   --ease: cubic-bezier(.4,0,.2,1);
 
-  /* Avatar accent rail — av-1 mirrors the app's brand blue everywhere;
-     av-2..5 have no theme equivalent, so they keep bespoke values
-     (overridden for dark below). */
-  --av-1: var(--avatar-bg, #3b5bdb); --av-1-bg: var(--icon-blue-bg, #edf2ff);
+  /* Avatar accent rail — av-1/3/4 mirror pj's primary/warning/purple so
+     they land on the exact same hues PauseReasonDialog uses for those
+     same states. av-2 (teal) and av-5 (sky) have no --pj- equivalent,
+     so they keep bespoke values (overridden for dark below, same as
+     PauseReasonDialog does for its own equivalent-free tokens). */
+  --av-1: var(--pj-primary, #3b5bdb); --av-1-bg: var(--pj-primary-bg, #edf2ff);
   --av-2: #0d9488; --av-2-bg: #f0fdfa;
-  --av-3: #d97706; --av-3-bg: #fffbeb;
-  --av-4: #9333ea; --av-4-bg: var(--icon-purple-bg, #faf5ff);
+  --av-3: var(--pj-warning, #d97706); --av-3-bg: var(--pj-warning-bg, #fffbeb);
+  --av-4: var(--pj-purple, #9333ea); --av-4-bg: var(--pj-purple-bg, #faf5ff);
   --av-5: #0284c7; --av-5-bg: #f0f9ff;
 
-  --on-primary: #ffffff;
+  --on-primary: var(--pj-on-color, #ffffff);
   --row-hover: var(--hoverText, #f9faff);
   --tab-count-overlay: rgba(255,255,255,.25);
-  --table-head-grad-start: var(--dropdownBG-Header, #f4f6fb);
-  --table-head-grad-end: var(--tableOddRow, #eef1f7);
-  --table-head-text: var(--tittleFontColor, #4b5568);
-  --table-head-border: var(--divider-color, #dde3ee);
-  --table-head-muted: var(--tableHeaderIcon, #9aa5bb);
+  --table-head-grad-start: var(--pj-surface-2, #f4f6fb);
+  --table-head-grad-end: var(--pj-border-subtle, #eef1f7);
+  --table-head-text: var(--pj-text-muted, #4b5568);
+  --table-head-border: var(--pj-border, #dde3ee);
+  --table-head-muted: var(--pj-text-faint, #9aa5bb);
 }
 
 /* ==========================================================
-   DARK MODE — only for tokens with no matching app variable.
-   Everything above resolves automatically once an ancestor
-   carries the app's own .light / .dark class, since it already
-   defines --avatar-bg, --dialogBG, --fontColor, etc. per theme.
+   DARK MODE — only for tokens with no --pj- equivalent.
+   Everything else above (primary, danger, all neutrals, and the
+   warning/purple-based av-3/av-4) resolves automatically the moment
+   an ancestor carries `.dark`/`[data-theme="dark"]`, because the
+   underlying --pj-* vars already flip on `.pai-page` in
+   ProjectActivityInfo.css — the same mechanism PauseReasonDialog
+   relies on. This block is now just the leftover bespoke colors
+   (av-2 teal, av-5 sky) that don't exist in the --pj- palette.
    ========================================================== */
 
 .dark .comments-dialog,
 [data-theme="dark"] .comments-dialog,
 .comments-dialog.dark,
 .comments-dialog[data-theme="dark"] {
-  --primary-600: #6d8dff;
+  /* --pj-surface-2 / --pj-border-subtle lean on --tableOddRow /
+     --tableOuterBorder, which (unlike --bg-drawer) aren't proven to
+     have real dark variants — hence explicit bespoke overrides here,
+     a shade lighter than --bg-drawer's dark value (#2a2e3f) so
+     secondary surfaces still read as a step up from the base card. */
+  --neutral-50:  #333849;
+  --neutral-100: #3a3f52;
 
   --av-2: #2dd4bf; --av-2-bg: #0f2b28;
-  --av-3: #fbbf24; --av-3-bg: #332006;
-  --av-4: #c084fc;
   --av-5: #38bdf8; --av-5-bg: #0c2536;
 
   --tab-count-overlay: rgba(255,255,255,.12);
@@ -97,7 +112,13 @@
   max-height: 88vh;
   border-radius: var(--r-xl) !important;
   overflow: hidden;
-  background: var(--neutral-0);
+  /* !important defeats MUI's own Paper background — same reason
+     .prd-paper needs it in PauseReasonDialog.css. Without it, MUI's
+     default (light) Paper background can win the cascade even though
+     --neutral-0 correctly resolves dark, leaving the card itself pale
+     while its own children (using the same var) render correctly. */
+  background: var(--neutral-0) !important;
+  background-clip: padding-box;
   box-shadow: var(--shadow-3);
   animation: dialogIn .28s var(--ease);
 }
