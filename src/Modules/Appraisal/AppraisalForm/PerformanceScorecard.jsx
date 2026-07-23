@@ -147,6 +147,7 @@ const PerformanceScorecardDateTable = ({
           field="my_last_year_KRA"
           header="Last Year's KRA"
           style={{ width: "16rem" }}
+          sortable
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex || isEditAllForm ? (
               <InputTextarea

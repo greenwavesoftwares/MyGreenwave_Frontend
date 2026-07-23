@@ -98,6 +98,7 @@ const MyKRA = ({
           field="my_next12month_KRA"
           header="Next Year KRA"
           style={{ width: "16rem" }}
+          sortable
           body={(rowData, { rowIndex }) =>
             editingRowIndex === rowIndex || isEditAllForm ? (
               <InputTextarea
