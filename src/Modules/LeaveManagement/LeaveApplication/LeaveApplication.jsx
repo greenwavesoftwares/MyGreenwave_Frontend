@@ -656,7 +656,7 @@ const LeaveApplication = () => {
           </Grid> */}
     <Grid size={{ md: 6, xs: 12 }} className="h-full">
   <div
-    className="cardStyle p-3"
+    // className="cardStyle p-3"
     style={{
       overflowX: "auto",
       WebkitOverflowScrolling: "touch",
@@ -665,6 +665,7 @@ const LeaveApplication = () => {
     <div style={{ minWidth: 350 }}>
   <Calendar
     inline
+    className="cardStyle p-3 primeReactCalendarStyle"
     style={{ width: "100%" }}
     dateTemplate={(date) => {
       const currentDateStr = `${date.year}-${String(date.month + 1).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
