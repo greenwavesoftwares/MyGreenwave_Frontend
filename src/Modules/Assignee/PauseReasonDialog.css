@@ -1,0 +1,217 @@
+/* ==========================================================
+   PauseReasonDialog — scoped to `.prd-*` classNames only.
+
+   Deliberately has NO tokens of its own: every color reads
+   from the --pj-* variables already defined (and dark-mode
+   overridden) in ProjectActivityInfo.css. That means this
+   dialog stays in sync with the rest of the app automatically
+   — nothing here needs its own dark-mode block.
+
+   IMPORTANT — MUI Dialog renders via a Portal into
+   document.body, OUTSIDE the `.pai-page` element that owns
+   the --pj-* variables. For these vars to resolve, mount the
+   Dialog's portal inside `.pai-page`:
+
+     <Dialog
+       container={() => document.querySelector('.pai-page')}
+       ...
+     >
+
+   Fallback hex values are included after each var() so the
+   dialog still renders sensibly if it's ever used somewhere
+   `.pai-page` isn't an ancestor.
+   ========================================================== */
+
+.prd-paper {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  /* --dialogBG is only 50% opaque in dark mode (#20243080) — stacked
+     on top of MUI's own translucent backdrop, that made the whole
+     card see-through. --bg-drawer is a fully OPAQUE solid surface in
+     both modes (#ffffff / #2a2e3f), which is what a modal card needs. */
+  background: var(--bg-drawer, #ffffff) !important;
+  background-clip: padding-box;
+}
+
+/* ── Header ── */
+.prd-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--pj-border-subtle, #F1E4D2);
+}
+
+.prd-header--paused {
+  background: linear-gradient(135deg, var(--pj-warning-bg-2, #FFFBEB) 0%, transparent 100%);
+  border-bottom-color: var(--pj-warning-border-2, #FDE68A);
+}
+.prd-header--startdelay {
+  background: linear-gradient(135deg, var(--pj-success-bg, #DCFCE7) 0%, transparent 100%);
+  border-bottom-color: var(--pj-success-border-2, #BBF7D0);
+}
+.prd-header--stopdelay {
+  background: linear-gradient(135deg, var(--pj-danger-bg-2, #FEF2F2) 0%, transparent 100%);
+  border-bottom-color: var(--pj-danger-border-2, #FECACA);
+}
+
+.prd-icon-chip {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.prd-icon-chip--paused     { background: var(--pj-warning-bg, #FEF3C7); }
+.prd-icon-chip--startdelay { background: var(--pj-success-bg, #DCFCE7); }
+.prd-icon-chip--stopdelay  { background: var(--pj-danger-bg, #FEE2E2); }
+
+/* color applied via className works for MUI icons (fill: currentColor
+   by default) AND lucide icons (stroke: currentColor by default) —
+   no per-library special-casing needed. */
+.prd-icon--paused     { color: var(--pj-warning, #B45309) !important; }
+.prd-icon--startdelay { color: var(--pj-success, #15803D) !important; }
+.prd-icon--stopdelay  { color: var(--pj-danger, #DC2626) !important; }
+
+/* For icons rendered on top of a button whose background is already
+   the status color (e.g. amber icon on amber button) — force white so
+   it doesn't disappear into its own background. */
+.prd-icon--on-button {
+  color: var(--pj-on-color, #FFFFFF) !important;
+}
+
+/* lucide's StopCircle only strokes its inner square by default, leaving
+   it hollow — fill just that shape so it reads as a solid "stop" glyph. */
+.prd-icon-stop rect {
+  fill: currentColor;
+}
+
+
+.prd-title {
+  color: var(--pj-text-primary, #0F172A) !important;
+}
+.prd-subtitle {
+  color: var(--pj-text-secondary, #475569) !important;
+}
+.prd-close-btn {
+  color: var(--pj-text-muted, #64748B) !important;
+}
+
+/* ── Content ── */
+.prd-content {
+  padding: 20px 24px !important;
+  background: transparent;
+}
+
+.prd-status-card {
+  border: 1px solid var(--pj-border, #EEF0F3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.prd-status-card-title {
+  color: var(--pj-text-primary, #0F172A) !important;
+  margin-bottom: 12px !important;
+}
+
+.prd-status-row {
+  display: flex;
+  gap: 12px;
+}
+
+.prd-status-box {
+  flex: 1;
+  border-radius: 8px;
+  padding: 10px 0;
+  text-align: center;
+}
+.prd-status-box--current {
+  background: var(--pj-primary-bg, #DBEAFE);
+  border: 1px solid var(--pj-primary-border, #93C5FD);
+}
+.prd-status-box--new-paused     { background: var(--pj-warning-bg, #FEF3C7); border: 1px solid var(--pj-warning-border, #FCD34D); }
+.prd-status-box--new-startdelay { background: var(--pj-success-bg, #DCFCE7); border: 1px solid var(--pj-success-border, #86EFAC); }
+.prd-status-box--new-stopdelay  { background: var(--pj-danger-bg, #FEE2E2); border: 1px solid var(--pj-danger-border, #FCA5A5); }
+
+.prd-status-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+.prd-status-tag-label--current      { color: var(--pj-primary, #2563EB) !important; }
+.prd-status-tag-label--new-paused     { color: var(--pj-warning, #B45309) !important; }
+.prd-status-tag-label--new-startdelay { color: var(--pj-success, #15803D) !important; }
+.prd-status-tag-label--new-stopdelay  { color: var(--pj-danger, #DC2626) !important; }
+
+.prd-status-value--current      { color: var(--pj-primary-hover, #1E3A8A) !important; }
+.prd-status-value--new-paused     { color: var(--pj-warning, #7C4700) !important; }
+.prd-status-value--new-startdelay { color: var(--pj-success, #14532D) !important; }
+.prd-status-value--new-stopdelay  { color: var(--pj-danger, #7F1D1D) !important; }
+
+/* ── Reason ── */
+.prd-reason-label {
+  color: var(--pj-text-primary, #0F172A) !important;
+}
+.prd-reason-hint {
+  color: var(--pj-text-muted, #64748B) !important;
+  display: block;
+  margin-bottom: 12px !important;
+}
+
+.prd-textfield .MuiOutlinedInput-root {
+  border-radius: 8px;
+  background: var(--pj-surface-2, #F8FAFC);
+  color: var(--pj-text-primary, #0F172A);
+}
+.prd-textfield .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-border, #E2E8F0) !important;
+}
+.prd-textfield .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-border-strong, #CBD5E1) !important;
+}
+.prd-textfield .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-primary, #1D4ED8) !important;
+}
+.prd-textfield textarea::placeholder {
+  color: var(--pj-text-faint, #94A3B8);
+  opacity: 1;
+}
+
+.prd-error-text {
+  color: var(--pj-danger, #DC2626) !important;
+}
+
+/* ── Footer ── */
+.prd-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--pj-border-subtle, #F1F1F1);
+  background: transparent;
+}
+
+.prd-cancel-btn {
+  border-color: var(--pj-border-strong, #E2E8F0) !important;
+  color: var(--pj-text-secondary, #475569) !important;
+}
+.prd-cancel-btn:hover {
+  background: var(--pj-surface-2, #F8FAFC) !important;
+}
+
+.prd-confirm-btn {
+  color: var(--pj-on-color, #FFFFFF) !important;
+  box-shadow: none !important;
+  transition: filter 0.15s, background 0.15s;
+}
+.prd-confirm-btn:hover {
+  filter: brightness(0.92);
+  box-shadow: none !important;
+}
+.prd-confirm-btn--paused     { background: var(--pj-warning, #B45309) !important; }
+.prd-confirm-btn--startdelay { background: var(--pj-success, #15803D) !important; }
+.prd-confirm-btn--stopdelay  { background: var(--pj-danger, #DC2626) !important; }

@@ -264,6 +264,13 @@ export default function CommentsActionDialog({
       open={open}
       onClose={onClose}
       maxWidth={false}
+      // Mounts the portal inside .pai-page — same as PauseReasonDialog —
+      // so the shared --pj-* vars (and their dark-mode overrides) are
+      // actually in scope. Falls back to the default body portal if
+      // .pai-page isn't found.
+      container={() =>
+        document.querySelector(".pai-page") || document.body
+      }
       PaperProps={{ className: "comments-dialog" }}
     >
       <DialogContent className="comments-content">
