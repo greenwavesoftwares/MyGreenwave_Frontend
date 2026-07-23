@@ -43,6 +43,9 @@ import Holiday from "../../Holiday/Holiday";
 import ListOfHoliday from "./ListOfHoliday";
 import HikingIcon from '@mui/icons-material/Hiking';
 import RedeemIcon from '@mui/icons-material/Redeem';
+// import { Calendar, Tooltip as AntToolTip } from "antd";
+import dayjs from "dayjs"; // Ant Design uses dayjs
+import { Calendar } from "primereact/calendar";
 
 const LeaveApplication = () => {
   const leaveStructure = {
@@ -78,6 +81,7 @@ const LeaveApplication = () => {
   const [appVersion, setAppVersion] = useState("1.0");
   //Holiday List
   const [holidayList, setHolidayList] = useState(false);
+  
   const actionBodyTemplate = (row) => {
     return (
       <div className="flex justify-content-center gap-1">
@@ -650,22 +654,81 @@ const LeaveApplication = () => {
               </TabView>
             </Card>
           </Grid> */}
-          <Grid size={{ md: 6, xs: 12 }}>
-            <div className="cardStyle p-3">
-              <Tooltip ref={tooltipRef} target="#selectedEvent" mouseTrack />
-              <Calender
-                initialView="dayGridMonth"
-                height={"31rem"}
-                events={leaveInfo.calenderData}
-                eventMouseEnter={(info) => {
-                  info.el.id = "selectedEvent";
-                  info.el.setAttribute("data-pr-tooltip", info.event.id);
-                  info.el.setAttribute("data-pr-position", "mouse");
-                  tooltipRef.current.updateTargetEvents("#selectedEvent");
-                }}
-              />
+    <Grid size={{ md: 6, xs: 12 }} className="h-full">
+  <div
+    // className="cardStyle p-3"
+    style={{
+      overflowX: "auto",
+      WebkitOverflowScrolling: "touch",
+    }}
+  >
+    <div style={{ minWidth: 350 }}>
+  <Calendar
+    inline
+    className="cardStyle p-3 primeReactCalendarStyle"
+    style={{ width: "100%" }}
+    dateTemplate={(date) => {
+      const currentDateStr = `${date.year}-${String(date.month + 1).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+
+      const dayLeaves = leaveInfo.calenderData?.filter((event) => {
+        const eventStart = dayjs(event.start).format("YYYY-MM-DD");
+        const eventEnd = dayjs(event.end || event.start).format("YYYY-MM-DD");
+        return currentDateStr >= eventStart && currentDateStr <= eventEnd;
+      }) || [];
+
+      return (
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center",
+          padding: "2px 0"
+        }}>
+          {/* Date Number */}
+          <span style={{ 
+            fontSize: "0.85rem", 
+            fontWeight: 500,
+            marginBottom: dayLeaves.length > 0 ? "3px" : "0"
+          }}>
+            {date.day}
+          </span>
+
+          {/* Leave Events */}
+          {dayLeaves.length > 0 && (
+            <div style={{ width: "100%", padding: "0 2px" }}>
+              {dayLeaves.map((leave, index) => (
+                <div
+                  key={index}
+                  style={{
+                    backgroundColor: leave.color || "#3b82f6",   // ← leave.color
+                    color: "#fff",
+                    fontSize: ".5rem",
+                    borderRadius: "4px",
+                    textAlign: "center",
+                    cursor: "default",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    padding: "1px 4px",
+                    marginBottom: "2px",
+                  }}
+                  title={leave.id} // ← Hover shows leave.id
+                >
+                  {leave.id
+                    ? leave.id.length > 5
+                      ? `${leave.id.substring(0, 5)}...`
+                      : leave.id
+                    : "Leave"}
+                </div>
+              ))}
             </div>
-          </Grid>
+          )}
+        </div>
+      );
+    }}
+  />
+</div>
+  </div>
+</Grid>
           <Grid size={{ md: 6, xs: 12 }} className="h-full">
             <div className="cardStyle px-3">
               <DataTable

@@ -269,6 +269,7 @@ font-size: 0.85rem;
 .calendarStyle.p-calendar-w-btn-right .p-inputtext::placeholder {
   color: var(--fontColor);
 }
+
 .p-datepicker:not(.p-datepicker-inline) {
   background: var(--dropdownBG);
   color: var(--fontColor);
@@ -324,6 +325,26 @@ font-size: 0.85rem;
   border: 1px solid var(--divider-color) !important;
   font-size: 0.85rem !important;
   color: var(--fontColor) !important;
+}
+
+//--------------------------------------📆 Prime ReactCalender Style-------------------------------------///
+.primeReactCalendarStyle .p-datepicker{
+   background:none !important;
+  color: var(--fontColor);
+  font-size: 0.85rem;
+  padding: 0;
+  border: none;
+}
+.primeReactCalendarStyle .p-datepicker table td{
+  border: 1px solid var(--divider-color);
+}
+.primeReactCalendarStyle .p-datepicker table th{
+  border: 1px solid var(--divider-color);
+}
+.primeReactCalendarStyle .p-datepicker .p-datepicker-header{
+     background:none !important;
+  color: var(--fontColor);
+  font-size: 0.85rem;
 }
 
 //-------------------------------------Dialog Style-----------------------------------------//
