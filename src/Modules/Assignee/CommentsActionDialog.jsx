@@ -134,9 +134,7 @@ export default function CommentsActionDialog({
         newComment.projectId,
         payload,
       );
-    } catch (e) {
-      showToast("error", "Error", "Error in adding comment");
-    }
+    
     if (response) {
       const updatedComments =
         await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
@@ -151,6 +149,9 @@ export default function CommentsActionDialog({
       );
       setNewComment(newCommentPayload);
       showToast("success", "Success", "Comment added successfully");
+    }
+    } catch (e) {
+      showToast("error", "Error", "Error in adding comment");
     }
   };
 
