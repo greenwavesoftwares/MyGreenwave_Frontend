@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useTheme } from "./useTheme";
-
+import { Link2 } from "lucide-react";
+import { computeArrows } from "./helpers/ganttArrows";
+import DependencyArrows from "./shared/DependencyArrows";
 /* ─── Constants ─── */
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -658,6 +660,7 @@ function GanttFilterDropdown({ label, options, selected, onChange, icon }) {
   const { t } = useTheme();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+
   const ref = useRef(null);
 
   useEffect(() => {
@@ -1222,6 +1225,7 @@ export default function GanttView({
   onFeedback,
   showGlobalFilters = false,
 }) {
+  console.log("Projects : ", projects);
   const { t } = useTheme();
 
   const [viewMode, setViewMode] = useState("task");
@@ -1240,12 +1244,20 @@ export default function GanttView({
   const [statusFilter, setStatusFilter] = useState([]);
   const timelineRef = useRef(null);
   const leftPanelRef = useRef(null);
+
   const [projectFilters, setProjectFilters] = useState({});
   const [columnFilters, setColumnFilters] = useState({
     module: [],
     resource: [],
     status: [],
   });
+  const [showDependencies, setShowDependencies] = useState(false);
+  const [hoveredRowId, setHoveredRowId] = useState(null);
+  // Add near your other refs
+  const barsRef = useRef(new Map()); // Map<rowId, DOM element>
+
+  // Force re-measure when arrows toggle or data changes
+  const [measureVersion, setMeasureVersion] = useState(0);
 
   // ── Filter projects ──
   const filteredProjects = useMemo(() => {
@@ -1712,9 +1724,118 @@ export default function GanttView({
         walk("__ROOT__", 0);
       }
     });
+
     return result;
   }, [filteredProjects, expandedProjects, expandedRows, projectFilters]);
+  // ── Compute position map for all rows (needed for arrows) ──
+  // ── Compute row positions from actual DOM (reliable) ──
+  const rowPositions = useMemo(() => {
+    const positions = new Map();
 
+    if (!showDependencies) return positions;
+
+    // Get the timeline container as reference point
+    const container = timelineRef.current;
+    if (!container) return positions;
+
+    const containerRect = container.getBoundingClientRect();
+    const scrollLeft = container.scrollLeft;
+    const scrollTop = container.scrollTop;
+
+    barsRef.current.forEach((el, rowId) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+
+      // Convert to coordinates relative to the scrollable content
+      const left = rect.left - containerRect.left + scrollLeft;
+      const top = rect.top - containerRect.top + scrollTop;
+
+      positions.set(rowId, {
+        left,
+        right: left + rect.width,
+        width: rect.width,
+        top,
+        bottom: top + rect.height,
+        midY: top + rect.height / 2,
+      });
+    });
+
+    return positions;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDependencies, measureVersion, allRows, resourceViewData]);
+  // ── Compute dependency arrows ──
+  const dependencyArrows = useMemo(() => {
+    if (!showDependencies) return [];
+
+    // Collect all rows currently rendered
+    const allRenderedRows =
+      viewMode === "task"
+        ? allRows
+        : resourceViewData.flatMap((res) => res.tasks);
+
+    return computeArrows(allRenderedRows, rowPositions, t);
+  }, [showDependencies, viewMode, allRows, resourceViewData, rowPositions, t]);
+
+  // ── Compute total chart height ──
+  const totalChartHeight = useMemo(() => {
+    if (!timelineRef.current) return 1000;
+    const contentDiv = timelineRef.current.querySelector("div");
+    return contentDiv ? contentDiv.offsetHeight : 1000;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDependencies, measureVersion, allRows]);
+  useEffect(() => {
+    if (showDependencies) {
+      // Trigger re-measure after render
+      const timer = setTimeout(() => setMeasureVersion((v) => v + 1), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    showDependencies,
+    viewMode,
+    expandedProjects,
+    expandedRows,
+    filteredProjects,
+    colWidthPx,
+    zoom,
+  ]);
+  useEffect(() => {
+    if (!showDependencies) return;
+    const el = timelineRef.current;
+    if (!el) return;
+
+    const handler = () => setMeasureVersion((v) => v + 1);
+    el.addEventListener("scroll", handler);
+    window.addEventListener("resize", handler);
+    return () => {
+      el.removeEventListener("scroll", handler);
+      window.removeEventListener("resize", handler);
+    };
+  }, [showDependencies]);
+  useEffect(() => {
+    if (showDependencies) {
+      console.log("📍 Bars captured:", barsRef.current.size);
+      console.log("📍 Positions computed:", rowPositions.size);
+      console.log("📍 Arrows built:", dependencyArrows.length);
+      console.log("📍 Sample position:", Array.from(rowPositions.entries())[0]);
+      console.log("📍 Sample arrow:", dependencyArrows[0]);
+    }
+  }, [showDependencies, rowPositions, dependencyArrows]);
+  useEffect(() => {
+    if (showDependencies && dependencyArrows.length > 0) {
+      console.log(`📍 ${dependencyArrows.length} arrows built:`);
+      dependencyArrows.forEach((a, i) => {
+        console.log(
+          `  ${i + 1}. "${a.sourceRow.task}" → "${a.targetRow.task}"`,
+        );
+        console.log(
+          `     source: right=${a.sourcePos.right}, midY=${a.sourcePos.midY}`,
+        );
+        console.log(
+          `     target: left=${a.targetPos.left}, midY=${a.targetPos.midY}`,
+        );
+      });
+    }
+  }, [dependencyArrows]);
   return (
     <div
       style={{
@@ -1827,7 +1948,26 @@ export default function GanttView({
         >
           <ZoomIn size={13} />
         </button>
+        <div style={{ width: 1, height: 20, background: t.border }} />
 
+        <button
+          onClick={() => setShowDependencies((p) => !p)}
+          title={
+            showDependencies
+              ? "Hide dependency arrows"
+              : "Show dependency arrows"
+          }
+          style={{
+            ...btnStyle,
+            background: showDependencies ? t.primary : t.bgCard,
+            color: showDependencies ? t.textInverse : t.textSecondary,
+            borderColor: showDependencies ? t.primary : t.borderStrong,
+            fontWeight: showDependencies ? 700 : 500,
+          }}
+        >
+          <Link2 size={13} />
+          Dependencies {showDependencies ? "ON" : "OFF"}
+        </button>
         <div style={{ width: 1, height: 20, background: t.border }} />
 
         {showGlobalFilters && (
@@ -2006,6 +2146,52 @@ export default function GanttView({
             Today
           </span>
         </div>
+        {showDependencies && (
+          <>
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <svg width="16" height="6" style={{ display: "inline-block" }}>
+                <line
+                  x1="0"
+                  y1="3"
+                  x2="14"
+                  y2="3"
+                  stroke="#22C55E"
+                  strokeWidth="1.5"
+                />
+                <polygon points="14,3 10,1 10,5" fill="#22C55E" />
+              </svg>
+              Done
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <svg width="16" height="6">
+                <line
+                  x1="0"
+                  y1="3"
+                  x2="14"
+                  y2="3"
+                  stroke={t.primary}
+                  strokeWidth="1.5"
+                />
+                <polygon points="14,3 10,1 10,5" fill={t.primary} />
+              </svg>
+              Pending
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <svg width="16" height="6">
+                <line
+                  x1="0"
+                  y1="3"
+                  x2="14"
+                  y2="3"
+                  stroke="#EF4444"
+                  strokeWidth="1.5"
+                />
+                <polygon points="14,3 10,1 10,5" fill="#EF4444" />
+              </svg>
+              Conflict
+            </span>
+          </>
+        )}
       </div>
 
       {/* ══ GANTT BODY ══ */}
@@ -2891,6 +3077,10 @@ export default function GanttView({
                               {/* Planned bar */}
                               {plannedBar && (
                                 <div
+                                  ref={(el) => {
+                                    if (el) barsRef.current.set(row.id, el);
+                                    else barsRef.current.delete(row.id);
+                                  }}
                                   onClick={(e) => handleBarClick(e, row)}
                                   title={`${row.task} — ${row.status || "Pending"} (Planned)`}
                                   style={{
@@ -2910,12 +3100,14 @@ export default function GanttView({
                                     boxShadow: t.shadowSm,
                                     transition: "opacity 0.12s",
                                   }}
-                                  onMouseEnter={(e) =>
-                                    (e.currentTarget.style.opacity = "0.85")
-                                  }
-                                  onMouseLeave={(e) =>
-                                    (e.currentTarget.style.opacity = "1")
-                                  }
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.opacity = "0.85";
+                                    setHoveredRowId(row.id); // ← NEW
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.opacity = "1";
+                                    setHoveredRowId(null); // ← NEW
+                                  }}
                                 >
                                   <div
                                     style={{
@@ -3107,6 +3299,11 @@ export default function GanttView({
                           <React.Fragment key={row.id}>
                             {plannedBar && (
                               <div
+                                ref={(el) => {
+                                  // ← ADD THIS
+                                  if (el) barsRef.current.set(row.id, el);
+                                  else barsRef.current.delete(row.id);
+                                }}
                                 onClick={(e) => handleBarClick(e, row)}
                                 title={`${row.task} — ${row._projectName} (Planned)`}
                                 style={{
@@ -3126,12 +3323,14 @@ export default function GanttView({
                                   boxShadow: t.shadowSm,
                                   transition: "opacity 0.12s",
                                 }}
-                                onMouseEnter={(e) =>
-                                  (e.currentTarget.style.opacity = "0.85")
-                                }
-                                onMouseLeave={(e) =>
-                                  (e.currentTarget.style.opacity = "1")
-                                }
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.opacity = "0.85";
+                                  setHoveredRowId(row.id); // ← optional: for hover highlight
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.opacity = "1";
+                                  setHoveredRowId(null);
+                                }}
                               >
                                 <div
                                   style={{
@@ -3236,7 +3435,16 @@ export default function GanttView({
                     </div>
                   );
                 })}
+              {/* Dependency arrows overlay */}
             </div>
+            {showDependencies && dependencyArrows.length > 0 && (
+              <DependencyArrows
+                arrows={dependencyArrows}
+                width={totalChartWidth}
+                height={totalChartHeight}
+                highlightedRowId={hoveredRowId}
+              />
+            )}
           </div>
         </div>
       </div>
