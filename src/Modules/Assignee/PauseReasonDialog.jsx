@@ -12,7 +12,7 @@ import PauseCircleRoundedIcon from "@mui/icons-material/PauseCircleRounded";
 import CloseIcon from "@mui/icons-material/Close";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
-import { PauseCircle, StopCircleIcon } from "lucide-react";
+import { PauseCircle, RotateCcw, StopCircleIcon } from "lucide-react";
 import "./PauseReasonDialog.css";
 
 /* type → key used to build className suffixes ("Paused" -> "paused") */
@@ -20,6 +20,7 @@ const TYPE_KEY = {
   Paused: "paused",
   StartDelay: "startdelay",
   StopDelay: "stopdelay",
+  Redo: "redo",
 };
 
 const PauseReasonDialog = ({
@@ -32,7 +33,7 @@ const PauseReasonDialog = ({
   const [reason, setReason] = useState("");
   const [error, setError] = useState(false);
 
-  const key = TYPE_KEY[pauseDelayType]; // "paused" | "startdelay" | "stopdelay" | undefined
+  const key = TYPE_KEY[pauseDelayType]; // "paused" | "startdelay" | "stopdelay" | "redo" | undefined
 
   const resetAndClose = () => {
     setReason("");
@@ -54,8 +55,8 @@ const PauseReasonDialog = ({
   };
 
   /* Color comes entirely from className (currentColor), so it works
-     identically for MUI icons (fill: currentColor) and the lucide
-     StartDelay icon (stroke: currentColor) without special-casing.
+     identically for MUI icons (fill: currentColor) and lucide icons
+     (stroke: currentColor) without special-casing.
 
      `onColoredSurface` picks which class to use:
      - true  -> tint the icon to the status color (header chip, which
@@ -75,9 +76,7 @@ const PauseReasonDialog = ({
       : { color: "var(--pj-on-color, #FFFFFF)" };
 
     if (pauseDelayType === "StartDelay") {
-      return (
-        <PauseCircle size={size} className={className} style={style} />
-      );
+      return <PauseCircle size={size} className={className} style={style} />;
     }
     if (pauseDelayType === "StopDelay") {
       // lucide icon — uses `size`/`style`, not MUI's `sx`.
@@ -89,13 +88,24 @@ const PauseReasonDialog = ({
         />
       );
     }
-    // Paused — the only genuinely MUI icon of the three.
-    return (
-      <PauseCircleRoundedIcon
-        className={className}
-        sx={{ fontSize: size, ...(style ? { color: style.color } : {}) }}
-      />
-    );
+    if (pauseDelayType === "Paused") {
+      // Paused — the only genuinely MUI icon of the bunch, so it takes
+      // `sx` for sizing instead of `size`/`style`.
+      return (
+        <PauseCircleRoundedIcon
+          className={className}
+          sx={{ fontSize: size, ...(style ? { color: style.color } : {}) }}
+        />
+      );
+    }
+    if (pauseDelayType === "Redo") {
+      // RotateCcw is a lucide icon like StartDelay/StopDelay above, so
+      // it needs `size`/`style` — it was previously (incorrectly)
+      // given MUI's `sx` prop, which lucide-react doesn't understand,
+      // so the Redo icon never actually got sized or colored.
+      return <RotateCcw size={size} className={className} style={style} />;
+    }
+    return null;
   };
 
   // The icon shown in the "NEW" status badge — matched to what that
@@ -133,6 +143,7 @@ const PauseReasonDialog = ({
             {pauseDelayType === "Paused" && <>Pause Activity</>}
             {pauseDelayType === "StartDelay" && <>Start Activity</>}
             {pauseDelayType === "StopDelay" && <>Stop Activity</>}
+            {pauseDelayType === "Redo" && <>Redo Activity</>}
           </Typography>
           <Typography
             variant="caption"
@@ -167,7 +178,6 @@ const PauseReasonDialog = ({
           <Box className="prd-status-row">
             <Box className="prd-status-box prd-status-box--current">
               <Box className="prd-status-tag">
-                
                 <Typography
                   variant="caption"
                   fontWeight={700}
@@ -184,12 +194,12 @@ const PauseReasonDialog = ({
                 {pauseDelayType === "Paused" && <>Running</>}
                 {pauseDelayType === "StartDelay" && <>Pending</>}
                 {pauseDelayType === "StopDelay" && <>Running</>}
+                {pauseDelayType === "Redo" && <>Completed</>}
               </Typography>
             </Box>
 
             <Box className={`prd-status-box prd-status-box--new-${key}`}>
               <Box className="prd-status-tag">
-                
                 <Typography
                   variant="caption"
                   fontWeight={700}
@@ -206,6 +216,7 @@ const PauseReasonDialog = ({
                 {pauseDelayType === "Paused" && <>Paused</>}
                 {pauseDelayType === "StartDelay" && <>Running</>}
                 {pauseDelayType === "StopDelay" && <>Completed</>}
+                {pauseDelayType === "Redo" && <>Running</>}
               </Typography>
             </Box>
           </Box>
@@ -219,11 +230,17 @@ const PauseReasonDialog = ({
           sx={{ mb: 0.25 }}
         >
           {pauseDelayType === "Paused" && <>Reason for pausing *</>}
-          {pauseDelayType !== "Paused" && <>Reason of Delay *</>}
+          {(pauseDelayType === "StartDelay" || pauseDelayType === "StopDelay") && (
+            <>Reason of Delay *</>
+          )}
+          {pauseDelayType === "Redo" && <>Reason for Redo *</>}
         </Typography>
         <Typography variant="caption" className="prd-reason-hint">
-          Write the reason {pauseDelayType === "Paused" && <> for pausing *</>}
-          {pauseDelayType !== "Paused" && <> of delay *</>}
+          Write the reason {pauseDelayType === "Paused" && <>for pausing</>}
+          {pauseDelayType === "Redo" && <>for redoing activity</>}
+          {(pauseDelayType === "StartDelay" || pauseDelayType === "StopDelay") && (
+            <>of delay</>
+          )}
         </Typography>
 
         <TextField
@@ -233,7 +250,7 @@ const PauseReasonDialog = ({
           size="small"
           autoFocus
           className="prd-textfield"
-          placeholder="Type the reason for pausing…"
+          placeholder="Type the reason..."
           value={reason}
           onChange={(e) => {
             setReason(e.target.value);
@@ -272,6 +289,7 @@ const PauseReasonDialog = ({
           {pauseDelayType === "Paused" && <>Pause Activity</>}
           {pauseDelayType === "StartDelay" && <>Start Activity</>}
           {pauseDelayType === "StopDelay" && <>Stop Activity</>}
+          {pauseDelayType === "Redo" && <>Redo Activity</>}
         </Button>
       </Box>
     </Dialog>

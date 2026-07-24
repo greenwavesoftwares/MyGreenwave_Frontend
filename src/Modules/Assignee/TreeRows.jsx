@@ -33,7 +33,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import Badge from "@mui/material/Badge";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StatusChip from "./StatusChip";
-import { Star, Trash2 } from "lucide-react";
+import { RotateCcw, Star, Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
 import ActivityTimer from "./ActivityTimer";
 
@@ -205,6 +205,15 @@ export default function TreeRows({
           </button>
         </Tooltip>,
       ],
+      "Completed":[ <Tooltip key="submit" title="Redo Activity">
+          <button
+            className="icon-button icon-btn--feedback"
+            onClick={() => onPauseDelayRequest(id, node, "Redo")}
+          >
+            <RotateCcw size={15} strokeWidth={2} />
+            
+          </button>
+        </Tooltip>],
       "Not Ready": [
         <Tooltip key="submit" title="Submit Activity">
           <button

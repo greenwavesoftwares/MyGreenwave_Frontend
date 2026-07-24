@@ -54,7 +54,13 @@
   background: linear-gradient(135deg, var(--pj-danger-bg-2, #FEF2F2) 0%, transparent 100%);
   border-bottom-color: var(--pj-danger-border-2, #FECACA);
 }
-
+/* was mistakenly duplicated as a second .prd-header--stopdelay rule,
+   which clobbered the real stop-delay header above and meant Redo's
+   header never got styled at all. */
+.prd-header--redo {
+  background: linear-gradient(135deg, var(--pj-purple-bg, #F3E8FF) 0%, transparent 100%);
+  border-bottom-color: var(--pj-purple-border, #E9D5FF);
+}
 .prd-icon-chip {
   width: 42px;
   height: 42px;
@@ -67,13 +73,15 @@
 .prd-icon-chip--paused     { background: var(--pj-warning-bg, #FEF3C7); }
 .prd-icon-chip--startdelay { background: var(--pj-success-bg, #DCFCE7); }
 .prd-icon-chip--stopdelay  { background: var(--pj-danger-bg, #FEE2E2); }
-
+.prd-icon-chip--redo       { background: var(--pj-purple-bg, #F3E8FF); }
 /* color applied via className works for MUI icons (fill: currentColor
    by default) AND lucide icons (stroke: currentColor by default) —
    no per-library special-casing needed. */
 .prd-icon--paused     { color: var(--pj-warning, #B45309) !important; }
 .prd-icon--startdelay { color: var(--pj-success, #15803D) !important; }
 .prd-icon--stopdelay  { color: var(--pj-danger, #DC2626) !important; }
+.prd-icon--redo       { color: var(--pj-purple, #7C3AED) !important; }
+
 
 /* For icons rendered on top of a button whose background is already
    the status color (e.g. amber icon on amber button) — force white so
@@ -134,6 +142,9 @@
 .prd-status-box--new-paused     { background: var(--pj-warning-bg, #FEF3C7); border: 1px solid var(--pj-warning-border, #FCD34D); }
 .prd-status-box--new-startdelay { background: var(--pj-success-bg, #DCFCE7); border: 1px solid var(--pj-success-border, #86EFAC); }
 .prd-status-box--new-stopdelay  { background: var(--pj-danger-bg, #FEE2E2); border: 1px solid var(--pj-danger-border, #FCA5A5); }
+/* fallbacks were red/pink (copy-pasted from stopdelay) — switched to
+   purple so Redo doesn't render as a "danger" color if vars are missing. */
+.prd-status-box--new-redo       { background: var(--pj-purple-bg, #F3E8FF); border: 1px solid var(--pj-purple-border, #D8B4FE); }
 
 .prd-status-tag {
   display: flex;
@@ -142,15 +153,20 @@
   gap: 4px;
   margin-bottom: 2px;
 }
-.prd-status-tag-label--current      { color: var(--pj-primary, #2563EB) !important; }
+.prd-status-tag-label--current        { color: var(--pj-primary, #2563EB) !important; }
 .prd-status-tag-label--new-paused     { color: var(--pj-warning, #B45309) !important; }
 .prd-status-tag-label--new-startdelay { color: var(--pj-success, #15803D) !important; }
 .prd-status-tag-label--new-stopdelay  { color: var(--pj-danger, #DC2626) !important; }
+/* was missing entirely — JSX builds this exact class name for Redo,
+   so the "NEW" tag label rendered with no color at all before. */
+.prd-status-tag-label--new-redo       { color: var(--pj-purple, #7C3AED) !important; }
 
-.prd-status-value--current      { color: var(--pj-primary-hover, #1E3A8A) !important; }
+.prd-status-value--current        { color: var(--pj-primary-hover, #1E3A8A) !important; }
 .prd-status-value--new-paused     { color: var(--pj-warning, #7C4700) !important; }
 .prd-status-value--new-startdelay { color: var(--pj-success, #14532D) !important; }
 .prd-status-value--new-stopdelay  { color: var(--pj-danger, #7F1D1D) !important; }
+/* also missing — same issue as the tag label above. */
+.prd-status-value--new-redo       { color: var(--pj-purple-hover, #6D28D9) !important; }
 
 /* ── Reason ── */
 .prd-reason-label {
@@ -215,3 +231,7 @@
 .prd-confirm-btn--paused     { background: var(--pj-warning, #B45309) !important; }
 .prd-confirm-btn--startdelay { background: var(--pj-success, #15803D) !important; }
 .prd-confirm-btn--stopdelay  { background: var(--pj-danger, #DC2626) !important; }
+/* was reading --pj-purple-border (a border token) with a red fallback
+   (#DC2626, copy-pasted from stopdelay) for a solid button background.
+   Now uses the actual purple fill token + a purple fallback. */
+.prd-confirm-btn--redo       { background: var(--pj-purple, #7C3AED) !important; }

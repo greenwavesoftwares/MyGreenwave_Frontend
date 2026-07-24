@@ -390,10 +390,7 @@ export default function ProjectActivityInfo({
       
     console.log("After duration calculation")
     }
-    const statusPayload = { status, actualTime, duration };
-    if (status === "Paused") {
-      statusPayload.reason = reason;
-    }
+    const statusPayload = { status, actualTime, duration,reason };
 
     const response = await activityTrackerApi.updateActivityStatus(
       activityId,
@@ -421,6 +418,8 @@ export default function ProjectActivityInfo({
       status='Completed'
     else if(pauseDelayTarget.pauseDelayType==='Paused')
       status='Paused'
+    else if(pauseDelayTarget.pauseDelayType==='Redo')
+      status='Running'
     if (pauseDelayTarget) {
       updateStatusOfActivity(
         pauseDelayTarget.activityId,
