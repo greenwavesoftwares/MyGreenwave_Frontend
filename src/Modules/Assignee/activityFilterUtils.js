@@ -64,6 +64,8 @@ export const nodeMatchesSearch = (node, term) => {
  * whether to include the whole module rather than a single row.) */
 export const matchesColumnFilters = (node, filters) => {
   for (const [field, selectedSet] of Object.entries(filters || {})) {
+    console.log("Selected set::",selectedSet)
+    console.log("Field::",field)
     if (!selectedSet || selectedSet.size === 0) continue;
     if (field === "module") continue;
     if (node.type === "MODULE") continue; // these fields don't apply to module header rows
@@ -97,6 +99,7 @@ export const filterTree = (nodes, term, filters) => {
     if (keepSelf || filteredChildren.length > 0) {
       acc.push({ ...node, children: filteredChildren });
     }
+    console.log("Filtered tree::",acc)
     return acc;
   }, []);
 };

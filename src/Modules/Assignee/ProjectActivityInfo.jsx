@@ -516,18 +516,30 @@ export default function ProjectActivityInfo({
   }, [filterOptions]);
 
   /* auto-expand all nodes when searching */
-  const expandedWithSearch = useMemo(() => {
-    if (!search) return expanded;
-    const allExpanded = { ...expanded };
-    const markExpanded = (nodes) => {
-      nodes?.forEach((node) => {
-        allExpanded[node.id] = true;
-        if (node.children?.length) markExpanded(node.children);
-      });
-    };
-    markExpanded(filteredModules);
-    return allExpanded;
-  }, [search, filteredModules, expanded]);
+  const expandedWithFilters = useMemo(() => {
+  const hasColumnFilters = Object.values(columnFilters).some(
+    (set) => set && set.size > 0
+  );
+
+  if (!search && !hasColumnFilters) {
+    return expanded;
+  }
+
+  const allExpanded = { ...expanded };
+
+  const markExpanded = (nodes) => {
+    nodes?.forEach((node) => {
+      allExpanded[node.id] = true;
+      if (node.children?.length) {
+        markExpanded(node.children);
+      }
+    });
+  };
+
+  markExpanded(filteredModules);
+
+  return allExpanded;
+}, [search, columnFilters, filteredModules, expanded]);
   const segregateBadgePerformers = (activityDetails) => {
     let resources = [];
     activityDetails.modules.map((module) => {
@@ -902,7 +914,7 @@ export default function ProjectActivityInfo({
                 <TreeRows
                   key={module.id}
                   node={module}
-                  expanded={expandedWithSearch}
+                  expanded={expandedWithFilters}
                   setExpanded={setExpanded}
                   addChildNode={addChildNode}
                   submitAddedNode={submitAddedNode}
