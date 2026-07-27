@@ -866,6 +866,79 @@ const activityTrackerApi = {
   },
 
   // ============================================================
+  //                     ACTIVITY REDO
+  // ============================================================
+
+  /**
+   * GET /activityTracker/activities/redo
+   * Gets all activity redo records across all activities.
+   * @returns Array of ActivityRedo model
+   */
+  getAllActivityRedo: async () => {
+    const response = await axios.get(`${apiEndPoint}/activities/redo`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/activities/{activityId}/redo
+   * Gets the redo record for a specific activity.
+   * @param {string} activityId
+   * @returns ActivityRedo model
+   */
+  getActivityRedo: async (activityId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/activities/${activityId}/redo`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/activities/{activityId}/redo
+   * Creates a new redo record for an activity.
+   * @param {string} activityId
+   * @param {Object} activityRedoData (ActivityRedo Model)
+   */
+  saveActivityRedo: async (activityId, activityRedoData) => {
+    const response = await axios.post(
+      `${apiEndPoint}/activities/${activityId}/redo`,
+      activityRedoData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/activities/{activityId}/redo
+   * Updates the redo record for an activity.
+   * @param {string} activityId
+   * @param {Object} activityRedoData (ActivityRedo Model)
+   */
+  updateActivityRedo: async (activityId, activityRedoData) => {
+    const response = await axios.put(
+      `${apiEndPoint}/activities/${activityId}/redo`,
+      activityRedoData,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/activities/{activityId}/redo
+   * Deletes the redo record for an activity.
+   * @param {string} activityId
+   */
+  deleteActivityRedo: async (activityId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/activities/${activityId}/redo`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
   //                        COMMENTS
   // ============================================================
 

@@ -61,6 +61,15 @@
   --table-head-text: var(--pj-text-muted, #4b5568);
   --table-head-border: var(--pj-border, #dde3ee);
   --table-head-muted: var(--pj-text-faint, #9aa5bb);
+
+  /* Dedicated solid background for the sticky table header only.
+     Intentionally NOT derived from --table-head-grad-start/end (which
+     lean on --pj-surface-2 / --pj-border-subtle): in the real app
+     those can resolve to semi-transparent values, which would let
+     body rows show through a sticky header while scrolling. This
+     token is hardcoded opaque so there's no dependency chain that
+     can reintroduce transparency. */
+  --table-head-solid-bg: #f4f6fb;
 }
 
 /* ==========================================================
@@ -90,6 +99,8 @@
   --av-5: #38bdf8; --av-5-bg: #0c2536;
 
   --tab-count-overlay: rgba(255,255,255,.12);
+
+  --table-head-solid-bg: #333849;
 }
 
 /* ==========================================================
@@ -107,8 +118,15 @@
    ========================================================== */
 
 .comments-dialog {
-  width: 74vw;
-  max-width: 1380px;
+  /* !important on width/max-width: MUI's Dialog applies a
+     MuiDialog-paperWidthXX class (default "sm" = 600px max-width)
+     to the Paper unless maxWidth={false} is passed on the <Dialog>
+     component. That class can otherwise win the cascade over this
+     rule, silently shrinking the dialog regardless of viewport size.
+     Pass maxWidth={false} in JSX (see CommentsActionDialog.jsx) and
+     keep these !important flags here as a safety net. */
+  width: 74vw !important;
+  max-width: 1380px !important;
   max-height: 88vh;
   border-radius: var(--r-xl) !important;
   overflow: hidden;
@@ -237,11 +255,18 @@
 .comments-dialog .entries-container {
   padding: 16px 20px;
   overflow-y: auto;
+  overflow-x: auto;                   /* allows sideways scroll on narrow screens */
+  -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
   flex: 1 1 auto;
+  min-height: 0;   /* flex children default to min-height:auto (content size), which
+                       silently defeats overflow-y:auto in a flex column */
   background: var(--neutral-50);
 }
 
-.comments-dialog .entries-container::-webkit-scrollbar { width: 5px; }
+.comments-dialog .entries-container::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
 
 .comments-dialog .entries-container::-webkit-scrollbar-thumb {
   background: var(--neutral-300);
@@ -249,6 +274,21 @@
 }
 
 .comments-dialog .entries-container::-webkit-scrollbar-track { background: transparent; }
+
+/* NOTE: the table is intentionally NOT wrapped in its own overflow-x
+   container. Per the CSS Overflow spec, giving an element overflow-x
+   something other than visible while leaving overflow-y at its
+   default forces overflow-y's *computed* value to auto too — that
+   element silently becomes a scroll container on both axes. Since
+   position:sticky binds to the NEAREST scroll-container ancestor, a
+   wrapper placed between .entries-container and the table would hijack
+   the sticky header away from .entries-container (the element that's
+   actually scrolling vertically) and onto a wrapper that never scrolls
+   vertically itself — the header would just scroll away instead of
+   sticking. Keeping both axes on .entries-container directly is what
+   makes it correctly stick during vertical scroll while columns still
+   track horizontal scroll (headers move with the table naturally since
+   only `top`, not `left`, is stickied). */
 
 /* ==========================================================
    EMPTY STATE
@@ -306,14 +346,66 @@
 
 /* ==========================================================
    TABLE
-   ========================================================== */
+   Laptop/desktop (>1024px): no min-width — table sizes naturally
+   within the 74vw / 1380px dialog, unchanged from before.
+   Below 1024px: min-width shrinks in steps so the table scrolls
+   sideways (via .entries-container overflow-x) instead of the
+   columns getting crushed.
+
+   NOTE: overflow:hidden intentionally removed from this rule.
+   .comments-table sits between the sticky header cells
+   (position: sticky) and their actual scrolling ancestor
+   (.entries-container, overflow-y: auto). position:sticky only
+   works if every element in that chain has overflow:visible — an
+   overflow:hidden here clips the header the moment it needs to
+   render outside .comments-table's own box, so the header would
+   appear to stick briefly then get cut off instead of staying
+   pinned. Rounded corners are recreated below on the corner cells
+   themselves instead, and border-collapse:separate keeps the sticky
+   cell's own border from collapsing into the row beneath it. */
 
 .comments-dialog .comments-table {
   border-radius: var(--r-lg);
-  overflow: hidden;
   background: var(--neutral-0);
   border: 1px solid var(--neutral-200);
   box-shadow: var(--shadow-1);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Recreate the clipped-corner look without overflow:hidden */
+.comments-dialog .comments-table .MuiTableCell-head:first-child {
+  border-top-left-radius: var(--r-lg);
+}
+
+.comments-dialog .comments-table .MuiTableCell-head:last-child {
+  border-top-right-radius: var(--r-lg);
+}
+
+.comments-dialog .comments-table .MuiTableBody-root .MuiTableRow-root:last-child .MuiTableCell-root:first-child {
+  border-bottom-left-radius: var(--r-lg);
+}
+
+.comments-dialog .comments-table .MuiTableBody-root .MuiTableRow-root:last-child .MuiTableCell-root:last-child {
+  border-bottom-right-radius: var(--r-lg);
+}
+
+@media (max-width: 1024px) {
+  .comments-dialog .comments-table {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 768px) {
+  .comments-dialog .comments-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 480px) {
+  .comments-dialog .comments-table {
+    min-width: 560px;
+  }
 }
 
 .comments-dialog .comments-table .MuiTableHead-root {
@@ -584,7 +676,7 @@
   font-size: 13px;
   color: var(--neutral-700);
   line-height: 1.55;
-  
+
 }
 
 /* ==========================================================
@@ -871,8 +963,8 @@
    ========================================================== */
 
 @media (max-width: 768px)  {.comments-dialog {
-    width: 100vw;
-    max-width: 100vw;
+    width: 100vw !important;
+    max-width: 100vw !important;
     max-height: 100vh;
     border-radius: 0 !important;
   }
@@ -966,6 +1058,25 @@
 .comments-dialog .entry-section.mobile-visible {
     display: block;
   }
+
+/* Whichever panel is visible needs to be the flexible, scrolling
+   child of .comments-content (which is overflow:hidden by design).
+   .entries-container already has flex:1 1 auto + overflow-y:auto
+   from the base rules above, so it's covered on both mobile and
+   desktop. .entry-section, though, is written as a compact
+   flex-shrink:0 block that sits *below* the scrollable list on
+   desktop — on desktop that's correct since it never needs to
+   scroll on its own. On mobile it becomes the ONLY visible panel and
+   has to take over the scrolling role instead, or its content (the
+   full add-entry form + footer) just gets clipped by
+   .comments-content's overflow:hidden with no way to reach the rest
+   of it. */
+  .comments-dialog .entry-section.mobile-visible {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce)  {.comments-dialog,
@@ -979,15 +1090,33 @@
    COMMENTS TABLE — HEADER STYLES
    Imported separately; relies on Inter font + CSS vars
    from CommentsActionDialog.css
+
+   Sticky header: anchors to the top of .entries-container, which is
+   the actual scrolling ancestor (overflow-y: auto, bounded by
+   .comments-content's max-height: 88vh). Background is solid and set
+   directly on the cell (not just the row) via --table-head-solid-bg
+   — a dedicated opaque token, NOT the gradient vars below it, since
+   those lean on tokens that can resolve semi-transparent in the real
+   app and would let body rows show through while scrolling.
+
+   The overflow:hidden that used to live on .comments-table (up in
+   the TABLE section above) has been removed for exactly this reason
+   — it clipped the sticky cells the moment they needed to render
+   outside that box, so the header would stop tracking the scroll
+   instead of staying pinned. Rounded corners are handled on the
+   corner cells instead, up in the TABLE section.
    ========================================================== */
 
-/* Head row background — one clean stripe */
+/* Head row background — kept for non-sticky context / fallback */
 .comments-dialog .comments-table .MuiTableHead-root {
   background: linear-gradient(180deg, var(--table-head-grad-start) 0%, var(--table-head-grad-end) 100%);
 }
 
 /* Individual header cells */
 .comments-dialog .comments-table .MuiTableCell-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -997,8 +1126,16 @@
   white-space: nowrap;
   padding: 11px 14px;
   border-bottom: 1.5px solid var(--table-head-border);
-  position: relative;
+  /* !important + background-color: forces this opaque token to win
+     over any MUI default (e.g. background-color: inherit/transparent
+     baked into MuiTableCell-head) that could otherwise let body rows
+     show through the sticky header while scrolling. */
+  background: var(--table-head-solid-bg) !important;
+  background-color: var(--table-head-solid-bg) !important;
   user-select: none;
+  /* position: sticky above already establishes a positioning context,
+     so the ::after divider below (position: absolute) anchors to
+     this cell without needing position: relative separately. */
 }
 
 /* Vertical divider between columns */

@@ -9,7 +9,19 @@ export function getThemeMode() {
     return "light";
   }
 }
+/* ─── Responsive Breakpoints ─── */
+export const BREAKPOINTS = {
+  mobile: 640,   // < 640px = mobile
+  tablet: 1024,  // 640-1024px = tablet, > 1024px = desktop
+};
 
+/* ─── Touch-friendly sizes ─── */
+export const TOUCH = {
+  minTarget: 44,        // WCAG minimum tap target
+  buttonHeight: 42,     // recommended button height on mobile
+  inputHeight: 44,      // recommended input height on mobile
+  iconSize: 20,         // recommended icon size on mobile
+};
 const light = {
   // Backgrounds
   bgApp: "#F1F5F9",
@@ -95,6 +107,12 @@ const light = {
   shadowMd: "0 4px 12px rgba(0,0,0,0.08)",
   shadowLg: "0 8px 24px rgba(0,0,0,0.15)",
   shadowXl: "0 24px 64px rgba(0,0,0,0.18)",
+
+  // Mobile modal handle
+  handleBar: "#CBD5E1",
+
+  // Safe-area-friendly overlay for mobile bottom sheets
+  bgSheetOverlay: "rgba(0,0,0,0.55)",
 };
 
 const dark = {
@@ -182,6 +200,12 @@ const dark = {
   shadowMd: "0 4px 12px rgba(0,0,0,0.5)",
   shadowLg: "0 8px 24px rgba(0,0,0,0.6)",
   shadowXl: "0 24px 64px rgba(0,0,0,0.7)",
+
+  // Mobile modal handle
+  handleBar: "#475569",
+
+  // Safe-area-friendly overlay for mobile bottom sheets
+  bgSheetOverlay: "rgba(0,0,0,0.55)",
 };
 
 export const themes = { light, dark };

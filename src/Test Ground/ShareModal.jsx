@@ -5,7 +5,6 @@ import {
   Users,
   Check,
   UserPlus,
-  Trash2,
   Building2,
   Briefcase,
   AlertTriangle,
@@ -18,6 +17,8 @@ import * as sharingApi from "./sharingApi";
 import { getUsersCached } from "./sharingApi";
 import { timeAgo } from "./updatesHelpers";
 import { useTheme } from "./useTheme";
+import { useResponsive } from "./useResponsive";
+import BottomSheet from "./shared/BottomSheet";
 
 /* ─── User Avatar ─── */
 function UserAvatar({ user, size = 36, selected = false, owner = false }) {
@@ -142,7 +143,7 @@ function SharedUserRow({ user, onRemove, isRemoving }) {
                 marginLeft: "auto",
               }}
             >
-              Shared {timeAgo(user.sharedAt)}
+              {timeAgo(user.sharedAt)}
             </span>
           )}
         </div>
@@ -280,10 +281,9 @@ function AvailableUserCard({ user, isSelected, onToggle }) {
   );
 }
 
-/* ─── Loading State ─── */
+/* ─── Loading + Error States ─── */
 function LoadingUsers() {
   const { t } = useTheme();
-
   return (
     <div
       style={{ padding: "40px 20px", textAlign: "center", color: t.textMuted }}
@@ -301,7 +301,6 @@ function LoadingUsers() {
   );
 }
 
-/* ─── Error State ─── */
 function ErrorUsers({ error, onRetry }) {
   const { t } = useTheme();
 
@@ -382,6 +381,7 @@ export default function ShareModal({
   onSave,
 }) {
   const { t } = useTheme();
+  const { isMobile } = useResponsive();
 
   const btnStyle = {
     height: 32,
@@ -402,14 +402,14 @@ export default function ShareModal({
 
   const inputStyle = {
     width: "100%",
-    height: 36,
+    height: isMobile ? 44 : 36,
     border: `1px solid ${t.borderStrong}`,
     borderRadius: 6,
     background: t.bgInput,
     color: t.textPrimary,
     padding: "0 10px",
     fontFamily: "Sora,sans-serif",
-    fontSize: 12,
+    fontSize: isMobile ? 14 : 12,
     boxSizing: "border-box",
     outline: "none",
   };
@@ -435,8 +435,10 @@ export default function ShareModal({
   }, []);
 
   useEffect(() => {
-    setTimeout(() => searchRef.current?.focus(), 100);
-  }, []);
+    if (!isMobile) {
+      setTimeout(() => searchRef.current?.focus(), 100);
+    }
+  }, [isMobile]);
 
   const loadUsers = async () => {
     setIsLoadingUsers(true);
@@ -564,6 +566,402 @@ export default function ShareModal({
     return false;
   }, [selectedUserIds, category?.sharedWith, selectedCount, originalCount]);
 
+  const modalTitle = "Share Category";
+
+  /* ─── Shared body content ─── */
+  const bodyContent = (
+    <div style={{ padding: isMobile ? "14px 16px" : "16px 20px" }}>
+      {isLoadingUsers && <LoadingUsers />}
+      {usersError && !isLoadingUsers && (
+        <ErrorUsers error={usersError} onRetry={loadUsers} />
+      )}
+
+      {!isLoadingUsers && !usersError && (
+        <>
+          {alreadySharedUsers.length > 0 && (
+            <div style={{ marginBottom: 22 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 10,
+                }}
+              >
+                <Users size={14} color={t.success} />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: t.textPrimary,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  Currently Shared
+                </span>
+                <span
+                  style={{
+                    padding: "1px 8px",
+                    background: t.successBg,
+                    color: t.success,
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {alreadySharedUsers.length}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Add People */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 10,
+              }}
+            >
+              <UserPlus size={14} color={t.primary} />
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: t.textPrimary,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Add People
+              </span>
+            </div>
+
+            {/* Search + Filter */}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                marginBottom: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  flex: "1 1 200px",
+                  minWidth: 180,
+                }}
+              >
+                <Search
+                  size={14}
+                  style={{
+                    position: "absolute",
+                    left: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: t.textFaint,
+                    pointerEvents: "none",
+                  }}
+                />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search name, email…"
+                  style={{ ...inputStyle, paddingLeft: 32 }}
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    style={{
+                      position: "absolute",
+                      right: 8,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: t.textFaint,
+                      padding: 2,
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+              {departments.length > 0 && (
+                <select
+                  value={selectedDept}
+                  onChange={(e) => setSelectedDept(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    width: isMobile ? "100%" : 150,
+                    cursor: "pointer",
+                    background: selectedDept ? t.primaryBgSubtle : t.bgInput,
+                    color: selectedDept ? t.primary : t.textPrimary,
+                    borderColor: selectedDept
+                      ? t.primaryBorder
+                      : t.borderStrong,
+                    fontWeight: selectedDept ? 600 : 400,
+                  }}
+                >
+                  <option value="">All departments</option>
+                  {departments.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {availableUsers.length > 0 && (
+              <div
+                style={{ fontSize: 10.5, color: t.textMuted, marginBottom: 8 }}
+              >
+                {availableUsers.length} user
+                {availableUsers.length !== 1 ? "s" : ""} available
+                {(search || selectedDept) &&
+                  ` (filtered from ${allUsers.length - 1})`}
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                maxHeight: isMobile ? "none" : 340,
+                overflowY: isMobile ? "visible" : "auto",
+                padding: "2px",
+              }}
+            >
+              {availableUsers.length === 0 ? (
+                <div
+                  style={{
+                    padding: 30,
+                    textAlign: "center",
+                    color: t.textFaint,
+                    fontSize: 12,
+                    background: t.bgSubtle,
+                    borderRadius: 8,
+                    border: `1px dashed ${t.border}`,
+                  }}
+                >
+                  <UserX
+                    size={26}
+                    strokeWidth={1.5}
+                    style={{ marginBottom: 8, opacity: 0.5 }}
+                  />
+                  <div>
+                    {search || selectedDept
+                      ? "No users match your filters"
+                      : "No users available"}
+                  </div>
+                </div>
+              ) : (
+                Object.entries(groupedUsers).map(([dept, users]) => (
+                  <div key={dept}>
+                    <div
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 9.5,
+                        fontWeight: 700,
+                        color: t.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        marginBottom: 4,
+                        marginTop: 6,
+                      }}
+                    >
+                      <Building2 size={10} />
+                      {dept}
+                      <span style={{ color: t.textFaint, fontWeight: 500 }}>
+                        · {users.length}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 5,
+                      }}
+                    >
+                      {users.map((user) => (
+                        <AvailableUserCard
+                          key={user.userId}
+                          user={user}
+                          isSelected={selectedUserIds.has(
+                            user.userId.toLowerCase(),
+                          )}
+                          onToggle={toggleUser}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  /* ─── Footer buttons ─── */
+  const footerButtons = (
+    <>
+      <button
+        onClick={onClose}
+        disabled={isSaving}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1 : "initial",
+          height: isMobile ? 46 : 32,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 600 : 500,
+          opacity: isSaving ? 0.6 : 1,
+          cursor: isSaving ? "not-allowed" : "pointer",
+        }}
+      >
+        <X size={13} /> Cancel
+      </button>
+      <button
+        onClick={handleSave}
+        disabled={!hasChanges || isSaving}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1.3 : "initial",
+          height: isMobile ? 46 : 32,
+          background: hasChanges && !isSaving ? t.primary : t.bgMuted,
+          color: hasChanges && !isSaving ? t.textInverse : t.textFaint,
+          borderColor: hasChanges && !isSaving ? t.primary : t.border,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 700 : 600,
+          cursor: hasChanges && !isSaving ? "pointer" : "not-allowed",
+        }}
+      >
+        {isSaving ? (
+          <>
+            <Loader2
+              size={13}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
+            Saving...
+          </>
+        ) : (
+          <>
+            <Check size={13} /> Save Changes
+          </>
+        )}
+      </button>
+    </>
+  );
+
+  // ══════════════════════════════════════════════════════
+  //   MOBILE — Bottom Sheet
+  // ══════════════════════════════════════════════════════
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={modalTitle}
+        height="full"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Subtitle */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: `linear-gradient(135deg, ${t.infoBg} 0%, ${t.primaryBg} 100%)`,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: t.primary,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <Share2 size={14} />
+            <span style={{ fontWeight: 700 }}>{category?.name}</span>
+            <span style={{ color: t.textSecondary }}>
+              · {selectedCount} user{selectedCount !== 1 ? "s" : ""} selected
+            </span>
+            {hasChanges && !isSaving && (
+              <span
+                style={{
+                  marginLeft: "auto",
+                  padding: "2px 8px",
+                  background: t.warningBg,
+                  color: t.warning,
+                  border: `1px solid ${t.warningBorder}`,
+                  borderRadius: 999,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                }}
+              >
+                Unsaved
+              </span>
+            )}
+          </div>
+
+          {/* Body */}
+          <div style={{ flex: 1, overflowY: "auto" }}>{bodyContent}</div>
+
+          {/* Info bar */}
+          <div
+            style={{
+              padding: "8px 16px",
+              borderTop: `1px solid ${t.border}`,
+              background: t.bgSubtle,
+              fontSize: 11,
+              color: t.textMuted,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Info size={12} />
+            {selectedCount === 0
+              ? "Only you will have access"
+              : `${selectedCount} user${selectedCount !== 1 ? "s" : ""} will have edit access`}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              display: "flex",
+              gap: 8,
+              background: t.bgSubtle,
+            }}
+          >
+            {footerButtons}
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  //   DESKTOP — Existing modal
+  // ══════════════════════════════════════════════════════
   return (
     <div
       onClick={(e) => !isSaving && e.target === e.currentTarget && onClose()}
@@ -631,7 +1029,7 @@ export default function ShareModal({
                 gap: 8,
               }}
             >
-              Share Category
+              {modalTitle}
               {hasChanges && !isSaving && (
                 <span
                   style={{
@@ -684,247 +1082,7 @@ export default function ShareModal({
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-          {isLoadingUsers && <LoadingUsers />}
-
-          {usersError && !isLoadingUsers && (
-            <ErrorUsers error={usersError} onRetry={loadUsers} />
-          )}
-
-          {!isLoadingUsers && !usersError && (
-            <>
-              {/* Currently Shared Section */}
-              {alreadySharedUsers.length > 0 && (
-                <div style={{ marginBottom: 22 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginBottom: 10,
-                    }}
-                  >
-                    <Users size={14} color={t.success} />
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: t.textPrimary,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      Currently Shared
-                    </span>
-                    <span
-                      style={{
-                        padding: "1px 8px",
-                        background: t.successBg,
-                        color: t.success,
-                        borderRadius: 999,
-                        fontSize: 10,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {alreadySharedUsers.length}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Add People Section */}
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginBottom: 10,
-                  }}
-                >
-                  <UserPlus size={14} color={t.primary} />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: t.textPrimary,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    Add People
-                  </span>
-                </div>
-
-                {/* Search + Filter */}
-                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                  <div style={{ position: "relative", flex: 1 }}>
-                    <Search
-                      size={14}
-                      style={{
-                        position: "absolute",
-                        left: 10,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: t.textFaint,
-                        pointerEvents: "none",
-                      }}
-                    />
-                    <input
-                      ref={searchRef}
-                      type="text"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search name, email, designation..."
-                      style={{ ...inputStyle, paddingLeft: 32 }}
-                    />
-                    {search && (
-                      <button
-                        onClick={() => setSearch("")}
-                        style={{
-                          position: "absolute",
-                          right: 8,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: t.textFaint,
-                          padding: 2,
-                        }}
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                  {departments.length > 0 && (
-                    <select
-                      value={selectedDept}
-                      onChange={(e) => setSelectedDept(e.target.value)}
-                      style={{
-                        ...inputStyle,
-                        width: 150,
-                        cursor: "pointer",
-                        background: selectedDept
-                          ? t.primaryBgSubtle
-                          : t.bgInput,
-                        color: selectedDept ? t.primary : t.textPrimary,
-                        borderColor: selectedDept
-                          ? t.primaryBorder
-                          : t.borderStrong,
-                        fontWeight: selectedDept ? 600 : 400,
-                      }}
-                    >
-                      <option value="">All departments</option>
-                      {departments.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                {/* Results count */}
-                {availableUsers.length > 0 && (
-                  <div
-                    style={{
-                      fontSize: 10.5,
-                      color: t.textMuted,
-                      marginBottom: 8,
-                    }}
-                  >
-                    {availableUsers.length} user
-                    {availableUsers.length !== 1 ? "s" : ""} available
-                    {(search || selectedDept) &&
-                      ` (filtered from ${allUsers.length - 1})`}
-                  </div>
-                )}
-
-                {/* User list */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                    maxHeight: 340,
-                    overflowY: "auto",
-                    padding: "2px",
-                  }}
-                >
-                  {availableUsers.length === 0 ? (
-                    <div
-                      style={{
-                        padding: 30,
-                        textAlign: "center",
-                        color: t.textFaint,
-                        fontSize: 12,
-                        background: t.bgSubtle,
-                        borderRadius: 8,
-                        border: `1px dashed ${t.border}`,
-                      }}
-                    >
-                      <UserX
-                        size={26}
-                        strokeWidth={1.5}
-                        style={{ marginBottom: 8, opacity: 0.5 }}
-                      />
-                      <div>
-                        {search || selectedDept
-                          ? "No users match your filters"
-                          : "No users available"}
-                      </div>
-                    </div>
-                  ) : (
-                    Object.entries(groupedUsers).map(([dept, users]) => (
-                      <div key={dept}>
-                        <div
-                          style={{
-                            padding: "4px 10px",
-                            fontSize: 9.5,
-                            fontWeight: 700,
-                            color: t.textMuted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            marginBottom: 4,
-                            marginTop: 6,
-                          }}
-                        >
-                          <Building2 size={10} />
-                          {dept}
-                          <span style={{ color: t.textFaint, fontWeight: 500 }}>
-                            · {users.length}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 5,
-                          }}
-                        >
-                          {users.map((user) => (
-                            <AvailableUserCard
-                              key={user.userId}
-                              user={user}
-                              isSelected={selectedUserIds.has(
-                                user.userId.toLowerCase(),
-                              )}
-                              onToggle={toggleUser}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>{bodyContent}</div>
 
         {/* Footer */}
         <div
@@ -953,45 +1111,7 @@ export default function ShareModal({
               ? "Only you will have access"
               : `${selectedCount} user${selectedCount !== 1 ? "s" : ""} will have edit access`}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={onClose}
-              disabled={isSaving}
-              style={{
-                ...btnStyle,
-                opacity: isSaving ? 0.6 : 1,
-                cursor: isSaving ? "not-allowed" : "pointer",
-              }}
-            >
-              <X size={13} /> Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving}
-              style={{
-                ...btnStyle,
-                background: hasChanges && !isSaving ? t.primary : t.bgMuted,
-                color: hasChanges && !isSaving ? t.textInverse : t.textFaint,
-                borderColor: hasChanges && !isSaving ? t.primary : t.border,
-                cursor: hasChanges && !isSaving ? "pointer" : "not-allowed",
-                fontWeight: 600,
-              }}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2
-                    size={13}
-                    style={{ animation: "spin 1s linear infinite" }}
-                  />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check size={13} /> Save Changes
-                </>
-              )}
-            </button>
-          </div>
+          <div style={{ display: "flex", gap: 8 }}>{footerButtons}</div>
         </div>
       </div>
     </div>

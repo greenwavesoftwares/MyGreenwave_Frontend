@@ -1,0 +1,177 @@
+/* Styling for ColumnFilter.jsx — a small square filter-icon button that
+ * opens a portal-rendered popup, matching the look of the Gantt view's
+ * per-column filter button (ProjectColumnFilterButton). Colors are pulled
+ * from the app's real .light/.dark theme tokens (defined globally, e.g.
+ * --dropdownBG, --borderColor, --fontColor, --avatar-bg, etc.) so this
+ * automatically follows whichever theme class is active on the page. */
+
+/* ── icon button ── */
+.col-filter-btn {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  color: var(--tittleFontColor, #94a3b8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  flex-shrink: 0;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.col-filter-btn:hover {
+  color: var(--avatar-bg, #4097ff);
+  border-color: var(--avatar-bg, #4097ff);
+}
+
+.col-filter-btn--active {
+  font-weight: 600;
+}
+
+.col-filter-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--dropdownBG, #fff);
+  line-height: 1;
+}
+
+/* ── popup panel ── */
+.col-filter-panel {
+  background: var(--dropdownBG, #fff);
+  border: 1px solid var(--borderColor, #cdd4e0);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.12);
+  z-index: 99999;
+  font-family: "Sora", sans-serif;
+  overflow: hidden;
+  max-width: calc(100vw - 20px);
+  box-sizing: border-box;
+}
+
+.col-filter-panel__header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--divider-color, #e4e8f0);
+  background: var(--dropdownBG-Header, #f8f9fb);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.col-filter-panel__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fontColor, #111827);
+}
+
+.col-filter-panel__clear {
+  background: none;
+  border: none;
+  color: var(--redFontColor, #dc2626);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.col-filter-panel__search {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--divider-color, #f1f3f7);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.col-filter-panel__search-icon {
+  color: var(--tittleFontColor, #9aa3b5);
+  flex-shrink: 0;
+}
+
+.col-filter-panel__search input {
+  width: 100%;
+  height: 26px;
+  border: 1px solid var(--inputFieldBorder, #e0e0e0);
+  border-radius: 5px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-family: "Sora", sans-serif;
+  outline: none;
+  box-sizing: border-box;
+  background: var(--dropdownBG, #fff);
+  color: var(--fontColor, #111827);
+}
+
+.col-filter-panel__list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.col-filter-panel__empty {
+  padding: 14px;
+  text-align: center;
+  color: var(--tittleFontColor, #9aa3b5);
+  font-size: 11px;
+}
+
+.col-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.col-filter-option:hover {
+  background: var(--hoverText, #95bff359);
+}
+
+.col-filter-checkbox {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1.5px solid var(--borderColor, #cdd4e0);
+  background: var(--dropdownBG, #fff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.col-filter-checkbox__mark {
+  line-height: 1;
+}
+
+.col-filter-option__label {
+  font-size: 11.5px;
+  color: var(--fontColor, #111827);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.col-filter-panel__footer {
+  padding: 6px 12px;
+  border-top: 1px solid var(--divider-color, #e4e8f0);
+  background: var(--dropdownBG-Header, #f8f9fb);
+  font-size: 10px;
+  color: var(--tittleFontColor, #6b7589);
+  text-align: center;
+}

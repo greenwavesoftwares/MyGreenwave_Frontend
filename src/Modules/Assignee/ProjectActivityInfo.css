@@ -72,6 +72,14 @@
 
   --pj-notice-bg:     #F4F2EC;
   --pj-notice-border: #EFEDE6;
+
+  /* Dedicated solid background for the sticky table header only.
+     Intentionally NOT tied to --pj-surface-2 / --tableOddRow: that
+     variable resolves to a semi-transparent value elsewhere in the
+     app's real theme, which let scrolled-past rows show through the
+     sticky header. This token is hardcoded opaque so there's no
+     dependency chain that can reintroduce transparency. */
+  --pj-thead-solid-bg: #EEF1F6;
 }
 
 /* ==========================================================
@@ -114,6 +122,8 @@
 
   --pj-notice-bg:     #262420;
   --pj-notice-border: #35322b;
+
+  --pj-thead-solid-bg: #1c2333;
 }
 
 
@@ -441,12 +451,33 @@
 ══════════════════════════════════════ */
 .pai-page .pai-table-wrapper {
   overflow-x: auto;
+  overflow-y: auto;
+  /* Without a height cap this wrapper never overflows itself — it just
+     grows to fit the full table, and the page/body scrolls instead.
+     Sticky positioning anchors to the nearest ancestor that actually
+     scrolls, so without this the header has nothing to stick to.
+     Tune to fit your layout (vh, or a fixed px value). */
+  max-height: 65vh;
 }
 
 .pai-page .pai-table {
   width: 100%;
-  border-collapse: collapse;
+  /* border-collapse switched from "collapse" to "separate" +
+     border-spacing: 0 — visually identical, but "collapse" can
+     cause sticky header cell borders to flicker/disappear on scroll
+     (mainly in Firefox) because collapsed borders are a shared
+     table-level paint rather than a per-cell one. "separate" keeps
+     each cell's border independent, which sticky positioning needs
+     to render reliably while scrolling. */
+  border-collapse: separate;
+  border-spacing: 0;
   min-width: 1100px;
+  /* No fixed height/min-height here on purpose: the table should size
+     to its actual rows. .pai-table-wrapper's max-height + overflow-y
+     below already provides the scrollable area for long lists — a
+     forced min-height here just gets divided up among whatever rows
+     happen to be visible, stretching them when filters leave only a
+     few (or one) row on screen. */
 }
 
 /* Override MUI padding on our table only */
@@ -457,14 +488,28 @@
 }
 
 .pai-page .pai-thead-row {
-  background: var(--pj-surface-2);
+  background: var(--pj-thead-solid-bg);
 }
 
 .pai-page .pai-thead-row .MuiTableCell-root {
+  /* Sticky header: anchors to the top of .pai-table-wrapper, which is
+     the actual scrolling ancestor (overflow-x/y: auto + max-height
+     above). Background is set directly on the cell itself (not just
+     inherited from the row) using a dedicated opaque token — see
+     --pj-thead-solid-bg — so body rows never show through while
+     scrolling, and z-index keeps it above rows passing underneath. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--pj-thead-solid-bg);
+  background-color: var(--pj-thead-solid-bg);
   border-bottom: 1px solid var(--pj-border-subtle);
 }
 
 .pai-page .pai-th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   font-size: 10.5px !important;
   font-weight: 700 !important;
   color: var(--pj-text-faint) !important;
@@ -472,12 +517,42 @@
   text-transform: uppercase !important;
   padding: 12px 14px !important;
   white-space: nowrap;
-  background: var(--pj-surface-2);
+  /* !important + background-color: forces this opaque token to win
+     over any MUI default (e.g. background-color: inherit/transparent
+     baked into MuiTableCell-head) that could otherwise let the
+     previous row show through the sticky header. */
+  background: var(--pj-thead-solid-bg) !important;
+  background-color: var(--pj-thead-solid-bg) !important;
 }
 
 .pai-page .pai-th-toggle {
   width: 36px !important;
   padding: 12px 8px !important;
+}
+
+/* ── column header + filter icon layout ──
+   (the .col-filter-* button/dropdown styles now live in ColumnFilter.css,
+   alongside the ColumnFilter.jsx component that uses them) */
+.pai-page .pai-th-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+}
+.pai-page .pai-clear-filters-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b5bdb;
+  background: rgba(59, 91, 219, 0.08);
+  border: 1px solid rgba(59, 91, 219, 0.25);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pai-page .pai-clear-filters-btn:hover {
+  background: rgba(59, 91, 219, 0.14);
 }
 
 /* Body rows — TreeRows component will inherit these via MUI overrides */

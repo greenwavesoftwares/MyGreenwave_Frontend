@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Star,
   X,
@@ -10,28 +10,23 @@ import {
   ClipboardList,
   Loader2,
 } from "lucide-react";
-
-/* ─── Shared Styles ─── */
-const btnStyle = {
-  height: 32,
-  padding: "0 14px",
-  borderRadius: 7,
-  border: "1px solid #CBD5E1",
-  background: "#fff",
-  color: "#475569",
-  fontFamily: "Sora,sans-serif",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-};
+import { useTheme } from "./useTheme";
+import { useResponsive } from "./useResponsive";
+import BottomSheet from "./shared/BottomSheet";
 
 /* ─── Rating Bar (1–10) ─── */
 function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
+  const { t } = useTheme();
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        flexWrap: "wrap",
+      }}
+    >
       {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
         const active = n <= (disabled ? value : hover || value);
         const getColor = (rating) => {
@@ -53,9 +48,9 @@ function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
               width: 28,
               height: 28,
               borderRadius: 6,
-              border: `1.5px solid ${active ? c.border : "#E2E8F0"}`,
-              background: active ? c.fill : "#F8FAFC",
-              color: active ? "#fff" : "#94A3B8",
+              border: `1.5px solid ${active ? c.border : t.border}`,
+              background: active ? c.fill : t.bgSubtle,
+              color: active ? "#fff" : t.textFaint,
               fontSize: 11,
               fontWeight: 700,
               cursor: disabled ? "default" : "pointer",
@@ -97,15 +92,7 @@ function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
                   : value <= 7
                     ? "#1D4ED8"
                     : "#15803D",
-            border: `1px solid ${
-              value <= 3
-                ? "#FCA5A5"
-                : value <= 5
-                  ? "#FCD34D"
-                  : value <= 7
-                    ? "#93C5FD"
-                    : "#86EFAC"
-            }`,
+            border: `1px solid ${value <= 3 ? "#FCA5A5" : value <= 5 ? "#FCD34D" : value <= 7 ? "#93C5FD" : "#86EFAC"}`,
           }}
         >
           {value}/10
@@ -116,7 +103,9 @@ function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
 }
 
 /* ─── Reference Card ─── */
-function RefCard({ label, value, icon, color = "#475569" }) {
+function RefCard({ label, value, icon, color }) {
+  const { t } = useTheme();
+
   return (
     <div
       style={{
@@ -124,19 +113,21 @@ function RefCard({ label, value, icon, color = "#475569" }) {
         alignItems: "center",
         gap: 8,
         padding: "6px 10px",
-        background: "#F8FAFC",
-        border: "1px solid #E2E8F0",
+        background: t.bgSubtle,
+        border: `1px solid ${t.border}`,
         borderRadius: 6,
         fontSize: 11,
         minWidth: 0,
       }}
     >
-      <span style={{ color, flexShrink: 0 }}>{icon}</span>
+      <span style={{ color: color || t.textSecondary, flexShrink: 0 }}>
+        {icon}
+      </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
             fontSize: 9.5,
-            color: "#94A3B8",
+            color: t.textFaint,
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.3px",
@@ -147,7 +138,7 @@ function RefCard({ label, value, icon, color = "#475569" }) {
         <div
           style={{
             fontWeight: 600,
-            color: "#0F172A",
+            color: t.textPrimary,
             fontFamily: "'JetBrains Mono',monospace",
             fontSize: 11,
             overflow: "hidden",
@@ -171,6 +162,8 @@ function CommentField({
   readOnly: isReadOnly,
   disabled,
 }) {
+  const { t } = useTheme();
+
   return (
     <div style={{ marginTop: 10 }}>
       <label
@@ -178,7 +171,7 @@ function CommentField({
           display: "block",
           fontSize: 10.5,
           fontWeight: 600,
-          color: "#64748B",
+          color: t.textMuted,
           marginBottom: 4,
         }}
       >
@@ -188,14 +181,14 @@ function CommentField({
         <div
           style={{
             width: "100%",
-            border: "1px solid #E2E8F0",
+            border: `1px solid ${t.border}`,
             borderRadius: 6,
             padding: "8px 10px",
             fontFamily: "Sora,sans-serif",
             fontSize: 11.5,
             lineHeight: 1.5,
-            color: "#475569",
-            background: "#F8FAFC",
+            color: t.textSecondary,
+            background: t.bgSubtle,
             minHeight: 36,
             boxSizing: "border-box",
             whiteSpace: "pre-wrap",
@@ -212,7 +205,7 @@ function CommentField({
           rows={2}
           style={{
             width: "100%",
-            border: "1px solid #E2E8F0",
+            border: `1px solid ${t.border}`,
             borderRadius: 6,
             padding: "8px 10px",
             fontFamily: "Sora,sans-serif",
@@ -222,7 +215,8 @@ function CommentField({
             resize: "vertical",
             minHeight: 48,
             lineHeight: 1.5,
-            background: disabled ? "#F8FAFC" : "#fff",
+            background: disabled ? t.bgInputDisabled : t.bgInput,
+            color: t.textPrimary,
           }}
         />
       )}
@@ -231,49 +225,15 @@ function CommentField({
 }
 
 /* ─── Format Helpers ─── */
-const WORK_START_HR = 10;
-
-function parseISODateTime(s) {
-  if (!s) return null;
-  const norm = s.replace(" ", "T");
-  const m = norm.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{1,2}):(\d{2}))?/);
-  if (!m) return null;
-  return new Date(
-    Number(m[1]),
-    Number(m[2]) - 1,
-    Number(m[3]),
-    Number(m[4] || WORK_START_HR),
-    Number(m[5] || 0),
-    0,
-    0,
-  );
-}
-
 function fmtHrMin(hrs) {
-  if (hrs === null || hrs === undefined || isNaN(hrs)) return "—";
-  const totalMinutes = Math.round(Math.abs(hrs) * 60);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
+  if (hrs == null || isNaN(hrs)) return "—";
+  const min = Math.round(Math.abs(hrs) * 60);
+  const h = Math.floor(min / 60);
+  const m = min % 60;
   const sign = hrs < 0 ? "-" : "";
   if (h === 0) return `${sign}${m}m`;
   if (m === 0) return `${sign}${h}h`;
   return `${sign}${h}h ${m}m`;
-}
-
-function fmtPlanned(val) {
-  if (!val) return "—";
-  const d = new Date(val);
-  if (isNaN(d)) return "—";
-  return (
-    d.toLocaleString("en-GB", {
-      timeZone: "UTC",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }) + " UTC"
-  );
 }
 
 function fmtActual(val) {
@@ -290,22 +250,38 @@ function fmtActual(val) {
   });
 }
 
-/* ─── Main FeedbackModal Component ─── */
+/* ─── Main FeedbackModal ─── */
 export default function FeedbackModal({
   row,
   onClose,
   onConfirm,
   isSubmitting = false,
 }) {
-  console.log("Feedback row::::",row)
-  // ── Determine mode ──
+  const { t } = useTheme();
+  const { isMobile } = useResponsive();
+
+  const btnStyle = {
+    height: 32,
+    padding: "0 14px",
+    borderRadius: 7,
+    border: `1px solid ${t.borderStrong}`,
+    background: t.bgCard,
+    color: t.textSecondary,
+    fontFamily: "Sora,sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  };
+
   const isFinished =
     String(row.status || row.activityStatus || "")
       .toLowerCase()
       .trim() === "finished";
   const readOnly = isFinished;
 
-  // ── Compute reference data ──
   const parseDt = (val) => {
     if (!val) return null;
     const d = new Date(val);
@@ -337,7 +313,6 @@ export default function FeedbackModal({
 
   const rejectCount = row.actiVityRejectCount || 0;
 
-  // ── Auto-suggest: Time Efficiency (1–10) ──
   const suggestTimeRating = () => {
     if (!benchmarkHrs || benchmarkHrs <= 0 || !actualHrs) return 5;
     const ratio = actualHrs / benchmarkHrs;
@@ -353,7 +328,6 @@ export default function FeedbackModal({
     return 1;
   };
 
-  // ── Auto-suggest: Fulfillment (1–10) ──
   const suggestFulfillmentRating = () => {
     if (rejectCount === 0) return 10;
     if (rejectCount === 1) return 7;
@@ -362,7 +336,6 @@ export default function FeedbackModal({
     return 1;
   };
 
-  // ── State ──
   const [timeRating, setTimeRating] = useState(
     readOnly ? row.timeEfficiencyRating || 0 : suggestTimeRating(),
   );
@@ -375,7 +348,6 @@ export default function FeedbackModal({
   const [hoverTime, setHoverTime] = useState(0);
   const [hoverFulfillment, setHoverFulfillment] = useState(0);
   const [hoverInnovation, setHoverInnovation] = useState(0);
-
   const [timeComments, setTimeComments] = useState(
     readOnly ? row.timeEfficiencyComments || "" : "",
   );
@@ -388,7 +360,6 @@ export default function FeedbackModal({
   const [overallComments, setOverallComments] = useState(
     readOnly ? row.feedbackComments || "" : "",
   );
-
   const [touched, setTouched] = useState(false);
 
   const isValid =
@@ -397,7 +368,6 @@ export default function FeedbackModal({
     innovationRating > 0 &&
     overallComments.trim().length >= 5;
 
-  // ── Rating labels ──
   const timeLabels = {
     1: "Very Poor — Took 2x+ longer than planned",
     2: "Poor — Significant delay (80–100% over)",
@@ -452,7 +422,6 @@ export default function FeedbackModal({
     });
   };
 
-  // ── Efficiency comparison ──
   const efficiencyPercent =
     benchmarkHrs > 0
       ? Math.round(((actualHrs - benchmarkHrs) / benchmarkHrs) * 100)
@@ -460,6 +429,772 @@ export default function FeedbackModal({
   const isAhead = efficiencyPercent < 0;
   const isOnTime = efficiencyPercent === 0;
 
+  const modalTitle = readOnly ? "Task Feedback" : "Rate & Finish Task";
+
+  /* ─── Body content ─── */
+  const bodyContent = (
+    <div style={{ padding: isMobile ? "16px 14px" : "20px" }}>
+      {/* ═══ Time Efficiency ═══ */}
+      <div
+        style={{
+          border: `1px solid ${t.border}`,
+          borderRadius: 10,
+          padding: isMobile ? 12 : 16,
+          marginBottom: 18,
+          background: t.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: t.primaryBg,
+              color: t.primary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Clock size={14} />
+          </div>
+          <div>
+            <div
+              style={{ fontWeight: 700, fontSize: 12.5, color: t.textPrimary }}
+            >
+              Time Efficiency
+              {!readOnly && (
+                <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+              )}
+            </div>
+            <div style={{ fontSize: 10.5, color: t.textMuted }}>
+              How efficient was completion vs plan?
+            </div>
+          </div>
+        </div>
+
+        {/* Reference Data Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <RefCard
+            label="Planned Start"
+            value={fmtActual(row.plannedStart)}
+            icon={<CalendarX size={13} />}
+            color={t.primary}
+          />
+          <RefCard
+            label="Planned Stop"
+            value={fmtActual(row.plannedStop)}
+            icon={<CalendarX size={13} />}
+            color={t.primary}
+          />
+          <RefCard
+            label="Actual Start"
+            value={fmtActual(row.actualStart)}
+            icon={<ClipboardList size={13} />}
+            color={t.success}
+          />
+          <RefCard
+            label="Actual Stop"
+            value={fmtActual(row.actualStop)}
+            icon={<ClipboardList size={13} />}
+            color={t.success}
+          />
+        </div>
+
+        {/* Duration Comparison */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            {
+              label: "Benchmark",
+              value: fmtHrMin(benchmarkHrs),
+              bg: t.primaryBg,
+              color: t.primary,
+              border: t.primaryBorder,
+            },
+            {
+              label: "Actual",
+              value: fmtHrMin(actualHrs),
+              bg: isAhead ? t.successBg : isOnTime ? t.primaryBg : t.warningBg,
+              color: isAhead ? t.success : isOnTime ? t.primary : t.warning,
+              border: isAhead
+                ? t.successBorder
+                : isOnTime
+                  ? t.primaryBorder
+                  : t.warningBorder,
+            },
+            {
+              label: "Variance",
+              value: `${isAhead || isOnTime ? "" : "+"}${efficiencyPercent}%`,
+              bg: isAhead ? t.successBg : isOnTime ? t.infoBg : t.dangerBg,
+              color: isAhead ? t.success : isOnTime ? t.primary : t.danger,
+              border: isAhead
+                ? t.successBorder
+                : isOnTime
+                  ? t.infoBorder
+                  : t.dangerBorder,
+            },
+          ].map((c, i) => (
+            <div
+              key={i}
+              style={{
+                flex: "1 1 90px",
+                padding: "8px 12px",
+                background: c.bg,
+                border: `1px solid ${c.border}`,
+                borderRadius: 7,
+                textAlign: "center",
+                minWidth: 90,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 9.5,
+                  color: c.color,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.3px",
+                  marginBottom: 2,
+                }}
+              >
+                {c.label}
+              </div>
+              <div
+                style={{
+                  fontSize: 16,
+                  fontWeight: 800,
+                  color: c.color,
+                  fontFamily: "'JetBrains Mono',monospace",
+                }}
+              >
+                {c.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {!readOnly && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 8,
+              padding: "6px 10px",
+              background: t.infoBg,
+              border: `1px solid ${t.infoBorder}`,
+              borderRadius: 6,
+              fontSize: 11,
+              color: t.info,
+              flexWrap: "wrap",
+            }}
+          >
+            <Info size={12} />
+            <span style={{ flex: 1, minWidth: 100 }}>
+              Suggested: <strong>{suggestTimeRating()}/10</strong>
+            </span>
+            <button
+              onClick={() => setTimeRating(suggestTimeRating())}
+              style={{
+                background: t.primary,
+                color: t.textInverse,
+                border: "none",
+                borderRadius: 4,
+                padding: "3px 10px",
+                fontSize: 10,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Apply
+            </button>
+          </div>
+        )}
+
+        <RatingBar
+          value={timeRating}
+          hover={hoverTime}
+          onChange={setTimeRating}
+          onHover={setHoverTime}
+          onLeave={() => setHoverTime(0)}
+          disabled={readOnly || isSubmitting}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: t.textMuted,
+            fontStyle: "italic",
+            marginTop: 6,
+            minHeight: 14,
+          }}
+        >
+          {timeLabels[readOnly ? timeRating : hoverTime || timeRating] ||
+            "Select a rating"}
+        </div>
+        {!readOnly && touched && timeRating === 0 && (
+          <div style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>
+            ⚠ Please rate time efficiency
+          </div>
+        )}
+
+        <CommentField
+          label="Time Efficiency Comments"
+          value={timeComments}
+          onChange={setTimeComments}
+          placeholder="Comments on time management…"
+          readOnly={readOnly}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* ═══ Fulfillment ═══ */}
+      <div
+        style={{
+          border: `1px solid ${t.border}`,
+          borderRadius: 10,
+          padding: isMobile ? 12 : 16,
+          marginBottom: 18,
+          background: t.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: t.violetBg,
+              color: t.violet,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ShieldCheck size={14} />
+          </div>
+          <div>
+            <div
+              style={{ fontWeight: 700, fontSize: 12.5, color: t.textPrimary }}
+            >
+              Level of Fulfillment
+              {!readOnly && (
+                <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+              )}
+            </div>
+            <div style={{ fontSize: 10.5, color: t.textMuted }}>
+              Quality &amp; completeness
+            </div>
+          </div>
+        </div>
+
+        {/* Reject count card */}
+        <div style={{ marginBottom: 12 }}>
+          <div
+            style={{
+              padding: "8px 12px",
+              background: rejectCount === 0 ? t.successBg : t.dangerBg,
+              border: `1px solid ${rejectCount === 0 ? t.successBorder : t.dangerBorder}`,
+              borderRadius: 7,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                background:
+                  rejectCount === 0 ? t.successBgSubtle : t.dangerBgSubtle,
+                color: rejectCount === 0 ? t.success : t.danger,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "'JetBrains Mono',monospace",
+                fontSize: 16,
+                fontWeight: 800,
+                flexShrink: 0,
+              }}
+            >
+              {rejectCount}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 9.5,
+                  color: rejectCount === 0 ? t.success : t.danger,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.3px",
+                }}
+              >
+                Reject / Redo Count
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: rejectCount === 0 ? t.success : t.dangerTextDeep,
+                  fontWeight: 500,
+                }}
+              >
+                {rejectCount === 0
+                  ? "First-time acceptance"
+                  : rejectCount === 1
+                    ? "Required one rework"
+                    : `${rejectCount} reworks needed`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!readOnly && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 8,
+              padding: "6px 10px",
+              background: t.violetBg,
+              border: `1px solid ${t.violetBorder}`,
+              borderRadius: 6,
+              fontSize: 11,
+              color: t.violet,
+              flexWrap: "wrap",
+            }}
+          >
+            <Info size={12} />
+            <span style={{ flex: 1, minWidth: 100 }}>
+              Suggested: <strong>{suggestFulfillmentRating()}/10</strong>
+            </span>
+            <button
+              onClick={() => setFulfillmentRating(suggestFulfillmentRating())}
+              style={{
+                background: t.violet,
+                color: t.textInverse,
+                border: "none",
+                borderRadius: 4,
+                padding: "3px 10px",
+                fontSize: 10,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Apply
+            </button>
+          </div>
+        )}
+
+        <RatingBar
+          value={fulfillmentRating}
+          hover={hoverFulfillment}
+          onChange={setFulfillmentRating}
+          onHover={setHoverFulfillment}
+          onLeave={() => setHoverFulfillment(0)}
+          disabled={readOnly || isSubmitting}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: t.textMuted,
+            fontStyle: "italic",
+            marginTop: 6,
+            minHeight: 14,
+          }}
+        >
+          {fulfillmentLabels[
+            readOnly ? fulfillmentRating : hoverFulfillment || fulfillmentRating
+          ] || "Select a rating"}
+        </div>
+        {!readOnly && touched && fulfillmentRating === 0 && (
+          <div style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>
+            ⚠ Please rate fulfillment
+          </div>
+        )}
+
+        <CommentField
+          label="Fulfillment Comments"
+          value={fulfillmentComments}
+          onChange={setFulfillmentComments}
+          placeholder="Comments on quality, rework…"
+          readOnly={readOnly}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* ═══ Innovation ═══ */}
+      <div
+        style={{
+          border: `1px solid ${t.border}`,
+          borderRadius: 10,
+          padding: isMobile ? 12 : 16,
+          marginBottom: 18,
+          background: t.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: t.warningBg,
+              color: t.warning,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Lightbulb size={14} />
+          </div>
+          <div>
+            <div
+              style={{ fontWeight: 700, fontSize: 12.5, color: t.textPrimary }}
+            >
+              Level of Innovation
+              {!readOnly && (
+                <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+              )}
+            </div>
+            <div style={{ fontSize: 10.5, color: t.textMuted }}>
+              Creative problem-solving
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 12,
+            padding: "6px 10px",
+            background: t.warningBgSubtle,
+            border: `1px solid ${t.warningBorder}`,
+            borderRadius: 6,
+            fontSize: 11,
+            color: t.warning,
+          }}
+        >
+          <Info size={12} />
+          <span>
+            Subjective — rate based on your observation of creative effort
+          </span>
+        </div>
+
+        <RatingBar
+          value={innovationRating}
+          hover={hoverInnovation}
+          onChange={setInnovationRating}
+          onHover={setHoverInnovation}
+          onLeave={() => setHoverInnovation(0)}
+          disabled={readOnly || isSubmitting}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: t.textMuted,
+            fontStyle: "italic",
+            marginTop: 6,
+            minHeight: 14,
+          }}
+        >
+          {innovationLabels[
+            readOnly ? innovationRating : hoverInnovation || innovationRating
+          ] || "Select a rating"}
+        </div>
+        {!readOnly && touched && innovationRating === 0 && (
+          <div style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>
+            ⚠ Please rate innovation
+          </div>
+        )}
+
+        <CommentField
+          label="Innovation Comments"
+          value={innovationComments}
+          onChange={setInnovationComments}
+          placeholder="Creative solutions, novel approaches…"
+          readOnly={readOnly}
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* ═══ Overall Comments ═══ */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            color: t.textPrimary,
+            marginBottom: 6,
+          }}
+        >
+          Overall Feedback
+          {!readOnly && (
+            <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+          )}
+        </label>
+
+        {readOnly ? (
+          <div
+            style={{
+              width: "100%",
+              border: `1px solid ${t.border}`,
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontFamily: "Sora,sans-serif",
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: t.textPrimary,
+              background: t.bgSubtle,
+              minHeight: 60,
+              boxSizing: "border-box",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {overallComments || "No feedback provided."}
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={overallComments}
+              onChange={(e) => setOverallComments(e.target.value)}
+              onBlur={() => setTouched(true)}
+              placeholder="Describe quality, time management, improvements…"
+              disabled={isSubmitting}
+              rows={isMobile ? 5 : 4}
+              style={{
+                width: "100%",
+                border: `1px solid ${touched && overallComments.trim().length < 5 ? t.dangerBorder : t.borderStrong}`,
+                borderRadius: 8,
+                padding: "10px 12px",
+                fontFamily: "Sora,sans-serif",
+                fontSize: isMobile ? 14 : 12.5,
+                outline: "none",
+                boxSizing: "border-box",
+                resize: "vertical",
+                minHeight: isMobile ? 100 : 80,
+                lineHeight: 1.5,
+                background: isSubmitting ? t.bgInputDisabled : t.bgInput,
+                color: t.textPrimary,
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 6,
+                fontSize: 11,
+                color:
+                  touched && overallComments.trim().length < 5
+                    ? t.danger
+                    : t.textFaint,
+              }}
+            >
+              <span>
+                {touched && overallComments.trim().length < 5
+                  ? "⚠ Must be at least 5 characters"
+                  : "Share your assessment"}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color:
+                    overallComments.trim().length > 0
+                      ? t.textSecondary
+                      : t.textDisabled,
+                }}
+              >
+                {overallComments.trim().length} chars
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  /* ─── Footer buttons ─── */
+  const footerButtons = readOnly ? (
+    <button
+      onClick={onClose}
+      style={{
+        ...btnStyle,
+        flex: isMobile ? 1 : "initial",
+        height: isMobile ? 46 : 32,
+        justifyContent: "center",
+        fontSize: isMobile ? 14 : 12,
+        fontWeight: isMobile ? 600 : 500,
+      }}
+    >
+      <X size={13} /> Close
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={onClose}
+        disabled={isSubmitting}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1 : "initial",
+          height: isMobile ? 46 : 32,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 600 : 500,
+          opacity: isSubmitting ? 0.5 : 1,
+          cursor: isSubmitting ? "not-allowed" : "pointer",
+        }}
+      >
+        <X size={13} /> Cancel
+      </button>
+      <button
+        onClick={handleSubmit}
+        disabled={!isValid || isSubmitting}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1.3 : "initial",
+          height: isMobile ? 46 : 32,
+          background: isValid ? t.success : t.bgMuted,
+          color: isValid ? t.textInverse : t.textFaint,
+          borderColor: isValid ? t.success : t.border,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 700 : 600,
+          opacity: isSubmitting ? 0.6 : 1,
+          cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
+        }}
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2
+              size={14}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
+            Submitting...
+          </>
+        ) : (
+          <>
+            <Star size={14} /> Submit &amp; Finish
+          </>
+        )}
+      </button>
+    </>
+  );
+
+  // ══════════════════════════════════════════════════════
+  //   MOBILE — Bottom Sheet
+  // ══════════════════════════════════════════════════════
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={modalTitle}
+        height="full"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Subtitle */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: readOnly ? t.violetBg : t.successBgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: readOnly ? t.violet : t.success,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Star size={14} fill={readOnly ? t.violet : "none"} />
+            <span style={{ fontWeight: 600 }}>
+              {row.task || row.name || row.module || `Row #${row.id}`}
+            </span>
+            {readOnly && (
+              <span
+                style={{
+                  marginLeft: "auto",
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  background: t.violetBg,
+                  color: t.violet,
+                  border: `1px solid ${t.violetBorder}`,
+                  textTransform: "uppercase",
+                }}
+              >
+                Read Only
+              </span>
+            )}
+          </div>
+
+          {/* Body */}
+          <div style={{ flex: 1, overflowY: "auto" }}>{bodyContent}</div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              display: "flex",
+              gap: 8,
+              background: t.bgSubtle,
+            }}
+          >
+            {footerButtons}
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  //   DESKTOP — Existing modal
+  // ══════════════════════════════════════════════════════
   return (
     <div
       onClick={(e) =>
@@ -468,7 +1203,7 @@ export default function FeedbackModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: t.bgOverlay,
         zIndex: 1000,
         display: "flex",
         alignItems: "center",
@@ -478,27 +1213,28 @@ export default function FeedbackModal({
     >
       <div
         style={{
-          background: "#fff",
+          background: t.bgCard,
           borderRadius: 14,
           width: "100%",
           maxWidth: 680,
           maxHeight: "92vh",
           fontFamily: "Sora,sans-serif",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          boxShadow: t.shadowXl,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
+          color: t.textPrimary,
         }}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 12,
             padding: "16px 20px",
-            borderBottom: "1px solid #E2E8F0",
-            background: readOnly ? "#EDE9FE" : "#F0FDF4",
+            borderBottom: `1px solid ${t.border}`,
+            background: readOnly ? t.violetBg : t.successBgSubtle,
             flexShrink: 0,
           }}
         >
@@ -507,8 +1243,8 @@ export default function FeedbackModal({
               width: 40,
               height: 40,
               borderRadius: 10,
-              background: readOnly ? "#DDD6FE" : "#DCFCE7",
-              color: readOnly ? "#7C3AED" : "#15803D",
+              background: readOnly ? t.violetBg : t.successBg,
+              color: readOnly ? t.violet : t.success,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -517,17 +1253,19 @@ export default function FeedbackModal({
             <Star
               size={20}
               strokeWidth={2}
-              fill={readOnly ? "#7C3AED" : "none"}
+              fill={readOnly ? t.violet : "none"}
             />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>
-              {readOnly ? "Task Feedback" : "Rate & Finish Task"}
+            <div
+              style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
+            >
+              {modalTitle}
             </div>
             <div
               style={{
                 fontSize: 11.5,
-                color: "#64748B",
+                color: t.textMuted,
                 marginTop: 2,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -545,9 +1283,9 @@ export default function FeedbackModal({
                 borderRadius: 999,
                 fontSize: 10,
                 fontWeight: 700,
-                background: "#EDE9FE",
-                color: "#7C3AED",
-                border: "1px solid #DDD6FE",
+                background: t.violetBg,
+                color: t.violet,
+                border: `1px solid ${t.violetBorder}`,
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
@@ -563,7 +1301,7 @@ export default function FeedbackModal({
               background: "none",
               border: "none",
               cursor: isSubmitting ? "not-allowed" : "pointer",
-              color: "#94A3B8",
+              color: t.textFaint,
               padding: 4,
               opacity: isSubmitting ? 0.5 : 1,
               display: "flex",
@@ -574,762 +1312,22 @@ export default function FeedbackModal({
           </button>
         </div>
 
-        {/* ── Scrollable Body ── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
-          {/* ═══ SECTION 1: TIME EFFICIENCY ═══ */}
-          <div
-            style={{
-              border: "1px solid #E2E8F0",
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 18,
-              background: "#FAFBFC",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: "#DBEAFE",
-                  color: "#1D4ED8",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Clock size={14} />
-              </div>
-              <div>
-                <div
-                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
-                >
-                  Time Efficiency
-                  {!readOnly && (
-                    <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 10.5, color: "#64748B" }}>
-                  How efficiently was the task completed within the planned
-                  timeframe?
-                </div>
-              </div>
-            </div>
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto" }}>{bodyContent}</div>
 
-            {/* Reference Data Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <RefCard
-                label="Planned Start"
-                value={fmtActual(row.plannedStart)}
-                icon={<CalendarX size={13} />}
-                color="#1D4ED8"
-              />
-              <RefCard
-                label="Planned Stop"
-                value={fmtActual(row.plannedStop)}
-                icon={<CalendarX size={13} />}
-                color="#1D4ED8"
-              />
-              <RefCard
-                label="Actual Start"
-                value={fmtActual(row.actualStart)}
-                icon={<ClipboardList size={13} />}
-                color="#15803D"
-              />
-              <RefCard
-                label="Actual Stop"
-                value={fmtActual(row.actualStop)}
-                icon={<ClipboardList size={13} />}
-                color="#15803D"
-              />
-            </div>
-
-            {/* Duration Comparison */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  background: "#DBEAFE",
-                  border: "1px solid #93C5FD",
-                  borderRadius: 7,
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: "#1D4ED8",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    marginBottom: 2,
-                  }}
-                >
-                  Benchmark Duration
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: "#1E40AF",
-                    fontFamily: "'JetBrains Mono',monospace",
-                  }}
-                >
-                  {fmtHrMin(benchmarkHrs)}
-                </div>
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  background: isAhead
-                    ? "#DCFCE7"
-                    : isOnTime
-                      ? "#DBEAFE"
-                      : "#FEF3C7",
-                  border: `1px solid ${isAhead ? "#86EFAC" : isOnTime ? "#93C5FD" : "#FCD34D"}`,
-                  borderRadius: 7,
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: isAhead
-                      ? "#15803D"
-                      : isOnTime
-                        ? "#1D4ED8"
-                        : "#B45309",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    marginBottom: 2,
-                  }}
-                >
-                  Actual Duration
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: isAhead
-                      ? "#166534"
-                      : isOnTime
-                        ? "#1E40AF"
-                        : "#92400E",
-                    fontFamily: "'JetBrains Mono',monospace",
-                  }}
-                >
-                  {fmtHrMin(actualHrs)}
-                </div>
-              </div>
-              <div
-                style={{
-                  padding: "8px 12px",
-                  background: isAhead
-                    ? "#DCFCE7"
-                    : isOnTime
-                      ? "#F0F9FF"
-                      : "#FEE2E2",
-                  border: `1px solid ${isAhead ? "#86EFAC" : isOnTime ? "#BAE6FD" : "#FCA5A5"}`,
-                  borderRadius: 7,
-                  textAlign: "center",
-                  minWidth: 80,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: "#64748B",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    marginBottom: 2,
-                  }}
-                >
-                  Variance
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: isAhead
-                      ? "#15803D"
-                      : isOnTime
-                        ? "#1D4ED8"
-                        : "#DC2626",
-                    fontFamily: "'JetBrains Mono',monospace",
-                  }}
-                >
-                  {isAhead ? "" : isOnTime ? "" : "+"}
-                  {efficiencyPercent}%
-                </div>
-              </div>
-            </div>
-
-            {!readOnly && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginBottom: 8,
-                  padding: "5px 10px",
-                  background: "#F0F9FF",
-                  border: "1px solid #BAE6FD",
-                  borderRadius: 6,
-                  fontSize: 10.5,
-                  color: "#0369A1",
-                }}
-              >
-                <Info size={12} />
-                <span>
-                  Suggested rating: <strong>{suggestTimeRating()}/10</strong>{" "}
-                  based on{" "}
-                  {efficiencyPercent === 0
-                    ? "on-time delivery"
-                    : isAhead
-                      ? `${Math.abs(efficiencyPercent)}% ahead of schedule`
-                      : `${efficiencyPercent}% over planned time`}
-                </span>
-                <button
-                  onClick={() => setTimeRating(suggestTimeRating())}
-                  style={{
-                    marginLeft: "auto",
-                    background: "#1D4ED8",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "2px 8px",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-
-            <RatingBar
-              value={timeRating}
-              hover={hoverTime}
-              onChange={setTimeRating}
-              onHover={setHoverTime}
-              onLeave={() => setHoverTime(0)}
-              disabled={readOnly || isSubmitting}
-            />
-            <div
-              style={{
-                fontSize: 10.5,
-                color: "#64748B",
-                fontStyle: "italic",
-                marginTop: 6,
-                minHeight: 14,
-              }}
-            >
-              {timeLabels[readOnly ? timeRating : hoverTime || timeRating] ||
-                "Select a rating"}
-            </div>
-            {!readOnly && touched && timeRating === 0 && (
-              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
-                ⚠ Please rate time efficiency
-              </div>
-            )}
-
-            <CommentField
-              label="Time Efficiency Comments"
-              value={timeComments}
-              onChange={setTimeComments}
-              placeholder="Comments on time management, delays, early delivery…"
-              readOnly={readOnly}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* ═══ SECTION 2: LEVEL OF FULFILLMENT ═══ */}
-          <div
-            style={{
-              border: "1px solid #E2E8F0",
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 18,
-              background: "#FAFBFC",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: "#EDE9FE",
-                  color: "#7C3AED",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ShieldCheck size={14} />
-              </div>
-              <div>
-                <div
-                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
-                >
-                  Level of Fulfillment
-                  {!readOnly && (
-                    <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 10.5, color: "#64748B" }}>
-                  Quality of deliverable and completeness of requirements.
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  background: rejectCount === 0 ? "#DCFCE7" : "#FEE2E2",
-                  border: `1px solid ${rejectCount === 0 ? "#86EFAC" : "#FCA5A5"}`,
-                  borderRadius: 7,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    background: rejectCount === 0 ? "#F0FDF4" : "#FEF2F2",
-                    color: rejectCount === 0 ? "#15803D" : "#DC2626",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "'JetBrains Mono',monospace",
-                    fontSize: 16,
-                    fontWeight: 800,
-                    flexShrink: 0,
-                  }}
-                >
-                  {rejectCount}
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: 9.5,
-                      color: rejectCount === 0 ? "#15803D" : "#DC2626",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.3px",
-                    }}
-                  >
-                    Reject / Redo Count
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: rejectCount === 0 ? "#166534" : "#7F1D1D",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {rejectCount === 0
-                      ? "No rejections — first-time acceptance"
-                      : rejectCount === 1
-                        ? "Rejected once — required one rework"
-                        : `Rejected ${rejectCount} times — multiple reworks needed`}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {!readOnly && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginBottom: 8,
-                  padding: "5px 10px",
-                  background: "#F5F3FF",
-                  border: "1px solid #DDD6FE",
-                  borderRadius: 6,
-                  fontSize: 10.5,
-                  color: "#5B21B6",
-                }}
-              >
-                <Info size={12} />
-                <span>
-                  Suggested rating:{" "}
-                  <strong>{suggestFulfillmentRating()}/10</strong> based on{" "}
-                  {rejectCount === 0
-                    ? "zero rejections"
-                    : `${rejectCount} rejection${rejectCount !== 1 ? "s" : ""}`}
-                </span>
-                <button
-                  onClick={() =>
-                    setFulfillmentRating(suggestFulfillmentRating())
-                  }
-                  style={{
-                    marginLeft: "auto",
-                    background: "#7C3AED",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "2px 8px",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-
-            <RatingBar
-              value={fulfillmentRating}
-              hover={hoverFulfillment}
-              onChange={setFulfillmentRating}
-              onHover={setHoverFulfillment}
-              onLeave={() => setHoverFulfillment(0)}
-              disabled={readOnly || isSubmitting}
-            />
-            <div
-              style={{
-                fontSize: 10.5,
-                color: "#64748B",
-                fontStyle: "italic",
-                marginTop: 6,
-                minHeight: 14,
-              }}
-            >
-              {fulfillmentLabels[
-                readOnly
-                  ? fulfillmentRating
-                  : hoverFulfillment || fulfillmentRating
-              ] || "Select a rating"}
-            </div>
-            {!readOnly && touched && fulfillmentRating === 0 && (
-              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
-                ⚠ Please rate level of fulfillment
-              </div>
-            )}
-
-            <CommentField
-              label="Fulfillment Comments"
-              value={fulfillmentComments}
-              onChange={setFulfillmentComments}
-              placeholder="Comments on quality, completeness, rework needed…"
-              readOnly={readOnly}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* ═══ SECTION 3: LEVEL OF INNOVATION ═══ */}
-          <div
-            style={{
-              border: "1px solid #E2E8F0",
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 18,
-              background: "#FAFBFC",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: "#FEF3C7",
-                  color: "#B45309",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Lightbulb size={14} />
-              </div>
-              <div>
-                <div
-                  style={{ fontWeight: 700, fontSize: 12.5, color: "#0F172A" }}
-                >
-                  Level of Innovation
-                  {!readOnly && (
-                    <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 10.5, color: "#64748B" }}>
-                  Creativity, problem-solving, and innovative thinking applied
-                  to the task.
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginBottom: 12,
-                padding: "5px 10px",
-                background: "#FFFBEB",
-                border: "1px solid #FDE68A",
-                borderRadius: 6,
-                fontSize: 10.5,
-                color: "#92400E",
-              }}
-            >
-              <Info size={12} />
-              <span>
-                This is a subjective assessment — rate based on your observation
-                of creative and innovative effort.
-              </span>
-            </div>
-
-            <RatingBar
-              value={innovationRating}
-              hover={hoverInnovation}
-              onChange={setInnovationRating}
-              onHover={setHoverInnovation}
-              onLeave={() => setHoverInnovation(0)}
-              disabled={readOnly || isSubmitting}
-            />
-            <div
-              style={{
-                fontSize: 10.5,
-                color: "#64748B",
-                fontStyle: "italic",
-                marginTop: 6,
-                minHeight: 14,
-              }}
-            >
-              {innovationLabels[
-                readOnly
-                  ? innovationRating
-                  : hoverInnovation || innovationRating
-              ] || "Select a rating"}
-            </div>
-            {!readOnly && touched && innovationRating === 0 && (
-              <div style={{ fontSize: 10.5, color: "#DC2626", marginTop: 4 }}>
-                ⚠ Please rate level of innovation
-              </div>
-            )}
-
-            <CommentField
-              label="Innovation Comments"
-              value={innovationComments}
-              onChange={setInnovationComments}
-              placeholder="Comments on creative solutions, novel approaches, improvements…"
-              readOnly={readOnly}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* ═══ SECTION 4: OVERALL COMMENTS ═══ */}
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: "#0F172A",
-                marginBottom: 6,
-              }}
-            >
-              Overall Feedback
-              {!readOnly && (
-                <span style={{ color: "#DC2626", marginLeft: 4 }}>*</span>
-              )}
-            </label>
-
-            {readOnly ? (
-              <div
-                style={{
-                  width: "100%",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: 8,
-                  padding: "10px 12px",
-                  fontFamily: "Sora,sans-serif",
-                  fontSize: 12.5,
-                  lineHeight: 1.6,
-                  color: "#0F172A",
-                  background: "#F8FAFC",
-                  minHeight: 60,
-                  boxSizing: "border-box",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {overallComments || "No feedback provided."}
-              </div>
-            ) : (
-              <>
-                <textarea
-                  value={overallComments}
-                  onChange={(e) => setOverallComments(e.target.value)}
-                  onBlur={() => setTouched(true)}
-                  placeholder="Describe the quality of work, time management, areas of improvement…"
-                  disabled={isSubmitting}
-                  rows={4}
-                  style={{
-                    width: "100%",
-                    border: `1px solid ${touched && overallComments.trim().length < 5 ? "#FCA5A5" : "#CBD5E1"}`,
-                    borderRadius: 8,
-                    padding: "10px 12px",
-                    fontFamily: "Sora,sans-serif",
-                    fontSize: 12.5,
-                    outline: "none",
-                    boxSizing: "border-box",
-                    resize: "vertical",
-                    minHeight: 80,
-                    lineHeight: 1.5,
-                    background: isSubmitting ? "#F8FAFC" : "#fff",
-                  }}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginTop: 6,
-                    fontSize: 10.5,
-                    color:
-                      touched && overallComments.trim().length < 5
-                        ? "#DC2626"
-                        : "#94A3B8",
-                  }}
-                >
-                  <span>
-                    {touched && overallComments.trim().length < 5
-                      ? "⚠ Feedback must be at least 5 characters"
-                      : "Share your overall assessment"}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      color:
-                        overallComments.trim().length > 0
-                          ? "#475569"
-                          : "#CBD5E1",
-                    }}
-                  >
-                    {overallComments.trim().length} chars
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div
           style={{
             padding: "12px 20px 16px",
-            borderTop: "1px solid #E2E8F0",
+            borderTop: `1px solid ${t.border}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: 8,
-            background: "#FAFBFC",
+            background: t.bgSubtle,
             flexShrink: 0,
           }}
         >
-          {readOnly ? (
-            <button
-              onClick={onClose}
-              style={{
-                ...btnStyle,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <X size={13} /> Close
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={onClose}
-                disabled={isSubmitting}
-                style={{
-                  ...btnStyle,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  opacity: isSubmitting ? 0.5 : 1,
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                }}
-              >
-                <X size={13} /> Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={!isValid || isSubmitting}
-                style={{
-                  ...btnStyle,
-                  background: isValid ? "#15803D" : "#F1F5F9",
-                  color: isValid ? "#fff" : "#94A3B8",
-                  borderColor: isValid ? "#15803D" : "#E2E8F0",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: isSubmitting ? 0.6 : 1,
-                  cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
-                  boxShadow: isValid
-                    ? "0 2px 6px rgba(21,128,61,0.25)"
-                    : "none",
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2
-                      size={14}
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />{" "}
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Star size={14} /> Submit & Finish
-                  </>
-                )}
-              </button>
-            </>
-          )}
+          {footerButtons}
         </div>
       </div>
     </div>
@@ -1337,4 +1335,4 @@ export default function FeedbackModal({
 }
 
 /* ─── Named Exports for Sub-components ─── */
-export { RatingBar, RefCard, CommentField, fmtHrMin, fmtPlanned, fmtActual };
+export { RatingBar, RefCard, CommentField, fmtHrMin, fmtActual };
