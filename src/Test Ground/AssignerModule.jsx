@@ -28,7 +28,8 @@ import { makeBtnStyle } from "./helpers/styles";
 import Toast from "./shared/Toast";
 import DraftProjectsList from "./DraftProjectsList";
 import ProjectEditor from "./ProjectEditor";
-
+import { useResponsive } from "./useResponsive";
+import BottomTabBar from "./shared/BottomTabBar";
 /* ═══════════════════════════════════════════════════════
    Root AssignerModule
    Handles: navigation, data fetching, drafts state
@@ -36,7 +37,16 @@ import ProjectEditor from "./ProjectEditor";
 export default function AssignerModule() {
   const { t } = useTheme();
   const currentUserId = getUserData()?.userDetails?.userId || null;
-
+  // Inside the component
+  const { isMobile, isTablet, isDesktop, width, orientation } = useResponsive();
+  // Temporary debug indicator (remove after testing)
+  console.log("📱 Responsive:", {
+    isMobile,
+    isTablet,
+    isDesktop,
+    width,
+    orientation,
+  });
   // ── Data ──
   const [drafts, setDrafts] = useState([]);
   const [draftsLoading, setDraftsLoading] = useState(true);
@@ -469,179 +479,196 @@ export default function AssignerModule() {
         transition: "background .2s, color .2s",
       }}
     >
-      {/* Top Nav */}
-      <nav
-        style={{
-          height: 48,
-          background: t.navBg,
-          display: "flex",
-          alignItems: "center",
-          padding: "0 20px",
-          gap: 10,
-          boxShadow: t.shadowMd,
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div
+      {/* ── Top Nav (Desktop/Tablet) ── */}
+      {!isMobile && (
+        <nav
           style={{
-            marginLeft: "auto",
+            height: 48,
+            background: t.navBg,
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            padding: "0 20px",
+            gap: 10,
+            boxShadow: t.shadowMd,
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
           }}
         >
           <div
             style={{
+              marginLeft: "auto",
               display: "flex",
-              background: t.navTabBg,
-              borderRadius: 8,
-              overflow: "hidden",
-              border: `1px solid ${t.navTabBorder}`,
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            <button
-              onClick={handleBackToList}
+            <div
               style={{
-                padding: "6px 14px",
-                background: tab === "drafts" ? t.navActive : "transparent",
-                color: tab === "drafts" ? t.textInverse : t.navMuted,
-                fontSize: 11.5,
-                fontWeight: 600,
-                border: "none",
-                cursor: "pointer",
                 display: "flex",
-                alignItems: "center",
-                gap: 5,
+                background: t.navTabBg,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: `1px solid ${t.navTabBorder}`,
               }}
             >
-              <FolderOpen size={14} /> Projects
-              {draftsUnpublishedCount > 0 && (
-                <span
-                  style={{
-                    background:
-                      tab === "drafts"
-                        ? "rgba(255,255,255,0.25)"
-                        : t.borderStrong,
-                    color: t.textInverse,
-                    borderRadius: 999,
-                    padding: "1px 6px",
-                    fontSize: 9,
-                    fontWeight: 700,
-                  }}
-                >
-                  {draftsUnpublishedCount}
-                </span>
-              )}
-            </button>
+              <button
+                onClick={handleBackToList}
+                style={{
+                  padding: "6px 14px",
+                  background: tab === "drafts" ? t.navActive : "transparent",
+                  color: tab === "drafts" ? t.textInverse : t.navMuted,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <FolderOpen size={14} /> Projects
+                {draftsUnpublishedCount > 0 && (
+                  <span
+                    style={{
+                      background:
+                        tab === "drafts"
+                          ? "rgba(255,255,255,0.25)"
+                          : t.borderStrong,
+                      color: t.textInverse,
+                      borderRadius: 999,
+                      padding: "1px 6px",
+                      fontSize: 9,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {draftsUnpublishedCount}
+                  </span>
+                )}
+              </button>
 
-            <button
-              onClick={() => {
-                if (!currentDraft) {
-                  showToast(
-                    "info",
-                    "No project open",
-                    "Open a draft or create a new one.",
-                  );
-                  return;
-                }
-                setTab("editor");
-              }}
-              disabled={!currentDraft}
-              style={{
-                padding: "6px 14px",
-                background: tab === "editor" ? t.navActive : "transparent",
-                color:
-                  tab === "editor"
-                    ? t.textInverse
-                    : currentDraft
-                      ? t.navMuted
-                      : t.textDisabled,
-                fontSize: 11.5,
-                fontWeight: 600,
-                border: "none",
-                cursor: currentDraft ? "pointer" : "not-allowed",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                opacity: !currentDraft ? 0.5 : 1,
-              }}
-            >
-              <Settings size={14} /> Assigner
-            </button>
+              <button
+                onClick={() => {
+                  if (!currentDraft) {
+                    showToast(
+                      "info",
+                      "No project open",
+                      "Open a draft or create a new one.",
+                    );
+                    return;
+                  }
+                  setTab("editor");
+                }}
+                disabled={!currentDraft}
+                style={{
+                  padding: "6px 14px",
+                  background: tab === "editor" ? t.navActive : "transparent",
+                  color:
+                    tab === "editor"
+                      ? t.textInverse
+                      : currentDraft
+                        ? t.navMuted
+                        : t.textDisabled,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: currentDraft ? "pointer" : "not-allowed",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  opacity: !currentDraft ? 0.5 : 1,
+                }}
+              >
+                <Settings size={14} /> Assigner
+              </button>
 
-            <button
-              onClick={() => setTab("gantt")}
-              style={{
-                padding: "6px 14px",
-                background: tab === "gantt" ? t.navActive : "transparent",
-                color: tab === "gantt" ? t.textInverse : t.navMuted,
-                fontSize: 11.5,
-                fontWeight: 600,
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <Calendar size={14} /> Gantt
-            </button>
+              <button
+                onClick={() => setTab("gantt")}
+                style={{
+                  padding: "6px 14px",
+                  background: tab === "gantt" ? t.navActive : "transparent",
+                  color: tab === "gantt" ? t.textInverse : t.navMuted,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <Calendar size={14} /> Gantt
+              </button>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Content */}
-      {tab === "drafts" ? (
-        <DraftProjectsList
-          drafts={drafts}
-          loading={draftsLoading}
-          error={draftsError}
-          deletingProjectId={deletingProjectId}
-          groupLabels={groupLabels}
-          currentUserId={currentUserId}
-          onOpen={handleOpenDraft}
-          onDelete={handleDeleteDraft}
-          onNew={handleNewProject}
-          onRefresh={() => fetchProjects(dateRange.fromDate, dateRange.toDate)}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
-      ) : tab === "gantt" ? (
-        <div
-          style={{
-            padding: "16px 20px 32px",
-            maxWidth: 1600,
-            margin: "0 auto",
-          }}
-        >
-          <GanttView
-            projects={drafts.filter((d) => d.status !== "draft")}
-            showGlobalFilters={true}
-            onOpenComments={handleGanttOpenComments}
-            onFeedback={handleGanttViewFeedback}
+      {/* ── Content ── */}
+      <div
+        style={{
+          // Add bottom padding on mobile to account for tab bar
+          paddingBottom: isMobile
+            ? "calc(60px + env(safe-area-inset-bottom, 0))"
+            : 0,
+          minHeight: isMobile
+            ? "calc(100dvh - 48px - 60px - env(safe-area-inset-bottom, 0))"
+            : "auto",
+        }}
+      >
+        {tab === "drafts" ? (
+          <DraftProjectsList
+            drafts={drafts}
+            loading={draftsLoading}
+            error={draftsError}
+            deletingProjectId={deletingProjectId}
+            groupLabels={groupLabels}
+            currentUserId={currentUserId}
+            onOpen={handleOpenDraft}
+            onDelete={handleDeleteDraft}
+            onNew={handleNewProject}
+            onRefresh={() =>
+              fetchProjects(dateRange.fromDate, dateRange.toDate)
+            }
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
           />
-        </div>
-      ) : currentDraft ? (
-        <ProjectEditor
-          key={currentDraft.id}
-          draft={currentDraft}
-          groupLabels={groupLabels}
-          groupResources={groupResources}
-          fetchResourcesForGroups={fetchResourcesForGroups}
-          onSaveDraft={handleSaveDraft}
-          onPublish={handlePublish}
-          onBack={handleBackToList}
-          showToast={showToast}
-          currentUserId={currentUserId}
-        />
-      ) : (
-        <div style={{ padding: 40, textAlign: "center", color: t.textFaint }}>
-          No project selected.{" "}
-          <button onClick={handleBackToList}>Back to drafts</button>
-        </div>
-      )}
+        ) : tab === "gantt" ? (
+          <div
+            style={{
+              padding: isMobile ? "12px 12px 32px" : "16px 20px 32px",
+              maxWidth: 1600,
+              margin: "0 auto",
+            }}
+          >
+            <GanttView
+              projects={drafts.filter((d) => d.status !== "draft")}
+              showGlobalFilters={true}
+              onOpenComments={handleGanttOpenComments}
+              onFeedback={handleGanttViewFeedback}
+            />
+          </div>
+        ) : currentDraft ? (
+          <ProjectEditor
+            key={currentDraft.id}
+            draft={currentDraft}
+            groupLabels={groupLabels}
+            groupResources={groupResources}
+            fetchResourcesForGroups={fetchResourcesForGroups}
+            onSaveDraft={handleSaveDraft}
+            onPublish={handlePublish}
+            onBack={handleBackToList}
+            showToast={showToast}
+            currentUserId={currentUserId}
+          />
+        ) : (
+          <div style={{ padding: 40, textAlign: "center", color: t.textFaint }}>
+            No project selected.{" "}
+            <button onClick={handleBackToList}>Back to drafts</button>
+          </div>
+        )}
+      </div>
 
       {/* Gantt-level modals */}
       {ganttCommentOpen && ganttNewComment && (
@@ -663,7 +690,47 @@ export default function AssignerModule() {
           isSubmitting={false}
         />
       )}
-
+      {/* ── Mobile Bottom Tab Bar ── */}
+      {isMobile && (
+        <BottomTabBar
+          activeKey={tab}
+          onTabChange={(key) => {
+            if (key === "editor" && !currentDraft) {
+              showToast(
+                "info",
+                "No project open",
+                "Open a draft or create a new one.",
+              );
+              return;
+            }
+            if (key === "drafts") {
+              handleBackToList();
+            } else {
+              setTab(key);
+            }
+          }}
+          tabs={[
+            {
+              key: "drafts",
+              label: "Projects",
+              icon: <FolderOpen />,
+              badge: draftsUnpublishedCount,
+            },
+            {
+              key: "editor",
+              label: "Editor",
+              icon: <Settings />,
+              disabled: !currentDraft,
+              disabledReason: "Open a project first",
+            },
+            {
+              key: "gantt",
+              label: "Gantt",
+              icon: <Calendar />,
+            },
+          ]}
+        />
+      )}
       {/* Global Toast */}
       <Toast
         toasts={toasts}

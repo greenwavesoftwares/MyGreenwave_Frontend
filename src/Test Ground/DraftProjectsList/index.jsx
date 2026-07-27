@@ -37,7 +37,8 @@ import {
 import { useTheme } from "../useTheme";
 import { getGroupName } from "../helpers/resources";
 import { makeBtnStyle } from "../helpers/styles";
-
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
   alignItems: "center",
@@ -70,7 +71,8 @@ export default function DraftProjectsList({
     ...makeBtnStyle(t),
     height: 32,
   };
-
+  const { isMobile } = useResponsive();
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -276,8 +278,10 @@ export default function DraftProjectsList({
     <div
       style={{ padding: "16px 20px 32px", maxWidth: 1600, margin: "0 auto" }}
     >
-      {/* Status Filter Tabs */}
-      {!loading && !error && drafts.length > 0 && (
+      {/* ══════════════════════════════════════════════════════ */}
+      {/*   DESKTOP / TABLET: Status filter tabs                 */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {!isMobile && !loading && !error && drafts.length > 0 && (
         <div
           style={{
             display: "flex",
@@ -377,319 +381,554 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* Header + Date + Search */}
-      <div
-        style={{
-          background: t.bgCard,
-          border: `1px solid ${t.border}`,
-          borderRadius: 12,
-          padding: "18px 20px",
-          marginBottom: 16,
-          boxShadow: t.shadowSm,
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          flexWrap: "wrap",
-        }}
-      >
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
-            background: t.warningBg,
-            color: t.warning,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Briefcase size={16} />
-        </div>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: t.textPrimary }}>
-            Projects
-          </div>
-          <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
-            {drafts.length === 0
-              ? "No projects found in this date range."
-              : `${drafts.length} project${drafts.length !== 1 ? "s" : ""} `}
-            <span style={{ color: t.textFaint }}>
-              ({formatDateShort(dateRange.fromDate)} →{" "}
-              {formatDateShort(dateRange.toDate)})
-            </span>
-          </div>
-        </div>
-
-        {/* Date range tabs */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {/*   MOBILE: Status filter tabs (horizontal scroll)       */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {isMobile && !loading && !error && drafts.length > 0 && (
         <div
           style={{
             display: "flex",
-            gap: 2,
-            background: t.bgMuted,
-            border: `1px solid ${t.border}`,
-            borderRadius: 8,
-            padding: 3,
-            position: "relative",
+            gap: 6,
+            marginBottom: 12,
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+            paddingBottom: 4,
+            // Hide scrollbar
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
-          <button
-            onClick={handleCurrentMonth}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "none",
-              background:
-                dateMode === "currentMonth" ? t.primary : "transparent",
-              color: dateMode === "currentMonth" ? t.textInverse : t.textMuted,
-              fontSize: 11.5,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "Sora,sans-serif",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <Calendar size={12} /> Current Month
-          </button>
-          <button
-            onClick={handleLast3Months}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "none",
-              background:
-                dateMode === "last3Months" ? t.primary : "transparent",
-              color: dateMode === "last3Months" ? t.textInverse : t.textMuted,
-              fontSize: 11.5,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "Sora,sans-serif",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <Clock size={12} /> Last 3 Months
-          </button>
-          <button
-            ref={customToggleBtnRef}
-            onClick={handleCustomToggle}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "none",
-              background: dateMode === "custom" ? t.primary : "transparent",
-              color: dateMode === "custom" ? t.textInverse : t.textMuted,
-              fontSize: 11.5,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "Sora,sans-serif",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <Filter size={12} /> Custom
-          </button>
-
-          {customOpen && (
-            <div
-              ref={customPickerRef}
-              style={{
-                position: "absolute",
-                top: "calc(100% + 6px)",
-                right: 0,
-                background: t.bgCard,
-                border: `1px solid ${t.borderStrong}`,
-                borderRadius: 10,
-                padding: 12,
-                boxShadow: t.shadowLg,
-                zIndex: 100,
-                display: "flex",
-                alignItems: "flex-end",
-                gap: 8,
-                fontFamily: "Sora,sans-serif",
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: t.textMuted,
-                    marginBottom: 4,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  From
-                </label>
-                <input
-                  type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  max={customTo || undefined}
-                  style={{
-                    height: 32,
-                    border: `1px solid ${t.borderStrong}`,
-                    borderRadius: 6,
-                    padding: "0 8px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 11.5,
-                    outline: "none",
-                    color: t.textPrimary,
-                    background: t.bgInput,
-                  }}
-                />
-              </div>
-
-              <span style={{ color: t.textFaint, paddingBottom: 8 }}>→</span>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: t.textMuted,
-                    marginBottom: 4,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  To
-                </label>
-                <input
-                  type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  min={customFrom || undefined}
-                  style={{
-                    height: 32,
-                    border: `1px solid ${t.borderStrong}`,
-                    borderRadius: 6,
-                    padding: "0 8px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 11.5,
-                    outline: "none",
-                    color: t.textPrimary,
-                    background: t.bgInput,
-                  }}
-                />
-              </div>
-
+          {[
+            {
+              key: "all",
+              label: "All",
+              icon: <Briefcase size={12} />,
+              color: t.textSecondary,
+            },
+            {
+              key: "draft",
+              label: "Drafts",
+              icon: <FileText size={11} />,
+              color: t.warning,
+            },
+            {
+              key: "published",
+              label: "Published",
+              icon: <Rocket size={11} />,
+              color: t.success,
+            },
+            {
+              key: "closed",
+              label: "Closed",
+              icon: <Lock size={11} />,
+              color: t.textSecondary,
+            },
+            {
+              key: "coAssigned",
+              label: "Co-Assigned",
+              icon: <Handshake size={12} />,
+              color: t.success,
+            },
+            {
+              key: "sharedWithMe",
+              label: "Shared",
+              icon: <Users size={12} />,
+              color: t.primary,
+            },
+          ].map((tab) => {
+            const active = statusFilter === tab.key;
+            const count = statusCounts[tab.key];
+            return (
               <button
-                onClick={handleCustomApply}
-                disabled={!customFrom || !customTo}
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
                 style={{
-                  height: 32,
-                  padding: "0 14px",
-                  borderRadius: 6,
-                  border: "none",
-                  background:
-                    !customFrom || !customTo ? t.borderStrong : t.primary,
-                  color: t.textInverse,
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  cursor: !customFrom || !customTo ? "not-allowed" : "pointer",
-                  fontFamily: "Sora,sans-serif",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 5,
+                  padding: "8px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${active ? t.primary : t.border}`,
+                  background: active ? t.primary : t.bgCard,
+                  color: active ? t.textInverse : tab.color,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "Sora,sans-serif",
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                  height: 34,
                 }}
               >
-                <Check size={12} /> Apply
+                {tab.icon}
+                <span>{tab.label}</span>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: 18,
+                    height: 18,
+                    padding: "0 5px",
+                    borderRadius: 999,
+                    background: active ? "rgba(255,255,255,0.25)" : t.bgMuted,
+                    color: active ? t.textInverse : t.textMuted,
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {count}
+                </span>
               </button>
+            );
+          })}
+        </div>
+      )}
 
-              <button
-                onClick={handleCustomCancel}
+      {/* ══════════════════════════════════════════════════════ */}
+      {/*   DESKTOP / TABLET: Full header row                    */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {!isMobile && (
+        <div
+          style={{
+            background: t.bgCard,
+            border: `1px solid ${t.border}`,
+            borderRadius: 12,
+            padding: "18px 20px",
+            marginBottom: 16,
+            boxShadow: t.shadowSm,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: t.warningBg,
+              color: t.warning,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Briefcase size={16} />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div
+              style={{ fontWeight: 700, fontSize: 16, color: t.textPrimary }}
+            >
+              Projects
+            </div>
+            <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>
+              {drafts.length === 0
+                ? "No projects found in this date range."
+                : `${drafts.length} project${drafts.length !== 1 ? "s" : ""} `}
+              <span style={{ color: t.textFaint }}>
+                ({formatDateShort(dateRange.fromDate)} →{" "}
+                {formatDateShort(dateRange.toDate)})
+              </span>
+            </div>
+          </div>
+
+          {/* ── Desktop Date range tabs ── */}
+          <div
+            style={{
+              display: "flex",
+              gap: 2,
+              background: t.bgMuted,
+              border: `1px solid ${t.border}`,
+              borderRadius: 8,
+              padding: 3,
+              position: "relative",
+            }}
+          >
+            <button
+              onClick={handleCurrentMonth}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 6,
+                border: "none",
+                background:
+                  dateMode === "currentMonth" ? t.primary : "transparent",
+                color:
+                  dateMode === "currentMonth" ? t.textInverse : t.textMuted,
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "Sora,sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <Calendar size={12} /> Current Month
+            </button>
+            <button
+              onClick={handleLast3Months}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 6,
+                border: "none",
+                background:
+                  dateMode === "last3Months" ? t.primary : "transparent",
+                color: dateMode === "last3Months" ? t.textInverse : t.textMuted,
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "Sora,sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <Clock size={12} /> Last 3 Months
+            </button>
+            <button
+              ref={customToggleBtnRef}
+              onClick={handleCustomToggle}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 6,
+                border: "none",
+                background: dateMode === "custom" ? t.primary : "transparent",
+                color: dateMode === "custom" ? t.textInverse : t.textMuted,
+                fontSize: 11.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "Sora,sans-serif",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <Filter size={12} /> Custom
+            </button>
+
+            {customOpen && (
+              <div
+                ref={customPickerRef}
                 style={{
-                  height: 32,
-                  padding: "0 10px",
-                  borderRadius: 6,
-                  border: `1px solid ${t.borderStrong}`,
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
                   background: t.bgCard,
-                  color: t.textMuted,
-                  fontSize: 11.5,
-                  fontWeight: 500,
-                  cursor: "pointer",
+                  border: `1px solid ${t.borderStrong}`,
+                  borderRadius: 10,
+                  padding: 12,
+                  boxShadow: t.shadowLg,
+                  zIndex: 100,
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: 8,
                   fontFamily: "Sora,sans-serif",
                 }}
               >
-                <X size={12} />
-              </button>
-            </div>
-          )}
-        </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: t.textMuted,
+                      marginBottom: 4,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    From
+                  </label>
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    max={customTo || undefined}
+                    style={{
+                      height: 32,
+                      border: `1px solid ${t.borderStrong}`,
+                      borderRadius: 6,
+                      padding: "0 8px",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 11.5,
+                      outline: "none",
+                      color: t.textPrimary,
+                      background: t.bgInput,
+                    }}
+                  />
+                </div>
+                <span style={{ color: t.textFaint, paddingBottom: 8 }}>→</span>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: t.textMuted,
+                      marginBottom: 4,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    To
+                  </label>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    min={customFrom || undefined}
+                    style={{
+                      height: 32,
+                      border: `1px solid ${t.borderStrong}`,
+                      borderRadius: 6,
+                      padding: "0 8px",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 11.5,
+                      outline: "none",
+                      color: t.textPrimary,
+                      background: t.bgInput,
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={handleCustomApply}
+                  disabled={!customFrom || !customTo}
+                  style={{
+                    height: 32,
+                    padding: "0 14px",
+                    borderRadius: 6,
+                    border: "none",
+                    background:
+                      !customFrom || !customTo ? t.borderStrong : t.primary,
+                    color: t.textInverse,
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    cursor:
+                      !customFrom || !customTo ? "not-allowed" : "pointer",
+                    fontFamily: "Sora,sans-serif",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  <Check size={12} /> Apply
+                </button>
+                <button
+                  onClick={handleCustomCancel}
+                  style={{
+                    height: 32,
+                    padding: "0 10px",
+                    borderRadius: 6,
+                    border: `1px solid ${t.borderStrong}`,
+                    background: t.bgCard,
+                    color: t.textMuted,
+                    fontSize: 11.5,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    fontFamily: "Sora,sans-serif",
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
 
-        {/* Search */}
-        <div style={{ position: "relative", width: 240 }}>
-          <Search
-            size={14}
-            style={{
-              position: "absolute",
-              left: 10,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: t.textFaint,
-            }}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by project, PO, site…"
-            style={{
-              height: 36,
-              width: "100%",
-              border: `1px solid ${t.borderStrong}`,
-              borderRadius: 8,
-              padding: "0 12px 0 32px",
-              fontFamily: "Sora,sans-serif",
-              fontSize: 12.5,
-              outline: "none",
-              boxSizing: "border-box",
-              background: t.bgInput,
-              color: t.textPrimary,
-            }}
-          />
-        </div>
-
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          title="Refresh"
-          style={{ ...themedBtn, height: 36, opacity: loading ? 0.6 : 1 }}
-        >
-          {loading ? (
-            <Loader2
+          {/* Desktop Search */}
+          <div style={{ position: "relative", width: 240 }}>
+            <Search
               size={14}
-              style={{ animation: "spin 1s linear infinite" }}
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: t.textFaint,
+              }}
             />
-          ) : (
-            <RefreshCw size={14} />
-          )}{" "}
-          Refresh
-        </button>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by project, PO, site…"
+              style={{
+                height: 36,
+                width: "100%",
+                border: `1px solid ${t.borderStrong}`,
+                borderRadius: 8,
+                padding: "0 12px 0 32px",
+                fontFamily: "Sora,sans-serif",
+                fontSize: 12.5,
+                outline: "none",
+                boxSizing: "border-box",
+                background: t.bgInput,
+                color: t.textPrimary,
+              }}
+            />
+          </div>
 
-        <button
-          onClick={onNew}
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            title="Refresh"
+            style={{ ...themedBtn, height: 36, opacity: loading ? 0.6 : 1 }}
+          >
+            {loading ? (
+              <Loader2
+                size={14}
+                style={{ animation: "spin 1s linear infinite" }}
+              />
+            ) : (
+              <RefreshCw size={14} />
+            )}{" "}
+            Refresh
+          </button>
+
+          <button
+            onClick={onNew}
+            style={{
+              ...themedBtn,
+              height: 36,
+              background: t.primary,
+              color: t.textInverse,
+              borderColor: t.primary,
+              fontWeight: 600,
+            }}
+          >
+            <Plus size={20} />
+            New Project
+          </button>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════ */}
+      {/*   MOBILE: Compact header row                           */}
+      {/* ══════════════════════════════════════════════════════ */}
+      {isMobile && (
+        <div
           style={{
-            ...themedBtn,
-            height: 36,
-            background: t.primary,
-            color: t.textInverse,
-            borderColor: t.primary,
-            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
           }}
         >
-          <Plus size={20} />
-          New Project
-        </button>
-      </div>
+          {/* Search (flex-1) */}
+          <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+            <Search
+              size={14}
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: t.textFaint,
+              }}
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              style={{
+                height: 42,
+                width: "100%",
+                border: `1px solid ${t.borderStrong}`,
+                borderRadius: 10,
+                padding: "0 12px 0 34px",
+                fontFamily: "Sora,sans-serif",
+                fontSize: 14,
+                outline: "none",
+                boxSizing: "border-box",
+                background: t.bgInput,
+                color: t.textPrimary,
+              }}
+            />
+          </div>
 
+          {/* Filter button (opens bottom sheet) */}
+          <button
+            onClick={() => setMobileFiltersOpen(true)}
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 10,
+              border: `1px solid ${t.borderStrong}`,
+              background: t.bgCard,
+              color: t.textSecondary,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Filter size={18} />
+          </button>
+
+          {/* Refresh button */}
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 10,
+              border: `1px solid ${t.borderStrong}`,
+              background: t.bgCard,
+              color: t.textSecondary,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            {loading ? (
+              <Loader2
+                size={18}
+                style={{ animation: "spin 1s linear infinite" }}
+              />
+            ) : (
+              <RefreshCw size={18} />
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Mobile: date range display */}
+      {isMobile && (
+        <div
+          onClick={() => setMobileFiltersOpen(true)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 12px",
+            background: t.bgSubtle,
+            border: `1px solid ${t.border}`,
+            borderRadius: 8,
+            marginBottom: 12,
+            cursor: "pointer",
+            fontSize: 12,
+            color: t.textSecondary,
+          }}
+        >
+          <Calendar size={14} color={t.primary} />
+          <span style={{ fontWeight: 600 }}>
+            {dateMode === "currentMonth" && "Current Month"}
+            {dateMode === "last3Months" && "Last 3 Months"}
+            {dateMode === "custom" && "Custom range"}
+          </span>
+          <span
+            style={{ color: t.textFaint, marginLeft: "auto", fontSize: 11 }}
+          >
+            {formatDateShort(dateRange.fromDate)} →{" "}
+            {formatDateShort(dateRange.toDate)}
+          </span>
+        </div>
+      )}
       {/* Loading */}
       {loading && (
         <div
@@ -883,8 +1122,10 @@ export default function DraftProjectsList({
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                gap: 14,
+                gridTemplateColumns: isMobile
+                  ? "1fr" // single column on mobile
+                  : "repeat(auto-fill, minmax(320px, 1fr))",
+                gap: isMobile ? 10 : 14,
               }}
             >
               {filtered.map((d) => {
@@ -1418,7 +1659,35 @@ export default function DraftProjectsList({
           )}
         </>
       )}
-
+      {/* ── Mobile FAB: New Project ── */}
+      {isMobile && (
+        <button
+          onClick={onNew}
+          title="Create new project"
+          style={{
+            position: "fixed",
+            bottom: "calc(76px + env(safe-area-inset-bottom, 0))", // above bottom tab bar
+            right: 16,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            border: "none",
+            background: t.primary,
+            color: t.textInverse,
+            boxShadow: "0 6px 20px rgba(29,78,216,0.4)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 80,
+            transition: "transform .15s",
+          }}
+          onTouchStart={(e) => (e.currentTarget.style.transform = "scale(0.9)")}
+          onTouchEnd={(e) => (e.currentTarget.style.transform = "scale(1)")}
+        >
+          <Plus size={26} />
+        </button>
+      )}
       {/* Delete confirmation */}
       {confirmDelete && (
         <div
@@ -1519,6 +1788,216 @@ export default function DraftProjectsList({
             </div>
           </div>
         </div>
+      )}
+      {/* ── Mobile Filters Bottom Sheet ── */}
+      {isMobile && (
+        <BottomSheet
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          title="Filters & Date Range"
+          height="auto"
+        >
+          <div
+            style={{
+              padding: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
+            {/* Date Range Section */}
+            <div>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: t.textMuted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  marginBottom: 8,
+                }}
+              >
+                Date Range
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  {
+                    key: "currentMonth",
+                    label: "Current Month",
+                    icon: <Calendar size={14} />,
+                    handler: handleCurrentMonth,
+                  },
+                  {
+                    key: "last3Months",
+                    label: "Last 3 Months",
+                    icon: <Clock size={14} />,
+                    handler: handleLast3Months,
+                  },
+                ].map((opt) => {
+                  const active = dateMode === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => {
+                        opt.handler();
+                        setMobileFiltersOpen(false);
+                      }}
+                      style={{
+                        height: 44,
+                        padding: "0 14px",
+                        borderRadius: 10,
+                        border: `1.5px solid ${active ? t.primary : t.border}`,
+                        background: active ? t.primaryBgSubtle : t.bgCard,
+                        color: active ? t.primary : t.textPrimary,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        fontFamily: "Sora,sans-serif",
+                        fontSize: 13,
+                        fontWeight: active ? 700 : 500,
+                      }}
+                    >
+                      {opt.icon}
+                      <span>{opt.label}</span>
+                      {active && (
+                        <Check size={16} style={{ marginLeft: "auto" }} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom range */}
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: 12,
+                  border: `1.5px solid ${dateMode === "custom" ? t.primary : t.border}`,
+                  background:
+                    dateMode === "custom" ? t.primaryBgSubtle : t.bgSubtle,
+                  borderRadius: 10,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: dateMode === "custom" ? t.primary : t.textSecondary,
+                    marginBottom: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Filter size={13} />
+                  Custom Range
+                </div>
+
+                <div
+                  style={{ display: "flex", gap: 8, alignItems: "flex-end" }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: t.textMuted,
+                        marginBottom: 4,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      From
+                    </label>
+                    <input
+                      type="date"
+                      value={customFrom}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                      max={customTo || undefined}
+                      style={{
+                        width: "100%",
+                        height: 42,
+                        border: `1px solid ${t.borderStrong}`,
+                        borderRadius: 8,
+                        padding: "0 10px",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 13,
+                        outline: "none",
+                        color: t.textPrimary,
+                        background: t.bgInput,
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: t.textMuted,
+                        marginBottom: 4,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      To
+                    </label>
+                    <input
+                      type="date"
+                      value={customTo}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                      min={customFrom || undefined}
+                      style={{
+                        width: "100%",
+                        height: 42,
+                        border: `1px solid ${t.borderStrong}`,
+                        borderRadius: 8,
+                        padding: "0 10px",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 13,
+                        outline: "none",
+                        color: t.textPrimary,
+                        background: t.bgInput,
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    handleCustomApply();
+                    setMobileFiltersOpen(false);
+                  }}
+                  disabled={!customFrom || !customTo}
+                  style={{
+                    width: "100%",
+                    height: 42,
+                    marginTop: 10,
+                    borderRadius: 8,
+                    border: "none",
+                    background:
+                      !customFrom || !customTo ? t.bgMuted : t.primary,
+                    color:
+                      !customFrom || !customTo ? t.textFaint : t.textInverse,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor:
+                      !customFrom || !customTo ? "not-allowed" : "pointer",
+                    fontFamily: "Sora,sans-serif",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Check size={16} /> Apply Custom Range
+                </button>
+              </div>
+            </div>
+          </div>
+        </BottomSheet>
       )}
     </div>
   );

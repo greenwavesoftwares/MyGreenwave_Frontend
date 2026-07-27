@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { X, Plus, Info, Check, Loader2 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeBtnStyle } from "../helpers/styles";
-
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 /**
  * Preview modal shown after an Excel upload when extra (non-hardcoded)
  * columns are detected. User can select which to import as custom columns.
@@ -16,6 +17,7 @@ export default function ExtraColumnsPreviewModal({
   onConfirm,
   isProcessing = false,
 }) {
+  const { isMobile } = useResponsive();
   const { t } = useTheme();
   const btnStyle = makeBtnStyle(t);
 
@@ -51,7 +53,291 @@ export default function ExtraColumnsPreviewModal({
   const newCount = extras.filter(
     (e) => !e.willMerge && selected.has(e.name),
   ).length;
+  // ── Mobile: bottom sheet ──
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title="Import Extra Columns"
+        height="90%"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Subtitle */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: t.bgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: t.textMuted,
+            }}
+          >
+            Found <strong>{extras.length}</strong> extra column
+            {extras.length !== 1 ? "s" : ""} in your file
+          </div>
 
+          {/* Body */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px" }}>
+            {/* Select all row */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 10,
+                marginBottom: 10,
+                borderBottom: `1px dashed ${t.border}`,
+              }}
+            >
+              <button
+                onClick={toggleAll}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: t.primary,
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: 0,
+                  fontFamily: "Sora, sans-serif",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                {selected.size === extras.length ? (
+                  <>
+                    <X size={12} /> Deselect All
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} /> Select All
+                  </>
+                )}
+              </button>
+              <span style={{ fontSize: 12, color: t.textMuted }}>
+                {selected.size} of {extras.length} selected
+              </span>
+            </div>
+
+            {/* Column list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {extras.map((extra) => {
+                const isSelected = selected.has(extra.name);
+                const isMerge = extra.willMerge;
+                return (
+                  <label
+                    key={extra.name}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: 12,
+                      background: isSelected
+                        ? isMerge
+                          ? t.warningBgSubtle
+                          : t.primaryBgSubtle
+                        : t.bgSubtle,
+                      border: `1.5px solid ${
+                        isSelected
+                          ? isMerge
+                            ? t.warningBorder
+                            : t.primaryBorder
+                          : t.border
+                      }`,
+                      borderRadius: 10,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleColumn(extra.name)}
+                      style={{ display: "none" }}
+                    />
+                    <span
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 6,
+                        border: `2px solid ${
+                          isSelected
+                            ? isMerge
+                              ? t.warning
+                              : t.primary
+                            : t.borderStrong
+                        }`,
+                        background: isSelected
+                          ? isMerge
+                            ? t.warning
+                            : t.primary
+                          : t.bgCard,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        color: t.textInverse,
+                      }}
+                    >
+                      {isSelected && <Check size={15} strokeWidth={3} />}
+                    </span>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: t.textPrimary,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: 200,
+                          }}
+                        >
+                          {extra.name}
+                        </span>
+                        {isMerge ? (
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              background: t.warningBg,
+                              color: t.warning,
+                              border: `1px solid ${t.warningBorder}`,
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Merge
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              background: t.successBg,
+                              color: t.success,
+                              border: `1px solid ${t.successBorder}`,
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            New
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: t.textMuted,
+                          marginTop: 4,
+                        }}
+                      >
+                        {isMerge
+                          ? "Will merge into existing column"
+                          : "Will create new custom column"}
+                        {" · "}
+                        <span
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            color:
+                              extra.filledCount > 0 ? t.success : t.textFaint,
+                          }}
+                        >
+                          {extra.filledCount}/{extra.totalRows} rows
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              display: "flex",
+              gap: 8,
+              background: t.bgSubtle,
+            }}
+          >
+            <button
+              onClick={onClose}
+              disabled={isProcessing}
+              style={{
+                flex: 1,
+                height: 46,
+                border: `1px solid ${t.borderStrong}`,
+                background: t.bgCard,
+                color: t.textSecondary,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <X size={14} /> Skip
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={isProcessing}
+              style={{
+                flex: 1.5,
+                height: 46,
+                border: "none",
+                background: t.primary,
+                color: t.textInverse,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2
+                    size={14}
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                  Importing…
+                </>
+              ) : (
+                <>
+                  <Check size={14} />
+                  Import {selected.size}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
   return (
     <div
       onClick={(e) =>

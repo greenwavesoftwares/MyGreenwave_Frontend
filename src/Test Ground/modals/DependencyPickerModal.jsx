@@ -22,7 +22,8 @@ import {
   getDependencyReadiness,
 } from "../helpers/dependencies";
 import StatusBadge from "../shared/StatusBadge";
-
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 /**
  * DependencyPickerModal
  * Props:
@@ -39,6 +40,7 @@ export default function DependencyPickerModal({
   onSave,
   isSaving = false,
 }) {
+  const { isMobile } = useResponsive();
   const { t } = useTheme();
   const btnStyle = makeBtnStyle(t);
   const inputStyle = makeInputStyle(t);
@@ -367,7 +369,346 @@ export default function DependencyPickerModal({
       </div>
     );
   };
+  // ── Mobile: bottom sheet ──
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={`🔗 Dependencies`}
+        height="full"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Subtitle bar */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: t.bgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: t.textMuted,
+            }}
+          >
+            For:{" "}
+            <strong style={{ color: t.textPrimary }}>
+              {row.task || row.module || `Row #${row.id}`}
+            </strong>
+          </div>
 
+          {/* Summary bar */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: t.bgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                color: t.textPrimary,
+              }}
+            >
+              <Info size={13} />
+              {selectedIds.size === 0
+                ? "No dependencies"
+                : `${selectedIds.size} selected`}
+            </div>
+            {selectedIds.size > 0 && (
+              <>
+                <span
+                  style={{
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: t.successBg,
+                    color: t.success,
+                    border: `1px solid ${t.successBorder}`,
+                  }}
+                >
+                  ✓ {readiness.finished} done
+                </span>
+                {readiness.pending > 0 && (
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: t.warningBg,
+                      color: t.warning,
+                      border: `1px solid ${t.warningBorder}`,
+                    }}
+                  >
+                    {readiness.pending} pending
+                  </span>
+                )}
+                {conflictSummary.conflicts > 0 && (
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: t.dangerBg,
+                      color: t.danger,
+                      border: `1px solid ${t.dangerBorder}`,
+                    }}
+                  >
+                    ⚠ {conflictSummary.conflicts} conflict
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Search + module filter */}
+          <div
+            style={{
+              padding: "10px 16px",
+              display: "flex",
+              gap: 8,
+              borderBottom: `1px solid ${t.border}`,
+              background: t.bgCard,
+              flexShrink: 0,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
+              <Search
+                size={14}
+                color={t.textFaint}
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                }}
+              />
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search…"
+                style={{
+                  ...inputStyle,
+                  height: 40,
+                  paddingLeft: 34,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            {modules.length > 0 && (
+              <select
+                value={moduleFilter}
+                onChange={(e) => setModuleFilter(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  height: 40,
+                  width: 140,
+                  cursor: "pointer",
+                  fontSize: 13,
+                }}
+              >
+                <option value="">All modules</option>
+                {modules.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* List */}
+          <div style={{ flex: 1, overflowY: "auto", background: t.bgCard }}>
+            {selectedRows.length > 0 && (
+              <>
+                <div
+                  style={{
+                    padding: "8px 16px",
+                    background: t.primaryBgSubtle,
+                    borderBottom: `1px solid ${t.primaryBorder}`,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: t.primary,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 5,
+                  }}
+                >
+                  ✓ Selected ({selectedRows.length})
+                </div>
+                {selectedRows.map((r) => renderRow(r, true))}
+              </>
+            )}
+
+            {Object.keys(grouped).length === 0 && selectedRows.length === 0 ? (
+              <div
+                style={{
+                  padding: 40,
+                  textAlign: "center",
+                  color: t.textFaint,
+                  fontSize: 13,
+                }}
+              >
+                <Search
+                  size={28}
+                  strokeWidth={1.5}
+                  style={{ marginBottom: 8, opacity: 0.5 }}
+                />
+                <div>
+                  {search || moduleFilter
+                    ? "No tasks match your filters"
+                    : "No available tasks"}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    padding: "8px 16px",
+                    background: t.bgSubtle,
+                    borderBottom: `1px solid ${t.border}`,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: t.textMuted,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 5,
+                  }}
+                >
+                  Available
+                </div>
+                {Object.entries(grouped).map(([mod, tasks]) => {
+                  const isCollapsed = collapsedModules.has(mod);
+                  return (
+                    <div key={mod}>
+                      <div
+                        onClick={() => toggleModuleCollapse(mod)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "8px 16px",
+                          background: t.bgSubtle,
+                          borderBottom: `1px solid ${t.borderSubtle}`,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: t.textSecondary,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {isCollapsed ? (
+                          <ChevronRight size={13} />
+                        ) : (
+                          <ChevronDown size={13} />
+                        )}
+                        <span>{mod}</span>
+                        <span
+                          style={{
+                            color: t.textFaint,
+                            fontWeight: 500,
+                            marginLeft: "auto",
+                            fontSize: 11,
+                          }}
+                        >
+                          {tasks.length}
+                        </span>
+                      </div>
+                      {!isCollapsed && tasks.map((r) => renderRow(r, false))}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              display: "flex",
+              gap: 8,
+              background: t.bgSubtle,
+            }}
+          >
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              style={{
+                flex: 1,
+                height: 46,
+                border: `1px solid ${t.borderStrong}`,
+                background: t.bgCard,
+                color: t.textSecondary,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              <X size={14} /> Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              style={{
+                flex: 1.2,
+                height: 46,
+                border: "none",
+                background: hasChanges && !isSaving ? t.primary : t.bgMuted,
+                color: hasChanges && !isSaving ? t.textInverse : t.textFaint,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: hasChanges && !isSaving ? "pointer" : "not-allowed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2
+                    size={14}
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Check size={14} /> Save
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
   return (
     <div
       onClick={(e) => !isSaving && e.target === e.currentTarget && onClose()}

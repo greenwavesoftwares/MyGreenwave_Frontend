@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { X, Calendar, Check } from "lucide-react";
 import { useTheme } from "../useTheme";
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "./BottomSheet";
 import { WORK_START_HR, WORK_END_HR } from "../helpers/constants";
 import { parseISODateTime, isoDateTime } from "../helpers/dateUtils";
 import { leaveOnDay } from "../helpers/workHours";
 import { makeNavBtn, makeTimeSelect, makePickerBtn } from "../helpers/styles";
 import TimePickerSection from "./TimePickerSection";
 
-/**
- * Full working-day date + time picker.
- * - Blocks weekends, past dates and leave days
- * - Portal-rendered; positioned relative to `anchorRef`
- * - Closes on outside click, scroll, resize
- */
 export default function WorkingDatePicker({
   value,
   onChange,
@@ -22,6 +19,7 @@ export default function WorkingDatePicker({
   anchorRef,
 }) {
   const { t } = useTheme();
+  const { isMobile } = useResponsive();
 
   const initial = value
     ? parseISODateTime(value)
@@ -36,12 +34,12 @@ export default function WorkingDatePicker({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const popupRef = useRef();
 
-  // Position popup based on anchor rect
+  // Position (desktop only)
   useEffect(() => {
-    if (!anchorRef?.current) return;
+    if (isMobile || !anchorRef?.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
     const popupWidth = 280;
-    const popupHeight = 380;
+    const popupHeight = 420;
 
     let top = rect.bottom + window.scrollY + 4;
     let left = rect.left + window.scrollX;
@@ -53,33 +51,37 @@ export default function WorkingDatePicker({
       left = rect.right + window.scrollX - popupWidth;
     }
     setPosition({ top, left });
-  }, [anchorRef]);
+  }, [anchorRef, isMobile]);
 
-  // Close on scroll
+  // Close on scroll (desktop only)
   useEffect(() => {
+    if (isMobile) return;
     const handler = () => onClose();
     window.addEventListener("scroll", handler, true);
     return () => window.removeEventListener("scroll", handler, true);
-  }, [onClose]);
+  }, [onClose, isMobile]);
 
-  // Click outside
+  // Click outside (desktop only)
   useEffect(() => {
+    if (isMobile) return;
     const handler = (e) => {
       if (popupRef.current && popupRef.current.contains(e.target)) return;
       if (anchorRef?.current && anchorRef.current.contains(e.target)) return;
       onClose();
     };
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 50);
+    const timer = setTimeout(
+      () => document.addEventListener("mousedown", handler),
+      50,
+    );
     return () => {
       clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
     };
-  }, [onClose, anchorRef]);
+  }, [onClose, anchorRef, isMobile]);
 
-  // Reposition on scroll/resize
+  // Reposition (desktop only)
   useEffect(() => {
+    if (isMobile) return;
     const reposition = () => {
       if (!anchorRef?.current) return;
       const rect = anchorRef.current.getBoundingClientRect();
@@ -94,7 +96,7 @@ export default function WorkingDatePicker({
       window.removeEventListener("scroll", reposition, true);
       window.removeEventListener("resize", reposition);
     };
-  }, [anchorRef]);
+  }, [anchorRef, isMobile]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -156,24 +158,10 @@ export default function WorkingDatePicker({
   const timeSelect = makeTimeSelect(t);
   const pickerBtn = makePickerBtn(t);
 
-  const popup = (
-    <div
-      ref={popupRef}
-      style={{
-        position: "absolute",
-        top: position.top,
-        left: position.left,
-        zIndex: 99999,
-        background: t.bgCard,
-        border: `1px solid ${t.borderStrong}`,
-        borderRadius: 10,
-        boxShadow: t.shadowLg,
-        padding: 12,
-        width: 280,
-        fontFamily: "Sora,sans-serif",
-      }}
-    >
-      {/* ── Month + Year nav ── */}
+  /* ─── Shared calendar body ─── */
+  const calendarBody = (
+    <>
+      {/* Month + year nav */}
       <div
         style={{
           display: "flex",
@@ -191,9 +179,10 @@ export default function WorkingDatePicker({
             setViewDate(new Date(year - 1, month, 1));
           }}
           disabled={year - 1 < today.getFullYear()}
-          title="Previous year"
           style={{
             ...navBtn,
+            width: isMobile ? 34 : 26,
+            height: isMobile ? 34 : 26,
             opacity: year - 1 < today.getFullYear() ? 0.3 : 1,
             cursor: year - 1 < today.getFullYear() ? "not-allowed" : "pointer",
           }}
@@ -209,9 +198,10 @@ export default function WorkingDatePicker({
             setViewDate(new Date(year, month - 1, 1));
           }}
           disabled={year === today.getFullYear() && month <= today.getMonth()}
-          title="Previous month"
           style={{
             ...navBtn,
+            width: isMobile ? 34 : 26,
+            height: isMobile ? 34 : 26,
             opacity:
               year === today.getFullYear() && month <= today.getMonth()
                 ? 0.3
@@ -226,12 +216,7 @@ export default function WorkingDatePicker({
         </button>
 
         <div
-          style={{
-            display: "flex",
-            gap: 4,
-            flex: 1,
-            justifyContent: "center",
-          }}
+          style={{ display: "flex", gap: 4, flex: 1, justifyContent: "center" }}
         >
           <select
             value={month}
@@ -240,10 +225,10 @@ export default function WorkingDatePicker({
             }
             style={{
               ...timeSelect,
-              fontSize: 12,
+              fontSize: isMobile ? 14 : 12,
               fontWeight: 700,
-              height: 28,
-              padding: "0 6px",
+              height: isMobile ? 36 : 28,
+              padding: "0 8px",
             }}
           >
             {[
@@ -269,7 +254,6 @@ export default function WorkingDatePicker({
               );
             })}
           </select>
-
           <select
             value={year}
             onChange={(e) =>
@@ -277,10 +261,10 @@ export default function WorkingDatePicker({
             }
             style={{
               ...timeSelect,
-              fontSize: 12,
+              fontSize: isMobile ? 14 : 12,
               fontWeight: 700,
-              height: 28,
-              padding: "0 6px",
+              height: isMobile ? 36 : 28,
+              padding: "0 8px",
             }}
           >
             {Array.from({ length: 11 }, (_, i) => today.getFullYear() + i).map(
@@ -300,8 +284,11 @@ export default function WorkingDatePicker({
             e.stopPropagation();
             setViewDate(new Date(year, month + 1, 1));
           }}
-          title="Next month"
-          style={navBtn}
+          style={{
+            ...navBtn,
+            width: isMobile ? 34 : 26,
+            height: isMobile ? 34 : 26,
+          }}
         >
           ›
         </button>
@@ -312,24 +299,55 @@ export default function WorkingDatePicker({
             e.stopPropagation();
             setViewDate(new Date(year + 1, month, 1));
           }}
-          title="Next year"
-          style={navBtn}
+          style={{
+            ...navBtn,
+            width: isMobile ? 34 : 26,
+            height: isMobile ? 34 : 26,
+          }}
         >
           »
         </button>
       </div>
 
-      {/* ── Days grid ── */}
+      {/* Weekday headers */}
+      {isMobile && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+            gap: 2,
+            marginBottom: 4,
+          }}
+        >
+          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+            <div
+              key={i}
+              style={{
+                textAlign: "center",
+                fontSize: 10,
+                fontWeight: 700,
+                color: t.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                paddingBottom: 4,
+              }}
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Days grid */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(7, 1fr)",
-          gap: 2,
+          gap: isMobile ? 4 : 2,
         }}
       >
         {cells.map((d, i) => {
           if (!d) return <div key={i} />;
-
           const day = d.getDay();
           const isWknd = day === 0 || day === 6;
           const onLeave = leaveOnDay(resourceUserId, d, groupResources);
@@ -393,11 +411,12 @@ export default function WorkingDatePicker({
               }
               style={{
                 aspectRatio: "1",
+                minHeight: isMobile ? 40 : 32,
                 border,
                 background: bg,
                 color,
-                borderRadius: 6,
-                fontSize: 11.5,
+                borderRadius: isMobile ? 8 : 6,
+                fontSize: isMobile ? 14 : 11.5,
                 fontWeight: selected || isToday ? 700 : 500,
                 cursor,
                 fontFamily: "Sora,sans-serif",
@@ -405,6 +424,7 @@ export default function WorkingDatePicker({
                 opacity: disabled ? 0.6 : 1,
                 textDecoration: isPast && !selected ? "line-through" : "none",
                 position: "relative",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               {d.getDate()}
@@ -427,22 +447,23 @@ export default function WorkingDatePicker({
         })}
       </div>
 
-      {/* ── Legend ── */}
+      {/* Legend */}
       <div
         style={{
           marginTop: 10,
           display: "flex",
           gap: 8,
-          fontSize: 9.5,
+          fontSize: isMobile ? 10.5 : 9.5,
           color: t.textMuted,
           flexWrap: "wrap",
+          justifyContent: isMobile ? "center" : "flex-start",
         }}
       >
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <span
             style={{
-              width: 9,
-              height: 9,
+              width: 10,
+              height: 10,
               borderRadius: 2,
               background: t.bgSubtle,
               border: `1px solid ${t.borderSubtle}`,
@@ -453,8 +474,8 @@ export default function WorkingDatePicker({
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <span
             style={{
-              width: 9,
-              height: 9,
+              width: 10,
+              height: 10,
               borderRadius: 2,
               background: t.dangerBgSubtle,
               border: `1px solid ${t.dangerBorder}`,
@@ -465,8 +486,8 @@ export default function WorkingDatePicker({
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <span
             style={{
-              width: 9,
-              height: 9,
+              width: 10,
+              height: 10,
               borderRadius: 2,
               background: t.warningBgSubtle,
               border: `1px solid ${t.warningBorder}`,
@@ -477,8 +498,8 @@ export default function WorkingDatePicker({
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <span
             style={{
-              width: 9,
-              height: 9,
+              width: 10,
+              height: 10,
               borderRadius: 2,
               background: t.primary,
             }}
@@ -487,7 +508,7 @@ export default function WorkingDatePicker({
         </span>
       </div>
 
-      {/* ── Time picker ── */}
+      {/* Time picker */}
       <TimePickerSection
         selectedDate={selectedDate}
         today={today}
@@ -496,8 +517,102 @@ export default function WorkingDatePicker({
         minute={minute}
         setMinute={setMinute}
       />
+    </>
+  );
 
-      {/* ── Actions ── */}
+  // ══════════════════════════════════════════════════════
+  //   MOBILE — Bottom Sheet
+  // ══════════════════════════════════════════════════════
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title="Pick Date & Time"
+        height="auto"
+      >
+        <div style={{ padding: "16px 16px 8px" }}>{calendarBody}</div>
+
+        {/* Sticky footer */}
+        <div
+          style={{
+            padding: 12,
+            borderTop: `1px solid ${t.border}`,
+            background: t.bgSubtle,
+            display: "flex",
+            gap: 8,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              height: 46,
+              border: `1px solid ${t.borderStrong}`,
+              background: t.bgCard,
+              color: t.textSecondary,
+              borderRadius: 10,
+              fontFamily: "Sora,sans-serif",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            <X size={14} /> Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            style={{
+              flex: 1.2,
+              height: 46,
+              border: "none",
+              background: t.primary,
+              color: t.textInverse,
+              borderRadius: 10,
+              fontFamily: "Sora,sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            <Check size={14} /> Confirm
+          </button>
+        </div>
+      </BottomSheet>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  //   DESKTOP — Popup Portal
+  // ══════════════════════════════════════════════════════
+  const popup = (
+    <div
+      ref={popupRef}
+      style={{
+        position: "absolute",
+        top: position.top,
+        left: position.left,
+        zIndex: 99999,
+        background: t.bgCard,
+        border: `1px solid ${t.borderStrong}`,
+        borderRadius: 10,
+        boxShadow: t.shadowLg,
+        padding: 12,
+        width: 280,
+        fontFamily: "Sora,sans-serif",
+      }}
+    >
+      {calendarBody}
+
+      {/* Actions */}
       <div
         style={{
           marginTop: 10,

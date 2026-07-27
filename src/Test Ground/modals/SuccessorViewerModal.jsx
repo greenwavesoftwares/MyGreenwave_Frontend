@@ -5,7 +5,8 @@ import { makeBtnStyle } from "../helpers/styles";
 import { fmtDisplay } from "../helpers/dateUtils";
 import { getSuccessors } from "../helpers/dependencies";
 import StatusBadge from "../shared/StatusBadge";
-
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 /**
  * Read-only viewer showing which rows depend on this row.
  * Click a successor row → jump to its dependency editor.
@@ -16,11 +17,185 @@ export default function SuccessorViewerModal({
   onClose,
   onOpenDependencies,
 }) {
+  const { isMobile } = useResponsive();
   const { t } = useTheme();
   const btnStyle = makeBtnStyle(t);
 
   const successors = getSuccessors(row.id, rows);
+  // ── Mobile: bottom sheet ──
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={`🔒 Blocks ${successors.length} task${successors.length !== 1 ? "s" : ""}`}
+        height="90%"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Subtitle */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: t.bgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: t.textMuted,
+            }}
+          >
+            This task:{" "}
+            <strong style={{ color: t.textPrimary }}>
+              {row.task || row.module || `Row #${row.id}`}
+            </strong>
+          </div>
 
+          {/* Info */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: t.infoBg,
+              borderBottom: `1px solid ${t.infoBorder}`,
+              fontSize: 12,
+              color: t.info,
+              display: "flex",
+              gap: 8,
+              lineHeight: 1.5,
+            }}
+          >
+            <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>
+              These tasks depend on this one — they can't start until it's
+              finished. Tap any to view its dependencies.
+            </span>
+          </div>
+
+          {/* List */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {successors.length === 0 ? (
+              <div
+                style={{ padding: 40, textAlign: "center", color: t.textFaint }}
+              >
+                <Lock
+                  size={28}
+                  strokeWidth={1.5}
+                  style={{ marginBottom: 8, opacity: 0.5 }}
+                />
+                <div>No tasks depend on this one.</div>
+              </div>
+            ) : (
+              successors.map((s) => (
+                <div
+                  key={s.id}
+                  onClick={() => onOpenDependencies(s)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 16px",
+                    borderBottom: `1px solid ${t.borderSubtle}`,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      background: t.warningBg,
+                      color: t.warning,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Link2 size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 13.5,
+                        color: t.textPrimary,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {s.task || "(untitled)"}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: t.textMuted,
+                        marginTop: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          padding: "1px 6px",
+                          background: t.bgMuted,
+                          borderRadius: 3,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {s.module || "— no module —"}
+                      </span>
+                      {s.plannedStart && (
+                        <span
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                        >
+                          {fmtDisplay(s.plannedStart)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <StatusBadge status={s.status} />
+                  <ArrowRight size={14} color={t.textFaint} />
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              background: t.bgSubtle,
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                width: "100%",
+                height: 46,
+                border: `1px solid ${t.borderStrong}`,
+                background: t.bgCard,
+                color: t.textSecondary,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <X size={14} /> Close
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
   return (
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}

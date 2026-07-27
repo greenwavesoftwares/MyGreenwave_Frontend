@@ -9,6 +9,8 @@ import {
   Trash2,
   Link2, // ← NEW: for 🔗 predecessor
   Lock, // ← NEW: for 🔒 successor
+  Pin, // ← NEW
+  PinOff,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeInputStyle, makeIconBtn } from "../helpers/styles";
@@ -60,6 +62,7 @@ const ActivityRow = React.memo(function ActivityRow({
   onUpdateCustomValue,
   onOpenDependencies, // ← NEW: opens picker modal
   onViewSuccessors, // ← NEW: opens successors view
+  onToggleAnchor,
 }) {
   const { t } = useTheme();
   const inputStyle = makeInputStyle(t);
@@ -345,6 +348,7 @@ const ActivityRow = React.memo(function ActivityRow({
             <SearchableDropdown
               value={row.resource || ""}
               onChange={(val) => handleField("resource", val)}
+              title="Select Resource"
               disabled={!resources.length || isLocked}
               placeholder={
                 isLocked
@@ -445,6 +449,7 @@ const ActivityRow = React.memo(function ActivityRow({
       {/* ─── Planned Start ─── */}
       <td style={{ ...tdStyle, width: 180 }}>
         {hasChildren ? (
+          // Parent row — show aggregated start (read-only)
           !row.resource ? (
             <span
               style={{ fontSize: 11, color: t.textFaint, fontStyle: "italic" }}
@@ -480,144 +485,209 @@ const ActivityRow = React.memo(function ActivityRow({
           )
         ) : row.resource ? (
           (() => {
-            const isAnchor = !!row._isAnchor;
-            const isAutoChained = !!row._autoChained;
-            const isAutoLocked = autoCalculate && isAutoChained;
+            const isAutoLocked = !!row._autoChained;
             const canPickDate = !isLocked && !isAutoLocked;
 
-            if (isAutoLocked) {
-              return (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    fontSize: 11,
-                    fontFamily: "'JetBrains Mono',monospace",
-                    color: t.textSecondary,
-                    opacity: 0.9,
-                  }}
-                >
-                  {startDisplay || (
-                    <span style={{ color: t.textFaint, fontStyle: "italic" }}>
-                      Waiting for previous task…
-                    </span>
-                  )}
-                  {startDisplay && (
-                    <span
-                      title="Auto-calculated from resource chain"
-                      style={{
-                        background: t.infoBg,
-                        color: t.info,
-                        border: `1px solid ${t.infoBorder}`,
-                        borderRadius: 3,
-                        padding: "1px 5px",
-                        fontSize: 9,
-                        fontWeight: 600,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 2,
-                      }}
-                    >
-                      ⚡ AUTO
-                    </span>
-                  )}
-                </span>
-              );
-            }
-
-            if (canPickDate) {
-              return (
-                <>
-                  {isPastStart && draft.status === "draft" && (
-                    <span
-                      style={{
-                        marginLeft: 5,
-                        background: t.dangerBgSubtle,
-                        color: t.danger,
-                        border: `1px solid ${t.dangerBorder}`,
-                        borderRadius: 3,
-                        padding: "1px 5px",
-                        fontSize: 9,
-                        fontWeight: 700,
-                        marginBottom: 3,
-                        display: "inline-block",
-                      }}
-                    >
-                      ⚠ PAST
-                    </span>
-                  )}
-                  <button
-                    ref={dateBtnRef}
-                    onClick={() => setPickerOpen(true)}
+            return (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  flexWrap: "wrap",
+                }}
+              >
+                {/* ── Auto-chained: read-only ── */}
+                {isAutoLocked ? (
+                  <span
                     style={{
-                      ...inputStyle,
-                      height: 28,
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono',monospace",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      display: "flex",
+                      display: "inline-flex",
                       alignItems: "center",
                       gap: 5,
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      color: t.textSecondary,
+                      opacity: 0.9,
                     }}
                   >
-                    <span style={{ fontSize: 12 }}>
-                      <Calendar size={12} />
-                    </span>
-                    <span style={{ flex: 1 }}>
-                      {startDisplay || (
-                        <span style={{ color: t.textFaint }}>Pick date…</span>
-                      )}
-                    </span>
-                    {false && isAnchor && autoCalculate && (
+                    {startDisplay || (
+                      <span style={{ color: t.textFaint, fontStyle: "italic" }}>
+                        Waiting…
+                      </span>
+                    )}
+                    {startDisplay && (
                       <span
-                        title="Anchor row — first task for this resource"
+                        title="Auto-calculated"
                         style={{
-                          background: t.successBg,
-                          color: t.success,
-                          border: `1px solid ${t.successBorder}`,
+                          background: t.infoBg,
+                          color: t.info,
+                          border: `1px solid ${t.infoBorder}`,
+                          borderRadius: 3,
+                          padding: "1px 5px",
+                          fontSize: 9,
+                          fontWeight: 600,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
+                      >
+                        ⚡ AUTO
+                      </span>
+                    )}
+                  </span>
+                ) : canPickDate ? (
+                  // ── Editable date picker ──
+                  <>
+                    {isPastStart && draft.status === "draft" && (
+                      <span
+                        style={{
+                          background: t.dangerBgSubtle,
+                          color: t.danger,
+                          border: `1px solid ${t.dangerBorder}`,
                           borderRadius: 3,
                           padding: "1px 5px",
                           fontSize: 9,
                           fontWeight: 700,
-                          letterSpacing: "0.3px",
+                          display: "inline-block",
+                          marginBottom: 3,
                         }}
                       >
-                        ⚓ ANCHOR
+                        ⚠ PAST
                       </span>
                     )}
-                  </button>
-                  {pickerOpen && (
-                    <WorkingDatePicker
-                      value={row.plannedStart}
-                      resourceUserId={row.resource}
-                      groupResources={groupResources}
-                      anchorRef={dateBtnRef}
-                      onChange={(val) => handleField("plannedStart", val)}
-                      onClose={() => setPickerOpen(false)}
-                    />
-                  )}
-                </>
-              );
-            }
+                    <button
+                      ref={dateBtnRef}
+                      onClick={() => setPickerOpen(true)}
+                      style={{
+                        ...inputStyle,
+                        height: 28,
+                        fontSize: 11,
+                        fontFamily: "'JetBrains Mono',monospace",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        flex: 1,
+                      }}
+                    >
+                      <Calendar size={12} />
+                      <span style={{ flex: 1 }}>
+                        {startDisplay || (
+                          <span style={{ color: t.textFaint }}>Pick date…</span>
+                        )}
+                      </span>
+                    </button>
+                    {pickerOpen && (
+                      <WorkingDatePicker
+                        value={row.plannedStart}
+                        resourceUserId={row.resource}
+                        groupResources={groupResources}
+                        anchorRef={dateBtnRef}
+                        onChange={(val) => handleField("plannedStart", val)}
+                        onClose={() => setPickerOpen(false)}
+                      />
+                    )}
+                  </>
+                ) : (
+                  // ── Locked: read-only ──
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      color: t.textSecondary,
+                      opacity: 0.9,
+                    }}
+                  >
+                    {startDisplay || "—"}
+                  </span>
+                )}
 
-            return (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: "'JetBrains Mono',monospace",
-                  color: t.textSecondary,
-                  opacity: 0.9,
-                }}
-                title={
-                  isLockedByParent
-                    ? "Locked — parent task is not pending"
-                    : "Locked — task not pending"
-                }
-              >
-                {startDisplay || "—"}
-              </span>
+                {/* ── Anchor toggle badge ── */}
+                {/* {!isAutoLocked && ( */}
+                {/* ── Anchor toggle switch ── */}
+                {/* <div
+                  onClick={() => !isLocked && onToggleAnchor(row)}
+                  title={
+                    isLocked
+                      ? "Locked — cannot set anchor"
+                      : row.isAnchor
+                        ? "Anchor ON — click to remove"
+                        : "Set as anchor (auto-chain from here)"
+                  }
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    cursor: isLocked ? "not-allowed" : "pointer",
+                    opacity: isLocked ? 0.4 : 1,
+                    userSelect: "none",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontSize: 11 }}>⚓</span>
+                  <span
+                    style={{
+                      position: "relative",
+                      display: "inline-block",
+                      width: 26,
+                      height: 14,
+                      background: row.isAnchor ? t.success : t.borderStrong,
+                      borderRadius: 999,
+                      transition: "background .2s",
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        left: row.isAnchor ? 14 : 2,
+                        width: 10,
+                        height: 10,
+                        background: "#fff",
+                        borderRadius: "50%",
+                        transition: "left .2s",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                      }}
+                    />
+                  </span>
+                </div> */}
+                {/* ── Anchor toggle button ── */}
+                <button
+                  onClick={() => !isLocked && onToggleAnchor(row)}
+                  disabled={isLocked}
+                  title={
+                    isLocked
+                      ? "Locked — cannot set anchor"
+                      : row.isAnchor
+                        ? "Anchor ON — click to remove"
+                        : "Set as anchor (auto-chain from here)"
+                  }
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 22,
+                    height: 22,
+                    borderRadius: 5,
+                    border: `1px solid ${row.isAnchor ? t.successBorder : t.border}`,
+                    background: row.isAnchor ? t.successBg : "transparent",
+                    color: row.isAnchor ? t.success : t.textFaint,
+                    cursor: isLocked ? "not-allowed" : "pointer",
+                    opacity: isLocked ? 0.4 : 1,
+                    flexShrink: 0,
+                    transition: "all .15s",
+                    padding: 0,
+                  }}
+                >
+                  {row.isAnchor ? (
+                    <Pin size={12} fill="currentColor" />
+                  ) : (
+                    <PinOff size={12} />
+                  )}
+                </button>
+                {/* )} */}
+              </div>
             );
           })()
         ) : (
@@ -764,7 +834,7 @@ const ActivityRow = React.memo(function ActivityRow({
           )}
 
           {/* ─── NEW: 🔗 Dependencies (predecessors) ─── */}
-          {onOpenDependencies && (
+          {false && onOpenDependencies && (
             <button
               onClick={() => !isLocked && onOpenDependencies(row)}
               title={

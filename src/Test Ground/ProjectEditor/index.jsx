@@ -38,6 +38,7 @@ import {
   ClipboardList,
   XCircle,
   Users,
+  Filter,
 } from "lucide-react";
 
 import { useTheme } from "../useTheme";
@@ -72,7 +73,7 @@ import {
 import {
   flattenOrdered,
   recomputeChains,
-  recomputeAutoChains,
+  recomputeAnchorChains,
 } from "../helpers/chains";
 import { runValidations } from "../helpers/validation";
 import {
@@ -121,6 +122,11 @@ import {
 
 // ── Dependency modal ──
 import DependencyPickerModal from "../modals/DependencyPickerModal";
+
+import { useResponsive } from "../useResponsive";
+import ActivityCard from "./ActivityCard";
+import { List, LayoutGrid } from "lucide-react";
+import MobileFiltersSheet from "./MobileFiltersSheet";
 /* ═══════════════════════════════════════════════════════
    ProjectEditor
    ═══════════════════════════════════════════════════════ */
@@ -135,12 +141,16 @@ export default function ProjectEditor({
   showToast,
   currentUserId,
 }) {
+  const { isMobile, isTablet } = useResponsive();
+  const [mobileTableMode, setMobileTableMode] = useState("cards"); // "cards" | "table"
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const { t } = useTheme();
   const labelStyle = makeLabelStyle(t);
   const inputStyle = makeInputStyle(t);
   const btnStyle = makeBtnStyle(t);
 
   // ─── Access control ───
+
   const projectAccess = useMemo(
     () => computeProjectAccess(draft, currentUserId),
     [draft, currentUserId],
@@ -383,27 +393,15 @@ export default function ProjectEditor({
   // ═══════════════════════════════════════════════════════
   const recomputeRows = useCallback(
     (rowsToProcess) => {
-      if (autoCalculate) {
-        const { rows: computed, warnings } = recomputeAutoChains(
-          rowsToProcess,
-          groupResources,
-        );
-        if (warnings.length > 0) {
-          const resourceNames = warnings.map((w) => {
-            const res = getResourceByUserId(w.userId, groups, groupResources);
-            return res?.name || w.userId;
-          });
-          showToast(
-            "warning",
-            "Missing anchor start dates",
-            `Please set the first planned start for: ${resourceNames.join(", ")}`,
-          );
-        }
-        return computed;
+      // Check if ANY row has isAnchor = true
+      const hasAnchors = rowsToProcess.some((r) => r.isAnchor);
+      if (hasAnchors) {
+        return recomputeAnchorChains(rowsToProcess, groupResources);
       }
+      // Fallback: manual mode (just computes plannedStop)
       return recomputeChains(rowsToProcess, groupResources);
     },
-    [autoCalculate, groupResources, groups, showToast],
+    [groupResources],
   );
 
   useEffect(() => {
@@ -730,7 +728,8 @@ export default function ProjectEditor({
         status: "Pending",
         comments: [],
         customValues: {},
-        dependsOn: [], // ← NEW
+        dependsOn: [],
+        isAnchor: false, // ← NEW
       };
       customColumns.forEach((col) => {
         newRow.customValues[col.id] = "";
@@ -741,6 +740,7 @@ export default function ProjectEditor({
     [moduleRegistry, customColumns, recomputeRows],
   );
 
+  // ── UPDATE addSubActivity — add isAnchor: false ──
   const addSubActivity = useCallback(
     (parentRow) => {
       const newRow = {
@@ -756,7 +756,8 @@ export default function ProjectEditor({
         status: "Pending",
         comments: [],
         customValues: {},
-        dependsOn: [], // ← NEW
+        dependsOn: [],
+        isAnchor: false, // ← NEW
       };
       customColumns.forEach((col) => {
         newRow.customValues[col.id] = "";
@@ -766,6 +767,7 @@ export default function ProjectEditor({
     [customColumns, recomputeRows],
   );
 
+  // ── UPDATE addRowBelow — add isAnchor: false ──
   const addRowBelow = useCallback(
     (referenceRow) => {
       const name = referenceRow.module || "";
@@ -786,6 +788,7 @@ export default function ProjectEditor({
         status: "Pending",
         comments: [],
         customValues: {},
+        isAnchor: false, // ← NEW
       };
       customColumns.forEach((col) => {
         newRow.customValues[col.id] = "";
@@ -818,6 +821,30 @@ export default function ProjectEditor({
       });
     },
     [moduleRegistry, customColumns, recomputeRows],
+  );
+  // ── ADD new handler: handleToggleAnchor ──
+  const handleToggleAnchor = useCallback(
+    (row) => {
+      // Turning ON
+      if (!row.isAnchor) {
+        // Block if no plannedStart
+        if (!row.plannedStart) {
+          showToast(
+            "error",
+            "Set a start date first",
+            "Please pick a planned start date before setting this as an anchor.",
+          );
+          return;
+        }
+      }
+      // Toggle isAnchor
+      const updated = { ...row, isAnchor: !row.isAnchor };
+      setRows((prev) => {
+        const replaced = prev.map((r) => (r.id === updated.id ? updated : r));
+        return recomputeRows(replaced);
+      });
+    },
+    [showToast, recomputeRows],
   );
 
   const updateRow = useCallback(
@@ -1503,7 +1530,14 @@ export default function ProjectEditor({
       }),
     [rows],
   );
-
+  const hasActiveColumnFilters = useMemo(() => {
+    return (
+      columnFilters.module.length > 0 ||
+      columnFilters.task.trim() !== "" ||
+      columnFilters.resource.length > 0 ||
+      columnFilters.status.length > 0
+    );
+  }, [columnFilters]);
   const showTable = rows.length > 0 || groups.length > 0;
   const showEmpty = !showTable;
 
@@ -1522,7 +1556,7 @@ export default function ProjectEditor({
     >
       <div
         style={{
-          padding: "16px 20px 32px",
+          padding: isMobile ? "12px 12px 24px" : "16px 20px 32px", // ← updated
           maxWidth: 1600,
           margin: "0 auto",
         }}
@@ -1533,25 +1567,35 @@ export default function ProjectEditor({
             background: t.bgCard,
             border: `1px solid ${t.border}`,
             borderRadius: 12,
-            padding: "10px 16px",
+            padding: isMobile ? "10px 12px" : "10px 16px",
             marginBottom: 12,
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            gap: isMobile ? 8 : 10,
+            flexWrap: "wrap",
           }}
         >
-          <button onClick={onBack} style={btnStyle}>
-            <ArrowLeft size={14} /> Back to Drafts
+          <button
+            onClick={onBack}
+            style={{
+              ...btnStyle,
+              height: isMobile ? 38 : 32,
+              padding: isMobile ? "0 12px" : "0 14px",
+            }}
+          >
+            <ArrowLeft size={14} /> {isMobile ? "Back" : "Back to Drafts"}
           </button>
 
-          <div style={{ fontSize: 12, color: t.textMuted, marginLeft: 4 }}>
-            Editing:{" "}
-            <strong style={{ color: t.textPrimary }}>
-              {project || "Untitled Project"}
-            </strong>
-          </div>
+          {!isMobile && (
+            <div style={{ fontSize: 12, color: t.textMuted, marginLeft: 4 }}>
+              Editing:{" "}
+              <strong style={{ color: t.textPrimary }}>
+                {project || "Untitled Project"}
+              </strong>
+            </div>
+          )}
 
-          {/* Status badge */}
+          {/* Status badge — always visible */}
           <span
             style={{
               display: "inline-flex",
@@ -1627,7 +1671,8 @@ export default function ProjectEditor({
               onClick={() => setCoAssignerModalOpen(true)}
               style={{
                 ...btnStyle,
-                marginLeft: "auto",
+                marginLeft: isMobile ? 0 : "auto",
+                height: isMobile ? 38 : 32,
                 background: t.successBgSubtle,
                 color: t.success,
                 borderColor: t.successBorder,
@@ -1635,7 +1680,7 @@ export default function ProjectEditor({
               }}
             >
               <Handshake size={13} />
-              Co-Assigners
+              {isMobile ? "" : "Co-Assigners"}
               {(draft.coAssigners || []).length > 0 && (
                 <span
                   style={{
@@ -1654,6 +1699,27 @@ export default function ProjectEditor({
           )}
         </div>
 
+        {/* ── Mobile-only: project title (since it was hidden in banner) ── */}
+        {isMobile && (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: "10px 12px",
+              background: t.bgCard,
+              border: `1px solid ${t.border}`,
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 700,
+              color: t.textPrimary,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {project || "Untitled Project"}
+          </div>
+        )}
+
         {/* ── Sub-Tab Bar ── */}
         <div
           style={{
@@ -1665,8 +1731,9 @@ export default function ProjectEditor({
             display: "flex",
             gap: 2,
             boxShadow: t.shadowSm,
-            width: "fit-content",
+            width: isMobile ? "100%" : "fit-content", // ← full width on mobile
             alignItems: "center",
+            overflowX: isMobile ? "auto" : "visible", // ← scrollable if needed
           }}
         >
           {[
@@ -1710,10 +1777,12 @@ export default function ProjectEditor({
                 disabled={isDisabled}
                 title={isDisabled ? tab.disabledReason : ""}
                 style={{
+                  flex: isMobile ? 1 : "initial", // ← equal width on mobile
                   display: "inline-flex",
                   alignItems: "center",
+                  justifyContent: "center",
                   gap: 6,
-                  padding: "8px 16px",
+                  padding: isMobile ? "10px 8px" : "8px 16px",
                   borderRadius: 8,
                   border: "none",
                   background: active ? t.textPrimary : "transparent",
@@ -1728,6 +1797,7 @@ export default function ProjectEditor({
                   fontFamily: "Sora,sans-serif",
                   transition: "all .15s",
                   opacity: isDisabled ? 0.5 : 1,
+                  whiteSpace: "nowrap",
                 }}
               >
                 {tab.icon}
@@ -1811,7 +1881,7 @@ export default function ProjectEditor({
                 background: t.bgCard,
                 border: `1px solid ${t.border}`,
                 borderRadius: 12,
-                padding: "18px 20px",
+                padding: isMobile ? "14px 14px" : "18px 20px",
                 marginBottom: 16,
                 boxShadow: t.shadowSm,
               }}
@@ -1822,6 +1892,7 @@ export default function ProjectEditor({
                   alignItems: "center",
                   gap: 8,
                   marginBottom: 14,
+                  flexWrap: "wrap",
                 }}
               >
                 <Settings size={15} color={t.textPrimary} />
@@ -1834,18 +1905,29 @@ export default function ProjectEditor({
                 >
                   Project Setup
                 </span>
-                <span
-                  style={{ fontSize: 11.5, color: t.textFaint, marginLeft: 4 }}
-                >
-                  Fill details, pick group, upload sheet — table appears below.
-                </span>
+                {!isMobile && (
+                  <span
+                    style={{
+                      fontSize: 11.5,
+                      color: t.textFaint,
+                      marginLeft: 4,
+                    }}
+                  >
+                    Fill details, pick group, upload sheet — table appears
+                    below.
+                  </span>
+                )}
               </div>
 
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1.2fr 1.5fr 1.5fr 1fr 1.2fr",
-                  gap: 12,
+                  gridTemplateColumns: isMobile
+                    ? "1fr" // Mobile: single column
+                    : isTablet
+                      ? "1fr 1fr" // Tablet: 2 columns
+                      : "2fr 1.2fr 1.5fr 1.5fr 1fr 1.2fr", // Desktop: 6-column layout
+                  gap: isMobile ? 10 : 12,
                   alignItems: "end",
                 }}
               >
@@ -1860,6 +1942,8 @@ export default function ProjectEditor({
                     disabled={!isEditable}
                     style={{
                       ...inputStyle,
+                      height: isMobile ? 42 : 34,
+                      fontSize: isMobile ? 14 : 12,
                       opacity: !isEditable ? 0.65 : 1,
                       cursor: !isEditable ? "not-allowed" : "text",
                       background: !isEditable ? t.bgInputDisabled : t.bgInput,
@@ -1878,6 +1962,8 @@ export default function ProjectEditor({
                     disabled={!isEditable}
                     style={{
                       ...inputStyle,
+                      height: isMobile ? 42 : 34,
+                      fontSize: isMobile ? 14 : 12,
                       opacity: !isEditable ? 0.65 : 1,
                       cursor: !isEditable ? "not-allowed" : "text",
                       background: !isEditable ? t.bgInputDisabled : t.bgInput,
@@ -1896,6 +1982,8 @@ export default function ProjectEditor({
                     disabled={!isEditable}
                     style={{
                       ...inputStyle,
+                      height: isMobile ? 42 : 34,
+                      fontSize: isMobile ? 14 : 12,
                       opacity: !isEditable ? 0.65 : 1,
                       cursor: !isEditable ? "not-allowed" : "text",
                       background: !isEditable ? t.bgInputDisabled : t.bgInput,
@@ -1912,6 +2000,7 @@ export default function ProjectEditor({
                     onChange={updateGroups}
                     multiple={true}
                     disabled={!isEditable}
+                    title="Select Groups"
                     placeholder={
                       !isEditable ? "Locked (not a draft)" : "Select group(s)…"
                     }
@@ -1933,13 +2022,13 @@ export default function ProjectEditor({
                     onClick={handleDownloadTemplate}
                     style={{
                       width: "100%",
-                      height: 34,
+                      height: isMobile ? 42 : 34,
                       border: `1px solid ${t.borderStrong}`,
                       borderRadius: 6,
                       background: t.bgSubtle,
                       color: t.textSecondary,
                       fontFamily: "Sora,sans-serif",
-                      fontSize: 12,
+                      fontSize: isMobile ? 13 : 12,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -1968,7 +2057,7 @@ export default function ProjectEditor({
                     disabled={!isEditable}
                     style={{
                       width: "100%",
-                      height: 34,
+                      height: isMobile ? 42 : 34,
                       border: `1px dashed ${!isEditable ? t.borderStrong : t.primaryBorder}`,
                       borderRadius: 6,
                       background: !isEditable
@@ -1976,7 +2065,7 @@ export default function ProjectEditor({
                         : t.primaryBgSubtle,
                       color: !isEditable ? t.textFaint : t.primary,
                       fontFamily: "Sora,sans-serif",
-                      fontSize: 12,
+                      fontSize: isMobile ? 13 : 12,
                       cursor: !isEditable ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -2122,7 +2211,7 @@ export default function ProjectEditor({
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
-                    padding: "12px 18px",
+                    padding: isMobile ? "10px 12px" : "12px 18px",
                     borderBottom: `1px solid ${t.border}`,
                     flexWrap: "wrap",
                   }}
@@ -2154,15 +2243,95 @@ export default function ProjectEditor({
                     </span>
                   </div>
 
+                  {/* ── Mobile view toggle (Cards / Table) ── */}
+                  {isMobile && (
+                    <div
+                      style={{
+                        display: "flex",
+                        marginLeft: "auto",
+                        background: t.bgMuted,
+                        borderRadius: 7,
+                        padding: 3,
+                      }}
+                    >
+                      <button
+                        onClick={() => setMobileTableMode("cards")}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 5,
+                          border: "none",
+                          background:
+                            mobileTableMode === "cards"
+                              ? t.bgCard
+                              : "transparent",
+                          color:
+                            mobileTableMode === "cards"
+                              ? t.textPrimary
+                              : t.textMuted,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          fontFamily: "Sora, sans-serif",
+                          boxShadow:
+                            mobileTableMode === "cards" ? t.shadowSm : "none",
+                        }}
+                      >
+                        <LayoutGrid size={12} />
+                        Cards
+                      </button>
+                      <button
+                        onClick={() => setMobileTableMode("table")}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 5,
+                          border: "none",
+                          background:
+                            mobileTableMode === "table"
+                              ? t.bgCard
+                              : "transparent",
+                          color:
+                            mobileTableMode === "table"
+                              ? t.textPrimary
+                              : t.textMuted,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          fontFamily: "Sora, sans-serif",
+                          boxShadow:
+                            mobileTableMode === "table" ? t.shadowSm : "none",
+                        }}
+                      >
+                        <List size={12} />
+                        Table
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Right-side actions ── */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
-                      marginLeft: "auto",
+                      marginLeft: isMobile ? 0 : "auto",
+                      width: isMobile ? "100%" : "auto",
+                      flexWrap: "wrap",
                     }}
                   >
-                    <div style={{ position: "relative", width: 200 }}>
+                    {/* Search — always visible */}
+                    <div
+                      style={{
+                        position: "relative",
+                        flex: isMobile ? 1 : "initial",
+                        width: isMobile ? "auto" : 200,
+                      }}
+                    >
                       <Search
                         size={14}
                         style={{
@@ -2177,15 +2346,17 @@ export default function ProjectEditor({
                       <input
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search task or module…"
+                        placeholder={
+                          isMobile ? "Search…" : "Search task or module…"
+                        }
                         style={{
                           width: "100%",
-                          height: 32,
+                          height: isMobile ? 40 : 32,
                           border: `1px solid ${t.border}`,
                           borderRadius: 7,
                           padding: "0 10px 0 32px",
-                          fontFamily: "Sora,sans-serif",
-                          fontSize: 12,
+                          fontFamily: "Sora, sans-serif",
+                          fontSize: isMobile ? 14 : 12,
                           outline: "none",
                           color: t.textPrimary,
                           background: t.bgInput,
@@ -2194,39 +2365,108 @@ export default function ProjectEditor({
                       />
                     </div>
 
-                    {(columnFilters.module.length > 0 ||
-                      columnFilters.task.trim() !== "" ||
-                      columnFilters.resource.length > 0 ||
-                      columnFilters.status.length > 0) && (
+                    {/* ── MOBILE: Single Filters button ── */}
+                    {isMobile ? (
                       <button
-                        onClick={() =>
-                          setColumnFilters({
-                            module: [],
-                            task: "",
-                            resource: [],
-                            status: [],
-                          })
-                        }
+                        onClick={() => setMobileFiltersOpen(true)}
                         style={{
-                          ...btnStyle,
-                          height: 32,
-                          color: t.danger,
-                          borderColor: t.dangerBorder,
-                          background: t.dangerBgSubtle,
-                          fontWeight: 600,
+                          width: 40,
+                          height: 40,
+                          borderRadius: 7,
+                          border: `1px solid ${
+                            hasActiveColumnFilters || autoCalculate
+                              ? t.primary
+                              : t.borderStrong
+                          }`,
+                          background:
+                            hasActiveColumnFilters || autoCalculate
+                              ? t.primaryBgSubtle
+                              : t.bgCard,
+                          color:
+                            hasActiveColumnFilters || autoCalculate
+                              ? t.primary
+                              : t.textSecondary,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          position: "relative",
                         }}
                       >
-                        <X size={13} /> Clear Filters
+                        <Filter size={16} />
+                        {hasActiveColumnFilters && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: -4,
+                              right: -4,
+                              minWidth: 16,
+                              height: 16,
+                              padding: "0 4px",
+                              background: t.danger,
+                              color: t.textInverse,
+                              borderRadius: 999,
+                              fontSize: 9,
+                              fontWeight: 700,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: `2px solid ${t.bgCard}`,
+                              lineHeight: 1,
+                            }}
+                          >
+                            {[
+                              columnFilters.module.length,
+                              columnFilters.task.trim() ? 1 : 0,
+                              columnFilters.resource.length,
+                              columnFilters.status.length,
+                            ].reduce((a, b) => a + b, 0)}
+                          </span>
+                        )}
                       </button>
+                    ) : (
+                      <>
+                        {/* ── DESKTOP: existing per-column filters + toggle in header ── */}
+                        {hasActiveColumnFilters && (
+                          <button
+                            onClick={() =>
+                              setColumnFilters({
+                                module: [],
+                                task: "",
+                                resource: [],
+                                status: [],
+                              })
+                            }
+                            style={{
+                              ...btnStyle,
+                              height: 32,
+                              color: t.danger,
+                              borderColor: t.dangerBorder,
+                              background: t.dangerBgSubtle,
+                              fontWeight: 600,
+                            }}
+                          >
+                            <X size={13} /> Clear Filters
+                          </button>
+                        )}
+                      </>
                     )}
 
+                    {/* Export button */}
                     <button
                       onClick={handleExport}
-                      style={{ ...btnStyle, height: 32 }}
+                      style={{
+                        ...btnStyle,
+                        height: isMobile ? 40 : 32,
+                        padding: isMobile ? "0 10px" : "0 14px",
+                      }}
+                      title="Export to Excel"
                     >
-                      <Download size={14} /> Export
+                      <Download size={14} /> {isMobile ? "" : "Export"}
                     </button>
 
+                    {/* Add Module button */}
                     {draft.status !== "closed" && (
                       <button
                         onClick={() => addRow()}
@@ -2235,14 +2475,204 @@ export default function ProjectEditor({
                           background: t.primary,
                           color: t.textInverse,
                           borderColor: t.primary,
-                          height: 32,
+                          height: isMobile ? 40 : 32,
+                          padding: isMobile ? "0 12px" : "0 14px",
                         }}
                       >
-                        <Plus size={14} /> Add Module
+                        <Plus size={14} /> {isMobile ? "Add" : "Add Module"}
                       </button>
                     )}
                   </div>
                 </div>
+
+                {/* ── Card view (mobile default) ── */}
+                {isMobile && mobileTableMode === "cards" && (
+                  <div
+                    style={{
+                      padding: 12,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      background: t.bgApp,
+                    }}
+                  >
+                    {!filteredRows.length ? (
+                      <div
+                        style={{
+                          padding: 40,
+                          textAlign: "center",
+                          color: t.textFaint,
+                          fontSize: 13,
+                          background: t.bgCard,
+                          border: `1px dashed ${t.borderDashed}`,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            background: t.primaryBgSubtle,
+                            color: t.primary,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: 10,
+                          }}
+                        >
+                          <Plus size={24} strokeWidth={2.5} />
+                        </div>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            color: t.textPrimary,
+                            marginBottom: 6,
+                          }}
+                        >
+                          No activities yet
+                        </div>
+                        <div style={{ fontSize: 12, marginBottom: 12 }}>
+                          Add activities manually or upload your Excel sheet.
+                        </div>
+                        <button
+                          onClick={() => addRow()}
+                          style={{
+                            ...btnStyle,
+                            background: t.primary,
+                            color: t.textInverse,
+                            borderColor: t.primary,
+                            height: 42,
+                            padding: "0 18px",
+                          }}
+                        >
+                          <Plus size={16} /> Add first activity
+                        </button>
+                      </div>
+                    ) : (
+                      sections.map((mod, modIdx) => {
+                        const topLevelIds = new Set(
+                          rows
+                            .filter((r) => !r.parentId && r.module === mod)
+                            .map((r) => r.id),
+                        );
+                        const isDescendantOf = (rowId, ancestorSet) => {
+                          let cur = rows.find((r) => r.id === rowId);
+                          while (cur?.parentId) {
+                            if (ancestorSet.has(cur.parentId)) return true;
+                            cur = rows.find((r) => r.id === cur.parentId);
+                          }
+                          return false;
+                        };
+                        const modRows = filteredRows.filter(
+                          (r) =>
+                            topLevelIds.has(r.id) ||
+                            isDescendantOf(r.id, topLevelIds),
+                        );
+                        const modColor = getModuleColor(mod, moduleColorMap);
+                        const modTaskCount = rows.filter(
+                          (r) => r.module === mod && !r.parentId,
+                        ).length;
+
+                        let displayIdx = 0;
+
+                        return (
+                          <React.Fragment key={mod || "unnamed"}>
+                            {/* ── Module section header ── */}
+                            <div
+                              style={{
+                                marginTop: modIdx > 0 ? 12 : 0,
+                                marginBottom: 4,
+                                padding: "8px 12px",
+                                background: modColor.bg,
+                                border: `1px solid ${modColor.border}`,
+                                borderLeft: `4px solid ${modColor.color}`,
+                                borderRadius: 8,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                position: "sticky",
+                                top: 0,
+                                zIndex: 5,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: modColor.color,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.4px",
+                                }}
+                              >
+                                {mod || "— unnamed —"}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: 10.5,
+                                  color: modColor.color,
+                                  fontWeight: 600,
+                                  opacity: 0.75,
+                                  marginLeft: "auto",
+                                }}
+                              >
+                                {modTaskCount} task
+                                {modTaskCount !== 1 ? "s" : ""}
+                              </span>
+                            </div>
+
+                            {/* Cards for this module */}
+                            {modRows.map((r) => {
+                              if (r.sortOrder === 0 || r._depth === 0)
+                                displayIdx++;
+                              return (
+                                <ActivityCard
+                                  key={r.id}
+                                  draft={draft}
+                                  row={r}
+                                  idx={displayIdx}
+                                  resources={resources}
+                                  groupResources={groupResources}
+                                  hasChildren={hasChildrenFn(r.id)}
+                                  parentRow={
+                                    r.parentId
+                                      ? rows.find((p) => p.id === r.parentId)
+                                      : null
+                                  }
+                                  moduleColor={getModuleColor(
+                                    r.module,
+                                    moduleColorMap,
+                                  )}
+                                  isOverlapping={overlapRowIds.has(r.id)}
+                                  autoCalculate={autoCalculate}
+                                  customColumns={sortedCustomColumns}
+                                  allRows={rows}
+                                  onUpdate={updateRow}
+                                  onDelete={deleteRow}
+                                  onAddSub={addSubActivity}
+                                  onAddRowBelow={addRowBelow}
+                                  onOpenComments={(row) =>
+                                    onOpenCommentBox(
+                                      draft.id,
+                                      row.id,
+                                      row.moduleId,
+                                    )
+                                  }
+                                  onRedoReject={setRejectRow}
+                                  onFeedback={setFeedbackRow}
+                                  onUpdateCustomValue={handleUpdateCustomValue}
+                                  onOpenDependencies={handleOpenDependencies}
+                                  onViewSuccessors={handleViewSuccessors}
+                                  onToggleAnchor={handleToggleAnchor}
+                                />
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
 
                 {/* Table */}
                 <div style={{ overflowX: "auto" }}>
@@ -2464,36 +2894,40 @@ export default function ProjectEditor({
                                       transition: "all .15s",
                                     }}
                                   >
-                                    <span style={{ fontSize: 10 }}>⚡</span>
-                                    <span
-                                      style={{
-                                        position: "relative",
-                                        display: "inline-block",
-                                        width: 26,
-                                        height: 14,
-                                        background: autoCalculate
-                                          ? t.primary
-                                          : t.borderStrong,
-                                        borderRadius: 999,
-                                        transition: "background .2s",
-                                        flexShrink: 0,
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          position: "absolute",
-                                          top: 2,
-                                          left: autoCalculate ? 14 : 2,
-                                          width: 10,
-                                          height: 10,
-                                          background: "#fff",
-                                          borderRadius: "50%",
-                                          transition: "left .2s",
-                                          boxShadow:
-                                            "0 1px 2px rgba(0,0,0,0.2)",
-                                        }}
-                                      />
-                                    </span>
+                                    {false && (
+                                      <>
+                                        <span style={{ fontSize: 10 }}>⚡</span>
+                                        <span
+                                          style={{
+                                            position: "relative",
+                                            display: "inline-block",
+                                            width: 26,
+                                            height: 14,
+                                            background: autoCalculate
+                                              ? t.primary
+                                              : t.borderStrong,
+                                            borderRadius: 999,
+                                            transition: "background .2s",
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          <span
+                                            style={{
+                                              position: "absolute",
+                                              top: 2,
+                                              left: autoCalculate ? 14 : 2,
+                                              width: 10,
+                                              height: 10,
+                                              background: "#fff",
+                                              borderRadius: "50%",
+                                              transition: "left .2s",
+                                              boxShadow:
+                                                "0 1px 2px rgba(0,0,0,0.2)",
+                                            }}
+                                          />
+                                        </span>
+                                      </>
+                                    )}
                                   </div>
                                 )}
 
@@ -2754,6 +3188,7 @@ export default function ProjectEditor({
                                     }
                                     onOpenDependencies={handleOpenDependencies} // ← NEW
                                     onViewSuccessors={handleViewSuccessors} // ← NEW
+                                    onToggleAnchor={handleToggleAnchor}
                                   />
                                 );
                               })}
@@ -2797,79 +3232,94 @@ export default function ProjectEditor({
               style={{
                 background: t.bgCard,
                 border: `1px solid ${t.border}`,
-                borderRadius: 12,
-                padding: "12px 18px",
+                borderRadius: isMobile ? "12px 12px 0 0" : 12, // ← square bottom on mobile
+                padding: isMobile ? "10px 12px" : "12px 18px",
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                flexWrap: "wrap",
-                boxShadow: t.shadowSm,
+                gap: isMobile ? 8 : 12,
+                flexWrap: isMobile ? "nowrap" : "wrap",
+                boxShadow: isMobile
+                  ? "0 -4px 16px rgba(0,0,0,0.08)"
+                  : t.shadowSm,
+
+                // ── Sticky mobile footer ──
+                position: isMobile ? "sticky" : "static",
+                bottom: isMobile
+                  ? "calc(60px + env(safe-area-inset-bottom, 0))"
+                  : "auto", // above tab bar
+                zIndex: isMobile ? 50 : "auto",
+                marginLeft: isMobile ? -12 : 0, // extend to screen edge
+                marginRight: isMobile ? -12 : 0,
+                marginTop: isMobile ? 12 : 0,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 11.5,
-                  color: t.textFaint,
-                  flex: 1,
-                  minWidth: 0,
-                  flexWrap: "wrap",
-                }}
-              >
-                <span>Saved as draft:</span>
-                <strong style={{ color: t.textPrimary }}>
-                  {draftTime || "—"}
-                </strong>
-                <span style={{ color: t.border, margin: "0 4px" }}>|</span>
-                <span
+              {!isMobile && (
+                <div
                   style={{
-                    display: "inline-flex",
+                    display: "flex",
                     alignItems: "center",
-                    gap: 5,
-                    padding: "3px 10px",
-                    borderRadius: 999,
-                    fontSize: 11,
-                    fontWeight: 500,
-                    background:
-                      draft.status === "closed"
-                        ? t.closedBg
-                        : motionSubmitted
-                          ? t.successBg
-                          : t.bgMuted,
-                    color:
-                      draft.status === "closed"
-                        ? t.closedText
-                        : motionSubmitted
-                          ? t.success
-                          : t.textMuted,
-                    border: `1px solid ${
-                      draft.status === "closed"
-                        ? t.closedBorder
-                        : motionSubmitted
-                          ? t.successBorder
-                          : t.border
-                    }`,
+                    gap: 6,
+                    fontSize: 11.5,
+                    color: t.textFaint,
+                    flex: 1,
+                    minWidth: 0,
+                    flexWrap: "wrap",
                   }}
                 >
-                  {draft.status === "closed" ? (
-                    <>
-                      <Lock size={12} /> Closed — project has been finalized
-                    </>
-                  ) : motionSubmitted ? (
-                    <>
-                      <Rocket size={12} /> Published — edit & re-publish to
-                      update
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={12} /> Draft — submit for motion to publish
-                    </>
-                  )}
-                </span>
-              </div>
+                  <span>Saved as draft:</span>
+                  <strong style={{ color: t.textPrimary }}>
+                    {draftTime || "—"}
+                  </strong>
+                  <span style={{ color: t.border, margin: "0 4px" }}>|</span>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      padding: "3px 10px",
+                      borderRadius: 999,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      background:
+                        draft.status === "closed"
+                          ? t.closedBg
+                          : motionSubmitted
+                            ? t.successBg
+                            : t.bgMuted,
+                      color:
+                        draft.status === "closed"
+                          ? t.closedText
+                          : motionSubmitted
+                            ? t.success
+                            : t.textMuted,
+                      border: `1px solid ${
+                        draft.status === "closed"
+                          ? t.closedBorder
+                          : motionSubmitted
+                            ? t.successBorder
+                            : t.border
+                      }`,
+                    }}
+                  >
+                    {draft.status === "closed" ? (
+                      <>
+                        <Lock size={12} /> Closed — project has been finalized
+                      </>
+                    ) : motionSubmitted ? (
+                      <>
+                        <Rocket size={12} /> Published — edit &amp; re-publish
+                        to update
+                      </>
+                    ) : (
+                      <>
+                        <Lock size={12} /> Draft — submit for motion to publish
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
 
+              {/* Save Draft */}
               <button
                 onClick={handleSaveDraftClick}
                 disabled={
@@ -2877,7 +3327,10 @@ export default function ProjectEditor({
                 }
                 style={{
                   ...btnStyle,
-                  height: 36,
+                  height: isMobile ? 44 : 36,
+                  flex: isMobile ? 1 : "initial", // ← equal split on mobile
+                  justifyContent: "center",
+                  fontSize: isMobile ? 13 : 12,
                   opacity:
                     isSaving || motionSubmitted || draft.status === "closed"
                       ? 0.5
@@ -2902,15 +3355,16 @@ export default function ProjectEditor({
                       size={14}
                       style={{ animation: "spin 1s linear infinite" }}
                     />
-                    Saving...
+                    {isMobile ? "" : "Saving..."}
                   </>
                 ) : (
                   <>
-                    <Save size={14} /> Save Draft
+                    <Save size={14} /> {isMobile ? "Save" : "Save Draft"}
                   </>
                 )}
               </button>
 
+              {/* Publish / Update */}
               <button
                 onClick={handleSubmitMotion}
                 disabled={isSaving || draft.status === "closed"}
@@ -2920,41 +3374,48 @@ export default function ProjectEditor({
                   color:
                     draft.status === "closed" ? t.textFaint : t.textInverse,
                   borderColor: draft.status === "closed" ? t.border : t.primary,
-                  height: 36,
+                  height: isMobile ? 44 : 36,
+                  flex: isMobile ? 1 : "initial", // ← equal split on mobile
+                  justifyContent: "center",
+                  fontSize: isMobile ? 13 : 12,
                   opacity: isSaving || draft.status === "closed" ? 0.5 : 1,
                   cursor:
                     isSaving || draft.status === "closed"
                       ? "not-allowed"
                       : "pointer",
+                  fontWeight: 600,
                 }}
               >
                 {draft.status === "closed" ? (
                   <>
                     <Lock size={14} />
-                    Project Closed
+                    {isMobile ? "Closed" : "Project Closed"}
                   </>
                 ) : motionSubmitted ? (
                   <>
                     <RefreshCw size={14} />
-                    Update &amp; Re-publish
+                    {isMobile ? "Update" : "Update & Re-publish"}
                   </>
                 ) : (
                   <>
                     <Send size={14} />
-                    Submit for Motion
+                    {isMobile ? "Publish" : "Submit for Motion"}
                   </>
                 )}
               </button>
             </div>
 
-            {/* Footer stats */}
+            {/* Footer stats — full row on desktop, compact/scroll on mobile */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
                 marginTop: 12,
-                flexWrap: "wrap",
+                flexWrap: isMobile ? "nowrap" : "wrap",
+                overflowX: isMobile ? "auto" : "visible",
+                paddingBottom: isMobile ? 4 : 0,
+                WebkitOverflowScrolling: "touch",
               }}
             >
               {[
@@ -3012,35 +3473,41 @@ export default function ProjectEditor({
                     fontSize: 11.5,
                     fontWeight: 500,
                     border: `1px solid ${t.border}`,
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {s.label}
                 </span>
               ))}
-              <div
-                style={{
-                  marginLeft: "auto",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 11.5,
-                  color: t.textFaint,
-                }}
-              >
-                <span>
-                  Project:{" "}
-                  <strong style={{ color: t.textSecondary }}>
-                    {project || "—"}
-                  </strong>
-                </span>
-                <span style={{ color: t.border }}>|</span>
-                <span>
-                  PO:{" "}
-                  <strong style={{ color: t.textSecondary }}>
-                    {po || "—"}
-                  </strong>
-                </span>
-              </div>
+
+              {/* Hide project/PO on mobile — already in the header */}
+              {!isMobile && (
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 11.5,
+                    color: t.textFaint,
+                  }}
+                >
+                  <span>
+                    Project:{" "}
+                    <strong style={{ color: t.textSecondary }}>
+                      {project || "—"}
+                    </strong>
+                  </span>
+                  <span style={{ color: t.border }}>|</span>
+                  <span>
+                    PO:{" "}
+                    <strong style={{ color: t.textSecondary }}>
+                      {po || "—"}
+                    </strong>
+                  </span>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -3249,6 +3716,24 @@ export default function ProjectEditor({
             setSuccessorViewRow(null);
             setDepPickerRow(r);
           }}
+        />
+      )}
+      {/* Mobile filters bottom sheet */}
+      {isMobile && (
+        <MobileFiltersSheet
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          filterOptions={filterOptions}
+          columnFilters={columnFilters}
+          onChangeColumnFilter={(key, value) =>
+            setColumnFilters((prev) => ({ ...prev, [key]: value }))
+          }
+          onClearAllFilters={() =>
+            setColumnFilters({ module: [], task: "", resource: [], status: [] })
+          }
+          onAddColumn={() => setAddColumnOpen(true)}
+          canAddColumn={hasEditAccess && draft.status !== "closed"}
+          hasActiveFilters={hasActiveColumnFilters}
         />
       )}
     </div>

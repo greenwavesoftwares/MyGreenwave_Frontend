@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   Row chain computation (auto + manual modes)
+   Row chain computation
    ═══════════════════════════════════════════════════════ */
 
 import {
@@ -50,11 +50,13 @@ export function flattenOrdered(rows, { withDepth = true } = {}) {
   return out;
 }
 
-/* ─── Manual mode chain computation ─── */
-export function recomputeChains(rows, groupResources = {}) {
+/* ─── Anchor-based chain computation ─── */
+export function recomputeAnchorChains(rows, groupResources = {}) {
+  // 1. Clone all rows
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
 
+  // 2. Build childrenMap
   const childrenMap = new Map();
   updated.forEach((r) => {
     const pid = r.parentId || "__ROOT__";
@@ -63,113 +65,156 @@ export function recomputeChains(rows, groupResources = {}) {
   });
 
   const getChildren = (id) => childrenMap.get(id) || [];
-  const topRows = childrenMap.get("__ROOT__") || [];
-  const chains = new Map();
 
-  topRows.forEach((row) => {
-    if (getChildren(row.id).length > 0) return;
-    if (!isPending(row)) return;
-    if (!row.resource) return;
-    const moduleKey = row.moduleId || row.module || "__no_module__";
-    const chainKey = `${moduleKey}|${row.resource}`;
-    if (!chains.has(chainKey)) chains.set(chainKey, []);
-    chains.get(chainKey).push(row);
+  // 3. Reset auto-chain flags on all rows
+  updated.forEach((r) => {
+    r._autoChained = false;
+    r._isAnchor = false;
   });
 
-  chains.forEach((chainRows, chainKey) => {
-    const [, userId] = chainKey.split("|");
-    let prevEnd = null;
+  // 4. Get ordered rows (respects tree order)
+  const ordered = flattenOrdered(updated);
 
-    chainRows.forEach((row, idx) => {
-      const realRow = byId.get(row.id);
-      if (!isPending(realRow)) return;
+  // 5. Group rows by resource (ordered)
+  const byResource = new Map();
+  ordered.forEach((r) => {
+    const row = byId.get(r.id);
+    if (!row || !row.resource) return;
+    // Include ALL rows (top-level + sub-activities)
+    if (!byResource.has(row.resource)) byResource.set(row.resource, []);
+    byResource.get(row.resource).push(row);
+  });
 
-      const dur = Number(realRow.durationHrs);
-      const hasValidDuration =
-        realRow.durationHrs !== "" &&
-        realRow.durationHrs !== null &&
-        realRow.durationHrs !== undefined &&
-        !isNaN(Number(realRow.durationHrs));
+  // 6. Process each resource
+  byResource.forEach((resourceRows, userId) => {
+    // Find all anchor indices
+    // Walk through rows and create segments
+    // Segment = [anchorRow, ...subsequentRows until next anchor]
 
-      let start;
-      const userStart = realRow.plannedStart
-        ? parseISODateTime(realRow.plannedStart)
-        : null;
+    let currentSegmentStart = -1; // index of current anchor
 
-      if (userStart) {
-        start = nextWorkMoment(userStart, userId, groupResources);
-      } else if (idx === 0) {
-        realRow.plannedStart = "";
-        realRow.plannedStop = "";
-        prevEnd = null;
-        return;
-      } else {
-        if (!prevEnd) {
-          realRow.plannedStart = "";
-          realRow.plannedStop = "";
-          return;
+    for (let i = 0; i < resourceRows.length; i++) {
+      const row = resourceRows[i];
+
+      if (row.isAnchor) {
+        // ── This row is an anchor ──
+        row._isAnchor = true;
+        row._autoChained = false;
+
+        // Use row's own plannedStart as segment start
+        // (guaranteed to exist — blocked at toggle time if missing)
+        const anchorStart = row.plannedStart
+          ? parseISODateTime(row.plannedStart)
+          : null;
+
+        if (!anchorStart) {
+          // Safety: if somehow anchor has no date, skip segment
+          currentSegmentStart = -1;
+          continue;
         }
-        start = nextWorkMoment(new Date(prevEnd), userId, groupResources);
-      }
 
-      realRow.plannedStart = isoDateTime(start);
+        // Recompute anchor's own plannedStop
+        const dur = Number(row.durationHrs);
+        const hasValidDur =
+          row.durationHrs !== "" &&
+          row.durationHrs !== null &&
+          row.durationHrs !== undefined &&
+          !isNaN(dur);
 
-      if (hasValidDuration) {
-        if (dur === 0) {
-          realRow.plannedStop = isoDateTime(start);
-          prevEnd = start;
+        if (hasValidDur && dur > 0) {
+          const stop = addWorkHours(
+            anchorStart,
+            dur,
+            userId,
+            groupResources,
+          );
+          row.plannedStop = isoDateTime(stop);
+        } else if (hasValidDur && dur === 0) {
+          row.plannedStop = isoDateTime(anchorStart);
         } else {
-          const end = addWorkHours(start, dur, userId, groupResources);
-          realRow.plannedStop = isoDateTime(end);
-          prevEnd = end;
+          row.plannedStop = "";
+        }
+
+        currentSegmentStart = i;
+      } else if (currentSegmentStart !== -1) {
+        // ── This row is inside a segment (after an anchor) ──
+        row._autoChained = true;
+        row._isAnchor = false;
+
+        // prevRow = the row just before this one in the resource list
+        const prevRow = resourceRows[i - 1];
+        const prevEnd = prevRow?.plannedStop
+          ? parseISODateTime(prevRow.plannedStop)
+          : null;
+
+        if (!prevEnd) {
+          // Previous row has no stop → can't chain
+          row.plannedStart = "";
+          row.plannedStop = "";
+          continue;
+        }
+
+        // Snap to next valid work moment
+        const start = nextWorkMoment(
+          new Date(prevEnd),
+          userId,
+          groupResources,
+        );
+        row.plannedStart = isoDateTime(start);
+
+        // Compute stop
+        const dur = Number(row.durationHrs);
+        const hasValidDur =
+          row.durationHrs !== "" &&
+          row.durationHrs !== null &&
+          row.durationHrs !== undefined &&
+          !isNaN(dur);
+
+        if (hasValidDur && dur > 0) {
+          const stop = addWorkHours(start, dur, userId, groupResources);
+          row.plannedStop = isoDateTime(stop);
+        } else if (hasValidDur && dur === 0) {
+          row.plannedStop = isoDateTime(start);
+        } else {
+          row.plannedStop = "";
         }
       } else {
-        realRow.plannedStop = "";
-        prevEnd = start;
+  // ── No segment started yet → manual mode ──
+  row._autoChained = false;
+  row._isAnchor = false;
+  
+  // Still compute plannedStop from plannedStart + duration (manual mode)
+  if (row.plannedStart) {
+    const start = parseISODateTime(row.plannedStart);
+    const dur = Number(row.durationHrs);
+    const hasValidDur =
+      row.durationHrs !== "" &&
+      row.durationHrs !== null &&
+      row.durationHrs !== undefined &&
+      !isNaN(dur);
+
+    if (start && hasValidDur) {
+      if (dur === 0) {
+        row.plannedStop = isoDateTime(start);
+      } else {
+        const stop = addWorkHours(start, dur, userId, groupResources);
+        row.plannedStop = isoDateTime(stop);
       }
-    });
+    } else {
+      row.plannedStop = "";
+    }
+  } else {
+    row.plannedStop = "";
+  }
+}
+    }
   });
 
-  // Sub-tasks
-  const processChildren = (parentId) => {
-    const parent = byId.get(parentId);
-    if (!parent) return;
-    const children = getChildren(parentId);
-    if (children.length === 0) return;
+  // 7. Parent aggregation (same as before)
+  const parentIds = Array.from(childrenMap.keys()).filter(
+    (k) => k !== "__ROOT__",
+  );
 
-    children.forEach((child) => {
-      const realChild = byId.get(child.id);
-      if (!isPending(realChild)) {
-        processChildren(realChild.id);
-        return;
-      }
-
-      const dur = Number(realChild.durationHrs);
-      const hasValidDuration =
-        realChild.durationHrs !== "" &&
-        realChild.durationHrs !== null &&
-        realChild.durationHrs !== undefined &&
-        !isNaN(Number(realChild.durationHrs));
-
-      if (realChild.plannedStart && hasValidDuration) {
-        const start = parseISODateTime(realChild.plannedStart);
-        if (start) {
-          let end;
-          if (dur === 0) end = new Date(start);
-          else end = new Date(start.getTime() + dur * 60 * 60 * 1000);
-          realChild.plannedStop = isoDateTime(end);
-        }
-      } else {
-        realChild.plannedStop = "";
-      }
-      processChildren(realChild.id);
-    });
-  };
-
-  topRows.forEach((row) => processChildren(row.id));
-
-  // Parent aggregation
-  const parentIds = Array.from(childrenMap.keys()).filter((k) => k !== "__ROOT__");
   for (const pid of parentIds) {
     const parent = byId.get(pid);
     if (!parent || !isPending(parent)) continue;
@@ -201,14 +246,20 @@ export function recomputeChains(rows, groupResources = {}) {
       continue;
     }
 
-    parent.plannedStart = isoDateTime(new Date(Math.min(...intervals.map((i) => i.start))));
-    parent.plannedStop = isoDateTime(new Date(Math.max(...intervals.map((i) => i.end))));
+    parent.plannedStart = isoDateTime(
+      new Date(Math.min(...intervals.map((i) => i.start))),
+    );
+    parent.plannedStop = isoDateTime(
+      new Date(Math.max(...intervals.map((i) => i.end))),
+    );
 
     let parentMs = 0;
     if (resourcesSet.size === 1) {
       for (const it of intervals) parentMs += it.end - it.start;
     } else {
-      const sorted = intervals.map((i) => ({ s: i.start, e: i.end })).sort((a, b) => a.s - b.s);
+      const sorted = intervals
+        .map((i) => ({ s: i.start, e: i.end }))
+        .sort((a, b) => a.s - b.s);
       let curS = sorted[0].s;
       let curE = sorted[0].e;
       for (let i = 1; i < sorted.length; i++) {
@@ -223,112 +274,100 @@ export function recomputeChains(rows, groupResources = {}) {
       parentMs += curE - curS;
     }
 
-    parent.durationHrs = Math.round((parentMs / (1000 * 60 * 60)) * 100) / 100;
+    parent.durationHrs =
+      Math.round((parentMs / (1000 * 60 * 60)) * 100) / 100;
     parent._autoDuration = true;
   }
 
   return updated;
 }
 
-/* ─── Auto mode chain (per-resource across all modules) ─── */
-export function recomputeAutoChains(rows, groupResources = {}) {
+/* ─── Manual mode chain computation (kept for plannedStop calc) ─── */
+export function recomputeChains(rows, groupResources = {}) {
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
-
   const childrenMap = new Map();
+  // ── Reset anchor-mode flags (in case they persisted) ──
   updated.forEach((r) => {
-    const pid = r.parentId || "__ROOT__";
-    if (!childrenMap.has(pid)) childrenMap.set(pid, []);
-    childrenMap.get(pid).push(r);
+    r._autoChained = false;
+    r._isAnchor = false;
   });
 
   const getChildren = (id) => childrenMap.get(id) || [];
-  const ordered = flattenOrdered(updated);
+  const topRows = childrenMap.get("__ROOT__") || [];
 
-  updated.forEach((r) => {
-    r._isAnchor = false;
-    r._autoChained = false;
-  });
-
-  const byResource = new Map();
-  const orderedIds = ordered.map((r) => r.id);
-
-  orderedIds.forEach((id) => {
-    const r = byId.get(id);
-    if (!r || !r.resource) return;
-    if (getChildren(r.id).length > 0) return;
-    if (!isPending(r)) return;
-    if (!byResource.has(r.resource)) byResource.set(r.resource, []);
-    byResource.get(r.resource).push(r);
-  });
-
-  const warnings = [];
-
-  byResource.forEach((chain, userId) => {
-    if (chain.length === 0) return;
-    const anchor = chain[0];
-    anchor._isAnchor = true;
-
-    if (!anchor.plannedStart) {
-      warnings.push({ userId, taskName: anchor.task || anchor.module || "Untitled" });
-      return;
-    }
-
-    const anchorStart = parseISODateTime(anchor.plannedStart);
-    const anchorDur = Number(anchor.durationHrs);
-    const hasAnchorDur =
-      anchor.durationHrs !== "" &&
-      anchor.durationHrs !== null &&
-      anchor.durationHrs !== undefined &&
-      !isNaN(anchorDur);
-
-    if (hasAnchorDur && anchorDur > 0) {
-      const stop = addWorkHours(anchorStart, anchorDur, userId, groupResources);
-      anchor.plannedStop = isoDateTime(stop);
-    } else if (hasAnchorDur && anchorDur === 0) {
-      anchor.plannedStop = isoDateTime(anchorStart);
-    } else {
-      anchor.plannedStop = "";
-    }
-
-    let prevEnd = anchor.plannedStop ? parseISODateTime(anchor.plannedStop) : null;
-
-    for (let i = 1; i < chain.length; i++) {
-      const row = chain[i];
-      row._autoChained = true;
-
-      if (!prevEnd) {
-        row.plannedStart = "";
-        row.plannedStop = "";
-        continue;
+  // Sub-tasks plannedStop computation
+  const processChildren = (parentId) => {
+    const children = getChildren(parentId);
+    children.forEach((child) => {
+      const realChild = byId.get(child.id);
+      if (!isPending(realChild)) {
+        processChildren(realChild.id);
+        return;
       }
-
-      const start = nextWorkMoment(new Date(prevEnd), userId, groupResources);
-      row.plannedStart = isoDateTime(start);
-
-      const dur = Number(row.durationHrs);
-      const hasDur =
-        row.durationHrs !== "" &&
-        row.durationHrs !== null &&
-        row.durationHrs !== undefined &&
+      const dur = Number(realChild.durationHrs);
+      const hasValidDuration =
+        realChild.durationHrs !== "" &&
+        realChild.durationHrs !== null &&
+        realChild.durationHrs !== undefined &&
         !isNaN(dur);
 
-      if (hasDur && dur > 0) {
-        const stop = addWorkHours(start, dur, userId, groupResources);
-        row.plannedStop = isoDateTime(stop);
-        prevEnd = stop;
-      } else if (hasDur && dur === 0) {
-        row.plannedStop = row.plannedStart;
-        prevEnd = start;
+      if (realChild.plannedStart && hasValidDuration) {
+        const start = parseISODateTime(realChild.plannedStart);
+        if (start) {
+          let end;
+          if (dur === 0) end = new Date(start);
+          else end = new Date(start.getTime() + dur * 60 * 60 * 1000);
+          realChild.plannedStop = isoDateTime(end);
+        }
       } else {
-        row.plannedStop = "";
-        prevEnd = start;
+        realChild.plannedStop = "";
       }
+      processChildren(realChild.id);
+    });
+  };
+
+  topRows.forEach((row) => processChildren(row.id));
+
+  // Compute plannedStop for top-level rows
+  updated.forEach((r) => {
+    if (r.parentId) return; // already handled
+    if (!isPending(r)) return;
+    if (!r.plannedStart) {
+      r.plannedStop = "";
+      return;
+    }
+    const dur = Number(r.durationHrs);
+    const hasValidDur =
+      r.durationHrs !== "" &&
+      r.durationHrs !== null &&
+      r.durationHrs !== undefined &&
+      !isNaN(dur);
+
+    if (hasValidDur) {
+      const start = parseISODateTime(r.plannedStart);
+      if (start) {
+        if (dur === 0) {
+          r.plannedStop = isoDateTime(start);
+        } else {
+          const stop = addWorkHours(
+            start,
+            dur,
+            r.resource,
+            groupResources,
+          );
+          r.plannedStop = isoDateTime(stop);
+        }
+      }
+    } else {
+      r.plannedStop = "";
     }
   });
 
-  // Parent aggregation (same as recomputeChains)
-  const parentIds = Array.from(childrenMap.keys()).filter((k) => k !== "__ROOT__");
+  // Parent aggregation
+  const parentIds = Array.from(childrenMap.keys()).filter(
+    (k) => k !== "__ROOT__",
+  );
   for (const pid of parentIds) {
     const parent = byId.get(pid);
     if (!parent || !isPending(parent)) continue;
@@ -338,13 +377,21 @@ export function recomputeAutoChains(rows, groupResources = {}) {
     const resourcesSet = new Set();
 
     for (const c of children) {
-      if (!c.plannedStart || !c.plannedStop) continue;
-      const s = parseISODateTime(c.plannedStart);
-      const e = parseISODateTime(c.plannedStop);
+      const realChild = byId.get(c.id);
+      if (!realChild) continue;
+      if (!realChild.plannedStart || !realChild.plannedStop) continue;
+      const s = parseISODateTime(realChild.plannedStart);
+      const e = parseISODateTime(realChild.plannedStop);
       if (!s || !e) continue;
-      if (e.getTime() <= s.getTime()) continue;
-      intervals.push({ start: s.getTime(), end: e.getTime(), resource: c.resource || "" });
-      resourcesSet.add(c.resource || "");
+      const startMs = s.getTime();
+      const endMs = e.getTime();
+      if (endMs <= startMs) continue;
+      intervals.push({
+        start: startMs,
+        end: endMs,
+        resource: realChild.resource || "",
+      });
+      resourcesSet.add(realChild.resource || "");
     }
 
     if (intervals.length === 0) {
@@ -352,14 +399,20 @@ export function recomputeAutoChains(rows, groupResources = {}) {
       continue;
     }
 
-    parent.plannedStart = isoDateTime(new Date(Math.min(...intervals.map((i) => i.start))));
-    parent.plannedStop = isoDateTime(new Date(Math.max(...intervals.map((i) => i.end))));
+    parent.plannedStart = isoDateTime(
+      new Date(Math.min(...intervals.map((i) => i.start))),
+    );
+    parent.plannedStop = isoDateTime(
+      new Date(Math.max(...intervals.map((i) => i.end))),
+    );
 
     let parentMs = 0;
     if (resourcesSet.size === 1) {
       for (const it of intervals) parentMs += it.end - it.start;
     } else {
-      const sorted = intervals.map((i) => ({ s: i.start, e: i.end })).sort((a, b) => a.s - b.s);
+      const sorted = intervals
+        .map((i) => ({ s: i.start, e: i.end }))
+        .sort((a, b) => a.s - b.s);
       let curS = sorted[0].s;
       let curE = sorted[0].e;
       for (let i = 1; i < sorted.length; i++) {
@@ -374,9 +427,10 @@ export function recomputeAutoChains(rows, groupResources = {}) {
       parentMs += curE - curS;
     }
 
-    parent.durationHrs = Math.round((parentMs / (1000 * 60 * 60)) * 100) / 100;
+    parent.durationHrs =
+      Math.round((parentMs / (1000 * 60 * 60)) * 100) / 100;
     parent._autoDuration = true;
   }
 
-  return { rows: updated, warnings };
+  return updated;
 }

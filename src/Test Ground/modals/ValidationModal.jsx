@@ -12,6 +12,8 @@ import {
   Rocket,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 import { makeBtnStyle } from "../helpers/styles";
 
 /**
@@ -30,12 +32,339 @@ export default function ValidationModal({
   isRepublish = false,
 }) {
   const { t } = useTheme();
+  const { isMobile } = useResponsive();
   const btnStyle = makeBtnStyle(t);
 
   const allOk = results.every((r) => r.ok);
   const failCount = results.filter((r) => !r.ok).length;
   const hasWarnings = warnings.length > 0;
 
+  const modalTitle = isRepublish
+    ? "Update Published Project"
+    : "Submit for Motion";
+
+  /* ─── Shared: warnings block ─── */
+  const warningsBlock = hasWarnings && (
+    <div
+      style={{
+        margin: isMobile ? "12px 12px 0" : "14px 20px 0",
+        padding: 12,
+        background: t.warningBgSubtle,
+        border: `1px solid ${t.warningBorder}`,
+        borderRadius: 10,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 10,
+          paddingBottom: 8,
+          borderBottom: `1px dashed ${t.warningBorder}`,
+        }}
+      >
+        <AlertTriangle size={16} color={t.warning} />
+        <span style={{ fontWeight: 700, fontSize: 12.5, color: t.warning }}>
+          {warnings.length} Warning{warnings.length !== 1 ? "s" : ""}
+        </span>
+        <span
+          style={{
+            marginLeft: "auto",
+            padding: "2px 8px",
+            background: t.warningBg,
+            color: t.warning,
+            borderRadius: 999,
+            fontSize: 9.5,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+          }}
+        >
+          Can Ignore
+        </span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {warnings.map((w, i) => (
+          <div
+            key={i}
+            style={{
+              padding: "8px 10px",
+              background: t.bgCard,
+              border: `1px solid ${t.warningBorder}`,
+              borderRadius: 6,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: t.warning,
+                marginBottom: w.detail ? 4 : 0,
+              }}
+            >
+              {w.title}
+            </div>
+            {w.detail && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: t.textSecondary,
+                  whiteSpace: "pre-line",
+                  lineHeight: 1.5,
+                }}
+              >
+                {w.detail}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          marginTop: 10,
+          paddingTop: 8,
+          borderTop: `1px dashed ${t.warningBorder}`,
+          fontSize: 10.5,
+          color: t.warning,
+          fontStyle: "italic",
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+        }}
+      >
+        <Info size={11} />
+        You can {isRepublish ? "update" : "publish"} anyway — review and
+        confirm.
+      </div>
+    </div>
+  );
+
+  /* ─── Shared: results list ─── */
+  const resultsBlock = (
+    <div
+      style={{
+        padding: isMobile ? "12px" : "14px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      {results.map((r, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 10,
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: r.ok ? t.successBgSubtle : t.dangerBgSubtle,
+            border: `1px solid ${r.ok ? t.successBorder : t.dangerBorder}`,
+          }}
+        >
+          <div
+            style={{
+              flexShrink: 0,
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: r.ok ? t.successBg : t.dangerBg,
+              color: r.ok ? t.success : t.danger,
+              marginTop: 1,
+            }}
+          >
+            {r.ok ? (
+              <CheckCircle2 size={14} strokeWidth={2.5} />
+            ) : (
+              <XCircle size={14} strokeWidth={2.5} />
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 12.5,
+                color: r.ok ? t.success : t.danger,
+                lineHeight: 1.4,
+              }}
+            >
+              {r.title}
+            </div>
+            {r.detail && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: t.textMuted,
+                  marginTop: 4,
+                  whiteSpace: "pre-line",
+                  lineHeight: 1.5,
+                }}
+              >
+                {r.detail}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  /* ─── Shared: footer buttons ─── */
+  const footerButtons = (
+    <>
+      <button
+        onClick={onClose}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1 : "initial",
+          height: isMobile ? 46 : 32,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 600 : 500,
+        }}
+      >
+        <X size={13} /> Close
+      </button>
+
+      {allOk && (
+        <button
+          onClick={onConfirm}
+          disabled={isSaving}
+          style={{
+            ...btnStyle,
+            flex: isMobile ? 1.4 : "initial",
+            height: isMobile ? 46 : 32,
+            background: hasWarnings ? t.warning : t.primary,
+            color: t.textInverse,
+            borderColor: hasWarnings ? t.warning : t.primary,
+            justifyContent: "center",
+            fontSize: isMobile ? 14 : 12,
+            fontWeight: isMobile ? 700 : 600,
+            opacity: isSaving ? 0.6 : 1,
+            cursor: isSaving ? "not-allowed" : "pointer",
+          }}
+        >
+          {isSaving ? (
+            <>
+              <Loader2
+                size={14}
+                style={{ animation: "spin 1s linear infinite" }}
+              />
+              {isRepublish ? "Updating..." : "Publishing..."}
+            </>
+          ) : hasWarnings ? (
+            <>
+              <AlertTriangle size={14} />
+              {isRepublish ? "Update Anyway" : "Publish Anyway"}
+            </>
+          ) : isRepublish ? (
+            <>
+              <RefreshCw size={14} />
+              {isMobile ? "Re-publish" : "Confirm & Re-publish"}
+            </>
+          ) : (
+            <>
+              <Rocket size={14} />
+              {isMobile ? "Publish" : "Confirm & Put in Motion"}
+            </>
+          )}
+        </button>
+      )}
+    </>
+  );
+
+  /* ─── Shared: subtitle text ─── */
+  const subtitleText = (() => {
+    if (!allOk && hasWarnings) {
+      return `${failCount} issue${failCount !== 1 ? "s" : ""} to resolve, ${warnings.length} warning${warnings.length !== 1 ? "s" : ""} to review.`;
+    }
+    if (!allOk) {
+      return `${failCount} issue${failCount !== 1 ? "s" : ""} to resolve before ${isRepublish ? "updating" : "submitting"}.`;
+    }
+    if (hasWarnings) {
+      return `All checks passed — ${warnings.length} warning${warnings.length !== 1 ? "s" : ""} to review before ${isRepublish ? "updating" : "publishing"}.`;
+    }
+    if (isRepublish) {
+      return `All ${results.length} checks passed — ready to update.`;
+    }
+    return `All ${results.length} checks passed — ready to put activities in motion.`;
+  })();
+
+  // ══════════════════════════════════════════════════════
+  //   MOBILE — Bottom Sheet
+  // ══════════════════════════════════════════════════════
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={modalTitle}
+        height="90%"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Status subtitle */}
+          <div
+            style={{
+              padding: "10px 14px",
+              background: !allOk
+                ? t.dangerBgSubtle
+                : hasWarnings
+                  ? t.warningBgSubtle
+                  : t.successBgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              fontSize: 12,
+              color: !allOk ? t.danger : hasWarnings ? t.warning : t.success,
+            }}
+          >
+            {!allOk ? (
+              <ShieldAlert size={16} />
+            ) : hasWarnings ? (
+              <AlertTriangle size={16} />
+            ) : (
+              <ShieldCheck size={16} />
+            )}
+            <span style={{ fontWeight: 600, lineHeight: 1.4 }}>
+              {subtitleText}
+            </span>
+          </div>
+
+          {/* Body */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {warningsBlock}
+            {resultsBlock}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              display: "flex",
+              gap: 8,
+              background: t.bgSubtle,
+            }}
+          >
+            {footerButtons}
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  //   DESKTOP — Existing modal
+  // ══════════════════════════════════════════════════════
   return (
     <div
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -107,34 +436,10 @@ export default function ValidationModal({
             <div
               style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
             >
-              {isRepublish ? "Update Published Project" : "Submit for Motion"}
+              {modalTitle}
             </div>
             <div style={{ fontSize: 11.5, color: t.textMuted, marginTop: 2 }}>
-              {!allOk && hasWarnings ? (
-                <>
-                  {failCount} issue{failCount !== 1 ? "s" : ""} to resolve,{" "}
-                  {warnings.length} warning{warnings.length !== 1 ? "s" : ""} to
-                  review.
-                </>
-              ) : !allOk ? (
-                <>
-                  {failCount} issue{failCount !== 1 ? "s" : ""} to resolve
-                  before {isRepublish ? "updating" : "submitting"}.
-                </>
-              ) : hasWarnings ? (
-                <>
-                  All checks passed — {warnings.length} warning
-                  {warnings.length !== 1 ? "s" : ""} to review before{" "}
-                  {isRepublish ? "updating" : "publishing"}.
-                </>
-              ) : isRepublish ? (
-                <>All {results.length} checks passed — ready to update.</>
-              ) : (
-                <>
-                  All {results.length} checks passed — ready to put activities
-                  in motion.
-                </>
-              )}
+              {subtitleText}
             </div>
           </div>
 
@@ -158,178 +463,8 @@ export default function ValidationModal({
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {/* Warnings */}
-          {hasWarnings && (
-            <div
-              style={{
-                margin: "14px 20px 0",
-                padding: 12,
-                background: t.warningBgSubtle,
-                border: `1px solid ${t.warningBorder}`,
-                borderRadius: 10,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 10,
-                  paddingBottom: 8,
-                  borderBottom: `1px dashed ${t.warningBorder}`,
-                }}
-              >
-                <AlertTriangle size={16} color={t.warning} />
-                <span
-                  style={{ fontWeight: 700, fontSize: 12.5, color: t.warning }}
-                >
-                  {warnings.length} Warning{warnings.length !== 1 ? "s" : ""}
-                </span>
-                <span
-                  style={{
-                    marginLeft: "auto",
-                    padding: "2px 8px",
-                    background: t.warningBg,
-                    color: t.warning,
-                    borderRadius: 999,
-                    fontSize: 9.5,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  Can Ignore
-                </span>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {warnings.map((w, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "8px 10px",
-                      background: t.bgCard,
-                      border: `1px solid ${t.warningBorder}`,
-                      borderRadius: 6,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: t.warning,
-                        marginBottom: w.detail ? 4 : 0,
-                      }}
-                    >
-                      {w.title}
-                    </div>
-                    {w.detail && (
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: t.textSecondary,
-                          whiteSpace: "pre-line",
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {w.detail}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div
-                style={{
-                  marginTop: 10,
-                  paddingTop: 8,
-                  borderTop: `1px dashed ${t.warningBorder}`,
-                  fontSize: 10.5,
-                  color: t.warning,
-                  fontStyle: "italic",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                }}
-              >
-                <Info size={11} />
-                You can {isRepublish ? "update" : "publish"} anyway — review and
-                confirm.
-              </div>
-            </div>
-          )}
-
-          {/* Results */}
-          <div
-            style={{
-              padding: "14px 20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            {results.map((r, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 10,
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  background: r.ok ? t.successBgSubtle : t.dangerBgSubtle,
-                  border: `1px solid ${r.ok ? t.successBorder : t.dangerBorder}`,
-                }}
-              >
-                <div
-                  style={{
-                    flexShrink: 0,
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: r.ok ? t.successBg : t.dangerBg,
-                    color: r.ok ? t.success : t.danger,
-                    marginTop: 1,
-                  }}
-                >
-                  {r.ok ? (
-                    <CheckCircle2 size={14} strokeWidth={2.5} />
-                  ) : (
-                    <XCircle size={14} strokeWidth={2.5} />
-                  )}
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 12.5,
-                      color: r.ok ? t.success : t.danger,
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {r.title}
-                  </div>
-                  {r.detail && (
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: t.textMuted,
-                        marginTop: 4,
-                        whiteSpace: "pre-line",
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {r.detail}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          {warningsBlock}
+          {resultsBlock}
         </div>
 
         {/* Footer */}
@@ -344,60 +479,7 @@ export default function ValidationModal({
             flexShrink: 0,
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              ...btnStyle,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <X size={13} /> Close
-          </button>
-
-          {allOk && (
-            <button
-              onClick={onConfirm}
-              disabled={isSaving}
-              style={{
-                ...btnStyle,
-                background: hasWarnings ? t.warning : t.primary,
-                color: t.textInverse,
-                borderColor: hasWarnings ? t.warning : t.primary,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                opacity: isSaving ? 0.6 : 1,
-                cursor: isSaving ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2
-                    size={14}
-                    style={{ animation: "spin 1s linear infinite" }}
-                  />
-                  {isRepublish ? "Updating..." : "Publishing..."}
-                </>
-              ) : hasWarnings ? (
-                <>
-                  <AlertTriangle size={14} />
-                  {isRepublish ? "Update Anyway" : "Publish Anyway"}
-                </>
-              ) : isRepublish ? (
-                <>
-                  <RefreshCw size={14} />
-                  Confirm &amp; Re-publish
-                </>
-              ) : (
-                <>
-                  <Rocket size={14} />
-                  Confirm &amp; Put in Motion
-                </>
-              )}
-            </button>
-          )}
+          {footerButtons}
         </div>
       </div>
     </div>

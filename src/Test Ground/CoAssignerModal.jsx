@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { timeAgoShort } from "./coAssignerHelpers";
 import { useTheme } from "./useTheme";
-
+import { useResponsive } from "./useResponsive";
+import BottomSheet from "./shared/BottomSheet";
 /* ═══════════════════════════════════════════════════════
    User Avatar
    ═══════════════════════════════════════════════════════ */
@@ -482,6 +483,7 @@ export default function CoAssignerModal({
   onRemoveCoAssigner,
 }) {
   const { t } = useTheme();
+  const { isMobile } = useResponsive();
   const isReadOnly = currentUserRole !== "owner";
 
   const [search, setSearch] = useState("");
@@ -639,7 +641,317 @@ export default function CoAssignerModal({
     boxSizing: "border-box",
     outline: "none",
   };
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={isReadOnly ? "Co-Assigners" : "Manage Co-Assigners"}
+        height="full"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Info banner */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: isReadOnly ? t.bgMuted : t.successBgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: isReadOnly ? t.textSecondary : t.success,
+              display: "flex",
+              gap: 8,
+              lineHeight: 1.5,
+            }}
+          >
+            <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            {isReadOnly ? (
+              <span>
+                Only the project owner can add or remove co-assigners.
+              </span>
+            ) : (
+              <span>
+                Changes are saved <strong>automatically</strong>.
+              </span>
+            )}
+          </div>
 
+          {/* Body */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "14px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 18,
+            }}
+          >
+            {/* Project Team */}
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 8,
+                }}
+              >
+                <Users size={14} color={t.textPrimary} />
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: t.textPrimary,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.4px",
+                  }}
+                >
+                  Project Team ({totalPeople})
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <PersonRow
+                  user={owner}
+                  variant="owner"
+                  isCurrentUser={
+                    owner.userId?.toLowerCase() === currentUserId?.toLowerCase()
+                  }
+                  canRemove={false}
+                />
+                {enrichedCoAssigners.length > 0 ? (
+                  enrichedCoAssigners.map((ca) => (
+                    <PersonRow
+                      key={ca.userId}
+                      user={ca}
+                      variant="co-assigner"
+                      isCurrentUser={
+                        ca.userId.toLowerCase() === currentUserId?.toLowerCase()
+                      }
+                      canRemove={!isReadOnly}
+                      isRemoving={removingUserIds.has(ca.userId.toLowerCase())}
+                      onRemove={handleRemoveUser}
+                      addedAt={ca.addedAt}
+                    />
+                  ))
+                ) : (
+                  <div
+                    style={{
+                      padding: 20,
+                      textAlign: "center",
+                      background: t.bgSubtle,
+                      borderRadius: 10,
+                      color: t.textFaint,
+                      fontSize: 12,
+                    }}
+                  >
+                    <Handshake
+                      size={22}
+                      strokeWidth={1.5}
+                      style={{ marginBottom: 6, opacity: 0.6 }}
+                    />
+                    <div>
+                      {isReadOnly
+                        ? "No co-assigners yet."
+                        : "Add team members below."}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add People */}
+            {!isReadOnly && (
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginBottom: 8,
+                  }}
+                >
+                  <UserPlus size={14} color={t.primary} />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: t.textPrimary,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                    }}
+                  >
+                    Add More People
+                  </span>
+                </div>
+
+                {isLoadingUsers && <LoadingUsers />}
+                {usersError && !isLoadingUsers && (
+                  <ErrorState error={usersError} onRetry={onRetryLoadUsers} />
+                )}
+                {!isLoadingUsers && !usersError && (
+                  <>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <div style={{ position: "relative", flex: 1 }}>
+                        <Search
+                          size={14}
+                          style={{
+                            position: "absolute",
+                            left: 10,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            color: t.textFaint,
+                          }}
+                        />
+                        <input
+                          ref={searchRef}
+                          type="text"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Search users…"
+                          style={{
+                            ...inputStyle,
+                            height: 42,
+                            paddingLeft: 34,
+                            fontSize: 14,
+                          }}
+                        />
+                      </div>
+                      {departments.length > 0 && (
+                        <select
+                          value={selectedDept}
+                          onChange={(e) => setSelectedDept(e.target.value)}
+                          style={{
+                            ...inputStyle,
+                            height: 42,
+                            width: 130,
+                            cursor: "pointer",
+                            fontSize: 13,
+                          }}
+                        >
+                          <option value="">All depts</option>
+                          {departments.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 6,
+                      }}
+                    >
+                      {availableUsers.length === 0 ? (
+                        <div
+                          style={{
+                            padding: 24,
+                            textAlign: "center",
+                            color: t.textFaint,
+                            fontSize: 12,
+                            background: t.bgSubtle,
+                            borderRadius: 10,
+                          }}
+                        >
+                          <UserX
+                            size={24}
+                            strokeWidth={1.5}
+                            style={{ marginBottom: 8, opacity: 0.5 }}
+                          />
+                          <div>
+                            {search || selectedDept
+                              ? "No matches"
+                              : "No users to add"}
+                          </div>
+                        </div>
+                      ) : (
+                        Object.entries(groupedAvailable).map(
+                          ([dept, users]) => (
+                            <div key={dept}>
+                              <div
+                                style={{
+                                  padding: "6px 8px",
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  color: t.textMuted,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.5px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
+                                <Building2 size={10} />
+                                {dept}
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 5,
+                                }}
+                              >
+                                {users.map((user) => (
+                                  <AvailableUserItem
+                                    key={user.userId}
+                                    user={user}
+                                    isAdding={addingUserIds.has(
+                                      user.userId.toLowerCase(),
+                                    )}
+                                    onAdd={handleAddUser}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ),
+                        )
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              background: t.bgSubtle,
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                width: "100%",
+                height: 46,
+                border: "none",
+                background: t.success,
+                color: t.textInverse,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <Check size={14} /> Done
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
   return (
     <div
       onClick={(e) =>

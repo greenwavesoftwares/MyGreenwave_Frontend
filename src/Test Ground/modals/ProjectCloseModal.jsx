@@ -13,15 +13,12 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 import { makeBtnStyle } from "../helpers/styles";
 import CommentField from "../shared/CommentField";
 import RatingBar from "../shared/RatingBar";
 
-/**
- * Project closure feedback modal.
- * - Owner rates: time efficiency, fulfillment, innovation, per-resource
- * - Also readOnly mode to view saved feedback
- */
 export default function ProjectCloseModal({
   project,
   rows,
@@ -32,15 +29,15 @@ export default function ProjectCloseModal({
   savedFeedback = null,
 }) {
   const { t } = useTheme();
+  const { isMobile } = useResponsive();
   const btnStyle = makeBtnStyle(t);
 
-  // ── Only top-level tasks (no sub-tasks) ──
+  // ── Top-level rows only ──
   const topLevelRows = useMemo(() => rows.filter((r) => !r.parentId), [rows]);
 
-  // ── Compute per-resource averages ──
+  // ── Per-resource stats ──
   const resourceStats = useMemo(() => {
     const map = {};
-
     topLevelRows.forEach((r) => {
       if (!r.resource) return;
       const key = r.resource;
@@ -56,7 +53,6 @@ export default function ProjectCloseModal({
         };
       }
       map[key].taskCount += 1;
-
       if (r.timeEfficiencyRating && r.fulfillmentRating && r.innovationRating) {
         map[key].totalTime += r.timeEfficiencyRating;
         map[key].totalFulfillment += r.fulfillmentRating;
@@ -64,7 +60,6 @@ export default function ProjectCloseModal({
         map[key].ratedCount += 1;
       }
     });
-
     return Object.values(map).map((s) => ({
       ...s,
       avgTime:
@@ -82,40 +77,41 @@ export default function ProjectCloseModal({
     }));
   }, [topLevelRows]);
 
-  // ── Compute benchmark vs actual duration ──
-  const totalBenchmarkHrs = useMemo(() => {
-    return topLevelRows.reduce((sum, r) => {
-      return sum + Number(r.durationHrs || 0);
-    }, 0);
-  }, [topLevelRows]);
+  // ── Duration comparison ──
+  const totalBenchmarkHrs = useMemo(
+    () => topLevelRows.reduce((sum, r) => sum + Number(r.durationHrs || 0), 0),
+    [topLevelRows],
+  );
 
-  const totalActualHrs = useMemo(() => {
-    return topLevelRows.reduce((sum, r) => {
-      const pStart = r.actualStart ? new Date(r.actualStart) : null;
-      const pStop = r.actualStop ? new Date(r.actualStop) : null;
-      if (pStart && pStop && !isNaN(pStart) && !isNaN(pStop)) {
-        return sum + (pStop.getTime() - pStart.getTime()) / (1000 * 60 * 60);
-      }
-      if (r.actualElapsedHrs) return sum + Math.abs(Number(r.actualElapsedHrs));
-      return sum;
-    }, 0);
-  }, [topLevelRows]);
+  const totalActualHrs = useMemo(
+    () =>
+      topLevelRows.reduce((sum, r) => {
+        const s = r.actualStart ? new Date(r.actualStart) : null;
+        const e = r.actualStop ? new Date(r.actualStop) : null;
+        if (s && e && !isNaN(s) && !isNaN(e)) {
+          return sum + (e.getTime() - s.getTime()) / (1000 * 60 * 60);
+        }
+        if (r.actualElapsedHrs)
+          return sum + Math.abs(Number(r.actualElapsedHrs));
+        return sum;
+      }, 0),
+    [topLevelRows],
+  );
 
   const totalBenchmarkRounded = Math.round(totalBenchmarkHrs * 100) / 100;
   const totalActualRounded = Math.round(totalActualHrs * 100) / 100;
 
   const fmtHrMin = (hrs) => {
-    if (hrs === null || hrs === undefined || isNaN(hrs)) return "—";
-    const totalMinutes = Math.round(Math.abs(hrs) * 60);
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
+    if (hrs == null || isNaN(hrs)) return "—";
+    const min = Math.round(Math.abs(hrs) * 60);
+    const h = Math.floor(min / 60);
+    const m = min % 60;
     const sign = hrs < 0 ? "-" : "";
     if (h === 0) return `${sign}${m}m`;
     if (m === 0) return `${sign}${h}h`;
     return `${sign}${h}h ${m}m`;
   };
 
-  // ── Efficiency ──
   const efficiencyPercent =
     totalBenchmarkRounded > 0
       ? Math.round(
@@ -127,7 +123,6 @@ export default function ProjectCloseModal({
   const isAhead = efficiencyPercent < 0;
   const isOnTime = efficiencyPercent === 0;
 
-  // ── Auto-suggest: Time Efficiency ──
   const suggestTimeRating = () => {
     if (
       !totalBenchmarkRounded ||
@@ -148,16 +143,14 @@ export default function ProjectCloseModal({
     return 1;
   };
 
-  // ── Auto-suggest: Fulfillment ──
   const suggestFulfillmentRating = () => {
     const rated = resourceStats.filter((s) => s.ratedCount > 0);
     if (rated.length === 0) return 5;
-    const avg =
-      rated.reduce((sum, s) => sum + s.avgFulfillment, 0) / rated.length;
-    return Math.round(avg);
+    return Math.round(
+      rated.reduce((sum, s) => sum + s.avgFulfillment, 0) / rated.length,
+    );
   };
 
-  // ── State ──
   const [timeRating, setTimeRating] = useState(
     readOnly && savedFeedback
       ? savedFeedback.timeEfficiencyRating || 0
@@ -189,10 +182,8 @@ export default function ProjectCloseModal({
   );
   const [touched, setTouched] = useState(false);
 
-  // ── Per-resource ratings ──
   const [resourceRatings, setResourceRatings] = useState(() => {
     const initial = {};
-
     if (readOnly && savedFeedback?.resourceRatings) {
       savedFeedback.resourceRatings.forEach((r) => {
         initial[r.userId] = {
@@ -201,25 +192,22 @@ export default function ProjectCloseModal({
         };
       });
       resourceStats.forEach((s) => {
-        if (!initial[s.userId]) {
-          initial[s.userId] = { rating: 0, comments: "" };
-        }
+        if (!initial[s.userId]) initial[s.userId] = { rating: 0, comments: "" };
       });
     } else {
       resourceStats.forEach((s) => {
-        const overallAvg =
+        const avg =
           s.ratedCount > 0
             ? Math.round(
                 ((s.avgTime + s.avgFulfillment + s.avgInnovation) / 3) * 10,
               ) / 10
             : 0;
         initial[s.userId] = {
-          rating: overallAvg > 0 ? Math.round(overallAvg) : 0,
+          rating: avg > 0 ? Math.round(avg) : 0,
           comments: "",
         };
       });
     }
-
     return initial;
   });
 
@@ -236,7 +224,6 @@ export default function ProjectCloseModal({
     allResourcesRated &&
     overallComments.trim().length >= 5;
 
-  // ── Rating description labels ──
   const timeLabels = {
     1: "Very Poor — Project took 2x+ longer than planned",
     2: "Poor — Significant project delay",
@@ -299,7 +286,6 @@ export default function ProjectCloseModal({
     });
   };
 
-  // ── Rating color helper ──
   const ratingColor = (val) => {
     if (val <= 0)
       return { bg: t.bgMuted, color: t.textFaint, border: t.border };
@@ -309,7 +295,6 @@ export default function ProjectCloseModal({
     return { bg: "#DCFCE7", color: "#15803D", border: "#86EFAC" };
   };
 
-  // ── Unrated task count ──
   const unratedCount = topLevelRows.filter(
     (r) =>
       !r.timeEfficiencyRating || !r.fulfillmentRating || !r.innovationRating,
@@ -321,6 +306,899 @@ export default function ProjectCloseModal({
         .trim() === "finished",
   ).length;
 
+  const modalTitle = readOnly ? "Project Feedback" : "Close Project";
+
+  /* ─── Body content (shared between mobile & desktop) ─── */
+  const bodyContent = (
+    <div style={{ padding: isMobile ? "16px 14px" : "20px" }}>
+      {/* Warning banner */}
+      {!readOnly && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            padding: 10,
+            background: t.dangerBgSubtle,
+            border: `1px solid ${t.dangerBorder}`,
+            borderRadius: 8,
+            marginBottom: 18,
+          }}
+        >
+          <AlertOctagon
+            size={16}
+            color={t.danger}
+            style={{ flexShrink: 0, marginTop: 1 }}
+          />
+          <div
+            style={{ fontSize: 12, color: t.dangerTextDeep, lineHeight: 1.5 }}
+          >
+            This will permanently <strong>close</strong> the project. All tasks
+            will be finalized. This action cannot be undone.
+          </div>
+        </div>
+      )}
+
+      {/* Unrated warning */}
+      {unratedCount > 0 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            padding: 10,
+            background: t.warningBgSubtle,
+            border: `1px solid ${t.warningBorder}`,
+            borderRadius: 8,
+            marginBottom: 18,
+          }}
+        >
+          <AlertTriangle
+            size={16}
+            color={t.warning}
+            style={{ flexShrink: 0, marginTop: 1 }}
+          />
+          <div style={{ fontSize: 12, color: t.warning, lineHeight: 1.5 }}>
+            <strong>{unratedCount}</strong> of {topLevelRows.length} top-level
+            task{topLevelRows.length !== 1 ? "s" : ""} not rated. (
+            {finishedCount} finished, {topLevelRows.length - finishedCount}{" "}
+            remaining).
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Per-Resource Ratings ═══ */}
+      {resourceStats.length > 0 && (
+        <div
+          style={{
+            border: `1px solid ${t.border}`,
+            borderRadius: 10,
+            padding: isMobile ? 12 : 16,
+            marginBottom: 18,
+            background: t.bgSubtle,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 7,
+                background: "#FCE7F3",
+                color: "#BE185D",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Star size={14} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{ fontWeight: 700, fontSize: 13, color: t.textPrimary }}
+              >
+                Rate Each Resource
+                <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+              </div>
+              <div style={{ fontSize: 11, color: t.textMuted }}>
+                Project-level rating per resource
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {resourceStats.map((s) => {
+              const avg =
+                s.ratedCount > 0
+                  ? Math.round(
+                      ((s.avgTime + s.avgFulfillment + s.avgInnovation) / 3) *
+                        10,
+                    ) / 10
+                  : 0;
+              const rc = ratingColor(avg);
+              const currentRating = resourceRatings[s.userId]?.rating || 0;
+              const currentComments = resourceRatings[s.userId]?.comments || "";
+              const currentHover = resourceHovers[s.userId] || 0;
+
+              return (
+                <div
+                  key={s.userId}
+                  style={{
+                    border: `1px solid ${t.border}`,
+                    borderRadius: 8,
+                    padding: 12,
+                    background: t.bgCard,
+                  }}
+                >
+                  {/* Header */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginBottom: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        background: t.primaryBg,
+                        color: t.primary,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {(s.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13,
+                          color: t.textPrimary,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {s.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: t.textFaint,
+                          fontFamily: "'JetBrains Mono',monospace",
+                        }}
+                      >
+                        {s.userId}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        background: rc.bg,
+                        color: rc.color,
+                        border: `1px solid ${rc.border}`,
+                        fontFamily: "'JetBrains Mono',monospace",
+                      }}
+                    >
+                      Avg: {avg > 0 ? avg.toFixed(1) : "—"}
+                    </span>
+                  </div>
+
+                  {avg > 0 && !readOnly && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 8,
+                        padding: "5px 10px",
+                        background: t.infoBg,
+                        border: `1px solid ${t.infoBorder}`,
+                        borderRadius: 6,
+                        fontSize: 11,
+                        color: t.info,
+                      }}
+                    >
+                      <Info size={11} />
+                      <span>
+                        Suggested: <strong>{Math.round(avg)}/10</strong>
+                      </span>
+                      <button
+                        onClick={() =>
+                          setResourceRatings((prev) => ({
+                            ...prev,
+                            [s.userId]: {
+                              ...prev[s.userId],
+                              rating: Math.round(avg),
+                            },
+                          }))
+                        }
+                        style={{
+                          marginLeft: "auto",
+                          background: t.primary,
+                          color: t.textInverse,
+                          border: "none",
+                          borderRadius: 4,
+                          padding: "3px 10px",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+
+                  <RatingBar
+                    value={currentRating}
+                    hover={currentHover}
+                    onChange={(val) =>
+                      setResourceRatings((prev) => ({
+                        ...prev,
+                        [s.userId]: { ...prev[s.userId], rating: val },
+                      }))
+                    }
+                    onHover={(val) =>
+                      setResourceHovers((prev) => ({
+                        ...prev,
+                        [s.userId]: val,
+                      }))
+                    }
+                    onLeave={() =>
+                      setResourceHovers((prev) => ({ ...prev, [s.userId]: 0 }))
+                    }
+                    disabled={readOnly || isSubmitting}
+                  />
+
+                  {touched && currentRating === 0 && (
+                    <div
+                      style={{ fontSize: 11, color: t.danger, marginTop: 4 }}
+                    >
+                      ⚠ Please rate {s.name}
+                    </div>
+                  )}
+
+                  <CommentField
+                    label={`Comments for ${s.name}`}
+                    value={currentComments}
+                    onChange={(val) =>
+                      setResourceRatings((prev) => ({
+                        ...prev,
+                        [s.userId]: { ...prev[s.userId], comments: val },
+                      }))
+                    }
+                    placeholder="Feedback…"
+                    readOnly={readOnly}
+                    disabled={readOnly || isSubmitting}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Time Efficiency ═══ */}
+      <div
+        style={{
+          border: `1px solid ${t.border}`,
+          borderRadius: 10,
+          padding: isMobile ? 12 : 16,
+          marginBottom: 18,
+          background: t.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: t.primaryBg,
+              color: t.primary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Clock size={14} />
+          </div>
+          <div>
+            <div
+              style={{ fontWeight: 700, fontSize: 13, color: t.textPrimary }}
+            >
+              Project Time Efficiency
+              <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+            </div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>
+              Overall efficiency across all top-level tasks
+            </div>
+          </div>
+        </div>
+
+        {/* Duration comparison */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            {
+              label: "Total Benchmark",
+              value: fmtHrMin(totalBenchmarkRounded),
+              bg: t.primaryBg,
+              color: t.primary,
+              border: t.primaryBorder,
+              extra: `${topLevelRows.length} task${topLevelRows.length !== 1 ? "s" : ""}`,
+            },
+            {
+              label: "Total Actual",
+              value: fmtHrMin(totalActualRounded),
+              bg: isAhead ? t.successBg : isOnTime ? t.primaryBg : t.warningBg,
+              color: isAhead ? t.success : isOnTime ? t.primary : t.warning,
+              border: isAhead
+                ? t.successBorder
+                : isOnTime
+                  ? t.primaryBorder
+                  : t.warningBorder,
+            },
+            {
+              label: "Variance",
+              value: `${isAhead || isOnTime ? "" : "+"}${efficiencyPercent}%`,
+              bg: isAhead ? t.successBg : isOnTime ? t.infoBg : t.dangerBg,
+              color: isAhead ? t.success : isOnTime ? t.primary : t.danger,
+              border: isAhead
+                ? t.successBorder
+                : isOnTime
+                  ? t.infoBorder
+                  : t.dangerBorder,
+            },
+          ].map((c, i) => (
+            <div
+              key={i}
+              style={{
+                flex: "1 1 100px",
+                padding: "8px 12px",
+                background: c.bg,
+                border: `1px solid ${c.border}`,
+                borderRadius: 7,
+                textAlign: "center",
+                minWidth: 90,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 9.5,
+                  color: c.color,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.3px",
+                  marginBottom: 2,
+                }}
+              >
+                {c.label}
+              </div>
+              <div
+                style={{
+                  fontSize: 16,
+                  fontWeight: 800,
+                  color: c.color,
+                  fontFamily: "'JetBrains Mono',monospace",
+                }}
+              >
+                {c.value}
+              </div>
+              {c.extra && (
+                <div style={{ fontSize: 10, color: t.textMuted, marginTop: 2 }}>
+                  {c.extra}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {!readOnly && (
+          <SuggestionRow
+            t={t}
+            bg={t.infoBg}
+            border={t.infoBorder}
+            color={t.info}
+            btnBg={t.primary}
+            text={
+              <>
+                Suggested: <strong>{suggestTimeRating()}/10</strong> based on{" "}
+                {efficiencyPercent === 0
+                  ? "on-time delivery"
+                  : isAhead
+                    ? `${Math.abs(efficiencyPercent)}% ahead`
+                    : `${efficiencyPercent}% over`}
+              </>
+            }
+            onApply={() => setTimeRating(suggestTimeRating())}
+          />
+        )}
+
+        <RatingBar
+          value={timeRating}
+          hover={hoverTime}
+          onChange={setTimeRating}
+          onHover={setHoverTime}
+          onLeave={() => setHoverTime(0)}
+          disabled={readOnly || isSubmitting}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: t.textMuted,
+            fontStyle: "italic",
+            marginTop: 6,
+            minHeight: 14,
+          }}
+        >
+          {timeLabels[hoverTime || timeRating] || "Select a rating"}
+        </div>
+        {touched && timeRating === 0 && (
+          <div style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>
+            ⚠ Please rate time efficiency
+          </div>
+        )}
+
+        <CommentField
+          label="Time Efficiency Comments"
+          value={timeComments}
+          onChange={setTimeComments}
+          placeholder="Comments on time management…"
+          readOnly={readOnly}
+          disabled={readOnly || isSubmitting}
+        />
+      </div>
+
+      {/* ═══ Fulfillment ═══ */}
+      <div
+        style={{
+          border: `1px solid ${t.border}`,
+          borderRadius: 10,
+          padding: isMobile ? 12 : 16,
+          marginBottom: 18,
+          background: t.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: t.violetBg,
+              color: t.violet,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ShieldCheck size={14} />
+          </div>
+          <div>
+            <div
+              style={{ fontWeight: 700, fontSize: 13, color: t.textPrimary }}
+            >
+              Project Fulfillment
+              <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+            </div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>
+              Overall quality and completeness
+            </div>
+          </div>
+        </div>
+
+        {!readOnly && (
+          <SuggestionRow
+            t={t}
+            bg={t.violetBg}
+            border={t.violetBorder}
+            color={t.violet}
+            btnBg={t.violet}
+            text={
+              <>
+                Suggested: <strong>{suggestFulfillmentRating()}/10</strong> from
+                resource averages
+              </>
+            }
+            onApply={() => setFulfillmentRating(suggestFulfillmentRating())}
+          />
+        )}
+
+        <RatingBar
+          value={fulfillmentRating}
+          hover={hoverFulfillment}
+          onChange={setFulfillmentRating}
+          onHover={setHoverFulfillment}
+          onLeave={() => setHoverFulfillment(0)}
+          disabled={readOnly || isSubmitting}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: t.textMuted,
+            fontStyle: "italic",
+            marginTop: 6,
+            minHeight: 14,
+          }}
+        >
+          {fulfillmentLabels[hoverFulfillment || fulfillmentRating] ||
+            "Select a rating"}
+        </div>
+        {touched && fulfillmentRating === 0 && (
+          <div style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>
+            ⚠ Please rate fulfillment
+          </div>
+        )}
+
+        <CommentField
+          label="Fulfillment Comments"
+          value={fulfillmentComments}
+          onChange={setFulfillmentComments}
+          placeholder="Comments on quality…"
+          readOnly={readOnly}
+          disabled={readOnly || isSubmitting}
+        />
+      </div>
+
+      {/* ═══ Innovation ═══ */}
+      <div
+        style={{
+          border: `1px solid ${t.border}`,
+          borderRadius: 10,
+          padding: isMobile ? 12 : 16,
+          marginBottom: 18,
+          background: t.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              background: t.warningBg,
+              color: t.warning,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Lightbulb size={14} />
+          </div>
+          <div>
+            <div
+              style={{ fontWeight: 700, fontSize: 13, color: t.textPrimary }}
+            >
+              Project Innovation
+              <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+            </div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>
+              Creative and innovative effort
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 12,
+            padding: "5px 10px",
+            background: t.warningBgSubtle,
+            border: `1px solid ${t.warningBorder}`,
+            borderRadius: 6,
+            fontSize: 11,
+            color: t.warning,
+          }}
+        >
+          <Info size={11} />
+          <span>Subjective — rate based on observed innovation</span>
+        </div>
+
+        <RatingBar
+          value={innovationRating}
+          hover={hoverInnovation}
+          onChange={setInnovationRating}
+          onHover={setHoverInnovation}
+          onLeave={() => setHoverInnovation(0)}
+          disabled={readOnly || isSubmitting}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: t.textMuted,
+            fontStyle: "italic",
+            marginTop: 6,
+            minHeight: 14,
+          }}
+        >
+          {innovationLabels[hoverInnovation || innovationRating] ||
+            "Select a rating"}
+        </div>
+        {touched && innovationRating === 0 && (
+          <div style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>
+            ⚠ Please rate innovation
+          </div>
+        )}
+
+        <CommentField
+          label="Innovation Comments"
+          value={innovationComments}
+          onChange={setInnovationComments}
+          placeholder="Creative solutions…"
+          readOnly={readOnly}
+          disabled={readOnly || isSubmitting}
+        />
+      </div>
+
+      {/* ═══ Overall Comments ═══ */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            color: t.textPrimary,
+            marginBottom: 6,
+          }}
+        >
+          Overall Project Feedback
+          <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
+        </label>
+        <textarea
+          value={overallComments}
+          onChange={(e) => setOverallComments(e.target.value)}
+          onBlur={() => setTouched(true)}
+          placeholder="Summarize your overall assessment…"
+          disabled={readOnly || isSubmitting}
+          rows={isMobile ? 5 : 4}
+          style={{
+            width: "100%",
+            border: `1px solid ${touched && overallComments.trim().length < 5 ? t.dangerBorder : t.borderStrong}`,
+            borderRadius: 8,
+            padding: "10px 12px",
+            fontFamily: "Sora,sans-serif",
+            fontSize: isMobile ? 14 : 12.5,
+            outline: "none",
+            boxSizing: "border-box",
+            resize: "vertical",
+            minHeight: isMobile ? 100 : 80,
+            lineHeight: 1.5,
+            background:
+              readOnly || isSubmitting ? t.bgInputDisabled : t.bgInput,
+            color: t.textPrimary,
+          }}
+        />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 6,
+            fontSize: 11,
+            color:
+              touched && overallComments.trim().length < 5
+                ? t.danger
+                : t.textFaint,
+          }}
+        >
+          <span>
+            {touched && overallComments.trim().length < 5
+              ? "⚠ Overall feedback must be at least 5 characters"
+              : "Summarize your assessment"}
+          </span>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color:
+                overallComments.trim().length > 0
+                  ? t.textSecondary
+                  : t.textDisabled,
+            }}
+          >
+            {overallComments.trim().length} chars
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ─── Footer buttons ─── */
+  const footerButtons = readOnly ? (
+    <button
+      onClick={onClose}
+      style={{
+        ...btnStyle,
+        flex: isMobile ? 1 : "initial",
+        height: isMobile ? 46 : 32,
+        justifyContent: "center",
+        fontSize: isMobile ? 14 : 12,
+        fontWeight: isMobile ? 600 : 500,
+      }}
+    >
+      <X size={13} /> Close
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={onClose}
+        disabled={isSubmitting}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1 : "initial",
+          height: isMobile ? 46 : 32,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 600 : 500,
+          opacity: isSubmitting ? 0.5 : 1,
+          cursor: isSubmitting ? "not-allowed" : "pointer",
+        }}
+      >
+        <X size={13} /> Cancel
+      </button>
+      <button
+        onClick={handleSubmit}
+        disabled={!isValid || isSubmitting}
+        style={{
+          ...btnStyle,
+          flex: isMobile ? 1.2 : "initial",
+          height: isMobile ? 46 : 32,
+          background: isValid ? t.danger : t.bgMuted,
+          color: isValid ? t.textInverse : t.textFaint,
+          borderColor: isValid ? t.danger : t.border,
+          justifyContent: "center",
+          fontSize: isMobile ? 14 : 12,
+          fontWeight: isMobile ? 700 : 600,
+          opacity: isSubmitting ? 0.6 : 1,
+          cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
+        }}
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2
+              size={14}
+              style={{ animation: "spin 1s linear infinite" }}
+            />
+            Closing...
+          </>
+        ) : (
+          <>
+            <XCircle size={14} /> Close Project
+          </>
+        )}
+      </button>
+    </>
+  );
+
+  // ══════════════════════════════════════════════════════
+  //   MOBILE — Bottom Sheet
+  // ══════════════════════════════════════════════════════
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={modalTitle}
+        height="full"
+      >
+        <div
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Subtitle */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: readOnly ? t.violetBg : t.dangerBgSubtle,
+              borderBottom: `1px solid ${t.border}`,
+              fontSize: 12,
+              color: readOnly ? t.violet : t.danger,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {readOnly ? (
+              <Star size={14} fill={t.violet} />
+            ) : (
+              <XCircle size={14} />
+            )}
+            <span style={{ fontWeight: 600 }}>
+              {project || "Untitled Project"}
+            </span>
+            {readOnly && (
+              <span
+                style={{
+                  marginLeft: "auto",
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  background: t.violetBg,
+                  color: t.violet,
+                  border: `1px solid ${t.violetBorder}`,
+                  textTransform: "uppercase",
+                }}
+              >
+                Read Only
+              </span>
+            )}
+          </div>
+
+          {/* Body */}
+          <div style={{ flex: 1, overflowY: "auto" }}>{bodyContent}</div>
+
+          {/* Footer */}
+          <div
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${t.border}`,
+              display: "flex",
+              gap: 8,
+              background: t.bgSubtle,
+            }}
+          >
+            {footerButtons}
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  //   DESKTOP — Existing modal
+  // ══════════════════════════════════════════════════════
   return (
     <div
       onClick={(e) =>
@@ -386,7 +1264,7 @@ export default function ProjectCloseModal({
             <div
               style={{ fontWeight: 700, fontSize: 14, color: t.textPrimary }}
             >
-              {readOnly ? "Project Feedback" : "Close Project"}
+              {modalTitle}
             </div>
             <div
               style={{
@@ -439,943 +1317,7 @@ export default function ProjectCloseModal({
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
-          {/* Warning banner */}
-          {!readOnly && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 8,
-                padding: 10,
-                background: t.dangerBgSubtle,
-                border: `1px solid ${t.dangerBorder}`,
-                borderRadius: 8,
-                marginBottom: 18,
-              }}
-            >
-              <AlertOctagon
-                size={16}
-                color={t.danger}
-                style={{ flexShrink: 0, marginTop: 1 }}
-              />
-              <div
-                style={{
-                  fontSize: 11.5,
-                  color: t.dangerTextDeep,
-                  lineHeight: 1.5,
-                }}
-              >
-                This will permanently <strong>close</strong> the project. All
-                tasks will be finalized. This action cannot be undone.
-              </div>
-            </div>
-          )}
-
-          {/* Unrated tasks warning */}
-          {unratedCount > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 8,
-                padding: 10,
-                background: t.warningBgSubtle,
-                border: `1px solid ${t.warningBorder}`,
-                borderRadius: 8,
-                marginBottom: 18,
-              }}
-            >
-              <AlertTriangle
-                size={16}
-                color={t.warning}
-                style={{ flexShrink: 0, marginTop: 1 }}
-              />
-              <div
-                style={{ fontSize: 11.5, color: t.warning, lineHeight: 1.5 }}
-              >
-                <strong>{unratedCount}</strong> of {topLevelRows.length}{" "}
-                top-level task{topLevelRows.length !== 1 ? "s" : ""} have not
-                been rated yet. ({finishedCount} finished,{" "}
-                {topLevelRows.length - finishedCount} remaining). Resource
-                averages below may be incomplete.
-              </div>
-            </div>
-          )}
-
-          {/* ═══ Per-Resource Ratings ═══ */}
-          {resourceStats.length > 0 && (
-            <div
-              style={{
-                border: `1px solid ${t.border}`,
-                borderRadius: 10,
-                padding: 16,
-                marginBottom: 18,
-                background: t.bgSubtle,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 12,
-                }}
-              >
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 7,
-                    background: "#FCE7F3",
-                    color: "#BE185D",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Star size={14} />
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 12.5,
-                      color: t.textPrimary,
-                    }}
-                  >
-                    Rate Each Resource
-                    <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
-                  </div>
-                  <div style={{ fontSize: 10.5, color: t.textMuted }}>
-                    Based on the task-level averages above, give a final
-                    project-level rating to each resource
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 14 }}
-              >
-                {resourceStats.map((s) => {
-                  const overallAvg =
-                    s.ratedCount > 0
-                      ? Math.round(
-                          ((s.avgTime + s.avgFulfillment + s.avgInnovation) /
-                            3) *
-                            10,
-                        ) / 10
-                      : 0;
-                  const rc = ratingColor(overallAvg);
-                  const currentRating = resourceRatings[s.userId]?.rating || 0;
-                  const currentComments =
-                    resourceRatings[s.userId]?.comments || "";
-                  const currentHover = resourceHovers[s.userId] || 0;
-
-                  return (
-                    <div
-                      key={s.userId}
-                      style={{
-                        border: `1px solid ${t.border}`,
-                        borderRadius: 8,
-                        padding: 14,
-                        background: t.bgCard,
-                      }}
-                    >
-                      {/* Resource header */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          marginBottom: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: "50%",
-                            background: t.primaryBg,
-                            color: t.primary,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {(s.name || "?").charAt(0).toUpperCase()}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontWeight: 600,
-                              fontSize: 12.5,
-                              color: t.textPrimary,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {s.name}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: t.textFaint,
-                              fontFamily: "'JetBrains Mono',monospace",
-                            }}
-                          >
-                            {s.userId}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 10,
-                              color: t.textMuted,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            Task Avg:
-                          </span>
-                          <span
-                            style={{
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: rc.bg,
-                              color: rc.color,
-                              border: `1px solid ${rc.border}`,
-                              fontFamily: "'JetBrains Mono',monospace",
-                            }}
-                          >
-                            {overallAvg > 0 ? overallAvg.toFixed(1) : "—"}
-                          </span>
-                        </div>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 4,
-                            fontSize: 9.5,
-                            color: t.textFaint,
-                          }}
-                        >
-                          {[
-                            { label: "T", val: s.avgTime },
-                            { label: "F", val: s.avgFulfillment },
-                            { label: "I", val: s.avgInnovation },
-                          ].map(({ label, val }) => (
-                            <span
-                              key={label}
-                              title={
-                                label === "T"
-                                  ? "Avg Time Efficiency"
-                                  : label === "F"
-                                    ? "Avg Fulfillment"
-                                    : "Avg Innovation"
-                              }
-                              style={{
-                                padding: "1px 5px",
-                                borderRadius: 3,
-                                background: t.bgMuted,
-                                border: `1px solid ${t.border}`,
-                                fontFamily: "'JetBrains Mono',monospace",
-                                fontSize: 9,
-                                fontWeight: 600,
-                                cursor: "help",
-                              }}
-                            >
-                              {label}:{val > 0 ? val.toFixed(1) : "—"}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Suggested badge */}
-                      {overallAvg > 0 && !readOnly && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            marginBottom: 8,
-                            padding: "4px 10px",
-                            background: t.infoBg,
-                            border: `1px solid ${t.infoBorder}`,
-                            borderRadius: 6,
-                            fontSize: 10.5,
-                            color: t.info,
-                          }}
-                        >
-                          <Info size={11} />
-                          <span>
-                            Suggested:{" "}
-                            <strong>{Math.round(overallAvg)}/10</strong> based
-                            on task averages ({s.ratedCount}/{s.taskCount}{" "}
-                            rated)
-                          </span>
-                          <button
-                            onClick={() =>
-                              setResourceRatings((prev) => ({
-                                ...prev,
-                                [s.userId]: {
-                                  ...prev[s.userId],
-                                  rating: Math.round(overallAvg),
-                                },
-                              }))
-                            }
-                            style={{
-                              marginLeft: "auto",
-                              background: t.primary,
-                              color: t.textInverse,
-                              border: "none",
-                              borderRadius: 4,
-                              padding: "2px 8px",
-                              fontSize: 10,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      )}
-
-                      <RatingBar
-                        value={currentRating}
-                        hover={currentHover}
-                        onChange={(val) =>
-                          setResourceRatings((prev) => ({
-                            ...prev,
-                            [s.userId]: { ...prev[s.userId], rating: val },
-                          }))
-                        }
-                        onHover={(val) =>
-                          setResourceHovers((prev) => ({
-                            ...prev,
-                            [s.userId]: val,
-                          }))
-                        }
-                        onLeave={() =>
-                          setResourceHovers((prev) => ({
-                            ...prev,
-                            [s.userId]: 0,
-                          }))
-                        }
-                        disabled={readOnly || isSubmitting}
-                      />
-
-                      {touched && currentRating === 0 && (
-                        <div
-                          style={{
-                            fontSize: 10.5,
-                            color: t.danger,
-                            marginTop: 4,
-                          }}
-                        >
-                          ⚠ Please rate {s.name}
-                        </div>
-                      )}
-
-                      <CommentField
-                        label={`Comments for ${s.name}`}
-                        value={currentComments}
-                        onChange={(val) =>
-                          setResourceRatings((prev) => ({
-                            ...prev,
-                            [s.userId]: { ...prev[s.userId], comments: val },
-                          }))
-                        }
-                        placeholder={`Project-level feedback for ${s.name}…`}
-                        readOnly={readOnly}
-                        disabled={readOnly || isSubmitting}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ═══ Time Efficiency ═══ */}
-          <div
-            style={{
-              border: `1px solid ${t.border}`,
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 18,
-              background: t.bgSubtle,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: t.primaryBg,
-                  color: t.primary,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Clock size={14} />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    color: t.textPrimary,
-                  }}
-                >
-                  Project Time Efficiency
-                  <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
-                </div>
-                <div style={{ fontSize: 10.5, color: t.textMuted }}>
-                  Overall time efficiency across all top-level tasks (sub-tasks
-                  excluded)
-                </div>
-              </div>
-            </div>
-
-            {/* Duration comparison */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  background: t.primaryBg,
-                  border: `1px solid ${t.primaryBorder}`,
-                  borderRadius: 7,
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: t.primary,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    marginBottom: 2,
-                  }}
-                >
-                  Total Benchmark
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: t.primary,
-                    fontFamily: "'JetBrains Mono',monospace",
-                  }}
-                >
-                  {fmtHrMin(totalBenchmarkRounded)}
-                </div>
-                <div style={{ fontSize: 10, color: t.textMuted, marginTop: 2 }}>
-                  {topLevelRows.length} task
-                  {topLevelRows.length !== 1 ? "s" : ""}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  background: isAhead
-                    ? t.successBg
-                    : isOnTime
-                      ? t.primaryBg
-                      : t.warningBg,
-                  border: `1px solid ${isAhead ? t.successBorder : isOnTime ? t.primaryBorder : t.warningBorder}`,
-                  borderRadius: 7,
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: isAhead
-                      ? t.success
-                      : isOnTime
-                        ? t.primary
-                        : t.warning,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    marginBottom: 2,
-                  }}
-                >
-                  Total Actual
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: isAhead
-                      ? t.success
-                      : isOnTime
-                        ? t.primary
-                        : t.warning,
-                    fontFamily: "'JetBrains Mono',monospace",
-                  }}
-                >
-                  {fmtHrMin(totalActualRounded)}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: "8px 12px",
-                  background: isAhead
-                    ? t.successBg
-                    : isOnTime
-                      ? t.infoBg
-                      : t.dangerBg,
-                  border: `1px solid ${isAhead ? t.successBorder : isOnTime ? t.infoBorder : t.dangerBorder}`,
-                  borderRadius: 7,
-                  textAlign: "center",
-                  minWidth: 80,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: t.textMuted,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3px",
-                    marginBottom: 2,
-                  }}
-                >
-                  Variance
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: isAhead
-                      ? t.success
-                      : isOnTime
-                        ? t.primary
-                        : t.danger,
-                    fontFamily: "'JetBrains Mono',monospace",
-                  }}
-                >
-                  {isAhead ? "" : isOnTime ? "" : "+"}
-                  {efficiencyPercent}%
-                </div>
-              </div>
-            </div>
-
-            {!readOnly && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginBottom: 8,
-                  padding: "5px 10px",
-                  background: t.infoBg,
-                  border: `1px solid ${t.infoBorder}`,
-                  borderRadius: 6,
-                  fontSize: 10.5,
-                  color: t.info,
-                }}
-              >
-                <Info size={12} />
-                <span>
-                  Suggested rating: <strong>{suggestTimeRating()}/10</strong>{" "}
-                  based on{" "}
-                  {efficiencyPercent === 0
-                    ? "on-time delivery"
-                    : isAhead
-                      ? `${Math.abs(efficiencyPercent)}% ahead of schedule`
-                      : `${efficiencyPercent}% over planned time`}
-                </span>
-                <button
-                  onClick={() => setTimeRating(suggestTimeRating())}
-                  style={{
-                    marginLeft: "auto",
-                    background: t.primary,
-                    color: t.textInverse,
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "2px 8px",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-
-            <RatingBar
-              value={timeRating}
-              hover={hoverTime}
-              onChange={setTimeRating}
-              onHover={setHoverTime}
-              onLeave={() => setHoverTime(0)}
-              disabled={readOnly || isSubmitting}
-            />
-            <div
-              style={{
-                fontSize: 10.5,
-                color: t.textMuted,
-                fontStyle: "italic",
-                marginTop: 6,
-                minHeight: 14,
-              }}
-            >
-              {timeLabels[hoverTime || timeRating] || "Select a rating"}
-            </div>
-            {touched && timeRating === 0 && (
-              <div style={{ fontSize: 10.5, color: t.danger, marginTop: 4 }}>
-                ⚠ Please rate time efficiency
-              </div>
-            )}
-
-            <CommentField
-              label="Time Efficiency Comments"
-              value={timeComments}
-              onChange={setTimeComments}
-              placeholder="Comments on overall project time management…"
-              readOnly={readOnly}
-              disabled={readOnly || isSubmitting}
-            />
-          </div>
-
-          {/* ═══ Fulfillment ═══ */}
-          <div
-            style={{
-              border: `1px solid ${t.border}`,
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 18,
-              background: t.bgSubtle,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: t.violetBg,
-                  color: t.violet,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ShieldCheck size={14} />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    color: t.textPrimary,
-                  }}
-                >
-                  Project Fulfillment
-                  <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
-                </div>
-                <div style={{ fontSize: 10.5, color: t.textMuted }}>
-                  Overall quality and completeness based on per-resource
-                  performance above
-                </div>
-              </div>
-            </div>
-
-            {!readOnly && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginBottom: 8,
-                  padding: "5px 10px",
-                  background: t.violetBg,
-                  border: `1px solid ${t.violetBorder}`,
-                  borderRadius: 6,
-                  fontSize: 10.5,
-                  color: t.violet,
-                }}
-              >
-                <Info size={12} />
-                <span>
-                  Suggested rating:{" "}
-                  <strong>{suggestFulfillmentRating()}/10</strong> based on
-                  average resource fulfillment scores
-                </span>
-                <button
-                  onClick={() =>
-                    setFulfillmentRating(suggestFulfillmentRating())
-                  }
-                  style={{
-                    marginLeft: "auto",
-                    background: t.violet,
-                    color: t.textInverse,
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "2px 8px",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-
-            <RatingBar
-              value={fulfillmentRating}
-              hover={hoverFulfillment}
-              onChange={setFulfillmentRating}
-              onHover={setHoverFulfillment}
-              onLeave={() => setHoverFulfillment(0)}
-              disabled={readOnly || isSubmitting}
-            />
-            <div
-              style={{
-                fontSize: 10.5,
-                color: t.textMuted,
-                fontStyle: "italic",
-                marginTop: 6,
-                minHeight: 14,
-              }}
-            >
-              {fulfillmentLabels[hoverFulfillment || fulfillmentRating] ||
-                "Select a rating"}
-            </div>
-            {touched && fulfillmentRating === 0 && (
-              <div style={{ fontSize: 10.5, color: t.danger, marginTop: 4 }}>
-                ⚠ Please rate level of fulfillment
-              </div>
-            )}
-
-            <CommentField
-              label="Fulfillment Comments"
-              value={fulfillmentComments}
-              onChange={setFulfillmentComments}
-              placeholder="Comments on overall project quality…"
-              readOnly={readOnly}
-              disabled={readOnly || isSubmitting}
-            />
-          </div>
-
-          {/* ═══ Innovation ═══ */}
-          <div
-            style={{
-              border: `1px solid ${t.border}`,
-              borderRadius: 10,
-              padding: 16,
-              marginBottom: 18,
-              background: t.bgSubtle,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: t.warningBg,
-                  color: t.warning,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Lightbulb size={14} />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 12.5,
-                    color: t.textPrimary,
-                  }}
-                >
-                  Project Innovation
-                  <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
-                </div>
-                <div style={{ fontSize: 10.5, color: t.textMuted }}>
-                  Overall creative and innovative effort across the project
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginBottom: 12,
-                padding: "5px 10px",
-                background: t.warningBgSubtle,
-                border: `1px solid ${t.warningBorder}`,
-                borderRadius: 6,
-                fontSize: 10.5,
-                color: t.warning,
-              }}
-            >
-              <Info size={12} />
-              <span>
-                Subjective assessment — rate based on your overall observation
-                of innovation across the project.
-              </span>
-            </div>
-
-            <RatingBar
-              value={innovationRating}
-              hover={hoverInnovation}
-              onChange={setInnovationRating}
-              onHover={setHoverInnovation}
-              onLeave={() => setHoverInnovation(0)}
-              disabled={readOnly || isSubmitting}
-            />
-            <div
-              style={{
-                fontSize: 10.5,
-                color: t.textMuted,
-                fontStyle: "italic",
-                marginTop: 6,
-                minHeight: 14,
-              }}
-            >
-              {innovationLabels[hoverInnovation || innovationRating] ||
-                "Select a rating"}
-            </div>
-            {touched && innovationRating === 0 && (
-              <div style={{ fontSize: 10.5, color: t.danger, marginTop: 4 }}>
-                ⚠ Please rate level of innovation
-              </div>
-            )}
-
-            <CommentField
-              label="Innovation Comments"
-              value={innovationComments}
-              onChange={setInnovationComments}
-              placeholder="Comments on creative solutions, novel approaches at project level…"
-              readOnly={readOnly}
-              disabled={readOnly || isSubmitting}
-            />
-          </div>
-
-          {/* ═══ Overall Comments ═══ */}
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: t.textPrimary,
-                marginBottom: 6,
-              }}
-            >
-              Overall Project Feedback
-              <span style={{ color: t.danger, marginLeft: 4 }}>*</span>
-            </label>
-            <textarea
-              value={overallComments}
-              onChange={(e) => setOverallComments(e.target.value)}
-              onBlur={() => setTouched(true)}
-              placeholder="Summarize your overall assessment of the project — delivery, quality, team performance…"
-              disabled={readOnly || isSubmitting}
-              rows={4}
-              style={{
-                width: "100%",
-                border: `1px solid ${
-                  touched && overallComments.trim().length < 5
-                    ? t.dangerBorder
-                    : t.borderStrong
-                }`,
-                borderRadius: 8,
-                padding: "10px 12px",
-                fontFamily: "Sora,sans-serif",
-                fontSize: 12.5,
-                outline: "none",
-                boxSizing: "border-box",
-                resize: "vertical",
-                minHeight: 80,
-                lineHeight: 1.5,
-                background:
-                  readOnly || isSubmitting ? t.bgInputDisabled : t.bgInput,
-                color: t.textPrimary,
-              }}
-            />
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginTop: 6,
-                fontSize: 10.5,
-                color:
-                  touched && overallComments.trim().length < 5
-                    ? t.danger
-                    : t.textFaint,
-              }}
-            >
-              <span>
-                {touched && overallComments.trim().length < 5
-                  ? "⚠ Overall feedback must be at least 5 characters"
-                  : "Summarize your overall project assessment"}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color:
-                    overallComments.trim().length > 0
-                      ? t.textSecondary
-                      : t.textDisabled,
-                }}
-              >
-                {overallComments.trim().length} chars
-              </span>
-            </div>
-          </div>
-        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>{bodyContent}</div>
 
         {/* Footer */}
         <div
@@ -1389,68 +1331,48 @@ export default function ProjectCloseModal({
             flexShrink: 0,
           }}
         >
-          {readOnly ? (
-            <button
-              onClick={onClose}
-              style={{
-                ...btnStyle,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-              }}
-            >
-              <X size={13} /> Close
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={onClose}
-                disabled={isSubmitting}
-                style={{
-                  ...btnStyle,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  opacity: isSubmitting ? 0.5 : 1,
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                }}
-              >
-                <X size={13} /> Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={!isValid || isSubmitting}
-                style={{
-                  ...btnStyle,
-                  background: isValid ? t.danger : t.bgMuted,
-                  color: isValid ? t.textInverse : t.textFaint,
-                  borderColor: isValid ? t.danger : t.border,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  opacity: isSubmitting ? 0.6 : 1,
-                  cursor: !isValid || isSubmitting ? "not-allowed" : "pointer",
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2
-                      size={14}
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />
-                    Closing...
-                  </>
-                ) : (
-                  <>
-                    <XCircle size={14} />
-                    Close Project
-                  </>
-                )}
-              </button>
-            </>
-          )}
+          {footerButtons}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ─── Suggestion Row helper ─── */
+function SuggestionRow({ t, bg, border, color, btnBg, text, onApply }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        marginBottom: 8,
+        padding: "6px 10px",
+        background: bg,
+        border: `1px solid ${border}`,
+        borderRadius: 6,
+        fontSize: 11,
+        color,
+        flexWrap: "wrap",
+      }}
+    >
+      <Info size={11} />
+      <span style={{ flex: 1, minWidth: 100 }}>{text}</span>
+      <button
+        onClick={onApply}
+        style={{
+          background: btnBg,
+          color: t.textInverse,
+          border: "none",
+          borderRadius: 4,
+          padding: "3px 10px",
+          fontSize: 10,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        Apply
+      </button>
     </div>
   );
 }

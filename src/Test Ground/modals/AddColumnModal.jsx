@@ -3,7 +3,8 @@ import { X, Plus, Edit, Info, Check, Loader2 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeBtnStyle } from "../helpers/styles";
 import { isColumnNameUnique } from "../helpers/customColumns";
-
+import { useResponsive } from "../useResponsive";
+import BottomSheet from "../shared/BottomSheet";
 /**
  * Add or rename a custom column.
  * Props:
@@ -21,6 +22,7 @@ export default function AddColumnModal({
   onConfirm,
   isSaving = false,
 }) {
+  const { isMobile } = useResponsive();
   const { t } = useTheme();
   const btnStyle = makeBtnStyle(t);
 
@@ -59,7 +61,179 @@ export default function AddColumnModal({
   };
 
   const isRenameMode = mode === "rename";
+  // ── Mobile: bottom sheet ──
+  if (isMobile) {
+    return (
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        title={isRenameMode ? "Rename Column" : "Add Custom Column"}
+        height="auto"
+      >
+        <div style={{ padding: "18px 16px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: 12,
+              fontWeight: 600,
+              color: t.textPrimary,
+              marginBottom: 8,
+            }}
+          >
+            Column Name <span style={{ color: t.danger }}>*</span>
+          </label>
 
+          <input
+            ref={inputRef}
+            type="text"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (touched) setTouched(true);
+            }}
+            onBlur={() => setTouched(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isSaving) handleSubmit();
+              if (e.key === "Escape" && !isSaving) onClose();
+            }}
+            placeholder="e.g. PO Number, Location…"
+            maxLength={50}
+            disabled={isSaving}
+            style={{
+              width: "100%",
+              height: 46,
+              border: `1px solid ${
+                touched && !isValid ? t.dangerBorder : t.borderStrong
+              }`,
+              borderRadius: 10,
+              padding: "0 14px",
+              fontFamily: "Sora, sans-serif",
+              fontSize: 15,
+              outline: "none",
+              boxSizing: "border-box",
+              background: isSaving ? t.bgInputDisabled : t.bgInput,
+              color: t.textPrimary,
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: 6,
+              fontSize: 11,
+              color: touched && !isValid ? t.danger : t.textFaint,
+              minHeight: 14,
+            }}
+          >
+            <span>
+              {validationMessage ||
+                (isRenameMode
+                  ? "Values will be preserved"
+                  : "Free-form text (max 500 chars per cell)")}
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                color: trimmed.length > 0 ? t.textSecondary : t.textDisabled,
+              }}
+            >
+              {trimmed.length}/50
+            </span>
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              padding: 12,
+              background: t.infoBg,
+              border: `1px solid ${t.infoBorder}`,
+              borderRadius: 8,
+              display: "flex",
+              gap: 8,
+              fontSize: 12,
+              color: t.info,
+              lineHeight: 1.5,
+            }}
+          >
+            <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>
+              {isRenameMode
+                ? "Renaming will not affect any existing cell values."
+                : "The new column will appear at the end of the table (before Actions)."}
+            </span>
+          </div>
+
+          {/* Sticky footer */}
+          <div
+            style={{
+              marginTop: 20,
+              display: "flex",
+              gap: 8,
+            }}
+          >
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              style={{
+                flex: 1,
+                height: 46,
+                border: `1px solid ${t.borderStrong}`,
+                background: t.bgCard,
+                color: t.textSecondary,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <X size={14} /> Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!isValid || isSaving}
+              style={{
+                flex: 1,
+                height: 46,
+                border: "none",
+                background: isValid && !isSaving ? t.violet : t.bgMuted,
+                color: isValid && !isSaving ? t.textInverse : t.textFaint,
+                borderRadius: 10,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: isValid && !isSaving ? "pointer" : "not-allowed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2
+                    size={14}
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                  {isRenameMode ? "Renaming…" : "Adding…"}
+                </>
+              ) : (
+                <>
+                  {isRenameMode ? <Check size={14} /> : <Plus size={14} />}
+                  {isRenameMode ? "Rename" : "Insert Column"}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+    );
+  }
   return (
     <div
       onClick={(e) => !isSaving && e.target === e.currentTarget && onClose()}
