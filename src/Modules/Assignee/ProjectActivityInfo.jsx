@@ -22,6 +22,11 @@ import FeedbackModal from "../../Test Ground/FeedbackModal";
 import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
+import ColumnFilterButton from "./ColumnFilter";
+import {
+  filterTree,
+  computeFilterOptions,
+} from "./activityFilterUtils";
 
 dayjs.extend(isBetween); // ← add this
 /* ── helpers ── */
@@ -40,6 +45,7 @@ export default function ProjectActivityInfo({
   setSelectedProject,
 }) {
   const [search, setSearch] = useState("");
+  const [columnFilters, setColumnFilters] = useState({}); // { fieldKey: Set(values) }
   const [expanded, setExpanded] = useState({});
   const [activityInfo, setActivityInfo] = useState(null);
   const [openCommentsDialog, setOpenCommentsDialog] = useState(null);
@@ -379,14 +385,14 @@ export default function ProjectActivityInfo({
         return (
           total +
           calculateWorkingHours(
-            rejetion.actualCompletionTime,
+            rejection.actualCompletionTime,
              actualTime,
             leaves,
           )
         );
       }, 0) ?? 0;
     
-    console.log("Rejection Details::", totalRejections);
+    console.log("Rejection Details::", totalRejectionHours);
     totalWorkingHours = totalWorkingHours-(totalPauseHours+totalRejectionHours);
     console.log("Working Hours:", totalWorkingHours);
     console.log("Pause Hours:", totalRejectionHours);
@@ -400,7 +406,7 @@ export default function ProjectActivityInfo({
     let duration = 0;
     if (status.toLowerCase() === "completed") {
       duration = await calculateDuration(activity, actualTime);
-      
+      console.log("Completed duration:",duration)
     console.log("After duration calculation")
     }
     const statusPayload = { status, actualTime, duration,reason };
@@ -448,36 +454,66 @@ export default function ProjectActivityInfo({
     [activityInfo],
   );
 
-  /* ── search filter helpers ── */
-  const nodeMatchesSearch = (node, term) => {
-    const t = term.toLowerCase();
-    return (
-      node.name?.toLowerCase().includes(t) ||
-      node.resourceName?.toLowerCase().includes(t) ||
-      node.resource?.toLowerCase().includes(t) ||
-      node.activityStatus?.toLowerCase().includes(t) ||
-      node.type?.toLowerCase().includes(t)
-    );
-  };
-
-  const filterTree = (nodes, term) => {
-    if (!term) return nodes;
-    return nodes.reduce((acc, node) => {
-      const filteredChildren = node.children?.length
-        ? filterTree(node.children, term)
-        : [];
-      const selfMatches = nodeMatchesSearch(node, term);
-      if (selfMatches || filteredChildren.length > 0) {
-        acc.push({ ...node, children: filteredChildren });
-      }
-      return acc;
-    }, []);
-  };
-
+  /* ── search + column filters ──
+     The matching/tree-walking logic lives in activityFilterUtils.js;
+     here we just wire it up to this component's state. */
   const filteredModules = useMemo(() => {
     if (!activityInfo?.modules) return [];
-    return filterTree(activityInfo.modules, search);
-  }, [activityInfo, search]);
+    return filterTree(activityInfo.modules, search, columnFilters);
+  }, [activityInfo, search, columnFilters]);
+
+  const setFilterForField = (field, valueSet) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      if (!valueSet || valueSet.size === 0) delete next[field];
+      else next[field] = valueSet;
+      return next;
+    });
+  };
+
+  const activeFilterCount = Object.values(columnFilters).filter(
+    (s) => s && s.size > 0,
+  ).length;
+
+  const clearAllFilters = () => setColumnFilters({});
+
+  /* options for every column's checkbox dropdown, built from the full
+     unfiltered tree so choices don't disappear as other filters are applied */
+  const filterOptions = useMemo(
+    () =>
+      computeFilterOptions(
+        activityInfo?.modules,
+        activityInfo?.customColumns,
+        columnFilters,
+      ),
+    [activityInfo, columnFilters],
+  );
+
+  /* When an upstream filter (e.g. module) changes, a downstream filter
+     (e.g. task/resource/status) may have selections that are no longer
+     valid options — prune those so the checked values on screen always
+     match what's actually selectable in that column's dropdown. */
+  useEffect(() => {
+    setColumnFilters((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      Object.keys(next).forEach((field) => {
+        if (field === "module") return; // top of the chain, never pruned
+        const validOptions = filterOptions[field];
+        if (!validOptions) return;
+        const validSet = new Set(validOptions);
+        const pruned = new Set(
+          [...next[field]].filter((v) => validSet.has(v)),
+        );
+        if (pruned.size !== next[field].size) {
+          changed = true;
+          if (pruned.size === 0) delete next[field];
+          else next[field] = pruned;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [filterOptions]);
 
   /* auto-expand all nodes when searching */
   const expandedWithSearch = useMemo(() => {
@@ -597,41 +633,7 @@ export default function ProjectActivityInfo({
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
-    activityDetails.customColumns= [
-    {
-      "id": "col_po_num_001",
-      "name": "PO Number",
-      "type": "text",
-      "width": 180,
-      "order": 0,
-      "createdAt": "2026-01-15T11:00:00.000Z",
-      "createdBy": "ashok.singh@greenwave.co.in"
-    },
-    {
-      "id": "col_location_002",
-      "name": "Location",
-      "type": "text",
-      "width": 180,
-      "order": 2,
-      "createdAt": "2026-01-15T11:05:00.000Z",
-      "createdBy": "ashok.singh@greenwave.co.in"
-    },
-    {
-      "id": "col_remark_003",
-      "name": "Remark",
-      "type": "text",
-      "width": 180,
-      "order": 1,
-      "createdAt": "2026-01-15T14:20:00.000Z",
-      "createdBy": "priya.das@greenwave.co.in"
-    }
-  ];
-  activityDetails.modules[0].children[0].customValues= {
-        "col_po_num_001": "PO-2026-0142-A",
-        "col_location_002": "Kolkata Office",
-        "col_remark_003": "Priority — needs approval by Fri"
-      }
-      
+    
       activityDetails.customColumns=[...(activityDetails.customColumns ?? [])].sort((a, b) => a.order - b.order)
     console.log("Fetched activities:", activityDetails);
     if (!activityDetails) return;
@@ -785,23 +787,97 @@ export default function ProjectActivityInfo({
             <TableHead>
               <TableRow className="pai-thead-row">
                 <TableCell className="pai-th pai-th-toggle" />
-                <TableCell className="pai-th">Module</TableCell>
-                <TableCell className="pai-th">Task</TableCell>
-                <TableCell className="pai-th">Resource</TableCell>
-                <TableCell className="pai-th">Planned Start</TableCell>
                 <TableCell className="pai-th">
-                  <div>
-                    <div>Duration</div>
-                    <div>(Hours)</div>
+                  <div className="pai-th-content">
+                    <span>Module</span>
+                    <ColumnFilterButton
+                      label="Module"
+                      options={filterOptions.module}
+                      selected={columnFilters.module || new Set()}
+                      onChange={(set) => setFilterForField("module", set)}
+                      color="#7C3AED"
+                    />
                   </div>
                 </TableCell>
-                <TableCell className="pai-th">Planned Stop</TableCell>
-                <TableCell className="pai-th">Status</TableCell>
-                <TableCell className="pai-th">Actual Start</TableCell>
-                <TableCell className="pai-th">Actual Stop</TableCell>
-                {activityInfo?.customColumns?.map((col)=>
-                  <TableCell className="pai-th">{col.name}</TableCell>
-                )}
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Task</span>
+                    <ColumnFilterButton
+                      label="Task"
+                      options={filterOptions.task}
+                      selected={columnFilters.task || new Set()}
+                      onChange={(set) => setFilterForField("task", set)}
+                      color="#3b5bdb"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Resource</span>
+                    <ColumnFilterButton
+                      label="Resource"
+                      options={filterOptions.resource}
+                      selected={columnFilters.resource || new Set()}
+                      onChange={(set) => setFilterForField("resource", set)}
+                      color="#15803D"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Planned Start</span>
+                    
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <div>
+                      <div>Duration(Hrs)</div>
+                    </div>
+                    
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Planned Stop</span>
+                    
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Status</span>
+                    <ColumnFilterButton
+                      label="Status"
+                      options={filterOptions.status}
+                      selected={columnFilters.status || new Set()}
+                      onChange={(set) => setFilterForField("status", set)}
+                      color="#B45309"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Actual Start</span>
+                    
+                  </div>
+                </TableCell>
+                <TableCell className="pai-th">
+                  <div className="pai-th-content">
+                    <span>Actual Stop</span>
+                    
+                  </div>
+                </TableCell>
+                {activityInfo?.customColumns?.map((col) => {
+                  const field = `custom:${col.id}`;
+                  return (
+                    <TableCell className="pai-th" key={col.id}>
+                      <div className="pai-th-content">
+                        <span>{col.name}</span>
+                        
+                      </div>
+                    </TableCell>
+                  );
+                })}
                 <TableCell className="pai-th">Action</TableCell>
                 
               </TableRow>
