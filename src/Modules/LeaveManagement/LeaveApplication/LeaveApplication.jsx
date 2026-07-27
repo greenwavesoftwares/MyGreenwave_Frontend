@@ -670,11 +670,21 @@ const LeaveApplication = () => {
     dateTemplate={(date) => {
       const currentDateStr = `${date.year}-${String(date.month + 1).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
 
-      const dayLeaves = leaveInfo.calenderData?.filter((event) => {
-        const eventStart = dayjs(event.start).format("YYYY-MM-DD");
-        const eventEnd = dayjs(event.end || event.start).format("YYYY-MM-DD");
-        return currentDateStr >= eventStart && currentDateStr <= eventEnd;
-      }) || [];
+  const dayLeaves =
+    leaveInfo.calenderData?.filter((event) => {
+      const eventStart = dayjs(event.start).format("YYYY-MM-DD");
+
+      let eventEnd;
+      if (event.start === event.end || !event.end) {
+        eventEnd = eventStart;
+      } else {
+        eventEnd = dayjs(event.end)
+          .subtract(1, "day")
+          .format("YYYY-MM-DD");
+      }
+
+      return currentDateStr >= eventStart && currentDateStr <= eventEnd;
+    }) || [];
 
       return (
         <div style={{ 
