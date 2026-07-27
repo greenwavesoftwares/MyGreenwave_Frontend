@@ -134,22 +134,22 @@ export default function CommentsActionDialog({
         newComment.projectId,
         payload,
       );
-    
-    if (response) {
-      const updatedComments =
-        await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
-          newComment.projectId,
-          newComment.activityId,
+
+      if (response) {
+        const updatedComments =
+          await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+            newComment.projectId,
+            newComment.activityId,
+          );
+        setExistingComments(updatedComments);
+        const newCommentPayload = addComment(
+          payload.projectId,
+          payload.activityId,
+          payload.moduleId,
         );
-      setExistingComments(updatedComments);
-      const newCommentPayload = addComment(
-        payload.projectId,
-        payload.activityId,
-        payload.moduleId,
-      );
-      setNewComment(newCommentPayload);
-      showToast("success", "Success", "Comment added successfully");
-    }
+        setNewComment(newCommentPayload);
+        showToast("success", "Success", "Comment added successfully");
+      }
     } catch (e) {
       showToast("error", "Error", "Error in adding comment");
     }
@@ -264,14 +264,17 @@ export default function CommentsActionDialog({
     <Dialog
       open={open}
       onClose={onClose}
+      // maxWidth={false} stops MUI from adding its default
+      // MuiDialog-paperWidthSm class (max-width: 600px) to the Paper,
+      // which would otherwise silently override the width rules in
+      // CommentsActionDialog.css regardless of viewport size.
       maxWidth={false}
+      fullWidth={false}
       // Mounts the portal inside .pai-page — same as PauseReasonDialog —
       // so the shared --pj-* vars (and their dark-mode overrides) are
       // actually in scope. Falls back to the default body portal if
       // .pai-page isn't found.
-      container={() =>
-        document.querySelector(".pai-page") || document.body
-      }
+      container={() => document.querySelector(".pai-page") || document.body}
       PaperProps={{ className: "comments-dialog" }}
     >
       <DialogContent className="comments-content">
@@ -326,7 +329,12 @@ export default function CommentsActionDialog({
           )}
         </div>
 
-        {/* ── COMMENTS LIST ── */}
+        {/* ── COMMENTS LIST ──
+            .entries-container scrolls both vertically and horizontally.
+            The table is NOT wrapped in a separate overflow-x container —
+            see the comment above .entries-container in
+            CommentsActionDialog.css for why that would break the sticky
+            header's scroll-ancestor binding. */}
         <div
           className={`entries-container ${
             mobileView === "existing" ? "mobile-visible" : "mobile-hidden"
@@ -348,345 +356,349 @@ export default function CommentsActionDialog({
           ) : (
             <Table size="small" className="comments-table">
               <TableHead>
-                <TableRow>
-                  <TableCell>#</TableCell>
-                  <TableCell>
-                    <span className="col-label">Description</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="col-label">Action Point</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="col-label">Resolution Date</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="col-label">Responsibility</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="col-label">Others</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="col-label">Attachment</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="col-label">Added By</span>
-                  </TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
+                  <TableRow>
+                    <TableCell>#</TableCell>
+                    <TableCell>
+                      <span className="col-label">Description</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="col-label">Action Point</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="col-label">Resolution Date</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="col-label">Responsibility</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="col-label">Others</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="col-label">Attachment</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="col-label">Added By</span>
+                    </TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
 
-              <TableBody>
-                {existingComments.map((entry, index) => (
-                  <React.Fragment key={index}>
-                    {/* COMMENT ROW */}
-                    <TableRow>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>
-                        <TruncatedText text={entry.commentDescription} />
-                      </TableCell>
-                      <TableCell>
-                        <TruncatedText text={entry.actionPoint} />
-                      </TableCell>
-                      <TableCell>{entry.resolutionDate}</TableCell>
-                      <TableCell>
-                        <Chip size="small" label={entry.responsibility} />
-                      </TableCell>
-                      <TableCell>
-                        <TruncatedText text={entry.others} />
-                      </TableCell>
-
-                      {/* ATTACHMENT */}
-                      <TableCell>
-                        {entry.attachment ? (
-                          <div className="attachment-pill">
-                            <InsertDriveFileOutlinedIcon fontSize="small" />
-                            <span
-                              className="attachment-name"
-                              title={entry.attachment.substring(
-                                entry.attachment.indexOf("_") + 1,
-                              )}
-                              onClick={async () => {
-                                try {
-                                  const fileName = entry.attachment.substring(
-                                    entry.attachment.indexOf("_") + 1,
-                                  );
-                                  const response =
-                                    await activityTrackerApi.getMinIoFile(
-                                      entry.attachment,
-                                      "comments",
-                                    );
-                                  const url =
-                                    window.URL.createObjectURL(response);
-                                  const a = document.createElement("a");
-                                  a.href = url;
-                                  a.download = fileName;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  window.URL.revokeObjectURL(url);
-                                } catch (error) {
-                                  console.error(
-                                    "Failed to download file",
-                                    error,
-                                  );
-                                }
-                              }}
-                            >
-                              {entry.attachment.substring(
-                                entry.attachment.indexOf("_") + 1,
-                              )}
-                            </span>
-                          </div>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-
-                      {/* ADDED BY */}
-                      <TableCell>
-                        <div className="added-cell">
-                          <div className="added-cell-meta">
-                            <strong>{entry.createdBy}</strong>
-                            <span>
-                              {new Date(entry.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* ACTIONS */}
-                      <TableCell>
-                        <div className="action-buttons">
-                          {allowActions && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<ReplyOutlinedIcon />}
-                              onClick={() =>
-                                setActiveReply(
-                                  activeReply === index ? null : index,
-                                )
-                              }
-                            >
-                              Reply
-                              {!!entry.replies?.length && (
-                                <span className="reply-count">
-                                  {entry.replies.length}
-                                </span>
-                              )}
-                            </Button>
-                          )}
-                          {allowActions && (
-                            <IconButton
-                              size="small"
-                              disabled={
-                                entry.createdBy !==
-                                getUserData()?.userDetails?.userId
-                              }
-                              aria-label="Delete comment"
-                              onClick={() =>
-                                openDeleteConfirmation("comment", index)
-                              }
-                            >
-                              <DeleteOutlineIcon
-                                fontSize="small"
-                                color="error"
-                              />
-                            </IconButton>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* REPLIES LIST */}
-                    {entry.replies?.length > 0 && (
+                <TableBody>
+                  {existingComments.map((entry, index) => (
+                    <React.Fragment key={index}>
+                      {/* COMMENT ROW */}
                       <TableRow>
-                        <TableCell colSpan={9} className="reply-history-cell">
-                          {entry.replies.map((reply) => (
-                            <div key={reply.replyId} className="reply-item">
-                              <div className="reply-header">
-                                <span
-                                  className="avatar-badge avatar-badge-sm"
-                                  aria-hidden="true"
-                                >
-                                  {getInitials(reply.createdBy)}
-                                </span>
-                                <strong>{reply.createdBy}</strong>
-                                <span>
-                                  {new Date(reply.createdAt).toLocaleString()}
-                                </span>
-                                {allowActions && (
-                                  <IconButton
-                                    size="small"
-                                    disabled={
-                                      reply.createdBy !==
-                                      getUserData()?.userDetails?.userId
-                                    }
-                                    aria-label="Delete reply"
-                                    onClick={() =>
-                                      openDeleteConfirmation(
-                                        "reply",
-                                        index,
-                                        reply.replyId,
-                                      )
-                                    }
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>
+                          <TruncatedText text={entry.commentDescription} />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedText text={entry.actionPoint} />
+                        </TableCell>
+                        <TableCell>{entry.resolutionDate}</TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            color="primary"
+                            label={entry.responsibility}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TruncatedText text={entry.others} />
+                        </TableCell>
+
+                        {/* ATTACHMENT */}
+                        <TableCell>
+                          {entry.attachment ? (
+                            <div className="attachment-pill">
+                              <InsertDriveFileOutlinedIcon fontSize="small" />
+                              <span
+                                className="attachment-name"
+                                title={entry.attachment.substring(
+                                  entry.attachment.indexOf("_") + 1,
+                                )}
+                                onClick={async () => {
+                                  try {
+                                    const fileName = entry.attachment.substring(
+                                      entry.attachment.indexOf("_") + 1,
+                                    );
+                                    const response =
+                                      await activityTrackerApi.getMinIoFile(
+                                        entry.attachment,
+                                        "comments",
+                                      );
+                                    const url =
+                                      window.URL.createObjectURL(response);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = fileName;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    window.URL.revokeObjectURL(url);
+                                  } catch (error) {
+                                    console.error(
+                                      "Failed to download file",
+                                      error,
+                                    );
+                                  }
+                                }}
+                              >
+                                {entry.attachment.substring(
+                                  entry.attachment.indexOf("_") + 1,
+                                )}
+                              </span>
+                            </div>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+
+                        {/* ADDED BY */}
+                        <TableCell>
+                          <div className="added-cell">
+                            <div className="added-cell-meta">
+                              <strong>{entry.createdBy}</strong>
+                              <span>
+                                {new Date(entry.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* ACTIONS */}
+                        <TableCell>
+                          <div className="action-buttons">
+                            {allowActions && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<ReplyOutlinedIcon />}
+                                onClick={() =>
+                                  setActiveReply(
+                                    activeReply === index ? null : index,
+                                  )
+                                }
+                              >
+                                Reply
+                                {!!entry.replies?.length && (
+                                  <span className="reply-count">
+                                    {entry.replies.length}
+                                  </span>
+                                )}
+                              </Button>
+                            )}
+                            {allowActions && (
+                              <IconButton
+                                size="small"
+                                disabled={
+                                  entry.createdBy !==
+                                  getUserData()?.userDetails?.userId
+                                }
+                                aria-label="Delete comment"
+                                onClick={() =>
+                                  openDeleteConfirmation("comment", index)
+                                }
+                              >
+                                <DeleteOutlineIcon
+                                  fontSize="small"
+                                  color="error"
+                                />
+                              </IconButton>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {/* REPLIES LIST */}
+                      {entry.replies?.length > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="reply-history-cell">
+                            {entry.replies.map((reply) => (
+                              <div key={reply.replyId} className="reply-item">
+                                <div className="reply-header">
+                                  <span
+                                    className="avatar-badge avatar-badge-sm"
+                                    aria-hidden="true"
                                   >
-                                    <DeleteOutlineIcon
-                                      fontSize="small"
-                                      color="error"
-                                    />
-                                  </IconButton>
+                                    {getInitials(reply.createdBy)}
+                                  </span>
+                                  <strong>{reply.createdBy}</strong>
+                                  <span>
+                                    {new Date(reply.createdAt).toLocaleString()}
+                                  </span>
+                                  {allowActions && (
+                                    <IconButton
+                                      size="small"
+                                      disabled={
+                                        reply.createdBy !==
+                                        getUserData()?.userDetails?.userId
+                                      }
+                                      aria-label="Delete reply"
+                                      onClick={() =>
+                                        openDeleteConfirmation(
+                                          "reply",
+                                          index,
+                                          reply.replyId,
+                                        )
+                                      }
+                                    >
+                                      <DeleteOutlineIcon
+                                        fontSize="small"
+                                        color="error"
+                                      />
+                                    </IconButton>
+                                  )}
+                                </div>
+                                <div className="reply-text">
+                                  <TruncatedText text={reply.replyText} />
+                                </div>
+
+                                {reply.attachment && (
+                                  <div
+                                    className="attachment-pill"
+                                    style={{ marginTop: 8 }}
+                                    onClick={async () => {
+                                      try {
+                                        const fileName =
+                                          reply.attachment.substring(
+                                            reply.attachment.indexOf("_") + 1,
+                                          );
+                                        const response =
+                                          await activityTrackerApi.getMinIoFile(
+                                            reply.attachment,
+                                            "replies",
+                                          );
+                                        const url =
+                                          window.URL.createObjectURL(response);
+                                        const a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = fileName;
+                                        a.click();
+                                        window.URL.revokeObjectURL(url);
+                                      } catch (error) {
+                                        console.error(
+                                          "Failed to download attachment:",
+                                          error,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <InsertDriveFileOutlinedIcon fontSize="small" />
+                                    <span
+                                      className="attachment-name"
+                                      title={reply.attachment.substring(
+                                        reply.attachment.indexOf("_") + 1,
+                                      )}
+                                    >
+                                      {reply.attachment.substring(
+                                        reply.attachment.indexOf("_") + 1,
+                                      )}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
-                              <div className="reply-text">
-                                <TruncatedText text={reply.replyText} />
-                              </div>
+                            ))}
+                          </TableCell>
+                        </TableRow>
+                      )}
 
-                              {reply.attachment && (
-                                <div
-                                  className="attachment-pill"
-                                  style={{ marginTop: 8 }}
-                                  onClick={async () => {
-                                    try {
-                                      const fileName =
-                                        reply.attachment.substring(
-                                          reply.attachment.indexOf("_") + 1,
-                                        );
-                                      const response =
-                                        await activityTrackerApi.getMinIoFile(
-                                          reply.attachment,
-                                          "replies",
-                                        );
-                                      const url =
-                                        window.URL.createObjectURL(response);
-                                      const a = document.createElement("a");
-                                      a.href = url;
-                                      a.download = fileName;
-                                      a.click();
-                                      window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                      console.error(
-                                        "Failed to download attachment:",
-                                        error,
-                                      );
-                                    }
-                                  }}
-                                >
-                                  <InsertDriveFileOutlinedIcon fontSize="small" />
-                                  <span
-                                    className="attachment-name"
-                                    title={reply.attachment.substring(
-                                      reply.attachment.indexOf("_") + 1,
-                                    )}
-                                  >
-                                    {reply.attachment.substring(
-                                      reply.attachment.indexOf("_") + 1,
+                      {/* REPLY INPUT */}
+                      {activeReply === index && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="reply-box-cell">
+                            <div className="reply-box">
+                              <div className="reply-avatar">
+                                {getUserData()?.userDetails?.userId ? (
+                                  <span aria-hidden="true">
+                                    {getInitials(
+                                      getUserData()?.userDetails?.userId,
                                     )}
                                   </span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </TableCell>
-                      </TableRow>
-                    )}
-
-                    {/* REPLY INPUT */}
-                    {activeReply === index && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="reply-box-cell">
-                          <div className="reply-box">
-                            <div className="reply-avatar">
-                              {getUserData()?.userDetails?.userId ? (
-                                <span aria-hidden="true">
-                                  {getInitials(
-                                    getUserData()?.userDetails?.userId,
-                                  )}
-                                </span>
-                              ) : (
-                                <PersonOutlineIcon />
-                              )}
-                            </div>
-                            <div className="reply-content">
-                              <TextField
-                                fullWidth
-                                multiline
-                                rows={2}
-                                placeholder="Write a reply…"
-                                value={replyText[index] || ""}
-                                onChange={(e) =>
-                                  setReplyText((prev) => ({
-                                    ...prev,
-                                    [index]: e.target.value,
-                                  }))
-                                }
-                              />
-                              <div className="reply-footer">
-                                <div className="reply-footer-actions">
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    className="btn-cancel"
-                                    onClick={() => setActiveReply(null)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={<SendOutlinedIcon />}
-                                    onClick={() => addReply(index)}
-                                  >
-                                    Send Reply
-                                  </Button>
-
-                                  <input
-                                    id={`reply-file-${index}`}
-                                    hidden
-                                    type="file"
-                                    onChange={(e) =>
-                                      handleReplyAttachment(index, e)
-                                    }
-                                  />
-                                  <label htmlFor={`reply-file-${index}`}>
+                                ) : (
+                                  <PersonOutlineIcon />
+                                )}
+                              </div>
+                              <div className="reply-content">
+                                <TextField
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  placeholder="Write a reply…"
+                                  value={replyText[index] || ""}
+                                  onChange={(e) =>
+                                    setReplyText((prev) => ({
+                                      ...prev,
+                                      [index]: e.target.value,
+                                    }))
+                                  }
+                                />
+                                <div className="reply-footer">
+                                  <div className="reply-footer-actions">
                                     <Button
-                                      component="span"
                                       size="small"
                                       variant="outlined"
-                                      startIcon={<AttachFileIcon />}
+                                      className="btn-cancel"
+                                      onClick={() => setActiveReply(null)}
                                     >
-                                      Attach
+                                      Cancel
                                     </Button>
-                                  </label>
+                                    <Button
+                                      size="small"
+                                      variant="contained"
+                                      startIcon={<SendOutlinedIcon />}
+                                      onClick={() => addReply(index)}
+                                    >
+                                      Send Reply
+                                    </Button>
 
-                                  {replyAttachment[index]?.attachmentName && (
-                                    <div className="attachment-pill">
-                                      <InsertDriveFileOutlinedIcon fontSize="small" />
-                                      <span className="attachment-name">
-                                        {replyAttachment[index].attachmentName}
-                                      </span>
-                                      <IconButton
+                                    <input
+                                      id={`reply-file-${index}`}
+                                      hidden
+                                      type="file"
+                                      onChange={(e) =>
+                                        handleReplyAttachment(index, e)
+                                      }
+                                    />
+                                    <label htmlFor={`reply-file-${index}`}>
+                                      <Button
+                                        component="span"
                                         size="small"
-                                        aria-label="Remove attachment"
-                                        onClick={() =>
-                                          removeReplyAttachment(index)
-                                        }
+                                        variant="outlined"
+                                        startIcon={<AttachFileIcon />}
                                       >
-                                        <CancelOutlinedIcon fontSize="small" />
-                                      </IconButton>
-                                    </div>
-                                  )}
+                                        Attach
+                                      </Button>
+                                    </label>
+
+                                    {replyAttachment[index]?.attachmentName && (
+                                      <div className="attachment-pill">
+                                        <InsertDriveFileOutlinedIcon fontSize="small" />
+                                        <span className="attachment-name">
+                                          {replyAttachment[index].attachmentName}
+                                        </span>
+                                        <IconButton
+                                          size="small"
+                                          aria-label="Remove attachment"
+                                          onClick={() =>
+                                            removeReplyAttachment(index)
+                                          }
+                                        >
+                                          <CancelOutlinedIcon fontSize="small" />
+                                        </IconButton>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
           )}
         </div>
 

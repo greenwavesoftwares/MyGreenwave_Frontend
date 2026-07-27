@@ -57,8 +57,8 @@ export default function TreeRows({
   onOpenFeedbackForm,
   deleteNode,
   fetchColor,
+  customColumns,
 }) {
-  console.log("Current user id:", currentUserId);
   const {
     id,
     name,
@@ -76,13 +76,11 @@ export default function TreeRows({
     pauseDuration,
     sortOrder,
     latestRejectReason,
+    customValues,
   } = node;
-  console.log("Node Details:", node);
-  console.log("Planned Start:", plannedStart);
+  
   const hasChildren = children?.length > 0;
-
   const isExpanded = expanded?.[id] ?? false;
-
   const toggleExpand = (nodeId) => {
     setExpanded((prev) => ({
       ...prev,
@@ -110,16 +108,14 @@ export default function TreeRows({
             className="icon-button icon-btn--start"
             onClick={() => {
               const minutesLeft = dayjs().diff(dayjs(plannedStart), "minute");
-              console.log("Minutes left::",minutesLeft)
-                if (minutesLeft >= 15) {
-                  // 15 minutes or less remaining
+              console.log("Minutes left::", minutesLeft);
+              if (minutesLeft >= 15) {
+                // 15 minutes or less remaining
 
-                  onPauseDelayRequest(id, node, "StartDelay");
-                }
-                else{
-                  
-                updateStatusOfActivity(id, "Running",node);
-                }
+                onPauseDelayRequest(id, node, "StartDelay");
+              } else {
+                updateStatusOfActivity(id, "Running", node);
+              }
             }}
           >
             <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
@@ -151,15 +147,13 @@ export default function TreeRows({
                   return;
                 }
                 const minutesLeft = dayjs().diff(dayjs(plannedStop), "minute");
-                console.log("Minutes left:::",minutesLeft)
+                console.log("Minutes left:::", minutesLeft);
                 if (minutesLeft >= 15) {
                   // 15 minutes or less remaining
 
                   onPauseDelayRequest(id, node, "StopDelay");
-                }
-                else{
-                  
-                updateStatusOfActivity(id, "Completed",node);
+                } else {
+                  updateStatusOfActivity(id, "Completed", node);
                 }
               }}
             >
@@ -205,15 +199,16 @@ export default function TreeRows({
           </button>
         </Tooltip>,
       ],
-      "Completed":[ <Tooltip key="submit" title="Redo Activity">
+      Completed: [
+        <Tooltip key="submit" title="Redo Activity">
           <button
             className="icon-button icon-btn--feedback"
             onClick={() => onPauseDelayRequest(id, node, "Redo")}
           >
             <RotateCcw size={15} strokeWidth={2} />
-            
           </button>
-        </Tooltip>],
+        </Tooltip>,
+      ],
       "Not Ready": [
         <Tooltip key="submit" title="Submit Activity">
           <button
@@ -342,6 +337,7 @@ export default function TreeRows({
                 deleteNode={deleteNode}
                 onOpenFeedbackForm={onOpenFeedbackForm}
                 fetchColor={fetchColor}
+                customColumns={customColumns}
               />
             ))}
         </>
@@ -478,7 +474,11 @@ export default function TreeRows({
                 : "-"}</TableCell>
 
             <TableCell>{pauseDuration || "-"}</TableCell> */}
-
+            {customColumns?.map((col) => 
+              <TableCell key={col.id}>
+                {customValues?.[col.id] ?? "-"}
+              </TableCell>
+            )}
             <TableCell align="center">
               <Box className="action-container">{renderActions()}</Box>
             </TableCell>
@@ -504,6 +504,7 @@ export default function TreeRows({
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 fetchColor={fetchColor}
+                customColumns={customColumns}
               />
             ))}
         </>

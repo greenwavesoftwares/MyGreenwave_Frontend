@@ -58,6 +58,7 @@ export default function ProjectActivityInfo({
   const WORK_START = 10;
   const WORK_END = 18;
   const WEEK_END = [0, 6];
+  
 
   /* ── tree helpers ── */
   const addDuration = (startTime, durationHrs) =>
@@ -370,13 +371,25 @@ export default function ProjectActivityInfo({
         );
       }, 0) ?? 0;
       console.log("After calculating pause hours")
-    const totalRejections = await activityTrackerApi.getActivityRejections(
+    const activityRejections = await activityTrackerApi.getActivityRejections(
       activity.id,
     );
+    const totalRejectionHours =
+      activityRejections?.reduce((total, rejection) => {
+        return (
+          total +
+          calculateWorkingHours(
+            rejetion.actualCompletionTime,
+             actualTime,
+            leaves,
+          )
+        );
+      }, 0) ?? 0;
+    
     console.log("Rejection Details::", totalRejections);
-    totalWorkingHours = totalWorkingHours - totalPauseHours;
+    totalWorkingHours = totalWorkingHours-(totalPauseHours+totalRejectionHours);
     console.log("Working Hours:", totalWorkingHours);
-    console.log("Pause Hours:", totalPauseHours);
+    console.log("Pause Hours:", totalRejectionHours);
 
     return Math.max(0, totalWorkingHours);
   };
@@ -584,6 +597,42 @@ export default function ProjectActivityInfo({
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
+    activityDetails.customColumns= [
+    {
+      "id": "col_po_num_001",
+      "name": "PO Number",
+      "type": "text",
+      "width": 180,
+      "order": 0,
+      "createdAt": "2026-01-15T11:00:00.000Z",
+      "createdBy": "ashok.singh@greenwave.co.in"
+    },
+    {
+      "id": "col_location_002",
+      "name": "Location",
+      "type": "text",
+      "width": 180,
+      "order": 2,
+      "createdAt": "2026-01-15T11:05:00.000Z",
+      "createdBy": "ashok.singh@greenwave.co.in"
+    },
+    {
+      "id": "col_remark_003",
+      "name": "Remark",
+      "type": "text",
+      "width": 180,
+      "order": 1,
+      "createdAt": "2026-01-15T14:20:00.000Z",
+      "createdBy": "priya.das@greenwave.co.in"
+    }
+  ];
+  activityDetails.modules[0].children[0].customValues= {
+        "col_po_num_001": "PO-2026-0142-A",
+        "col_location_002": "Kolkata Office",
+        "col_remark_003": "Priority — needs approval by Fri"
+      }
+      
+      activityDetails.customColumns=[...(activityDetails.customColumns ?? [])].sort((a, b) => a.order - b.order)
     console.log("Fetched activities:", activityDetails);
     if (!activityDetails) return;
     setActivityInfo(activityDetails);
@@ -750,7 +799,11 @@ export default function ProjectActivityInfo({
                 <TableCell className="pai-th">Status</TableCell>
                 <TableCell className="pai-th">Actual Start</TableCell>
                 <TableCell className="pai-th">Actual Stop</TableCell>
+                {activityInfo?.customColumns?.map((col)=>
+                  <TableCell className="pai-th">{col.name}</TableCell>
+                )}
                 <TableCell className="pai-th">Action</TableCell>
+                
               </TableRow>
             </TableHead>
             <TableBody>
@@ -788,6 +841,7 @@ export default function ProjectActivityInfo({
                   deleteNode={deleteNode}
                   onOpenFeedbackForm={onOpenFeedbackForm}
                   fetchColor={fetchColor}
+                  customColumns={activityInfo?.customColumns}
                 />
               ))}
             </TableBody>
