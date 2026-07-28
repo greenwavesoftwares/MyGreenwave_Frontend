@@ -83,7 +83,7 @@ const Login = () => {
                 style={{ display: "inline-flex" }}
               />
 
-              <h1 className="text-base font-bold mb-2 ml-1">
+              <h1 className="text-base font-bold mb-2 ml-1" style={{color:'black'}}>
                 Welcome to My Greenwave{" "}
               </h1>
             </div>
