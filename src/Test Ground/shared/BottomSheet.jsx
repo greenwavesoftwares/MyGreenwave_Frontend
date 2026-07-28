@@ -21,6 +21,7 @@ export default function BottomSheet({
   showCloseBtn = true,
   height = "90%",
   canDismiss = true,
+  contentScroll = true,
   children,
 }) {
   const { t } = useTheme();
@@ -199,7 +200,10 @@ export default function BottomSheet({
         <div
           style={{
             flex: 1,
-            overflowY: "auto",
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflowY: contentScroll ? "auto" : "hidden",
             WebkitOverflowScrolling: "touch",
           }}
         >

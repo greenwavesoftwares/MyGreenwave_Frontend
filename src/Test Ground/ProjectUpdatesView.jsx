@@ -29,6 +29,7 @@ import {
   RefreshCw,
   WifiOff,
   AlertCircle,
+  MoreVertical,
 } from "lucide-react";
 import ShareModal from "./ShareModal";
 import ManageSharingModal from "./ManageSharingModal";
@@ -36,7 +37,8 @@ import * as sharingApi from "./sharingApi";
 import { useOptimisticSharing } from "./useOptimisticSharing";
 import { findUserById } from "./updatesHelpers";
 import { useTheme } from "./useTheme";
-
+import { useResponsive } from "./useResponsive"; // ← NEW
+import BottomSheet from "./shared/BottomSheet"; // ← NEW
 /* ─── Default Template Categories ─── */
 const DEFAULT_CATEGORIES = [
   "Detail Engineering",
@@ -402,7 +404,466 @@ function FileAttachmentBadge({ file, onRemove, readOnly, size = "sm" }) {
     </div>
   );
 }
+/* ═══════════════════════════════════════════════════════
+   Mobile Note Editor Bottom Sheet
+   ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   Mobile Note Editor Bottom Sheet
+   ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   Mobile Note Editor Bottom Sheet
+   ═══════════════════════════════════════════════════════ */
+function MobileNoteEditorSheet({
+  open,
+  onClose,
+  categoryName,
+  snapshotDate,
+  initialText,
+  initialFile,
+  onSave,
+  showToast,
+  isSaving = false,
+}) {
+  const { t } = useTheme();
+  const [text, setText] = useState(initialText || "");
+  const [file, setFile] = useState(initialFile);
+  const [isUploading, setIsUploading] = useState(false);
+  const textareaRef = useRef();
+  const fileInputRef = useRef();
 
+  useEffect(() => {
+    if (open) {
+      setText(initialText || "");
+      setFile(initialFile);
+      setTimeout(() => textareaRef.current?.focus(), 200);
+    }
+  }, [open, initialText, initialFile]);
+
+  const handleFileSelect = async (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+      showToast?.(
+        "error",
+        "File too large",
+        `Maximum file size is ${MAX_FILE_SIZE_MB} MB.`,
+      );
+      e.target.value = "";
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const base64 = await readFileAsBase64(selectedFile);
+      setFile({
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type,
+        data: base64,
+        uploadedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      showToast?.("error", "Upload failed", err.message);
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleSave = () => {
+    if (!text.trim()) {
+      showToast?.("error", "Cannot save", "Note text cannot be empty.");
+      return;
+    }
+    onSave({ text: text.trim(), file });
+  };
+
+  const isDisabled = isSaving || isUploading;
+  const hasChanges =
+    text.trim() !== (initialText || "").trim() ||
+    file?.name !== initialFile?.name;
+
+  const FOOTER_HEIGHT = 70;
+  const SAFE_AREA_BUFFER = 40; // extra buffer for iPhone 14/15 Pro Max
+  return (
+    <BottomSheet
+      open={open}
+      onClose={() => !isDisabled && onClose()}
+      title={initialText ? "Edit Note" : "Add Note"}
+      height="full"
+      contentScroll={false}
+    >
+      {/* Position: relative wrapper — footer absolutely positioned inside */}
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+        }}
+      >
+        {/* ── SCROLLABLE CONTENT ── */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: FOOTER_HEIGHT + SAFE_AREA_BUFFER, // reserve footer space
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Context bar */}
+          <div
+            style={{
+              flexShrink: 0,
+              padding: "10px 14px",
+              background: `linear-gradient(135deg, ${t.primaryBg} 0%, ${t.bgSubtle} 100%)`,
+              borderBottom: `1px solid ${t.border}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <ClipboardList size={13} color={t.primary} />
+            <span
+              style={{
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: t.textPrimary,
+              }}
+            >
+              {categoryName}
+            </span>
+            <span style={{ color: t.textFaint, fontSize: 12 }}>·</span>
+            <span
+              style={{
+                fontSize: 11.5,
+                color: t.textMuted,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 600,
+              }}
+            >
+              {snapshotDate}
+            </span>
+            {hasChanges && !isSaving && (
+              <span
+                style={{
+                  marginLeft: "auto",
+                  padding: "2px 8px",
+                  background: t.warningBg,
+                  color: t.warning,
+                  border: `1px solid ${t.warningBorder}`,
+                  borderRadius: 999,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                }}
+              >
+                Unsaved
+              </span>
+            )}
+          </div>
+
+          {/* Body content */}
+          <div
+            style={{
+              padding: 14,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              flex: 1,
+            }}
+          >
+            {/* Attachment */}
+            <div>
+              <div
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: t.textMuted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.4px",
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <Paperclip size={11} />
+                Attachment
+              </div>
+              {!file ? (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isDisabled}
+                    style={{
+                      width: "100%",
+                      height: 46,
+                      border: `1.5px dashed ${t.infoBorder}`,
+                      background: t.infoBg,
+                      color: t.info,
+                      borderRadius: 8,
+                      fontFamily: "Sora, sans-serif",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      opacity: isDisabled ? 0.6 : 1,
+                    }}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2
+                          size={14}
+                          style={{ animation: "spin 1s linear infinite" }}
+                        />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Paperclip size={14} /> Attach File
+                      </>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    style={{ display: "none" }}
+                  />
+                </>
+              ) : (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    background: t.infoBg,
+                    border: `1px solid ${t.infoBorder}`,
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  {(() => {
+                    const FileIcon = getFileIcon(file.name);
+                    return (
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 6,
+                          background: t.bgCard,
+                          color: t.info,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <FileIcon size={16} />
+                      </div>
+                    );
+                  })()}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: t.info,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {file.name}
+                    </div>
+                    {file.size && (
+                      <div
+                        style={{
+                          fontSize: 10.5,
+                          color: t.textMuted,
+                          marginTop: 1,
+                        }}
+                      >
+                        {formatFileSize(file.size)}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => !isDisabled && setFile(null)}
+                    disabled={isDisabled}
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 6,
+                      border: `1px solid ${t.dangerBorder}`,
+                      background: t.dangerBgSubtle,
+                      color: t.danger,
+                      cursor: isDisabled ? "not-allowed" : "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      opacity: isDisabled ? 0.5 : 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Note textarea */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                minHeight: 200,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: t.textMuted,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.4px",
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <FileText size={11} />
+                Note <span style={{ color: t.danger }}>*</span>
+              </div>
+              <textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter your update note..."
+                disabled={isDisabled}
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  minHeight: 180,
+                  border: `1px solid ${t.borderStrong}`,
+                  borderRadius: 8,
+                  padding: "12px 14px",
+                  fontFamily: "Sora, sans-serif",
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  outline: "none",
+                  boxSizing: "border-box",
+                  resize: "none",
+                  background: isDisabled ? t.bgInputDisabled : t.bgInput,
+                  color: t.textPrimary,
+                }}
+              />
+              <div
+                style={{
+                  fontSize: 10,
+                  color: t.textFaint,
+                  marginTop: 4,
+                  textAlign: "right",
+                }}
+              >
+                {text.length} characters
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── ABSOLUTELY POSITIONED FOOTER ── */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            // height auto — let padding define it
+            padding: "12px",
+            paddingBottom: "calc(12px + env(safe-area-inset-bottom, 20px))", // ← ensures visible above home indicator
+            borderTop: `1px solid ${t.border}`,
+            display: "flex",
+            gap: 8,
+            background: t.bgSubtle,
+            boxSizing: "border-box",
+            zIndex: 10,
+          }}
+        >
+          <button
+            onClick={onClose}
+            disabled={isDisabled}
+            style={{
+              flex: 1,
+              height: 46,
+              border: `1px solid ${t.borderStrong}`,
+              borderRadius: 8,
+              background: t.bgCard,
+              color: t.textSecondary,
+              fontFamily: "Sora, sans-serif",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: isDisabled ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+              opacity: isDisabled ? 0.6 : 1,
+            }}
+          >
+            <X size={14} /> Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!text.trim() || isDisabled}
+            style={{
+              flex: 1.3,
+              height: 46,
+              border: `1px solid ${text.trim() && !isDisabled ? t.primary : t.border}`,
+              borderRadius: 8,
+              background: text.trim() && !isDisabled ? t.primary : t.bgMuted,
+              color: text.trim() && !isDisabled ? t.textInverse : t.textFaint,
+              fontFamily: "Sora, sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: text.trim() && !isDisabled ? "pointer" : "not-allowed",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            {isSaving ? (
+              <>
+                <Loader2
+                  size={14}
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check size={14} /> Save Note
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
 /* ═══════════════════════════════════════════════════════
    Note Editor
    ═══════════════════════════════════════════════════════ */
@@ -1559,7 +2020,634 @@ function UpdateCell({
     </>
   );
 }
+/* ═══════════════════════════════════════════════════════
+   Mobile Note Card
+   ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   Mobile Note Card (cleaner design + no inline editor)
+   ═══════════════════════════════════════════════════════ */
+function MobileNoteCard({
+  category,
+  snapshot,
+  note,
+  canEdit,
+  canManage,
+  isPastSnapshot,
+  isSaving,
+  isLocked,
+  onOpenEditor,
+  onDeleteNote,
+  onRename,
+  onDelete,
+  onShare,
+  showToast,
+  currentUserId,
+}) {
+  const { t } = useTheme();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [localDeleting, setLocalDeleting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
+  const hasNote = !!note;
+  const sharedCount = (category.sharedWith || []).length;
+  const authorUser = hasNote ? findUserById(note.author) : null;
+
+  // Left accent color
+  const accentColor = isLocked
+    ? t.borderStrong
+    : hasNote
+      ? t.success
+      : isPastSnapshot
+        ? t.textFaint
+        : t.warning;
+
+  const handleDelete = async () => {
+    setLocalDeleting(true);
+    try {
+      await onDeleteNote();
+      setConfirmDelete(false);
+    } finally {
+      setLocalDeleting(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(note?.text || "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const canModifyNote = canEdit && !isPastSnapshot && hasNote;
+
+  return (
+    <>
+      <div
+        style={{
+          background: t.bgCard,
+          border: `1px solid ${t.border}`,
+          borderLeft: `4px solid ${accentColor}`,
+          borderRadius: 10,
+          overflow: "hidden",
+          opacity: isLocked ? 0.75 : 1,
+          boxShadow: t.shadowSm,
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "12px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: hasNote ? t.bgCard : t.bgSubtle,
+            borderBottom: `1px solid ${t.borderSubtle}`,
+          }}
+        >
+          {isLocked && <Lock size={13} color={t.textFaint} />}
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: isLocked ? t.textFaint : t.textPrimary,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {category.name}
+          </div>
+
+          {/* Shared badge */}
+          {sharedCount > 0 && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
+                padding: "3px 7px",
+                background: t.successBg,
+                color: t.success,
+                border: `1px solid ${t.successBorder}`,
+                borderRadius: 999,
+                fontSize: 10,
+                fontWeight: 700,
+              }}
+            >
+              <Users size={9} />
+              {sharedCount}
+            </span>
+          )}
+
+          {/* Menu (only for owner) */}
+          {canManage && !category._pending && (
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setMenuOpen((p) => !p)}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 6,
+                  border: `1px solid ${t.border}`,
+                  background: t.bgCard,
+                  color: t.textMuted,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                }}
+              >
+                <MoreVertical size={14} />
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div
+                    onClick={() => setMenuOpen(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 20 }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 4px)",
+                      right: 0,
+                      background: t.bgCard,
+                      border: `1px solid ${t.borderStrong}`,
+                      borderRadius: 8,
+                      boxShadow: t.shadowLg,
+                      zIndex: 21,
+                      minWidth: 170,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onShare();
+                      }}
+                      style={mobileMenuBtnStyle(t, t.success)}
+                    >
+                      <Share2 size={13} /> Share
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onRename();
+                      }}
+                      style={mobileMenuBtnStyle(t, t.textPrimary)}
+                    >
+                      <Edit size={13} /> Rename
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onDelete();
+                      }}
+                      style={mobileMenuBtnStyle(t, t.danger)}
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "12px 14px" }}>
+          {hasNote ? (
+            <>
+              {/* Note text */}
+              <div
+                style={{
+                  fontSize: 13,
+                  color: t.textPrimary,
+                  lineHeight: 1.55,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  marginBottom: note.file || authorUser ? 10 : 0,
+                }}
+              >
+                {note.text}
+              </div>
+
+              {/* Attachment */}
+              {note.file && (
+                <div style={{ marginBottom: 10 }}>
+                  <FileAttachmentBadge
+                    file={note.file}
+                    readOnly={true}
+                    size="md"
+                  />
+                </div>
+              )}
+
+              {/* Author + timestamp */}
+              {(authorUser || note.authorName) && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 10.5,
+                    color: t.textFaint,
+                    paddingTop: 8,
+                    borderTop: `1px solid ${t.borderSubtle}`,
+                    marginBottom: canModifyNote ? 10 : 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: t.primaryBg,
+                      color: t.primary,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {(authorUser?.userName || note.authorName || "?")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </span>
+                  <span style={{ fontWeight: 600 }}>
+                    {authorUser?.userName || note.authorName || note.author}
+                  </span>
+                  {note.updatedAt && (
+                    <>
+                      <span>·</span>
+                      <span style={{ fontStyle: "italic" }}>
+                        {new Date(note.updatedAt).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Action buttons — ALWAYS visible on mobile */}
+              {canModifyNote && (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={handleCopy}
+                    style={{
+                      flex: 1,
+                      height: 38,
+                      border: `1px solid ${copied ? t.successBorder : t.border}`,
+                      borderRadius: 7,
+                      background: copied ? t.successBg : t.bgCard,
+                      color: copied ? t.success : t.textMuted,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 5,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontFamily: "Sora, sans-serif",
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={13} /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={13} /> Copy
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={onOpenEditor}
+                    disabled={isSaving}
+                    style={{
+                      flex: 1,
+                      height: 38,
+                      border: `1px solid ${t.primaryBorder}`,
+                      borderRadius: 7,
+                      background: t.primaryBgSubtle,
+                      color: t.primary,
+                      cursor: isSaving ? "not-allowed" : "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 5,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontFamily: "Sora, sans-serif",
+                      opacity: isSaving ? 0.6 : 1,
+                    }}
+                  >
+                    <Edit size={13} /> Edit
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={isSaving}
+                    style={{
+                      width: 38,
+                      height: 38,
+                      border: `1px solid ${t.dangerBorder}`,
+                      borderRadius: 7,
+                      background: t.dangerBgSubtle,
+                      color: t.danger,
+                      cursor: isSaving ? "not-allowed" : "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      opacity: isSaving ? 0.6 : 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              )}
+
+              {/* Archived badge */}
+              {isPastSnapshot && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "3px 8px",
+                    background: t.bgMuted,
+                    color: t.textMuted,
+                    border: `1px solid ${t.borderStrong}`,
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    marginTop: 8,
+                  }}
+                >
+                  <Lock size={10} /> Archived — read only
+                </div>
+              )}
+
+              <InlineSaving show={isSaving} />
+            </>
+          ) : (
+            /* Empty state */
+            <>
+              {isLocked ? (
+                <div
+                  style={{
+                    padding: "20px 12px",
+                    textAlign: "center",
+                    color: t.textFaint,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Lock size={13} /> No access to this category
+                </div>
+              ) : isPastSnapshot ? (
+                <div
+                  style={{
+                    padding: "20px 12px",
+                    textAlign: "center",
+                    color: t.textFaint,
+                    fontSize: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Lock size={13} /> No entry — archived
+                </div>
+              ) : (
+                <button
+                  onClick={onOpenEditor}
+                  disabled={isSaving}
+                  style={{
+                    width: "100%",
+                    height: 46,
+                    border: `1.5px dashed ${t.primaryBorder}`,
+                    borderRadius: 8,
+                    background: t.primaryBgSubtle,
+                    color: t.primary,
+                    fontFamily: "Sora, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: isSaving ? "not-allowed" : "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    opacity: isSaving ? 0.6 : 1,
+                  }}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2
+                        size={14}
+                        style={{ animation: "spin 1s linear infinite" }}
+                      />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={14} /> Add note
+                    </>
+                  )}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {confirmDelete && (
+        <ConfirmDeleteModal
+          title="Delete this note?"
+          message="This note and its attachment will be permanently removed."
+          onClose={() => !localDeleting && setConfirmDelete(false)}
+          onConfirm={handleDelete}
+          isDeleting={localDeleting}
+        />
+      )}
+    </>
+  );
+}
+/* ═══════════════════════════════════════════════════════
+   Mobile Snapshot Picker (horizontal scroller)
+   ═══════════════════════════════════════════════════════ */
+function MobileSnapshotPicker({
+  snapshots,
+  selectedSnapshotId,
+  onSelect,
+  isOwner,
+  onDelete,
+  onAddSnapshot,
+  canAddSnapshot,
+}) {
+  const { t } = useTheme();
+
+  return (
+    <div
+      style={{
+        padding: "10px 14px 12px",
+        background: t.bgCard,
+        borderBottom: `1px solid ${t.border}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: t.textMuted,
+          textTransform: "uppercase",
+          letterSpacing: "0.5px",
+          marginBottom: 8,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <Calendar size={11} />
+        Select Date ({snapshots.length})
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 6,
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+          paddingBottom: 4,
+        }}
+      >
+        {snapshots.map((snap) => {
+          const isActive = snap.id === selectedSnapshotId;
+          const isPast = isSnapshotPast(snap.date);
+          return (
+            <button
+              key={snap.id}
+              onClick={() => onSelect(snap.id)}
+              style={{
+                flexShrink: 0,
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: `1.5px solid ${isActive ? t.primary : t.border}`,
+                background: isActive
+                  ? t.primary
+                  : isPast
+                    ? t.bgSubtle
+                    : t.bgCard,
+                color: isActive
+                  ? t.textInverse
+                  : isPast
+                    ? t.textMuted
+                    : t.textPrimary,
+                fontFamily: "Sora, sans-serif",
+                cursor: "pointer",
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+                minWidth: 90,
+                transition: "all .12s",
+                opacity: snap._pending ? 0.6 : 1,
+              }}
+            >
+              {snap._pending && (
+                <Loader2
+                  size={11}
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+              )}
+              {isPast && !snap._pending && (
+                <Lock size={10} style={{ opacity: 0.7 }} />
+              )}
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11.5,
+                  fontWeight: isActive ? 700 : 600,
+                }}
+              >
+                {formatDate(snap.date)}
+              </span>
+              {snap.label && (
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    opacity: isActive ? 0.9 : 0.7,
+                    maxWidth: 90,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {snap.label}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        {canAddSnapshot && (
+          <button
+            onClick={onAddSnapshot}
+            style={{
+              flexShrink: 0,
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: `1.5px dashed ${t.primaryBorder}`,
+              background: t.primaryBgSubtle,
+              color: t.primary,
+              fontFamily: "Sora, sans-serif",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              minWidth: 90,
+              justifyContent: "center",
+            }}
+          >
+            <Plus size={13} /> Add
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+function mobileMenuBtnStyle(t, color) {
+  return {
+    width: "100%",
+    padding: "10px 12px",
+    border: "none",
+    background: "transparent",
+    color,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 12.5,
+    fontWeight: 600,
+    fontFamily: "Sora, sans-serif",
+    textAlign: "left",
+  };
+}
 /* ═══════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════ */
@@ -1572,7 +2660,12 @@ export default function ProjectUpdatesView({
   projectName = "",
 }) {
   const { t } = useTheme();
+  const { isMobile } = useResponsive();
 
+  // Mobile-only: track selected snapshot for tab-like view
+  const [mobileSelectedSnapshotId, setMobileSelectedSnapshotId] =
+    useState(null);
+  const [mobileEditor, setMobileEditor] = useState(null);
   // Data state
   const [updates, setUpdates] = useState(null);
   const [projectOwnerId, setProjectOwnerId] = useState(null);
@@ -1603,18 +2696,19 @@ export default function ProjectUpdatesView({
 
   // Themed button style
   const btnStyle = {
-    height: 32,
-    padding: "0 14px",
+    height: isMobile ? 40 : 32,
+    padding: isMobile ? "0 12px" : "0 14px",
     borderRadius: 7,
     border: `1px solid ${t.borderStrong}`,
     background: t.bgCard,
     color: t.textSecondary,
     fontFamily: "Sora,sans-serif",
-    fontSize: 12,
+    fontSize: isMobile ? 13 : 12,
     fontWeight: 500,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 5,
   };
 
@@ -1755,7 +2849,22 @@ export default function ProjectUpdatesView({
   useEffect(() => {
     fetchUpdates(true);
   }, [fetchUpdates]);
-
+  // Auto-select latest snapshot when switching to mobile
+  useEffect(() => {
+    if (
+      isMobile &&
+      updates?.snapshots?.length > 0 &&
+      !mobileSelectedSnapshotId
+    ) {
+      const sorted = [...updates.snapshots].sort((a, b) =>
+        b.date.localeCompare(a.date),
+      );
+      // Pick current or nearest date
+      const today = todayISO();
+      const current = sorted.find((s) => s.date >= today) || sorted[0];
+      setMobileSelectedSnapshotId(current.id);
+    }
+  }, [isMobile, updates?.snapshots, mobileSelectedSnapshotId]);
   const applyCategorySharingUpdate = useCallback((update) => {
     setUpdates((prev) => {
       if (!prev) return prev;
@@ -2385,6 +3494,7 @@ export default function ProjectUpdatesView({
   }
 
   // Main matrix view
+  // Main matrix view
   return (
     <div
       style={{
@@ -2397,8 +3507,8 @@ export default function ProjectUpdatesView({
         <div
           style={{
             position: "absolute",
-            top: -8,
-            right: 0,
+            top: isMobile ? 4 : -8,
+            right: isMobile ? 8 : 0,
             zIndex: 10,
             padding: "4px 10px",
             background: t.infoBg,
@@ -2418,17 +3528,17 @@ export default function ProjectUpdatesView({
         </div>
       )}
 
-      {/* Toolbar */}
+      {/* ── Toolbar ── */}
       <div
         style={{
           background: t.bgCard,
           border: `1px solid ${t.border}`,
           borderRadius: 12,
-          padding: "12px 18px",
+          padding: isMobile ? "10px 12px" : "12px 18px",
           marginBottom: 12,
           display: "flex",
           alignItems: "center",
-          gap: 12,
+          gap: isMobile ? 8 : 12,
           flexWrap: "wrap",
           boxShadow: t.shadowSm,
         }}
@@ -2444,21 +3554,35 @@ export default function ProjectUpdatesView({
           }}
         >
           <ClipboardList size={16} color={t.warning} />
-          Progress Updates
+          {isMobile ? "Updates" : "Progress Updates"}
         </div>
-        <div style={{ fontSize: 11.5, color: t.textMuted }}>
-          {categories.length} categor{categories.length !== 1 ? "ies" : "y"} ·{" "}
-          {snapshots.length} snapshot{snapshots.length !== 1 ? "s" : ""} ·{" "}
-          {totalNotes} note{totalNotes !== 1 ? "s" : ""}
-        </div>
+        {!isMobile && (
+          <div style={{ fontSize: 11.5, color: t.textMuted }}>
+            {categories.length} categor{categories.length !== 1 ? "ies" : "y"} ·{" "}
+            {snapshots.length} snapshot{snapshots.length !== 1 ? "s" : ""} ·{" "}
+            {totalNotes} note{totalNotes !== 1 ? "s" : ""}
+          </div>
+        )}
 
         {!readOnly && (
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <div
+            style={{
+              marginLeft: isMobile ? 0 : "auto",
+              display: "flex",
+              gap: isMobile ? 6 : 8,
+              flexWrap: "wrap",
+              width: isMobile ? "100%" : "auto",
+            }}
+          >
             <button
               onClick={() => fetchUpdates(false)}
               disabled={isRefreshing}
               title="Refresh"
-              style={{ ...btnStyle, opacity: isRefreshing ? 0.6 : 1 }}
+              style={{
+                ...btnStyle,
+                opacity: isRefreshing ? 0.6 : 1,
+                flex: isMobile ? 1 : "initial",
+              }}
             >
               <RefreshCw
                 size={13}
@@ -2466,7 +3590,7 @@ export default function ProjectUpdatesView({
                   animation: isRefreshing ? "spin 1s linear infinite" : "none",
                 }}
               />
-              Refresh
+              {isMobile ? "" : "Refresh"}
             </button>
 
             {isOwner && (
@@ -2478,9 +3602,10 @@ export default function ProjectUpdatesView({
                     background: t.violetBg,
                     color: t.violet,
                     borderColor: t.violetBorder,
+                    flex: isMobile ? 1 : "initial",
                   }}
                 >
-                  <Plus size={13} /> Add Category
+                  <Plus size={13} /> {isMobile ? "Category" : "Add Category"}
                 </button>
                 {categories.length > 0 && (
                   <button
@@ -2490,14 +3615,16 @@ export default function ProjectUpdatesView({
                       background: t.successBgSubtle,
                       color: t.success,
                       borderColor: t.successBorder,
+                      flex: isMobile ? 1 : "initial",
                     }}
                   >
-                    <Users size={13} /> Manage Sharing
+                    <Users size={13} />{" "}
+                    {isMobile ? "Sharing" : "Manage Sharing"}
                   </button>
                 )}
               </>
             )}
-            {userCanAddSnapshot && (
+            {userCanAddSnapshot && !isMobile && (
               <button
                 onClick={() => setAddSnapshotOpen(true)}
                 style={{
@@ -2514,7 +3641,58 @@ export default function ProjectUpdatesView({
         )}
       </div>
 
-      {/* Role banner */}
+      {/* Mobile stats mini-bar */}
+      {isMobile && (
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            marginBottom: 12,
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {[
+            {
+              label: "Categories",
+              value: categories.length,
+              color: t.violet,
+              bg: t.violetBg,
+            },
+            {
+              label: "Snapshots",
+              value: snapshots.length,
+              color: t.primary,
+              bg: t.primaryBg,
+            },
+            {
+              label: "Notes",
+              value: totalNotes,
+              color: t.info,
+              bg: t.infoBg,
+            },
+          ].map((s) => (
+            <span
+              key={s.label}
+              style={{
+                padding: "5px 10px",
+                background: s.bg,
+                color: s.color,
+                border: `1px solid ${t.border}`,
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 600,
+                flexShrink: 0,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {s.label}: <strong>{s.value}</strong>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* ── Role banner ── */}
       {!readOnly && !isOwner && (
         <div
           style={{
@@ -2534,363 +3712,637 @@ export default function ProjectUpdatesView({
             <>
               <Users size={14} />
               <span>
-                You have edit access to <strong>{editableCount}</strong> of{" "}
+                Edit access: <strong>{editableCount}</strong> /{" "}
                 <strong>{categories.length}</strong> categor
-                {categories.length !== 1 ? "ies" : "y"}.
+                {categories.length !== 1 ? "ies" : "y"}
               </span>
             </>
           ) : (
             <>
               <Lock size={14} />
               <span>
-                <strong>View-only access.</strong> Contact{" "}
-                {findUserById(projectOwnerId)?.userName || projectOwnerId} for
-                access.
+                <strong>View-only access.</strong>
               </span>
             </>
           )}
         </div>
       )}
 
-      {/* Matrix */}
-      <div
-        style={{
-          background: t.bgCard,
-          border: `1px solid ${t.border}`,
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}
-          >
-            <thead>
-              <tr>
-                <th
+      {/* ══════════════════════════════════════════════════
+        MOBILE VIEW — Snapshot picker + Category cards
+        ══════════════════════════════════════════════════ */}
+      {isMobile ? (
+        <div
+          style={{
+            background: t.bgCard,
+            border: `1px solid ${t.border}`,
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          {snapshots.length === 0 ? (
+            <div
+              style={{
+                padding: "40px 20px",
+                textAlign: "center",
+                color: t.textMuted,
+              }}
+            >
+              <Calendar
+                size={32}
+                strokeWidth={1.5}
+                style={{ marginBottom: 12, opacity: 0.5 }}
+              />
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: t.textPrimary,
+                  marginBottom: 6,
+                }}
+              >
+                No snapshots yet
+              </div>
+              <div style={{ fontSize: 12, marginBottom: 14 }}>
+                Add a snapshot to start tracking updates.
+              </div>
+              {userCanAddSnapshot && (
+                <button
+                  onClick={() => setAddSnapshotOpen(true)}
                   style={{
-                    width: 240,
-                    minWidth: 240,
-                    padding: "12px 16px",
+                    ...btnStyle,
                     background: t.primary,
                     color: t.textInverse,
-                    fontWeight: 700,
-                    fontSize: 11.5,
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
-                    textAlign: "left",
-                    position: "sticky",
-                    left: 0,
-                    zIndex: 2,
+                    borderColor: t.primary,
                   }}
                 >
-                  Update
-                </th>
-                {sortedSnapshots.map((snap) => {
+                  <Calendar size={14} /> Add First Snapshot
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <MobileSnapshotPicker
+                snapshots={sortedSnapshots}
+                selectedSnapshotId={mobileSelectedSnapshotId}
+                onSelect={setMobileSelectedSnapshotId}
+                isOwner={isOwner}
+                onDelete={(id) =>
+                  setConfirmDelete({
+                    type: "snapshot",
+                    id,
+                    name: formatDate(snapshots.find((s) => s.id === id)?.date),
+                  })
+                }
+                onAddSnapshot={() => setAddSnapshotOpen(true)}
+                canAddSnapshot={userCanAddSnapshot && !readOnly}
+              />
+
+              {/* Selected snapshot info bar */}
+              {mobileSelectedSnapshotId &&
+                (() => {
+                  const snap = snapshots.find(
+                    (s) => s.id === mobileSelectedSnapshotId,
+                  );
+                  if (!snap) return null;
                   const isPast = isSnapshotPast(snap.date);
-                  const canDelete = isOwner && !isPast && !snap._pending;
                   return (
-                    <th
-                      key={snap.id}
+                    <div
                       style={{
-                        minWidth: 240,
                         padding: "10px 14px",
-                        background: isPast ? t.textSecondary : t.primary,
-                        color: t.textInverse,
-                        fontWeight: 700,
-                        fontSize: 12,
-                        textAlign: "center",
-                        borderRight: "1px solid rgba(255,255,255,0.15)",
-                        opacity: snap._pending ? 0.7 : 1,
+                        background: isPast ? t.bgSubtle : t.primaryBgSubtle,
+                        borderBottom: `1px solid ${t.border}`,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
                       }}
                     >
-                      <div
+                      {isPast ? (
+                        <Lock size={13} color={t.textMuted} />
+                      ) : (
+                        <Calendar size={13} color={t.primary} />
+                      )}
+                      <span
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 12.5,
+                          fontWeight: 700,
+                          color: isPast ? t.textSecondary : t.primary,
                         }}
                       >
-                        {snap._pending ? (
-                          <Loader2
-                            size={11}
-                            style={{ animation: "spin 1s linear infinite" }}
-                          />
-                        ) : isPast ? (
-                          <Lock size={11} style={{ opacity: 0.8 }} />
-                        ) : null}
-                        <span
-                          style={{
-                            fontFamily: "'JetBrains Mono',monospace",
-                            fontSize: 12,
-                          }}
-                        >
-                          {formatDate(snap.date)}
-                        </span>
-                        {isOwner &&
-                          (isPast ? (
-                            <span
-                              title="Past snapshots cannot be deleted"
-                              style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: 4,
-                                background: "rgba(255,255,255,0.1)",
-                                color: "rgba(255,255,255,0.6)",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "not-allowed",
-                              }}
-                            >
-                              <Lock size={10} />
-                            </span>
-                          ) : canDelete ? (
-                            <button
-                              onClick={() =>
-                                setConfirmDelete({
-                                  type: "snapshot",
-                                  id: snap.id,
-                                  name: formatDate(snap.date),
-                                })
-                              }
-                              style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: 4,
-                                border: "1px solid rgba(255,255,255,0.3)",
-                                background: "rgba(255,255,255,0.15)",
-                                cursor: "pointer",
-                                color: t.textInverse,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <X size={11} />
-                            </button>
-                          ) : null)}
-                      </div>
+                        {formatDate(snap.date)}
+                      </span>
                       {snap.label && (
-                        <div
-                          style={{
-                            fontSize: 10,
-                            opacity: 0.8,
-                            marginTop: 2,
-                            fontWeight: 400,
-                          }}
-                        >
-                          {snap.label}
-                        </div>
+                        <span style={{ fontSize: 11.5, color: t.textMuted }}>
+                          · {snap.label}
+                        </span>
                       )}
                       {isPast && (
-                        <div
+                        <span
                           style={{
+                            marginLeft: "auto",
+                            padding: "2px 7px",
+                            background: t.bgMuted,
+                            color: t.textMuted,
+                            border: `1px solid ${t.borderStrong}`,
+                            borderRadius: 999,
                             fontSize: 9.5,
-                            opacity: 0.75,
-                            marginTop: 2,
-                            fontStyle: "italic",
+                            fontWeight: 700,
                           }}
                         >
-                          Archived
-                        </div>
+                          ARCHIVED
+                        </span>
                       )}
-                    </th>
+                      {isOwner && !isPast && !snap._pending && (
+                        <button
+                          onClick={() =>
+                            setConfirmDelete({
+                              type: "snapshot",
+                              id: snap.id,
+                              name: formatDate(snap.date),
+                            })
+                          }
+                          style={{
+                            marginLeft: isPast ? 0 : "auto",
+                            width: 26,
+                            height: 26,
+                            borderRadius: 6,
+                            border: `1px solid ${t.dangerBorder}`,
+                            background: t.dangerBgSubtle,
+                            color: t.danger,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
                   );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedCategories.map((cat, catIdx) => {
-                const role = cat.userRole || "viewer";
-                const canEdit =
-                  (role === "owner" || role === "collaborator") && !readOnly;
-                const canManage = role === "owner" && !readOnly;
-                const isLocked = !canEdit;
-                const sharedCount = (cat.sharedWith || []).length;
+                })()}
 
-                return (
-                  <tr key={cat.id} style={{ opacity: cat._pending ? 0.7 : 1 }}>
-                    <td
-                      style={{
-                        padding: "12px 16px",
-                        borderBottom: `1px solid ${t.borderSubtle}`,
-                        borderRight: `1px solid ${t.border}`,
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        color: isLocked ? t.textFaint : t.textPrimary,
-                        position: "sticky",
-                        left: 0,
-                        background: isLocked
-                          ? t.bgSubtle
-                          : catIdx % 2 === 0
-                            ? t.bgCard
-                            : t.bgSubtle,
-                        zIndex: 1,
-                        verticalAlign: "top",
-                        opacity: isLocked ? 0.75 : 1,
-                      }}
-                    >
-                      <div
+              {/* Category cards for selected snapshot */}
+              <div
+                style={{
+                  padding: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  background: t.bgApp,
+                }}
+              >
+                {categories.length === 0 ? (
+                  <div
+                    style={{
+                      padding: "30px 20px",
+                      textAlign: "center",
+                      color: t.textMuted,
+                      background: t.bgCard,
+                      borderRadius: 10,
+                      border: `1px dashed ${t.borderDashed}`,
+                    }}
+                  >
+                    <ClipboardList
+                      size={28}
+                      strokeWidth={1.5}
+                      style={{ marginBottom: 10, opacity: 0.5 }}
+                    />
+                    <div style={{ fontSize: 12.5, marginBottom: 12 }}>
+                      No categories yet
+                    </div>
+                    {isOwner && (
+                      <button
+                        onClick={() => setAddCategoryOpen(true)}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          flexWrap: "wrap",
+                          ...btnStyle,
+                          background: t.violet,
+                          color: t.textInverse,
+                          borderColor: t.violet,
                         }}
                       >
-                        {cat._pending ? (
-                          <Loader2
-                            size={12}
+                        <Plus size={13} /> Add Category
+                      </button>
+                    )}
+                  </div>
+                ) : mobileSelectedSnapshotId ? (
+                  sortedCategories.map((cat) => {
+                    const role = cat.userRole || "viewer";
+                    const canEdit =
+                      (role === "owner" || role === "collaborator") &&
+                      !readOnly;
+                    const canManage = role === "owner" && !readOnly;
+                    const isLocked = !canEdit;
+                    const snap = snapshots.find(
+                      (s) => s.id === mobileSelectedSnapshotId,
+                    );
+                    const key = cellKey(cat.id, mobileSelectedSnapshotId);
+                    return (
+                      <MobileNoteCard
+                        key={cat.id}
+                        category={cat}
+                        snapshot={snap}
+                        note={getCellNote(cat.id, mobileSelectedSnapshotId)}
+                        canEdit={canEdit}
+                        canManage={canManage}
+                        isPastSnapshot={isSnapshotPast(snap?.date)}
+                        isSaving={savingCellKeys.has(key)}
+                        isLocked={isLocked}
+                        currentUserId={currentUserId}
+                        showToast={showToast}
+                        onOpenEditor={() =>
+                          setMobileEditor({
+                            categoryId: cat.id,
+                            snapshotId: mobileSelectedSnapshotId,
+                            categoryName: cat.name,
+                            snapshotDate: formatDate(snap?.date),
+                            note: getCellNote(cat.id, mobileSelectedSnapshotId),
+                          })
+                        }
+                        onDeleteNote={() =>
+                          handleDeleteNote(cat.id, mobileSelectedSnapshotId)
+                        }
+                        onRename={() => setEditingCategoryId(cat.id)}
+                        onDelete={() =>
+                          setConfirmDelete({
+                            type: "category",
+                            id: cat.id,
+                            name: cat.name,
+                          })
+                        }
+                        onShare={() => setShareCategoryId(cat.id)}
+                      />
+                    );
+                  })
+                ) : (
+                  <div
+                    style={{
+                      padding: 30,
+                      textAlign: "center",
+                      color: t.textFaint,
+                      fontSize: 12,
+                    }}
+                  >
+                    Select a date above to view updates.
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        /* ══════════════════════════════════════════════════
+          DESKTOP VIEW — Matrix table (existing, unchanged)
+          ══════════════════════════════════════════════════ */
+        <div
+          style={{
+            background: t.bgCard,
+            border: `1px solid ${t.border}`,
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                minWidth: 600,
+              }}
+            >
+              <thead>
+                <tr>
+                  <th
+                    style={{
+                      width: 240,
+                      minWidth: 240,
+                      padding: "12px 16px",
+                      background: t.primary,
+                      color: t.textInverse,
+                      fontWeight: 700,
+                      fontSize: 11.5,
+                      letterSpacing: "0.5px",
+                      textTransform: "uppercase",
+                      textAlign: "left",
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 2,
+                    }}
+                  >
+                    Update
+                  </th>
+                  {sortedSnapshots.map((snap) => {
+                    const isPast = isSnapshotPast(snap.date);
+                    const canDelete = isOwner && !isPast && !snap._pending;
+                    return (
+                      <th
+                        key={snap.id}
+                        style={{
+                          minWidth: 240,
+                          padding: "10px 14px",
+                          background: isPast ? t.textSecondary : t.primary,
+                          color: t.textInverse,
+                          fontWeight: 700,
+                          fontSize: 12,
+                          textAlign: "center",
+                          borderRight: "1px solid rgba(255,255,255,0.15)",
+                          opacity: snap._pending ? 0.7 : 1,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                          }}
+                        >
+                          {snap._pending ? (
+                            <Loader2
+                              size={11}
+                              style={{ animation: "spin 1s linear infinite" }}
+                            />
+                          ) : isPast ? (
+                            <Lock size={11} style={{ opacity: 0.8 }} />
+                          ) : null}
+                          <span
                             style={{
-                              animation: "spin 1s linear infinite",
-                              color: t.primary,
+                              fontFamily: "'JetBrains Mono',monospace",
+                              fontSize: 12,
                             }}
-                          />
-                        ) : isLocked ? (
-                          <Lock size={12} color={t.textFaint} />
-                        ) : null}
-
-                        {editingCategoryId === cat.id ? (
-                          <CategoryNameEditor
-                            value={cat.name}
-                            onSave={(newName) =>
-                              handleRenameCategory(cat.id, newName)
-                            }
-                            onCancel={() => setEditingCategoryId(null)}
-                          />
-                        ) : (
-                          <>
-                            <span style={{ flex: 1, minWidth: 0 }}>
-                              {cat.name}
-                            </span>
-
-                            {sharedCount > 0 && (
+                          >
+                            {formatDate(snap.date)}
+                          </span>
+                          {isOwner &&
+                            (isPast ? (
                               <span
-                                title={`Shared with ${sharedCount} user${sharedCount !== 1 ? "s" : ""}`}
+                                title="Past snapshots cannot be deleted"
                                 style={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: 4,
+                                  background: "rgba(255,255,255,0.1)",
+                                  color: "rgba(255,255,255,0.6)",
                                   display: "inline-flex",
                                   alignItems: "center",
-                                  gap: 3,
-                                  padding: "2px 6px",
-                                  background:
-                                    role === "collaborator"
-                                      ? t.primaryBg
-                                      : t.successBg,
-                                  color:
-                                    role === "collaborator"
-                                      ? t.primary
-                                      : t.success,
-                                  border: `1px solid ${role === "collaborator" ? t.primaryBorder : t.successBorder}`,
-                                  borderRadius: 999,
-                                  fontSize: 9.5,
-                                  fontWeight: 700,
+                                  justifyContent: "center",
+                                  cursor: "not-allowed",
                                 }}
                               >
-                                <Users size={9} />
-                                {sharedCount}
+                                <Lock size={10} />
                               </span>
-                            )}
-
-                            {canManage && !cat._pending && (
-                              <div style={{ display: "flex", gap: 3 }}>
-                                <button
-                                  onClick={() => setShareCategoryId(cat.id)}
-                                  title="Share"
-                                  style={{
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: 4,
-                                    border: `1px solid ${t.successBorder}`,
-                                    background: t.successBgSubtle,
-                                    cursor: "pointer",
-                                    color: t.success,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Share2 size={10} />
-                                </button>
-                                <button
-                                  onClick={() => setEditingCategoryId(cat.id)}
-                                  title="Rename"
-                                  style={{
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: 4,
-                                    border: `1px solid ${t.border}`,
-                                    background: t.bgCard,
-                                    cursor: "pointer",
-                                    color: t.textMuted,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Edit size={10} />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setConfirmDelete({
-                                      type: "category",
-                                      id: cat.id,
-                                      name: cat.name,
-                                    })
-                                  }
-                                  title="Delete"
-                                  style={{
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: 4,
-                                    border: `1px solid ${t.dangerBorder}`,
-                                    background: t.dangerBgSubtle,
-                                    cursor: "pointer",
-                                    color: t.danger,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Trash2 size={10} />
-                                </button>
-                              </div>
-                            )}
-                          </>
+                            ) : canDelete ? (
+                              <button
+                                onClick={() =>
+                                  setConfirmDelete({
+                                    type: "snapshot",
+                                    id: snap.id,
+                                    name: formatDate(snap.date),
+                                  })
+                                }
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: 4,
+                                  border: "1px solid rgba(255,255,255,0.3)",
+                                  background: "rgba(255,255,255,0.15)",
+                                  cursor: "pointer",
+                                  color: t.textInverse,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <X size={11} />
+                              </button>
+                            ) : null)}
+                        </div>
+                        {snap.label && (
+                          <div
+                            style={{
+                              fontSize: 10,
+                              opacity: 0.8,
+                              marginTop: 2,
+                              fontWeight: 400,
+                            }}
+                          >
+                            {snap.label}
+                          </div>
                         )}
-                      </div>
-                    </td>
+                        {isPast && (
+                          <div
+                            style={{
+                              fontSize: 9.5,
+                              opacity: 0.75,
+                              marginTop: 2,
+                              fontStyle: "italic",
+                            }}
+                          >
+                            Archived
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedCategories.map((cat, catIdx) => {
+                  const role = cat.userRole || "viewer";
+                  const canEdit =
+                    (role === "owner" || role === "collaborator") && !readOnly;
+                  const canManage = role === "owner" && !readOnly;
+                  const isLocked = !canEdit;
+                  const sharedCount = (cat.sharedWith || []).length;
 
-                    {sortedSnapshots.map((snap) => {
-                      const key = cellKey(cat.id, snap.id);
-                      return (
-                        <UpdateCell
-                          key={snap.id}
-                          note={getCellNote(cat.id, snap.id)}
-                          canEdit={canEdit}
-                          isLocked={isLocked}
-                          isPastSnapshot={isSnapshotPast(snap.date)}
-                          catIdx={catIdx}
-                          currentUserId={currentUserId}
-                          showToast={showToast}
-                          isSaving={savingCellKeys.has(key)}
-                          onSaveNote={(note) =>
-                            handleSaveNote(cat.id, snap.id, note)
-                          }
-                          onDeleteNote={() => handleDeleteNote(cat.id, snap.id)}
-                        />
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  return (
+                    <tr
+                      key={cat.id}
+                      style={{ opacity: cat._pending ? 0.7 : 1 }}
+                    >
+                      <td
+                        style={{
+                          padding: "12px 16px",
+                          borderBottom: `1px solid ${t.borderSubtle}`,
+                          borderRight: `1px solid ${t.border}`,
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          color: isLocked ? t.textFaint : t.textPrimary,
+                          position: "sticky",
+                          left: 0,
+                          background: isLocked
+                            ? t.bgSubtle
+                            : catIdx % 2 === 0
+                              ? t.bgCard
+                              : t.bgSubtle,
+                          zIndex: 1,
+                          verticalAlign: "top",
+                          opacity: isLocked ? 0.75 : 1,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          {cat._pending ? (
+                            <Loader2
+                              size={12}
+                              style={{
+                                animation: "spin 1s linear infinite",
+                                color: t.primary,
+                              }}
+                            />
+                          ) : isLocked ? (
+                            <Lock size={12} color={t.textFaint} />
+                          ) : null}
+
+                          {editingCategoryId === cat.id ? (
+                            <CategoryNameEditor
+                              value={cat.name}
+                              onSave={(newName) =>
+                                handleRenameCategory(cat.id, newName)
+                              }
+                              onCancel={() => setEditingCategoryId(null)}
+                            />
+                          ) : (
+                            <>
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                {cat.name}
+                              </span>
+
+                              {sharedCount > 0 && (
+                                <span
+                                  title={`Shared with ${sharedCount} user${sharedCount !== 1 ? "s" : ""}`}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                    padding: "2px 6px",
+                                    background:
+                                      role === "collaborator"
+                                        ? t.primaryBg
+                                        : t.successBg,
+                                    color:
+                                      role === "collaborator"
+                                        ? t.primary
+                                        : t.success,
+                                    border: `1px solid ${role === "collaborator" ? t.primaryBorder : t.successBorder}`,
+                                    borderRadius: 999,
+                                    fontSize: 9.5,
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <Users size={9} />
+                                  {sharedCount}
+                                </span>
+                              )}
+
+                              {canManage && !cat._pending && (
+                                <div style={{ display: "flex", gap: 3 }}>
+                                  <button
+                                    onClick={() => setShareCategoryId(cat.id)}
+                                    title="Share"
+                                    style={{
+                                      width: 22,
+                                      height: 22,
+                                      borderRadius: 4,
+                                      border: `1px solid ${t.successBorder}`,
+                                      background: t.successBgSubtle,
+                                      cursor: "pointer",
+                                      color: t.success,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Share2 size={10} />
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingCategoryId(cat.id)}
+                                    title="Rename"
+                                    style={{
+                                      width: 22,
+                                      height: 22,
+                                      borderRadius: 4,
+                                      border: `1px solid ${t.border}`,
+                                      background: t.bgCard,
+                                      cursor: "pointer",
+                                      color: t.textMuted,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Edit size={10} />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setConfirmDelete({
+                                        type: "category",
+                                        id: cat.id,
+                                        name: cat.name,
+                                      })
+                                    }
+                                    title="Delete"
+                                    style={{
+                                      width: 22,
+                                      height: 22,
+                                      borderRadius: 4,
+                                      border: `1px solid ${t.dangerBorder}`,
+                                      background: t.dangerBgSubtle,
+                                      cursor: "pointer",
+                                      color: t.danger,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+
+                      {sortedSnapshots.map((snap) => {
+                        const key = cellKey(cat.id, snap.id);
+                        return (
+                          <UpdateCell
+                            key={snap.id}
+                            note={getCellNote(cat.id, snap.id)}
+                            canEdit={canEdit}
+                            isLocked={isLocked}
+                            isPastSnapshot={isSnapshotPast(snap.date)}
+                            catIdx={catIdx}
+                            currentUserId={currentUserId}
+                            showToast={showToast}
+                            isSaving={savingCellKeys.has(key)}
+                            onSaveNote={(note) =>
+                              handleSaveNote(cat.id, snap.id, note)
+                            }
+                            onDeleteNote={() =>
+                              handleDeleteNote(cat.id, snap.id)
+                            }
+                          />
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Modals */}
+      {/* ── Modals (unchanged) ── */}
       {addSnapshotOpen && (
         <AddSnapshotModal
           existingSnapshots={snapshots}
@@ -2951,6 +4403,57 @@ export default function ProjectUpdatesView({
           onClose={() => !isSharingPending && setManageSharingOpen(false)}
           onSave={handleBulkShareUpdate}
         />
+      )}
+      {/* Mobile Note Editor Sheet */}
+      {isMobile && mobileEditor && (
+        <MobileNoteEditorSheet
+          open={true}
+          onClose={() => setMobileEditor(null)}
+          categoryName={mobileEditor.categoryName}
+          snapshotDate={mobileEditor.snapshotDate}
+          initialText={mobileEditor.note?.text || ""}
+          initialFile={mobileEditor.note?.file || null}
+          isSaving={savingCellKeys.has(
+            cellKey(mobileEditor.categoryId, mobileEditor.snapshotId),
+          )}
+          showToast={showToast}
+          onSave={async (noteData) => {
+            try {
+              await handleSaveNote(
+                mobileEditor.categoryId,
+                mobileEditor.snapshotId,
+                noteData,
+              );
+              setMobileEditor(null);
+            } catch {}
+          }}
+        />
+      )}
+      {/* Mobile Floating Add Snapshot Button */}
+      {isMobile && userCanAddSnapshot && !readOnly && snapshots.length > 0 && (
+        <button
+          onClick={() => setAddSnapshotOpen(true)}
+          style={{
+            position: "fixed",
+            bottom: "calc(80px + env(safe-area-inset-bottom, 0))",
+            right: 16,
+            width: 52,
+            height: 52,
+            borderRadius: "50%",
+            background: t.primary,
+            color: t.textInverse,
+            border: "none",
+            boxShadow: t.shadowXl,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 40,
+          }}
+          title="Add snapshot"
+        >
+          <Calendar size={22} />
+        </button>
       )}
     </div>
   );
