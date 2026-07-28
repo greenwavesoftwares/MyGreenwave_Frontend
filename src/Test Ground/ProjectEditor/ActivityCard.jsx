@@ -15,6 +15,8 @@ import {
   MoreVertical,
   Edit,
   User,
+  Pin, // ← NEW
+  PinOff,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeInputStyle } from "../helpers/styles";
@@ -436,6 +438,7 @@ const ActivityCard = React.memo(function ActivityCard({
 
                 {/* ── Anchor toggle button ── */}
 
+                {/* ── Anchor toggle button ── */}
                 <button
                   onClick={() => !isLocked && onToggleAnchor(row)}
                   disabled={isLocked}
@@ -443,9 +446,7 @@ const ActivityCard = React.memo(function ActivityCard({
                     height: 36,
                     padding: "0 12px",
                     borderRadius: 7,
-                    border: `1px solid ${
-                      row.isAnchor ? t.successBorder : t.border
-                    }`,
+                    border: `1px solid ${row.isAnchor ? t.successBorder : t.border}`,
                     background: row.isAnchor ? t.successBg : "transparent",
                     color: row.isAnchor ? t.success : t.textMuted,
                     cursor: isLocked ? "not-allowed" : "pointer",
@@ -460,9 +461,14 @@ const ActivityCard = React.memo(function ActivityCard({
                     alignSelf: "flex-start",
                   }}
                 >
-                  <span>✨</span>
-                  {/* ⚓ */}
-                  <span>{row.isAnchor ? "Anchor ON" : "Set as Anchor"}</span>
+                  {row.isAnchor ? (
+                    <Pin size={14} fill="currentColor" />
+                  ) : (
+                    <PinOff size={14} />
+                  )}
+                  <span>
+                    {row.isAnchor ? "Pinned as Anchor" : "Set as Anchor"}
+                  </span>
                 </button>
               </div>
             );

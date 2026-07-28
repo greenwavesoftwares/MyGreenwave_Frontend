@@ -1994,24 +1994,26 @@ export default function GanttView({
           <div style={{ width: 1, height: 20, background: t.border }} />
 
           {/* Dependencies toggle */}
-          <button
-            onClick={() => setShowDependencies((p) => !p)}
-            title={
-              showDependencies
-                ? "Hide dependency arrows"
-                : "Show dependency arrows"
-            }
-            style={{
-              ...btnStyle,
-              background: showDependencies ? t.primary : t.bgCard,
-              color: showDependencies ? t.textInverse : t.textSecondary,
-              borderColor: showDependencies ? t.primary : t.borderStrong,
-              fontWeight: showDependencies ? 700 : 500,
-            }}
-          >
-            <Link2 size={13} />
-            Dependencies {showDependencies ? "ON" : "OFF"}
-          </button>
+          {false && (
+            <button
+              onClick={() => setShowDependencies((p) => !p)}
+              title={
+                showDependencies
+                  ? "Hide dependency arrows"
+                  : "Show dependency arrows"
+              }
+              style={{
+                ...btnStyle,
+                background: showDependencies ? t.primary : t.bgCard,
+                color: showDependencies ? t.textInverse : t.textSecondary,
+                borderColor: showDependencies ? t.primary : t.borderStrong,
+                fontWeight: showDependencies ? 700 : 500,
+              }}
+            >
+              <Link2 size={13} />
+              Dependencies {showDependencies ? "ON" : "OFF"}
+            </button>
+          )}
 
           {/* Global filters section — unchanged */}
           {showGlobalFilters && (
