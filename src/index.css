@@ -183,3 +183,65 @@ html {
 .padding-0.p-datatable .p-datatable-tbody > tr > td{
   padding: 2px !important;
 }
+/* ─── Mobile-friendly touch defaults ─── */
+/* ═══════════════════════════════════════════════════════
+   Global Base
+   ═══════════════════════════════════════════════════════ */
+
+/* Prevent text selection on button taps */
+button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Prevent iOS input zoom — MOBILE ONLY */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+
+
+/* Better touch handling */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Prevent overscroll bounce */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Safe-area utility classes */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Spinning animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
