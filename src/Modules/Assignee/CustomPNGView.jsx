@@ -10,7 +10,7 @@ const CustomPNGView = ({ mainState: { currentDocument } }) => {
   );
 };
 
-MyCustomPNGRenderer.fileTypes = ["png", "image/png"];
-MyCustomPNGRenderer.weight = 1;
+CustomPNGView.fileTypes = ["png", "image/png"];
+CustomPNGView.weight = 1;
 
 export default CustomPNGView;
