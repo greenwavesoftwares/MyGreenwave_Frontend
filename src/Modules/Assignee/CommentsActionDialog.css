@@ -759,6 +759,23 @@
   border-color: var(--primary);
 }
 
+.comments-dialog .attachment-pill .attachment-name {
+  cursor: pointer;
+}
+
+.comments-dialog .attachment-pill .MuiIconButton-root {
+  padding: 1px;
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.comments-dialog .attachment-pill .MuiIconButton-root:hover {
+  background: var(--primary-100);
+}
+
 .comments-dialog .attachment-staged { cursor: default; }
 
 .comments-dialog .attachment-staged .MuiIconButton-root {

@@ -1,0 +1,240 @@
+/* ==========================================================
+   DESIGN TOKENS — Document Viewer chrome
+   Wired to the app's real .light/.dark theme variables
+   (--dialogBG, --card-bg, --fontColor, --divider-color, etc.)
+   with the original hardcoded hex values kept only as fallbacks,
+   in case those variables aren't present on an ancestor.
+
+   SCOPING: the PrimeReact <Dialog> is portaled with `appendTo`
+   pointing at `.pai-page` (see DocumentViewer.jsx), the same
+   container CommentsActionDialog's MUI Dialog uses — so even
+   though the Dialog isn't a JSX descendant of anything themed, it
+   stays a real DOM descendant of the page wrapper the app's theme
+   class lives on, and these vars resolve correctly.
+
+   Two selectors carry the same tokens because they sit in two
+   structurally unrelated DOM subtrees:
+     - .doc-viewer-trigger → the inline "Open file(s)" picker bar
+       (only rendered when DocumentViewer is used without
+       `hideTrigger`, i.e. NOT the CommentsActionDialog case)
+     - .doc-viewer-dialog  → className on the PrimeReact Dialog
+       panel itself. This is also the ancestor for
+       CustomDialogHeader.jsx AND the plugin renderers styled in
+       CustomViews.css (PDF/Excel/PNG) — those consume these same
+       --dv-* tokens rather than redefining them.
+   ========================================================== */
+
+.doc-viewer-trigger,
+.doc-viewer-dialog {
+  /* --dialogBG is only ~50% opaque in dark mode (#20243080) — stacked on
+     top of the Dialog's own translucent mask, that makes the whole panel
+     see-through, and lets its box-shadow/backdrop bleed into a hazy halo
+     in light mode too. --bg-drawer is a fully OPAQUE solid surface in
+     both themes (#ffffff / #2a2e3f) — same fix already used for this
+     exact issue in PauseReasonDialog.css and CommentsActionDialog.css. */
+  --dv-surface:        var(--bg-drawer, #ffffff);
+  --dv-surface-2:      var(--card-bg, #f9fafb);
+  --dv-row-alt:        var(--tableOddRow, #f7f7f7);
+  /* --dv-border:         var(--divider-color, #e2e2e2);
+  --dv-border-strong:  var(--tableOuterBorder, #d7d3d3); */
+
+  --dv-text:           var(--fontColor, #263238);
+  --dv-text-muted:     var(--tittleFontColor, #6b7280);
+  --dv-text-faint:     var(--FontAwesomeIcon, #8a94a6);
+
+  --dv-primary:        var(--avatar-bg, #2563eb);
+  --dv-primary-bg:     var(--icon-blue-bg, #dbeafe);
+  --dv-primary-fg:     var(--blueFontColor, #1e40af);
+
+  /* --meal-app-red mirrors ProjectActivityInfo.css's own danger-bg
+     token — deliberately NOT --redBG, which is a saturated solid
+     red in both themes rather than a soft background tint. */
+  --dv-danger:         var(--redFontColor, #b30000);
+  --dv-danger-bg:      var(--meal-app-red, #fef2f2);
+  --dv-danger-border:  var(--redBorder, #fda0a0);
+
+  /* --greenFontColor/--greenBG are mistyped in the app's real theme
+     (literal "blue"/"green" values in places, same issue already
+     called out in ProjectActivityInfo.css) — so "success" stays
+     bespoke rather than inheriting that bug. --greenBorder IS a
+     real color in both themes and is safe to use as-is. */
+  --dv-success:        #15803d;
+  --dv-success-bg:     var(--icon-green-bg, #dcfce7);
+  --dv-success-border: var(--greenBorder, #86efac);
+
+  --dv-purple:         #7c3aed;
+  --dv-purple-bg:      var(--icon-purple-bg, #f3e8ff);
+
+  --dv-shadow: 0 12px 32px var(--boxShadowPaper, rgba(17, 24, 39, .12)),
+               0 4px 12px var(--boxShadowPaper, rgba(17, 24, 39, .06));
+}
+
+/* ==========================================================
+   DARK MODE — only for tokens with no matching app variable.
+   Everything else above resolves automatically the moment an
+   ancestor carries `.dark` / `[data-theme="dark"]`, because the
+   underlying app vars already flip.
+   ========================================================== */
+
+.dark .doc-viewer-trigger,
+[data-theme="dark"] .doc-viewer-trigger,
+.doc-viewer-trigger.dark,
+.doc-viewer-trigger[data-theme="dark"],
+.dark .doc-viewer-dialog,
+[data-theme="dark"] .doc-viewer-dialog,
+.doc-viewer-dialog.dark,
+.doc-viewer-dialog[data-theme="dark"] {
+  --dv-success: #4ade80;
+  --dv-purple:  #c4b5fd;
+}
+
+/* ==========================================================
+   TRIGGER BAR (local file picker — hidden entirely when
+   DocumentViewer is driven externally via `hideTrigger`)
+   ========================================================== */
+
+.doc-viewer-trigger {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--dv-border);
+  background: var(--dv-surface);
+  color: var(--dv-text);
+}
+
+.doc-viewer-trigger-label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 8px;
+  color: var(--dv-text);
+}
+
+.doc-viewer-trigger-loading {
+  margin-left: 12px;
+  color: var(--dv-text-muted);
+  font-size: 13px;
+}
+
+/* ==========================================================
+   DIALOG PANEL
+   ========================================================== */
+
+.doc-viewer-dialog.p-dialog {
+  background: var(--dv-surface);
+  color: var(--dv-text);
+ 
+}
+
+.doc-viewer-dialog .p-dialog-header {
+  background: var(--dv-surface);
+  color: var(--dv-text);
+  border-bottom: 1px solid var(--dv-border);
+}
+
+.doc-viewer-dialog .p-dialog-content {
+  background: var(--dv-surface-2);
+  color: var(--dv-text);
+}
+
+.doc-viewer-dialog .p-dialog-header-icon {
+  color: var(--dv-text-muted);
+}
+
+.doc-viewer-dialog .p-dialog-header-icon:hover {
+  color: var(--dv-text);
+  background: var(--dv-row-alt);
+}
+
+.doc-viewer-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: 8px;
+}
+
+.doc-viewer-download-btn {
+  color: var(--dv-primary) !important;
+}
+
+.doc-viewer-download-btn:hover {
+  background: var(--dv-primary-bg) !important;
+}
+
+.doc-viewer-empty-state {
+  padding: 24px;
+  color: var(--dv-text-muted);
+}
+
+/* react-doc-viewer's own root container (#react-doc-viewer, set via its
+   internal `Container` styled-component) hardcodes `background: #eee`
+   directly in the library — it isn't read from the `theme` prop like
+   HeaderBar's colors are, so it has to be overridden here instead. Left
+   as-is, this light-gray panel shows through behind/around our plugin
+   renderers (CustomViews.css) in dark mode. The id selector is needed to
+   out-rank the library's own generated class. */
+.doc-viewer-dialog #react-doc-viewer {
+  background: var(--dv-surface-2);
+}
+
+/* ==========================================================
+   CustomDialogHeader.jsx — file-type badge + filename + count
+   ========================================================== */
+
+.doc-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.doc-viewer-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .5px;
+  background: var(--dv-surface-2);
+  color: var(--dv-text-muted);
+  border: 1px solid var(--dv-border);
+}
+
+.doc-viewer-badge--pdf {
+  background: var(--dv-danger-bg);
+  color: var(--dv-danger);
+  border-color: var(--dv-danger-border);
+}
+
+.doc-viewer-badge--doc {
+  background: var(--dv-primary-bg);
+  color: var(--dv-primary-fg);
+  border-color: var(--dv-primary-bg);
+}
+
+.doc-viewer-badge--xls {
+  background: var(--dv-success-bg);
+  color: var(--dv-success);
+  border-color: var(--dv-success-border);
+}
+
+.doc-viewer-badge--png {
+  background: var(--dv-purple-bg);
+  color: var(--dv-purple);
+  border-color: var(--dv-purple-bg);
+}
+
+.doc-viewer-filename {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dv-text);
+}
+
+.doc-viewer-position {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--dv-text-faint);
+}

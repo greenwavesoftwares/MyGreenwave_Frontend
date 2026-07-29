@@ -1,0 +1,110 @@
+/* ==========================================================
+   Custom react-doc-viewer plugin renderers
+   (CustomPDFView.jsx, CustomExcelView.jsx, CustomPNGView.jsx)
+
+   These always render as descendants of `.doc-viewer-dialog`
+   (the PrimeReact Dialog panel — see DocumentViewer.css), so they
+   consume its --dv-* tokens rather than redefining them. Each var
+   reference still carries the underlying app variable as a second
+   fallback layer (e.g. var(--dv-text, var(--fontColor, ...))) so
+   these stay themed even if ever rendered standalone, outside that
+   dialog, during testing.
+   ========================================================== */
+
+/* ---------- PDF ---------- */
+
+.doc-pdf-renderer {
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+}
+
+.doc-pdf-canvas {
+  display: block;
+  margin: 0 auto 16px;
+  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
+  background: #ffffff; /* PDF page content itself stays white, like paper */
+}
+
+.doc-pdf-error {
+  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  padding: 16px;
+}
+
+/* ---------- Excel / CSV ---------- */
+
+.doc-excel-renderer {
+  height: 100%;
+  overflow: auto;
+  padding: 8px;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-excel-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--dv-border, var(--divider-color, #dddddd));
+}
+
+.doc-excel-tab {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  font-weight: 400;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.doc-excel-tab:hover {
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-excel-tab.active {
+  border-bottom-color: var(--dv-primary, var(--avatar-bg, #2563eb));
+  color: var(--dv-primary, var(--avatar-bg, #2563eb));
+  font-weight: 600;
+}
+
+.doc-excel-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-excel-table td {
+  border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.doc-excel-table tr:nth-child(even) {
+  background: var(--dv-row-alt, var(--tableOddRow, #f7f7f7));
+}
+
+.doc-excel-error {
+  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  padding: 16px;
+}
+
+/* ---------- PNG / images ---------- */
+
+.doc-png-renderer {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 16px;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+}
+
+.doc-png-img {
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
+}
