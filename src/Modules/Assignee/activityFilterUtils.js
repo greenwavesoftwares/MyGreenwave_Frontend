@@ -53,7 +53,7 @@ export const updateStatus = (status, time) => {
     console.log("time:", time);
   switch (statusInLC) {
     case "pending":
-      if (dayjs() > dayjs(time)) return "Due to Start";
+      if (dayjs() < dayjs(time)) return "Yet to Start";
       else return "Pending";
     case "completed":
       return "Completed";
