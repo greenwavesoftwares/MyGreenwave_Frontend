@@ -191,58 +191,85 @@ export default function DraftProjectsList({
   const isUpdatesSharedProject = useCallback(
     (d) => {
       if (!currentUserId) return false;
-      const categories = d.updates?.categories || [];
-      return categories.some((cat) =>
-        (cat.sharedWith || []).some(
-          (s) => s.userId?.toLowerCase() === currentUserId.toLowerCase(),
-        ),
+      const uid = currentUserId.toLowerCase();
+
+      // Not the creator
+      if (d.createdBy?.toLowerCase() === uid) return false;
+
+      // Not a co-assigner
+      const isCoAssigner = (d.coAssigners || []).some(
+        (ca) => ca.userId?.toLowerCase() === uid,
       );
+      if (isCoAssigner) return false;
+
+      // API only returns projects you have access to
+      // → if not creator and not co-assigner, must be updates-shared
+      return true;
     },
     [currentUserId],
   );
+  // Helper: determines the SINGLE role for a project (priority: own > co-assigned > shared)
+  const getProjectRole = useCallback(
+    (d) => {
+      if (isMineProject(d)) return "own";
+      if (isCoAssignedProject(d)) return "coAssigned";
+      if (isUpdatesSharedProject(d)) return "sharedWithMe";
+      return "unrelated"; // shouldn't happen if API returns only accessible projects
+    },
+    [isMineProject, isCoAssignedProject, isUpdatesSharedProject],
+  );
 
   const statusCounts = useMemo(() => {
-    const isMine = (d) => isMineProject(d);
-    const isShared = (d) =>
-      !isMine(d) && (isCoAssignedProject(d) || isUpdatesSharedProject(d));
-    return {
+    const counts = {
       all: drafts.length,
-      draft: drafts.filter(
-        (d) => isMine(d) && d.status !== "published" && d.status !== "closed",
-      ).length,
-      published: drafts.filter((d) => isMine(d) && d.status === "published")
-        .length,
-      closed: drafts.filter((d) => isMine(d) && d.status === "closed").length,
-      coAssigned: drafts.filter((d) => !isMine(d) && isCoAssignedProject(d))
-        .length,
-      sharedWithMe: drafts.filter((d) => isShared(d)).length,
+      draft: 0,
+      published: 0,
+      closed: 0,
+      coAssigned: 0,
+      sharedWithMe: 0,
     };
-  }, [drafts, isMineProject, isCoAssignedProject, isUpdatesSharedProject]);
+    drafts.forEach((d) => {
+      const role = getProjectRole(d);
+      if (role === "own") {
+        if (d.status === "published") counts.published++;
+        else if (d.status === "closed") counts.closed++;
+        else counts.draft++;
+      } else if (role === "coAssigned") {
+        counts.coAssigned++;
+      } else if (role === "sharedWithMe") {
+        counts.sharedWithMe++;
+      }
+    });
+    return counts;
+  }, [drafts, getProjectRole]);
 
   const filtered = useMemo(() => {
     let result = drafts;
-    if (statusFilter === "draft") {
-      result = result.filter(
-        (d) =>
-          isMineProject(d) && d.status !== "published" && d.status !== "closed",
-      );
-    } else if (statusFilter === "published") {
-      result = result.filter(
-        (d) => isMineProject(d) && d.status === "published",
-      );
-    } else if (statusFilter === "closed") {
-      result = result.filter((d) => isMineProject(d) && d.status === "closed");
-    } else if (statusFilter === "coAssigned") {
-      result = result.filter((d) => isCoAssignedProject(d));
-    } else if (statusFilter === "sharedWithMe") {
-      result = result.filter(
-        (d) =>
-          d.createdBy &&
-          currentUserId &&
-          d.createdBy.toLowerCase() !== currentUserId.toLowerCase() &&
-          !isCoAssignedProject(d),
-      );
+
+    if (statusFilter !== "all") {
+      result = result.filter((d) => {
+        const role = getProjectRole(d);
+        if (statusFilter === "draft") {
+          return (
+            role === "own" && d.status !== "published" && d.status !== "closed"
+          );
+        }
+        if (statusFilter === "published") {
+          return role === "own" && d.status === "published";
+        }
+        if (statusFilter === "closed") {
+          return role === "own" && d.status === "closed";
+        }
+        if (statusFilter === "coAssigned") {
+          return role === "coAssigned";
+        }
+        if (statusFilter === "sharedWithMe") {
+          return role === "sharedWithMe";
+        }
+        return true;
+      });
     }
+
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -253,15 +280,7 @@ export default function DraftProjectsList({
       );
     }
     return result;
-  }, [
-    drafts,
-    search,
-    statusFilter,
-    currentUserId,
-    isMineProject,
-    isCoAssignedProject,
-  ]);
-
+  }, [drafts, statusFilter, search, getProjectRole]);
   const fmtDate = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);

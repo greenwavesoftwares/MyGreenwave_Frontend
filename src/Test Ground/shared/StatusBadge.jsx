@@ -1,47 +1,109 @@
 import React from "react";
+import {
+  Clock,
+  CheckCircle2,
+  Star,
+  XCircle,
+  AlertCircle,
+  PauseCircle,
+  PlayCircle,
+} from "lucide-react";
 import { useTheme } from "../useTheme";
-import { getStatusConfig } from "../helpers/statusConfig";
-import SpinningIcon from "./SpinningIcon";
+import { getDisplayStatus } from "../helpers/statusDisplay";
 import PulsingIcon from "./PulsingIcon";
 
-/**
- * Status pill for an activity row.
- * Automatically animates for statuses marked spin/pulse in config.
- */
-export default function StatusBadge({ status }) {
+export default function StatusBadge({ row, status: explicitStatus }) {
   const { t } = useTheme();
-  const cfg = getStatusConfig(status, t);
-  const { Icon, label, bg, color, border, pulse, spin } = cfg;
 
-  let IconElement;
-  if (spin) {
-    IconElement = <SpinningIcon Icon={Icon} size={11} color={color} />;
-  } else if (pulse) {
-    IconElement = <PulsingIcon Icon={Icon} size={11} color={color} />;
-  } else {
-    IconElement = <Icon size={11} color={color} strokeWidth={2.5} />;
+  const displayStatus = row
+    ? getDisplayStatus(row)
+    : String(explicitStatus || "Pending").trim();
+
+  const normalized = displayStatus.toLowerCase();
+
+  let bg, color, border, Icon, label;
+
+  switch (normalized) {
+    case "yet to start":
+      bg = t.warningBgSubtle || "#FED7AA";
+      color = "#C2410C";
+      border = "#FDBA74";
+      Icon = AlertCircle;
+      label = "Yet to Start";
+      break;
+
+    case "running":
+      bg = "#DBEAFE";
+      color = "#1D4ED8";
+      border = "#93C5FD";
+      Icon = PlayCircle;
+      label = "Running";
+      break;
+
+    case "paused":
+      bg = t.bgMuted;
+      color = t.textSecondary;
+      border = t.borderStrong;
+      Icon = PauseCircle;
+      label = "Paused";
+      break;
+
+    case "completed":
+      bg = t.successBg;
+      color = t.success;
+      border = t.successBorder;
+      Icon = CheckCircle2;
+      label = "Completed";
+      break;
+
+    case "finished":
+      bg = t.violetBg;
+      color = t.violet;
+      border = t.violetBorder;
+      Icon = Star;
+      label = "Finished";
+      break;
+
+    case "rejected":
+      bg = t.dangerBgSubtle;
+      color = t.danger;
+      border = t.dangerBorder;
+      Icon = XCircle;
+      label = "Rejected";
+      break;
+
+    case "pending":
+    default:
+      bg = t.warningBg;
+      color = t.warning;
+      border = t.warningBorder;
+      Icon = Clock;
+      label = "Pending";
+      break;
   }
 
   return (
     <span
-      title={label}
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 5,
-        padding: "3px 10px",
+        gap: 4,
+        padding: "3px 9px",
         borderRadius: 999,
-        fontSize: 10.5,
-        fontWeight: 600,
         background: bg,
-        color: color,
+        color,
         border: `1px solid ${border}`,
+        fontSize: 10.5,
+        fontWeight: 700,
         whiteSpace: "nowrap",
-        transition: "all .15s",
       }}
     >
-      {IconElement}
-      <span>{label}</span>
+      {normalized === "running" ? (
+        <PulsingIcon Icon={PlayCircle} size={11} color={color} />
+      ) : (
+        <Icon size={11} />
+      )}
+      {label}
     </span>
   );
 }

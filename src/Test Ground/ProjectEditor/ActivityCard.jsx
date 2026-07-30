@@ -877,7 +877,7 @@ const ActivityCard = React.memo(function ActivityCard({
                   }}
                 />
               )}
-              <StatusBadge status={row.status} />
+              <StatusBadge row={row} />
             </div>
           </div>
 

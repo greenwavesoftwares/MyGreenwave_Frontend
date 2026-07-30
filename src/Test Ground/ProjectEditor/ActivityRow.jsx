@@ -786,7 +786,7 @@ const ActivityRow = React.memo(function ActivityRow({
 
       {/* ─── Status ─── */}
       <td style={{ ...tdStyle, width: 110, textAlign: "center" }}>
-        <StatusBadge status={row.status} />
+        <StatusBadge row={row} />
       </td>
 
       {/* ─── Custom Column Cells ─── */}

@@ -528,7 +528,7 @@ export default function AssignerModule() {
                 }}
               >
                 <FolderOpen size={14} /> Projects
-                {draftsUnpublishedCount > 0 && (
+                {/* {draftsUnpublishedCount > 0 && (
                   <span
                     style={{
                       background:
@@ -543,6 +543,23 @@ export default function AssignerModule() {
                     }}
                   >
                     {draftsUnpublishedCount}
+                  </span>
+                )} */}
+                {drafts?.length > 0 && (
+                  <span
+                    style={{
+                      background:
+                        tab === "drafts"
+                          ? "rgba(255,255,255,0.25)"
+                          : t.borderStrong,
+                      color: t.textInverse,
+                      borderRadius: 999,
+                      padding: "1px 6px",
+                      fontSize: 9,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {drafts?.length}
                   </span>
                 )}
               </button>

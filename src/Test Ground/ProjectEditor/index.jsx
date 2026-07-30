@@ -127,6 +127,7 @@ import { useResponsive } from "../useResponsive";
 import ActivityCard from "./ActivityCard";
 import { List, LayoutGrid } from "lucide-react";
 import MobileFiltersSheet from "./MobileFiltersSheet";
+import { getDisplayStatus } from "../helpers/statusDisplay";
 /* ═══════════════════════════════════════════════════════
    ProjectEditor
    ═══════════════════════════════════════════════════════ */
@@ -310,9 +311,10 @@ export default function ProjectEditor({
     const resList = [
       ...new Set(rows.filter((r) => r.resource).map((r) => r.resource)),
     ].sort();
-    const statuses = [
-      ...new Set(rows.map((r) => r.status || "Pending")),
-    ].sort();
+
+    // Use DISPLAY status (includes "Yet to Start" for past pending rows)
+    const statuses = [...new Set(rows.map((r) => getDisplayStatus(r)))].sort();
+
     const resourceOpts = resList.map((userId) => {
       const row = rows.find((r) => r.resource === userId);
       return { value: userId, label: row?.resourceName || userId };
@@ -1419,8 +1421,8 @@ export default function ProjectEditor({
         )
           pass = false;
         if (columnFilters.status.length > 0) {
-          const rowStatus = r.status || "Pending";
-          if (!columnFilters.status.includes(rowStatus)) pass = false;
+          const rowDisplayStatus = getDisplayStatus(r);
+          if (!columnFilters.status.includes(rowDisplayStatus)) pass = false;
         }
         if (pass) {
           matched.add(r.id);
@@ -1583,7 +1585,7 @@ export default function ProjectEditor({
               padding: isMobile ? "0 12px" : "0 14px",
             }}
           >
-            <ArrowLeft size={14} /> {isMobile ? "Back" : "Back to Drafts"}
+            <ArrowLeft size={14} /> {isMobile ? "Back" : "Back to Projects"}
           </button>
 
           {!isMobile && (
