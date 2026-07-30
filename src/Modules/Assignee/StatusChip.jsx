@@ -20,7 +20,13 @@ const STATUS_CONFIG = {
     color: "#64748B",
     border: "#E2E8F0",
   },
-
+  "due to start": {
+  label: "Due To Start",
+  Icon: AlertCircle,
+  bg: "#FEF3C7",      // Warning background
+  color: "#B45309",   // Dark amber text
+  border: "#F59E0B",  // Amber border
+},
   "not ready": {
     label: "Not Ready",
     Icon: AlertCircle,

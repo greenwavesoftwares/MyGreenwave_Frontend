@@ -11,6 +11,8 @@ import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 
 import "./CustomViews.css";
 import { ViewIcon } from "lucide-react";
+import { viewAttachment } from "./AttachmentHelper";
+import DocumentViewer from "./DocumentViewer";
 
 const EML_TYPES = ["eml", "message/rfc822"];
 const MSG_TYPES = ["msg", "application/vnd.ms-outlook"];
@@ -36,7 +38,10 @@ function contentToUint8Array(content, encoding) {
 function formatBytes(bytes) {
   if (!bytes) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1,
+  );
   const value = bytes / Math.pow(1024, i);
   return `${i === 0 ? value : value.toFixed(1)} ${units[i]}`;
 }
@@ -44,7 +49,11 @@ function formatBytes(bytes) {
 /** Decide "eml" vs "msg" from whatever metadata the viewer gives us. */
 function detectKind(currentDocument) {
   const fileType = (currentDocument.fileType || "").toLowerCase();
-  const name = (currentDocument.uri || currentDocument.name || "").toLowerCase();
+  const name = (
+    currentDocument.uri ||
+    currentDocument.name ||
+    ""
+  ).toLowerCase();
 
   if (EML_TYPES.includes(fileType) || name.endsWith(".eml")) return "eml";
   if (MSG_TYPES.includes(fileType) || name.endsWith(".msg")) return "msg";
@@ -57,11 +66,12 @@ async function toArrayBuffer(fileData) {
   if (fileData instanceof Uint8Array) return fileData.buffer;
   if (fileData instanceof Blob) return await fileData.arrayBuffer();
   if (typeof fileData === "string" && fileData.startsWith("data:")) {
-    const base64 = fileData.split(",")[1] || "";
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
+    //checks whether filedata starts with data and have the format like data:image/png;base64,iVBORw0KG...
+    const base64 = fileData.split(",")[1] || ""; //finds whatever is base64 string is, something like data:image/png;base64,iVBORw0KG... will have the result iVBORw0KG.....
+    const binary = atob(base64); //converts from ascii to binary
+    const bytes = new Uint8Array(binary.length); //byte array to store
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes.buffer;
+    return bytes.buffer; //returns array buffer
   }
   throw new Error("Unsupported fileData format");
 }
@@ -75,7 +85,10 @@ async function parseEml(fileData) {
       : await toArrayBuffer(fileData);
 
   const parsed = await PostalMime.parse(input);
-  const toRecipient = (r) => ({ name: r.name || r.address || "", address: r.address || "" });
+  const toRecipient = (r) => ({
+    name: r.name || r.address || "",
+    address: r.address || "",
+  });
 
   return {
     fromName: parsed.from?.name || "",
@@ -90,8 +103,14 @@ async function parseEml(fileData) {
       .filter((a) => a.filename)
       .map((a) => {
         const bytes = contentToUint8Array(a.content, a.encoding);
-        const blob = new Blob([bytes], { type: a.mimeType || "application/octet-stream" });
-        return { filename: a.filename, size: bytes.byteLength, url: URL.createObjectURL(blob) };
+        const blob = new Blob([bytes], {
+          type: a.mimeType || "application/octet-stream",
+        });
+        return {
+          filename: a.filename,
+          size: bytes.byteLength,
+          url: URL.createObjectURL(blob),
+        };
       }),
   };
 }
@@ -123,7 +142,9 @@ async function parseMsg(fileData) {
       .map((a) => {
         try {
           const data = reader.getAttachment(a);
-          const blob = new Blob([data.content], { type: "application/octet-stream" });
+          const blob = new Blob([data.content], {
+            type: "application/octet-stream",
+          });
           return {
             filename: data.fileName || a.fileName || "attachment",
             size: data.content.byteLength,
@@ -182,7 +203,8 @@ function RecipientRow({ label, list, maxShown = 1 }) {
   useEffect(() => {
     if (!open) return;
     const onOutside = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target))
+        setOpen(false);
     };
     const onEscape = (e) => {
       if (e.key === "Escape") setOpen(false);
@@ -217,8 +239,13 @@ function RecipientRow({ label, list, maxShown = 1 }) {
           {open && (
             <ul className="doc-mail-more-popover" role="menu">
               {list.map((r, i) => (
-                <li key={`${r.address || r.name}-${i}`} className="doc-mail-more-item">
-                  <span className="doc-mail-more-name">{r.name || r.address}</span>
+                <li
+                  key={`${r.address || r.name}-${i}`}
+                  className="doc-mail-more-item"
+                >
+                  <span className="doc-mail-more-name">
+                    {r.name || r.address}
+                  </span>
                   {r.address && r.address !== r.name && (
                     <span className="doc-mail-more-address">{r.address}</span>
                   )}
@@ -238,7 +265,6 @@ const CustomMailViewer = ({ mainState: { currentDocument } }) => {
   const [loading, setLoading] = useState(false);
   const attachmentUrlsRef = useRef([]);
   const documentViewerRef = useRef(null);
-  
 
   useEffect(() => {
     if (!currentDocument) return;
@@ -352,18 +378,27 @@ const CustomMailViewer = ({ mainState: { currentDocument } }) => {
               <a
                 key={`${att.filename}-${i}`}
                 href={att.url}
+                
+                onClick={async () => {
+                  const res = await fetch(att.url);
+                  const blob = await res.blob();
+                  viewAttachment(blob, documentViewerRef, att.filename);
+                }}
                 download={att.filename}
                 className="doc-mail-attachment-chip"
                 title={`Download ${att.filename}`}
               >
                 <DownloadOutlinedIcon className="doc-mail-attachment-icon" />
                 <span className="doc-mail-attachment-name">{att.filename}</span>
-                <span className="doc-mail-attachment-size">{formatBytes(att.size)}</span>
+                <span className="doc-mail-attachment-size">
+                  {formatBytes(att.size)}
+                </span>
               </a>
             ))}
           </div>
         </div>
       )}
+      <DocumentViewer ref={documentViewerRef} hideTrigger />
     </div>
   );
 };

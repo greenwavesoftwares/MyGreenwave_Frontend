@@ -30,7 +30,7 @@ export const nodeFieldValue = (field, node) => {
     case "resource":
       return node.resourceName || node.resource || "";
     case "status":
-      return node.activityStatus || "";
+      return updateStatus(node.activityStatus,node.plannedStart) || "";
     case "plannedStart":
       return formatDT(node.plannedStart, "DD-MM-YYYY HH:mm");
     case "plannedStop":
@@ -45,15 +45,36 @@ export const nodeFieldValue = (field, node) => {
       return "";
   }
 };
-
+export const updateStatus = (status, time) => {
+  if(!status)
+    return
+  const statusInLC=status.toLowerCase()
+   console.log("status:", status);
+    console.log("time:", time);
+  switch (statusInLC) {
+    case "pending":
+      if (dayjs() > dayjs(time)) return "Due to Start";
+      else return "Pending";
+    case "completed":
+      return "Completed";
+    case "finished":
+      return "Finished";
+    case "running":
+      return "Running";
+    case "paused":
+      return "Paused"
+  }
+};
 /** Free-text search match, same fields as the original search box. */
 export const nodeMatchesSearch = (node, term) => {
   const t = term.toLowerCase();
+  const updatedStatus=updateStatus(node.activityStatus,node.plannedStart)
   return (
     node.name?.toLowerCase().includes(t) ||
     node.resourceName?.toLowerCase().includes(t) ||
     node.resource?.toLowerCase().includes(t) ||
     node.activityStatus?.toLowerCase().includes(t) ||
+    updateStatus(node.activityStatus,node.plannedStart).includes(t) ||
     node.type?.toLowerCase().includes(t)
   );
 };
@@ -64,8 +85,8 @@ export const nodeMatchesSearch = (node, term) => {
  * whether to include the whole module rather than a single row.) */
 export const matchesColumnFilters = (node, filters) => {
   for (const [field, selectedSet] of Object.entries(filters || {})) {
-    console.log("Selected set::",selectedSet)
-    console.log("Field::",field)
+    console.log("Selected set::", selectedSet);
+    console.log("Field::", field);
     if (!selectedSet || selectedSet.size === 0) continue;
     if (field === "module") continue;
     if (node.type === "MODULE") continue; // these fields don't apply to module header rows
@@ -99,7 +120,7 @@ export const filterTree = (nodes, term, filters) => {
     if (keepSelf || filteredChildren.length > 0) {
       acc.push({ ...node, children: filteredChildren });
     }
-    console.log("Filtered tree::",acc)
+    console.log("Filtered tree::", acc);
     return acc;
   }, []);
 };
@@ -135,7 +156,9 @@ const collectLeafNodesByModule = (modules) => {
 /** De-dupe + sort (numeric-aware) a list of display values for a filter dropdown. */
 export const uniqueSorted = (arr) =>
   Array.from(
-    new Set((arr || []).filter((v) => v !== undefined && v !== null && v !== "")),
+    new Set(
+      (arr || []).filter((v) => v !== undefined && v !== null && v !== ""),
+    ),
   ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
 /** Does this leaf node satisfy every active column filter EXCEPT the one

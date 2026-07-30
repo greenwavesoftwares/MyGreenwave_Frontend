@@ -38,9 +38,9 @@ import ConfirmDialog from "./ConfirmDialog";
 import DocumentViewer from "./DocumentViewer";
 import { showToast } from "./toastService";
 import {
-  viewAttachment,
   downloadAttachment,
   getAttachmentFileName,
+  viewAttachmentFromMinio,
 } from "./AttachmentHelper";
 
 export default function CommentsActionDialog({
@@ -430,7 +430,7 @@ export default function CommentsActionDialog({
                                   entry.attachment,
                                 )}
                                 onClick={() =>
-                                  viewAttachment(
+                                  viewAttachmentFromMinio(
                                     entry.attachment,
                                     "comments",
                                     documentViewerRef,
@@ -572,7 +572,7 @@ export default function CommentsActionDialog({
                                         reply.attachment,
                                       )}
                                       onClick={() =>
-                                        viewAttachment(
+                                        viewAttachmentFromMinio(
                                           reply.attachment,
                                           "replies",
                                           documentViewerRef,

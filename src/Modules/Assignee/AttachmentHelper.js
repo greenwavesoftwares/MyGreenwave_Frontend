@@ -28,12 +28,21 @@ export function getAttachmentFileName(attachmentKey) {
  * @param {string} folder - storage folder/bucket segment (e.g. "comments", "replies")
  * @param {React.RefObject} documentViewerRef - ref to the DocumentViewer that should display it
  */
-export async function viewAttachment(attachmentKey, folder, documentViewerRef) {
+export async function viewAttachmentFromMinio(attachmentKey, folder, documentViewerRef) {
   try {
     const fileBlob = await activityTrackerApi.getMinIoFile(attachmentKey, folder);
+    const filename=getAttachmentFileName(attachmentKey);
+    await viewAttachment(fileBlob,documentViewerRef,filename)
+  } catch (error) {
+    console.error("Failed to open file", error);
+    showToast("error", "Error", "Unable to preview file");
+  }
+}
+export async function viewAttachment(fileBlob,documentViewerRef,filename){
+  try {
     await documentViewerRef?.current?.openBlob(
       fileBlob,
-      getAttachmentFileName(attachmentKey),
+      
     );
   } catch (error) {
     console.error("Failed to open file", error);

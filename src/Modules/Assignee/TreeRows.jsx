@@ -36,6 +36,7 @@ import StatusChip from "./StatusChip";
 import { RotateCcw, Star, Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
 import ActivityTimer from "./ActivityTimer";
+import { updateStatus } from "./activityFilterUtils";
 
 export default function TreeRows({
   node,
@@ -81,6 +82,7 @@ export default function TreeRows({
   
   const hasChildren = children?.length > 0;
   const isExpanded = expanded?.[id] ?? false;
+  const updatedStatus=updateStatus(node.activityStatus,node.plannedStart)
   const toggleExpand = (nodeId) => {
     setExpanded((prev) => ({
       ...prev,
@@ -452,7 +454,7 @@ export default function TreeRows({
                       : "default"
                 }
               /> */}
-                  <StatusChip status={activityStatus?.toLowerCase()} />
+                  <StatusChip status={updatedStatus?.toLowerCase()} />
                 </span>
               </Tooltip>
             </TableCell>
