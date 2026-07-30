@@ -9,6 +9,8 @@ import CustomPDFView from "./CustomPDFView";
 import CustomDialogHeader from "./CustomDialogHeader";
 import { DocViewerMaximizedContext } from "./DocViewerMaximizedContext";
 import "./DocumentViewer.css";
+import CustomJPGView from "./CustomJPGView";
+import CustomMailViewer from "./CustomMailViewer";
 
 /**
  * DocumentViewer — everything in one file, no Electron main/preload needed.
@@ -140,7 +142,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
         // mask/panel z-index dynamically starting well below that, so
         // without this it silently renders *behind* the MUI dialog.
         // appendTo targets `.pai-page` — same container CommentsActionDialog's
-        // MUI Dialog uses — rather than raw document.body, so this stays a
+        // MUI Dialog uses — rather than raw doc'ument.body, so this stays a
         // real DOM descendant of the page wrapper the app's .light/.dark
         // theme class lives on and DocumentViewer.css's --dv-* tokens keep
         // resolving correctly. baseZIndex pushes both the mask and the
@@ -186,7 +188,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
           <DocViewerMaximizedContext.Provider value={isMaximized}>
             <DocViewer
               documents={docs}
-              pluginRenderers={[CustomPNGView, CustomExcelView, CustomPDFView]}
+              pluginRenderers={[CustomPNGView, CustomExcelView, CustomPDFView,CustomJPGView,CustomMailViewer]}
               onDocumentChange={(doc) => {
                 const idx = docs.findIndex((d) => d.uri === doc.uri);
                 if (idx !== -1) setActiveIndex(idx);

@@ -1,6 +1,6 @@
 /* ==========================================================
    Custom react-doc-viewer plugin renderers
-   (CustomPDFView.jsx, CustomExcelView.jsx, CustomPNGView.jsx)
+   (CustomPDFView.jsx, CustomExcelView.jsx, CustomPNGView.jsx, CustomJPGView.jpg)
 
    These always render as descendants of `.doc-viewer-dialog`
    (the PrimeReact Dialog panel — see DocumentViewer.css), so they
@@ -107,4 +107,262 @@
   max-width: 100%;
   max-height: 100%;
   box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
+}
+.doc-jpg-renderer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+}
+
+.doc-jpg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Fill as much space as possible without cropping */
+  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
+}
+
+/* ---------- Mail (.eml / .msg) ---------- */
+
+.doc-mail-renderer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-mail-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  background: var(--dv-surface, var(--bg-drawer, #ffffff));
+  font-size: 13px;
+}
+
+.doc-mail-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  /* Same green tokens as .doc-mail-check-icon below, so the avatar and the
+     "verified recipient" check read as one consistent color, and both
+     flip together in dark mode (--dv-success has a dark-mode override in
+     DocumentViewer.css). */
+  background: var(--dv-success-bg, #dcfce7);
+  color: var(--dv-success, #15803d);
+}
+
+.doc-mail-sender-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doc-mail-sender-row {
+  display: flex;
+  align-items: center;
+}
+
+.doc-mail-sender-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text, var(--fontColor, #263238));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-mail-recipient-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-mail-check-icon {
+  font-size: 14px !important;
+  color: var(--dv-success, #15803d);
+}
+
+.doc-mail-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+}
+
+.doc-mail-value {
+  color: var(--dv-text, var(--fontColor, #263238));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-mail-more-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.doc-mail-more {
+  /* Reset default <button> chrome */
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+
+  color: var(--dv-primary, var(--avatar-bg, #2563eb));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc-mail-more:hover {
+  color: var(--dv-primary-fg, var(--blueFontColor, #1e40af));
+}
+
+.doc-mail-more-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  max-width: 280px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 6px;
+  background: var(--dv-surface, var(--bg-drawer, #ffffff));
+  border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  box-shadow: var(--dv-shadow, 0 8px 24px rgba(17, 24, 39, .12));
+}
+
+.doc-mail-more-item {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.doc-mail-more-item:hover {
+  background: var(--dv-row-alt, var(--tableOddRow, #f7f7f7));
+}
+
+.doc-mail-more-name {
+  font-size: 13px;
+  color: var(--dv-text, var(--fontColor, #263238));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-mail-more-address {
+  font-size: 11px;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-mail-date {
+  flex-shrink: 0;
+  padding-top: 2px;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.doc-mail-frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  /* The email body itself stays white, like paper — same rationale as
+     .doc-pdf-canvas: the content being rendered isn't app UI, so it
+     shouldn't flip with the theme. */
+  background: #ffffff;
+}
+
+.doc-mail-attachments {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  background: var(--dv-surface, var(--bg-drawer, #ffffff));
+  font-size: 13px;
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-mail-attachments-label {
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.doc-mail-attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-mail-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+  color: var(--dv-text, var(--fontColor, #263238));
+  text-decoration: none;
+  max-width: 260px;
+}
+
+.doc-mail-attachment-chip:hover {
+  background: var(--dv-primary-bg, var(--icon-blue-bg, #dbeafe));
+  border-color: var(--dv-primary-bg, var(--icon-blue-bg, #dbeafe));
+  color: var(--dv-primary-fg, var(--blueFontColor, #1e40af));
+}
+
+.doc-mail-attachment-icon {
+  font-size: 16px !important;
+  flex-shrink: 0;
+  color: var(--dv-primary, var(--avatar-bg, #2563eb));
+}
+
+.doc-mail-attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-mail-attachment-size {
+  flex-shrink: 0;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  font-size: 11px;
+}
+
+.doc-mail-loading {
+  padding: 16px;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+}
+
+.doc-mail-error {
+  padding: 16px;
+  color: var(--dv-danger, var(--redFontColor, #cc0000));
 }

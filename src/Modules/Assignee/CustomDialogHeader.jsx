@@ -14,6 +14,8 @@ const TYPE_BADGE = {
   xlsx: { label: "XLS", modifier: "xls" },
   csv: { label: "CSV", modifier: "xls" },
   png: { label: "PNG", modifier: "png" },
+  eml: { label: "EML", modifier: "mail" },
+  msg: { label: "MSG", modifier: "mail" },
 };
 
 const getExt = (fileName = "") => fileName.split(".").pop()?.toLowerCase() ?? "";

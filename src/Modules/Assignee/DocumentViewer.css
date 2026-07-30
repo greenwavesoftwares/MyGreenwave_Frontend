@@ -223,6 +223,18 @@
   color: var(--dv-purple);
   border-color: var(--dv-purple-bg);
 }
+.doc-viewer-badge--jpg{
+  background: var(--dv-purple-bg);
+  color: var(--dv-purple);
+  border-color: var(--dv-purple-bg);
+
+}
+
+.doc-viewer-badge--mail {
+  background: var(--dv-primary-bg);
+  color: var(--dv-primary-fg);
+  border-color: var(--dv-primary-bg);
+}
 
 .doc-viewer-filename {
   font-size: 16px;

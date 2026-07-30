@@ -37,6 +37,11 @@ import { getUserData } from "../Login/Encrypt";
 import ConfirmDialog from "./ConfirmDialog";
 import DocumentViewer from "./DocumentViewer";
 import { showToast } from "./toastService";
+import {
+  viewAttachment,
+  downloadAttachment,
+  getAttachmentFileName,
+} from "./AttachmentHelper";
 
 export default function CommentsActionDialog({
   open,
@@ -57,52 +62,9 @@ export default function CommentsActionDialog({
   // Has no effect on desktop, where both panels are always shown stacked.
   const [mobileView, setMobileView] = useState("existing");
   // Drives the shared DocumentViewer dialog (view-in-place) for both
-  // comment and reply attachments — see viewAttachment below.
+  // comment and reply attachments — passed into viewAttachment() from
+  // AttachmentHelper.js at each call site below.
   const documentViewerRef = useRef(null);
-
-  const getAttachmentFileName = (attachmentKey) =>
-    attachmentKey?.substring(attachmentKey.indexOf("_") + 1) ?? "";
-
-  // Opens an already-uploaded attachment (comment or reply) in the shared
-  // DocumentViewer so the person can preview it without leaving the dialog.
-  const viewAttachment = async (attachmentKey, folder) => {
-    try {
-      const fileBlob = await activityTrackerApi.getMinIoFile(
-        attachmentKey,
-        folder,
-      );
-      await documentViewerRef.current?.openBlob(
-        fileBlob,
-        getAttachmentFileName(attachmentKey),
-      );
-    } catch (error) {
-      console.error("Failed to open file", error);
-      showToast("error", "Error", "Unable to preview file");
-    }
-  };
-
-  // Downloads an already-uploaded attachment (comment or reply) straight
-  // to disk, independent of the preview above.
-  const downloadAttachment = async (attachmentKey, folder) => {
-    try {
-      const fileBlob = await activityTrackerApi.getMinIoFile(
-        attachmentKey,
-        folder,
-      );
-      const fileName = getAttachmentFileName(attachmentKey);
-      const url = window.URL.createObjectURL(fileBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download file", error);
-      showToast("error", "Error", "Unable to download file");
-    }
-  };
 
   const handleReplyAttachment = (commentIndex, event) => {
     const file = event.target.files?.[0];
@@ -468,7 +430,11 @@ export default function CommentsActionDialog({
                                   entry.attachment,
                                 )}
                                 onClick={() =>
-                                  viewAttachment(entry.attachment, "comments")
+                                  viewAttachment(
+                                    entry.attachment,
+                                    "comments",
+                                    documentViewerRef,
+                                  )
                                 }
                               >
                                 {getAttachmentFileName(entry.attachment)}
@@ -609,25 +575,12 @@ export default function CommentsActionDialog({
                                         viewAttachment(
                                           reply.attachment,
                                           "replies",
+                                          documentViewerRef,
                                         )
                                       }
                                     >
                                       {getAttachmentFileName(reply.attachment)}
                                     </span>
-                                    <Tooltip title="View">
-                                      <IconButton
-                                        size="small"
-                                        aria-label="View attachment"
-                                        onClick={() =>
-                                          viewAttachment(
-                                            reply.attachment,
-                                            "replies",
-                                          )
-                                        }
-                                      >
-                                        <VisibilityOutlinedIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
                                     <Tooltip title="Download">
                                       <IconButton
                                         size="small"
