@@ -39,6 +39,7 @@ import { getGroupName } from "../helpers/resources";
 import { makeBtnStyle } from "../helpers/styles";
 import { useResponsive } from "../useResponsive";
 import BottomSheet from "../shared/BottomSheet";
+import { loadSavedDateRange, saveDateRange } from "../helpers/dateRangeStorage";
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
   alignItems: "center",
@@ -78,13 +79,23 @@ export default function DraftProjectsList({
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Date range state
-  const [dateMode, setDateMode] = useState("currentMonth");
-  const [lastAppliedCustom, setLastAppliedCustom] = useState({
-    fromDate: dateRange.fromDate,
-    toDate: dateRange.toDate,
+  // Date range state — restore from localStorage
+  const [dateMode, setDateMode] = useState(
+    () => loadSavedDateRange()?.mode || "currentMonth",
+  );
+  const [lastAppliedCustom, setLastAppliedCustom] = useState(() => {
+    const saved = loadSavedDateRange();
+    return {
+      fromDate: saved?.customFrom || dateRange.fromDate,
+      toDate: saved?.customTo || dateRange.toDate,
+    };
   });
-  const [customFrom, setCustomFrom] = useState(dateRange.fromDate);
-  const [customTo, setCustomTo] = useState(dateRange.toDate);
+  const [customFrom, setCustomFrom] = useState(
+    () => loadSavedDateRange()?.customFrom || dateRange.fromDate,
+  );
+  const [customTo, setCustomTo] = useState(
+    () => loadSavedDateRange()?.customTo || dateRange.toDate,
+  );
   const [customOpen, setCustomOpen] = useState(false);
   const customPickerRef = useRef(null);
   const customToggleBtnRef = useRef(null);
@@ -102,6 +113,7 @@ export default function DraftProjectsList({
     const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     setDateMode("currentMonth");
     setCustomOpen(false);
+    saveDateRange({ mode: "currentMonth" });
     onDateRangeChange({
       fromDate: toSimpleDate(first),
       toDate: toSimpleDate(last),
@@ -114,6 +126,7 @@ export default function DraftProjectsList({
     const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     setDateMode("last3Months");
     setCustomOpen(false);
+    saveDateRange({ mode: "last3Months" });
     onDateRangeChange({
       fromDate: toSimpleDate(from),
       toDate: toSimpleDate(to),
@@ -136,6 +149,11 @@ export default function DraftProjectsList({
       return;
     }
     setLastAppliedCustom({ fromDate: customFrom, toDate: customTo });
+    saveDateRange({
+      mode: "custom",
+      customFrom,
+      customTo,
+    });
     onDateRangeChange({ fromDate: customFrom, toDate: customTo });
     setCustomOpen(false);
   };

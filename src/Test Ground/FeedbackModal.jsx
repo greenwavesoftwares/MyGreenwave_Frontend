@@ -9,6 +9,7 @@ import {
   CalendarX,
   ClipboardList,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
 import { useResponsive } from "./useResponsive";
@@ -282,35 +283,8 @@ export default function FeedbackModal({
       .trim() === "finished";
   const readOnly = isFinished;
 
-  const parseDt = (val) => {
-    if (!val) return null;
-    const d = new Date(val);
-    return isNaN(d) ? null : d;
-  };
-
-  const plannedStartDt = parseDt(row.plannedStart);
-  const plannedStopDt = parseDt(row.plannedStop);
-  const actualStartDt = parseDt(row.actualStart);
-  const actualStopDt = parseDt(row.actualStop);
-
-  const benchmarkHrs =
-    plannedStartDt && plannedStopDt
-      ? Math.round(
-          ((plannedStopDt.getTime() - plannedStartDt.getTime()) /
-            (1000 * 60 * 60)) *
-            100,
-        ) / 100
-      : row.durationHrs || 0;
-
-  const actualHrs =
-    actualStartDt && actualStopDt
-      ? Math.round(
-          ((actualStopDt.getTime() - actualStartDt.getTime()) /
-            (1000 * 60 * 60)) *
-            100,
-        ) / 100
-      : row.actualElapsedHrs || 0;
-
+  const benchmarkHrs = Number(row.durationHrs) || 0;
+  const actualHrs = Number(row.actualDurationHrs) || 0;
   const rejectCount = row.actiVityRejectCount || 0;
 
   const suggestTimeRating = () => {
@@ -593,7 +567,125 @@ export default function FeedbackModal({
             </div>
           ))}
         </div>
+        {/* ═══ Delay Reasons ═══ */}
+        {(row.startDelayedReason || row.stopDelayedReason) && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            {row.startDelayedReason && (
+              <div
+                style={{
+                  padding: "8px 10px",
+                  background: t.warningBgSubtle,
+                  border: `1px solid ${t.warningBorder}`,
+                  borderRadius: 7,
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    background: t.warningBg,
+                    color: t.warning,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <AlertTriangle size={12} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      color: t.warning,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.3px",
+                      marginBottom: 3,
+                    }}
+                  >
+                    Start Delayed — Reason
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: t.textPrimary,
+                      lineHeight: 1.4,
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {row.startDelayedReason}
+                  </div>
+                </div>
+              </div>
+            )}
 
+            {row.stopDelayedReason && (
+              <div
+                style={{
+                  padding: "8px 10px",
+                  background: t.warningBgSubtle,
+                  border: `1px solid ${t.warningBorder}`,
+                  borderRadius: 7,
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    background: t.warningBg,
+                    color: t.warning,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <AlertTriangle size={12} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      color: t.warning,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.3px",
+                      marginBottom: 3,
+                    }}
+                  >
+                    Stop Delayed — Reason
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: t.textPrimary,
+                      lineHeight: 1.4,
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {row.stopDelayedReason}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {!readOnly && (
           <div
             style={{

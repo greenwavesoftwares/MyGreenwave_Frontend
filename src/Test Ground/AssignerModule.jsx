@@ -20,7 +20,7 @@ import activityTrackerApi from "../Services/activityTrackerApi";
 import { addComment } from "../Modules/Assignee/AssigneeHelper";
 import CommentsActionDialog from "../Modules/Assignee/CommentsActionDialog";
 import FeedbackModal from "./FeedbackModal";
-import GanttView from "./GanttView";
+import GanttView from "./GanttView/index";
 
 import { generateProjectId } from "./helpers/ids";
 import { makeBtnStyle } from "./helpers/styles";
@@ -30,6 +30,7 @@ import DraftProjectsList from "./DraftProjectsList";
 import ProjectEditor from "./ProjectEditor";
 import { useResponsive } from "./useResponsive";
 import BottomTabBar from "./shared/BottomTabBar";
+import { getInitialDateRange } from "./helpers/dateRangeStorage";
 /* ═══════════════════════════════════════════════════════
    Root AssignerModule
    Handles: navigation, data fetching, drafts state
@@ -90,7 +91,9 @@ export default function AssignerModule() {
     return { fromDate: toSimpleDate(first), toDate: toSimpleDate(last) };
   };
 
-  const [dateRange, setDateRange] = useState(getCurrentMonthRange());
+  // const [dateRange, setDateRange] = useState(getCurrentMonthRange());
+  // ── Date range state (restored from localStorage on mount) ──
+  const [dateRange, setDateRange] = useState(() => getInitialDateRange());
 
   // ═══════════════════════════════════════════════════════
   // Toast helper

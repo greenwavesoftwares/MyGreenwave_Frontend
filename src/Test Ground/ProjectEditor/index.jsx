@@ -107,7 +107,7 @@ import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "../../Modules/Assignee/AssigneeHelper";
 import CommentsActionDialog from "../../Modules/Assignee/CommentsActionDialog";
 import FeedbackModal from "../FeedbackModal";
-import GanttView from "../GanttView";
+import GanttView from "../GanttView/index";
 import ProjectUpdatesView from "../ProjectUpdatesView";
 import CoAssignerModal from "../CoAssignerModal";
 import * as sharingApi from "../sharingApi";
