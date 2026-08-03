@@ -24,6 +24,7 @@ export const nodeFieldValue = (field, node) => {
     const colId = field.slice(7);
     return String(node.customValues?.[colId] ?? "-");
   }
+  //find the field value based on field name
   switch (field) {
     case "task":
       return node.name || "";
@@ -85,13 +86,11 @@ export const nodeMatchesSearch = (node, term) => {
  * whether to include the whole module rather than a single row.) */
 export const matchesColumnFilters = (node, filters) => {
   for (const [field, selectedSet] of Object.entries(filters || {})) {
-    console.log("Selected set::", selectedSet);
-    console.log("Field::", field);
     if (!selectedSet || selectedSet.size === 0) continue;
     if (field === "module") continue;
     if (node.type === "MODULE") continue; // these fields don't apply to module header rows
-    const value = nodeFieldValue(field, node);
-    if (!selectedSet.has(value)) return false;
+    const value = nodeFieldValue(field, node);//find the value of the field based on field name
+    if (!selectedSet.has(value)) return false;//checks whether the field value is present in the selected set,if not present then return false
   }
   return true;
 };
@@ -144,11 +143,13 @@ const collectLeafNodesByModule = (modules) => {
   const result = [];
   (modules || []).forEach((moduleNode) => {
     const moduleName = moduleNode.name;
+    //pass each node along with module name in result array
     const walk = (node) => {
-      result.push({ ...node, _moduleName: moduleName });
+      result.push({ ...node, _moduleName: moduleName });//pushing the node in result
+      //pass child node along walk and pushing them in result
       if (node.children?.length) node.children.forEach(walk);
     };
-    (moduleNode.children || []).forEach(walk);
+    (moduleNode.children || []).forEach(walk);//this is the start of walk for the children of module node
   });
   return result;
 };
@@ -159,7 +160,10 @@ export const uniqueSorted = (arr) =>
     new Set(
       (arr || []).filter((v) => v !== undefined && v !== null && v !== ""),
     ),
-  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));//here the undefined in localeCompare is given because there are no locales to sort with,i.e. no language to sort with, like english, swedish, etc 
+  //compares a with b checks if the characters are numeric, if it's numeric then numeric sorting occurs
+  //suppose Appple1,Apple2 and Apple10 are compared, if it's normal sort then the result will be
+  //Apple1,Apple10,Apple2 as it compares character by character, since numeric is true, Apple1,Apple2,Apple10 is the output
 
 /** Does this leaf node satisfy every active column filter EXCEPT the one
  * named `exceptField`? Used to build cascading dropdown options: a given
@@ -167,6 +171,7 @@ export const uniqueSorted = (arr) =>
  * you'd never be able to add/change a selection), but every *other* active
  * filter — including "module" — should. */
 const nodeMatchesFiltersExcept = (node, filters, exceptField) => {
+  //if the except field, the field that can be excluded from the filteration is not module, then filter based on module 
   if (exceptField !== "module") {
     const moduleFilter = filters?.module;
     if (
@@ -177,9 +182,11 @@ const nodeMatchesFiltersExcept = (node, filters, exceptField) => {
       return false;
     }
   }
+  //iterates through the entries of the objects, suppose this array has two objects [{name:"Apple",id:"001"},{name:"Banana",id:"002"}]
+  //the iteration will be done in this format {field:"name",selectedSet:["Apple","Banana"]}, {field:"id",selectedSet:["001","002"]}
   for (const [field, selectedSet] of Object.entries(filters || {})) {
-    if (field === "module" || field === exceptField) continue;
-    if (!selectedSet || selectedSet.size === 0) continue;
+    if (field === "module" || field === exceptField) continue;//checks whether the field is module and whether module is included in ignored fields
+    if (!selectedSet || selectedSet.size === 0) continue;//if size of the set is 0 or the set is null, then continues to next iteration
     const value = nodeFieldValue(field, node);
     if (!selectedSet.has(value)) return false;
   }
@@ -205,16 +212,21 @@ export const computeFilterOptions = (modules, customColumns, columnFilters) => {
   const moduleNodes = modules || [];
   const leafNodes = collectLeafNodesByModule(modules);
 
+  /**
+   * Sort the filter values by traversing to leaf nodes
+   */
   const optionsFor = (field) =>
     uniqueSorted(
       leafNodes
         .filter((n) => nodeMatchesFiltersExcept(n, columnFilters, field))
+        //filters the node based on all the column filters except the field to be ignored, i.e the current field, suppose resource is the current field
+        //then this function filters nodes based on modules and then tasks, and only includes all resources after all other filters are done
         .map((n) => nodeFieldValue(field, n)),
     );
 
   const options = {
-    module: uniqueSorted(moduleNodes.map((n) => n.name)),
-    task: optionsFor("task"),
+    module: uniqueSorted(moduleNodes.map((n) => n.name)),//sort the filter values based on field and the sorting will be done lexicographically as well as numerically
+    task: optionsFor("task"),//sort the filter value by traversing to the leaf nodes
     resource: optionsFor("resource"),
     status: optionsFor("status"),
     plannedStart: optionsFor("plannedStart"),

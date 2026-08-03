@@ -438,8 +438,8 @@ export default function TreeRows({
               <Tooltip
                 title={
                   activityStatus?.toLowerCase() === "rejected"
-                    ? (latestRejectReason ?? activityStatus)
-                    : activityStatus
+                    && (latestRejectReason ?? activityStatus)
+                    
                 }
               >
                 <span>
