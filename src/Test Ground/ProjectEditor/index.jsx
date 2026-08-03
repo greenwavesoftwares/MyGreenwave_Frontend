@@ -3581,6 +3581,9 @@ export default function ProjectEditor({
           newComment={newComment}
           setNewComment={setNewComment}
           allowActions={draft.status !== "closed"}
+          activityName={
+            rows.find((r) => r.id === newComment.activityId)?.task || "—"
+          }
         />
       )}
 
