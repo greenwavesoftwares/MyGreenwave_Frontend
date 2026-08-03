@@ -18,6 +18,8 @@ import {
   AlertTriangle,
   X,
   Briefcase,
+  Eye, // ← NEW
+  EyeOff,
   Filter,
 } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -46,7 +48,6 @@ const COL_RESOURCE_WIDTH = 130;
 const COL_STATUS_WIDTH = 100;
 const LEFT_PANEL_WIDTH =
   COL_TASK_WIDTH + COL_MODULE_WIDTH + COL_RESOURCE_WIDTH + COL_STATUS_WIDTH;
-
 /* ─── Zoom Config ─── */
 const ZOOM_CONFIGS = {
   hour: {
@@ -197,7 +198,8 @@ function generateMajorTicks(startMs, endMs) {
   const ticks = [];
   const start = new Date(startMs);
   let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-  while (cur.getTime() <= endMs + DAY_MS * 31) {
+  // Only include major ticks that fall within the actual chart range
+  while (cur.getTime() <= endMs) {
     ticks.push(new Date(cur));
     cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
   }
@@ -1221,6 +1223,219 @@ function ProjectColumnFilterButton({
     </>
   );
 }
+
+/* ─── Column Visibility Dropdown ─── */
+function ColumnVisibilityDropdown({ visibleColumns, onToggle }) {
+  const { t } = useTheme();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const totalCount = 3; // module, resource, status
+  const visibleCount = Object.values(visibleColumns).filter(Boolean).length;
+  const hasHidden = visibleCount < totalCount;
+
+  const columns = [
+    { key: "module", label: "Module" },
+    { key: "resource", label: "Resource" },
+    { key: "status", label: "Status" },
+  ];
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        title="Show/hide columns"
+        style={{
+          height: 30,
+          padding: "0 10px",
+          borderRadius: 6,
+          border: `1px solid ${hasHidden ? t.primary : t.borderStrong}`,
+          background: hasHidden ? t.primaryBgSubtle : t.bgCard,
+          color: hasHidden ? t.primary : t.textSecondary,
+          fontFamily: "Sora,sans-serif",
+          fontSize: 11.5,
+          fontWeight: 500,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+        }}
+      >
+        {hasHidden ? <EyeOff size={13} /> : <Eye size={13} />}
+        Columns
+        <span
+          style={{
+            padding: "1px 6px",
+            borderRadius: 999,
+            background: hasHidden ? t.primary : t.bgMuted,
+            color: hasHidden ? t.textInverse : t.textMuted,
+            fontSize: 9,
+            fontWeight: 700,
+          }}
+        >
+          {visibleCount}/{totalCount}
+        </span>
+        <ChevronDown
+          size={11}
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.15s",
+          }}
+        />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            right: 0,
+            marginTop: 4,
+            width: 200,
+            background: t.bgCard,
+            border: `1px solid ${t.borderStrong}`,
+            borderRadius: 8,
+            boxShadow: t.shadowLg,
+            zIndex: 999,
+            fontFamily: "Sora,sans-serif",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "8px 10px",
+              borderBottom: `1px solid ${t.border}`,
+              background: t.bgSubtle,
+            }}
+          >
+            <span
+              style={{ fontSize: 11, fontWeight: 700, color: t.textPrimary }}
+            >
+              Show Columns
+            </span>
+          </div>
+
+          {/* Task always visible — informational only */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 12px",
+              background: t.bgSubtle,
+              opacity: 0.7,
+              cursor: "not-allowed",
+            }}
+            title="Task column is always visible"
+          >
+            <span
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: 4,
+                border: `1.5px solid ${t.borderStrong}`,
+                background: t.bgMuted,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                color: t.textMuted,
+                fontSize: 10,
+              }}
+            >
+              <Eye size={10} />
+            </span>
+            <span
+              style={{
+                fontSize: 11.5,
+                color: t.textMuted,
+                fontWeight: 500,
+                flex: 1,
+              }}
+            >
+              Task
+            </span>
+            <span style={{ fontSize: 9, color: t.textFaint }}>Always</span>
+          </div>
+
+          <div style={{ padding: "4px 0" }}>
+            {columns.map((col) => {
+              const isVisible = visibleColumns[col.key];
+              return (
+                <div
+                  key={col.key}
+                  onClick={() => onToggle(col.key)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                    background: isVisible ? t.primaryBgSubtle : "transparent",
+                    borderLeft: isVisible
+                      ? `3px solid ${t.primary}`
+                      : "3px solid transparent",
+                    transition: "background .1s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isVisible)
+                      e.currentTarget.style.background = t.bgSubtle;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isVisible)
+                      e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 4,
+                      border: `1.5px solid ${isVisible ? t.primary : t.borderStrong}`,
+                      background: isVisible ? t.primary : t.bgCard,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      color: t.textInverse,
+                      fontSize: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {isVisible && "✓"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11.5,
+                      color: t.textPrimary,
+                      fontWeight: isVisible ? 600 : 400,
+                      flex: 1,
+                    }}
+                  >
+                    {col.label}
+                  </span>
+                  {isVisible ? (
+                    <Eye size={12} color={t.primary} />
+                  ) : (
+                    <EyeOff size={12} color={t.textFaint} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 /* ─── Main GanttView ─── */
 export default function GanttView({
   projects = [],
@@ -1234,6 +1449,30 @@ export default function GanttView({
   const [mobileLeftPanelOpen, setMobileLeftPanelOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [mobileTooltipRow, setMobileTooltipRow] = useState(null);
+  // Column visibility (persisted to localStorage)
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    try {
+      const saved = localStorage.getItem("gantt-visible-columns");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return { module: true, resource: true, status: true };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "gantt-visible-columns",
+        JSON.stringify(visibleColumns),
+      );
+    } catch (e) {}
+  }, [visibleColumns]);
+
+  const toggleColumn = useCallback((columnKey) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  }, []);
   console.log("Projects : ", projects);
   const { t } = useTheme();
 
@@ -1323,7 +1562,15 @@ export default function GanttView({
     );
     return anyExpanded ? LEFT_PANEL_WIDTH_EXPANDED : LEFT_PANEL_WIDTH_COLLAPSED;
   }, [filteredProjects, expandedProjects]);
-
+  // Dynamic left panel width based on visible columns
+  const dynamicLeftPanelWidth = useMemo(() => {
+    return (
+      COL_TASK_WIDTH +
+      (visibleColumns.module ? COL_MODULE_WIDTH : 0) +
+      (visibleColumns.resource ? COL_RESOURCE_WIDTH : 0) +
+      (visibleColumns.status ? COL_STATUS_WIDTH : 0)
+    );
+  }, [visibleColumns]);
   const syncScroll = useCallback((e) => {
     if (leftPanelRef.current)
       leftPanelRef.current.scrollTop = e.target.scrollTop;
@@ -1381,7 +1628,7 @@ export default function GanttView({
       };
     }
     const start = Math.min(...allDates) - DAY_MS;
-    const end = Math.max(...allDates) + DAY_MS;
+    const end = Math.max(...allDates) + DAY_MS * 3; // 3 days buffer
     return { projectStart: start, projectEnd: end, totalMs: end - start };
   }, [filteredProjects]);
 
@@ -1870,6 +2117,22 @@ export default function GanttView({
       }
     });
   }, [isMobile, todayLeft]);
+  console.log("📅 Range:", {
+    projectStart: new Date(projectStart).toISOString(),
+    projectEnd: new Date(projectEnd).toISOString(),
+    totalMs,
+    totalDays: Math.round(totalMs / DAY_MS),
+    colWidthPx,
+    totalChartWidth,
+    ticksCount: ticks.length,
+    firstTick: ticks[0]?.toISOString(),
+    lastTick: ticks[ticks.length - 1]?.toISOString(),
+    taskDates: filteredProjects
+      .flatMap((p) => p.rows || [])
+      .flatMap((r) => [r.plannedStart, r.plannedStop])
+      .filter(Boolean)
+      .slice(0, 5),
+  });
   return (
     <div
       style={{
@@ -1992,7 +2255,13 @@ export default function GanttView({
           </button>
 
           <div style={{ width: 1, height: 20, background: t.border }} />
+          <div style={{ width: 1, height: 20, background: t.border }} />
 
+          {/* Column visibility toggle */}
+          <ColumnVisibilityDropdown
+            visibleColumns={visibleColumns}
+            onToggle={toggleColumn}
+          />
           {/* Dependencies toggle */}
           {false && (
             <button
@@ -2199,7 +2468,7 @@ export default function GanttView({
         {!isMobile && (
           <div
             style={{
-              width: LEFT_PANEL_WIDTH,
+              width: dynamicLeftPanelWidth,
               flexShrink: 0,
               borderRight: `1px solid ${t.border}`,
               display: "flex",
@@ -2420,114 +2689,118 @@ export default function GanttView({
                             </div>
 
                             {/* Module */}
-                            <div
-                              style={{
-                                width: COL_MODULE_WIDTH,
-                                padding: "0 10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                borderRight: `1px solid ${t.border}`,
-                              }}
-                            >
-                              <span
+                            {visibleColumns.module && (
+                              <div
                                 style={{
-                                  fontSize: 9.5,
-                                  fontWeight: 700,
-                                  color: t.textFaint,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.4px",
+                                  width: COL_MODULE_WIDTH,
+                                  padding: "0 10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  borderRight: `1px solid ${t.border}`,
                                 }}
                               >
-                                Module
-                              </span>
-                              <ProjectColumnFilterButton
-                                color={t.violet}
-                                columnKey="module"
-                                options={projectFilterOpts.moduleOpts}
-                                selected={projectFilter.module}
-                                onChange={(vals) =>
-                                  updateProjectFilter(
-                                    project.id,
-                                    "module",
-                                    vals,
-                                  )
-                                }
-                              />
-                            </div>
-
+                                <span
+                                  style={{
+                                    fontSize: 9.5,
+                                    fontWeight: 700,
+                                    color: t.textFaint,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.4px",
+                                  }}
+                                >
+                                  Module
+                                </span>
+                                <ProjectColumnFilterButton
+                                  color={t.violet}
+                                  columnKey="module"
+                                  options={projectFilterOpts.moduleOpts}
+                                  selected={projectFilter.module}
+                                  onChange={(vals) =>
+                                    updateProjectFilter(
+                                      project.id,
+                                      "module",
+                                      vals,
+                                    )
+                                  }
+                                />
+                              </div>
+                            )}
                             {/* Resource */}
-                            <div
-                              style={{
-                                width: COL_RESOURCE_WIDTH,
-                                padding: "0 10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                borderRight: `1px solid ${t.border}`,
-                              }}
-                            >
-                              <span
+                            {visibleColumns.resource && (
+                              <div
                                 style={{
-                                  fontSize: 9.5,
-                                  fontWeight: 700,
-                                  color: t.textFaint,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.4px",
+                                  width: COL_RESOURCE_WIDTH,
+                                  padding: "0 10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  borderRight: `1px solid ${t.border}`,
                                 }}
                               >
-                                Resource
-                              </span>
-                              <ProjectColumnFilterButton
-                                color={t.success}
-                                columnKey="resource"
-                                options={projectFilterOpts.resourceOpts}
-                                selected={projectFilter.resource}
-                                onChange={(vals) =>
-                                  updateProjectFilter(
-                                    project.id,
-                                    "resource",
-                                    vals,
-                                  )
-                                }
-                              />
-                            </div>
-
+                                <span
+                                  style={{
+                                    fontSize: 9.5,
+                                    fontWeight: 700,
+                                    color: t.textFaint,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.4px",
+                                  }}
+                                >
+                                  Resource
+                                </span>
+                                <ProjectColumnFilterButton
+                                  color={t.success}
+                                  columnKey="resource"
+                                  options={projectFilterOpts.resourceOpts}
+                                  selected={projectFilter.resource}
+                                  onChange={(vals) =>
+                                    updateProjectFilter(
+                                      project.id,
+                                      "resource",
+                                      vals,
+                                    )
+                                  }
+                                />
+                              </div>
+                            )}
                             {/* Status */}
-                            <div
-                              style={{
-                                width: COL_STATUS_WIDTH,
-                                padding: "0 10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                              }}
-                            >
-                              <span
+                            {visibleColumns.status && (
+                              <div
                                 style={{
-                                  fontSize: 9.5,
-                                  fontWeight: 700,
-                                  color: t.textFaint,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.4px",
+                                  width: COL_STATUS_WIDTH,
+                                  padding: "0 10px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
                                 }}
                               >
-                                Status
-                              </span>
-                              <ProjectColumnFilterButton
-                                color={t.warning}
-                                columnKey="status"
-                                options={projectFilterOpts.statusOpts}
-                                selected={projectFilter.status}
-                                onChange={(vals) =>
-                                  updateProjectFilter(
-                                    project.id,
-                                    "status",
-                                    vals,
-                                  )
-                                }
-                              />
-                            </div>
+                                <span
+                                  style={{
+                                    fontSize: 9.5,
+                                    fontWeight: 700,
+                                    color: t.textFaint,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.4px",
+                                  }}
+                                >
+                                  Status
+                                </span>
+                                <ProjectColumnFilterButton
+                                  color={t.warning}
+                                  columnKey="status"
+                                  options={projectFilterOpts.statusOpts}
+                                  selected={projectFilter.status}
+                                  onChange={(vals) =>
+                                    updateProjectFilter(
+                                      project.id,
+                                      "status",
+                                      vals,
+                                    )
+                                  }
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -2611,142 +2884,148 @@ export default function GanttView({
                                 </div>
 
                                 {/* Module cell */}
-                                <div
-                                  style={{
-                                    width: COL_MODULE_WIDTH,
-                                    padding: "0 10px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    borderRight: `1px solid ${t.borderSubtle}`,
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  {row.module ? (
-                                    <span
-                                      style={{
-                                        padding: "2px 7px",
-                                        borderRadius: 4,
-                                        background: t.violetBg,
-                                        color: t.violet,
-                                        border: `1px solid ${t.violetBorder}`,
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        maxWidth: "100%",
-                                      }}
-                                      title={row.module}
-                                    >
-                                      {row.module}
-                                    </span>
-                                  ) : (
-                                    <span
-                                      style={{
-                                        color: t.textDisabled,
-                                        fontStyle: "italic",
-                                        fontSize: 10,
-                                      }}
-                                    >
-                                      —
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Resource cell */}
-                                <div
-                                  style={{
-                                    width: COL_RESOURCE_WIDTH,
-                                    padding: "0 10px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    borderRight: `1px solid ${t.borderSubtle}`,
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  {row.resource ? (
-                                    <>
-                                      <div
-                                        style={{
-                                          width: 20,
-                                          height: 20,
-                                          borderRadius: "50%",
-                                          background: t.primaryBg,
-                                          color: t.primary,
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          fontSize: 9,
-                                          fontWeight: 700,
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        {(
-                                          row.resourceName ||
-                                          row.resource ||
-                                          "?"
-                                        )
-                                          .charAt(0)
-                                          .toUpperCase()}
-                                      </div>
+                                {visibleColumns.module && (
+                                  <div
+                                    style={{
+                                      width: COL_MODULE_WIDTH,
+                                      padding: "0 10px",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      borderRight: `1px solid ${t.borderSubtle}`,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    {row.module ? (
                                       <span
                                         style={{
+                                          padding: "2px 7px",
+                                          borderRadius: 4,
+                                          background: t.violetBg,
+                                          color: t.violet,
+                                          border: `1px solid ${t.violetBorder}`,
+                                          fontSize: 10,
+                                          fontWeight: 600,
                                           overflow: "hidden",
                                           textOverflow: "ellipsis",
                                           whiteSpace: "nowrap",
-                                          fontSize: 10.5,
-                                          color: t.textSecondary,
-                                          fontWeight: 500,
+                                          maxWidth: "100%",
                                         }}
-                                        title={row.resourceName || row.resource}
+                                        title={row.module}
                                       >
-                                        {row.resourceName || row.resource}
+                                        {row.module}
                                       </span>
-                                    </>
-                                  ) : (
+                                    ) : (
+                                      <span
+                                        style={{
+                                          color: t.textDisabled,
+                                          fontStyle: "italic",
+                                          fontSize: 10,
+                                        }}
+                                      >
+                                        —
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Resource cell */}
+                                {visibleColumns.resource && (
+                                  <div
+                                    style={{
+                                      width: COL_RESOURCE_WIDTH,
+                                      padding: "0 10px",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      borderRight: `1px solid ${t.borderSubtle}`,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    {row.resource ? (
+                                      <>
+                                        <div
+                                          style={{
+                                            width: 20,
+                                            height: 20,
+                                            borderRadius: "50%",
+                                            background: t.primaryBg,
+                                            color: t.primary,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: 9,
+                                            fontWeight: 700,
+                                            flexShrink: 0,
+                                          }}
+                                        >
+                                          {(
+                                            row.resourceName ||
+                                            row.resource ||
+                                            "?"
+                                          )
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                        </div>
+                                        <span
+                                          style={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                            fontSize: 10.5,
+                                            color: t.textSecondary,
+                                            fontWeight: 500,
+                                          }}
+                                          title={
+                                            row.resourceName || row.resource
+                                          }
+                                        >
+                                          {row.resourceName || row.resource}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span
+                                        style={{
+                                          color: t.textDisabled,
+                                          fontStyle: "italic",
+                                          fontSize: 10,
+                                        }}
+                                      >
+                                        —
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Status cell */}
+                                {visibleColumns.status && (
+                                  <div
+                                    style={{
+                                      width: COL_STATUS_WIDTH,
+                                      padding: "0 10px",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      overflow: "hidden",
+                                    }}
+                                  >
                                     <span
                                       style={{
-                                        color: t.textDisabled,
-                                        fontStyle: "italic",
-                                        fontSize: 10,
+                                        padding: "2px 8px",
+                                        borderRadius: 999,
+                                        fontSize: 9.5,
+                                        fontWeight: 700,
+                                        background: sc.bg,
+                                        color: sc.color,
+                                        border: `1px solid ${sc.border}`,
+                                        textTransform: "capitalize",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        maxWidth: "100%",
                                       }}
+                                      title={row.status || "Pending"}
                                     >
-                                      —
+                                      {row.status || "Pending"}
                                     </span>
-                                  )}
-                                </div>
-
-                                {/* Status cell */}
-                                <div
-                                  style={{
-                                    width: COL_STATUS_WIDTH,
-                                    padding: "0 10px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      padding: "2px 8px",
-                                      borderRadius: 999,
-                                      fontSize: 9.5,
-                                      fontWeight: 700,
-                                      background: sc.bg,
-                                      color: sc.color,
-                                      border: `1px solid ${sc.border}`,
-                                      textTransform: "capitalize",
-                                      whiteSpace: "nowrap",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                      maxWidth: "100%",
-                                    }}
-                                    title={row.status || "Pending"}
-                                  >
-                                    {row.status || "Pending"}
-                                  </span>
-                                </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -2920,7 +3199,7 @@ export default function GanttView({
                 </div>
               </div>
 
-              {/* Column Width */}
+              {/* Visible Columns */}
               <div>
                 <div
                   style={{
@@ -2931,70 +3210,66 @@ export default function GanttView({
                     letterSpacing: "0.5px",
                     marginBottom: 8,
                     display: "flex",
-                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 5,
                   }}
                 >
-                  <span>Column Width</span>
-                  <span
-                    style={{
-                      color: t.textSecondary,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
-                    {colWidthPx}px
-                  </span>
+                  <Eye size={12} />
+                  Visible Columns
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button
-                    onClick={() =>
-                      setColWidthPx((p) => Math.max(p - 20, MIN_COL_WIDTH))
-                    }
-                    disabled={colWidthPx <= MIN_COL_WIDTH}
-                    style={{
-                      flex: 1,
-                      height: 44,
-                      borderRadius: 10,
-                      border: `1px solid ${t.borderStrong}`,
-                      background: t.bgCard,
-                      color: t.textSecondary,
-                      fontFamily: "Sora,sans-serif",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      opacity: colWidthPx <= MIN_COL_WIDTH ? 0.4 : 1,
-                    }}
-                  >
-                    <ZoomOut size={16} /> Narrower
-                  </button>
-                  <button
-                    onClick={() =>
-                      setColWidthPx((p) => Math.min(p + 20, MAX_COL_WIDTH))
-                    }
-                    disabled={colWidthPx >= MAX_COL_WIDTH}
-                    style={{
-                      flex: 1,
-                      height: 44,
-                      borderRadius: 10,
-                      border: `1px solid ${t.borderStrong}`,
-                      background: t.bgCard,
-                      color: t.textSecondary,
-                      fontFamily: "Sora,sans-serif",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      opacity: colWidthPx >= MAX_COL_WIDTH ? 0.4 : 1,
-                    }}
-                  >
-                    <ZoomIn size={16} /> Wider
-                  </button>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  {[
+                    { key: "module", label: "Module" },
+                    { key: "resource", label: "Resource" },
+                    { key: "status", label: "Status" },
+                  ].map((col) => {
+                    const isVisible = visibleColumns[col.key];
+                    return (
+                      <button
+                        key={col.key}
+                        onClick={() => toggleColumn(col.key)}
+                        style={{
+                          height: 46,
+                          padding: "0 14px",
+                          borderRadius: 10,
+                          border: `1.5px solid ${isVisible ? t.primary : t.border}`,
+                          background: isVisible ? t.primaryBgSubtle : t.bgCard,
+                          color: isVisible ? t.primary : t.textSecondary,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          fontFamily: "Sora,sans-serif",
+                          fontSize: 13,
+                          fontWeight: isVisible ? 700 : 500,
+                        }}
+                      >
+                        {isVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+                        <span style={{ flex: 1, textAlign: "left" }}>
+                          {col.label}
+                        </span>
+                        <span
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 5,
+                            border: `1.5px solid ${isVisible ? t.primary : t.borderStrong}`,
+                            background: isVisible ? t.primary : t.bgCard,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: t.textInverse,
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {isVisible && "✓"}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -3186,6 +3461,7 @@ export default function GanttView({
                         left,
                         top: 0,
                         bottom: 0,
+                        width: colWidthPx, // ← changed to fixed width
                         display: "flex",
                         alignItems: "center",
                         paddingLeft: 4,
@@ -3194,7 +3470,8 @@ export default function GanttView({
                         color: isWeekend ? t.danger : t.textMuted,
                         whiteSpace: "nowrap",
                         borderLeft: `1px solid ${t.border}`,
-                        minWidth: colWidthPx,
+                        overflow: "hidden",
+                        boxSizing: "border-box",
                       }}
                     >
                       {ZOOM_CONFIGS[zoom].tickFormat(tick)}
