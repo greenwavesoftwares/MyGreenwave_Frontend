@@ -1,5 +1,11 @@
 import React from "react";
-import { ChevronDown, ChevronRight, Briefcase } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Briefcase,
+  Eye,
+  Maximize2,
+} from "lucide-react";
 import BottomSheet from "../../../shared/BottomSheet";
 import { useTheme } from "../../../useTheme";
 import { getStatusColor } from "../../helpers/statusColors";
@@ -20,6 +26,8 @@ export default function MobileTaskListSheet({
   setExpandedProjects,
   rowPositions,
   timelineRef,
+  onOpenFullScreen,
+  isFullScreen,
 }) {
   const { t } = useTheme();
 
@@ -94,6 +102,33 @@ export default function MobileTaskListSheet({
                         {project.status || "draft"}
                       </div>
                     </div>
+                    {/* Full-screen view button (hidden inside full-screen modal) */}
+                    {!isFullScreen && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenFullScreen?.(project.id);
+                          onClose();
+                        }}
+                        title="Expand to full screen"
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 7,
+                          border: `1px solid ${t.primaryBorder}`,
+                          background: t.primaryBgSubtle,
+                          color: t.primary,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Maximize2 size={15} />
+                      </button>
+                    )}
                   </div>
 
                   {/* Task rows */}

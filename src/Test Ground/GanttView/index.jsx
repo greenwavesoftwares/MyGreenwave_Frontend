@@ -9,7 +9,7 @@ import React, {
 import { useTheme } from "../useTheme";
 import { useResponsive } from "../useResponsive";
 import { computeArrows } from "../helpers/ganttArrows";
-
+import FullScreenProjectModal from "./components/FullScreenProjectModal";
 // Constants + helpers
 import {
   ZOOM_CONFIGS,
@@ -45,6 +45,7 @@ export default function GanttView({
   onOpenComments,
   onFeedback,
   showGlobalFilters = false, // reserved for future toolbar filters
+  isFullScreen = false,
 }) {
   const { t } = useTheme();
   const { isMobile } = useResponsive();
@@ -66,6 +67,12 @@ export default function GanttView({
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const [showDependencies, setShowDependencies] = useState(false);
+  // Full-screen project modal
+  const [fullScreenProjectId, setFullScreenProjectId] = useState(null);
+  const fullScreenProject = useMemo(
+    () => projects.find((p) => p.id === fullScreenProjectId) || null,
+    [projects, fullScreenProjectId],
+  );
 
   // ── Refs ──
   const timelineRef = useRef(null);
@@ -431,6 +438,8 @@ export default function GanttView({
             visibleColumns={visibleColumns}
             leftPanelWidth={dynamicLeftPanelWidth}
             leftPanelRef={leftPanelRef}
+            onOpenFullScreen={setFullScreenProjectId} // ← NEW
+            isFullScreen={isFullScreen}
           />
         )}
 
@@ -491,6 +500,8 @@ export default function GanttView({
           setExpandedProjects={setExpandedProjects}
           rowPositions={rowPositions}
           timelineRef={timelineRef}
+          onOpenFullScreen={setFullScreenProjectId} // ← NEW
+          isFullScreen={isFullScreen}
         />
       )}
 
@@ -515,7 +526,15 @@ export default function GanttView({
           onFeedback={onFeedback}
         />
       )}
-
+      {/* Full-screen project modal */}
+      {fullScreenProject && (
+        <FullScreenProjectModal
+          project={fullScreenProject}
+          onClose={() => setFullScreenProjectId(null)}
+          onOpenComments={onOpenComments}
+          onFeedback={onFeedback}
+        />
+      )}
       {/* Pulse animation for running bars */}
       <style>{`
         @keyframes ganttPulse {

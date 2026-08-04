@@ -1,5 +1,13 @@
 import React from "react";
-import { ChevronDown, ChevronRight, Briefcase, Filter, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Briefcase,
+  Filter,
+  X,
+  Eye,
+  Maximize2,
+} from "lucide-react";
 import { useTheme } from "../../useTheme";
 import {
   HEADER_HEIGHT,
@@ -36,6 +44,8 @@ export default function GanttLeftPanel({
   visibleColumns,
   leftPanelWidth,
   leftPanelRef,
+  onOpenFullScreen,
+  isFullScreen,
 }) {
   const { t } = useTheme();
 
@@ -184,6 +194,32 @@ export default function GanttLeftPanel({
                       </div>
                     </div>
 
+                    {/* Full-screen view button (hidden inside full-screen modal) */}
+                    {!isFullScreen && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenFullScreen?.(project.id);
+                        }}
+                        title="Expand to full screen"
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 5,
+                          border: `1px solid ${t.primaryBorder}`,
+                          background: t.primaryBgSubtle,
+                          color: t.primary,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Maximize2 size={11} />
+                      </button>
+                    )}
                     {isExpanded && hasFilters && (
                       <button
                         onClick={(e) => {
