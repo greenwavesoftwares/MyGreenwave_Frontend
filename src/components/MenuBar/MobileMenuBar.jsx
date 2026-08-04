@@ -86,9 +86,10 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   ...theme.mixins.toolbar,
 }));
 
-function convertToInitials(name) {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
+function convertToInitials(id) {
+  if (!id) return "";
+  const name = id.trim().split("@")[0];
+  const parts=name.split(".")
   return parts.map((p) => p[0].toUpperCase()).join("");
 }
 
@@ -103,6 +104,7 @@ export default function MobileMenuBar() {
   const navigate = useNavigate();
   const userDetails = getUserData();
   const userName = userDetails?.userDetails?.userName;
+  const userId=userDetails?.userDetails?.userId
 
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => {
@@ -356,7 +358,7 @@ export default function MobileMenuBar() {
           </IconButton>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Avatar className="avatar-mobile">
-              {convertToInitials(userName)}
+              {convertToInitials(userId)}
             </Avatar>
           </div>
         </Toolbar>
@@ -433,7 +435,7 @@ export default function MobileMenuBar() {
                     placement="right"
                   >
                     <Avatar className="avatar">
-                      {convertToInitials(userName)}
+                      {convertToInitials(userId)}
                     </Avatar>
                   </Tooltip>
                 </ListItemIcon>

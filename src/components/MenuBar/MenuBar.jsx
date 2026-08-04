@@ -107,9 +107,10 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   ...theme.mixins.toolbar,
 }));
 
-function convertToInitials(name) {
-  if (!name) return "";
-  const parts = name.trim().split(" ");
+function convertToInitials(id) {
+  if (!id) return "";
+  const name = id.trim().split("@")[0];
+  const parts=name.split(".")
   return parts.map((p) => p[0].toUpperCase()).join("");
 }
 
@@ -126,6 +127,7 @@ export default function MiniDrawer() {
   const navigate = useNavigate();
   const userDetails = getUserData();
   const userName = userDetails?.userDetails?.userName;
+  const userId=userDetails?.userDetails?.userId
   const BASE_PATH="/mygreenwave"
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => {
@@ -508,7 +510,7 @@ const result = path.substring(secondSlashIndex + 1);
                       placement="right"
                     >
                       <Avatar className="avatar">
-                        {convertToInitials(userName)}
+                        {convertToInitials(userId)}
                       </Avatar>
                     </Tooltip>
                   </ListItemIcon>
