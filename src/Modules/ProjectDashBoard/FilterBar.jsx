@@ -1,0 +1,151 @@
+import React from "react";
+import MultiSelectPicker from "./MultiSelectPicker";
+import FilterField from "./FilterField";
+
+// Hardcoded all 12 months
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+/**
+ * Filter bar component with Year, Month, Project, and Resource filters
+ */
+function FilterBar({
+  t,
+  apiLoading,
+  selectedYear,
+  setSelectedYear,
+  availableYears,
+  currentYear,
+  selectedMonths,
+  setSelectedMonths,
+  monthPickerOpen,
+  setMonthPickerOpen,
+  monthPickerRef,
+  monthSummary,
+  selectedProjects,
+  setSelectedProjects,
+  projectPickerOptions,
+  projectPickerOpen,
+  setProjectPickerOpen,
+  projectPickerRef,
+  projectSummary,
+  selectedResources,
+  setSelectedResources,
+  resourcePickerOptions,
+  resourcePickerOpen,
+  setResourcePickerOpen,
+  resourcePickerRef,
+  resourceSummary,
+  loadData,
+  dropdownStyle
+}) {
+  
+  // Always use all 12 months as options (hardcoded)
+  const monthPickerOptions = MONTH_NAMES;
+  
+  const toggleMonth = (n) => setSelectedMonths((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]);
+  const toggleProject = (n) => setSelectedProjects((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]);
+  const toggleResource = (n) => setSelectedResources((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]);
+
+  return (
+    <div
+      className="wt-filter-bar"
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 12,
+        alignItems: "center",
+        background: t.filterBarBg,
+        border: `1px solid ${t.filterBarBorder}`,
+        borderRadius: 12,
+        padding: "10px 14px",
+      }}
+    >
+      <FilterField label="Year" t={t}>
+        <select 
+          value={selectedYear} 
+          onChange={(e) => setSelectedYear(Number(e.target.value))} 
+          disabled={apiLoading} 
+          style={dropdownStyle}
+        >
+          {availableYears.map((y) => (<option key={y} value={y}>{y}</option>))}
+        </select>
+      </FilterField>
+
+      <FilterField label="Month" t={t}>
+        <MultiSelectPicker
+          t={t}
+          pickerRef={monthPickerRef}
+          open={monthPickerOpen}
+          setOpen={setMonthPickerOpen}
+          disabled={apiLoading}
+          summary={monthSummary}
+          allLabel="All months"
+          allSelected={selectedMonths.length === 0}
+          onSelectAll={() => setSelectedMonths([])}
+          options={MONTH_NAMES}
+          selected={selectedMonths}
+          onToggle={toggleMonth}
+          dropdownStyle={dropdownStyle}
+        />
+      </FilterField>
+
+      <FilterField label="Project" t={t}>
+        <MultiSelectPicker
+          t={t}
+          pickerRef={projectPickerRef}
+          open={projectPickerOpen}
+          setOpen={setProjectPickerOpen}
+          disabled={apiLoading || !projectPickerOptions.length}
+          summary={projectSummary}
+          allLabel="All projects"
+          allSelected={selectedProjects.length === 0}
+          onSelectAll={() => setSelectedProjects([])}
+          options={projectPickerOptions}
+          selected={selectedProjects}
+          onToggle={toggleProject}
+          dropdownStyle={dropdownStyle}
+        />
+      </FilterField>
+
+      <FilterField label="Resource" t={t}>
+        <MultiSelectPicker
+          t={t}
+          pickerRef={resourcePickerRef}
+          open={resourcePickerOpen}
+          setOpen={setResourcePickerOpen}
+          disabled={apiLoading || !resourcePickerOptions.length}
+          summary={resourceSummary}
+          allLabel="All resources"
+          allSelected={selectedResources.length === 0}
+          onSelectAll={() => setSelectedResources([])}
+          options={resourcePickerOptions}
+          selected={selectedResources}
+          onToggle={toggleResource}
+          dropdownStyle={dropdownStyle}
+        />
+      </FilterField>
+
+      <div style={{ flex: 1 }} />
+      
+      <button
+        onClick={() => loadData()}
+        disabled={apiLoading}
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "#fff",
+          background: t.btnPrimary,
+          border: "none",
+          borderRadius: 8,
+          padding: "7px 14px",
+          cursor: "pointer",
+        }}
+        className="wt-refresh-btn"
+      >
+        {apiLoading ? "Refreshing…" : "Refresh data"}
+      </button>
+    </div>
+  );
+}
+
+export default FilterBar;
