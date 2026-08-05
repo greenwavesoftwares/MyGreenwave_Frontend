@@ -9,6 +9,7 @@ import {
 import BottomSheet from "../../../shared/BottomSheet";
 import { useTheme } from "../../../useTheme";
 import { getStatusColor } from "../../helpers/statusColors";
+import { getModuleColor } from "../../../helpers/modules";
 
 /**
  * Bottom sheet showing the task tree (task view) or resource list (resource view).
@@ -22,6 +23,7 @@ export default function MobileTaskListSheet({
   allRows,
   resourceViewData,
   projectColorMap,
+  moduleColorMap,
   expandedProjects,
   setExpandedProjects,
   rowPositions,
@@ -182,21 +184,28 @@ export default function MobileTaskListSheet({
                                 flexWrap: "wrap",
                               }}
                             >
-                              {row.module && (
-                                <span
-                                  style={{
-                                    padding: "1px 6px",
-                                    background: t.violetBg,
-                                    color: t.violet,
-                                    border: `1px solid ${t.violetBorder}`,
-                                    borderRadius: 3,
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {row.module}
-                                </span>
-                              )}
+                              {row.module &&
+                                (() => {
+                                  const mc = getModuleColor(
+                                    row.module,
+                                    moduleColorMap,
+                                  );
+                                  return (
+                                    <span
+                                      style={{
+                                        padding: "1px 6px",
+                                        background: mc.bg,
+                                        color: mc.color,
+                                        border: `1px solid ${mc.border}`,
+                                        borderRadius: 3,
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {row.module}
+                                    </span>
+                                  );
+                                })()}
                               {row.resource && (
                                 <span>{row.resourceName || row.resource}</span>
                               )}

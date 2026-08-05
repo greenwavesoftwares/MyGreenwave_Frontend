@@ -134,6 +134,7 @@ export default function GanttView({
   const {
     filteredProjects,
     projectColorMap,
+    moduleColorMap,
     filterOptions,
     resourceViewData,
     allRows,
@@ -426,6 +427,7 @@ export default function GanttView({
             allRows={allRows}
             resourceViewData={resourceViewData}
             projectColorMap={projectColorMap}
+            moduleColorMap={moduleColorMap}
             expandedProjects={expandedProjects}
             setExpandedProjects={setExpandedProjects}
             expandedRows={expandedRows}
@@ -496,6 +498,7 @@ export default function GanttView({
           allRows={allRows}
           resourceViewData={resourceViewData}
           projectColorMap={projectColorMap}
+          moduleColorMap={moduleColorMap}
           expandedProjects={expandedProjects}
           setExpandedProjects={setExpandedProjects}
           rowPositions={rowPositions}

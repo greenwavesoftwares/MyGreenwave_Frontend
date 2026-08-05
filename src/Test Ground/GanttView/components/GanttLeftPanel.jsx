@@ -21,6 +21,7 @@ import {
 import { getStatusColor } from "../helpers/statusColors";
 import { computeProjectFilterOptions } from "../helpers/filterOptions";
 import ProjectColumnFilterButton from "./ProjectColumnFilterButton";
+import { getModuleColor } from "../../helpers/modules";
 
 /**
  * Desktop left panel with task list (task view) or resource list (resource view).
@@ -32,6 +33,7 @@ export default function GanttLeftPanel({
   allRows,
   resourceViewData,
   projectColorMap,
+  moduleColorMap,
   expandedProjects,
   setExpandedProjects,
   expandedRows,
@@ -477,24 +479,32 @@ export default function GanttLeftPanel({
                               }}
                             >
                               {row.module ? (
-                                <span
-                                  style={{
-                                    padding: "2px 7px",
-                                    borderRadius: 4,
-                                    background: t.violetBg,
-                                    color: t.violet,
-                                    border: `1px solid ${t.violetBorder}`,
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    maxWidth: "100%",
-                                  }}
-                                  title={row.module}
-                                >
-                                  {row.module}
-                                </span>
+                                (() => {
+                                  const mc = getModuleColor(
+                                    row.module,
+                                    moduleColorMap,
+                                  );
+                                  return (
+                                    <span
+                                      style={{
+                                        padding: "2px 7px",
+                                        borderRadius: 4,
+                                        background: mc.bg,
+                                        color: mc.color,
+                                        border: `1px solid ${mc.border}`,
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        maxWidth: "100%",
+                                      }}
+                                      title={row.module}
+                                    >
+                                      {row.module}
+                                    </span>
+                                  );
+                                })()
                               ) : (
                                 <span
                                   style={{

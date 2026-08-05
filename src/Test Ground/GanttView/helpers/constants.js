@@ -23,29 +23,34 @@ export const COL_STATUS_WIDTH = 100;
 
 /* ─── Zoom Configurations ─── */
 export const ZOOM_CONFIGS = {
-  hour: {
-    label: "Hours",
-    unitMs: HOUR_MS,
-    defaultColWidth: 60,
-    tickFormat: (d) => `${String(d.getHours()).padStart(2, "0")}:00`,
-    majorFormat: (d) =>
-      d.toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-      }),
-    majorUnitMs: DAY_MS,
-  },
-  day: {
-    label: "Days",
-    unitMs: DAY_MS,
-    defaultColWidth: 80,
-    tickFormat: (d) =>
-      d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
-    majorFormat: (d) =>
-      d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
-    majorUnitMs: 30 * DAY_MS,
-  },
+hour: {
+  label: "Hours",
+  unitMs: HOUR_MS,
+  defaultColWidth: 60,
+  tickFormat: (d) => `${String(d.getHours()).padStart(2, "0")}:00`,
+  majorFormat: (d) =>
+    d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",   // ← NEW
+    }),
+  majorUnitMs: DAY_MS,
+},
+ day: {
+  label: "Days",
+  unitMs: DAY_MS,
+  defaultColWidth: 100,  // ← wider to fit "Wed 22 Oct" comfortably
+  tickFormat: (d) =>
+    d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+    }),
+  majorFormat: (d) =>
+    d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+  majorUnitMs: 30 * DAY_MS,
+},
   week: {
     label: "Weeks",
     unitMs: WEEK_MS,

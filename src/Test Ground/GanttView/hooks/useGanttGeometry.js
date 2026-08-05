@@ -59,10 +59,10 @@ export function useGanttGeometry({ filteredProjects, zoom, colWidthPx }) {
     [projectStart, projectEnd, zoom],
   );
 
-  const majorTicks = useMemo(
-    () => generateMajorTicks(projectStart, projectEnd),
-    [projectStart, projectEnd],
-  );
+const majorTicks = useMemo(
+  () => generateMajorTicks(projectStart, projectEnd, zoom),
+  [projectStart, projectEnd, zoom],
+);
 
   // ── Today marker position ──
   const todayLeft = useMemo(() => {

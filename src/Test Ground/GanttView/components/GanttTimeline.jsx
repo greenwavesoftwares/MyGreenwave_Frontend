@@ -124,14 +124,17 @@ export default function GanttTimeline({
                     display: "flex",
                     alignItems: "center",
                     paddingLeft: 4,
+                    paddingRight: 4,
                     fontSize: 9.5,
                     fontWeight: isWeekend ? 700 : 400,
                     color: isWeekend ? t.danger : t.textMuted,
                     whiteSpace: "nowrap",
                     borderLeft: `1px solid ${t.border}`,
                     overflow: "hidden",
+                    textOverflow: "ellipsis", // ← NEW: graceful cut with "..."
                     boxSizing: "border-box",
                   }}
+                  title={ZOOM_CONFIGS[zoom].tickFormat(tick)} // ← NEW: hover shows full text
                 >
                   {ZOOM_CONFIGS[zoom].tickFormat(tick)}
                 </div>

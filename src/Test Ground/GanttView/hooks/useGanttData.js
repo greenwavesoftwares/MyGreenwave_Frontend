@@ -11,6 +11,8 @@
 
 import { useMemo, useCallback } from "react";
 import { PROJECT_COLORS } from "../helpers/constants";
+import { MODULE_COLORS } from "../../helpers/constants";  // ← from ProjectEditor's helpers
+import { getModuleColor } from "../../helpers/modules"; 
 import { assignLanes } from "../helpers/lanes";
 import { computeGlobalFilterOptions } from "../helpers/filterOptions";
 
@@ -83,7 +85,22 @@ export function useGanttData({
     });
     return map;
   }, [filteredProjects]);
-
+// ── Module color mapping (global scope — same module = same color across projects) ──
+const moduleColorMap = useMemo(() => {
+  const uniqueModules = new Set();
+  filteredProjects.forEach((p) => {
+    (p.rows || []).forEach((r) => {
+      if (r.module) uniqueModules.add(r.module);
+    });
+  });
+  const map = {};
+  Array.from(uniqueModules)
+    .sort()
+    .forEach((mod, idx) => {
+      map[mod] = MODULE_COLORS[idx % MODULE_COLORS.length];
+    });
+  return map;
+}, [filteredProjects]);
   // ── Global filter options ──
   const filterOptions = useMemo(
     () =>
@@ -211,6 +228,7 @@ export function useGanttData({
   return {
     filteredProjects,
     projectColorMap,
+     moduleColorMap,
     filterOptions,
     resourceViewData,
     allRows,

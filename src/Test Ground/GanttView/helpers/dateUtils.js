@@ -56,18 +56,39 @@ export function generateTicks(startMs, endMs, unitMs) {
   }
   return ticks;
 }
-
 /**
- * Generate major ticks (month boundaries).
+ * Generate major ticks.
+ * - "hour" zoom → day boundaries (midnight of each day)
+ * - "day" / "week" zoom → month boundaries (1st of each month)
  * Only includes ticks that fall within the chart range.
  */
-export function generateMajorTicks(startMs, endMs) {
+export function generateMajorTicks(startMs, endMs, zoomMode = "day") {
   const ticks = [];
   const start = new Date(startMs);
-  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-  while (cur.getTime() <= endMs) {
-    ticks.push(new Date(cur));
-    cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+
+  if (zoomMode === "hour") {
+    // Day boundaries
+    let cur = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      start.getDate(),
+    );
+    while (cur.getTime() <= endMs) {
+      ticks.push(new Date(cur));
+      cur = new Date(
+        cur.getFullYear(),
+        cur.getMonth(),
+        cur.getDate() + 1,
+      );
+    }
+  } else {
+    // Month boundaries (day / week zoom)
+    let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (cur.getTime() <= endMs) {
+      ticks.push(new Date(cur));
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    }
   }
+
   return ticks;
 }

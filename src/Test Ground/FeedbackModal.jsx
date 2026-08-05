@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Star,
   X,
@@ -10,6 +10,8 @@ import {
   ClipboardList,
   Loader2,
   AlertTriangle,
+  ChevronDown, // ← NEW
+  ChevronRight,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
 import { useResponsive } from "./useResponsive";
@@ -286,7 +288,20 @@ export default function FeedbackModal({
   const benchmarkHrs = Number(row.durationHrs) || 0;
   const actualHrs = Number(row.actualDurationHrs) || 0;
   const rejectCount = row.actiVityRejectCount || 0;
-
+  // Extract & sort reject reasons (newest first)
+  const rejectsList = React.useMemo(() => {
+    if (!Array.isArray(row.rejects) || row.rejects.length === 0) return [];
+    return row.rejects
+      .map((item) => {
+        const [timestamp, reason] = Object.entries(item)[0] || [];
+        return { timestamp, reason };
+      })
+      .filter((r) => r.timestamp)
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+  }, [row.rejects]);
   const suggestTimeRating = () => {
     if (!benchmarkHrs || benchmarkHrs <= 0 || !actualHrs) return 5;
     const ratio = actualHrs / benchmarkHrs;
@@ -335,7 +350,7 @@ export default function FeedbackModal({
     readOnly ? row.feedbackComments || "" : "",
   );
   const [touched, setTouched] = useState(false);
-
+  const [rejectsExpanded, setRejectsExpanded] = useState(false);
   const isValid =
     timeRating > 0 &&
     fulfillmentRating > 0 &&
@@ -867,7 +882,137 @@ export default function FeedbackModal({
             </div>
           </div>
         </div>
+        {/* ═══ Reject Reasons (expandable) ═══ */}
+        {rejectsList.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              onClick={() => setRejectsExpanded((p) => !p)}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                background: t.dangerBgSubtle,
+                border: `1px solid ${t.dangerBorder}`,
+                borderRadius: 7,
+                color: t.danger,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 11.5,
+                fontWeight: 600,
+                transition: "background 0.15s",
+              }}
+            >
+              {rejectsExpanded ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+              <AlertTriangle size={13} />
+              <span style={{ flex: 1, textAlign: "left" }}>
+                View Reject Reasons
+              </span>
+              <span
+                style={{
+                  padding: "1px 8px",
+                  background: t.danger,
+                  color: t.textInverse,
+                  borderRadius: 999,
+                  fontSize: 10,
+                  fontWeight: 700,
+                }}
+              >
+                {rejectsList.length}
+              </span>
+            </button>
 
+            {rejectsExpanded && (
+              <div
+                style={{
+                  marginTop: 8,
+                  border: `1px solid ${t.dangerBorder}`,
+                  borderRadius: 7,
+                  overflow: "hidden",
+                  background: t.bgCard,
+                }}
+              >
+                {rejectsList.map((rej, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: "10px 12px",
+                      borderBottom:
+                        idx < rejectsList.length - 1
+                          ? `1px solid ${t.borderSubtle}`
+                          : "none",
+                      background: idx % 2 === 0 ? t.bgCard : t.bgSubtle,
+                    }}
+                  >
+                    {/* Timestamp row */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginBottom: 6,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 5,
+                          background: t.dangerBg,
+                          color: t.danger,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        #{rejectsList.length - idx}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          color: t.textMuted,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {fmtActual(rej.timestamp)}
+                      </span>
+                    </div>
+
+                    {/* Reason text */}
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: t.textPrimary,
+                        lineHeight: 1.5,
+                        paddingLeft: 28,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {rej.reason || (
+                        <span
+                          style={{ color: t.textFaint, fontStyle: "italic" }}
+                        >
+                          (no reason provided)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {!readOnly && (
           <div
             style={{
