@@ -857,6 +857,7 @@ export default function ActivityTrackerCharts() {
           site: r.site,
           id: r.id,
           rows: [],
+          status:'Published'
         });
       m.get(r.project).rows.push(r);
     });
