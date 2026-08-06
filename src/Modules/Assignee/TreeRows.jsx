@@ -13,8 +13,12 @@ import {
   Tooltip,
   TextField,
   TextareaAutosize,
+  Popover,
+  List,
+  ListItem,
 } from "@mui/material";
 import ModeCommentOutlinedIcon from "@mui/icons-material/ModeCommentOutlined";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import UndoIcon from "@mui/icons-material/Undo";
@@ -59,6 +63,7 @@ export default function TreeRows({
   deleteNode,
   fetchColor,
   customColumns,
+  activityLookupMap,
 }) {
   const {
     id,
@@ -78,11 +83,20 @@ export default function TreeRows({
     sortOrder,
     latestRejectReason,
     customValues,
+    dependsOn,
   } = node;
-  
+
   const hasChildren = children?.length > 0;
   const isExpanded = expanded?.[id] ?? false;
-  const updatedStatus=updateStatus(node.activityStatus,node.plannedStart)
+  const updatedStatus = updateStatus(node.activityStatus, node.plannedStart);
+  const [dependencyAnchorEl, setDependencyAnchorEl] = useState(null);
+  const dependencyPopoverOpen = Boolean(dependencyAnchorEl);
+  const handleOpenDependencies = (event) => {
+    setDependencyAnchorEl(event.currentTarget);
+  };
+  const handleCloseDependencies = () => {
+    setDependencyAnchorEl(null);
+  };
   const toggleExpand = (nodeId) => {
     setExpanded((prev) => ({
       ...prev,
@@ -111,6 +125,24 @@ export default function TreeRows({
             onClick={() => {
               const minutesLeft = dayjs().diff(dayjs(plannedStart), "minute");
               console.log("Minutes left::", minutesLeft);
+              console.log("Activities Lookup map:", activityLookupMap);
+
+              if (node?.dependsOn?.length > 0) {
+                const areDependentsCompleted =
+                  node?.dependsOn?.every((depId) => {
+                    const status =
+                      activityLookupMap?.[depId]?.activityStatus?.toLowerCase();
+                    return status === "completed" || status === "finished";
+                  }) ?? true;
+                if (areDependentsCompleted !== true) {
+                  showToast(
+                    "error",
+                    "Error",
+                    "The dependent activities needs to be completed.",
+                  );
+                  return;
+                }
+              }
               if (minutesLeft >= 15) {
                 // 15 minutes or less remaining
 
@@ -135,7 +167,6 @@ export default function TreeRows({
           </button>
         </Tooltip>,
 
-        allChildrenCompleted(node) && (
           <Tooltip key="complete" title="Complete">
             <button
               className="icon-button icon-btn--stop"
@@ -162,7 +193,7 @@ export default function TreeRows({
               <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
             </button>
           </Tooltip>
-        ),
+        ,
       ].filter(Boolean),
 
       Rejected: [
@@ -234,6 +265,19 @@ export default function TreeRows({
 
     const actionItems = [];
 
+    if (dependsOn?.length > 0) {
+      actionItems.push(
+        <Tooltip key="dependencies" title="View Dependencies">
+          <button
+            className="icon-button icon-btn--dependencies"
+            onClick={handleOpenDependencies}
+          >
+            <AccountTreeOutlinedIcon sx={{ fontSize: 14 }} />
+          </button>
+        </Tooltip>,
+      );
+    }
+
     if (isAssignedUser) {
       actionItems.push(...(statusActions[activityStatus] || []));
 
@@ -278,7 +322,84 @@ export default function TreeRows({
       }
     }
 
-    return <div className="action-container">{actionItems}</div>;
+    return (
+      <>
+        <div className="action-container">{actionItems}</div>
+
+        <Popover
+          open={dependencyPopoverOpen}
+          anchorEl={dependencyAnchorEl}
+          onClose={handleCloseDependencies}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          // Mounts the portal inside .pai-page — same trick
+          // CommentsActionDialog/PauseReasonDialog use — so the shared
+          // --pj-* vars (and their dark-mode overrides) are in scope.
+          // Falls back to the default body portal if .pai-page isn't found.
+          container={() => document.querySelector(".pai-page") || document.body}
+          PaperProps={{ className: "dependency-popover" }}
+        >
+          <Box className="dependency-popover-inner">
+            <Typography className="dependency-popover-title">
+              Dependencies ({dependsOn?.length ?? 0})
+            </Typography>
+
+            {dependsOn?.length > 0 ? (
+              <List dense disablePadding className="dependency-list">
+                {dependsOn.map((depId) => {
+                  const dep = activityLookupMap?.[depId];
+                  const scheduledStart =
+                    dep?.plannedStart && dayjs(dep.plannedStart).isValid()
+                      ? dayjs(dep.plannedStart).format("DD-MM-YYYY HH:mm")
+                      : "-";
+                  const scheduledStop =
+                    dep?.plannedStop && dayjs(dep.plannedStop).isValid()
+                      ? dayjs(dep.plannedStop).format("DD-MM-YYYY HH:mm")
+                      : "-";
+
+                  return (
+                    <ListItem
+                      key={depId}
+                      disableGutters
+                      className="dependency-item"
+                    >
+                      <Box className="dependency-item-head">
+                        <Typography className="dependency-item-name">
+                          {dep?.name ?? "Unknown activity"}
+                        </Typography>
+                        {dep?.activityStatus && (
+                          <StatusChip
+                            status={dep.activityStatus.toLowerCase()}
+                          />
+                        )}
+                      </Box>
+
+                      <Typography className="dependency-item-meta">
+                        Resource: {dep?.resource ?? "—"}
+                      </Typography>
+
+                      <Typography className="dependency-item-meta">
+                        Scheduled: {scheduledStart} → {scheduledStop}
+                      </Typography>
+
+                      {!dep && (
+                        <Typography className="dependency-item-id">
+                          {depId}
+                        </Typography>
+                      )}
+                    </ListItem>
+                  );
+                })}
+              </List>
+            ) : (
+              <Typography className="dependency-empty">
+                No dependencies
+              </Typography>
+            )}
+          </Box>
+        </Popover>
+      </>
+    );
   };
 
   const allChildrenCompleted = (activity) => {
@@ -340,6 +461,7 @@ export default function TreeRows({
                 onOpenFeedbackForm={onOpenFeedbackForm}
                 fetchColor={fetchColor}
                 customColumns={customColumns}
+                activityLookupMap={activityLookupMap}
               />
             ))}
         </>
@@ -437,9 +559,8 @@ export default function TreeRows({
             <TableCell>
               <Tooltip
                 title={
-                  activityStatus?.toLowerCase() === "rejected"
-                    && (latestRejectReason ?? activityStatus)
-                    
+                  activityStatus?.toLowerCase() === "rejected" &&
+                  (latestRejectReason ?? activityStatus)
                 }
               >
                 <span>
@@ -476,11 +597,11 @@ export default function TreeRows({
                 : "-"}</TableCell>
 
             <TableCell>{pauseDuration || "-"}</TableCell> */}
-            {customColumns?.map((col) => 
+            {customColumns?.map((col) => (
               <TableCell key={col.id}>
                 {customValues?.[col.id] ?? "-"}
               </TableCell>
-            )}
+            ))}
             <TableCell align="center">
               <Box className="action-container">{renderActions()}</Box>
             </TableCell>
@@ -507,6 +628,7 @@ export default function TreeRows({
                 deleteNode={deleteNode}
                 fetchColor={fetchColor}
                 customColumns={customColumns}
+                activityLookupMap={activityLookupMap}
               />
             ))}
         </>

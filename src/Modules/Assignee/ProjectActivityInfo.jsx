@@ -457,6 +457,24 @@ export default function ProjectActivityInfo({
   /* ── search + column filters ──
      The matching/tree-walking logic lives in activityFilterUtils.js;
      here we just wire it up to this component's state. */
+  const activityLookupMap = useMemo(() => {
+    const map = {};
+    const walk = (nodes) => {
+      nodes?.forEach((n) => {
+        map[n.id] = {
+          name: n.name,
+          activityStatus: n.activityStatus,
+          resource: n.resource,
+          plannedStart: n.plannedStart,
+          plannedStop: n.plannedStop,
+        };
+        if (n.children?.length) walk(n.children);
+      });
+    };
+    walk(activityInfo?.modules);
+    return map;
+  }, [activityInfo]);
+
   const filteredModules = useMemo(() => {
     if (!activityInfo?.modules) return [];
     return filterTree(activityInfo.modules, search, columnFilters);
@@ -645,7 +663,13 @@ export default function ProjectActivityInfo({
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
-    
+    const firstActivity = activityDetails?.modules?.[1]?.children?.[2];
+if (firstActivity) {
+  firstActivity.dependsOn = [
+    "1f475c83-101e-4c4a-b9cb-7785cec832b2",
+    "e6b2fd02-8617-4ab8-97aa-6d1bb9dec0f2",
+  ];
+}
       activityDetails.customColumns=[...(activityDetails.customColumns ?? [])].sort((a, b) => a.order - b.order)
     console.log("Fetched activities:", activityDetails);
     if (!activityDetails) return;
@@ -930,6 +954,7 @@ export default function ProjectActivityInfo({
                   onOpenFeedbackForm={onOpenFeedbackForm}
                   fetchColor={fetchColor}
                   customColumns={activityInfo?.customColumns}
+                  activityLookupMap={activityLookupMap}
                 />
               ))}
             </TableBody>

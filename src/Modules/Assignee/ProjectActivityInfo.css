@@ -80,6 +80,16 @@
      sticky header. This token is hardcoded opaque so there's no
      dependency chain that can reintroduce transparency. */
   --pj-thead-solid-bg: #EEF1F6;
+
+  /* Dependencies popover — same reasoning as --pj-thead-solid-bg:
+     --pj-surface-2 / --tableOddRow can resolve to a translucent value
+     in the app's real theme, which is unacceptable for a floating
+     popover (page content would show through). These are hardcoded
+     opaque and given their own dark override below instead. */
+  --pj-dep-popover-bg:  #FFFFFF;
+  --pj-dep-row-odd-bg:  #FFFFFF;
+  --pj-dep-row-even-bg: #F3F6FB;
+  --pj-dep-heading:     var(--pj-primary, #1D4ED8);
 }
 
 /* ==========================================================
@@ -124,6 +134,11 @@
   --pj-notice-border: #35322b;
 
   --pj-thead-solid-bg: #1c2333;
+
+  --pj-dep-popover-bg:  #1B2333;
+  --pj-dep-row-odd-bg:  #1B2333;
+  --pj-dep-row-even-bg: #242E44;
+  --pj-dep-heading:     var(--pj-primary, #6d8dff);
 }
 
 
@@ -799,6 +814,122 @@
 
 .pai-page .icon-btn--stop:hover {
   background: var(--pj-danger-border-2) !important;
+}
+
+/* Dependencies */
+.pai-page .icon-btn--dependencies {
+  background: var(--pj-primary-bg) !important;
+  color: var(--pj-primary) !important;
+  border-color: var(--pj-primary-border) !important;
+}
+
+.pai-page .icon-btn--dependencies:hover {
+  background: var(--pj-primary-bg-2) !important;
+}
+
+/* ══════════════════════════════════════
+   DEPENDENCIES POPOVER
+   Rendered via the Popover's `container` prop inside `.pai-page`
+   (same trick CommentsActionDialog/PauseReasonDialog use for their
+   portaled Dialogs) so it stays in scope of the --pj-* tokens and
+   picks up dark mode automatically — no separate dark block needed
+   for colors, only for the shadow (flat --pj- shadows read too
+   heavy/light once inverted).
+   ══════════════════════════════════════ */
+.pai-page .dependency-popover {
+  background: var(--pj-dep-popover-bg) !important;
+  border: 1px solid var(--pj-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+  /* Belt-and-braces: guarantees an opaque backdrop even if a future
+     edit swaps --pj-dep-popover-bg for a token that turns out to be
+     translucent in some theme. */
+  background-clip: padding-box !important;
+  isolation: isolate;
+}
+
+.dark .pai-page .dependency-popover,
+[data-theme="dark"] .pai-page .dependency-popover,
+.pai-page.dark .dependency-popover,
+.pai-page[data-theme="dark"] .dependency-popover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+.pai-page .dependency-popover-inner {
+  padding: 0;
+  min-width: 280px;
+  max-width: 360px;
+  font-family: "Sora", sans-serif;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pai-page .dependency-popover-title {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  color: var(--pj-dep-heading) !important;
+  background: var(--pj-primary-bg) !important;
+  margin: 0 !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--pj-primary-border) !important;
+}
+
+.pai-page .dependency-list {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.pai-page .dependency-item {
+  display: block !important;
+  padding: 9px 14px !important;
+  background: var(--pj-dep-row-odd-bg) !important;
+  border-bottom: 1px solid var(--pj-border-subtle) !important;
+}
+
+.pai-page .dependency-item:nth-of-type(even) {
+  background: var(--pj-dep-row-even-bg) !important;
+}
+
+.pai-page .dependency-item:last-of-type {
+  border-bottom: none !important;
+}
+
+.pai-page .dependency-empty {
+  display: block;
+  padding: 12px 14px;
+  font-size: 12.5px !important;
+  color: var(--pj-text-muted) !important;
+}
+
+.pai-page .dependency-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.pai-page .dependency-item-name {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--pj-text-primary) !important;
+  word-break: break-word;
+}
+
+.pai-page .dependency-item-meta {
+  font-size: 11.5px !important;
+  color: var(--pj-text-muted) !important;
+  display: block !important;
+  line-height: 1.5 !important;
+}
+
+.pai-page .dependency-item-id {
+  font-size: 11px !important;
+  color: var(--pj-text-faint) !important;
+  word-break: break-all;
+  display: block !important;
+  margin-top: 2px;
 }
 
 /* Comment Count Badge */
