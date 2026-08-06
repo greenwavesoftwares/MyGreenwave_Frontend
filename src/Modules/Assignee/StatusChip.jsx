@@ -16,9 +16,9 @@ const STATUS_CONFIG = {
   pending: {
     label: "Pending",
     Icon: Clock,
-    bg: "#F8FAFC",
-    color: "#64748B",
-    border: "#E2E8F0",
+    bg: "#FDE68A",
+    color: "#c35a1d",
+    border: "#d79952",
   },
   "yet to start": {
   label: "Yet To Start",
