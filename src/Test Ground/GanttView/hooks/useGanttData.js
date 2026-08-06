@@ -15,6 +15,7 @@ import { MODULE_COLORS } from "../../helpers/constants";  // ← from ProjectEdi
 import { getModuleColor } from "../../helpers/modules"; 
 import { assignLanes } from "../helpers/lanes";
 import { computeGlobalFilterOptions } from "../helpers/filterOptions";
+import { getDisplayStatus } from "../../helpers/statusDisplay";
 
 export function useGanttData({
   projects,
@@ -52,11 +53,11 @@ export function useGanttData({
               !resourceFilter.includes(r.resource || "")
             )
               return false;
-            if (
-              statusFilter.length > 0 &&
-              !statusFilter.includes(r.status || "Pending")
-            )
-              return false;
+           if (
+  statusFilter.length > 0 &&
+  !statusFilter.includes(getDisplayStatus(r))
+)
+  return false;
             return true;
           });
           const finalIds = new Set(filteredRows.map((r) => r.id));
@@ -174,11 +175,11 @@ const moduleColorMap = useMemo(() => {
             !pFilter.resource.includes(r.resource || "")
           )
             return false;
-          if (
-            pFilter.status.length > 0 &&
-            !pFilter.status.includes(r.status || "Pending")
-          )
-            return false;
+         if (
+  pFilter.status.length > 0 &&
+  !pFilter.status.includes(getDisplayStatus(r))
+)
+  return false;
           return true;
         });
         const finalIds = new Set(filteredRows.map((r) => r.id));

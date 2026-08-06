@@ -10,6 +10,7 @@ import BottomSheet from "../../../shared/BottomSheet";
 import { useTheme } from "../../../useTheme";
 import { getStatusColor } from "../../helpers/statusColors";
 import { getModuleColor } from "../../../helpers/modules";
+import { getDisplayStatus } from "../../../helpers/statusDisplay";
 
 /**
  * Bottom sheet showing the task tree (task view) or resource list (resource view).
@@ -136,7 +137,8 @@ export default function MobileTaskListSheet({
                   {/* Task rows */}
                   {isExpanded &&
                     projectRows.map((row) => {
-                      const sc = getStatusColor(row.status, t);
+                      const displayStatus = getDisplayStatus(row);
+                      const sc = getStatusColor(displayStatus, t);
                       return (
                         <div
                           key={row.id}
@@ -224,7 +226,7 @@ export default function MobileTaskListSheet({
                               flexShrink: 0,
                             }}
                           >
-                            {row.status || "Pending"}
+                            {displayStatus}
                           </span>
                         </div>
                       );

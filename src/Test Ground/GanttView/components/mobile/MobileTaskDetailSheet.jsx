@@ -4,6 +4,7 @@ import BottomSheet from "../../../shared/BottomSheet";
 import { useTheme } from "../../../useTheme";
 import { fmtDisplay, fmtHrMin } from "../../helpers/dateUtils";
 import { getStatusColor, isDelayed } from "../../helpers/statusColors";
+import { getDisplayStatus } from "../../../helpers/statusDisplay";
 
 /**
  * Mobile task detail bottom sheet — opened when a user taps a bar.
@@ -19,7 +20,8 @@ export default function MobileTaskDetailSheet({
 
   if (!row) return null;
 
-  const sc = getStatusColor(row.status, t);
+  const displayStatus = getDisplayStatus(row);
+  const sc = getStatusColor(displayStatus, t);
   const delayed = isDelayed(row);
   const isFinished =
     String(row.status || "")
@@ -62,7 +64,7 @@ export default function MobileTaskDetailSheet({
               textTransform: "capitalize",
             }}
           >
-            {row.status || "Pending"}
+            {displayStatus}
           </span>
 
           {delayed && (

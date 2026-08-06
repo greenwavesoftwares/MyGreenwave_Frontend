@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Star,
   X,
@@ -12,10 +12,14 @@ import {
   AlertTriangle,
   ChevronDown, // ← NEW
   ChevronRight,
+  User,
+  CheckCircle2,
+  PauseCircle,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
 import { useResponsive } from "./useResponsive";
 import BottomSheet from "./shared/BottomSheet";
+import activityTrackerApi from "../../src/Services/activityTrackerApi";
 
 /* ─── Rating Bar (1–10) ─── */
 function RatingBar({ value, hover, onChange, onHover, onLeave, disabled }) {
@@ -288,20 +292,8 @@ export default function FeedbackModal({
   const benchmarkHrs = Number(row.durationHrs) || 0;
   const actualHrs = Number(row.actualDurationHrs) || 0;
   const rejectCount = row.actiVityRejectCount || 0;
-  // Extract & sort reject reasons (newest first)
-  const rejectsList = React.useMemo(() => {
-    if (!Array.isArray(row.rejects) || row.rejects.length === 0) return [];
-    return row.rejects
-      .map((item) => {
-        const [timestamp, reason] = Object.entries(item)[0] || [];
-        return { timestamp, reason };
-      })
-      .filter((r) => r.timestamp)
-      .sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-  }, [row.rejects]);
+  const pauseCount = row.activityPauseCount || 0;
+
   const suggestTimeRating = () => {
     if (!benchmarkHrs || benchmarkHrs <= 0 || !actualHrs) return 5;
     const ratio = actualHrs / benchmarkHrs;
@@ -351,6 +343,76 @@ export default function FeedbackModal({
   );
   const [touched, setTouched] = useState(false);
   const [rejectsExpanded, setRejectsExpanded] = useState(false);
+
+  // ── Reject reasons — fetched from API ──
+  const [rejectsList, setRejectsList] = useState([]);
+  const [rejectsLoading, setRejectsLoading] = useState(false);
+  const [rejectsError, setRejectsError] = useState(null);
+  // ── Pause history — fetched from API ──
+  const [pausesList, setPausesList] = useState([]);
+  const [pausesLoading, setPausesLoading] = useState(false);
+  const [pausesError, setPausesError] = useState(null);
+  const [pausesExpanded, setPausesExpanded] = useState(false);
+  // ── Fetch reject reasons from API ──
+  const fetchRejects = useCallback(async () => {
+    if (!row?.id) return;
+    if (!rejectCount || rejectCount === 0) return; // Skip if no rejects
+    setRejectsLoading(true);
+    setRejectsError(null);
+    try {
+      const data = await activityTrackerApi.getActivityRejections(row.id);
+      const list = Array.isArray(data) ? data : [];
+      // Sort newest first
+      const sorted = list.sort(
+        (a, b) =>
+          new Date(b.rejectAt).getTime() - new Date(a.rejectAt).getTime(),
+      );
+      setRejectsList(sorted);
+    } catch (err) {
+      setRejectsError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load reject reasons",
+      );
+      setRejectsList([]);
+    } finally {
+      setRejectsLoading(false);
+    }
+  }, [row?.id, rejectCount]);
+  // ── Fetch pause history from API ──
+  const fetchPauses = useCallback(async () => {
+    if (!row?.id) return;
+    if (!pauseCount || pauseCount === 0) return; // Skip if no pauses
+    setPausesLoading(true);
+    setPausesError(null);
+    try {
+      const data = await activityTrackerApi.getActivityPauses(row.id);
+      const list = Array.isArray(data) ? data : [];
+      // Sort newest first (by pauseStart)
+      const sorted = list.sort(
+        (a, b) =>
+          new Date(b.pauseStart).getTime() - new Date(a.pauseStart).getTime(),
+      );
+      setPausesList(sorted);
+    } catch (err) {
+      setPausesError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load pause history",
+      );
+      setPausesList([]);
+    } finally {
+      setPausesLoading(false);
+    }
+  }, [row?.id, pauseCount]);
+
+  useEffect(() => {
+    fetchPauses();
+  }, [fetchPauses]);
+  useEffect(() => {
+    fetchRejects();
+  }, [fetchRejects]);
+
   const isValid =
     timeRating > 0 &&
     fulfillmentRating > 0 &&
@@ -701,6 +763,291 @@ export default function FeedbackModal({
             )}
           </div>
         )}
+        {/* ═══ Pause History (expandable, fetched from API) ═══ */}
+        {pauseCount > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              onClick={() => setPausesExpanded((p) => !p)}
+              disabled={pausesLoading && pausesList.length === 0}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                background: t.warningBgSubtle,
+                border: `1px solid ${t.warningBorder}`,
+                borderRadius: 7,
+                color: t.warning,
+                cursor:
+                  pausesLoading && pausesList.length === 0 ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontFamily: "Sora, sans-serif",
+                fontSize: 11.5,
+                fontWeight: 600,
+                transition: "background 0.15s",
+                opacity: pausesLoading && pausesList.length === 0 ? 0.7 : 1,
+              }}
+            >
+              {pausesExpanded ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+              <PauseCircle size={13} />
+              <span style={{ flex: 1, textAlign: "left" }}>
+                View Pause History
+              </span>
+
+              {pausesLoading ? (
+                <Loader2
+                  size={13}
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+              ) : (
+                <span
+                  style={{
+                    padding: "1px 8px",
+                    background: t.warning,
+                    color: t.textInverse,
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {pausesList.length || pauseCount}
+                </span>
+              )}
+            </button>
+
+            {pausesExpanded && (
+              <div
+                style={{
+                  marginTop: 8,
+                  border: `1px solid ${t.warningBorder}`,
+                  borderRadius: 7,
+                  overflow: "hidden",
+                  background: t.bgCard,
+                }}
+              >
+                {/* Loading state */}
+                {pausesLoading && (
+                  <div
+                    style={{
+                      padding: 24,
+                      textAlign: "center",
+                      color: t.textMuted,
+                      fontSize: 12,
+                    }}
+                  >
+                    <Loader2
+                      size={20}
+                      style={{
+                        animation: "spin 1s linear infinite",
+                        color: t.warning,
+                        marginBottom: 8,
+                      }}
+                    />
+                    <div>Loading pause history...</div>
+                  </div>
+                )}
+
+                {/* Error state */}
+                {!pausesLoading && pausesError && (
+                  <div
+                    style={{
+                      padding: 16,
+                      background: t.warningBgSubtle,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                    }}
+                  >
+                    <AlertTriangle
+                      size={16}
+                      color={t.warning}
+                      style={{ flexShrink: 0, marginTop: 2 }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 12,
+                          color: t.warning,
+                          marginBottom: 3,
+                        }}
+                      >
+                        Failed to load pause history
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: t.textSecondary,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {pausesError}
+                      </div>
+                      <button
+                        onClick={fetchPauses}
+                        style={{
+                          height: 26,
+                          padding: "0 10px",
+                          borderRadius: 5,
+                          border: `1px solid ${t.warning}`,
+                          background: t.warning,
+                          color: t.textInverse,
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "Sora, sans-serif",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <RefreshCw size={11} /> Retry
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {!pausesLoading && !pausesError && pausesList.length === 0 && (
+                  <div
+                    style={{
+                      padding: 20,
+                      textAlign: "center",
+                      color: t.textFaint,
+                      fontSize: 11.5,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No pause details available.
+                  </div>
+                )}
+
+                {/* Pauses list */}
+                {!pausesLoading &&
+                  !pausesError &&
+                  pausesList.map((p, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: "10px 12px",
+                        borderBottom:
+                          idx < pausesList.length - 1
+                            ? `1px solid ${t.borderSubtle}`
+                            : "none",
+                        background: idx % 2 === 0 ? t.bgCard : t.bgSubtle,
+                      }}
+                    >
+                      {/* Header row: # + duration + times */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginBottom: 6,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 5,
+                            background: t.warningBg,
+                            color: t.warning,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          #{pausesList.length - idx}
+                        </div>
+
+                        {/* Duration chip */}
+                        {p.pauseDurationHrs != null && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              padding: "2px 7px",
+                              background: t.warningBg,
+                              color: t.warning,
+                              border: `1px solid ${t.warningBorder}`,
+                              borderRadius: 4,
+                              fontSize: 10,
+                              fontWeight: 700,
+                            }}
+                          >
+                            <Clock size={9} />
+                            {fmtHrMin(p.pauseDurationHrs)}
+                          </span>
+                        )}
+
+                        <span
+                          style={{
+                            marginLeft: "auto",
+                            fontSize: 10.5,
+                            color: t.textMuted,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {fmtActual(p.pauseStart)}
+                        </span>
+                      </div>
+
+                      {/* Reason text */}
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: t.textPrimary,
+                          lineHeight: 1.5,
+                          paddingLeft: 28,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          marginBottom: p.resumeAt ? 6 : 0,
+                        }}
+                      >
+                        {p.reason || (
+                          <span
+                            style={{ color: t.textFaint, fontStyle: "italic" }}
+                          >
+                            (no reason provided)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Resume time (subtle) */}
+                      {p.resumeAt && (
+                        <div
+                          style={{
+                            paddingLeft: 28,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 10,
+                            color: t.textFaint,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          <CheckCircle2 size={10} />
+                          <span>Resumed at: {fmtActual(p.resumeAt)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
         {!readOnly && (
           <div
             style={{
@@ -882,11 +1229,12 @@ export default function FeedbackModal({
             </div>
           </div>
         </div>
-        {/* ═══ Reject Reasons (expandable) ═══ */}
-        {rejectsList.length > 0 && (
+        {/* ═══ Reject Reasons (expandable, fetched from API) ═══ */}
+        {rejectCount > 0 && (
           <div style={{ marginBottom: 12 }}>
             <button
               onClick={() => setRejectsExpanded((p) => !p)}
+              disabled={rejectsLoading && rejectsList.length === 0}
               style={{
                 width: "100%",
                 padding: "8px 12px",
@@ -894,7 +1242,10 @@ export default function FeedbackModal({
                 border: `1px solid ${t.dangerBorder}`,
                 borderRadius: 7,
                 color: t.danger,
-                cursor: "pointer",
+                cursor:
+                  rejectsLoading && rejectsList.length === 0
+                    ? "wait"
+                    : "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -902,6 +1253,7 @@ export default function FeedbackModal({
                 fontSize: 11.5,
                 fontWeight: 600,
                 transition: "background 0.15s",
+                opacity: rejectsLoading && rejectsList.length === 0 ? 0.7 : 1,
               }}
             >
               {rejectsExpanded ? (
@@ -913,18 +1265,26 @@ export default function FeedbackModal({
               <span style={{ flex: 1, textAlign: "left" }}>
                 View Reject Reasons
               </span>
-              <span
-                style={{
-                  padding: "1px 8px",
-                  background: t.danger,
-                  color: t.textInverse,
-                  borderRadius: 999,
-                  fontSize: 10,
-                  fontWeight: 700,
-                }}
-              >
-                {rejectsList.length}
-              </span>
+
+              {rejectsLoading ? (
+                <Loader2
+                  size={13}
+                  style={{ animation: "spin 1s linear infinite" }}
+                />
+              ) : (
+                <span
+                  style={{
+                    padding: "1px 8px",
+                    background: t.danger,
+                    color: t.textInverse,
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {rejectsList.length || rejectCount}
+                </span>
+              )}
             </button>
 
             {rejectsExpanded && (
@@ -937,78 +1297,229 @@ export default function FeedbackModal({
                   background: t.bgCard,
                 }}
               >
-                {rejectsList.map((rej, idx) => (
+                {/* Loading state */}
+                {rejectsLoading && (
                   <div
-                    key={idx}
                     style={{
-                      padding: "10px 12px",
-                      borderBottom:
-                        idx < rejectsList.length - 1
-                          ? `1px solid ${t.borderSubtle}`
-                          : "none",
-                      background: idx % 2 === 0 ? t.bgCard : t.bgSubtle,
+                      padding: 24,
+                      textAlign: "center",
+                      color: t.textMuted,
+                      fontSize: 12,
                     }}
                   >
-                    {/* Timestamp row */}
-                    <div
+                    <Loader2
+                      size={20}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        marginBottom: 6,
+                        animation: "spin 1s linear infinite",
+                        color: t.danger,
+                        marginBottom: 8,
                       }}
-                    >
+                    />
+                    <div>Loading reject reasons...</div>
+                  </div>
+                )}
+
+                {/* Error state */}
+                {!rejectsLoading && rejectsError && (
+                  <div
+                    style={{
+                      padding: 16,
+                      background: t.dangerBgSubtle,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                    }}
+                  >
+                    <AlertTriangle
+                      size={16}
+                      color={t.danger}
+                      style={{ flexShrink: 0, marginTop: 2 }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
-                          width: 22,
-                          height: 22,
-                          borderRadius: 5,
-                          background: t.dangerBg,
-                          color: t.danger,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          fontSize: 10,
                           fontWeight: 700,
-                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 12,
+                          color: t.danger,
+                          marginBottom: 3,
                         }}
                       >
-                        #{rejectsList.length - idx}
+                        Failed to load reject reasons
                       </div>
-                      <span
+                      <div
                         style={{
-                          fontSize: 10.5,
-                          color: t.textMuted,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontWeight: 600,
+                          fontSize: 11,
+                          color: t.dangerTextDeep,
+                          marginBottom: 8,
                         }}
                       >
-                        {fmtActual(rej.timestamp)}
-                      </span>
-                    </div>
-
-                    {/* Reason text */}
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: t.textPrimary,
-                        lineHeight: 1.5,
-                        paddingLeft: 28,
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {rej.reason || (
-                        <span
-                          style={{ color: t.textFaint, fontStyle: "italic" }}
-                        >
-                          (no reason provided)
-                        </span>
-                      )}
+                        {rejectsError}
+                      </div>
+                      <button
+                        onClick={fetchRejects}
+                        style={{
+                          height: 26,
+                          padding: "0 10px",
+                          borderRadius: 5,
+                          border: `1px solid ${t.danger}`,
+                          background: t.danger,
+                          color: t.textInverse,
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "Sora, sans-serif",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <RefreshCw size={11} /> Retry
+                      </button>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Empty state (API returned nothing) */}
+                {!rejectsLoading &&
+                  !rejectsError &&
+                  rejectsList.length === 0 && (
+                    <div
+                      style={{
+                        padding: 20,
+                        textAlign: "center",
+                        color: t.textFaint,
+                        fontSize: 11.5,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      No reject details available.
+                    </div>
+                  )}
+
+                {/* Rejects list */}
+                {!rejectsLoading &&
+                  !rejectsError &&
+                  rejectsList.map((rej, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: "10px 12px",
+                        borderBottom:
+                          idx < rejectsList.length - 1
+                            ? `1px solid ${t.borderSubtle}`
+                            : "none",
+                        background: idx % 2 === 0 ? t.bgCard : t.bgSubtle,
+                      }}
+                    >
+                      {/* Header row: # + rejectBy + rejectAt */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginBottom: 6,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 5,
+                            background: t.dangerBg,
+                            color: t.danger,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          #{rejectsList.length - idx}
+                        </div>
+
+                        {rej.rejectBy && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              padding: "2px 7px",
+                              background: t.violetBg,
+                              color: t.violet,
+                              border: `1px solid ${t.violetBorder}`,
+                              borderRadius: 4,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              maxWidth: 200,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={rej.rejectBy}
+                          >
+                            <User size={9} />
+                            {rej.rejectBy}
+                          </span>
+                        )}
+
+                        <span
+                          style={{
+                            marginLeft: "auto",
+                            fontSize: 10.5,
+                            color: t.textMuted,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {fmtActual(rej.rejectAt)}
+                        </span>
+                      </div>
+
+                      {/* Reason text */}
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: t.textPrimary,
+                          lineHeight: 1.5,
+                          paddingLeft: 28,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          marginBottom: rej.actualCompletionTime ? 6 : 0,
+                        }}
+                      >
+                        {rej.reason || (
+                          <span
+                            style={{ color: t.textFaint, fontStyle: "italic" }}
+                          >
+                            (no reason provided)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actual completion time (subtle) */}
+                      {rej.actualCompletionTime && (
+                        <div
+                          style={{
+                            paddingLeft: 28,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 10,
+                            color: t.textFaint,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          <CheckCircle2 size={10} />
+                          <span>
+                            Completed at: {fmtActual(rej.actualCompletionTime)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             )}
           </div>

@@ -15,6 +15,12 @@ export function makeStatusColors(t) {
       border: t.borderStrong,
       bar: t.textFaint,
     },
+    "yet to start": {
+      bg: "#FED7AA",
+      color: "#C2410C",
+      border: "#FDBA74",
+      bar: "#F97316",
+    },
     "not ready": {
       bg: t.warningBg,
       color: t.warning,

@@ -36,6 +36,7 @@ import GanttTooltip from "./components/GanttTooltip";
 import MobileTaskListSheet from "./components/mobile/MobileTaskListSheet";
 import MobileToolsSheet from "./components/mobile/MobileToolsSheet";
 import MobileTaskDetailSheet from "./components/mobile/MobileTaskDetailSheet";
+import { getDisplayStatus } from "../helpers/statusDisplay";
 
 /* ═══════════════════════════════════════════════════════
    GanttView — main orchestrator
@@ -173,7 +174,7 @@ export default function GanttView({
           allProjectRows.filter((r) => r.resource).map((r) => r.resource),
         );
         const validStatuses = new Set(
-          allProjectRows.map((r) => r.status || "Pending"),
+          allProjectRows.map((r) => getDisplayStatus(r)),
         );
 
         const cleanedModule = currentFilter.module.filter((m) =>

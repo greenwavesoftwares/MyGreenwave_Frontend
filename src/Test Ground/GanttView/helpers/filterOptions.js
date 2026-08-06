@@ -2,6 +2,8 @@
    Filter Options Computation
    ═══════════════════════════════════════════════════════ */
 
+import { getDisplayStatus } from "../../helpers/statusDisplay";
+
 /**
  * Compute the top-level filter options (global toolbar).
  *
@@ -59,9 +61,9 @@ export function computeGlobalFilterOptions({
     );
   }
 
-  const statuses = [
-    ...new Set(scopedRows.map((r) => r.status || "Pending")),
-  ].sort();
+ const statuses = [
+  ...new Set(scopedRows.map((r) => getDisplayStatus(r))),
+].sort();
   const statusOpts = statuses.map((s) => ({ value: s, label: s }));
 
   return { projectOpts, moduleOpts, resourceOpts, statusOpts };
@@ -87,12 +89,12 @@ export function computeProjectFilterOptions(project, currentFilter) {
       !currentFilter.resource.includes(row.resource || "")
     )
       return false;
-    if (
-      excludeKey !== "status" &&
-      currentFilter.status.length > 0 &&
-      !currentFilter.status.includes(row.status || "Pending")
-    )
-      return false;
+   if (
+  excludeKey !== "status" &&
+  currentFilter.status.length > 0 &&
+  !currentFilter.status.includes(getDisplayStatus(row))
+)
+  return false;
     return true;
   };
 
@@ -117,10 +119,10 @@ export function computeProjectFilterOptions(project, currentFilter) {
     a.label.localeCompare(b.label),
   );
 
-  const rowsForStatuses = allRows.filter((r) => matchesFilters(r, "status"));
-  const statuses = [
-    ...new Set(rowsForStatuses.map((r) => r.status || "Pending")),
-  ].sort();
+const rowsForStatuses = allRows.filter((r) => matchesFilters(r, "status"));
+const statuses = [
+  ...new Set(rowsForStatuses.map((r) => getDisplayStatus(r))),
+].sort();
 
   return {
     moduleOpts: modules.map((m) => ({ value: m, label: m })),

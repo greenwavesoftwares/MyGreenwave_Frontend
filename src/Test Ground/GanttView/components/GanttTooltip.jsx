@@ -14,6 +14,7 @@ import {
   getDelayedColor,
   isDelayed,
 } from "../helpers/statusColors";
+import { getDisplayStatus } from "../../helpers/statusDisplay";
 
 /**
  * Themed tooltip popup for a task bar (desktop only).
@@ -30,7 +31,8 @@ export default function GanttTooltip({
   const { t } = useTheme();
   const ref = useRef(null);
   const delayed = isDelayed(row);
-  const sc = delayed ? getDelayedColor(t) : getStatusColor(row.status, t);
+  const displayStatus = getDisplayStatus(row);
+  const sc = delayed ? getDelayedColor(t) : getStatusColor(displayStatus, t);
   const hasActual = row.actualStart || row.actualStop;
   const isFinished =
     String(row.status || "")
@@ -118,7 +120,7 @@ export default function GanttTooltip({
               textTransform: "capitalize",
             }}
           >
-            {row.status || "Pending"}
+            {displayStatus}
           </span>
           {delayed && (
             <span

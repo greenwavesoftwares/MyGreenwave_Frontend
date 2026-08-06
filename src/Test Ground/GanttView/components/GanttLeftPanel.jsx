@@ -22,6 +22,7 @@ import { getStatusColor } from "../helpers/statusColors";
 import { computeProjectFilterOptions } from "../helpers/filterOptions";
 import ProjectColumnFilterButton from "./ProjectColumnFilterButton";
 import { getModuleColor } from "../../helpers/modules";
+import { getDisplayStatus } from "../../helpers/statusDisplay";
 
 /**
  * Desktop left panel with task list (task view) or resource list (resource view).
@@ -395,7 +396,8 @@ export default function GanttLeftPanel({
                     projectRows.map((row) => {
                       const isParent = hasChildren(row.id);
                       const isRowExpanded = expandedRows.has(row.id);
-                      const sc = getStatusColor(row.status, t);
+                      const displayStatus = getDisplayStatus(row);
+                      const sc = getStatusColor(displayStatus, t);
 
                       return (
                         <div
@@ -607,9 +609,9 @@ export default function GanttLeftPanel({
                                   textOverflow: "ellipsis",
                                   maxWidth: "100%",
                                 }}
-                                title={row.status || "Pending"}
+                                title={displayStatus}
                               >
-                                {row.status || "Pending"}
+                                {displayStatus}
                               </span>
                             </div>
                           )}
