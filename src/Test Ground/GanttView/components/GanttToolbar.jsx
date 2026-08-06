@@ -1,5 +1,5 @@
 import React from "react";
-import { ZoomIn, ZoomOut, Calendar, Users } from "lucide-react";
+import { ZoomIn, ZoomOut, Calendar, Users, Link2 } from "lucide-react";
 import { useTheme } from "../../useTheme";
 import {
   ZOOM_CONFIGS,
@@ -20,6 +20,8 @@ export default function GanttToolbar({
   setColWidthPx,
   visibleColumns,
   toggleColumn,
+  showDependencies, // ← NEW
+  setShowDependencies,
 }) {
   const { t } = useTheme();
 
@@ -135,6 +137,26 @@ export default function GanttToolbar({
         title="Zoom in"
       >
         <ZoomIn size={13} />
+      </button>
+
+      <div style={{ width: 1, height: 20, background: t.border }} />
+
+      {/* Dependencies toggle */}
+      <button
+        onClick={() => setShowDependencies((p) => !p)}
+        title={
+          showDependencies ? "Hide dependency arrows" : "Show dependency arrows"
+        }
+        style={{
+          ...btnStyle,
+          background: showDependencies ? t.primary : t.bgCard,
+          color: showDependencies ? t.textInverse : t.textSecondary,
+          borderColor: showDependencies ? t.primary : t.borderStrong,
+          fontWeight: showDependencies ? 700 : 500,
+        }}
+      >
+        <Link2 size={13} />
+        Dependencies {showDependencies ? "ON" : "OFF"}
       </button>
 
       <div style={{ width: 1, height: 20, background: t.border }} />

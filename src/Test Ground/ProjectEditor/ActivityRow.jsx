@@ -834,7 +834,7 @@ const ActivityRow = React.memo(function ActivityRow({
           )}
 
           {/* ─── NEW: 🔗 Dependencies (predecessors) ─── */}
-          {false && onOpenDependencies && (
+          {onOpenDependencies && (
             <button
               onClick={() => !isLocked && onOpenDependencies(row)}
               title={

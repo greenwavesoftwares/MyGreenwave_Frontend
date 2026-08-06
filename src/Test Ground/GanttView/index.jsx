@@ -403,6 +403,8 @@ export default function GanttView({
           setColWidthPx={setColWidthPx}
           visibleColumns={visibleColumns}
           toggleColumn={toggleColumn}
+          showDependencies={showDependencies}
+          setShowDependencies={setShowDependencies}
         />
       ) : (
         <GanttMobileToolbar
