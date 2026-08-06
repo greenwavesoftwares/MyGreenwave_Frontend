@@ -5,7 +5,6 @@ import {
   TableCell,
   Box,
   Chip,
-  IconButton,
   Typography,
   Table,
   TableHead,
@@ -13,12 +12,13 @@ import {
   Tooltip,
   TextField,
   TextareaAutosize,
-  Popover,
-  List,
-  ListItem,
 } from "@mui/material";
+import { Dialog } from "primereact/dialog";
 import ModeCommentOutlinedIcon from "@mui/icons-material/ModeCommentOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import UndoIcon from "@mui/icons-material/Undo";
@@ -89,14 +89,15 @@ export default function TreeRows({
   const hasChildren = children?.length > 0;
   const isExpanded = expanded?.[id] ?? false;
   const updatedStatus = updateStatus(node.activityStatus, node.plannedStart);
-  const [dependencyAnchorEl, setDependencyAnchorEl] = useState(null);
-  const dependencyPopoverOpen = Boolean(dependencyAnchorEl);
-  const handleOpenDependencies = (event) => {
-    setDependencyAnchorEl(event.currentTarget);
+  const [dependencyDialogVisible, setDependencyDialogVisible] = useState(false);
+  const handleOpenDependencies = () => {
+    setDependencyDialogVisible(true);
   };
   const handleCloseDependencies = () => {
-    setDependencyAnchorEl(null);
+    setDependencyDialogVisible(false);
   };
+  const formatDepTime = (value) =>
+    value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY HH:mm") : "—";
   const toggleExpand = (nodeId) => {
     setExpanded((prev) => ({
       ...prev,
@@ -138,7 +139,7 @@ export default function TreeRows({
                   showToast(
                     "error",
                     "Error",
-                    "The dependent activities needs to be completed.",
+                    "The dependent activities needs to be completed first. View the activities on which this activity is dependent on by clicking on the View Dependencies button",
                   );
                   return;
                 }
@@ -326,78 +327,141 @@ export default function TreeRows({
       <>
         <div className="action-container">{actionItems}</div>
 
-        <Popover
-          open={dependencyPopoverOpen}
-          anchorEl={dependencyAnchorEl}
-          onClose={handleCloseDependencies}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
+        <Dialog
+          className="dependency-dialog"
+          visible={dependencyDialogVisible}
+          onHide={handleCloseDependencies}
+          header={
+            <Box className="dependency-dialog-header">
+              <Box className="dependency-dialog-icon">
+                <AccountTreeOutlinedIcon sx={{ fontSize: 16 }} />
+              </Box>
+              <Box>
+                <Typography className="dependency-dialog-title">
+                  {name || "Activity"}
+                </Typography>
+                <Typography className="dependency-dialog-subtitle">
+                  Dependencies · {dependsOn?.length ?? 0}{" "}
+                  {dependsOn?.length === 1 ? "linked task" : "linked tasks"}
+                </Typography>
+              </Box>
+            </Box>
+          }
           // Mounts the portal inside .pai-page — same trick
-          // CommentsActionDialog/PauseReasonDialog use — so the shared
-          // --pj-* vars (and their dark-mode overrides) are in scope.
-          // Falls back to the default body portal if .pai-page isn't found.
-          container={() => document.querySelector(".pai-page") || document.body}
-          PaperProps={{ className: "dependency-popover" }}
+          // CommentsActionDialog/PauseReasonDialog/DocumentViewer's
+          // PrimeReact Dialog use — so the shared --pj-* vars (and
+          // their dark-mode overrides) are in scope. Falls back to the
+          // default body portal if .pai-page isn't found.
+          appendTo={() => document.querySelector(".pai-page") || document.body}
+          baseZIndex={1400}
+          // No anchor/position props — PrimeReact renders this in its
+          // own default centered-overlay position rather than pinned
+          // next to the trigger button.
+          modal
+          dismissableMask
+          draggable={false}
+          style={{ width: "420px" }}
+          breakpoints={{ "640px": "94vw" }}
         >
-          <Box className="dependency-popover-inner">
-            <Typography className="dependency-popover-title">
-              Dependencies ({dependsOn?.length ?? 0})
-            </Typography>
+          {dependsOn?.length > 0 ? (
+            <Box className="dependency-list">
+              {dependsOn.map((depId) => {
+                const dep = activityLookupMap?.[depId];
+                const hasActual = Boolean(
+                  dep?.actualStart || dep?.actualStop,
+                );
 
-            {dependsOn?.length > 0 ? (
-              <List dense disablePadding className="dependency-list">
-                {dependsOn.map((depId) => {
-                  const dep = activityLookupMap?.[depId];
-                  const scheduledStart =
-                    dep?.plannedStart && dayjs(dep.plannedStart).isValid()
-                      ? dayjs(dep.plannedStart).format("DD-MM-YYYY HH:mm")
-                      : "-";
-                  const scheduledStop =
-                    dep?.plannedStop && dayjs(dep.plannedStop).isValid()
-                      ? dayjs(dep.plannedStop).format("DD-MM-YYYY HH:mm")
-                      : "-";
-
-                  return (
-                    <ListItem
-                      key={depId}
-                      disableGutters
-                      className="dependency-item"
-                    >
-                      <Box className="dependency-item-head">
-                        <Typography className="dependency-item-name">
-                          {dep?.name ?? "Unknown activity"}
-                        </Typography>
-                        {dep?.activityStatus && (
-                          <StatusChip
-                            status={dep.activityStatus.toLowerCase()}
-                          />
-                        )}
-                      </Box>
-
-                      <Typography className="dependency-item-meta">
-                        Resource: {dep?.resource ?? "—"}
+                return (
+                  <Box key={depId} className="dependency-item">
+                    <Box className="dependency-item-head">
+                      <Typography className="dependency-item-name">
+                        {dep?.name ?? "Unknown activity"}
                       </Typography>
-
-                      <Typography className="dependency-item-meta">
-                        Scheduled: {scheduledStart} → {scheduledStop}
-                      </Typography>
-
-                      {!dep && (
-                        <Typography className="dependency-item-id">
-                          {depId}
-                        </Typography>
+                      {dep?.activityStatus && (
+                        <StatusChip
+                          status={dep.activityStatus.toLowerCase()}
+                        />
                       )}
-                    </ListItem>
-                  );
-                })}
-              </List>
-            ) : (
-              <Typography className="dependency-empty">
-                No dependencies
-              </Typography>
-            )}
-          </Box>
-        </Popover>
+                    </Box>
+
+                    {dep?.resource && (
+                      <Box className="dependency-item-resource">
+                        <PersonOutlineOutlinedIcon sx={{ fontSize: 13 }} />
+                        <Typography component="span">
+                          {dep.resource}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    <Box className="dependency-time-grid">
+                      <Box className="dependency-time-box dependency-time-box--scheduled">
+                        <Box className="dependency-time-box-label">
+                          <CalendarMonthOutlinedIcon sx={{ fontSize: 12 }} />
+                          SCHEDULED START
+                        </Box>
+                        <Typography className="dependency-time-box-value">
+                          {formatDepTime(dep?.plannedStart)}
+                        </Typography>
+                      </Box>
+                      <Box className="dependency-time-box dependency-time-box--scheduled">
+                        <Box className="dependency-time-box-label">
+                          <CalendarMonthOutlinedIcon sx={{ fontSize: 12 }} />
+                          SCHEDULED STOP
+                        </Box>
+                        <Typography className="dependency-time-box-value">
+                          {formatDepTime(dep?.plannedStop)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box className="dependency-time-grid">
+                      <Box
+                        className={`dependency-time-box ${
+                          hasActual
+                            ? "dependency-time-box--actual"
+                            : "dependency-time-box--pending"
+                        }`}
+                      >
+                        <Box className="dependency-time-box-label">
+                          <AccessTimeOutlinedIcon sx={{ fontSize: 12 }} />
+                          ACTUAL START
+                        </Box>
+                        <Typography className="dependency-time-box-value">
+                          {formatDepTime(dep?.actualStart)}
+                        </Typography>
+                      </Box>
+                      <Box
+                        className={`dependency-time-box ${
+                          hasActual
+                            ? "dependency-time-box--actual"
+                            : "dependency-time-box--pending"
+                        }`}
+                      >
+                        <Box className="dependency-time-box-label">
+                          <AccessTimeOutlinedIcon sx={{ fontSize: 12 }} />
+                          ACTUAL STOP
+                        </Box>
+                        <Typography className="dependency-time-box-value">
+                          {formatDepTime(dep?.actualStop)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {!dep && (
+                      <Typography className="dependency-item-id">
+                        {depId}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })}
+            </Box>
+          ) : (
+            <Typography className="dependency-empty">
+              No dependencies
+            </Typography>
+          )}
+        </Dialog>
       </>
     );
   };

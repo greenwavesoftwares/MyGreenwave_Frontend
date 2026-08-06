@@ -467,6 +467,8 @@ export default function ProjectActivityInfo({
           resource: n.resource,
           plannedStart: n.plannedStart,
           plannedStop: n.plannedStop,
+          actualStart: n.actualStart,
+          actualStop: n.actualStop,
         };
         if (n.children?.length) walk(n.children);
       });
