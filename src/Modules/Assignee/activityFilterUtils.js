@@ -64,6 +64,8 @@ export const updateStatus = (status, time) => {
       return "Running";
     case "paused":
       return "Paused"
+    case "rejected":
+      return "Rejected"
   }
 };
 /** Free-text search match, same fields as the original search box. */
