@@ -1,18 +1,14 @@
 import React from "react";
 import AccordionSection from "./AccordionSection";
-import GanttView from "../../Test Ground/GanttView";
+import GanttView from "../../Test Ground/GanttView/index";
 
 /**
  * Resource Gantt Section
  */
-function ResourceGanttSection({
-  t,
-  filteredProjectsData
-}) {
-  
+function ResourceGanttSection({ t, filteredProjectsData }) {
   return (
     <AccordionSection title="Resource Gantt" t={t} defaultOpen>
-      <GanttView projects={filteredProjectsData}/>
+      <GanttView projects={filteredProjectsData} />
     </AccordionSection>
   );
 }
