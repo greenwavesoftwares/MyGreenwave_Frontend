@@ -262,34 +262,11 @@ export default function GanttLeftPanel({
                         borderLeft: `4px solid ${pc}80`,
                       }}
                     >
-                      {/* Task */}
-                      <div
-                        style={{
-                          width: COL_TASK_WIDTH - 4,
-                          padding: "0 12px",
-                          display: "flex",
-                          alignItems: "center",
-                          borderRight: `1px solid ${t.border}`,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 9.5,
-                            fontWeight: 700,
-                            color: t.textFaint,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.4px",
-                          }}
-                        >
-                          Task
-                        </span>
-                      </div>
-
-                      {/* Module */}
+                      {/* 1. Module */}
                       {visibleColumns.module && (
                         <div
                           style={{
-                            width: COL_MODULE_WIDTH,
+                            width: COL_MODULE_WIDTH - 4,
                             padding: "0 10px",
                             display: "flex",
                             alignItems: "center",
@@ -320,7 +297,32 @@ export default function GanttLeftPanel({
                         </div>
                       )}
 
-                      {/* Resource */}
+                      {/* 2. Task */}
+                      <div
+                        style={{
+                          width: visibleColumns.module
+                            ? COL_TASK_WIDTH
+                            : COL_TASK_WIDTH - 4,
+                          padding: "0 12px",
+                          display: "flex",
+                          alignItems: "center",
+                          borderRight: `1px solid ${t.border}`,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 9.5,
+                            fontWeight: 700,
+                            color: t.textFaint,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.4px",
+                          }}
+                        >
+                          Task
+                        </span>
+                      </div>
+
+                      {/* 3. Resource */}
                       {visibleColumns.resource && (
                         <div
                           style={{
@@ -355,7 +357,7 @@ export default function GanttLeftPanel({
                         </div>
                       )}
 
-                      {/* Status */}
+                      {/* 4. Status */}
                       {visibleColumns.status && (
                         <div
                           style={{
@@ -408,7 +410,60 @@ export default function GanttLeftPanel({
                             borderBottom: `1px solid ${t.borderSubtle}`,
                           }}
                         >
-                          {/* Task cell */}
+                          {/* 1. Module cell */}
+                          {visibleColumns.module && (
+                            <div
+                              style={{
+                                width: COL_MODULE_WIDTH,
+                                padding: "0 10px",
+                                display: "flex",
+                                alignItems: "center",
+                                borderRight: `1px solid ${t.borderSubtle}`,
+                                overflow: "hidden",
+                              }}
+                            >
+                              {row.module ? (
+                                (() => {
+                                  const mc = getModuleColor(
+                                    row.module,
+                                    moduleColorMap,
+                                  );
+                                  return (
+                                    <span
+                                      style={{
+                                        padding: "2px 7px",
+                                        borderRadius: 4,
+                                        background: mc.bg,
+                                        color: mc.color,
+                                        border: `1px solid ${mc.border}`,
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                        maxWidth: "100%",
+                                      }}
+                                      title={row.module}
+                                    >
+                                      {row.module}
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span
+                                  style={{
+                                    color: t.textDisabled,
+                                    fontStyle: "italic",
+                                    fontSize: 10,
+                                  }}
+                                >
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 2. Task cell */}
                           <div
                             style={{
                               width: COL_TASK_WIDTH,
@@ -468,60 +523,7 @@ export default function GanttLeftPanel({
                             </div>
                           </div>
 
-                          {/* Module cell */}
-                          {visibleColumns.module && (
-                            <div
-                              style={{
-                                width: COL_MODULE_WIDTH,
-                                padding: "0 10px",
-                                display: "flex",
-                                alignItems: "center",
-                                borderRight: `1px solid ${t.borderSubtle}`,
-                                overflow: "hidden",
-                              }}
-                            >
-                              {row.module ? (
-                                (() => {
-                                  const mc = getModuleColor(
-                                    row.module,
-                                    moduleColorMap,
-                                  );
-                                  return (
-                                    <span
-                                      style={{
-                                        padding: "2px 7px",
-                                        borderRadius: 4,
-                                        background: mc.bg,
-                                        color: mc.color,
-                                        border: `1px solid ${mc.border}`,
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                        maxWidth: "100%",
-                                      }}
-                                      title={row.module}
-                                    >
-                                      {row.module}
-                                    </span>
-                                  );
-                                })()
-                              ) : (
-                                <span
-                                  style={{
-                                    color: t.textDisabled,
-                                    fontStyle: "italic",
-                                    fontSize: 10,
-                                  }}
-                                >
-                                  —
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Resource cell */}
+                          {/* 3. Resource cell */}
                           {visibleColumns.resource && (
                             <div
                               style={{
@@ -583,7 +585,7 @@ export default function GanttLeftPanel({
                             </div>
                           )}
 
-                          {/* Status cell */}
+                          {/* 4. Status cell */}
                           {visibleColumns.status && (
                             <div
                               style={{
