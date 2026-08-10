@@ -1324,6 +1324,29 @@ const activityTrackerApi = {
     );
     return response.data;
   },
+
+  // ============================================================
+  //                  USER ALLOCATION / ADMIN
+  // ============================================================
+
+  /**
+   * GET /activityTracker/getAllUnallocatedUsersByManager/{manager}
+   * Returns users managed by the specified manager who are not
+   * currently allocated to any published project.
+   *
+   * @param {string} manager - Manager/user identifier
+   * @returns {Array<string>} List of unallocated user IDs
+   */
+  getAllUnallocatedUsersByManager: async (manager) => {
+    const response = await axios.get(
+      `${apiEndPoint}/getAllUnallocatedUsersByManager/${manager}`,
+      {
+        headers: getHeaders(),
+      },
+    );
+
+    return response.data;
+  },
 };
 
 export default activityTrackerApi;
