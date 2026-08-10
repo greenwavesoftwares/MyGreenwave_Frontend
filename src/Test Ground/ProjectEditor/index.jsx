@@ -1072,7 +1072,14 @@ export default function ProjectEditor({
             "module",
             "MODULE",
           ]);
-          const task = pick(["Task", "Task Name", "Activity", "task", "TASK"]);
+          const task = pick([
+            "Task",
+            "Task Name",
+            "Activity",
+            "Activity Name",
+            "task",
+            "TASK",
+          ]);
           const resourceInput = String(
             pick([
               "Resource Code",
@@ -1081,6 +1088,7 @@ export default function ProjectEditor({
               "UserId",
               "Email",
               "resource",
+              "Resource Code (or User ID / Email)",
             ]),
           ).trim();
 
@@ -1095,6 +1103,7 @@ export default function ProjectEditor({
             "Planned Duration (hrs)",
             "Duration",
             "Hours",
+            "Planned Duration",
           ]);
 
           // Parse date
