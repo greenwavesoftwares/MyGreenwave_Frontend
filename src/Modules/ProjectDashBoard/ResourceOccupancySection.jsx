@@ -110,6 +110,8 @@ function ResourceOccupancySection({
             filteredRows={filteredRows}
             t={t}
             isDark={isDark}
+            resourceMetrics=
+            {[]}
           />
         </div>
       </div>

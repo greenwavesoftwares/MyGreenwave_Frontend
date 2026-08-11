@@ -14,6 +14,8 @@ import ResourceOccupancySection from "./ResourceOccupancySection";
 import ResourceGanttSection from "./ResourceGanttSection";
 import TooltipComponent from "./Tooltip";
 import GanttView from "../../Test Ground/GanttView/index";
+import UnallocatedResourceOccupancy from "./UnallocatedResourceOccupancy";
+import { getUserData } from "../Login/Encrypt";
 
 /* ================================================================
    THEME  –  reads localStorage "Theme" (light | dark)
@@ -626,6 +628,7 @@ export default function ActivityTrackerCharts() {
   const [weekViewMode, setWeekViewMode] = useState("chart");
   const [projectPageIndex, setProjectPageIndex] = useState(0);
   const [projectSlideDir, setProjectSlideDir] = useState(1);
+  const [unallocatedResourcesList, setUnallocatedResourcesList] = useState([]);
 
   function loadData(year = selectedYear, months = selectedMonths) {
     setApiLoading(true);
@@ -639,6 +642,15 @@ export default function ActivityTrackerCharts() {
         months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
         year,
       );
+        const userDetails=getUserData()
+    const userId = userDetails?.userDetails?.userId;
+      const unallocatedResources = await activityTrackerApi.getAllUnallocatedUsersByManager(
+        userId,
+        months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
+        year,
+      );
+      setUnallocatedResourcesList(unallocatedResources)
+      
       setApiResponse(r ?? { data: [] });
     } catch (e) {
       setApiError(String(e?.message ?? e));
@@ -1188,6 +1200,20 @@ export default function ActivityTrackerCharts() {
       p.includes(n) ? p.filter((x) => x !== n) : [...p, n],
     );
 
+
+    // const filteredUnallocatedResources = useMemo(() => {
+    //   if (selectedResources.length === 0) return unallocatedResourcesList;
+    //   return unallocatedResourcesList.filter((r) =>
+    //     selectedResources.includes(r.resourceName),
+    //   );
+    // }, [unallocatedResourcesList, selectedResources, selectedMonths, selectedYear]);
+
+   const filteredUnallocatedResources = unallocatedResourcesList?.filter((r) =>
+  r.UnallocatedMonths?.split(",").some((month) => selectedMonths.includes(month))
+);
+
+    console.log('Selected Month : ',selectedMonths,"selected year : ",selectedYear,'unallocatedResourcesList : ',unallocatedResourcesList)
+
   return (
     <div className="container mx-auto px-4">
       <div
@@ -1302,6 +1328,17 @@ export default function ActivityTrackerCharts() {
               isDark={isDark}
               selectedYear={selectedYear}
             />
+
+          {  filteredUnallocatedResources.length > 0 && (
+            <UnallocatedResourceOccupancy
+  weeks={currentOccMonthBlock.weeks}
+  unallocatedUsers={filteredUnallocatedResources}
+  capacityHrs={8}
+  t={t}
+  isDark={isDark}
+  showHover={showHover}
+  hideHover={hideHover}
+/>)}
 
             {/* Resource Gantt Section */}
             <ResourceGanttSection
