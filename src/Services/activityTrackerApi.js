@@ -1330,16 +1330,18 @@ const activityTrackerApi = {
   // ============================================================
 
   /**
-   * GET /activityTracker/getAllUnallocatedUsersByManager/{manager}
+   * GET /activityTracker/getAllUnallocatedUsersByManager/{manager}/month/{months}/year/{year}
    * Returns users managed by the specified manager who are not
-   * currently allocated to any published project.
+   * currently allocated to any published project for the given month(s) and year.
    *
    * @param {string} manager - Manager/user identifier
-   * @returns {Array<string>} List of unallocated user IDs
+   * @param {string} months - Comma-separated months, e.g. "1,2,3" or "6"
+   * @param {number|string} year - Year, e.g. 2026
+   * @returns {Array<Object>} List of unallocated users
    */
-  getAllUnallocatedUsersByManager: async (manager) => {
+  getAllUnallocatedUsersByManager: async (manager, months, year) => {
     const response = await axios.get(
-      `${apiEndPoint}/getAllUnallocatedUsersByManager/${manager}`,
+      `${apiEndPoint}/getAllUnallocatedUsersByManager/${manager}/month/${months}/year/${year}`,
       {
         headers: getHeaders(),
       },
