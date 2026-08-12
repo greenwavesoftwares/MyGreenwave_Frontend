@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 const CELL = 46;
 const NAME = 195;
-const MONTH_USAGE = 96;
+const MONTH_PROGRESS = 96;
 const TASK_COMPLETION = 112;
-const LEFT_WIDTH = NAME + MONTH_USAGE + TASK_COMPLETION;
+const LEFT_WIDTH = NAME + MONTH_PROGRESS + TASK_COMPLETION;
 const BAR_HEIGHT = 20;
 const WEEK_HEADER_HEIGHT = 38;
 const DAY_HEADER_HEIGHT = 46;
@@ -38,18 +38,55 @@ const percentageText = (value) => Number.isFinite(Number(value)) ? `${Math.round
 const percentageColor = (value, fallback) => !Number.isFinite(Number(value)) ? fallback : Number(value) < 50 ? "#16a34a" : Number(value) < 75 ? "#ca8a04" : Number(value) < 90 ? "#ea580c" : "#dc2626";
 
 /**
- * resourceMetrics accepts either a flat metric list or the monthly API response:
- * [{ month: "August", year: 2026, resourceMetrics: [{ resourceName, resourceId, resourceMonthPercentage, taskCompletionPercentage }] }]
+ * One timeline for allocated and unallocated people.
+ * Allocated rows use occupancy/metric data. Unallocated rows display 8h free and — for both metrics.
  */
 function ResourceOccupancyTimeline({
-  weeks = [], resources = [], occupancyByResourceDate = {}, taskOccupancyByResourceDate = {},
-  resourceColorMap = {}, capacityHrs = DEFAULT_CAPACITY, expandedResources, onToggleExpand,
-  showHover = () => {}, hideHover = () => {}, filteredRows, resourceMetrics = [], t: customTheme = {}, isDark = false,
+  weeks = [],
+  resources = [],
+  unallocatedUsers: suppliedUnallocatedUsers = null,
+  getUnallocatedResources,
+  occupancyByResourceDate = {},
+  taskOccupancyByResourceDate = {},
+  resourceColorMap = {},
+  capacityHrs = DEFAULT_CAPACITY,
+  expandedResources,
+  onToggleExpand,
+  showHover = () => {},
+  hideHover = () => {},
+  filteredRows,
+  resourceMetrics = [],
+  t: customTheme = {},
+  isDark = false,
 }) {
   const t = useMemo(() => ({ ...defaultTheme, ...customTheme }), [customTheme]);
   const [hoveredKey, setHoveredKey] = useState(null);
+  const [loadedUnallocatedUsers, setLoadedUnallocatedUsers] = useState([]);
+  const [loadingUnallocated, setLoadingUnallocated] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const todayKey = new Date().toDateString();
 
+  useEffect(() => {
+    if (suppliedUnallocatedUsers !== null || typeof getUnallocatedResources !== "function") return undefined;
+    let mounted = true;
+    async function loadUnallocatedUsers() {
+      setLoadingUnallocated(true);
+      try {
+        const response = await getUnallocatedResources();
+        const list = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : Array.isArray(response?.users) ? response.users : [];
+        if (mounted) setLoadedUnallocatedUsers(list);
+      } catch (error) {
+        console.warn("Could not load unallocated resources", error);
+        if (mounted) setLoadedUnallocatedUsers([]);
+      } finally {
+        if (mounted) setLoadingUnallocated(false);
+      }
+    }
+    loadUnallocatedUsers();
+    return () => { mounted = false; };
+  }, [getUnallocatedResources, suppliedUnallocatedUsers]);
+
+  const unallocatedUsers = suppliedUnallocatedUsers ?? loadedUnallocatedUsers;
   const { days, weekBoundaries } = useMemo(() => {
     const flat = []; const boundaries = []; let total = 0;
     weeks.forEach((week) => { const validDays = (week || []).filter(Boolean); flat.push(...validDays); total += validDays.length; if (validDays.length) boundaries.push(total); });
@@ -63,10 +100,9 @@ function ResourceOccupancyTimeline({
 
   const currentMonthMetrics = useMemo(() => {
     if (!Array.isArray(resourceMetrics)) return [];
-    const flatMetrics = resourceMetrics.some((item) => item?.resourceName || item?.resourceId || item?.resourceMonthPercentage !== undefined);
-    if (flatMetrics) return resourceMetrics;
-    const selected = resourceMetrics.find((item) => item?.month === currentTimelineMonth?.month && Number(item?.year) === Number(currentTimelineMonth?.year));
-    return selected?.resourceMetrics || [];
+    const flat = resourceMetrics.some((item) => item?.resourceName || item?.resourceId || item?.resourceMonthPercentage !== undefined);
+    if (flat) return resourceMetrics;
+    return resourceMetrics.find((item) => item?.month === currentTimelineMonth?.month && Number(item?.year) === Number(currentTimelineMonth?.year))?.resourceMetrics || [];
   }, [resourceMetrics, currentTimelineMonth]);
 
   const metricsByName = useMemo(() => currentMonthMetrics.reduce((result, metric) => {
@@ -74,12 +110,55 @@ function ResourceOccupancyTimeline({
     return result;
   }, {}), [currentMonthMetrics]);
 
-  const weekIndexForDay = (index) => {
-    for (let i = 0; i < weekBoundaries.length; i += 1) if (index < weekBoundaries[i]) return i;
-    return Math.max(weekBoundaries.length - 1, 0);
+  const timelineRows = useMemo(() => {
+    const allocated = resources.map((name) => ({ id: `allocated-${name}`, name, isUnallocated: false }));
+    const unallocated = (unallocatedUsers || []).map((user, index) => {
+      const name = user.UserName || user.userName || user.name || `User ${index + 1}`;
+      const userId = user.UserId || user.userId || user.id || user.email || user.emailId || `${name}-${index}`;
+      return { id: `unallocated-${userId}`, name, userId, isUnallocated: true };
+    });
+    return [...allocated, ...unallocated];
+  }, [resources, unallocatedUsers]);
+
+  // Resource and Monthly Utilization each cycle: ascending → descending → original (no sort).
+  const toggleSort = (key) => {
+    setSortConfig((current) => {
+      if (current.key !== key || !current.direction) return { key, direction: "asc" };
+      if (current.direction === "asc") return { key, direction: "desc" };
+      return { key: null, direction: null };
+    });
   };
-  const chartWidth = Math.max(days.length, 1) * CELL;
-  const weekOverlay = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
+
+  const sortIndicator = (key) => {
+    if (sortConfig.key !== key || !sortConfig.direction) return "↕";
+    return sortConfig.direction === "asc" ? "▲" : "▼";
+  };
+
+  const sortedTimelineRows = useMemo(() => {
+    // No sort: preserve the incoming/original order, allocated rows followed by unallocated rows.
+    if (!sortConfig.key || !sortConfig.direction) return timelineRows;
+
+    return [...timelineRows].sort((a, b) => {
+      if (sortConfig.key === "name") {
+        const comparison = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        return sortConfig.direction === "asc" ? comparison : -comparison;
+      }
+
+      // Monthly Utilization sort: use the resourceMonthPercentage numeric value.
+      // Unallocated rows show —, and participate in this numerical sort as 0.
+      const aMetric = metricsByName[a.name.trim().toLowerCase()] || {};
+      const bMetric = metricsByName[b.name.trim().toLowerCase()] || {};
+      const aRaw = a.isUnallocated ? 0 : Number(aMetric.resourceMonthPercentage);
+      const bRaw = b.isUnallocated ? 0 : Number(bMetric.resourceMonthPercentage);
+      const aValue = Number.isFinite(aRaw) ? aRaw : 0;
+      const bValue = Number.isFinite(bRaw) ? bRaw : 0;
+      const comparison = aValue - bValue;
+
+      // Alphabetical tie-breaker for equal percentages.
+      if (comparison === 0) return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+      return sortConfig.direction === "asc" ? comparison : -comparison;
+    });
+  }, [timelineRows, metricsByName, sortConfig]);
 
   const resourceData = useMemo(() => resources.reduce((result, name) => {
     result[name] = {};
@@ -90,18 +169,29 @@ function ResourceOccupancyTimeline({
     return result;
   }, {}), [resources, days, occupancyByResourceDate, capacityHrs]);
 
-  const activate = (event, resourceName, date, data, key) => {
+  const weekIndexForDay = (index) => {
+    for (let i = 0; i < weekBoundaries.length; i += 1) if (index < weekBoundaries[i]) return i;
+    return Math.max(weekBoundaries.length - 1, 0);
+  };
+  const chartWidth = Math.max(days.length, 1) * CELL;
+  const weekOverlay = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
+  const chipBg = isDark ? "rgba(239,68,68,0.18)" : "#fef2f2";
+  const chipBorder = isDark ? "rgba(239,68,68,0.45)" : "#fecaca";
+  const chipText = isDark ? "#fca5a5" : "#b91c1c";
+  const chipDot = isDark ? "#f87171" : "#ef4444";
+
+  const activate = (event, row, date, data, key) => {
     setHoveredKey(key);
     const rect = event.currentTarget.getBoundingClientRect(); const side = window.innerWidth - rect.right < 320 ? "left" : "right";
-    showHover({ x: side === "left" ? rect.left : rect.right, y: rect.top + rect.height / 2, side, kind: "occupancy", entry: { resourceName, date, hours: data.occupied, capacityHrs, tasks: data.tasks, free: data.free } });
+    showHover({ x: side === "left" ? rect.left : rect.right, y: rect.top + rect.height / 2, side, kind: "occupancy", entry: { resourceName: row.name, userId: row.userId, date, hours: data.occupied, capacityHrs, tasks: data.tasks, free: data.free, isUnallocated: row.isUnallocated } });
   };
   const clearHover = () => { setHoveredKey(null); hideHover(); };
   const headerStyle = { fontSize: 10, fontWeight: 700, color: t.textSecondary, textTransform: "uppercase", textAlign: "center", lineHeight: 1.15, boxSizing: "border-box" };
 
-  if (!resources.length || !days.length) return <div style={{ padding: 24, textAlign: "center", color: t.emptyText, fontSize: 13 }}>No resource activity to show for this selection.</div>;
+  if (!timelineRows.length || !days.length) return <div style={{ padding: 24, textAlign: "center", color: t.emptyText, fontSize: 13 }}>{loadingUnallocated ? "Loading resources..." : "No resource activity to show for this selection."}</div>;
 
   return <div>
-    <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500, marginBottom: 8 }}>{resources.length} resource{resources.length !== 1 ? "s" : ""} • {days.length} day{days.length !== 1 ? "s" : ""} • {capacityHrs}h daily capacity</div>
+    <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500, marginBottom: 8 }}>{timelineRows.length} resource{timelineRows.length !== 1 ? "s" : ""} • {days.length} day{days.length !== 1 ? "s" : ""} • {capacityHrs}h daily capacity</div>
     <div style={{ border: `1px solid ${t.cardBorder}`, borderRadius: 10, background: t.cardBg, overflow: "auto", maxHeight: SCROLL_MAX_HEIGHT, position: "relative" }}>
       <div style={{ width: LEFT_WIDTH + chartWidth, minWidth: "100%", position: "relative" }}>
         <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 30, background: t.occHeaderBg, borderBottom: `1px solid ${t.gridLineMd}` }}>
@@ -110,21 +200,28 @@ function ResourceOccupancyTimeline({
         </div>
         <div style={{ display: "flex", position: "sticky", top: WEEK_HEADER_HEIGHT, zIndex: 29, background: t.occHeaderBg, borderBottom: `1px solid ${t.gridLineMd}`, paddingBottom: 4 }}>
           <div style={{ width: LEFT_WIDTH, minHeight: DAY_HEADER_HEIGHT, display: "flex", flexShrink: 0, position: "sticky", left: 0, zIndex: 34, background: t.occHeaderBg, borderRight: `1px solid ${t.gridLineMd}` }}>
-            <div style={{ ...headerStyle, width: NAME, textAlign: "left", padding: "8px 12px 4px" }}>Resource</div><div style={{ ...headerStyle, width: MONTH_USAGE, borderLeft: `1px solid ${t.gridLineMd}`, display: "grid", placeItems: "center" }}>Monthly<br />Progress</div><div style={{ ...headerStyle, width: TASK_COMPLETION, borderLeft: `1px solid ${t.gridLineMd}`, display: "grid", placeItems: "center" }}>Task<br />Completion</div>
+            <button type="button" onClick={() => toggleSort("name")} title="Sort resource name" style={{ ...headerStyle, width: NAME, border: "none", background: "transparent", cursor: "pointer", textAlign: "left", padding: "8px 12px 4px", display: "flex", alignItems: "center", justifyContent: "space-between" }}><span>Resource</span><span style={{ color: sortConfig.key === "name" ? t.btnPrimary : t.textMuted, fontSize: 10 }}>{sortIndicator("name")}</span></button>
+            <button type="button" onClick={() => toggleSort("monthlyUtilization")} title="Sort by monthly utilization percentage" style={{ ...headerStyle, width: MONTH_PROGRESS, border: "none", borderLeft: `1px solid ${t.gridLineMd}`, background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span>Monthly<br />Utilization</span><span style={{ color: sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textMuted, fontSize: 9 }}>{sortIndicator("monthlyUtilization")}</span></button>
+            <div style={{ ...headerStyle, width: TASK_COMPLETION, borderLeft: `1px solid ${t.gridLineMd}`, display: "grid", placeItems: "center" }}>Task<br />Completion</div>
           </div>
-          <div style={{ display: "flex", width: chartWidth }}>{days.map((date, index) => { const today = date.toDateString() === todayKey; const week = weekIndexForDay(index); const last = weekBoundaries[week] - 1 === index && index < days.length - 1; const base = today ? t.occHeaderToday : t.occHeaderBg; const bg = week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base; return <div key={`${date.toDateString()}-${index}`} style={{ width: CELL, flexShrink: 0, textAlign: "center", padding: "4px 1px", borderRight: last ? `2px solid ${t.cardBorder}` : index < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none", background: bg }}><div style={{ fontSize: 9, fontWeight: 600, color: today ? t.todayText : isWeekend(date) ? t.textMuted : t.textSecondary }}>{date.toLocaleDateString("en-US", { weekday: "short" })}</div><div style={{ fontSize: 13, fontWeight: today ? 800 : 700, color: today ? t.todayText : t.textPrimary }}>{date.getDate()}</div></div>; })}</div>
+          <div style={{ display: "flex", width: chartWidth }}>{days.map((date, index) => { const today = date.toDateString() === todayKey; const week = weekIndexForDay(index); const last = weekBoundaries[week] - 1 === index && index < days.length - 1; const base = today ? t.occHeaderToday : t.occHeaderBg; const bg = week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base; return <div key={`${date.toDateString()}-${index}`} style={{ width: CELL, flexShrink: 0, textAlign: "center", padding: "4px 1px", borderRight: last ? `2px solid ${t.cardBorder}` : index < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none", background: bg, boxShadow: today ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}, inset 0 2px 0 ${t.earlyColor}` : "none" }}><div style={{ fontSize: 9, fontWeight: 600, color: today ? t.todayText : isWeekend(date) ? t.textMuted : t.textSecondary }}>{date.toLocaleDateString("en-US", { weekday: "short" })}</div><div style={{ fontSize: 13, fontWeight: today ? 800 : 700, color: today ? t.todayText : t.textPrimary }}>{date.getDate()}</div></div>; })}</div>
         </div>
-        {resources.map((name, resourceIndex) => { const rowBg = resourceIndex % 2 ? t.occRowOdd : t.occRowEven; const metric = metricsByName[name.trim().toLowerCase()] || null; const daily = resourceData[name] || {}; return <div key={name} style={{ display: "flex", alignItems: "center", background: rowBg, borderBottom: `1px solid ${t.gridLine}` }}>
-          <div style={{ width: LEFT_WIDTH, height: 42, display: "flex", flexShrink: 0, position: "sticky", left: 0, zIndex: 10, background: rowBg, borderRight: `1px solid ${t.gridLineMd}` }}>
-            <div style={{ width: NAME, boxSizing: "border-box", padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 20, height: 20, borderRadius: "50%", background: resourceColorMap[name]?.actual || "#64748b", color: "#fff", display: "grid", placeItems: "center", fontSize: 9, fontWeight: 700 }}>{initialsFor(name)}</div><div title={name} style={{ fontSize: 12.5, fontWeight: 600, color: t.resNameColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div></div>
-            <div title={`Month Progress: ${percentageText(metric?.resourceMonthPercentage)}`} style={{ width: MONTH_USAGE, display: "grid", placeItems: "center", borderLeft: `1px solid ${t.gridLineMd}`, color: percentageColor(metric?.resourceMonthPercentage, t.textMuted), fontSize: 12, fontWeight: 700 }}>{percentageText(metric?.resourceMonthPercentage)}</div>
-            <div title={`Task Completion: ${percentageText(metric?.taskCompletionPercentage)}`} style={{ width: TASK_COMPLETION, display: "grid", placeItems: "center", borderLeft: `1px solid ${t.gridLineMd}`, color: percentageColor(metric?.taskCompletionPercentage, t.textMuted), fontSize: 12, fontWeight: 700 }}>{percentageText(metric?.taskCompletionPercentage)}</div>
-          </div>
-          <div style={{ width: chartWidth, display: "flex", height: 42 }}>{days.map((date, index) => { const dateKey = date.toDateString(); const data = daily[dateKey] || { occupied: 0, free: capacityHrs, tasks: [] }; const key = `${name}-${dateKey}`; const hover = hoveredKey === key; const today = dateKey === todayKey; const week = weekIndexForDay(index); const last = weekBoundaries[week] - 1 === index && index < days.length - 1; const base = today ? t.occCellToday : isWeekend(date) ? t.occCellWeekend : t.occCellBg; const bg = week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base; const fill = Math.min(data.occupied / capacityHrs * 100, 100); return <div key={index} onMouseEnter={(event) => activate(event, name, date, data, key)} onMouseLeave={clearHover} onClick={(event) => { event.stopPropagation(); activate(event, name, date, data, key); }} style={{ width: CELL, flexShrink: 0, padding: 3, display: "flex", alignItems: "center", borderRight: last ? `2px solid ${t.cardBorder}` : index < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none", background: hover ? (isDark ? "rgba(59,130,246,.2)" : "#e0f2fe") : bg, cursor: "pointer" }}><div style={{ width: "100%", height: BAR_HEIGHT, background: t.occFreeBar, border: hover ? `1.5px solid ${t.btnPrimary}` : `1px solid ${t.occFreeBarBorder}`, borderRadius: 6, position: "relative", overflow: "hidden", boxShadow: t.occFreeBarShadow }}><div style={{ position: "absolute", inset: "0 auto 0 0", width: `${fill}%`, background: occupancyColor(data.occupied) }} /><div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 8, fontWeight: 700, color: data.occupied ? "#1e293b" : t.occFreeLabel }}>{duration(data.occupied || data.free)}</div></div></div>; })}</div>
-        </div>; })}
+        {sortedTimelineRows.map((row, index) => {
+          const rowBg = index % 2 ? t.occRowOdd : t.occRowEven;
+          const metric = row.isUnallocated ? null : metricsByName[row.name.trim().toLowerCase()] || null;
+          const daily = row.isUnallocated ? {} : resourceData[row.name] || {};
+          return <div key={row.id} style={{ display: "flex", alignItems: "center", background: rowBg, borderBottom: `1px solid ${t.gridLine}` }}>
+            <div style={{ width: LEFT_WIDTH, height: 42, display: "flex", flexShrink: 0, position: "sticky", left: 0, zIndex: 10, background: rowBg, borderRight: `1px solid ${t.gridLineMd}` }}>
+              <div style={{ width: NAME, boxSizing: "border-box", padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 20, height: 20, borderRadius: "50%", background: row.isUnallocated ? "#94a3b8" : resourceColorMap[row.name]?.actual || "#64748b", color: "#fff", display: "grid", placeItems: "center", fontSize: 9, fontWeight: 700 }}>{initialsFor(row.name)}</div><div style={{ minWidth: 0, flex: 1 }}><div title={row.name} style={{ fontSize: 12.5, fontWeight: 600, color: t.resNameColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</div>{row.isUnallocated && <span style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3, padding: "1.5px 6px", borderRadius: 999, fontSize: 9, fontWeight: 700, color: chipText, background: chipBg, border: `1px solid ${chipBorder}` }}><i style={{ width: 4.5, height: 4.5, borderRadius: "50%", background: chipDot }} />Unallocated</span>}</div></div>
+              <div title={row.isUnallocated ? "Monthly Progress is unavailable for unallocated resources" : `Monthly Progress: ${percentageText(metric?.resourceMonthPercentage)}`} style={{ width: MONTH_PROGRESS, display: "grid", placeItems: "center", borderLeft: `1px solid ${t.gridLineMd}`, color: row.isUnallocated ? t.textMuted : percentageColor(metric?.resourceMonthPercentage, t.textMuted), fontSize: 12, fontWeight: 700 }}>{row.isUnallocated ? "—" : percentageText(metric?.resourceMonthPercentage)}</div>
+              <div title={row.isUnallocated ? "Task Completion is unavailable for unallocated resources" : `Task Completion: ${percentageText(metric?.taskCompletionPercentage)}`} style={{ width: TASK_COMPLETION, display: "grid", placeItems: "center", borderLeft: `1px solid ${t.gridLineMd}`, color: row.isUnallocated ? t.textMuted : percentageColor(metric?.taskCompletionPercentage, t.textMuted), fontSize: 12, fontWeight: 700 }}>{row.isUnallocated ? "—" : percentageText(metric?.taskCompletionPercentage)}</div>
+            </div>
+            <div style={{ width: chartWidth, display: "flex", height: 42 }}>{days.map((date, dayIndex) => { const dateKey = date.toDateString(); const data = row.isUnallocated ? { occupied: 0, free: capacityHrs, tasks: [] } : daily[dateKey] || { occupied: 0, free: capacityHrs, tasks: [] }; const key = `${row.id}-${dateKey}`; const hover = hoveredKey === key; const today = dateKey === todayKey; const week = weekIndexForDay(dayIndex); const last = weekBoundaries[week] - 1 === dayIndex && dayIndex < days.length - 1; const base = today ? t.occCellToday : isWeekend(date) ? t.occCellWeekend : t.occCellBg; const bg = week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base; const fill = Math.min(data.occupied / capacityHrs * 100, 100); return <div key={dayIndex} onMouseEnter={(event) => activate(event, row, date, data, key)} onMouseLeave={clearHover} onClick={(event) => { event.stopPropagation(); activate(event, row, date, data, key); }} style={{ width: CELL, flexShrink: 0, padding: 3, display: "flex", alignItems: "center", borderRight: last ? `2px solid ${t.cardBorder}` : dayIndex < days.length - 1 ? `1px solid ${t.gridLineMd}` : "none", background: hover ? (isDark ? "rgba(59,130,246,.2)" : "#e0f2fe") : bg, boxShadow: today ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}` : "none", cursor: "pointer" }}><div style={{ width: "100%", height: BAR_HEIGHT, background: t.occFreeBar, border: hover ? `1.5px solid ${t.btnPrimary}` : `1px solid ${t.occFreeBarBorder}`, borderRadius: 6, position: "relative", overflow: "hidden", boxShadow: t.occFreeBarShadow }}><div style={{ position: "absolute", inset: "0 auto 0 0", width: `${fill}%`, background: occupancyColor(data.occupied) }} /><div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 8, fontWeight: 700, color: data.occupied ? "#1e293b" : t.occFreeLabel }}>{duration(data.occupied || data.free)}</div></div></div>; })}</div>
+          </div>;
+        })}
       </div>
     </div>
-    <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap", fontSize: 11, color: t.legendText }}><span style={{ display: "flex", alignItems: "center", gap: 5 }}><i style={{ width: 26, height: 10, background: t.occFreeBar, border: `1px solid ${t.occFreeBarBorder}`, borderRadius: 3 }} />Free capacity</span><span style={{ display: "flex", alignItems: "center", gap: 5 }}><i style={{ width: 26, height: 10, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#dc2626)", borderRadius: 3 }} />Occupied (load)</span></div>
+    <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap", fontSize: 11, color: t.legendText }}><span style={{ display: "flex", alignItems: "center", gap: 5 }}><i style={{ width: 26, height: 10, background: t.occFreeBar, border: `1px solid ${t.occFreeBarBorder}`, borderRadius: 3 }} />Free capacity</span><span style={{ display: "flex", alignItems: "center", gap: 5 }}><i style={{ width: 26, height: 10, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#dc2626)", borderRadius: 3 }} />Occupied (load)</span><span style={{ display: "flex", alignItems: "center", gap: 5 }}><i style={{ width: 8, height: 8, background: chipDot, borderRadius: "50%" }} />Unallocated</span></div>
   </div>;
 }
 

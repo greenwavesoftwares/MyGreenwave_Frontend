@@ -23,8 +23,13 @@ function ResourceOccupancySection({
   hideHover,
   filteredRows,
   isDark,
-  selectedYear
+  selectedYear,
+  filteredUnallocatedResources,
+ currentMonthResourceMetrics
+
 }) {
+
+  console.log('Unallocated Users: ',filteredUnallocatedResources)
   // Hardcoded month names - always available
   const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   
@@ -96,23 +101,23 @@ function ResourceOccupancySection({
           key={currentOccMonthBlock ? currentOccMonthBlock.key : "occ-empty"}
           style={{ animation: `${occMonthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease` }}
         >
-          <ResourceOccupancyTimeline
-            weeks={currentOccMonthBlock ? currentOccMonthBlock.weeks : []}
-            resources={timelineResources}
-            occupancyByResourceDate={occupancyByResourceDate}
-            taskOccupancyByResourceDate={taskOccupancyByResourceDate}
-            resourceColorMap={resourceColorMap}
-            capacityHrs={RESOURCE_DAILY_CAPACITY_HRS}
-            expandedResources={expandedResources}
-            onToggleExpand={toggleExpandedResource}
-            showHover={showHover}
-            hideHover={hideHover}
-            filteredRows={filteredRows}
-            t={t}
-            isDark={isDark}
-            resourceMetrics=
-            {[]}
-          />
+         <ResourceOccupancyTimeline
+  weeks={currentOccMonthBlock?.weeks || []}
+  resources={timelineResources}
+  unallocatedUsers={filteredUnallocatedResources}
+  occupancyByResourceDate={occupancyByResourceDate}
+  taskOccupancyByResourceDate={taskOccupancyByResourceDate}
+  resourceColorMap={resourceColorMap}
+  capacityHrs={RESOURCE_DAILY_CAPACITY_HRS}
+  expandedResources={expandedResources}
+  onToggleExpand={toggleExpandedResource}
+  showHover={showHover}
+  hideHover={hideHover}
+  filteredRows={filteredRows}
+  resourceMetrics={currentMonthResourceMetrics}
+  t={t}
+  isDark={isDark}
+/>
         </div>
       </div>
     </AccordionSection>

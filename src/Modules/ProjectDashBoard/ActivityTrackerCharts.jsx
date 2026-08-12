@@ -1327,9 +1327,16 @@ export default function ActivityTrackerCharts() {
               filteredRows={filteredRows}
               isDark={isDark}
               selectedYear={selectedYear}
+               weeks={currentOccMonthBlock.weeks}
+  filteredUnallocatedResources={filteredUnallocatedResources}
+  capacityHrs={8}
+  t={t}
+  isDark={isDark}
+  showHover={showHover}
+  hideHover={hideHover}
             />
 
-          {  filteredUnallocatedResources.length > 0 && (
+          {/* {  filteredUnallocatedResources.length > 0 && (
             <UnallocatedResourceOccupancy
   weeks={currentOccMonthBlock.weeks}
   unallocatedUsers={filteredUnallocatedResources}
@@ -1338,7 +1345,7 @@ export default function ActivityTrackerCharts() {
   isDark={isDark}
   showHover={showHover}
   hideHover={hideHover}
-/>)}
+/>)} */}
 
             {/* Resource Gantt Section */}
             <ResourceGanttSection
