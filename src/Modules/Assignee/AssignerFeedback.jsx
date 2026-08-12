@@ -9,39 +9,56 @@ import {
   IconButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { Star, Send, Check } from "lucide-react";
+import { Star, StarHalf, Send, Check } from "lucide-react";
 import "./AssignerFeedback.css";
 import { getUserData } from "../Login/Encrypt";
 import { managerFeedback } from "./AssigneeHelper";
 
 /**
  * StarRating
- * Small reusable 1-5 star control. Color comes entirely from the
+ * Small reusable 1-5 star control with half-star precision (0.5 steps).
+ * Clicking/hovering the left half of a star selects the .5 value, the
+ * right half selects the whole number. Color comes entirely from the
  * `af-star-icon` classes (which read the --pj-warning token), so it
  * stays in sync with light/dark mode automatically.
  */
 const StarRating = ({ value, onChange }) => {
   const [hovered, setHovered] = useState(0);
 
+  // Given a pointer event over a given star's button, figure out whether
+  // the pointer is in the left half (→ star - 0.5) or right half (→ star).
+  const valueFromPointer = (e, star) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+    return isLeftHalf ? star - 0.5 : star;
+  };
+
+  const display = hovered || value;
+
   return (
     <Box className="af-stars">
       {[1, 2, 3, 4, 5].map((star) => {
-        const filled = star <= (hovered || value);
+        const full = star <= display;
+        const half = !full && star - 0.5 <= display;
+        const Icon = half ? StarHalf : Star;
+
         return (
           <IconButton
             key={star}
             size="small"
             className="af-star-btn"
-            onClick={() => onChange(star)}
-            onMouseEnter={() => setHovered(star)}
+            onClick={(e) => onChange(valueFromPointer(e, star))}
+            onMouseMove={(e) => setHovered(valueFromPointer(e, star))}
             onMouseLeave={() => setHovered(0)}
-            aria-label={`Rate ${star} out of 5`}
+            aria-label={`Rate ${star - 0.5} or ${star} out of 5`}
           >
-            <Star
+            <Icon
               size={20}
               strokeWidth={1.5}
               className={
-                filled ? "af-star-icon af-star-icon--filled" : "af-star-icon"
+                full || half
+                  ? "af-star-icon af-star-icon--filled"
+                  : "af-star-icon"
               }
             />
           </IconButton>
@@ -62,14 +79,15 @@ const OVERALL_KEY = "overall";
  * AssignerFeedback
  *
  * Dialog for rating one or more assigners (the assigner and any number
- * of co-assigners) across a dynamic set of criteria ("points"), plus one
- * overall rating + remark per manager. The overall rating/remark is
- * stored as just another entry (keyed by OVERALL_KEY) inside the same
- * `entries` map as the per-point ratings — it is rendered separately at
- * the bottom of the form, but uses the same read/write helpers.
+ * of co-assigners) across a dynamic set of criteria ("categories"), plus
+ * one overall rating + remark per assigner. The overall rating/remark is
+ * stored as just another entry (categoryId: "overall") inside the same
+ * `entries` list as the per-category ratings — matches the wire format
+ * for both GET and PUT, and is rendered separately at the bottom of the
+ * form using the same read/write helpers.
  *
  * A tab strip lets the user move between assigners, with a checkmark
- * once a manager's per-point ratings are complete.
+ * once an assigner's per-category ratings are complete.
  *
  * Colors and dark mode come entirely from the shared --pj-* tokens
  * defined in ProjectActivityInfo.css — this file defines no colors
@@ -78,34 +96,59 @@ const OVERALL_KEY = "overall";
  * Props:
  *  - open: boolean
  *  - onClose: () => void
- *  - assigners: [{ id, name, role }]
- *      role is free text, e.g. "Assigner" | "Co-assigner" — pass as
- *      many co-assigners as needed, the tab strip scrolls.
- *  - feedbackData: { [managerId]: { entries: { [pointId]: {rating, remark}, overall?: {rating, remark} } } }
- *      pre-fills the form, e.g. from previously submitted feedback.
- *  - onSubmit: (payload) => void   payload = [{
- *      managerId, managerName, role,
- *      ratings: [{ pointId, label, rating, remark }],
- *      finalRemark, finalRating, averageRating
- *    }, ...]
+ *  - projectId: string
+ *      required to build the PUT payload; forwarded as-is from whatever
+ *      screen renders this dialog.
+ *  - assigners: [{ assignerId, name, role }]
+ *      role is free text, e.g. "assigner" | "co-assigner" — pass as
+ *      many co-assigners as needed, the tab strip scrolls. Can be
+ *      passed straight through from the GET response's `assigners`.
+ *  - feedback: [{ assignerId, entries: [{ categoryId, rating, remark }] }]
+ *      pre-fills the form from the GET response's `feedback` array
+ *      (e.g. previously submitted feedback for this project).
+ *  - onSubmit: (payload) => void   payload matches the PUT shape:
+ *      {
+ *        userId, projectId, submittedAt,
+ *        feedback: [{ assignerId, entries: [{ categoryId, rating, remark }] }]
+ *      }
  */
 const AssignerFeedback = ({
   open = true,
   onClose = () => {},
+  projectId,
   assigners = [
-    { id: "mgr_1", name: "Riya Sharma", role: "Assigner" },
-    { id: "mgr_2", name: "Devansh Kapoor", role: "Co-assigner" },
-    { id: "mgr_3", name: "Ayesha Khan", role: "Co-assigner" },
+    { assignerId: "riya.sharma@greenwave.co.in", name: "Riya Sharma", role: "assigner" },
+    { assignerId: "devansh.kapoor@greenwave.co.in", name: "Devansh Kapoor", role: "co-assigner" },
+    { assignerId: "ayesha.khan@greenwave.co.in", name: "Ayesha Khan", role: "co-assigner" },
   ],
-  entries,
-  feedbackData,
+  feedback,
   onSubmit = () => {},
 }) => {
-  const [activeManagerId, setActiveManagerId] = useState(assigners[0]?.id);
-  // data keyed by managerId -> { entries: { [pointId]: {rating, remark} } }
+  // Converts the GET-response `feedback` array (list of
+  // { assignerId, entries: [{ categoryId, rating, remark }] }) into the
+  // shape this component edits internally: a map keyed by assignerId,
+  // each holding a map keyed by categoryId, for O(1) lookups while
+  // rendering/editing. Converted back to the list shape on submit.
+  const toInternalData = (feedbackList = []) =>
+    feedbackList.reduce((acc, f) => {
+      acc[f.assignerId] = {
+        entries: Object.fromEntries(
+          (f.entries || []).map((e) => [
+            e.categoryId,
+            { rating: e.rating, remark: e.remark },
+          ]),
+        ),
+      };
+      return acc;
+    }, {});
+
+  const [activeAssignerId, setActiveAssignerId] = useState(
+    assigners[0]?.assignerId,
+  );
+  // data keyed by assignerId -> { entries: { [categoryId]: {rating, remark} } }
   // The overall rating/remark lives at entries[OVERALL_KEY], same shape
-  // as any other point entry.
-  const [data, setData] = useState(feedbackData || {});
+  // as any other category entry.
+  const [data, setData] = useState(() => toInternalData(feedback));
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
@@ -132,49 +175,51 @@ const AssignerFeedback = ({
     return () => resizeObserver.disconnect();
   }, [assigners]);
 
-  const getManagerData = (managerId) => data[managerId] || { entries: {} };
+  const getAssignerData = (assignerId) =>
+    data[assignerId] || { entries: {} };
 
   const points = managerFeedback()
 
-  // Generic setters — used for both the per-point cards and the overall
+  // Generic setters — used for both the per-category cards and the overall
   // rating/remark card, since both just write into entries[key].
-  const setRating = (managerId, key, rating) => {
+  const setRating = (assignerId, key, rating) => {
     setData((prev) => {
-      const md = getManagerData(managerId);
+      const ad = getAssignerData(assignerId);
       return {
         ...prev,
-        [managerId]: {
-          ...md,
-          entries: { ...md.entries, [key]: { ...md.entries[key], rating } },
+        [assignerId]: {
+          ...ad,
+          entries: { ...ad.entries, [key]: { ...ad.entries[key], rating } },
         },
       };
     });
   };
 
-  const setRemark = (managerId, key, remark) => {
+  const setRemark = (assignerId, key, remark) => {
     setData((prev) => {
-      const md = getManagerData(managerId);
+      const ad = getAssignerData(assignerId);
       return {
         ...prev,
-        [managerId]: {
-          ...md,
-          entries: { ...md.entries, [key]: { ...md.entries[key], remark } },
+        [assignerId]: {
+          ...ad,
+          entries: { ...ad.entries, [key]: { ...ad.entries[key], remark } },
         },
       };
     });
   };
 
-  const isManagerComplete = (managerId) => {
-    const md = getManagerData(managerId);
-    return points.length > 0 && points.every((p) => md.entries[p.id]?.rating);
+  const isManagerComplete = (assignerId) => {
+    const ad = getAssignerData(assignerId);
+    return points.length > 0 && points.every((p) => ad.entries[p.id]?.rating);
   };
 
   const allComplete =
-    assigners.length > 0 && assigners.every((m) => isManagerComplete(m.id));
+    assigners.length > 0 &&
+    assigners.every((m) => isManagerComplete(m.assignerId));
 
   const activeManager =
-    assigners.find((m) => m.id === activeManagerId) || assigners[0];
-  const activeData = getManagerData(activeManagerId);
+    assigners.find((m) => m.assignerId === activeAssignerId) || assigners[0];
+  const activeData = getAssignerData(activeAssignerId);
   const activeOverall = activeData.entries[OVERALL_KEY] || {};
   const ratedCount = points.filter(
     (p) => activeData.entries[p.id]?.rating,
@@ -196,43 +241,31 @@ const AssignerFeedback = ({
       return;
     }
     setError("");
+
     const payload = {
       userId: getUserData()?.userDetails?.userId,
+      projectId,
+      submittedAt: new Date().toISOString(),
+      feedback: assigners.map((m) => {
+        const ad = getAssignerData(m.assignerId);
 
-      data: assigners.reduce((acc, m) => {
-        const md = getManagerData(m.id);
+        const entries = [
+          ...points.map((p) => ({
+            categoryId: p.id,
+            rating: ad.entries[p.id]?.rating || 0,
+            remark: ad.entries[p.id]?.remark || "",
+          })),
+          {
+            categoryId: OVERALL_KEY,
+            rating: ad.entries[OVERALL_KEY]?.rating || 0,
+            remark: ad.entries[OVERALL_KEY]?.remark || "",
+          },
+        ];
 
-        const ratings = points
-          .map((p) => md.entries[p.id]?.rating)
-          .filter((rating) => rating !== undefined && rating !== null);
-
-        const avg = ratings.length
-          ? Number(
-              (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1),
-            )
-          : 0;
-
-        const overall = md.entries[OVERALL_KEY] || {};
-
-        acc[m.id] = {
-          entries: Object.fromEntries(
-            points.map((p) => [
-              p.id,
-              {
-                rating: md.entries[p.id]?.rating || 0,
-                remark: md.entries[p.id]?.remark || "",
-              },
-            ]),
-          ),
-
-          finalRemark: overall.remark || "",
-          finalRating: overall.rating || 0,
-          averageRating: avg,
-        };
-
-        return acc;
-      }, {}),
+        return { assignerId: m.assignerId, entries };
+      }),
     };
+
     console.log("Onsubmit :::", payload);
     onSubmit(payload);
     setSubmitted(true);
@@ -242,7 +275,7 @@ const AssignerFeedback = ({
     setData({});
     setError("");
     setSubmitted(false);
-    setActiveManagerId(assigners[0]?.id);
+    setActiveAssignerId(assigners[0]?.assignerId);
     onClose();
   };
 
@@ -321,13 +354,13 @@ const AssignerFeedback = ({
             className={`af-tabs${tabsOverflowing ? " af-tabs--scrollable" : ""}`}
           >
             {assigners.map((m) => {
-              const complete = isManagerComplete(m.id);
-              const active = m.id === activeManagerId;
+              const complete = isManagerComplete(m.assignerId);
+              const active = m.assignerId === activeAssignerId;
               return (
                 <button
-                  key={m.id}
+                  key={m.assignerId}
                   type="button"
-                  onClick={() => setActiveManagerId(m.id)}
+                  onClick={() => setActiveAssignerId(m.assignerId)}
                   className={`af-tab${active ? " af-tab--active" : ""}`}
                 >
                   {complete && <Check size={13} className="af-tab-check" />}
@@ -362,7 +395,7 @@ const AssignerFeedback = ({
                     <StarRating
                       value={entry.rating || 0}
                       onChange={(rating) =>
-                        setRating(activeManagerId, point.id, rating)
+                        setRating(activeAssignerId, point.id, rating)
                       }
                     />
                   </Box>
@@ -375,7 +408,7 @@ const AssignerFeedback = ({
                     placeholder={`Remark about ${point.label.toLowerCase()} (optional)`}
                     value={entry.remark || ""}
                     onChange={(e) =>
-                      setRemark(activeManagerId, point.id, e.target.value)
+                      setRemark(activeAssignerId, point.id, e.target.value)
                     }
                   />
                 </Box>
@@ -397,7 +430,7 @@ const AssignerFeedback = ({
                 <StarRating
                   value={activeOverall.rating || 0}
                   onChange={(rating) =>
-                    setRating(activeManagerId, OVERALL_KEY, rating)
+                    setRating(activeAssignerId, OVERALL_KEY, rating)
                   }
                 />
               </Box>
@@ -410,7 +443,7 @@ const AssignerFeedback = ({
                 placeholder="Any final thoughts on this manager's performance"
                 value={activeOverall.remark || ""}
                 onChange={(e) =>
-                  setRemark(activeManagerId, OVERALL_KEY, e.target.value)
+                  setRemark(activeAssignerId, OVERALL_KEY, e.target.value)
                 }
               />
             </Box>

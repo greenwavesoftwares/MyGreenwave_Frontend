@@ -215,29 +215,38 @@ const TAB_DEFS = [
 ];
 
 // Must match AssignerFeedback's OVERALL_KEY — the overall rating/remark
-// is stored as just another entry inside `entries`, not a separate field.
+// is stored as just another entry (categoryId: "overall") inside the
+// `entries` list, not a separate field. Matches the PUT/GET wire format.
 const OVERALL_KEY = "overall";
 
-// Hardcoded until the manager-feedback API is ready. Keyed by managerId,
-// matching what AssignerFeedback's getManagerData(managerId) expects:
-// { entries: { [pointId]: {rating, remark}, [OVERALL_KEY]: {rating, remark} } }
-// TODO: swap for a real activityTrackerApi.getFeedbackByAssignee(userId, projectId)
-// call once GET /activityTracker/feedback/assignee/:userId is live — see the
-// mapFeedbackResponse-based version of openFeedback for that wiring.
-const HARDCODED_FEEDBACK_BASE = {
-  assignerId: "avrajit.roy@greenwave.co.in",
-  assignerName: "Avrajit Roy",
-  coAssigners: [
-    { id: "sreepriya.roy@greenwave.co.in", name: "Sreepriya Roy" },
-  ],
-  data: {
-    "avrajit.roy@greenwave.co.in": {
-      entries: {
-        communication: { rating: 5, remark: "Done fabulously" },
-        [OVERALL_KEY]: { rating: 5, remark: "Done Fabulously" },
-      },
+// Hardcoded until the manager-feedback API is ready. Mirrors the exact
+// shape of GET /activityTracker/feedback/:projectId:
+// { userId, projectId, submittedAt, assigners: [{assignerId, name, role}],
+//   feedback: [{assignerId, entries: [{categoryId, rating, remark}]}] }
+// TODO: swap for a real activityTrackerApi.getAssignerFeedback(projectId)
+// call once that endpoint is live — see openFeedback below for wiring.
+const HARDCODED_FEEDBACK_RESPONSE = {
+  assigners: [
+    {
+      assignerId: "avrajit.roy@greenwave.co.in",
+      name: "Avrajit Roy",
+      role: "assigner",
     },
-  },
+    {
+      assignerId: "sreepriya.roy@greenwave.co.in",
+      name: "Sreepriya Roy",
+      role: "co-assigner",
+    },
+  ],
+  feedback: [
+    {
+      assignerId: "avrajit.roy@greenwave.co.in",
+      entries: [
+        { categoryId: "communication", rating: 5, remark: "Done fabulously" },
+        { categoryId: OVERALL_KEY, rating: 5, remark: "Done Fabulously" },
+      ],
+    },
+  ],
 };
 
 export default function ProjectsInfo({ projectSelection }) {
@@ -249,56 +258,67 @@ export default function ProjectsInfo({ projectSelection }) {
   // Project currently open in the "rate your managers" dialog, or null.
   const [feedbackProject, setFeedbackProject] = useState(null);
 
-  // Normalizes whatever the API sends for assigner / co-assigners into
-  // the { id, name, role } shape AssignerFeedback expects. Adjust the
-  // field names here once the real project payload is confirmed —
-  // falls back gracefully if a project has no co-assigners at all.
-  const buildAssigners = (project) => {
-    console.log("Project inside build manager:", project);
-    if (!project) return [];
+  // Normalizes assigner data into the { assignerId, name, role } shape
+  // AssignerFeedback expects, and excludes the current user (nobody
+  // should be able to rate themselves even if they show up in their own
+  // assigner/co-assigner list). Prefers the feedback response's own
+  // `assigners` array (the new API shape); falls back to reconstructing
+  // it from a project record's assignerId/assignerName/coAssigners
+  // fields for projects where no feedback has been fetched yet.
+  const normalizeAssigners = (source) => {
+    if (!source) return [];
+
     let managers = [];
-    if (project.assignerId || project.assignerName) {
-      managers.push({
-        id: project.assignerId ?? "assigner",
-        name: project.assignerName ?? "Assigner",
-        role: "Assigner",
+
+    if (Array.isArray(source.assigners) && source.assigners.length > 0) {
+      managers = source.assigners.map((a) => ({
+        assignerId: a.assignerId,
+        name: a.name,
+        role: a.role ?? "assigner",
+      }));
+    } else {
+      if (source.assignerId || source.assignerName) {
+        managers.push({
+          assignerId: source.assignerId ?? "assigner",
+          name: source.assignerName ?? "Assigner",
+          role: "assigner",
+        });
+      }
+      const coAssigners = source.coAssigners ?? [];
+      coAssigners.forEach((co, i) => {
+        managers.push({
+          assignerId: co.assignerId ?? co.userId ?? `co_assigner_${i}`,
+          name: co.name ?? co.userName ?? `Co-assigner ${i + 1}`,
+          role: "co-assigner",
+        });
       });
     }
-    const coAssigners = project.coAssigners ?? project.coAssigners ?? [];
-    coAssigners.forEach((co, i) => {
-      managers.push({
-        id: co.id ?? co.userId ?? `co_assigner_${i}`,
-        name: co.name ?? co.userName ?? `Co-assigner ${i + 1}`,
-        role: "Co-assigner",
-      });
-    });
-    if(managers?.length>0){
-      managers=managers.filter((manager)=>(manager.id.toLowerCase()!==getUserData()?.userDetails?.userId?.toLowerCase()))
-    }
-    console.log("Managers::",managers)
-    return managers;
+
+    const currentUserId = getUserData()?.userDetails?.userId?.toLowerCase();
+    return managers.filter(
+      (m) => m.assignerId?.toLowerCase() !== currentUserId,
+    );
   };
 
   const openFeedback = (e, project) => {
     // Card itself is clickable (drills into the project) — stop that
     // from firing when the star is what was actually clicked.
     e.stopPropagation();
-    const existing = HARDCODED_FEEDBACK_BASE;
-    if(existing?.data?.length>0){
-      const filteredData=Object.fromEntries(Object.entries(existing?.data).filter((aId)=>aId!==getUserData()?.userDetails?.userId))
-      existing.data=filteredData
 
-    }
+    // TODO: swap for a real
+    // activityTrackerApi.getAssignerFeedback(project.projectId) call
+    // once GET /activityTracker/feedback/:projectId is live. Response
+    // shape: { userId, projectId, submittedAt, assigners, feedback }.
+    const response = HARDCODED_FEEDBACK_RESPONSE;
 
-    const feedbackInfo = {
+    setFeedbackProject({
       projectId: project.projectId,
       projectName: project.projectName,
-      ...(existing ?? {}), // whatever was actually submitted wins
-    };
-
-  
-    setFeedbackProject(feedbackInfo);
+      assigners: normalizeAssigners(response ?? project),
+      feedback: response?.feedback ?? [],
+    });
   };
+
 
   const closeFeedback = () => setFeedbackProject(null);
 
@@ -309,8 +329,6 @@ export default function ProjectsInfo({ projectSelection }) {
       const projectDetails = await activityTrackerApi.getProjectsByAssignee();
       if (projectDetails?.[0]) {
         console.log("Project details::", projectDetails[0]);
-        projectDetails[0].assignerId = "avrajit.roy@greenwave.co.in";
-        projectDetails[0].assignerName = "Avrajit Roy";
         projectDetails[0].assignerId = "avrajit.roy@greenwave.co.in";
         projectDetails[0].assignerName = "Avrajit Roy";
         projectDetails[0].coAssigners = [
@@ -524,11 +542,14 @@ export default function ProjectsInfo({ projectSelection }) {
         <AssignerFeedback
           open={!!feedbackProject}
           onClose={closeFeedback}
-          assigners={buildAssigners(feedbackProject)}
-          feedbackData={feedbackProject?.data}
+          projectId={feedbackProject.projectId}
+          assigners={feedbackProject.assigners}
+          feedback={feedbackProject.feedback}
           onSubmit={(payload) => {
-            // TODO: wire to activityTrackerApi once the submit endpoint
-            // for manager feedback is available.
+            // TODO: wire to activityTrackerApi.submitAssignerFeedback(payload)
+            // once PUT /activityTracker/feedback is live. `payload` already
+            // matches that endpoint's expected body:
+            // { userId, projectId, submittedAt, feedback: [{assignerId, entries}] }
             console.log("Manager feedback submitted:", payload);
             closeFeedback();
           }}

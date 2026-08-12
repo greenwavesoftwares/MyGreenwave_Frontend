@@ -139,7 +139,7 @@ export default function TreeRows({
                   showToast(
                     "error",
                     "Error",
-                    "The dependent activities needs to be completed first. View the activities on which this activity is dependent on by clicking on the View Dependencies button",
+                    "Dependent activities must be completed first. Click View Dependencies to see the activities and who is responsible.",
                   );
                   return;
                 }
