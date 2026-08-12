@@ -1,0 +1,261 @@
+/* ==========================================================
+   AssignerFeedback — scoped to `.af-*` classNames only.
+
+   Deliberately has NO tokens of its own: every color reads
+   from the --pj-* variables already defined (and dark-mode
+   overridden) in ProjectActivityInfo.css. That means this
+   dialog stays in sync with the rest of the app automatically
+   — nothing here needs its own dark-mode block. Same pattern
+   as PauseReasonDialog.css.
+
+   IMPORTANT — MUI Dialog renders via a Portal into
+   document.body, OUTSIDE the `.pai-page` element that owns
+   the --pj-* variables. AssignerFeedback.jsx mounts the portal
+   inside `.pai-page` via the `container` prop, so these
+   variables resolve correctly.
+
+   Fallback hex values are included after each var() so the
+   dialog still renders sensibly if it's ever used somewhere
+   `.pai-page` isn't an ancestor.
+   ========================================================== */
+
+.af-paper {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: var(--bg-drawer, #ffffff) !important;
+  background-clip: padding-box;
+}
+
+/* ── Header ── */
+.af-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--pj-border-subtle, #F1F5F9);
+  background: linear-gradient(135deg, var(--pj-warning-bg-2, #FFFBEB) 0%, transparent 100%);
+}
+
+.af-icon-chip {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--pj-warning-bg, #FEF3C7);
+}
+.af-header-icon {
+  color: var(--pj-warning, #B45309);
+  fill: var(--pj-warning, #B45309);
+}
+
+.af-title {
+  color: var(--pj-text-primary, #0F172A) !important;
+}
+.af-subtitle {
+  color: var(--pj-text-secondary, #475569) !important;
+}
+.af-close-btn {
+  color: var(--pj-text-muted, #64748B) !important;
+}
+
+/* ── Manager tabs ── */
+.af-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--pj-border-subtle, #F1F5F9);
+}
+
+.af-tab {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--pj-border, #E2E8F0);
+  background: var(--pj-surface, #FFFFFF);
+  color: var(--pj-text-secondary, #475569);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.af-tab:hover {
+  background: var(--pj-surface-2, #F8FAFC);
+}
+.af-tab--active {
+  background: var(--pj-primary, #1D4ED8) !important;
+  border-color: var(--pj-primary, #1D4ED8) !important;
+  color: var(--pj-on-color, #FFFFFF) !important;
+}
+.af-tab-check {
+  color: var(--pj-success, #15803D);
+}
+.af-tab--active .af-tab-check {
+  color: var(--pj-on-color, #FFFFFF);
+}
+.af-tab-role {
+  color: var(--pj-text-faint, #94A3B8);
+  font-weight: 500;
+}
+.af-tab--active .af-tab-role {
+  color: var(--pj-primary-bg, #DBEAFE);
+}
+
+/* ── Content ── */
+.af-content {
+  padding: 20px 24px !important;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.af-point-card {
+  border: 1px solid var(--pj-border, #E2E8F0);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: var(--pj-surface, #FFFFFF);
+}
+
+.af-point-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.af-point-label {
+  color: var(--pj-text-primary, #0F172A) !important;
+}
+.af-point-desc {
+  color: var(--pj-text-muted, #64748B) !important;
+}
+
+/* ── Star rating ── */
+.af-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.af-star-btn {
+  padding: 3px !important;
+}
+.af-star-icon {
+  color: var(--pj-border-strong, #CBD5E1);
+  fill: transparent;
+  transition: color 0.1s, fill 0.1s;
+}
+.af-star-icon--filled {
+  color: var(--pj-warning, #B45309);
+  fill: var(--pj-warning, #B45309);
+}
+
+/* ── Text fields ── */
+.af-textfield .MuiOutlinedInput-root {
+  border-radius: 8px;
+  background: var(--pj-surface-2, #F8FAFC);
+  color: var(--pj-text-primary, #0F172A);
+}
+.af-textfield .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-border, #E2E8F0) !important;
+}
+.af-textfield .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-border-strong, #CBD5E1) !important;
+}
+.af-textfield .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-primary, #1D4ED8) !important;
+}
+.af-textfield textarea::placeholder {
+  color: var(--pj-text-faint, #94A3B8);
+  opacity: 1;
+}
+
+.af-error-text {
+  color: var(--pj-danger, #DC2626) !important;
+}
+
+/* ── Footer ── */
+.af-footer {
+  padding: 14px 24px 16px;
+  border-top: 1px solid var(--pj-border-subtle, #F1F5F9);
+  background: transparent;
+}
+.af-footer-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.af-progress-text {
+  color: var(--pj-text-muted, #64748B) !important;
+}
+.af-avg-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--pj-text-primary, #0F172A);
+  font-size: 13px;
+  font-weight: 700;
+}
+.af-avg-icon {
+  color: var(--pj-warning, #B45309);
+  fill: var(--pj-warning, #B45309);
+}
+
+.af-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.af-cancel-btn {
+  border-color: var(--pj-border-strong, #E2E8F0) !important;
+  color: var(--pj-text-secondary, #475569) !important;
+}
+.af-cancel-btn:hover {
+  background: var(--pj-surface-2, #F8FAFC) !important;
+}
+
+.af-submit-btn {
+  background: var(--pj-primary, #1D4ED8) !important;
+  color: var(--pj-on-color, #FFFFFF) !important;
+  box-shadow: none !important;
+  transition: filter 0.15s;
+}
+.af-submit-btn:hover {
+  filter: brightness(0.92);
+  box-shadow: none !important;
+}
+
+/* ── Success state ── */
+.af-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.af-success-icon-chip {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pj-success-bg, #DCFCE7);
+  margin-bottom: 6px;
+}
+.af-success-icon {
+  color: var(--pj-success, #15803D);
+}

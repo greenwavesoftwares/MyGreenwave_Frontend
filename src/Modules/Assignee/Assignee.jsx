@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import ProjectsInfo from './ProjectsInfo'
 import ProjectActivityInfo from './ProjectActivityInfo';
 import { getUserData } from '../Login/Encrypt';
+import AssignerFeedback from './AssignerFeedback';
 
 export default function Assignee() {
     const [selectedProject, setSelectedProject] = useState(null);

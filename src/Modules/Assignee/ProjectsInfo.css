@@ -524,6 +524,46 @@
 
 /* footer */
 
+.proj-page .proj-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+/* Feedback star button — same icon-button / icon-btn--feedback pattern
+   used in ProjectActivityInfo.css (.pai-page), mirrored here since this
+   card lives under .proj-page instead. Purple reads --pj-purple, which
+   resolves to the same #7C3AED the Star icon's own fill uses, so the
+   chip background and the icon glyph always stay in sync in both
+   light and dark mode. */
+.proj-page .icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--pj-border);
+  background: var(--pj-surface);
+  color: var(--pj-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .12s, border-color .12s, box-shadow .12s, transform .12s;
+}
+.proj-page .icon-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+.proj-page .icon-btn--feedback {
+  color: var(--pj-purple);
+  border-color: var(--pj-purple-border);
+  background: var(--pj-purple-bg);
+}
+.proj-page .icon-btn--feedback:hover {
+  background: var(--pj-purple-strong-bg);
+}
+
 .proj-page .proj-card-footer {
   margin-top: 4px;
   padding-top: 14px;
