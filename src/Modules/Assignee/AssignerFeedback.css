@@ -64,10 +64,31 @@
 /* ── Manager tabs ── */
 .af-tabs {
   display: flex;
+  align-items: center;
   gap: 8px;
-  overflow-x: auto;
+  overflow-x: hidden;
+  overflow-y: hidden;
   padding: 12px 24px;
   border-bottom: 1px solid var(--pj-border-subtle, #F1F5F9);
+}
+
+/* Only enable horizontal scrolling (and its scrollbar) once the manager
+   chips actually overflow the row — e.g. 3+ managers. With 1-2 managers
+   everything fits on one line, so no scrollbar is shown. */
+.af-tabs--scrollable {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.af-tabs--scrollable::-webkit-scrollbar {
+  height: 6px;
+}
+.af-tabs--scrollable::-webkit-scrollbar-thumb {
+  background: var(--pj-border, #E2E8F0);
+  border-radius: 999px;
+}
+.af-tabs--scrollable::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .af-tab {

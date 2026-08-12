@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -108,6 +108,29 @@ const AssignerFeedback = ({
   const [data, setData] = useState(feedbackData || {});
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+
+  // Tabs row only needs to scroll (and show a scrollbar) once the manager
+  // chips actually overflow the available width. With just 1-2 managers
+  // they fit on a single line, so we keep overflow hidden and skip the
+  // scrollbar entirely in that case.
+  const tabsRef = useRef(null);
+  const [tabsOverflowing, setTabsOverflowing] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+
+    const checkOverflow = () => {
+      setTabsOverflowing(el.scrollWidth > el.clientWidth + 1);
+    };
+
+    checkOverflow();
+
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    resizeObserver.observe(el);
+
+    return () => resizeObserver.disconnect();
+  }, [assigners]);
 
   const getManagerData = (managerId) => data[managerId] || { entries: {} };
 
@@ -293,7 +316,10 @@ const AssignerFeedback = ({
       ) : (
         <>
           {/* ── MANAGER TABS ── */}
-          <Box className="af-tabs">
+          <Box
+            ref={tabsRef}
+            className={`af-tabs${tabsOverflowing ? " af-tabs--scrollable" : ""}`}
+          >
             {assigners.map((m) => {
               const complete = isManagerComplete(m.id);
               const active = m.id === activeManagerId;
