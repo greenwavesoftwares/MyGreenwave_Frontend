@@ -309,7 +309,8 @@ export default function ProjectsInfo({ projectSelection }) {
     // activityTrackerApi.getAssignerFeedback(project.projectId) call
     // once GET /activityTracker/feedback/:projectId is live. Response
     // shape: { userId, projectId, submittedAt, assigners, feedback }.
-    const response = HARDCODED_FEEDBACK_RESPONSE;
+    const userid=getUserData()?.userDetails?.userId;
+    const response = activityTrackerApi.getAssignerRatings(userid,project.projectId);
 
     setFeedbackProject({
       projectId: project.projectId,
@@ -555,6 +556,7 @@ export default function ProjectsInfo({ projectSelection }) {
             // once PUT /activityTracker/feedback is live. `payload` already
             // matches that endpoint's expected body:
             // { userId, projectId, submittedAt, feedback: [{assignerId, entries}] }
+            activityTrackerApi.createAssignerRating(payload)
             console.log("Manager feedback submitted:", payload);
             closeFeedback();
           }}

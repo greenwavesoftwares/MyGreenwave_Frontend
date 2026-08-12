@@ -150,7 +150,7 @@ export default function TreeRows({
                   return;
                 }
               }
-              if (minutesLeft >= 15) {
+              if (minutesLeft >= 60) {
                 // 15 minutes or less remaining
 
                 onPauseDelayRequest(id, node, "StartDelay");
@@ -198,7 +198,7 @@ export default function TreeRows({
                 }
                 const minutesLeft = dayjs().diff(dayjs(plannedStop), "minute");
                 console.log("Minutes left:::", minutesLeft);
-                if (minutesLeft >= 15) {
+                if (minutesLeft >= 60) {
                   // 15 minutes or less remaining
 
                   onPauseDelayRequest(id, node, "StopDelay");
