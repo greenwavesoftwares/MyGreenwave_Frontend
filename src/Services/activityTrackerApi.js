@@ -296,6 +296,284 @@ const activityTrackerApi = {
   },
 
   // ============================================================
+  //                 PROJECT ASSIGNER RATINGS
+  // ============================================================
+
+  /**
+   * GET /activityTracker/feedback/assignee/{userid}/{projectid}
+   * Gets assigner ratings for a user and project.
+   * @param {string} userId
+   * @param {string} projectId
+   */
+  getAssignerRatings: async (userId, projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/feedback/assignee/${userId}/${projectId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/feedback/assignee
+   * Creates assigner rating.
+   * @param {Object} assignerRatingsDTO
+   */
+  createAssignerRating: async (assignerRatingsDTO) => {
+    const response = await axios.post(
+      `${apiEndPoint}/feedback/assignee`,
+      assignerRatingsDTO,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/feedback/assignee
+   * Updates assigner rating.
+   * @param {Object} assignerRatingsDTO
+   */
+  updateAssignerRatings: async (assignerRatingsDTO) => {
+    const response = await axios.put(
+      `${apiEndPoint}/feedback/assignee`,
+      assignerRatingsDTO,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
+  //                  ACTIVITY CUSTOM COLUMNS
+  // ============================================================
+
+  /**
+   * POST /activityTracker/customColumns
+   * Creates an activity custom column.
+   * @param {Object} activityCustomColumn
+   */
+  saveActivityCustomColumn: async (activityCustomColumn) => {
+    const response = await axios.post(
+      `${apiEndPoint}/customColumns`,
+      activityCustomColumn,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/customColumns/{projectId}/bulk
+   * Creates multiple activity custom columns for a project.
+   * @param {string} projectId
+   * @param {Array<Object>} activityCustomColumns
+   */
+  saveActivityCustomColumns: async (projectId, activityCustomColumns) => {
+    const response = await axios.post(
+      `${apiEndPoint}/customColumns/${projectId}/bulk`,
+      activityCustomColumns,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/customColumns/{columnId}
+   * Updates an activity custom column.
+   * @param {string} columnId
+   * @param {Object} activityCustomColumn
+   */
+  updateActivityCustomColumn: async (columnId, activityCustomColumn) => {
+    const response = await axios.put(
+      `${apiEndPoint}/customColumns/${columnId}`,
+      activityCustomColumn,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/customColumns/{columnId}
+   * Deletes an activity custom column.
+   * @param {string} columnId
+   */
+  deleteActivityCustomColumn: async (columnId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/customColumns/${columnId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/customColumns/{projectId}
+   * Deletes all custom columns belonging to a project.
+   * @param {string} projectId
+   */
+  deleteActivityCustomColumnByProjectId: async (projectId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/customColumns/${projectId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/customColumns/{columnId}
+   * Gets an activity custom column by ID.
+   * @param {string} columnId
+   */
+  getActivityCustomColumnById: async (columnId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/customColumns/${columnId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/projects/{projectId}/customColumns
+   * Gets all custom columns for a project.
+   * @param {string} projectId
+   */
+  getActivityCustomColumnsByProject: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/customColumns`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/customColumns
+   * Gets all activity custom columns.
+   */
+  getAllActivityCustomColumns: async () => {
+    const response = await axios.get(`${apiEndPoint}/customColumns`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
+  // ============================================================
+  //                  ACTIVITY CUSTOM VALUES
+  // ============================================================
+
+  /**
+   * POST /activityTracker/activities/{activityId}/customValues
+   * Creates a custom value for an activity.
+   * @param {string} activityId
+   * @param {Object} activityCustomValue
+   */
+  saveActivityCustomValue: async (activityId, activityCustomValue) => {
+    const response = await axios.post(
+      `${apiEndPoint}/activities/${activityId}/customValues`,
+      activityCustomValue,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/activities/{activityId}/customValues/bulk
+   * Creates multiple custom values for an activity.
+   * @param {string} activityId
+   * @param {Array<Object>} activityCustomValues
+   */
+  saveActivityCustomValues: async (activityId, activityCustomValues) => {
+    const response = await axios.post(
+      `${apiEndPoint}/activities/${activityId}/customValues/bulk`,
+      activityCustomValues,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/activities/{activityId}/customValues/{customColumnId}
+   * Updates a custom value.
+   * @param {string} activityId
+   * @param {string} customColumnId
+   * @param {Object} activityCustomValue
+   */
+  updateActivityCustomValue: async (
+    activityId,
+    customColumnId,
+    activityCustomValue,
+  ) => {
+    const response = await axios.put(
+      `${apiEndPoint}/activities/${activityId}/customValues/${customColumnId}`,
+      activityCustomValue,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/activities/{activityId}/customValues/{customColumnId}
+   * Deletes a specific custom value.
+   * @param {string} activityId
+   * @param {string} customColumnId
+   */
+  deleteActivityCustomValue: async (activityId, customColumnId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/activities/${activityId}/customValues/${customColumnId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/activities/{activityId}/customValues
+   * Deletes all custom values for an activity.
+   * @param {string} activityId
+   */
+  deleteActivityCustomValueByActivityId: async (activityId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/activities/${activityId}/customValues`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/activities/{projectId}/customValues
+   * Deletes all custom values for a project.
+   * @param {string} projectId
+   */
+  deleteActivityCustomValueByProjectId: async (projectId) => {
+    const response = await axios.delete(
+      `${apiEndPoint}/activities/${projectId}/customValues`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/activities/{activityId}/customValues/{customColumnId}
+   * Gets a specific custom value.
+   * @param {string} activityId
+   * @param {string} customColumnId
+   */
+  getActivityCustomValue: async (activityId, customColumnId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/activities/${activityId}/customValues/${customColumnId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/activities/{activityId}/customValues
+   * Gets all custom values for an activity.
+   * @param {string} activityId
+   */
+  getActivityCustomValuesByActivity: async (activityId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/activities/${activityId}/customValues`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  // ============================================================
   //                 PROJECT UPDATE CATEGORIES
   // ============================================================
 
