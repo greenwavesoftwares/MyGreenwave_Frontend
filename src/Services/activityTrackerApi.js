@@ -354,6 +354,20 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  /**
+   * GET /activityTracker/assigneeAssignerInfoByProjectId/{projectId}
+   * Gets assigner/assignee information and ratings for a project.
+   * @param {string} projectId
+   * @returns {Array<Object>} AssigneeAssignerInfoByProjectIdInfoDTO
+   */
+  getAssigneeAssignerInfoByProjectId: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/assigneeAssignerInfoByProjectId/${projectId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
   // ============================================================
   //                  ACTIVITY CUSTOM COLUMNS
   // ============================================================
