@@ -61,6 +61,26 @@ export default function ProjectActivityInfo({
   const [resourceColor, setResourceColor] = useState({});
   const [loading, setLoading] = useState(true);
   const [pauseDelayTarget, setPauseDelayTarget] = useState(null); // { activityId, activity }
+  const [pauseDelayLoading, setPauseDelayLoading] = useState(false);
+  // Tracks in-flight API calls that are triggered from row-level buttons
+  // (start/complete/restart/resume, submit sub-activity, open comments),
+  // keyed per-activity so only the button that started the call shows a
+  // loader/disabled state — not every row on the page.
+  const [loadingKeys, setLoadingKeys] = useState(() => new Set());
+
+  const startLoading = (key) =>
+    setLoadingKeys((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+
+  const stopLoading = (key) =>
+    setLoadingKeys((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   const WORK_START = 10;
   const WORK_END = 18;
   const WEEK_END = [0, 6];
@@ -178,6 +198,8 @@ export default function ProjectActivityInfo({
     status,
     activityName,
   ) => {
+    const loadingKey = `comment-${activityId}`;
+    startLoading(loadingKey);
     try{
     const existingCommentsResp =
       await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
@@ -196,6 +218,9 @@ export default function ProjectActivityInfo({
     }
     catch(e){
       showToast("error","Error","Error in fetching comment")
+    }
+    finally {
+      stopLoading(loadingKey);
     }
   };
   const onCloseCommentbox = () => {
@@ -252,6 +277,8 @@ export default function ProjectActivityInfo({
       return;
     }
     const payload = mapToActivityPayload(activityData, projectId, moduleId);
+    const loadingKey = `submit-${activityData.id}`;
+    startLoading(loadingKey);
     try {
       const response = await activityTrackerApi.createActivity(
         projectId,
@@ -265,6 +292,8 @@ export default function ProjectActivityInfo({
     } catch (e) {
       console.log("Error:", e);
       showToast("error", "Error", "Error in adding SubActivity");
+    } finally {
+      stopLoading(loadingKey);
     }
   };
 
@@ -400,6 +429,8 @@ export default function ProjectActivityInfo({
     return Math.max(0, totalWorkingHours);
   };
   const updateStatusOfActivity = async (activityId, status, activity, reason) => {
+    const loadingKey = `status-${activityId}`;
+    startLoading(loadingKey);
     try{
       console.log("Inside updateStatus")
     const actualTime = new Date();
@@ -416,10 +447,12 @@ export default function ProjectActivityInfo({
       statusPayload,
     );
     showToast("success", "Status Updated", `Activity ${statusPayload.status}`);
-    fetchActivities();
+    await fetchActivities();
   }catch(e){
     showToast("error","Error","Error in status update")
     
+  } finally {
+    stopLoading(loadingKey);
   }
   };
 
@@ -429,7 +462,7 @@ export default function ProjectActivityInfo({
     setPauseDelayTarget({ activityId, activity,pauseDelayType });
   };
 
-  const handlePauseDelayConfirm = (reason) => {
+  const handlePauseDelayConfirm = async (reason) => {
     let status=null
     if(pauseDelayTarget.pauseDelayType==='StartDelay')
       status='Running'
@@ -440,12 +473,17 @@ export default function ProjectActivityInfo({
     else if(pauseDelayTarget.pauseDelayType==='Redo')
       status='Running'
     if (pauseDelayTarget) {
-      updateStatusOfActivity(
-        pauseDelayTarget.activityId,
-        status,
-        pauseDelayTarget.activity,
-        reason,
-      );
+      setPauseDelayLoading(true);
+      try {
+        await updateStatusOfActivity(
+          pauseDelayTarget.activityId,
+          status,
+          pauseDelayTarget.activity,
+          reason,
+        );
+      } finally {
+        setPauseDelayLoading(false);
+      }
     }
     setPauseDelayTarget(null);
   };
@@ -797,19 +835,24 @@ export default function ProjectActivityInfo({
               className="pai-refresh-btn"
               onClick={fetchActivitiesOnLoad}
               title="Refresh"
+              disabled={loading}
             >
-              <svg
-                width="14"
-                height="14"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <path d="M23 4v6h-6" />
-                <path d="M1 20v-6h6" />
-                <path d="M3.51 9a9 9 0 0114.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0020.49 15" />
-              </svg>
+              {loading ? (
+                <span className="icon-btn-spinner" />
+              ) : (
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
+                  <path d="M23 4v6h-6" />
+                  <path d="M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0114.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0020.49 15" />
+                </svg>
+              )}
             </button>
             {/* <button className="pai-add-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -957,6 +1000,7 @@ export default function ProjectActivityInfo({
                   fetchColor={fetchColor}
                   customColumns={activityInfo?.customColumns}
                   activityLookupMap={activityLookupMap}
+                  loadingKeys={loadingKeys}
                 />
               ))}
             </TableBody>
@@ -969,6 +1013,7 @@ export default function ProjectActivityInfo({
         pauseDelayType={pauseDelayTarget?.pauseDelayType}
         onConfirm={handlePauseDelayConfirm}
         onCancel={() => setPauseDelayTarget(null)}
+        loading={pauseDelayLoading}
       />
       <CommentsActionDialog
         existingComments={existingComments}

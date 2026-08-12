@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,7 @@ import {
   Button,
   Box,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import PauseCircleRoundedIcon from "@mui/icons-material/PauseCircleRounded";
 import CloseIcon from "@mui/icons-material/Close";
@@ -29,28 +30,34 @@ const PauseReasonDialog = ({
   onConfirm,
   onCancel,
   pauseDelayType,
+  loading = false,
 }) => {
   const [reason, setReason] = useState("");
   const [error, setError] = useState(false);
 
   const key = TYPE_KEY[pauseDelayType]; // "paused" | "startdelay" | "stopdelay" | "redo" | undefined
 
-  const resetAndClose = () => {
-    setReason("");
-    setError(false);
-  };
+  // Reset the form once the dialog has actually closed, rather than the
+  // instant Confirm is clicked — the dialog stays open (with the Confirm
+  // button showing a loader) until the status-update API call finishes.
+  useEffect(() => {
+    if (!open) {
+      setReason("");
+      setError(false);
+    }
+  }, [open]);
 
   const handleConfirm = () => {
+    if (loading) return;
     if (!reason.trim()) {
       setError(true);
       return;
     }
     onConfirm(reason.trim());
-    resetAndClose();
   };
 
   const handleCancel = () => {
-    resetAndClose();
+    if (loading) return;
     onCancel();
   };
 
@@ -116,7 +123,7 @@ const PauseReasonDialog = ({
   return (
     <Dialog
       open={open}
-      onClose={handleCancel}
+      onClose={loading ? undefined : handleCancel}
       // Mounts the portal inside .pai-page so the --pj-* CSS variables
       // (and dark-mode overrides) defined there are actually in scope.
       // Falls back to the default body portal if .pai-page isn't found.
@@ -158,6 +165,7 @@ const PauseReasonDialog = ({
           size="small"
           onClick={handleCancel}
           className="prd-close-btn"
+          disabled={loading}
           sx={{ mt: -3 }}
         >
           <CloseIcon fontSize="small" />
@@ -252,6 +260,7 @@ const PauseReasonDialog = ({
           className="prd-textfield"
           placeholder="Type the reason..."
           value={reason}
+          disabled={loading}
           onChange={(e) => {
             setReason(e.target.value);
             setError(false);
@@ -275,14 +284,22 @@ const PauseReasonDialog = ({
           variant="outlined"
           onClick={handleCancel}
           className="prd-cancel-btn"
+          disabled={loading}
           sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
         >
           Cancel
         </Button>
         <Button
           variant="contained"
-          startIcon={pauseDelayIcon(18, false)}
+          startIcon={
+            loading ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              pauseDelayIcon(18, false)
+            )
+          }
           onClick={handleConfirm}
+          disabled={loading}
           className={`prd-confirm-btn prd-confirm-btn--${key}`}
           sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
         >

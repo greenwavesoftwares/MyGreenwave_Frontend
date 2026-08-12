@@ -457,6 +457,28 @@
   background: var(--pj-border);
 }
 
+.pai-page .pai-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Generic small spinner reused inside icon-only buttons (refresh,
+   row action buttons) while their API call is in flight. */
+@keyframes pai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.pai-page .icon-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.75;
+  animation: pai-spin 0.6s linear infinite;
+}
+
 /* ══════════════════════════════════════
    TABLE
    NOTE: MUI classnames (.MuiTableCell-root etc.) are global by

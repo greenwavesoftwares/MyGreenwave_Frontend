@@ -64,7 +64,9 @@ export default function TreeRows({
   fetchColor,
   customColumns,
   activityLookupMap,
+  loadingKeys,
 }) {
+  const isKeyLoading = (key) => loadingKeys?.has(key) ?? false;
   const {
     id,
     name,
@@ -117,12 +119,16 @@ export default function TreeRows({
   const renderActions = () => {
     const isAssignedUser =
       currentUserId?.toLowerCase() === resource?.toLowerCase();
+    const isStatusLoading = isKeyLoading(`status-${id}`);
+    const isSubmitLoading = isKeyLoading(`submit-${id}`);
+    const isCommentLoading = isKeyLoading(`comment-${id}`);
 
     const statusActions = {
       Pending: [
         <Tooltip key="start" title="Start">
           <button
             className="icon-button icon-btn--start"
+            disabled={isStatusLoading}
             onClick={() => {
               const minutesLeft = dayjs().diff(dayjs(plannedStart), "minute");
               console.log("Minutes left::", minutesLeft);
@@ -153,7 +159,11 @@ export default function TreeRows({
               }
             }}
           >
-            <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
+            {isStatusLoading ? (
+              <span className="icon-btn-spinner" />
+            ) : (
+              <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
+            )}
           </button>
         </Tooltip>,
       ],
@@ -162,15 +172,21 @@ export default function TreeRows({
         <Tooltip key="pause" title="Pause">
           <button
             className="icon-button icon-btn--pause"
+            disabled={isStatusLoading}
             onClick={() => onPauseDelayRequest(id, node, "Paused")}
           >
-            <PauseIcon sx={{ fontSize: 14 }} className="pause-icon" />
+            {isStatusLoading ? (
+              <span className="icon-btn-spinner" />
+            ) : (
+              <PauseIcon sx={{ fontSize: 14 }} className="pause-icon" />
+            )}
           </button>
         </Tooltip>,
 
           <Tooltip key="complete" title="Complete">
             <button
               className="icon-button icon-btn--stop"
+              disabled={isStatusLoading}
               onClick={() => {
                 if (!allChildrenCompleted(node)) {
                   showToast(
@@ -191,7 +207,11 @@ export default function TreeRows({
                 }
               }}
             >
-              <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
+              {isStatusLoading ? (
+                <span className="icon-btn-spinner" />
+              ) : (
+                <StopIcon sx={{ fontSize: 14 }} className="stop-icon" />
+              )}
             </button>
           </Tooltip>
         ,
@@ -201,9 +221,14 @@ export default function TreeRows({
         <Tooltip key="restart" title="Restart">
           <button
             className="icon-button icon-btn--start"
+            disabled={isStatusLoading}
             onClick={() => updateStatusOfActivity(id, "Running", node)}
           >
-            <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
+            {isStatusLoading ? (
+              <span className="icon-btn-spinner" />
+            ) : (
+              <PlayArrowIcon sx={{ fontSize: 14 }} className="start-icon" />
+            )}
           </button>
         </Tooltip>,
       ].filter(Boolean),
@@ -212,9 +237,14 @@ export default function TreeRows({
         <Tooltip key="resume" title="Resume">
           <button
             className="icon-button icon-btn--resume"
+            disabled={isStatusLoading}
             onClick={() => updateStatusOfActivity(id, "Running", node)}
           >
-            <FastForwardIcon sx={{ fontSize: 14 }} className="resume-icon" />
+            {isStatusLoading ? (
+              <span className="icon-btn-spinner" />
+            ) : (
+              <FastForwardIcon sx={{ fontSize: 14 }} className="resume-icon" />
+            )}
           </button>
         </Tooltip>,
       ],
@@ -237,9 +267,14 @@ export default function TreeRows({
         <Tooltip key="submit" title="Redo Activity">
           <button
             className="icon-button icon-btn--feedback"
+            disabled={isStatusLoading}
             onClick={() => onPauseDelayRequest(id, node, "Redo")}
           >
-            <RotateCcw size={15} strokeWidth={2} />
+            {isStatusLoading ? (
+              <span className="icon-btn-spinner" />
+            ) : (
+              <RotateCcw size={15} strokeWidth={2} />
+            )}
           </button>
         </Tooltip>,
       ],
@@ -247,15 +282,21 @@ export default function TreeRows({
         <Tooltip key="submit" title="Submit Activity">
           <button
             className="icon-button icon-btn--submit"
+            disabled={isSubmitLoading}
             onClick={() => submitAddedNode(projectId, moduleId, node)}
           >
-            <SendIcon sx={{ fontSize: 14 }} className="send-icon" />
+            {isSubmitLoading ? (
+              <span className="icon-btn-spinner" />
+            ) : (
+              <SendIcon sx={{ fontSize: 14 }} className="send-icon" />
+            )}
           </button>
         </Tooltip>,
 
         <Tooltip key="delete" title="Delete Activity">
           <button
             className="icon-button icon-btn--delete"
+            disabled={isSubmitLoading}
             onClick={() => deleteNode(projectId, moduleId, node)}
           >
             <Trash2 size={14} />
@@ -292,6 +333,7 @@ export default function TreeRows({
             <Tooltip title="Comments">
               <button
                 className="icon-button icon-btn--comment"
+                disabled={isCommentLoading}
                 onClick={() =>
                   onOpenCommentBox(
                     projectId,
@@ -302,7 +344,11 @@ export default function TreeRows({
                   )
                 }
               >
-                <ModeCommentOutlinedIcon sx={{ fontSize: 14 }} />
+                {isCommentLoading ? (
+                  <span className="icon-btn-spinner" />
+                ) : (
+                  <ModeCommentOutlinedIcon sx={{ fontSize: 14 }} />
+                )}
               </button>
             </Tooltip>
           </Badge>,
@@ -526,6 +572,7 @@ export default function TreeRows({
                 fetchColor={fetchColor}
                 customColumns={customColumns}
                 activityLookupMap={activityLookupMap}
+                loadingKeys={loadingKeys}
               />
             ))}
         </>
@@ -693,6 +740,7 @@ export default function TreeRows({
                 fetchColor={fetchColor}
                 customColumns={customColumns}
                 activityLookupMap={activityLookupMap}
+                loadingKeys={loadingKeys}
               />
             ))}
         </>

@@ -14,6 +14,7 @@ import {
   Button,
   Chip,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -58,6 +59,14 @@ export default function CommentsActionDialog({
   const [replyAttachment, setReplyAttachment] = useState({});
   const [openConfirm, setOpenConfirm] = useState(false);
   const [deleteInfo, setDeleteInfo] = useState({});
+  // ── loading states for buttons that hit the API ──
+  const [addingComment, setAddingComment] = useState(false);
+  const [replyLoadingIndex, setReplyLoadingIndex] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  // Which attachment (by storage key) is currently being viewed/downloaded,
+  // so only that specific row's button shows a loader.
+  const [viewingAttachmentKey, setViewingAttachmentKey] = useState(null);
+  const [downloadingAttachmentKey, setDownloadingAttachmentKey] = useState(null);
   // Mobile-only: which panel is visible — "existing" comments or the "new" entry form.
   // Has no effect on desktop, where both panels are always shown stacked.
   const [mobileView, setMobileView] = useState("existing");
@@ -141,6 +150,7 @@ export default function CommentsActionDialog({
         ? newComment.responsibility.join(",")
         : "",
     };
+    setAddingComment(true);
     try {
       const response = await activityTrackerApi.addComment(
         newComment.projectId,
@@ -164,6 +174,8 @@ export default function CommentsActionDialog({
       }
     } catch (e) {
       showToast("error", "Error", "Error in adding comment");
+    } finally {
+      setAddingComment(false);
     }
   };
 
@@ -182,6 +194,7 @@ export default function CommentsActionDialog({
       attachmentBase64: replyAttachment[commentIndex]?.attachmentBase64 || null,
       attachmentName: replyAttachment[commentIndex]?.attachmentName || null,
     };
+    setReplyLoadingIndex(commentIndex);
     try {
       const replyAdded = await activityTrackerApi.addReply(
         comment.commentId,
@@ -204,6 +217,8 @@ export default function CommentsActionDialog({
       showToast("success", "Success", "Reply added successfully");
     } catch (e) {
       showToast("error", "Error", "Failed to add reply");
+    } finally {
+      setReplyLoadingIndex(null);
     }
   };
 
@@ -249,9 +264,35 @@ export default function CommentsActionDialog({
     setOpenConfirm(true);
   };
 
-  const confirmDelete = () => {
-    handleDelete(deleteInfo.type, deleteInfo.index, deleteInfo.id);
-    setOpenConfirm(false);
+  // Wrap the generic AttachmentHelper functions so this dialog can track,
+  // per attachment key, whether a view/download call is currently in
+  // flight and disable/spin just that button.
+  const handleViewAttachment = async (attachmentKey, folder) => {
+    setViewingAttachmentKey(attachmentKey);
+    try {
+      await viewAttachmentFromMinio(attachmentKey, folder, documentViewerRef);
+    } finally {
+      setViewingAttachmentKey(null);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachmentKey, folder) => {
+    setDownloadingAttachmentKey(attachmentKey);
+    try {
+      await downloadAttachment(attachmentKey, folder);
+    } finally {
+      setDownloadingAttachmentKey(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      await handleDelete(deleteInfo.type, deleteInfo.index, deleteInfo.id);
+    } finally {
+      setDeleteLoading(false);
+      setOpenConfirm(false);
+    }
   };
 
   const getInitials = (name) => {
@@ -429,14 +470,33 @@ export default function CommentsActionDialog({
                                 title={getAttachmentFileName(
                                   entry.attachment,
                                 )}
+                                style={{
+                                  cursor:
+                                    viewingAttachmentKey === entry.attachment
+                                      ? "wait"
+                                      : "pointer",
+                                  pointerEvents:
+                                    viewingAttachmentKey === entry.attachment
+                                      ? "none"
+                                      : "auto",
+                                  opacity:
+                                    viewingAttachmentKey === entry.attachment
+                                      ? 0.6
+                                      : 1,
+                                }}
                                 onClick={() =>
-                                  viewAttachmentFromMinio(
+                                  handleViewAttachment(
                                     entry.attachment,
                                     "comments",
-                                    documentViewerRef,
                                   )
                                 }
                               >
+                                {viewingAttachmentKey === entry.attachment && (
+                                  <CircularProgress
+                                    size={12}
+                                    sx={{ mr: 0.5 }}
+                                  />
+                                )}
                                 {getAttachmentFileName(entry.attachment)}
                               </span>
                               
@@ -444,14 +504,23 @@ export default function CommentsActionDialog({
                                 <IconButton
                                   size="small"
                                   aria-label="Download attachment"
+                                  disabled={
+                                    downloadingAttachmentKey ===
+                                    entry.attachment
+                                  }
                                   onClick={() =>
-                                    downloadAttachment(
+                                    handleDownloadAttachment(
                                       entry.attachment,
                                       "comments",
                                     )
                                   }
                                 >
-                                  <DownloadOutlinedIcon fontSize="small" />
+                                  {downloadingAttachmentKey ===
+                                  entry.attachment ? (
+                                    <CircularProgress size={14} />
+                                  ) : (
+                                    <DownloadOutlinedIcon fontSize="small" />
+                                  )}
                                 </IconButton>
                               </Tooltip>
                             </div>
@@ -571,28 +640,60 @@ export default function CommentsActionDialog({
                                       title={getAttachmentFileName(
                                         reply.attachment,
                                       )}
+                                      style={{
+                                        cursor:
+                                          viewingAttachmentKey ===
+                                          reply.attachment
+                                            ? "wait"
+                                            : "pointer",
+                                        pointerEvents:
+                                          viewingAttachmentKey ===
+                                          reply.attachment
+                                            ? "none"
+                                            : "auto",
+                                        opacity:
+                                          viewingAttachmentKey ===
+                                          reply.attachment
+                                            ? 0.6
+                                            : 1,
+                                      }}
                                       onClick={() =>
-                                        viewAttachmentFromMinio(
+                                        handleViewAttachment(
                                           reply.attachment,
                                           "replies",
-                                          documentViewerRef,
                                         )
                                       }
                                     >
+                                      {viewingAttachmentKey ===
+                                        reply.attachment && (
+                                        <CircularProgress
+                                          size={12}
+                                          sx={{ mr: 0.5 }}
+                                        />
+                                      )}
                                       {getAttachmentFileName(reply.attachment)}
                                     </span>
                                     <Tooltip title="Download">
                                       <IconButton
                                         size="small"
                                         aria-label="Download attachment"
+                                        disabled={
+                                          downloadingAttachmentKey ===
+                                          reply.attachment
+                                        }
                                         onClick={() =>
-                                          downloadAttachment(
+                                          handleDownloadAttachment(
                                             reply.attachment,
                                             "replies",
                                           )
                                         }
                                       >
-                                        <DownloadOutlinedIcon fontSize="small" />
+                                        {downloadingAttachmentKey ===
+                                        reply.attachment ? (
+                                          <CircularProgress size={14} />
+                                        ) : (
+                                          <DownloadOutlinedIcon fontSize="small" />
+                                        )}
                                       </IconButton>
                                     </Tooltip>
                                   </div>
@@ -646,7 +747,17 @@ export default function CommentsActionDialog({
                                     <Button
                                       size="small"
                                       variant="contained"
-                                      startIcon={<SendOutlinedIcon />}
+                                      startIcon={
+                                        replyLoadingIndex === index ? (
+                                          <CircularProgress
+                                            size={14}
+                                            color="inherit"
+                                          />
+                                        ) : (
+                                          <SendOutlinedIcon />
+                                        )
+                                      }
+                                      disabled={replyLoadingIndex === index}
                                       onClick={() => addReply(index)}
                                     >
                                       Send Reply
@@ -856,7 +967,14 @@ export default function CommentsActionDialog({
                 </Button>
                 <Button
                   variant="contained"
-                  startIcon={<AddIcon />}
+                  startIcon={
+                    addingComment ? (
+                      <CircularProgress size={14} color="inherit" />
+                    ) : (
+                      <AddIcon />
+                    )
+                  }
+                  disabled={addingComment}
                   onClick={addComments}
                 >
                   Add Entry
@@ -870,6 +988,7 @@ export default function CommentsActionDialog({
           open={openConfirm}
           onConfirm={confirmDelete}
           onCancel={() => setOpenConfirm(false)}
+          loading={deleteLoading}
         />
 
         {/* Shared preview dialog for comment/reply attachments — opened

@@ -530,8 +530,13 @@ export default function ProjectsInfo({ projectSelection }) {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <button className="proj-refresh-btn" onClick={fetchProjects}>
-            <RefreshIcon /> Refresh
+          <button
+            className="proj-refresh-btn"
+            onClick={fetchProjects}
+            disabled={loading}
+          >
+            {loading ? <span className="proj-btn-spinner" /> : <RefreshIcon />}{" "}
+            Refresh
           </button>
         </div>
       </div>

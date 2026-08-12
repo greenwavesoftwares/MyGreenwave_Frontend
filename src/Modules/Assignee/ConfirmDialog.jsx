@@ -7,6 +7,7 @@ import {
   Button,
   Typography,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 
@@ -16,11 +17,12 @@ const ConfirmDialog = ({
   message = "Are you sure?",
   onConfirm,
   onCancel,
+  loading = false,
 }) => {
   return (
     <Dialog
       open={open}
-      onClose={onCancel}
+      onClose={loading ? undefined : onCancel}
       PaperProps={{
         sx: {
           borderRadius: 3,
@@ -73,6 +75,7 @@ const ConfirmDialog = ({
           size="small"
           variant="outlined"
           onClick={onCancel}
+          disabled={loading}
         >
           Cancel
         </Button>
@@ -82,8 +85,10 @@ const ConfirmDialog = ({
           variant="contained"
           color="error"
           onClick={onConfirm}
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={14} color="inherit" /> : null}
         >
-          Confirm
+          {loading ? "Deleting..." : "Confirm"}
         </Button>
       </DialogActions>
     </Dialog>
