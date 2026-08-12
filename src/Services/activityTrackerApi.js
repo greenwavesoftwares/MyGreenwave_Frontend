@@ -341,6 +341,19 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  /**
+   * DELETE /activityTracker/feedback/assignee/{projectId}
+   * delete assigner rating.
+   * @param {string} projectId
+   */
+  deleteAssignerRatings: async (projectId) => {
+    const response = await axios.put(
+      `${apiEndPoint}/feedback/assignee/${projectId}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
   // ============================================================
   //                  ACTIVITY CUSTOM COLUMNS
   // ============================================================
