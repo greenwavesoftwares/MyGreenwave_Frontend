@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 import { useTheme } from "../../useTheme";
 import { useResponsive } from "../../useResponsive";
@@ -9,7 +9,11 @@ import GanttView from "../index";
  * Reuses the main GanttView component with a filtered projects array.
  */
 export default function FullScreenProjectModal({
-  project,
+  project, // legacy — single project
+  projects, // NEW — array of projects
+  title, // NEW — custom header title
+  subtitle, // NEW — custom header subtitle
+  initialViewMode, // NEW — "task" | "resource"
   onClose,
   onOpenComments,
   onFeedback,
@@ -17,6 +21,25 @@ export default function FullScreenProjectModal({
   const { t } = useTheme();
   const { isMobile } = useResponsive();
 
+  // Normalize: support both `project` (single) and `projects` (array)
+  const projectsArray = useMemo(() => {
+    if (Array.isArray(projects) && projects.length > 0) return projects;
+    if (project) return [project];
+    return [];
+  }, [project, projects]);
+
+  // Compute display title/subtitle
+  const displayTitle = title || projectsArray[0]?.project || "Untitled Project";
+
+  const displaySubtitle =
+    subtitle ||
+    (() => {
+      if (projectsArray.length === 1) {
+        const p = projectsArray[0];
+        return `${(p.rows || []).length} tasks · ${p.status || "draft"}`;
+      }
+      return `${projectsArray.length} projects`;
+    })();
   // Close on ESC
   useEffect(() => {
     const handler = (e) => {
@@ -35,7 +58,7 @@ export default function FullScreenProjectModal({
     };
   }, []);
 
-  if (!project) return null;
+  if (projectsArray.length === 0) return null;
 
   return (
     <div
@@ -94,7 +117,7 @@ export default function FullScreenProjectModal({
               fontWeight: 700,
             }}
           >
-            {(project.project || "?").charAt(0).toUpperCase()}
+            {(displayTitle || "?").charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -107,30 +130,19 @@ export default function FullScreenProjectModal({
                 whiteSpace: "nowrap",
               }}
             >
-              {project.project || "Untitled Project"}
+              {displayTitle}
             </div>
             <div
               style={{
                 fontSize: 11.5,
                 color: t.textMuted,
                 marginTop: 2,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                flexWrap: "wrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              <span>{(project.rows || []).length} tasks</span>
-              <span>•</span>
-              <span style={{ textTransform: "capitalize", fontWeight: 500 }}>
-                {project.status || "draft"}
-              </span>
-              {project.po && (
-                <>
-                  <span>•</span>
-                  <span>PO: {project.po}</span>
-                </>
-              )}
+              {displaySubtitle}
             </div>
           </div>
 
@@ -183,10 +195,11 @@ export default function FullScreenProjectModal({
           }}
         >
           <GanttView
-            projects={[project]}
+            projects={projectsArray}
             onOpenComments={onOpenComments}
             onFeedback={onFeedback}
             isFullScreen={true}
+            initialViewMode={initialViewMode}
           />
         </div>
       </div>

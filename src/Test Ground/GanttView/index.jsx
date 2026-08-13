@@ -46,8 +46,9 @@ export default function GanttView({
   projects = [],
   onOpenComments,
   onFeedback,
-  showGlobalFilters = false, // reserved for future toolbar filters
+  showGlobalFilters = false,
   isFullScreen = false,
+  initialViewMode = "task", // ← NEW
 }) {
   const { t } = useTheme();
   const { isMobile } = useResponsive();
@@ -57,7 +58,7 @@ export default function GanttView({
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
 
   // ── View / zoom / interaction state ──
-  const [viewMode, setViewMode] = useState("task");
+  const [viewMode, setViewMode] = useState(initialViewMode);
   const [zoom, setZoom] = useState("day");
   const [colWidthPx, setColWidthPx] = useState(
     ZOOM_CONFIGS.day.defaultColWidth,
@@ -70,7 +71,10 @@ export default function GanttView({
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const [showDependencies, setShowDependencies] = useState(false);
   // Full-screen project modal
+  // Full-screen project modal (single project OR all projects)
   const [fullScreenProjectId, setFullScreenProjectId] = useState(null);
+  const [fullScreenAll, setFullScreenAll] = useState(false);
+
   const fullScreenProject = useMemo(
     () => projects.find((p) => p.id === fullScreenProjectId) || null,
     [projects, fullScreenProjectId],
@@ -451,6 +455,7 @@ export default function GanttView({
             leftPanelWidth={dynamicLeftPanelWidth}
             leftPanelRef={leftPanelRef}
             onOpenFullScreen={setFullScreenProjectId} // ← NEW
+            onOpenFullScreenAll={() => setFullScreenAll(true)}
             isFullScreen={isFullScreen}
           />
         )}
@@ -540,10 +545,27 @@ export default function GanttView({
         />
       )}
       {/* Full-screen project modal */}
-      {fullScreenProject && (
+      {/* Full-screen project modal (single project) */}
+      {fullScreenProject && !fullScreenAll && (
         <FullScreenProjectModal
-          project={fullScreenProject}
+          projects={[fullScreenProject]}
+          title={fullScreenProject.project || "Untitled Project"}
+          subtitle={`${(fullScreenProject.rows || []).length} tasks · ${fullScreenProject.status || "draft"}`}
+          initialViewMode="task"
           onClose={() => setFullScreenProjectId(null)}
+          onOpenComments={onOpenComments}
+          onFeedback={onFeedback}
+        />
+      )}
+
+      {/* Full-screen all projects (from resource view) */}
+      {fullScreenAll && (
+        <FullScreenProjectModal
+          projects={projects}
+          title="All Projects — Resource View"
+          subtitle={`${projects.length} project${projects.length !== 1 ? "s" : ""}`}
+          initialViewMode="resource"
+          onClose={() => setFullScreenAll(false)}
           onOpenComments={onOpenComments}
           onFeedback={onFeedback}
         />
