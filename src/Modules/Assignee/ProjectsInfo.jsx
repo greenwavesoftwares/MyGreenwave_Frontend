@@ -6,6 +6,7 @@ import StatusChip from "./StatusChip";
 import { Lock, Rocket, Star } from "lucide-react";
 import AssignerFeedback from "./AssignerFeedback";
 import { getUserData } from "../Login/Encrypt";
+import { showToast } from "./toastService";
 /* =========================
    ICONS
 ========================= */
@@ -257,6 +258,11 @@ export default function ProjectsInfo({ projectSelection }) {
   const [query, setQuery] = useState("");
   // Project currently open in the "rate your managers" dialog, or null.
   const [feedbackProject, setFeedbackProject] = useState(null);
+  // projectId of the card whose feedback (ratings + assigners) is
+  // currently being fetched — drives the spinner on that card's star
+  // button so only the clicked card shows a loading state, not every
+  // card at once.
+  const [feedbackLoadingId, setFeedbackLoadingId] = useState(null);
 
   // Normalizes assigner data into the { assignerId, name, role } shape
   // AssignerFeedback expects, and excludes the current user (nobody
@@ -300,24 +306,59 @@ export default function ProjectsInfo({ projectSelection }) {
     );
   };
 
-  const openFeedback = (e, project) => {
+  const openFeedback = async(e, project) => {
     // Card itself is clickable (drills into the project) — stop that
     // from firing when the star is what was actually clicked.
     e.stopPropagation();
 
-    // TODO: swap for a real
-    // activityTrackerApi.getAssignerFeedback(project.projectId) call
-    // once GET /activityTracker/feedback/:projectId is live. Response
-    // shape: { userId, projectId, submittedAt, assigners, feedback }.
-    const userid=getUserData()?.userDetails?.userId;
-    const response = activityTrackerApi.getAssignerRatings(userid,project.projectId);
+    // Guard against double-clicks firing a second fetch while the
+    // first is still in flight.
+    if (feedbackLoadingId) return;
 
-    setFeedbackProject({
-      projectId: project.projectId,
-      projectName: project.projectName,
-      assigners: normalizeAssigners(response ?? project),
-      feedback: response?.feedback ?? [],
-    });
+    setFeedbackLoadingId(project.projectId);
+    try {
+      // TODO: swap for a real
+      // activityTrackerApi.getAssignerFeedback(project.projectId) call
+      // once GET /activityTracker/feedback/:projectId is live. Response
+      // shape: { userId, projectId, submittedAt, assigners, feedback }.
+      const userid=getUserData()?.userDetails?.userId;
+      const response = await activityTrackerApi.getAssignerRatings(userid,project.projectId);
+      const responseAssigners=await activityTrackerApi.getAssigneeAssignerInfoByProjectId(project.projectId)
+
+      const currentUserId = getUserData()?.userDetails?.userId?.toLowerCase();
+
+      const assigners=(responseAssigners ?? []).filter(
+        (m) => m.id?.toLowerCase() !== currentUserId,
+      );
+      console.log("Assigner after filteration::",assigners)
+
+      // Nobody left to rate once you exclude yourself — surface it as
+      // an error instead of opening an empty feedback dialog.
+      if (assigners.length === 0) {
+        showToast(
+          "error",
+          "No assigners to rate",
+          "There are no other assigners on this project apart from yourself.",
+        );
+        return;
+      }
+
+      setFeedbackProject({
+        projectId: project.projectId,
+        projectName: project.projectName,
+        assigners: assigners,
+        feedback: response?.feedback ?? [],
+      });
+    } catch (err) {
+      console.error("Failed to load assigner feedback:", err);
+      showToast(
+        "error",
+        "Error",
+        "Unable to load feedback for this project. Please try again.",
+      );
+    } finally {
+      setFeedbackLoadingId(null);
+    }
   };
 
 
@@ -430,8 +471,13 @@ export default function ProjectsInfo({ projectSelection }) {
                   className="icon-button icon-btn--feedback"
                   title="Rate managers"
                   onClick={(e) => openFeedback(e, project)}
+                  disabled={feedbackLoadingId === project.projectId}
                 >
-                  <Star className="send-icon" size={15} strokeWidth={2} />
+                  {feedbackLoadingId === project.projectId ? (
+                    <span className="proj-btn-spinner" />
+                  ) : (
+                    <Star className="send-icon" size={15} strokeWidth={2} />
+                  )}
                 </button>
               </span>
               <h3 className="proj-card-title">{project.projectName}</h3>
@@ -551,14 +597,22 @@ export default function ProjectsInfo({ projectSelection }) {
           projectId={feedbackProject.projectId}
           assigners={feedbackProject.assigners}
           feedback={feedbackProject.feedback}
-          onSubmit={(payload) => {
-            // TODO: wire to activityTrackerApi.submitAssignerFeedback(payload)
+          onSubmit={async (payload) => {
+            // TODO: swap for activityTrackerApi.submitAssignerFeedback(payload)
             // once PUT /activityTracker/feedback is live. `payload` already
             // matches that endpoint's expected body:
             // { userId, projectId, submittedAt, feedback: [{assignerId, entries}] }
-            activityTrackerApi.createAssignerRating(payload)
+            //
+            // Awaited (and not wrapped in try/catch) on purpose: AssignerFeedback
+            // itself awaits this handler, shows its own loading/success state,
+            // and catches a thrown/rejected error to show the failure message —
+            // so this just needs to do the request and let errors bubble up.
+            // Also intentionally does NOT call closeFeedback() here — the dialog
+            // shows its own "Feedback submitted" success screen and closes via
+            // its Done button, so closing it out from under the user the moment
+            // the request resolves would skip that confirmation.
+            await activityTrackerApi.createAssignerRating(payload);
             console.log("Manager feedback submitted:", payload);
-            closeFeedback();
           }}
         />
       )}

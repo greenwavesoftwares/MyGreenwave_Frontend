@@ -79,16 +79,23 @@
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
+  /* Leave a little breathing room so the scrollbar doesn't sit flush
+     against the tab chips. */
+  padding-bottom: 8px;
 }
 .af-tabs--scrollable::-webkit-scrollbar {
-  height: 6px;
+  height: 8px;
 }
 .af-tabs--scrollable::-webkit-scrollbar-thumb {
-  background: var(--pj-border, #E2E8F0);
+  background: var(--pj-border-strong, #CBD5E1);
   border-radius: 999px;
 }
+.af-tabs--scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--pj-text-faint, #94A3B8);
+}
 .af-tabs--scrollable::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--pj-surface-2, #F8FAFC);
+  border-radius: 999px;
 }
 
 .af-tab {
@@ -256,6 +263,33 @@
 .af-submit-btn:hover {
   filter: brightness(0.92);
   box-shadow: none !important;
+}
+.af-submit-btn:disabled,
+.af-cancel-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.af-submit-btn:disabled {
+  background: var(--pj-primary, #1D4ED8) !important;
+  color: var(--pj-on-color, #FFFFFF) !important;
+}
+
+/* Small inline spinner shown on the submit button while the feedback
+   PUT request is in flight. Mirrors the .proj-btn-spinner pattern used
+   elsewhere in the app, sized to sit on the button's text baseline. */
+.af-btn-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 4px;
+  vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: af-spin 0.7s linear infinite;
+}
+@keyframes af-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ── Success state ── */

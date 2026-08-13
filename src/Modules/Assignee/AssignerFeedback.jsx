@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Star, StarHalf, Send, Check } from "lucide-react";
 import "./AssignerFeedback.css";
 import { getUserData } from "../Login/Encrypt";
 import { managerFeedback } from "./AssigneeHelper";
+import { showToast } from "./toastService";
 
 /**
  * StarRating
@@ -21,8 +22,20 @@ import { managerFeedback } from "./AssigneeHelper";
  * right half selects the whole number. Color comes entirely from the
  * `af-star-icon` classes (which read the --pj-warning token), so it
  * stays in sync with light/dark mode automatically.
+ *
+ * Uses Pointer Events rather than mouse events so it behaves correctly
+ * on touch devices: onClick can be silently cancelled by the browser if
+ * it detects finger movement between touchstart/touchend, which left
+ * touch users with a rating that looked filled in (from a stray
+ * mousemove-driven hover state) but was never actually committed to
+ * state. onPointerUp fires reliably for mouse, touch, and pen, and the
+ * hover preview is now gated to real mouse input only.
+ *
+ * `readOnly` disables all interaction — used once feedback has already
+ * been submitted for this project, so a previously-submitted rating
+ * can be viewed but not changed.
  */
-const StarRating = ({ value, onChange }) => {
+const StarRating = ({ value, onChange, readOnly = false }) => {
   const [hovered, setHovered] = useState(0);
 
   // Given a pointer event over a given star's button, figure out whether
@@ -36,7 +49,7 @@ const StarRating = ({ value, onChange }) => {
   const display = hovered || value;
 
   return (
-    <Box className="af-stars">
+    <Box className={`af-stars${readOnly ? " af-stars--readonly" : ""}`}>
       {[1, 2, 3, 4, 5].map((star) => {
         const full = star <= display;
         const half = !full && star - 0.5 <= display;
@@ -47,9 +60,24 @@ const StarRating = ({ value, onChange }) => {
             key={star}
             size="small"
             className="af-star-btn"
-            onClick={(e) => onChange(valueFromPointer(e, star))}
-            onMouseMove={(e) => setHovered(valueFromPointer(e, star))}
-            onMouseLeave={() => setHovered(0)}
+            disabled={readOnly}
+            onPointerUp={
+              readOnly
+                ? undefined
+                : (e) => onChange(valueFromPointer(e, star))
+            }
+            onPointerMove={
+              readOnly
+                ? undefined
+                : (e) => {
+                    // Hover preview only makes sense for an actual mouse —
+                    // touch/pen shouldn't leave a "phantom" preview behind.
+                    if (e.pointerType === "mouse") {
+                      setHovered(valueFromPointer(e, star));
+                    }
+                  }
+            }
+            onPointerLeave={readOnly ? undefined : () => setHovered(0)}
             aria-label={`Rate ${star - 0.5} or ${star} out of 5`}
           >
             <Icon
@@ -89,6 +117,14 @@ const OVERALL_KEY = "overall";
  * A tab strip lets the user move between assigners, with a checkmark
  * once an assigner's per-category ratings are complete.
  *
+ * If `feedback` is already populated (i.e. the GET response for this
+ * project came back with entries), the whole dialog renders read-only:
+ * stars and remarks can be viewed but not edited, and the submit button
+ * is replaced with a simple Close button. This assumes one feedback
+ * array covers the whole project (all assigners rated together) — if
+ * your API can return partial feedback per-assigner instead, switch
+ * `isReadOnly` to a per-manager check against `toInternalData(feedback)`.
+ *
  * Colors and dark mode come entirely from the shared --pj-* tokens
  * defined in ProjectActivityInfo.css — this file defines no colors
  * of its own, same pattern as PauseReasonDialog.
@@ -99,13 +135,13 @@ const OVERALL_KEY = "overall";
  *  - projectId: string
  *      required to build the PUT payload; forwarded as-is from whatever
  *      screen renders this dialog.
- *  - assigners: [{ assignerId, name, role }]
+ *  - assigners: [{ id, name, role }]
  *      role is free text, e.g. "assigner" | "co-assigner" — pass as
- *      many co-assigners as needed, the tab strip scrolls. Can be
- *      passed straight through from the GET response's `assigners`.
+ *      many co-assigners as needed, the tab strip scrolls.
  *  - feedback: [{ assignerId, entries: [{ categoryId, rating, remark }] }]
  *      pre-fills the form from the GET response's `feedback` array
- *      (e.g. previously submitted feedback for this project).
+ *      (e.g. previously submitted feedback for this project). A
+ *      non-empty array also locks the form into read-only mode.
  *  - onSubmit: (payload) => void   payload matches the PUT shape:
  *      {
  *        userId, projectId, submittedAt,
@@ -117,14 +153,13 @@ const AssignerFeedback = ({
   onClose = () => {},
   projectId,
   assigners = [
-    { assignerId: "riya.sharma@greenwave.co.in", name: "Riya Sharma", role: "assigner" },
-    { assignerId: "devansh.kapoor@greenwave.co.in", name: "Devansh Kapoor", role: "co-assigner" },
-    { assignerId: "ayesha.khan@greenwave.co.in", name: "Ayesha Khan", role: "co-assigner" },
+    { id: "riya.sharma@greenwave.co.in", name: "Riya Sharma", role: "assigner" },
+    { id: "devansh.kapoor@greenwave.co.in", name: "Devansh Kapoor", role: "co-assigner" },
+    { id: "ayesha.khan@greenwave.co.in", name: "Ayesha Khan", role: "co-assigner" },
   ],
   feedback,
   onSubmit = () => {},
-}) => {
-  // Converts the GET-response `feedback` array (list of
+}) => {  // Converts the GET-response `feedback` array (list of
   // { assignerId, entries: [{ categoryId, rating, remark }] }) into the
   // shape this component edits internally: a map keyed by assignerId,
   // each holding a map keyed by categoryId, for O(1) lookups while
@@ -142,49 +177,58 @@ const AssignerFeedback = ({
       return acc;
     }, {});
 
-  const [activeAssignerId, setActiveAssignerId] = useState(
-    assigners[0]?.assignerId,
-  );
+  // Already-submitted feedback locks the whole form: no editing stars
+  // or remarks, no re-submitting. Derived straight from the prop rather
+  // than local state, so it can't drift from what the server told us.
+  const isReadOnly = Array.isArray(feedback) && feedback.length > 0;
+
+  const [activeAssignerId, setActiveAssignerId] = useState(assigners[0]?.id);
   // data keyed by assignerId -> { entries: { [categoryId]: {rating, remark} } }
   // The overall rating/remark lives at entries[OVERALL_KEY], same shape
   // as any other category entry.
   const [data, setData] = useState(() => toInternalData(feedback));
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  // True while the PUT request from handleSubmit is in flight — drives
+  // the spinner on the submit button and blocks a second submit/close
+  // from firing mid-request.
+  const [submitting, setSubmitting] = useState(false);
 
-  // Tabs row only needs to scroll (and show a scrollbar) once the manager
-  // chips actually overflow the available width. With just 1-2 managers
-  // they fit on a single line, so we keep overflow hidden and skip the
-  // scrollbar entirely in that case.
+  // Tabs row scrolls horizontally once there's more than one assigner —
+  // gated purely on count rather than a measured-overflow check, since
+  // the measurement approach (ResizeObserver + scrollWidth) was proving
+  // unreliable: it could report "no overflow" on first paint (e.g. before
+  // web fonts finished loading), leaving the row silently clipped with no
+  // way to reach the remaining tabs. Enabling overflow-x unconditionally
+  // for 2+ assigners guarantees the extra tabs are always reachable, even
+  // if a couple of assigners technically fit without needing to scroll.
   const tabsRef = useRef(null);
-  const [tabsOverflowing, setTabsOverflowing] = useState(false);
+  const tabsScrollable = assigners.length > 1;
 
-  useLayoutEffect(() => {
-    const el = tabsRef.current;
-    if (!el) return;
+  // Trackpads pan horizontally on their own, but a plain mouse wheel only
+  // sends vertical delta — without this the tabs row would be scrollable
+  // in principle but undiscoverable for most desktop mouse users. Redirect
+  // vertical wheel movement into horizontal scroll on this row only.
+  const handleTabsWheel = (e) => {
+    if (!tabsScrollable) return;
+    if (e.deltaY === 0) return;
+    e.currentTarget.scrollLeft += e.deltaY;
+    e.preventDefault();
+  };
 
-    const checkOverflow = () => {
-      setTabsOverflowing(el.scrollWidth > el.clientWidth + 1);
-    };
+  const getAssignerData = (assignerId) => data[assignerId] || { entries: {} };
 
-    checkOverflow();
-
-    const resizeObserver = new ResizeObserver(checkOverflow);
-    resizeObserver.observe(el);
-
-    return () => resizeObserver.disconnect();
-  }, [assigners]);
-
-  const getAssignerData = (assignerId) =>
-    data[assignerId] || { entries: {} };
-
-  const points = managerFeedback()
+  const points = managerFeedback();
 
   // Generic setters — used for both the per-category cards and the overall
-  // rating/remark card, since both just write into entries[key].
+  // rating/remark card, since both just write into entries[key]. Both read
+  // the previous manager entry from `prev` (not the outer `data` closure),
+  // so two updates that land in the same React batch (e.g. two quick taps
+  // across different categories) merge correctly instead of the second
+  // update clobbering the first.
   const setRating = (assignerId, key, rating) => {
     setData((prev) => {
-      const ad = getAssignerData(assignerId);
+      const ad = prev[assignerId] || { entries: {} };
       return {
         ...prev,
         [assignerId]: {
@@ -197,7 +241,7 @@ const AssignerFeedback = ({
 
   const setRemark = (assignerId, key, remark) => {
     setData((prev) => {
-      const ad = getAssignerData(assignerId);
+      const ad = prev[assignerId] || { entries: {} };
       return {
         ...prev,
         [assignerId]: {
@@ -214,11 +258,10 @@ const AssignerFeedback = ({
   };
 
   const allComplete =
-    assigners.length > 0 &&
-    assigners.every((m) => isManagerComplete(m.assignerId));
+    assigners.length > 0 && assigners.every((m) => isManagerComplete(m.id));
 
   const activeManager =
-    assigners.find((m) => m.assignerId === activeAssignerId) || assigners[0];
+    assigners.find((m) => m.id === activeAssignerId) || assigners[0];
   const activeData = getAssignerData(activeAssignerId);
   const activeOverall = activeData.entries[OVERALL_KEY] || {};
   const ratedCount = points.filter(
@@ -235,7 +278,9 @@ const AssignerFeedback = ({
     );
   }, [points, activeData]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isReadOnly || submitting) return;
+
     if (!allComplete) {
       setError("Please rate every point for each manager before submitting.");
       return;
@@ -247,7 +292,7 @@ const AssignerFeedback = ({
       projectId,
       submittedAt: new Date().toISOString(),
       feedback: assigners.map((m) => {
-        const ad = getAssignerData(m.assignerId);
+        const ad = getAssignerData(m.id);
 
         const entries = [
           ...points.map((p) => ({
@@ -261,21 +306,37 @@ const AssignerFeedback = ({
             remark: ad.entries[OVERALL_KEY]?.remark || "",
           },
         ];
-
-        return { assignerId: m.assignerId, entries };
+        return { assignerId: m.id, entries };
       }),
     };
 
-    console.log("Onsubmit :::", payload);
-    onSubmit(payload);
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      // `onSubmit` may or may not be async depending on the caller —
+      // awaiting a non-promise value just resolves immediately, so this
+      // works either way. If the caller's handler throws (or its promise
+      // rejects), the catch below treats it as a failed submission.
+      await onSubmit(payload);
+      setSubmitted(true);
+      showToast("success", "Success", "Feedback submitted successfully");
+    } catch (err) {
+      console.error("Failed to submit assigner feedback:", err);
+      setError("Failed to submit feedback. Please try again.");
+      showToast("error", "Error", "Failed to submit feedback. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
+    // Ignore close attempts (backdrop click, Escape, the X button, or
+    // Cancel) while a submit is in flight so we don't tear down the
+    // dialog mid-request.
+    if (submitting) return;
     setData({});
     setError("");
     setSubmitted(false);
-    setActiveAssignerId(assigners[0]?.assignerId);
+    setActiveAssignerId(assigners[0]?.id);
     onClose();
   };
 
@@ -320,6 +381,7 @@ const AssignerFeedback = ({
           size="small"
           onClick={handleClose}
           className="af-close-btn"
+          disabled={submitting}
           sx={{ mt: -3 }}
         >
           <CloseIcon fontSize="small" />
@@ -351,16 +413,17 @@ const AssignerFeedback = ({
           {/* ── MANAGER TABS ── */}
           <Box
             ref={tabsRef}
-            className={`af-tabs${tabsOverflowing ? " af-tabs--scrollable" : ""}`}
+            onWheel={handleTabsWheel}
+            className={`af-tabs${tabsScrollable ? " af-tabs--scrollable" : ""}`}
           >
             {assigners.map((m) => {
-              const complete = isManagerComplete(m.assignerId);
-              const active = m.assignerId === activeAssignerId;
+              const complete = isManagerComplete(m.id);
+              const active = m.id === activeAssignerId;
               return (
                 <button
-                  key={m.assignerId}
+                  key={m.id}
                   type="button"
-                  onClick={() => setActiveAssignerId(m.assignerId)}
+                  onClick={() => setActiveAssignerId(m.id)}
                   className={`af-tab${active ? " af-tab--active" : ""}`}
                 >
                   {complete && <Check size={13} className="af-tab-check" />}
@@ -397,6 +460,7 @@ const AssignerFeedback = ({
                       onChange={(rating) =>
                         setRating(activeAssignerId, point.id, rating)
                       }
+                      readOnly={isReadOnly}
                     />
                   </Box>
                   <TextField
@@ -410,6 +474,7 @@ const AssignerFeedback = ({
                     onChange={(e) =>
                       setRemark(activeAssignerId, point.id, e.target.value)
                     }
+                    disabled={isReadOnly}
                   />
                 </Box>
               );
@@ -432,6 +497,7 @@ const AssignerFeedback = ({
                   onChange={(rating) =>
                     setRating(activeAssignerId, OVERALL_KEY, rating)
                   }
+                  readOnly={isReadOnly}
                 />
               </Box>
               <TextField
@@ -445,6 +511,7 @@ const AssignerFeedback = ({
                 onChange={(e) =>
                   setRemark(activeAssignerId, OVERALL_KEY, e.target.value)
                 }
+                disabled={isReadOnly}
               />
             </Box>
           </DialogContent>
@@ -453,8 +520,9 @@ const AssignerFeedback = ({
           <Box className="af-footer">
             <Box className="af-footer-status">
               <Typography variant="caption" className="af-progress-text">
-                {ratedCount} of {points.length} points rated for{" "}
-                {activeManager?.name}
+                {isReadOnly
+                  ? `Feedback already submitted for ${activeManager?.name}`
+                  : `${ratedCount} of ${points.length} points rated for ${activeManager?.name}`}
               </Typography>
               {averageRating > 0 && (
                 <Box className="af-avg-badge">
@@ -463,7 +531,7 @@ const AssignerFeedback = ({
                 </Box>
               )}
             </Box>
-            {error && (
+            {error && !isReadOnly && (
               <Typography
                 variant="caption"
                 className="af-error-text"
@@ -477,18 +545,29 @@ const AssignerFeedback = ({
                 variant="outlined"
                 onClick={handleClose}
                 className="af-cancel-btn"
+                disabled={submitting}
                 sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
               >
-                Cancel
+                {isReadOnly ? "Close" : "Cancel"}
               </Button>
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                className="af-submit-btn"
-                sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-              >
-                Submit all feedback
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  className="af-submit-btn"
+                  disabled={submitting}
+                  sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+                >
+                  {submitting ? (
+                    <>
+                      <span className="af-btn-spinner" />
+                      Submitting…
+                    </>
+                  ) : (
+                    "Submit all feedback"
+                  )}
+                </Button>
+              )}
             </Box>
           </Box>
         </>

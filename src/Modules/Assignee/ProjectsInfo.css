@@ -579,6 +579,12 @@
 .proj-page .icon-btn--feedback:hover {
   background: var(--pj-purple-strong-bg);
 }
+.proj-page .icon-btn--feedback:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 .proj-page .proj-card-footer {
   margin-top: 4px;
