@@ -40,6 +40,7 @@ import {
   Users,
   Filter,
 } from "lucide-react";
+import { CheckCircle2 as CheckIcon } from "lucide-react";
 
 import { useTheme } from "../useTheme";
 
@@ -97,6 +98,7 @@ import CommentsModal from "../modals/CommentsModal";
 import ValidationModal from "../modals/ValidationModal";
 import RejectReasonModal from "../modals/RejectReasonModal";
 import ProjectCloseModal from "../modals/ProjectCloseModal";
+import ExternalClosureModal from "../modals/ExternalClosureModal";
 import AddColumnModal from "../modals/AddColumnModal";
 import ConfirmDeleteColumnModal from "../modals/ConfirmDeleteColumnModal";
 import ExtraColumnsPreviewModal from "../modals/ExtraColumnsPreviewModal";
@@ -205,7 +207,9 @@ export default function ProjectEditor({
   // ─── UI state ───
   const [view, setView] = useState("activities");
   const [motionSubmitted, setMotionSubmitted] = useState(
-    draft.status === "published",
+    draft.status === "published" ||
+      draft.status === "finished" ||
+      draft.status === "closed",
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [overlapRowIds, setOverlapRowIds] = useState(new Set());
@@ -242,7 +246,8 @@ export default function ProjectEditor({
   // ─── Close project ───
   const [closeProjectOpen, setCloseProjectOpen] = useState(false);
   const [isClosingProject, setIsClosingProject] = useState(false);
-
+  const [externalClosureOpen, setExternalClosureOpen] = useState(false);
+  const [isExternalClosing, setIsExternalClosing] = useState(false);
   // ─── Co-assigner modal ───
   const [coAssignerModalOpen, setCoAssignerModalOpen] = useState(false);
   const [allUsersForCoAssigner, setAllUsersForCoAssigner] = useState([]);
@@ -634,7 +639,7 @@ export default function ProjectEditor({
         const payload = {
           ...buildProjectData(),
           status: "closed",
-          projectFeedback: feedback,
+          // projectFeedback: feedback,
           timeEfficiencyRating: feedback.timeEfficiencyRating,
           timeEfficiencyComments: feedback.timeEfficiencyComments,
           fulfillmentRating: feedback.fulfillmentRating,
@@ -644,6 +649,7 @@ export default function ProjectEditor({
           overallComments: feedback.overallComments,
           projectUserRatings: feedback.resourceRatings || [],
           resourceRatings: feedback.resourceRatings || [],
+          closures: feedback.closures || [],
           closedAt: new Date().toISOString(),
         };
         await onPublish(payload);
@@ -655,6 +661,30 @@ export default function ProjectEditor({
       }
     },
     [buildProjectData, onPublish, showToast],
+  );
+  const handleExternalClosure = useCallback(
+    async (feedback) => {
+      setIsExternalClosing(true);
+      try {
+        const payload = {
+          ...buildProjectData(),
+          status: "finished",
+          closures: [
+            ...(draft.closures || []).filter(
+              (c) => c.closureType !== "External Closure",
+            ),
+            ...feedback.closures, // adds External Closure entry
+          ],
+        };
+        await onPublish(payload);
+        setExternalClosureOpen(false);
+      } catch (err) {
+        showToast("error", "External closure failed", err.message);
+      } finally {
+        setIsExternalClosing(false);
+      }
+    },
+    [buildProjectData, draft.closures, onPublish, showToast],
   );
 
   const handleSaveDraftClick = useCallback(async () => {
@@ -1619,21 +1649,27 @@ export default function ProjectEditor({
               background:
                 draft.status === "closed"
                   ? t.closedBg
-                  : motionSubmitted
+                  : draft.status === "finished"
                     ? t.successBg
-                    : t.warningBg,
+                    : motionSubmitted
+                      ? t.successBg
+                      : t.warningBg,
               color:
                 draft.status === "closed"
                   ? t.closedText
-                  : motionSubmitted
+                  : draft.status === "finished"
                     ? t.success
-                    : t.warning,
+                    : motionSubmitted
+                      ? t.success
+                      : t.warning,
               border: `1px solid ${
                 draft.status === "closed"
                   ? t.closedBorder
-                  : motionSubmitted
+                  : draft.status === "finished"
                     ? t.successBorder
-                    : t.warningBorder
+                    : motionSubmitted
+                      ? t.successBorder
+                      : t.warningBorder
               }`,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
@@ -1642,6 +1678,10 @@ export default function ProjectEditor({
             {draft.status === "closed" ? (
               <>
                 <Lock size={11} /> Closed
+              </>
+            ) : draft.status === "finished" ? (
+              <>
+                <CheckCircle2 size={11} /> Finished
               </>
             ) : motionSubmitted ? (
               <>
@@ -1843,8 +1883,62 @@ export default function ProjectEditor({
         {/* ══ ACTIVITIES VIEW ══ */}
         {view === "activities" && (
           <>
-            {/* Close Project button */}
-            {motionSubmitted &&
+            {/* ── External Closure button (green) ── */}
+            {/* ── External Closure button (green) ── */}
+            {(motionSubmitted || draft.status === "published") &&
+              draft.status !== "closed" &&
+              draft.status !== "finished" &&
+              allTasksDone &&
+              canDeleteProject(currentUserProjectRole) && (
+                <button
+                  onClick={() => setExternalClosureOpen(true)}
+                  style={{
+                    ...btnStyle,
+                    marginLeft: "auto",
+                    background: t.successBgSubtle,
+                    color: t.success,
+                    borderColor: t.successBorder,
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  <CheckCircle2 size={14} />
+                  External Closure
+                </button>
+              )}
+
+            {/* ── View External Closure (read-only) ── */}
+            {(draft.status === "finished" ||
+              (draft.closures || []).some(
+                (c) => c.closureType === "External Closure",
+              )) && (
+              <button
+                onClick={() => setExternalClosureOpen(true)}
+                style={{
+                  ...btnStyle,
+                  marginLeft:
+                    draft.status === "finished" && !closeProjectOpen
+                      ? "auto"
+                      : 0,
+                  background: t.violetBg,
+                  color: t.violet,
+                  borderColor: t.violetBorder,
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <CheckCircle2 size={14} />
+                View External Closure
+              </button>
+            )}
+
+            {/* ── Close Project button (danger red) ── */}
+            {/* ── Close Project button (danger red) ── */}
+            {(motionSubmitted || draft.status === "finished") &&
               draft.status !== "closed" &&
               allTasksDone &&
               canDeleteProject(currentUserProjectRole) && (
@@ -1852,7 +1946,13 @@ export default function ProjectEditor({
                   onClick={() => setCloseProjectOpen(true)}
                   style={{
                     ...btnStyle,
-                    marginLeft: "auto",
+                    marginLeft:
+                      draft.status === "finished" ||
+                      (draft.closures || []).some(
+                        (c) => c.closureType === "External Closure",
+                      )
+                        ? 0
+                        : "auto",
                     background: t.dangerBgSubtle,
                     color: t.danger,
                     borderColor: t.dangerBorder,
@@ -1866,12 +1966,14 @@ export default function ProjectEditor({
                   Close Project
                 </button>
               )}
+
+            {/* ── View Project Feedback (closed) ── */}
             {draft.status === "closed" && (
               <button
                 onClick={() => setCloseProjectOpen(true)}
                 style={{
                   ...btnStyle,
-                  marginLeft: "auto",
+                  marginLeft: 0,
                   background: t.violetBg,
                   color: t.violet,
                   borderColor: t.violetBorder,
@@ -3294,27 +3396,38 @@ export default function ProjectEditor({
                       background:
                         draft.status === "closed"
                           ? t.closedBg
-                          : motionSubmitted
+                          : draft.status === "finished"
                             ? t.successBg
-                            : t.bgMuted,
+                            : motionSubmitted
+                              ? t.successBg
+                              : t.bgMuted,
                       color:
                         draft.status === "closed"
                           ? t.closedText
-                          : motionSubmitted
+                          : draft.status === "finished"
                             ? t.success
-                            : t.textMuted,
+                            : motionSubmitted
+                              ? t.success
+                              : t.textMuted,
                       border: `1px solid ${
                         draft.status === "closed"
                           ? t.closedBorder
-                          : motionSubmitted
+                          : draft.status === "finished"
                             ? t.successBorder
-                            : t.border
+                            : motionSubmitted
+                              ? t.successBorder
+                              : t.border
                       }`,
                     }}
                   >
                     {draft.status === "closed" ? (
                       <>
                         <Lock size={12} /> Closed — project has been finalized
+                      </>
+                    ) : draft.status === "finished" ? (
+                      <>
+                        <CheckCircle2 size={12} /> Finished — externally closed,
+                        awaiting internal closure
                       </>
                     ) : motionSubmitted ? (
                       <>
@@ -3334,7 +3447,10 @@ export default function ProjectEditor({
               <button
                 onClick={handleSaveDraftClick}
                 disabled={
-                  isSaving || motionSubmitted || draft.status === "closed"
+                  isSaving ||
+                  motionSubmitted ||
+                  draft.status === "closed" ||
+                  draft.status === "finished"
                 }
                 style={{
                   ...btnStyle,
@@ -3343,19 +3459,29 @@ export default function ProjectEditor({
                   justifyContent: "center",
                   fontSize: isMobile ? 13 : 12,
                   opacity:
-                    isSaving || motionSubmitted || draft.status === "closed"
+                    isSaving ||
+                    motionSubmitted ||
+                    draft.status === "closed" ||
+                    draft.status === "finished"
                       ? 0.5
                       : 1,
                   cursor:
-                    isSaving || motionSubmitted || draft.status === "closed"
+                    isSaving ||
+                    motionSubmitted ||
+                    draft.status === "closed" ||
+                    draft.status === "finished"
                       ? "not-allowed"
                       : "pointer",
                   background:
-                    motionSubmitted || draft.status === "closed"
+                    motionSubmitted ||
+                    draft.status === "closed" ||
+                    draft.status === "finished"
                       ? t.bgMuted
                       : t.bgCard,
                   color:
-                    motionSubmitted || draft.status === "closed"
+                    motionSubmitted ||
+                    draft.status === "closed" ||
+                    draft.status === "finished"
                       ? t.textFaint
                       : t.textSecondary,
                 }}
@@ -3378,20 +3504,39 @@ export default function ProjectEditor({
               {/* Publish / Update */}
               <button
                 onClick={handleSubmitMotion}
-                disabled={isSaving || draft.status === "closed"}
+                disabled={
+                  isSaving ||
+                  draft.status === "closed" ||
+                  draft.status === "finished"
+                }
                 style={{
                   ...btnStyle,
-                  background: draft.status === "closed" ? t.bgMuted : t.primary,
+                  background:
+                    draft.status === "closed" || draft.status === "finished"
+                      ? t.bgMuted
+                      : t.primary,
                   color:
-                    draft.status === "closed" ? t.textFaint : t.textInverse,
-                  borderColor: draft.status === "closed" ? t.border : t.primary,
+                    draft.status === "closed" || draft.status === "finished"
+                      ? t.textFaint
+                      : t.textInverse,
+                  borderColor:
+                    draft.status === "closed" || draft.status === "finished"
+                      ? t.border
+                      : t.primary,
                   height: isMobile ? 44 : 36,
-                  flex: isMobile ? 1 : "initial", // ← equal split on mobile
+                  flex: isMobile ? 1 : "initial",
                   justifyContent: "center",
                   fontSize: isMobile ? 13 : 12,
-                  opacity: isSaving || draft.status === "closed" ? 0.5 : 1,
+                  opacity:
+                    isSaving ||
+                    draft.status === "closed" ||
+                    draft.status === "finished"
+                      ? 0.5
+                      : 1,
                   cursor:
-                    isSaving || draft.status === "closed"
+                    isSaving ||
+                    draft.status === "closed" ||
+                    draft.status === "finished"
                       ? "not-allowed"
                       : "pointer",
                   fontWeight: 600,
@@ -3401,6 +3546,11 @@ export default function ProjectEditor({
                   <>
                     <Lock size={14} />
                     {isMobile ? "Closed" : "Project Closed"}
+                  </>
+                ) : draft.status === "finished" ? (
+                  <>
+                    <CheckCircle2 size={14} />
+                    {isMobile ? "Finished" : "Project Finished"}
                   </>
                 ) : motionSubmitted ? (
                   <>
@@ -3634,6 +3784,22 @@ export default function ProjectEditor({
           isSubmitting={isClosingProject}
           readOnly={draft.status === "closed"}
           savedFeedback={draft.status === "closed" ? draft : null}
+        />
+      )}
+      {externalClosureOpen && (
+        <ExternalClosureModal
+          project={project}
+          onClose={() => !isExternalClosing && setExternalClosureOpen(false)}
+          onConfirm={handleExternalClosure}
+          isSubmitting={isExternalClosing}
+          readOnly={
+            draft.status === "finished" ||
+            draft.status === "closed" ||
+            (draft.closures || []).some(
+              (c) => c.closureType === "External Closure",
+            )
+          }
+          savedFeedback={draft}
         />
       )}
 

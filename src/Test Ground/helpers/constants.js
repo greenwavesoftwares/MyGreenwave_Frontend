@@ -11,7 +11,7 @@ export const MAX_CUSTOM_COL_CHARS = 500;
 export const DEFAULT_CUSTOM_COL_WIDTH = 180;
 export const MIN_CUSTOM_COL_WIDTH = 100;
 export const MAX_CUSTOM_COL_WIDTH = 500;
-
+export const RESOURCE_VIEW_PANEL_WIDTH = 230;
 // Module color palette
 export const MODULE_COLORS = [
   { bg: "#DBEAFE", color: "#1D4ED8", border: "#93C5FD" }, // Blue

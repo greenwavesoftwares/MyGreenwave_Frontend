@@ -1,33 +1,51 @@
 /* ═══════════════════════════════════════════════════════
    Status Display Helper
-   Determines the visual status label based on planned start
+   Determines the visual status label based on time comparison
    ═══════════════════════════════════════════════════════ */
 
 import { parseISODateTime } from "./dateUtils";
 
 /**
- * Returns the display status for a row.
- * - If actual status is "Pending" AND plannedStart is in the past → "Yet to Start"
- * - Otherwise returns the actual status (or "Pending" as default)
+ * Returns the display status for a row based on time-aware logic.
+ *
+ * Rules:
+ *   - Pending + plannedStart > now  → "Yet to Start"
+ *   - Pending + plannedStart <= now → "Pending Late"
+ *   - Pending + no plannedStart     → "Pending" (neutral fallback)
+ *   - Running + plannedStop > now   → "Running"
+ *   - Running + plannedStop <= now  → "Running Late"
+ *   - Running + no plannedStop      → "Running"
+ *   - Any other status              → returned as-is
  *
  * NOTE: This is FRONTEND-ONLY. The actual row.status is not mutated.
  */
 export function getDisplayStatus(row) {
   const rawStatus = String(row?.status || "Pending").trim();
   const normalized = rawStatus.toLowerCase();
-
-  // Only "Pending" rows can become "Yet to Start"
-  if (normalized !== "pending") return rawStatus;
-
-  if (!row?.plannedStart) return "Pending";
-
-  const plannedStart = parseISODateTime(row.plannedStart);
-  if (!plannedStart || isNaN(plannedStart.getTime())) return "Pending";
-
   const now = new Date();
-  if (plannedStart.getTime() > now.getTime()) return "Yet to Start";
 
-  return "Pending";
+  // ── Pending logic ──
+  if (normalized === "pending") {
+    if (!row?.plannedStart) return "Pending"; // no data → neutral fallback
+    const plannedStart = parseISODateTime(row.plannedStart);
+    if (!plannedStart || isNaN(plannedStart.getTime())) return "Pending";
+
+    if (plannedStart.getTime() > now.getTime()) return "Yet to Start";
+    return "Pending Late";
+  }
+
+  // ── Running logic ──
+  if (normalized === "running") {
+    if (!row?.plannedStop) return "Running"; // no data → default running
+    const plannedStop = parseISODateTime(row.plannedStop);
+    if (!plannedStop || isNaN(plannedStop.getTime())) return "Running";
+
+    if (plannedStop.getTime() <= now.getTime()) return "Running Late";
+    return "Running";
+  }
+
+  // ── All other statuses returned as-is ──
+  return rawStatus;
 }
 
 /**
@@ -36,7 +54,9 @@ export function getDisplayStatus(row) {
 export const DISPLAY_STATUSES = [
   "Yet to Start",
   "Pending",
+  "Pending Late",
   "Running",
+  "Running Late",
   "Paused",
   "Completed",
   "Finished",

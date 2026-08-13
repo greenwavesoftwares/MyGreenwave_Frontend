@@ -37,6 +37,7 @@ import MobileTaskListSheet from "./components/mobile/MobileTaskListSheet";
 import MobileToolsSheet from "./components/mobile/MobileToolsSheet";
 import MobileTaskDetailSheet from "./components/mobile/MobileTaskDetailSheet";
 import { getDisplayStatus } from "../helpers/statusDisplay";
+import { RESOURCE_VIEW_PANEL_WIDTH } from "../helpers/constants";
 
 /* ═══════════════════════════════════════════════════════
    GanttView — main orchestrator
@@ -240,15 +241,21 @@ export default function GanttView({
     getBarPosition,
   } = useGanttGeometry({ filteredProjects, zoom, colWidthPx });
 
-  // ── Dynamic left panel width (based on visible columns) ──
+  // ── Dynamic left panel width (based on view mode + visible columns) ──
   const dynamicLeftPanelWidth = useMemo(() => {
+    // Resource view uses a single narrow column for resource names
+    if (viewMode === "resource") {
+      return RESOURCE_VIEW_PANEL_WIDTH;
+    }
+
+    // Task view uses multiple columns based on visibility
     return (
       COL_TASK_WIDTH +
       (visibleColumns.module ? COL_MODULE_WIDTH : 0) +
       (visibleColumns.resource ? COL_RESOURCE_WIDTH : 0) +
       (visibleColumns.status ? COL_STATUS_WIDTH : 0)
     );
-  }, [visibleColumns]);
+  }, [viewMode, visibleColumns]);
 
   // ── Sync scroll (timeline vertical → left panel) ──
   const syncScroll = useCallback((e) => {
