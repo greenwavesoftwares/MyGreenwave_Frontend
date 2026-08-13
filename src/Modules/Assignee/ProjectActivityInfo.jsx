@@ -732,6 +732,11 @@ export default function ProjectActivityInfo({
   useEffect(() => {
     fetchActivitiesOnLoad();
   }, []);
+  const projectStatusAssignee=(status)=>{
+    if(status==='finished')
+      return 'published'
+    return status
+  }
   if (loading) {
     return <ProjectActivitiesSkeleton />;
   }
@@ -779,7 +784,7 @@ export default function ProjectActivityInfo({
             </div>
             <div className="pai-info-field">
               <span className="pai-field-label">Status</span>
-              <StatusChip status={activityInfo.projectStatus} />
+              <StatusChip status={projectStatusAssignee(activityInfo.projectStatus)} />
             </div>
             <div className="pai-info-field">
               <span className="pai-field-label">Created By</span>

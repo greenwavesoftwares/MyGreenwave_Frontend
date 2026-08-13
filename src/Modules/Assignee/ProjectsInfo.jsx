@@ -205,6 +205,8 @@ const LockIcon = (props) => <Lock size={14} strokeWidth={2} {...props} />;
 
 function normalizeStatus(status) {
   const s = (status || "").toLowerCase();
+  if(s==='finished')
+    return 'published'
   return s;
 }
 
@@ -466,7 +468,8 @@ export default function ProjectsInfo({ projectSelection }) {
             >
               <span className="proj-card-top-row">
                 <StatusChip status={status} />
-                <button
+                
+                {project.projectStatus==='closed'&&<button
                   type="button"
                   className="icon-button icon-btn--feedback"
                   title="Rate managers"
@@ -479,6 +482,7 @@ export default function ProjectsInfo({ projectSelection }) {
                     <Star className="send-icon" size={15} strokeWidth={2} />
                   )}
                 </button>
+        }
               </span>
               <h3 className="proj-card-title">{project.projectName}</h3>
 
