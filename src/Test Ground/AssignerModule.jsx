@@ -280,16 +280,20 @@ export default function AssignerModule() {
     async (projectData) => {
       const isUpdate = projectData.status === "published";
       const isClose = projectData.status === "closed";
+      const isFinished = projectData.status === "finished";
       const payload = {
         ...projectData,
-        status: isClose ? "closed" : "published",
+        status: isClose ? "closed" : isFinished ? "finished" : "published",
         publishedAt:
-          isUpdate || isClose
+          isUpdate || isClose || isFinished
             ? projectData.publishedAt
             : new Date().toISOString(),
         closedAt: isClose
           ? projectData.closedAt || new Date().toISOString()
           : projectData.closedAt || null,
+        finishedAt: isFinished
+          ? projectData.finishedAt || new Date().toISOString()
+          : projectData.finishedAt || null,
         updatedAt: new Date().toISOString(),
       };
       setSavingProjectId(projectData.id);
@@ -304,11 +308,19 @@ export default function AssignerModule() {
         });
         setPendingDraft((prev) => (prev?.id === projectData.id ? null : prev));
 
+        const isFinished = projectData.status === "finished";
+
         if (isClose) {
           showToast(
             "success",
             "Project Closed 🔒",
             `"${finalData.project}" has been closed.`,
+          );
+        } else if (isFinished) {
+          showToast(
+            "success",
+            "Project Finished ✅",
+            `"${finalData.project}" has been marked as finished.`,
           );
         } else if (isUpdate) {
           showToast(

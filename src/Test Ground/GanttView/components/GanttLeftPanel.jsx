@@ -48,6 +48,7 @@ export default function GanttLeftPanel({
   leftPanelWidth,
   leftPanelRef,
   onOpenFullScreen,
+  onOpenFullScreenAll,
   isFullScreen,
 }) {
   const { t } = useTheme();
@@ -72,8 +73,10 @@ export default function GanttLeftPanel({
           background: t.bgSubtle,
           display: "flex",
           alignItems: "flex-end",
+          justifyContent: "space-between",
           padding: "0 12px 8px",
           flexShrink: 0,
+          gap: 8,
         }}
       >
         <span
@@ -87,6 +90,32 @@ export default function GanttLeftPanel({
         >
           {viewMode === "task" ? "Project / Task" : "Resource"}
         </span>
+
+        {/* ── Expand-all button (resource view only) ── */}
+        {viewMode === "resource" &&
+          !isFullScreen &&
+          filteredProjects.length > 0 && (
+            <button
+              onClick={() => onOpenFullScreenAll?.()}
+              title="Expand all projects to full screen"
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 5,
+                border: `1px solid ${t.primaryBorder}`,
+                background: t.primaryBgSubtle,
+                color: t.primary,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                flexShrink: 0,
+              }}
+            >
+              <Maximize2 size={11} />
+            </button>
+          )}
       </div>
 
       <div ref={leftPanelRef} style={{ flex: 1, overflowY: "hidden" }}>

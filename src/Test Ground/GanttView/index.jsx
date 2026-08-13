@@ -37,6 +37,7 @@ import MobileTaskListSheet from "./components/mobile/MobileTaskListSheet";
 import MobileToolsSheet from "./components/mobile/MobileToolsSheet";
 import MobileTaskDetailSheet from "./components/mobile/MobileTaskDetailSheet";
 import { getDisplayStatus } from "../helpers/statusDisplay";
+import { RESOURCE_VIEW_PANEL_WIDTH } from "../helpers/constants";
 
 /* ═══════════════════════════════════════════════════════
    GanttView — main orchestrator
@@ -45,8 +46,9 @@ export default function GanttView({
   projects = [],
   onOpenComments,
   onFeedback,
-  showGlobalFilters = false, // reserved for future toolbar filters
+  showGlobalFilters = false,
   isFullScreen = false,
+  initialViewMode = "task", // ← NEW
 }) {
   const { t } = useTheme();
   const { isMobile } = useResponsive();
@@ -56,7 +58,7 @@ export default function GanttView({
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
 
   // ── View / zoom / interaction state ──
-  const [viewMode, setViewMode] = useState("task");
+  const [viewMode, setViewMode] = useState(initialViewMode);
   const [zoom, setZoom] = useState("day");
   const [colWidthPx, setColWidthPx] = useState(
     ZOOM_CONFIGS.day.defaultColWidth,
@@ -69,7 +71,10 @@ export default function GanttView({
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const [showDependencies, setShowDependencies] = useState(false);
   // Full-screen project modal
+  // Full-screen project modal (single project OR all projects)
   const [fullScreenProjectId, setFullScreenProjectId] = useState(null);
+  const [fullScreenAll, setFullScreenAll] = useState(false);
+
   const fullScreenProject = useMemo(
     () => projects.find((p) => p.id === fullScreenProjectId) || null,
     [projects, fullScreenProjectId],
@@ -240,15 +245,21 @@ export default function GanttView({
     getBarPosition,
   } = useGanttGeometry({ filteredProjects, zoom, colWidthPx });
 
-  // ── Dynamic left panel width (based on visible columns) ──
+  // ── Dynamic left panel width (based on view mode + visible columns) ──
   const dynamicLeftPanelWidth = useMemo(() => {
+    // Resource view uses a single narrow column for resource names
+    if (viewMode === "resource") {
+      return RESOURCE_VIEW_PANEL_WIDTH;
+    }
+
+    // Task view uses multiple columns based on visibility
     return (
       COL_TASK_WIDTH +
       (visibleColumns.module ? COL_MODULE_WIDTH : 0) +
       (visibleColumns.resource ? COL_RESOURCE_WIDTH : 0) +
       (visibleColumns.status ? COL_STATUS_WIDTH : 0)
     );
-  }, [visibleColumns]);
+  }, [viewMode, visibleColumns]);
 
   // ── Sync scroll (timeline vertical → left panel) ──
   const syncScroll = useCallback((e) => {
@@ -444,6 +455,7 @@ export default function GanttView({
             leftPanelWidth={dynamicLeftPanelWidth}
             leftPanelRef={leftPanelRef}
             onOpenFullScreen={setFullScreenProjectId} // ← NEW
+            onOpenFullScreenAll={() => setFullScreenAll(true)}
             isFullScreen={isFullScreen}
           />
         )}
@@ -533,10 +545,27 @@ export default function GanttView({
         />
       )}
       {/* Full-screen project modal */}
-      {fullScreenProject && (
+      {/* Full-screen project modal (single project) */}
+      {fullScreenProject && !fullScreenAll && (
         <FullScreenProjectModal
-          project={fullScreenProject}
+          projects={[fullScreenProject]}
+          title={fullScreenProject.project || "Untitled Project"}
+          subtitle={`${(fullScreenProject.rows || []).length} tasks · ${fullScreenProject.status || "draft"}`}
+          initialViewMode="task"
           onClose={() => setFullScreenProjectId(null)}
+          onOpenComments={onOpenComments}
+          onFeedback={onFeedback}
+        />
+      )}
+
+      {/* Full-screen all projects (from resource view) */}
+      {fullScreenAll && (
+        <FullScreenProjectModal
+          projects={projects}
+          title="All Projects — Resource View"
+          subtitle={`${projects.length} project${projects.length !== 1 ? "s" : ""}`}
+          initialViewMode="resource"
+          onClose={() => setFullScreenAll(false)}
           onOpenComments={onOpenComments}
           onFeedback={onFeedback}
         />

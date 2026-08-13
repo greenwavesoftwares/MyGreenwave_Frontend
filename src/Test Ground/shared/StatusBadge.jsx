@@ -7,6 +7,7 @@ import {
   AlertCircle,
   PauseCircle,
   PlayCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { getDisplayStatus } from "../helpers/statusDisplay";
@@ -32,12 +33,30 @@ export default function StatusBadge({ row, status: explicitStatus }) {
       label = "Yet to Start";
       break;
 
+    // ── NEW: Pending Late ──
+    case "pending late":
+      bg = "#FEE2E2"; // red-100
+      color = "#DC2626"; // red-600
+      border = "#FCA5A5"; // red-300
+      Icon = AlertTriangle;
+      label = "Pending Late";
+      break;
+
     case "running":
       bg = "#DBEAFE";
       color = "#1D4ED8";
       border = "#93C5FD";
       Icon = PlayCircle;
       label = "Running";
+      break;
+
+    // ── NEW: Running Late ──
+    case "running late":
+      bg = "#FEE2E2"; // red-100
+      color = "#DC2626"; // red-600
+      border = "#FCA5A5"; // red-300
+      Icon = PlayCircle;
+      label = "Running Late";
       break;
 
     case "paused":
@@ -98,7 +117,7 @@ export default function StatusBadge({ row, status: explicitStatus }) {
         whiteSpace: "nowrap",
       }}
     >
-      {normalized === "running" ? (
+      {normalized === "running" || normalized === "running late" ? (
         <PulsingIcon Icon={PlayCircle} size={11} color={color} />
       ) : (
         <Icon size={11} />

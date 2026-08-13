@@ -347,9 +347,11 @@ const activityTrackerApi = {
    * @param {string} projectId
    */
   deleteAssignerRatings: async (projectId) => {
-    const response = await axios.put(
+    const response = await axios.delete(
       `${apiEndPoint}/feedback/assignee/${projectId}`,
-      { headers: getHeaders() },
+      {
+        headers: getHeaders(),
+      },
     );
     return response.data;
   },
@@ -1543,6 +1545,26 @@ const activityTrackerApi = {
       `${apiEndPoint}/getNonPublishedActivityTreesByUser`,
       { headers: getHeaders() },
     );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/monthlyResourceMetrics
+   * Retrieves monthly resource metrics for the specified year and months.
+   *
+   * @param {number|string} year - Year, e.g. 2026
+   * @param {string} months - Comma-separated months, e.g. "1,2,3" or "6"
+   * @returns {Array<Object>} MonthlyResourceMetrics
+   */
+  getMonthlyResourceMetrics: async (year, months) => {
+    const response = await axios.get(`${apiEndPoint}/monthlyResourceMetrics`, {
+      headers: getHeaders(),
+      params: {
+        year,
+        months,
+      },
+    });
+
     return response.data;
   },
 

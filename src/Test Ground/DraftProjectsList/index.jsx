@@ -249,7 +249,8 @@ export default function DraftProjectsList({
     drafts.forEach((d) => {
       const role = getProjectRole(d);
       if (role === "own") {
-        if (d.status === "published") counts.published++;
+        if (d.status === "published" || d.status === "finished")
+          counts.published++;
         else if (d.status === "closed") counts.closed++;
         else counts.draft++;
       } else if (role === "coAssigned") {
@@ -269,11 +270,17 @@ export default function DraftProjectsList({
         const role = getProjectRole(d);
         if (statusFilter === "draft") {
           return (
-            role === "own" && d.status !== "published" && d.status !== "closed"
+            role === "own" &&
+            d.status !== "published" &&
+            d.status !== "finished" &&
+            d.status !== "closed"
           );
         }
         if (statusFilter === "published") {
-          return role === "own" && d.status === "published";
+          return (
+            role === "own" &&
+            (d.status === "published" || d.status === "finished")
+          );
         }
         if (statusFilter === "closed") {
           return role === "own" && d.status === "closed";
@@ -1341,19 +1348,22 @@ export default function DraftProjectsList({
                             background:
                               status === "closed"
                                 ? t.closedBg
-                                : status === "published"
+                                : status === "published" ||
+                                    status === "finished"
                                   ? t.successBg
                                   : t.warningBg,
                             color:
                               status === "closed"
                                 ? t.closedText
-                                : status === "published"
+                                : status === "published" ||
+                                    status === "finished"
                                   ? t.success
                                   : t.warning,
                             border: `1px solid ${
                               status === "closed"
                                 ? t.closedBorder
-                                : status === "published"
+                                : status === "published" ||
+                                    status === "finished"
                                   ? t.successBorder
                                   : t.warningBorder
                             }`,
@@ -1365,7 +1375,8 @@ export default function DraftProjectsList({
                             <>
                               <Lock size={11} /> Closed
                             </>
-                          ) : status === "published" ? (
+                          ) : status === "published" ||
+                            status === "finished" ? (
                             <>
                               <Rocket size={11} /> Published
                             </>
@@ -1420,6 +1431,7 @@ export default function DraftProjectsList({
                       </div>
 
                       {d.status !== "published" &&
+                        d.status !== "finished" &&
                         d.status !== "closed" &&
                         cardVariant === "own" && (
                           <button

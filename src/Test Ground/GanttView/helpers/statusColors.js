@@ -21,6 +21,13 @@ export function makeStatusColors(t) {
       border: "#FDBA74",
       bar: "#F97316",
     },
+    // ── NEW: Pending Late ──
+    "pending late": {
+      bg: "#FEE2E2",
+      color: "#DC2626",
+      border: "#FCA5A5",
+      bar: "#EF4444",
+    },
     "not ready": {
       bg: t.warningBg,
       color: t.warning,
@@ -44,6 +51,13 @@ export function makeStatusColors(t) {
       color: t.primary,
       border: t.primaryBorder,
       bar: "#3B82F6",
+    },
+    // ── NEW: Running Late ──
+    "running late": {
+      bg: "#FEE2E2",
+      color: "#DC2626",
+      border: "#FCA5A5",
+      bar: "#EF4444",
     },
     completed: {
       bg: t.successBg,
