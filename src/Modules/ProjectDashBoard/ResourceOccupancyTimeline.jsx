@@ -720,6 +720,8 @@ function ResourceOccupancyTimeline({
                         </span>
                         <span
                           style={{
+                            display: "inline-flex",
+                            alignItems: "center",
                             color:
                               completionPercentage(
                                 metric?.totalCompletedTasks,
@@ -728,10 +730,14 @@ function ResourceOccupancyTimeline({
                                 ? t.textMuted
                                 : t.textPrimary,
                             fontSize: 9,
+                            fontWeight: 700,
                             whiteSpace: "nowrap",
+                            padding: "1.5px 6px",
+                            borderRadius: 999,
+                            background: isDark ? "rgba(255,255,255,0.08)" : t.occFreeBar,
+                            border: `1px solid ${t.occFreeBarBorder}`,
                           }}
-                        >
-                          Completed
+                        >Completed-
                           {metric?.totalCompletedTasks ?? 0}/{metric?.totalAssignedTasks ?? 0} ·{" "}
                           {completionPercentage(
                             metric?.totalCompletedTasks,
