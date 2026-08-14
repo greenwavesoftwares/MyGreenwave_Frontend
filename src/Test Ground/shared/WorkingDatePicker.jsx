@@ -9,12 +9,14 @@ import { parseISODateTime, isoDateTime } from "../helpers/dateUtils";
 import { leaveOnDay } from "../helpers/workHours";
 import { makeNavBtn, makeTimeSelect, makePickerBtn } from "../helpers/styles";
 import TimePickerSection from "./TimePickerSection";
+import { isHoliday } from "../helpers/holidays";
 
 export default function WorkingDatePicker({
   value,
   onChange,
   resourceUserId,
   groupResources,
+  holidays = [],
   onClose,
   anchorRef,
 }) {
@@ -123,6 +125,7 @@ export default function WorkingDatePicker({
     if (!d) return;
     const isWknd = d.getDay() === 0 || d.getDay() === 6;
     const onLeave = leaveOnDay(resourceUserId, d, groupResources);
+    const isHol = isHoliday(d, holidays); // ← NEW
     const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const startOfToday = new Date(
       today.getFullYear(),
@@ -130,7 +133,7 @@ export default function WorkingDatePicker({
       today.getDate(),
     );
     const isPast = startOfDay < startOfToday;
-    if (isWknd || onLeave || isPast) return;
+    if (isWknd || onLeave || isHol || isPast) return;
     setSelectedDate(d);
   };
 
@@ -351,6 +354,7 @@ export default function WorkingDatePicker({
           const day = d.getDay();
           const isWknd = day === 0 || day === 6;
           const onLeave = leaveOnDay(resourceUserId, d, groupResources);
+          const isHol = isHoliday(d, holidays); // ← NEW
           const startOfDay = new Date(
             d.getFullYear(),
             d.getMonth(),
@@ -362,7 +366,7 @@ export default function WorkingDatePicker({
             today.getDate(),
           );
           const isPast = startOfDay < startOfToday;
-          const disabled = isWknd || onLeave || isPast;
+          const disabled = isWknd || onLeave || isHol || isPast; // ← UPDATED
           const selected = isSameDay(d, selectedDate);
           const isToday = isSameDay(d, today);
 
@@ -385,6 +389,12 @@ export default function WorkingDatePicker({
             color = t.danger;
             cursor = "not-allowed";
             border = `1px solid ${t.dangerBorder}`;
+          } else if (isHol) {
+            // ── NEW: Holiday styling (same as weekend but tinted differently) ──
+            bg = t.dangerBgSubtle;
+            color = t.danger;
+            cursor = "not-allowed";
+            border = `1px solid ${t.dangerBorder}`;
           } else if (onLeave) {
             bg = t.warningBgSubtle;
             color = t.warning;
@@ -403,11 +413,13 @@ export default function WorkingDatePicker({
               title={
                 isPast
                   ? "Past date — disabled"
-                  : isWknd
-                    ? "Weekend — disabled"
-                    : onLeave
-                      ? `Leave (${onLeave.date})`
-                      : ""
+                  : isHol
+                    ? "Holiday"
+                    : isWknd
+                      ? "Weekend — disabled"
+                      : onLeave
+                        ? `Leave (${onLeave.date})`
+                        : ""
               }
               style={{
                 aspectRatio: "1",
@@ -428,7 +440,7 @@ export default function WorkingDatePicker({
               }}
             >
               {d.getDate()}
-              {onLeave && !selected && !isPast && (
+              {onLeave && !selected && !isPast && !isHol && (
                 <span
                   style={{
                     position: "absolute",
@@ -442,11 +454,27 @@ export default function WorkingDatePicker({
                   }}
                 />
               )}
+              {/* ── NEW: Holiday dot indicator (violet) ── */}
+              {isHol && !selected && !isPast && (
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: 2,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: t.violet,
+                  }}
+                />
+              )}
             </button>
           );
         })}
       </div>
 
+      {/* Legend */}
       {/* Legend */}
       <div
         style={{
@@ -482,6 +510,33 @@ export default function WorkingDatePicker({
             }}
           />
           Weekend
+        </span>
+        {/* ── NEW: Holiday legend entry ── */}
+        <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 2,
+              background: t.dangerBgSubtle,
+              border: `1px solid ${t.dangerBorder}`,
+              position: "relative",
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                bottom: 1,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 3,
+                height: 3,
+                borderRadius: "50%",
+                background: t.violet,
+              }}
+            />
+          </span>
+          Holiday
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
           <span

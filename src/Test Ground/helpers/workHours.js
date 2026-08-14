@@ -4,6 +4,7 @@
 
 import { WORK_START_HR, WORK_END_HR } from "./constants";
 import { isoDate, isWeekday } from "./dateUtils";
+import { isHoliday } from "./holidays";
 
 export function leavesFor(userId, groupResources) {
   if (!userId || !groupResources || typeof groupResources !== "object")
@@ -21,14 +22,22 @@ export function leaveOnDay(userId, d, groupResources) {
   return leavesFor(userId, groupResources).find((l) => l.date === key) || null;
 }
 
-export function nextWorkMoment(dt, userId, groupResources = {}) {
+export function nextWorkMoment(dt, userId, groupResources = {}, holidays = []) {
   let d = new Date(dt);
   for (let i = 0; i < 730; i++) {
+    // Skip weekends
     if (!isWeekday(d)) {
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
       continue;
     }
+    // Skip company holidays
+    if (isHoliday(d, holidays)) {
+      d.setDate(d.getDate() + 1);
+      d.setHours(WORK_START_HR, 0, 0, 0);
+      continue;
+    }
+    // Skip personal leaves
     if (leaveOnDay(userId, d, groupResources)) {
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
@@ -49,8 +58,14 @@ export function nextWorkMoment(dt, userId, groupResources = {}) {
   return d;
 }
 
-export function addWorkHours(startDt, hours, userId, groupResources = {}) {
-  let d = nextWorkMoment(new Date(startDt), userId, groupResources);
+export function addWorkHours(
+  startDt,
+  hours,
+  userId,
+  groupResources = {},
+  holidays = [],
+) {
+  let d = nextWorkMoment(new Date(startDt), userId, groupResources, holidays);
   let remaining = Number(hours) || 0;
   if (remaining <= 0) return d;
   for (let i = 0; i < 730 && remaining > 0; i++) {
@@ -59,7 +74,7 @@ export function addWorkHours(startDt, hours, userId, groupResources = {}) {
     if (avail <= 0) {
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
-      d = nextWorkMoment(d, userId, groupResources);
+      d = nextWorkMoment(d, userId, groupResources, holidays);
       continue;
     }
     if (remaining <= avail + 1e-9) {
@@ -69,13 +84,13 @@ export function addWorkHours(startDt, hours, userId, groupResources = {}) {
       remaining -= avail;
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
-      d = nextWorkMoment(d, userId, groupResources);
+      d = nextWorkMoment(d, userId, groupResources, holidays);
     }
   }
   return d;
 }
 
-export function defaultFirstStart(userId, groupResources = {}) {
+export function defaultFirstStart(userId, groupResources = {}, holidays = []) {
   const now = new Date();
   const hr = now.getHours() + now.getMinutes() / 60;
   let baseDate;
@@ -105,5 +120,5 @@ export function defaultFirstStart(userId, groupResources = {}) {
     }
   }
 
-  return nextWorkMoment(baseDate, userId, groupResources);
+  return nextWorkMoment(baseDate, userId, groupResources, holidays);
 }

@@ -58,6 +58,7 @@ export default function AssignerModule() {
 
   const [groupLabels, setGroupLabels] = useState([]);
   const [groupResources, setGroupResources] = useState({});
+  const [holidays, setHolidays] = useState([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groupsError, setGroupsError] = useState(null);
   const [resourcesLoading, setResourcesLoading] = useState(false);
@@ -120,7 +121,17 @@ export default function AssignerModule() {
       setGroupsLoading(false);
     }
   }, [showToast]);
-
+  const fetchHolidays = useCallback(async () => {
+    try {
+      const data = await activityTrackerApi.getHolidays();
+      if (Array.isArray(data)) {
+        setHolidays(data);
+      }
+    } catch (err) {
+      console.warn("Failed to load holidays (non-critical):", err.message);
+      // Fail silently — don't disrupt user workflow
+    }
+  }, []);
   const fetchResourcesForGroups = useCallback(
     async (groupIds) => {
       if (!groupIds || groupIds.length === 0) return {};
@@ -172,7 +183,9 @@ export default function AssignerModule() {
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
-
+  useEffect(() => {
+    fetchHolidays();
+  }, [fetchHolidays]);
   // ═══════════════════════════════════════════════════════
   // Current draft
   // ═══════════════════════════════════════════════════════
@@ -687,6 +700,7 @@ export default function AssignerModule() {
             draft={currentDraft}
             groupLabels={groupLabels}
             groupResources={groupResources}
+            holidays={holidays} // ← NEW
             fetchResourcesForGroups={fetchResourcesForGroups}
             onSaveDraft={handleSaveDraft}
             onPublish={handlePublish}
