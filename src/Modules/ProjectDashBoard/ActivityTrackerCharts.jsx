@@ -1338,10 +1338,10 @@ export default function ActivityTrackerCharts() {
                weeks={currentOccMonthBlock.weeks}
   filteredUnallocatedResources={filteredUnallocatedResources}
   capacityHrs={8}
-  t={t}
-  isDark={isDark}
-  showHover={showHover}
-  hideHover={hideHover}
+  // t={t}
+  // isDark={isDark}
+  // showHover={showHover}
+  // hideHover={hideHover}
  currentMonthResourceMetrics={currentMonthResourceMetrics}
  
             />
