@@ -715,7 +715,7 @@ function ResourceOccupancyTimeline({
                             }}
                           >
                             <span style={{ fontSize: 11 }}>◷</span>Delayed{" "}
-                            {metric?.DelayedTasks ?? 0}
+                            {metric?.delayedTasks ?? 0}
                           </span>
                         </span>
                         <span
