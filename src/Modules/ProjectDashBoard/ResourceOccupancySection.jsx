@@ -29,7 +29,7 @@ function ResourceOccupancySection({
 
 }) {
 
-  console.log('Unallocated Users: ',filteredUnallocatedResources)
+  console.log('Unallocated Users: ',filteredUnallocatedResources,'currentMonthResourceMetrics ',currentMonthResourceMetrics)
   // Hardcoded month names - always available
   const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   
@@ -114,9 +114,10 @@ function ResourceOccupancySection({
   showHover={showHover}
   hideHover={hideHover}
   filteredRows={filteredRows}
-  resourceMetrics={currentMonthResourceMetrics}
+  currentMonthResourceMetrics={currentMonthResourceMetrics}
   t={t}
   isDark={isDark}
+  resourceMetrics={currentMonthResourceMetrics}
 />
         </div>
       </div>

@@ -613,6 +613,7 @@ export default function ActivityTrackerCharts() {
   const [occMonthBlockIndex, setOccMonthBlockIndex] = useState(0);
   const [occMonthSlideDir, setOccMonthSlideDir] = useState(1);
   const [expandedResources, setExpandedResources] = useState({});
+  const [currentMonthResourceMetrics, setCurrentMonthResourceMetrics] = useState([]);
   const [viewportWidth, setViewportWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200,
   );
@@ -649,6 +650,13 @@ export default function ActivityTrackerCharts() {
         months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
         year,
       );
+
+      const resourceMetrics = await activityTrackerApi.getMonthlyResourceMetrics(
+        year,
+        months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
+        
+      );
+      setCurrentMonthResourceMetrics(resourceMetrics ?? []);
       setUnallocatedResourcesList(unallocatedResources)
       
       setApiResponse(r ?? { data: [] });
@@ -1334,6 +1342,8 @@ export default function ActivityTrackerCharts() {
   isDark={isDark}
   showHover={showHover}
   hideHover={hideHover}
+ currentMonthResourceMetrics={currentMonthResourceMetrics}
+ 
             />
 
           {/* {  filteredUnallocatedResources.length > 0 && (
