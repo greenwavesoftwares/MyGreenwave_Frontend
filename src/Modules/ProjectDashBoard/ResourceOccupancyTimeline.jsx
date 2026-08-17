@@ -1,16 +1,32 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-const CELL = 46;
-const NAME = 195;
-const MONTH_PROGRESS = 96;
-const TASK_COMPLETION = 150;
-const LEFT_WIDTH = NAME + MONTH_PROGRESS + TASK_COMPLETION;
-const BAR_HEIGHT = 20;
-const WEEK_HEADER_HEIGHT = 38;
-const DAY_HEADER_HEIGHT = 46;
-const SCROLL_MAX_HEIGHT = 520;
+const DESKTOP_LAYOUT = {
+  cell: 46,
+  name: 195,
+  monthProgress: 96,
+  taskCompletion: 150,
+  barHeight: 20,
+  weekHeaderHeight: 38,
+  dayHeaderHeight: 46,
+  rowHeight: 42,
+  maxHeight: 520,
+};
+
+const MOBILE_LAYOUT = {
+  cell: 44,
+  name: 148,
+  monthProgress: 0,
+  taskCompletion: 0,
+  barHeight: 22,
+  weekHeaderHeight: 34,
+  dayHeaderHeight: 44,
+  rowHeight: 56,
+  maxHeight: "min(72vh, 560px)",
+};
+
+const MOBILE_BREAKPOINT = 720;
 const DEFAULT_CAPACITY = 8;
-const MAX_SPAN_DAYS = 1096; // guard against absurd plannedStart/plannedStop spans
+const MAX_SPAN_DAYS = 1096;
 
 const defaultTheme = {
   emptyText: "#64748b",
@@ -40,6 +56,29 @@ const defaultTheme = {
   legendText: "#64748b",
 };
 
+/** Switch to the compact timeline layout on narrow/mobile viewports. */
+const useMobileLayout = (breakpoint = MOBILE_BREAKPOINT) => {
+  const query = `(max-width: ${breakpoint}px)`;
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia(query).matches,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia(query);
+    const update = () => setIsMobile(media.matches);
+    update();
+    if (media.addEventListener) media.addEventListener("change", update);
+    else media.addListener(update);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener("change", update);
+      else media.removeListener(update);
+    };
+  }, [query]);
+
+  return isMobile;
+};
+
 const initialsFor = (name) => {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -47,15 +86,20 @@ const initialsFor = (name) => {
     ? parts[0].slice(0, 2).toUpperCase()
     : `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
+
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 const localDateKey = (date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+
 const duration = (hours) => {
   if (hours == null) return "";
   if (hours < 1) return `${Math.round(hours * 60)}m`;
   const rounded = Math.round(hours * 10) / 10;
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}h`;
 };
+
 const occupancyColor = (hours) =>
   hours < 4
     ? "#22c55e"
@@ -68,8 +112,10 @@ const occupancyColor = (hours) =>
           : hours < 7.75
             ? "#ea580c"
             : "#dc2626";
+
 const percentageText = (value) =>
   Number.isFinite(Number(value)) ? `${Math.round(Number(value))}%` : "—";
+
 const percentageColor = (value, fallback) =>
   !Number.isFinite(Number(value))
     ? fallback
@@ -80,23 +126,23 @@ const percentageColor = (value, fallback) =>
         : Number(value) < 90
           ? "#ea580c"
           : "#dc2626";
+
 const completionPercentage = (completed, assigned) => {
   const completedNumber = Number(completed);
   const assignedNumber = Number(assigned);
-  if (!Number.isFinite(completedNumber) || !Number.isFinite(assignedNumber) || assignedNumber <= 0)
+  if (
+    !Number.isFinite(completedNumber) ||
+    !Number.isFinite(assignedNumber) ||
+    assignedNumber <= 0
+  )
     return null;
   return Math.round((completedNumber / assignedNumber) * 100);
 };
 
 /* ------------------------------------------------------------------ */
-/* Task → per-day distribution helpers                                */
+/* Task -> per-day distribution helpers                               */
 /* ------------------------------------------------------------------ */
 
-/**
- * Normalize a plannedStart/plannedStop value into a local-midnight Date.
- * Accepts Date instances, ms timestamps, "YYYY-MM-DD" (also ISO datetimes —
- * parsed as local to avoid UTC-day shifts) and anything `new Date` handles.
- */
 const parseLocalDate = (value) => {
   if (value == null || value === "") return null;
   if (value instanceof Date) {
@@ -121,22 +167,16 @@ const parseLocalDate = (value) => {
   return null;
 };
 
-/** Earliest / latest non-null Date from the given candidates. */
 const minDate = (...dates) => {
   const valid = dates.filter(Boolean);
-  return valid.length ? new Date(Math.min(...valid.map((d) => d.getTime()))) : null;
-};
-const maxDate = (...dates) => {
-  const valid = dates.filter(Boolean);
-  return valid.length ? new Date(Math.max(...valid.map((d) => d.getTime()))) : null;
+  return valid.length ? new Date(Math.min(...valid.map((date) => date.getTime()))) : null;
 };
 
-/**
- * Inclusive list of dates from start to stop (weekends optionally skipped).
- * A stop before start, or a missing stop, collapses to just the start day.
- * If every day in the span is skipped (e.g. a weekend-only range), the start
- * day is still returned so the task never silently disappears.
- */
+const maxDate = (...dates) => {
+  const valid = dates.filter(Boolean);
+  return valid.length ? new Date(Math.max(...valid.map((date) => date.getTime()))) : null;
+};
+
 const eachDayInRange = (start, stop, skipWeekends) => {
   if (!start) return [];
   const end = !stop || stop < start ? start : stop;
@@ -152,8 +192,6 @@ const eachDayInRange = (start, stop, skipWeekends) => {
   return days;
 };
 
-/** Read task duration in hours, tolerating common alternate field names.
- *  Planned-duration fields win; actual-hour fields are a fallback. */
 const readTaskHours = (task) => {
   const raw =
     task?.durationHrs ??
@@ -187,12 +225,6 @@ const taskMatchesResource = (task, name) => {
   );
 };
 
-/**
- * resolveTasksForResource supports two input shapes for
- * `taskOccupancyByResourceDate`:
- *   1. map:      { "Jane Doe": [task, ...], "John Smith": [task, ...] }
- *   2. flat list: [ { resourceName: "Jane Doe", ... }, ... ]
- */
 const resolveTasksForResource = (source, name) => {
   if (!source) return [];
   if (Array.isArray(source)) return source.filter((task) => taskMatchesResource(task, name));
@@ -204,12 +236,6 @@ const resolveTasksForResource = (source, name) => {
   return match && Array.isArray(source[match]) ? source[match] : [];
 };
 
-/**
- * Split a task's durationHrs across its span days.
- *  - "even": durationHrs / numberOfDays, same amount every day.
- *  - "fill": front-load each day up to capacityHrs, then continue on the next
- *    day (hours beyond the span are dropped — extend plannedStop instead).
- */
 const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   if (!spanDays.length) return [];
   if (totalHours <= 0) return spanDays.map(() => 0);
@@ -225,17 +251,6 @@ const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   return spanDays.map(() => perDay);
 };
 
-/**
- * Build { [date.toDateString()]: { hours, tasks } } for one resource from its
- * task list. The distribution span is the union of the planned and actual
- * ranges — earliest(plannedStart, actualStart) → latest(plannedStop,
- * actualStop) — so when actual work began before the scheduled start (or ran
- * past the scheduled stop), those days are still filled. Every task entry
- * keeps its original fields plus:
- *   - dayHours:     hours attributed to this specific day
- *   - totalDays:    number of days the duration was spread across
- *   - beganEarlier: true when actualStart is before plannedStart
- */
 const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
   const byDay = {};
   tasks.forEach((task) => {
@@ -278,24 +293,11 @@ const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
 };
 
 /**
- * One timeline for allocated and unallocated people.
- * Allocated rows use occupancy/metric data. Unallocated rows display 8h free and — for both metrics.
- *
- * Occupancy resolution, per resource:
- *   1. If `taskOccupancyByResourceDate` contains tasks for the resource, each
- *      task's `durationHrs` is spread across its span and the per-day sums
- *      drive the bars. The span is the union of planned and actual dates:
- *      earliest(plannedStart, actualStart) → latest(plannedStop, actualStop),
- *      so bars are back-filled when actual work started before the schedule
- *      and extended when it finished late. In this case
- *      `occupancyByResourceDate` is ignored for that resource (no double count).
- *   2. Otherwise the pre-computed `occupancyByResourceDate` is used as-is.
- *
- * New props for the task-driven mode:
- *   - spreadMode:    "even" (default) spreads durationHrs evenly across the
- *                    planned days; "fill" allocates up to capacityHrs per day.
- *   - skipWeekends:  false (default) counts every calendar day of the span;
- *                    true spreads only across Mon–Fri.
+ * Responsive behavior:
+ * - Desktop keeps the three fixed columns from the original component.
+ * - At <= 720px only the resource column remains sticky. Monthly utilization
+ *   and completion move below the resource name, leaving room for timeline days.
+ * - Touch users can swipe the grid and tap a weekday to open its details.
  */
 function ResourceOccupancyTimeline({
   weeks = [],
@@ -318,6 +320,14 @@ function ResourceOccupancyTimeline({
   isDark = false,
 }) {
   const t = useMemo(() => ({ ...defaultTheme, ...customTheme }), [customTheme]);
+  const isMobile = useMobileLayout();
+  const layout = isMobile ? MOBILE_LAYOUT : DESKTOP_LAYOUT;
+  const leftWidth = layout.name + layout.monthProgress + layout.taskCompletion;
+  const dailyCapacity =
+    Number.isFinite(Number(capacityHrs)) && Number(capacityHrs) > 0
+      ? Number(capacityHrs)
+      : DEFAULT_CAPACITY;
+
   const [hoveredKey, setHoveredKey] = useState(null);
   const [loadedUnallocatedUsers, setLoadedUnallocatedUsers] = useState([]);
   const [loadingUnallocated, setLoadingUnallocated] = useState(false);
@@ -354,6 +364,7 @@ function ResourceOccupancyTimeline({
   }, [getUnallocatedResources, suppliedUnallocatedUsers]);
 
   const unallocatedUsers = suppliedUnallocatedUsers ?? loadedUnallocatedUsers;
+
   const { days, weekBoundaries } = useMemo(() => {
     const flat = [];
     const boundaries = [];
@@ -414,7 +425,6 @@ function ResourceOccupancyTimeline({
     return [...allocated, ...unallocated];
   }, [resources, unallocatedUsers]);
 
-  // Resource and Monthly Utilization each cycle: ascending → descending → original (no sort).
   const toggleSort = (key) => {
     setSortConfig((current) => {
       if (current.key !== key || !current.direction) return { key, direction: "asc" };
@@ -429,7 +439,6 @@ function ResourceOccupancyTimeline({
   };
 
   const sortedTimelineRows = useMemo(() => {
-    // No sort: preserve the incoming/original order, allocated rows followed by unallocated rows.
     if (!sortConfig.key || !sortConfig.direction) return timelineRows;
 
     return [...timelineRows].sort((a, b) => {
@@ -438,8 +447,6 @@ function ResourceOccupancyTimeline({
         return sortConfig.direction === "asc" ? comparison : -comparison;
       }
 
-      // Monthly Utilization sort: use the resourceMonthPercentage numeric value.
-      // Unallocated rows show —, and participate in this numerical sort as 0.
       const aMetric = metricsByName[a.name.trim().toLowerCase()] || {};
       const bMetric = metricsByName[b.name.trim().toLowerCase()] || {};
       const aRaw = a.isUnallocated ? 0 : Number(aMetric.resourceMonthUtilization);
@@ -448,20 +455,22 @@ function ResourceOccupancyTimeline({
       const bValue = Number.isFinite(bRaw) ? bRaw : 0;
       const comparison = aValue - bValue;
 
-      // Alphabetical tie-breaker for equal percentages.
-      if (comparison === 0) return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+      if (comparison === 0)
+        return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
       return sortConfig.direction === "asc" ? comparison : -comparison;
     });
   }, [timelineRows, metricsByName, sortConfig]);
 
   const resourceData = useMemo(() => {
-    // Precompute the task-derived day map once per resource. `null` means "no
-    // tasks supplied for this resource" → fall back to occupancyByResourceDate.
     const taskMapsByResource = {};
     resources.forEach((name) => {
       const tasks = resolveTasksForResource(taskOccupancyByResourceDate, name);
       taskMapsByResource[name] = tasks.length
-        ? buildTaskDayMap(tasks, { spreadMode, skipWeekends, capacityHrs })
+        ? buildTaskDayMap(tasks, {
+            spreadMode,
+            skipWeekends,
+            capacityHrs: dailyCapacity,
+          })
         : null;
     });
 
@@ -474,20 +483,30 @@ function ResourceOccupancyTimeline({
         const total = taskMap ? taskMap[key]?.hours || 0 : source?.hours || 0;
         const tasks = taskMap ? taskMap[key]?.tasks || [] : source?.tasks || [];
         result[name][key] = {
-          occupied: Math.min(total, capacityHrs),
-          free: Math.max(0, capacityHrs - total),
+          occupied: Math.min(total, dailyCapacity),
+          free: Math.max(0, dailyCapacity - total),
           tasks,
         };
       });
       return result;
     }, {});
-  }, [resources, days, occupancyByResourceDate, taskOccupancyByResourceDate, spreadMode, skipWeekends, capacityHrs]);
+  }, [
+    resources,
+    days,
+    occupancyByResourceDate,
+    taskOccupancyByResourceDate,
+    spreadMode,
+    skipWeekends,
+    dailyCapacity,
+  ]);
 
   const weekIndexForDay = (index) => {
-    for (let i = 0; i < weekBoundaries.length; i += 1) if (index < weekBoundaries[i]) return i;
+    for (let i = 0; i < weekBoundaries.length; i += 1)
+      if (index < weekBoundaries[i]) return i;
     return Math.max(weekBoundaries.length - 1, 0);
   };
-  const chartWidth = Math.max(days.length, 1) * CELL;
+
+  const chartWidth = Math.max(days.length, 1) * layout.cell;
   const weekOverlay = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
   const chipBg = isDark ? "rgba(239,68,68,0.18)" : "#fef2f2";
   const chipBorder = isDark ? "rgba(239,68,68,0.45)" : "#fecaca";
@@ -508,17 +527,20 @@ function ResourceOccupancyTimeline({
         userId: row.userId,
         date,
         hours: data.occupied,
-        capacityHrs,
+        capacityHrs: dailyCapacity,
         tasks: data.tasks,
         free: data.free,
+        isOnLeave: data.isOnLeave,
         isUnallocated: row.isUnallocated,
       },
     });
   };
+
   const clearHover = () => {
     setHoveredKey(null);
     hideHover();
   };
+
   const headerStyle = {
     fontSize: 10,
     fontWeight: 700,
@@ -539,22 +561,67 @@ function ResourceOccupancyTimeline({
     );
 
   return (
-    <div>
-      <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 500, marginBottom: 8 }}>
-        {timelineRows.length} resource{timelineRows.length !== 1 ? "s" : ""} • {days.length} day
-        {days.length !== 1 ? "s" : ""} • {capacityHrs}h daily capacity
+    <div style={{ width: "100%", minWidth: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          flexWrap: "wrap",
+          color: t.textSecondary,
+          marginBottom: 8,
+        }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 500 }}>
+          {timelineRows.length} resource{timelineRows.length !== 1 ? "s" : ""} • {days.length}{" "}
+          day{days.length !== 1 ? "s" : ""} • {dailyCapacity}h daily capacity
+        </span>
+        {isMobile && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => toggleSort("monthlyUtilization")}
+              title="Sort by monthly utilization"
+              style={{
+                border: `1px solid ${t.cardBorder}`,
+                borderRadius: 999,
+                padding: "3px 7px",
+                background: t.cardBg,
+                color:
+                  sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textSecondary,
+                font: "inherit",
+                fontSize: 9,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Utilization {sortIndicator("monthlyUtilization")}
+            </button>
+            <span style={{ fontSize: 10, color: t.textMuted }} aria-hidden="true">
+              Swipe for more days
+            </span>
+          </span>
+        )}
       </div>
+
       <div
         style={{
           border: `1px solid ${t.cardBorder}`,
-          borderRadius: 10,
+          borderRadius: isMobile ? 8 : 10,
           background: t.cardBg,
           overflow: "auto",
-          maxHeight: SCROLL_MAX_HEIGHT,
+          maxHeight: layout.maxHeight,
+          width: "100%",
           position: "relative",
+          WebkitOverflowScrolling: "touch",
+          overscrollBehavior: "contain",
+          touchAction: "pan-x pan-y",
+          scrollbarGutter: "stable",
         }}
       >
-        <div style={{ width: LEFT_WIDTH + chartWidth, minWidth: "100%", position: "relative" }}>
+        <div style={{ width: leftWidth + chartWidth, minWidth: "100%", position: "relative" }}>
+          {/* Week header */}
           <div
             style={{
               display: "flex",
@@ -567,8 +634,8 @@ function ResourceOccupancyTimeline({
           >
             <div
               style={{
-                width: LEFT_WIDTH,
-                height: WEEK_HEADER_HEIGHT,
+                width: leftWidth,
+                height: layout.weekHeaderHeight,
                 flexShrink: 0,
                 position: "sticky",
                 left: 0,
@@ -577,7 +644,13 @@ function ResourceOccupancyTimeline({
                 borderRight: `1px solid ${t.gridLineMd}`,
               }}
             />
-            <div style={{ display: "flex", width: chartWidth, minHeight: WEEK_HEADER_HEIGHT }}>
+            <div
+              style={{
+                display: "flex",
+                width: chartWidth,
+                minHeight: layout.weekHeaderHeight,
+              }}
+            >
               {weekBoundaries.map((end, index) => {
                 const start = index ? weekBoundaries[index - 1] : 0;
                 const count = end - start;
@@ -586,7 +659,7 @@ function ResourceOccupancyTimeline({
                     <div
                       key={index}
                       style={{
-                        width: count * CELL,
+                        width: count * layout.cell,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -611,11 +684,13 @@ function ResourceOccupancyTimeline({
               })}
             </div>
           </div>
+
+          {/* Day and metric headers */}
           <div
             style={{
               display: "flex",
               position: "sticky",
-              top: WEEK_HEADER_HEIGHT,
+              top: layout.weekHeaderHeight,
               zIndex: 29,
               background: t.occHeaderBg,
               borderBottom: `1px solid ${t.gridLineMd}`,
@@ -624,8 +699,8 @@ function ResourceOccupancyTimeline({
           >
             <div
               style={{
-                width: LEFT_WIDTH,
-                minHeight: DAY_HEADER_HEIGHT,
+                width: leftWidth,
+                minHeight: layout.dayHeaderHeight,
                 display: "flex",
                 flexShrink: 0,
                 position: "sticky",
@@ -641,12 +716,12 @@ function ResourceOccupancyTimeline({
                 title="Sort resource name"
                 style={{
                   ...headerStyle,
-                  width: NAME,
+                  width: layout.name,
                   border: "none",
                   background: "transparent",
                   cursor: "pointer",
                   textAlign: "left",
-                  padding: "8px 12px 4px",
+                  padding: isMobile ? "8px 9px 4px" : "8px 12px 4px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -662,64 +737,71 @@ function ResourceOccupancyTimeline({
                   {sortIndicator("name")}
                 </span>
               </button>
-              <button
-                type="button"
-                onClick={() => toggleSort("monthlyUtilization")}
-                title="Sort by monthly utilization percentage"
-                style={{
-                  ...headerStyle,
-                  width: MONTH_PROGRESS,
-                  border: "none",
-                  borderLeft: `1px solid ${t.gridLineMd}`,
-                  background: "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span>
-                  Monthly
-                  <br />
-                  Utilization
-                </span>
-                <span
-                  style={{
-                    color: sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textMuted,
-                    fontSize: 9,
-                  }}
-                >
-                  {sortIndicator("monthlyUtilization")}
-                </span>
-              </button>
-              <div
-                style={{
-                  ...headerStyle,
-                  width: TASK_COMPLETION,
-                  borderLeft: `1px solid ${t.gridLineMd}`,
-                  display: "grid",
-                  placeItems: "center",
-                }}
-              >
-                Task
-                <br />
-                Completion
-              </div>
+
+              {!isMobile && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("monthlyUtilization")}
+                    title="Sort by monthly utilization percentage"
+                    style={{
+                      ...headerStyle,
+                      width: layout.monthProgress,
+                      border: "none",
+                      borderLeft: `1px solid ${t.gridLineMd}`,
+                      background: "transparent",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span>
+                      Monthly
+                      <br />
+                      Utilization
+                    </span>
+                    <span
+                      style={{
+                        color:
+                          sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textMuted,
+                        fontSize: 9,
+                      }}
+                    >
+                      {sortIndicator("monthlyUtilization")}
+                    </span>
+                  </button>
+                  <div
+                    style={{
+                      ...headerStyle,
+                      width: layout.taskCompletion,
+                      borderLeft: `1px solid ${t.gridLineMd}`,
+                      display: "grid",
+                      placeItems: "center",
+                    }}
+                  >
+                    Task
+                    <br />
+                    Completion
+                  </div>
+                </>
+              )}
             </div>
+
             <div style={{ display: "flex", width: chartWidth }}>
               {days.map((date, index) => {
                 const today = date.toDateString() === todayKey;
                 const week = weekIndexForDay(index);
                 const last = weekBoundaries[week] - 1 === index && index < days.length - 1;
                 const base = today ? t.occHeaderToday : t.occHeaderBg;
-                const bg =
+                const background =
                   week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
                 return (
                   <div
                     key={`${date.toDateString()}-${index}`}
                     style={{
-                      width: CELL,
+                      width: layout.cell,
                       flexShrink: 0,
                       textAlign: "center",
                       padding: "4px 1px",
@@ -728,7 +810,7 @@ function ResourceOccupancyTimeline({
                         : index < days.length - 1
                           ? `1px solid ${t.gridLineMd}`
                           : "none",
-                      background: bg,
+                      background,
                       boxShadow: today
                         ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}, inset 0 2px 0 ${t.earlyColor}`
                         : "none",
@@ -761,12 +843,18 @@ function ResourceOccupancyTimeline({
               })}
             </div>
           </div>
+
+          {/* Resource rows */}
           {sortedTimelineRows.map((row, index) => {
             const rowBg = index % 2 ? t.occRowOdd : t.occRowEven;
             const metric = row.isUnallocated
               ? null
               : metricsByName[row.name.trim().toLowerCase()] || null;
             const daily = row.isUnallocated ? {} : resourceData[row.name] || {};
+            const completed = metric?.totalCompletedTasks ?? 0;
+            const assigned = metric?.totalAssignedTasks ?? 0;
+            const completion = completionPercentage(completed, assigned);
+
             return (
               <div
                 key={row.id}
@@ -779,8 +867,8 @@ function ResourceOccupancyTimeline({
               >
                 <div
                   style={{
-                    width: LEFT_WIDTH,
-                    height: 42,
+                    width: leftWidth,
+                    height: layout.rowHeight,
                     display: "flex",
                     flexShrink: 0,
                     position: "sticky",
@@ -788,22 +876,24 @@ function ResourceOccupancyTimeline({
                     zIndex: 10,
                     background: rowBg,
                     borderRight: `1px solid ${t.gridLineMd}`,
+                    boxShadow: isMobile ? `3px 0 7px rgba(15,23,42,0.08)` : "none",
                   }}
                 >
                   <div
                     style={{
-                      width: NAME,
+                      width: layout.name,
                       boxSizing: "border-box",
-                      padding: "6px 10px",
+                      padding: isMobile ? "6px 7px" : "6px 10px",
                       display: "flex",
                       alignItems: "center",
-                      gap: 8,
+                      gap: isMobile ? 6 : 8,
                     }}
                   >
                     <div
                       style={{
-                        width: 20,
-                        height: 20,
+                        width: isMobile ? 22 : 20,
+                        height: isMobile ? 22 : 20,
+                        flex: "0 0 auto",
                         borderRadius: "50%",
                         background: row.isUnallocated
                           ? "#94a3b8"
@@ -821,7 +911,7 @@ function ResourceOccupancyTimeline({
                       <div
                         title={row.name}
                         style={{
-                          fontSize: 12.5,
+                          fontSize: isMobile ? 11.5 : 12.5,
                           fontWeight: 600,
                           color: t.resNameColor,
                           overflow: "hidden",
@@ -831,147 +921,188 @@ function ResourceOccupancyTimeline({
                       >
                         {row.name}
                       </div>
-                      {row.isUnallocated && (
+
+                      {row.isUnallocated ? (
                         <span
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 3,
                             marginTop: 3,
-                            padding: "1.5px 6px",
+                            padding: "1.5px 5px",
                             borderRadius: 999,
-                            fontSize: 9,
+                            fontSize: 8.5,
                             fontWeight: 700,
                             color: chipText,
                             background: chipBg,
                             border: `1px solid ${chipBorder}`,
+                            maxWidth: "100%",
                           }}
                         >
                           <i
+                            aria-hidden="true"
                             style={{
                               width: 4.5,
                               height: 4.5,
+                              flex: "0 0 auto",
                               borderRadius: "50%",
                               background: chipDot,
                             }}
                           />
                           Unallocated
                         </span>
+                      ) : (
+                        isMobile && (
+                          <div
+                            title={`Monthly utilization: ${percentageText(
+                              metric?.resourceMonthUtilization,
+                            )}. Completed: ${completed}/${assigned}. On time: ${
+                              metric?.onTimeTasks ?? 0
+                            }. Delayed: ${metric?.delayedTasks ?? 0}.`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              minWidth: 0,
+                              marginTop: 4,
+                              color: t.textMuted,
+                              fontSize: 8.5,
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: percentageColor(
+                                  metric?.resourceMonthUtilization,
+                                  t.textMuted,
+                                ),
+                              }}
+                            >
+                              {percentageText(metric?.resourceMonthUtilization)} util
+                            </span>
+                            <span aria-hidden="true">·</span>
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {completed}/{assigned} done
+                            </span>
+                          </div>
+                        )
                       )}
                     </div>
                   </div>
-                  <div
-                    title={
-                      row.isUnallocated
-                        ? "Monthly Utilization is unavailable for unallocated resources"
-                        : `Monthly Utilization: ${percentageText(metric?.resourceMonthUtilization)}`
-                    }
-                    style={{
-                      width: MONTH_PROGRESS,
-                      display: "grid",
-                      placeItems: "center",
-                      borderLeft: `1px solid ${t.gridLineMd}`,
-                      color: row.isUnallocated
-                        ? t.textMuted
-                        : percentageColor(metric?.resourceMonthUtilization, t.textMuted),
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {row.isUnallocated ? "—" : percentageText(metric?.resourceMonthUtilization)}
-                  </div>
-                  <div
-                    title={
-                      row.isUnallocated
-                        ? "Task completion is unavailable for unallocated resources"
-                        : `On time: ${metric?.onTimeTasks ?? 0} | Delayed: ${metric?.DelayedTasks ?? 0} | Completed: ${metric?.totalCompletedTasks ?? 0}/${metric?.totalAssignedTasks ?? 0} (${completionPercentage(metric?.totalCompletedTasks, metric?.totalAssignedTasks) ?? "—"}%)`
-                    }
-                    style={{
-                      width: TASK_COMPLETION,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 2,
-                      borderLeft: `1px solid ${t.gridLineMd}`,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {row.isUnallocated ? (
-                      <span style={{ color: t.textMuted, fontSize: 12 }}>—</span>
-                    ) : (
-                      <>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 6,
-                            whiteSpace: "nowrap",
-                            fontSize: 9,
-                          }}
-                        >
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 2,
-                              color: "#15803d",
-                            }}
-                          >
-                            <span style={{ fontSize: 11 }}>✓</span>On time{" "}
-                            {metric?.onTimeTasks ?? 0}
-                          </span>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 2,
-                              color: "#c2410c",
-                            }}
-                          >
-                            <span style={{ fontSize: 11 }}>◷</span>Delayed{" "}
-                            {metric?.delayedTasks ?? 0}
-                          </span>
-                        </span>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            color:
-                              completionPercentage(
-                                metric?.totalCompletedTasks,
-                                metric?.totalAssignedTasks,
-                              ) == null
-                                ? t.textMuted
-                                : t.textPrimary,
-                            fontSize: 9,
-                            fontWeight: 700,
-                            whiteSpace: "nowrap",
-                            padding: "1.5px 6px",
-                            borderRadius: 999,
-                            background: isDark ? "rgba(255,255,255,0.08)" : t.occFreeBar,
-                            border: `1px solid ${t.occFreeBarBorder}`,
-                          }}
-                        >Completed-
-                          {metric?.totalCompletedTasks ?? 0}/{metric?.totalAssignedTasks ?? 0} ·{" "}
-                          {completionPercentage(
-                            metric?.totalCompletedTasks,
-                            metric?.totalAssignedTasks,
-                          ) ?? "—"}
-                          %
-                        </span>
-                      </>
-                    )}
-                  </div>
+
+                  {!isMobile && (
+                    <>
+                      <div
+                        title={
+                          row.isUnallocated
+                            ? "Monthly Utilization is unavailable for unallocated resources"
+                            : `Monthly Utilization: ${percentageText(
+                                metric?.resourceMonthUtilization,
+                              )}`
+                        }
+                        style={{
+                          width: layout.monthProgress,
+                          display: "grid",
+                          placeItems: "center",
+                          borderLeft: `1px solid ${t.gridLineMd}`,
+                          color: row.isUnallocated
+                            ? t.textMuted
+                            : percentageColor(metric?.resourceMonthUtilization, t.textMuted),
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {row.isUnallocated
+                          ? "—"
+                          : percentageText(metric?.resourceMonthUtilization)}
+                      </div>
+
+                      <div
+                        title={
+                          row.isUnallocated
+                            ? "Task completion is unavailable for unallocated resources"
+                            : `On time: ${metric?.onTimeTasks ?? 0} | Delayed: ${
+                                metric?.delayedTasks ?? 0
+                              } | Completed: ${completed}/${assigned} (${completion ?? "—"}%)`
+                        }
+                        style={{
+                          width: layout.taskCompletion,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 2,
+                          borderLeft: `1px solid ${t.gridLineMd}`,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {row.isUnallocated ? (
+                          <span style={{ color: t.textMuted, fontSize: 12 }}>—</span>
+                        ) : (
+                          <>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 6,
+                                whiteSpace: "nowrap",
+                                fontSize: 9,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                  color: "#15803d",
+                                }}
+                              >
+                                <span style={{ fontSize: 11 }}>✓</span>On time{" "}
+                                {metric?.onTimeTasks ?? 0}
+                              </span>
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                  color: "#c2410c",
+                                }}
+                              >
+                                <span style={{ fontSize: 11 }}>◷</span>Delayed{" "}
+                                {metric?.delayedTasks ?? 0}
+                              </span>
+                            </span>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                color: completion == null ? t.textMuted : t.textPrimary,
+                                fontSize: 9,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                                padding: "1.5px 6px",
+                                borderRadius: 999,
+                                background: isDark ? "rgba(255,255,255,0.08)" : t.occFreeBar,
+                                border: `1px solid ${t.occFreeBarBorder}`,
+                              }}
+                            >
+                              Completed-{completed}/{assigned} · {completion ?? "—"}%
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div style={{ width: chartWidth, display: "flex", height: 42 }}>
+
+                <div style={{ width: chartWidth, display: "flex", height: layout.rowHeight }}>
                   {days.map((date, dayIndex) => {
                     const dateKey = date.toDateString();
-                    // Weekends are non-working: never render an occupancy fill or
-                    // hours label, and skip hover/click — just the shaded cell.
                     const weekend = isWeekend(date);
                     const isOnLeave =
                       !row.isUnallocated &&
@@ -980,8 +1111,12 @@ function ResourceOccupancyTimeline({
                     const data = isOnLeave
                       ? { occupied: 0, free: 0, tasks: [], isOnLeave: true }
                       : row.isUnallocated
-                        ? { occupied: 0, free: capacityHrs, tasks: [] }
-                        : daily[dateKey] || { occupied: 0, free: capacityHrs, tasks: [] };
+                        ? { occupied: 0, free: dailyCapacity, tasks: [] }
+                        : daily[dateKey] || {
+                            occupied: 0,
+                            free: dailyCapacity,
+                            tasks: [],
+                          };
                     const key = `${row.id}-${dateKey}`;
                     const hover = hoveredKey === key;
                     const today = dateKey === todayKey;
@@ -990,21 +1125,41 @@ function ResourceOccupancyTimeline({
                       weekBoundaries[week] - 1 === dayIndex && dayIndex < days.length - 1;
                     const base = today
                       ? t.occCellToday
-                      : isWeekend(date)
+                      : weekend
                         ? t.occCellWeekend
                         : t.occCellBg;
-                    const bg =
+                    const background =
                       week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
                     const fill = weekend
                       ? 0
-                      : Math.min((data.occupied / capacityHrs) * 100, 100);
+                      : Math.min((data.occupied / dailyCapacity) * 100, 100);
+                    const dateLabel = date.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+                    const statusLabel = data.isOnLeave
+                      ? "on leave"
+                      : `${duration(data.occupied)} occupied, ${duration(data.free)} free`;
+
                     return (
                       <div
                         key={dayIndex}
-                        onMouseEnter={(event) => {
+                        role={weekend ? undefined : "button"}
+                        tabIndex={weekend ? undefined : 0}
+                        aria-label={weekend ? undefined : `${row.name}, ${dateLabel}: ${statusLabel}`}
+                        onPointerEnter={(event) => {
+                          if (!weekend && event.pointerType !== "touch")
+                            activate(event, row, date, data, key);
+                        }}
+                        onPointerLeave={(event) => {
+                          if (!weekend && event.pointerType !== "touch") clearHover();
+                        }}
+                        onFocus={(event) => {
                           if (!weekend) activate(event, row, date, data, key);
                         }}
-                        onMouseLeave={() => {
+                        onBlur={() => {
                           if (!weekend) clearHover();
                         }}
                         onClick={(event) => {
@@ -1012,10 +1167,21 @@ function ResourceOccupancyTimeline({
                           event.stopPropagation();
                           activate(event, row, date, data, key);
                         }}
+                        onKeyDown={(event) => {
+                          if (weekend) return;
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            activate(event, row, date, data, key);
+                          } else if (event.key === "Escape") {
+                            clearHover();
+                            event.currentTarget.blur();
+                          }
+                        }}
                         style={{
-                          width: CELL,
+                          width: layout.cell,
                           flexShrink: 0,
-                          padding: 3,
+                          padding: isMobile ? 4 : 3,
+                          boxSizing: "border-box",
                           display: "flex",
                           alignItems: "center",
                           borderRight: last
@@ -1023,22 +1189,30 @@ function ResourceOccupancyTimeline({
                             : dayIndex < days.length - 1
                               ? `1px solid ${t.gridLineMd}`
                               : "none",
-                          background: hover ? (isDark ? "rgba(59,130,246,.2)" : "#e0f2fe") : bg,
+                          background: hover
+                            ? isDark
+                              ? "rgba(59,130,246,.2)"
+                              : "#e0f2fe"
+                            : background,
                           boxShadow: today
                             ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}`
                             : "none",
                           cursor: weekend ? "default" : "pointer",
+                          outline: hover ? `2px solid ${t.btnPrimary}` : "none",
+                          outlineOffset: -2,
+                          WebkitTapHighlightColor: "transparent",
                         }}
                       >
                         <div
                           style={{
                             width: "100%",
-                            height: BAR_HEIGHT,
-                            background: !weekend && data.isOnLeave
-                              ? isDark
-                                ? "#475569"
-                                : "#cbd5e1"
-                              : t.occFreeBar,
+                            height: layout.barHeight,
+                            background:
+                              !weekend && data.isOnLeave
+                                ? isDark
+                                  ? "#475569"
+                                  : "#cbd5e1"
+                                : t.occFreeBar,
                             border: hover
                               ? `1.5px solid ${t.btnPrimary}`
                               : `1px solid ${t.occFreeBarBorder}`,
@@ -1062,7 +1236,7 @@ function ResourceOccupancyTimeline({
                               inset: 0,
                               display: "grid",
                               placeItems: "center",
-                              fontSize: 8,
+                              fontSize: isMobile ? 8.5 : 8,
                               fontWeight: 700,
                               color: data.occupied
                                 ? isDark
@@ -1087,18 +1261,23 @@ function ResourceOccupancyTimeline({
           })}
         </div>
       </div>
+
       <div
         style={{
           display: "flex",
-          gap: 16,
+          gap: isMobile ? 12 : 16,
           marginTop: 10,
-          flexWrap: "wrap",
+          paddingBottom: 2,
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          overflowX: isMobile ? "auto" : "visible",
+          WebkitOverflowScrolling: "touch",
           fontSize: 11,
           color: t.legendText,
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
           <i
+            aria-hidden="true"
             style={{
               width: 26,
               height: 10,
@@ -1109,8 +1288,9 @@ function ResourceOccupancyTimeline({
           />
           Free capacity
         </span>
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
           <i
+            aria-hidden="true"
             style={{
               width: 26,
               height: 10,
@@ -1120,8 +1300,11 @@ function ResourceOccupancyTimeline({
           />
           Occupied (load)
         </span>
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <i style={{ width: 8, height: 8, background: chipDot, borderRadius: "50%" }} />
+        <span style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
+          <i
+            aria-hidden="true"
+            style={{ width: 8, height: 8, background: chipDot, borderRadius: "50%" }}
+          />
           Unallocated
         </span>
       </div>
