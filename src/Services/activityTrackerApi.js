@@ -1651,7 +1651,13 @@ const activityTrackerApi = {
     );
     return response.data;
   },
-
+getHolidays: async () => {
+  const response = await axios.get(
+    `${host}holidays/dates`,
+    { headers: getHeaders() },
+  );
+  return response.data;
+},
   // ============================================================
   //                  USER ALLOCATION / ADMIN
   // ============================================================
@@ -1677,5 +1683,7 @@ const activityTrackerApi = {
     return response.data;
   },
 };
+
+
 
 export default activityTrackerApi;

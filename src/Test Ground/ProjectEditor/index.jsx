@@ -137,6 +137,7 @@ export default function ProjectEditor({
   draft,
   groupLabels,
   groupResources,
+  holidays = [],
   fetchResourcesForGroups,
   onSaveDraft,
   onPublish,
@@ -400,22 +401,25 @@ export default function ProjectEditor({
   // ═══════════════════════════════════════════════════════
   const recomputeRows = useCallback(
     (rowsToProcess) => {
-      // Check if ANY row has isAnchor = true
       const hasAnchors = rowsToProcess.some((r) => r.isAnchor);
       if (hasAnchors) {
-        return recomputeAnchorChains(rowsToProcess, groupResources);
+        return recomputeAnchorChains(rowsToProcess, groupResources, holidays);
       }
-      // Fallback: manual mode (just computes plannedStop)
-      return recomputeChains(rowsToProcess, groupResources);
+      return recomputeChains(rowsToProcess, groupResources, holidays);
     },
-    [groupResources],
+    [groupResources, holidays],
   );
 
   useEffect(() => {
     setRows((prev) => recomputeRows(prev));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCalculate]);
-
+  // Auto-recompute plannedStop when holidays list becomes available
+  useEffect(() => {
+    if (holidays.length === 0) return;
+    setRows((prev) => recomputeRows(prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holidays]);
   // ═══════════════════════════════════════════════════════
   // Comment handler
   // ═══════════════════════════════════════════════════════
@@ -1681,7 +1685,7 @@ export default function ProjectEditor({
               </>
             ) : draft.status === "finished" ? (
               <>
-                <CheckCircle2 size={11} /> Finished
+                <CheckCircle2 size={11} /> Published
               </>
             ) : motionSubmitted ? (
               <>
@@ -2746,6 +2750,7 @@ export default function ProjectEditor({
                                   idx={displayIdx}
                                   resources={resources}
                                   groupResources={groupResources}
+                                  holidays={holidays}
                                   hasChildren={hasChildrenFn(r.id)}
                                   parentRow={
                                     r.parentId
@@ -3268,6 +3273,7 @@ export default function ProjectEditor({
                                     isFirstInChain={isFirstInChain(r)}
                                     resources={resources}
                                     groupResources={groupResources}
+                                    holidays={holidays}
                                     hasChildren={hasChildrenFn(r.id)}
                                     parentRow={
                                       r.parentId

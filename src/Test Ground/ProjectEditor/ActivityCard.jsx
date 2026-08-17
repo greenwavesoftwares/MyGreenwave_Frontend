@@ -44,6 +44,7 @@ const ActivityCard = React.memo(function ActivityCard({
   idx,
   resources,
   groupResources,
+  holidays = [],
   hasChildren,
   moduleColor,
   isOverlapping,
@@ -113,7 +114,7 @@ const ActivityCard = React.memo(function ActivityCard({
 
     if (field === "resource" && value && !row.plannedStart) {
       try {
-        const dt = defaultFirstStart(value, groupResources || {});
+        const dt = defaultFirstStart(value, groupResources || {}, holidays);
         if (dt instanceof Date && !isNaN(dt)) {
           updated.plannedStart = isoDateTime(dt);
           if (updated.durationHrs) {
@@ -122,6 +123,7 @@ const ActivityCard = React.memo(function ActivityCard({
               Number(updated.durationHrs),
               value,
               groupResources || {},
+              holidays,
             );
             updated.plannedStop = isoDateTime(stop);
           }
@@ -418,6 +420,7 @@ const ActivityCard = React.memo(function ActivityCard({
                         value={row.plannedStart}
                         resourceUserId={row.resource}
                         groupResources={groupResources}
+                        holidays={holidays}
                         anchorRef={dateBtnRef}
                         onChange={(val) => handleField("plannedStart", val)}
                         onClose={() => setPickerOpen(false)}

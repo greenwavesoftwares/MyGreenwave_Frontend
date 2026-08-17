@@ -44,6 +44,7 @@ const ActivityRow = React.memo(function ActivityRow({
   isFirstInChain,
   resources,
   groupResources,
+  holidays = [],
   hasChildren,
   moduleColor,
   isOverlapping,
@@ -116,7 +117,7 @@ const ActivityRow = React.memo(function ActivityRow({
     // Auto-set planned start when a new resource is picked
     if (field === "resource" && value && !row.plannedStart) {
       try {
-        const dt = defaultFirstStart(value, groupResources || {});
+        const dt = defaultFirstStart(value, groupResources || {}, holidays);
         if (dt instanceof Date && !isNaN(dt)) {
           updated.plannedStart = isoDateTime(dt);
           if (updated.durationHrs) {
@@ -125,13 +126,12 @@ const ActivityRow = React.memo(function ActivityRow({
               Number(updated.durationHrs),
               value,
               groupResources || {},
+              holidays,
             );
             updated.plannedStop = isoDateTime(stop);
           }
         }
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
 
     onUpdate(updated, { recompute: needsRecompute });
@@ -583,6 +583,7 @@ const ActivityRow = React.memo(function ActivityRow({
                         value={row.plannedStart}
                         resourceUserId={row.resource}
                         groupResources={groupResources}
+                        holidays={holidays}
                         anchorRef={dateBtnRef}
                         onChange={(val) => handleField("plannedStart", val)}
                         onClose={() => setPickerOpen(false)}

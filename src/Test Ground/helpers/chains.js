@@ -2,10 +2,7 @@
    Row chain computation
    ═══════════════════════════════════════════════════════ */
 
-import {
-  isoDateTime,
-  parseISODateTime,
-} from "./dateUtils";
+import { isoDateTime, parseISODateTime } from "./dateUtils";
 import { nextWorkMoment, addWorkHours } from "./workHours";
 
 export function isPending(row) {
@@ -51,7 +48,11 @@ export function flattenOrdered(rows, { withDepth = true } = {}) {
 }
 
 /* ─── Anchor-based chain computation ─── */
-export function recomputeAnchorChains(rows, groupResources = {}) {
+export function recomputeAnchorChains(
+  rows,
+  groupResources = {},
+  holidays = [], // ← NEW
+) {
   // 1. Clone all rows
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
@@ -80,18 +81,13 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
   ordered.forEach((r) => {
     const row = byId.get(r.id);
     if (!row || !row.resource) return;
-    // Include ALL rows (top-level + sub-activities)
     if (!byResource.has(row.resource)) byResource.set(row.resource, []);
     byResource.get(row.resource).push(row);
   });
 
   // 6. Process each resource
   byResource.forEach((resourceRows, userId) => {
-    // Find all anchor indices
-    // Walk through rows and create segments
-    // Segment = [anchorRow, ...subsequentRows until next anchor]
-
-    let currentSegmentStart = -1; // index of current anchor
+    let currentSegmentStart = -1;
 
     for (let i = 0; i < resourceRows.length; i++) {
       const row = resourceRows[i];
@@ -101,19 +97,15 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
         row._isAnchor = true;
         row._autoChained = false;
 
-        // Use row's own plannedStart as segment start
-        // (guaranteed to exist — blocked at toggle time if missing)
         const anchorStart = row.plannedStart
           ? parseISODateTime(row.plannedStart)
           : null;
 
         if (!anchorStart) {
-          // Safety: if somehow anchor has no date, skip segment
           currentSegmentStart = -1;
           continue;
         }
 
-        // Recompute anchor's own plannedStop
         const dur = Number(row.durationHrs);
         const hasValidDur =
           row.durationHrs !== "" &&
@@ -127,6 +119,7 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
             dur,
             userId,
             groupResources,
+            holidays, // ← NEW
           );
           row.plannedStop = isoDateTime(stop);
         } else if (hasValidDur && dur === 0) {
@@ -141,28 +134,25 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
         row._autoChained = true;
         row._isAnchor = false;
 
-        // prevRow = the row just before this one in the resource list
         const prevRow = resourceRows[i - 1];
         const prevEnd = prevRow?.plannedStop
           ? parseISODateTime(prevRow.plannedStop)
           : null;
 
         if (!prevEnd) {
-          // Previous row has no stop → can't chain
           row.plannedStart = "";
           row.plannedStop = "";
           continue;
         }
 
-        // Snap to next valid work moment
         const start = nextWorkMoment(
           new Date(prevEnd),
           userId,
           groupResources,
+          holidays, // ← NEW
         );
         row.plannedStart = isoDateTime(start);
 
-        // Compute stop
         const dur = Number(row.durationHrs);
         const hasValidDur =
           row.durationHrs !== "" &&
@@ -171,7 +161,13 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
           !isNaN(dur);
 
         if (hasValidDur && dur > 0) {
-          const stop = addWorkHours(start, dur, userId, groupResources);
+          const stop = addWorkHours(
+            start,
+            dur,
+            userId,
+            groupResources,
+            holidays, // ← NEW
+          );
           row.plannedStop = isoDateTime(stop);
         } else if (hasValidDur && dur === 0) {
           row.plannedStop = isoDateTime(start);
@@ -179,38 +175,44 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
           row.plannedStop = "";
         }
       } else {
-  // ── No segment started yet → manual mode ──
-  row._autoChained = false;
-  row._isAnchor = false;
-  
-  // Still compute plannedStop from plannedStart + duration (manual mode)
-  if (row.plannedStart) {
-    const start = parseISODateTime(row.plannedStart);
-    const dur = Number(row.durationHrs);
-    const hasValidDur =
-      row.durationHrs !== "" &&
-      row.durationHrs !== null &&
-      row.durationHrs !== undefined &&
-      !isNaN(dur);
+        // ── No segment started yet → manual mode ──
+        row._autoChained = false;
+        row._isAnchor = false;
 
-    if (start && hasValidDur) {
-      if (dur === 0) {
-        row.plannedStop = isoDateTime(start);
-      } else {
-        const stop = addWorkHours(start, dur, userId, groupResources);
-        row.plannedStop = isoDateTime(stop);
+        // Still compute plannedStop from plannedStart + duration
+        if (row.plannedStart) {
+          const start = parseISODateTime(row.plannedStart);
+          const dur = Number(row.durationHrs);
+          const hasValidDur =
+            row.durationHrs !== "" &&
+            row.durationHrs !== null &&
+            row.durationHrs !== undefined &&
+            !isNaN(dur);
+
+          if (start && hasValidDur) {
+            if (dur === 0) {
+              row.plannedStop = isoDateTime(start);
+            } else {
+              const stop = addWorkHours(
+                start,
+                dur,
+                userId,
+                groupResources,
+                holidays, // ← NEW
+              );
+              row.plannedStop = isoDateTime(stop);
+            }
+          } else {
+            row.plannedStop = "";
+          }
+        } else {
+          row.plannedStop = "";
+        }
       }
-    } else {
-      row.plannedStop = "";
-    }
-  } else {
-    row.plannedStop = "";
-  }
-}
     }
   });
 
-  // 7. Parent aggregation (same as before)
+  // 7. Parent aggregation
   const parentIds = Array.from(childrenMap.keys()).filter(
     (k) => k !== "__ROOT__",
   );
@@ -283,14 +285,26 @@ export function recomputeAnchorChains(rows, groupResources = {}) {
 }
 
 /* ─── Manual mode chain computation (kept for plannedStop calc) ─── */
-export function recomputeChains(rows, groupResources = {}) {
+export function recomputeChains(
+  rows,
+  groupResources = {},
+  holidays = [], // ← NEW
+) {
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
   const childrenMap = new Map();
+
   // ── Reset anchor-mode flags (in case they persisted) ──
   updated.forEach((r) => {
     r._autoChained = false;
     r._isAnchor = false;
+  });
+
+  // Build children map (was missing in the original — needs to populate childrenMap)
+  updated.forEach((r) => {
+    const pid = r.parentId || "__ROOT__";
+    if (!childrenMap.has(pid)) childrenMap.set(pid, []);
+    childrenMap.get(pid).push(r);
   });
 
   const getChildren = (id) => childrenMap.get(id) || [];
@@ -355,6 +369,7 @@ export function recomputeChains(rows, groupResources = {}) {
             dur,
             r.resource,
             groupResources,
+            holidays, // ← NEW
           );
           r.plannedStop = isoDateTime(stop);
         }

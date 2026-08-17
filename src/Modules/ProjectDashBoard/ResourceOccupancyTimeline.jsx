@@ -10,6 +10,7 @@ const WEEK_HEADER_HEIGHT = 38;
 const DAY_HEADER_HEIGHT = 46;
 const SCROLL_MAX_HEIGHT = 520;
 const DEFAULT_CAPACITY = 8;
+const MAX_SPAN_DAYS = 1096; // guard against absurd plannedStart/plannedStop spans
 
 const defaultTheme = {
   emptyText: "#64748b",
@@ -87,9 +88,214 @@ const completionPercentage = (completed, assigned) => {
   return Math.round((completedNumber / assignedNumber) * 100);
 };
 
+/* ------------------------------------------------------------------ */
+/* Task → per-day distribution helpers                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Normalize a plannedStart/plannedStop value into a local-midnight Date.
+ * Accepts Date instances, ms timestamps, "YYYY-MM-DD" (also ISO datetimes —
+ * parsed as local to avoid UTC-day shifts) and anything `new Date` handles.
+ */
+const parseLocalDate = (value) => {
+  if (value == null || value === "") return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime())
+      ? null
+      : new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? null
+      : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  }
+  if (typeof value === "string") {
+    const match = value.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime())
+      ? null
+      : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  }
+  return null;
+};
+
+/** Earliest / latest non-null Date from the given candidates. */
+const minDate = (...dates) => {
+  const valid = dates.filter(Boolean);
+  return valid.length ? new Date(Math.min(...valid.map((d) => d.getTime()))) : null;
+};
+const maxDate = (...dates) => {
+  const valid = dates.filter(Boolean);
+  return valid.length ? new Date(Math.max(...valid.map((d) => d.getTime()))) : null;
+};
+
+/**
+ * Inclusive list of dates from start to stop (weekends optionally skipped).
+ * A stop before start, or a missing stop, collapses to just the start day.
+ * If every day in the span is skipped (e.g. a weekend-only range), the start
+ * day is still returned so the task never silently disappears.
+ */
+const eachDayInRange = (start, stop, skipWeekends) => {
+  if (!start) return [];
+  const end = !stop || stop < start ? start : stop;
+  const days = [];
+  const cursor = new Date(start);
+  let guard = 0;
+  while (cursor <= end && guard < MAX_SPAN_DAYS) {
+    if (!skipWeekends || !isWeekend(cursor)) days.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+    guard += 1;
+  }
+  if (!days.length) days.push(new Date(start));
+  return days;
+};
+
+/** Read task duration in hours, tolerating common alternate field names.
+ *  Planned-duration fields win; actual-hour fields are a fallback. */
+const readTaskHours = (task) => {
+  const raw =
+    task?.durationHrs ??
+    task?.durationHours ??
+    task?.plannedHours ??
+    task?.plannedHrs ??
+    task?.allocatedHours ??
+    task?.actualDurationHrs ??
+    task?.actualHours ??
+    task?.hours;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const taskMatchesResource = (task, name) => {
+  const wanted = String(name || "")
+    .trim()
+    .toLowerCase();
+  if (!wanted) return false;
+  const candidates = [
+    task?.resourceName,
+    task?.userName,
+    task?.assignedTo,
+    task?.assigneeName,
+    task?.assignee,
+    task?.resource,
+    task?.owner,
+  ];
+  return candidates.some(
+    (candidate) => typeof candidate === "string" && candidate.trim().toLowerCase() === wanted,
+  );
+};
+
+/**
+ * resolveTasksForResource supports two input shapes for
+ * `taskOccupancyByResourceDate`:
+ *   1. map:      { "Jane Doe": [task, ...], "John Smith": [task, ...] }
+ *   2. flat list: [ { resourceName: "Jane Doe", ... }, ... ]
+ */
+const resolveTasksForResource = (source, name) => {
+  if (!source) return [];
+  if (Array.isArray(source)) return source.filter((task) => taskMatchesResource(task, name));
+  if (typeof source !== "object") return [];
+  if (Array.isArray(source[name])) return source[name];
+  const match = Object.keys(source).find(
+    (key) => key.trim().toLowerCase() === String(name).trim().toLowerCase(),
+  );
+  return match && Array.isArray(source[match]) ? source[match] : [];
+};
+
+/**
+ * Split a task's durationHrs across its span days.
+ *  - "even": durationHrs / numberOfDays, same amount every day.
+ *  - "fill": front-load each day up to capacityHrs, then continue on the next
+ *    day (hours beyond the span are dropped — extend plannedStop instead).
+ */
+const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
+  if (!spanDays.length) return [];
+  if (totalHours <= 0) return spanDays.map(() => 0);
+  if (spreadMode === "fill") {
+    let remaining = totalHours;
+    return spanDays.map(() => {
+      const take = Math.min(remaining, capacityHrs);
+      remaining -= take;
+      return take;
+    });
+  }
+  const perDay = totalHours / spanDays.length;
+  return spanDays.map(() => perDay);
+};
+
+/**
+ * Build { [date.toDateString()]: { hours, tasks } } for one resource from its
+ * task list. The distribution span is the union of the planned and actual
+ * ranges — earliest(plannedStart, actualStart) → latest(plannedStop,
+ * actualStop) — so when actual work began before the scheduled start (or ran
+ * past the scheduled stop), those days are still filled. Every task entry
+ * keeps its original fields plus:
+ *   - dayHours:     hours attributed to this specific day
+ *   - totalDays:    number of days the duration was spread across
+ *   - beganEarlier: true when actualStart is before plannedStart
+ */
+const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
+  const byDay = {};
+  tasks.forEach((task) => {
+    if (!task || typeof task !== "object") return;
+    const plannedStart = parseLocalDate(
+      task.plannedStart ?? task.plannedStartDate ?? task.startDate ?? task.start,
+    );
+    const plannedStop = parseLocalDate(
+      task.plannedStop ??
+        task.plannedStopDate ??
+        task.plannedEndDate ??
+        task.endDate ??
+        task.end,
+    );
+    const actualStart = parseLocalDate(
+      task.actualStart ?? task.actualStartDate ?? task.startedAt ?? task.startedOn,
+    );
+    const actualStop = parseLocalDate(
+      task.actualStop ?? task.actualStopDate ?? task.actualEndDate ?? task.actualEnd,
+    );
+    const start = minDate(plannedStart, actualStart);
+    const stop = maxDate(plannedStop, actualStop);
+    if (!start) return;
+    const spanDays = eachDayInRange(start, stop, skipWeekends);
+    const perDayHours = distributeHours(readTaskHours(task), spanDays, spreadMode, capacityHrs);
+    spanDays.forEach((day, index) => {
+      const key = day.toDateString();
+      if (!byDay[key]) byDay[key] = { hours: 0, tasks: [] };
+      const hoursForDay = perDayHours[index];
+      byDay[key].hours += hoursForDay;
+      byDay[key].tasks.push({
+        ...task,
+        dayHours: Math.round(hoursForDay * 100) / 100,
+        totalDays: spanDays.length,
+        beganEarlier: Boolean(plannedStart && actualStart && actualStart < plannedStart),
+      });
+    });
+  });
+  return byDay;
+};
+
 /**
  * One timeline for allocated and unallocated people.
  * Allocated rows use occupancy/metric data. Unallocated rows display 8h free and — for both metrics.
+ *
+ * Occupancy resolution, per resource:
+ *   1. If `taskOccupancyByResourceDate` contains tasks for the resource, each
+ *      task's `durationHrs` is spread across its span and the per-day sums
+ *      drive the bars. The span is the union of planned and actual dates:
+ *      earliest(plannedStart, actualStart) → latest(plannedStop, actualStop),
+ *      so bars are back-filled when actual work started before the schedule
+ *      and extended when it finished late. In this case
+ *      `occupancyByResourceDate` is ignored for that resource (no double count).
+ *   2. Otherwise the pre-computed `occupancyByResourceDate` is used as-is.
+ *
+ * New props for the task-driven mode:
+ *   - spreadMode:    "even" (default) spreads durationHrs evenly across the
+ *                    planned days; "fill" allocates up to capacityHrs per day.
+ *   - skipWeekends:  false (default) counts every calendar day of the span;
+ *                    true spreads only across Mon–Fri.
  */
 function ResourceOccupancyTimeline({
   weeks = [],
@@ -98,6 +304,8 @@ function ResourceOccupancyTimeline({
   getUnallocatedResources,
   occupancyByResourceDate = {},
   taskOccupancyByResourceDate = {},
+  spreadMode = "even",
+  skipWeekends = false,
   resourceColorMap = {},
   capacityHrs = DEFAULT_CAPACITY,
   expandedResources,
@@ -246,24 +454,34 @@ function ResourceOccupancyTimeline({
     });
   }, [timelineRows, metricsByName, sortConfig]);
 
-  const resourceData = useMemo(
-    () =>
-      resources.reduce((result, name) => {
-        result[name] = {};
-        days.forEach((date) => {
-          const key = date.toDateString();
-          const source = occupancyByResourceDate?.[key]?.[name];
-          const total = source?.hours || 0;
-          result[name][key] = {
-            occupied: Math.min(total, capacityHrs),
-            free: Math.max(0, capacityHrs - total),
-            tasks: source?.tasks || [],
-          };
-        });
-        return result;
-      }, {}),
-    [resources, days, occupancyByResourceDate, capacityHrs],
-  );
+  const resourceData = useMemo(() => {
+    // Precompute the task-derived day map once per resource. `null` means "no
+    // tasks supplied for this resource" → fall back to occupancyByResourceDate.
+    const taskMapsByResource = {};
+    resources.forEach((name) => {
+      const tasks = resolveTasksForResource(taskOccupancyByResourceDate, name);
+      taskMapsByResource[name] = tasks.length
+        ? buildTaskDayMap(tasks, { spreadMode, skipWeekends, capacityHrs })
+        : null;
+    });
+
+    return resources.reduce((result, name) => {
+      result[name] = {};
+      const taskMap = taskMapsByResource[name];
+      days.forEach((date) => {
+        const key = date.toDateString();
+        const source = occupancyByResourceDate?.[key]?.[name];
+        const total = taskMap ? taskMap[key]?.hours || 0 : source?.hours || 0;
+        const tasks = taskMap ? taskMap[key]?.tasks || [] : source?.tasks || [];
+        result[name][key] = {
+          occupied: Math.min(total, capacityHrs),
+          free: Math.max(0, capacityHrs - total),
+          tasks,
+        };
+      });
+      return result;
+    }, {});
+  }, [resources, days, occupancyByResourceDate, taskOccupancyByResourceDate, spreadMode, skipWeekends, capacityHrs]);
 
   const weekIndexForDay = (index) => {
     for (let i = 0; i < weekBoundaries.length; i += 1) if (index < weekBoundaries[i]) return i;
@@ -752,6 +970,9 @@ function ResourceOccupancyTimeline({
                 <div style={{ width: chartWidth, display: "flex", height: 42 }}>
                   {days.map((date, dayIndex) => {
                     const dateKey = date.toDateString();
+                    // Weekends are non-working: never render an occupancy fill or
+                    // hours label, and skip hover/click — just the shaded cell.
+                    const weekend = isWeekend(date);
                     const isOnLeave =
                       !row.isUnallocated &&
                       Array.isArray(metric?.leaveDates) &&
@@ -774,13 +995,20 @@ function ResourceOccupancyTimeline({
                         : t.occCellBg;
                     const bg =
                       week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
-                    const fill = Math.min((data.occupied / capacityHrs) * 100, 100);
+                    const fill = weekend
+                      ? 0
+                      : Math.min((data.occupied / capacityHrs) * 100, 100);
                     return (
                       <div
                         key={dayIndex}
-                        onMouseEnter={(event) => activate(event, row, date, data, key)}
-                        onMouseLeave={clearHover}
+                        onMouseEnter={(event) => {
+                          if (!weekend) activate(event, row, date, data, key);
+                        }}
+                        onMouseLeave={() => {
+                          if (!weekend) clearHover();
+                        }}
                         onClick={(event) => {
+                          if (weekend) return;
                           event.stopPropagation();
                           activate(event, row, date, data, key);
                         }}
@@ -799,14 +1027,14 @@ function ResourceOccupancyTimeline({
                           boxShadow: today
                             ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}`
                             : "none",
-                          cursor: "pointer",
+                          cursor: weekend ? "default" : "pointer",
                         }}
                       >
                         <div
                           style={{
                             width: "100%",
                             height: BAR_HEIGHT,
-                            background: data.isOnLeave
+                            background: !weekend && data.isOnLeave
                               ? isDark
                                 ? "#475569"
                                 : "#cbd5e1"
@@ -843,7 +1071,11 @@ function ResourceOccupancyTimeline({
                                 : t.occFreeLabel,
                             }}
                           >
-                            {data.isOnLeave ? "Leave" : duration(data.occupied || data.free)}
+                            {weekend
+                              ? ""
+                              : data.isOnLeave
+                                ? "Leave"
+                                : duration(data.occupied || data.free)}
                           </div>
                         </div>
                       </div>
