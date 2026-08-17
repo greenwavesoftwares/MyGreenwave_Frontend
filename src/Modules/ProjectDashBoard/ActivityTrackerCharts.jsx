@@ -966,121 +966,153 @@ export default function ActivityTrackerCharts() {
     return res;
   }, [filteredRows]);
 
-  const occupancyByResourceDate = useMemo(() => {
-    const map = {};
-    const WORK_START_HR = 10;
-    const WORK_END_HR = 18;
-    const BLOCKS = WORK_END_HR - WORK_START_HR;
+const occupancyByResourceDate = useMemo(() => {
+  const map = {};
+  const WORK_START_HR = 10;
+  const WORK_END_HR = 18;
+  const BLOCKS = WORK_END_HR - WORK_START_HR;
 
-    function bucket(dk, rn) {
-      if (!map[dk]) map[dk] = {};
-      if (!map[dk][rn])
-        map[dk][rn] = {
-          hours: 0,
-          tasks: [],
-          hourly: new Array(BLOCKS).fill(0),
-        };
-      return map[dk][rn];
+  function bucket(dateKey, resourceName) {
+    if (!map[dateKey]) map[dateKey] = {};
+
+    if (!map[dateKey][resourceName]) {
+      map[dateKey][resourceName] = {
+        hours: 0,
+        tasks: [],
+        hourly: new Array(BLOCKS).fill(0),
+      };
     }
 
-    filteredRows.forEach((r) => {
-      const pStart = parseDate(r.plannedStart);
-      if (!pStart) return;
-      const pStop = parseDate(r.plannedStop);
-      const aStart = parseDate(r.actualStart);
-      const aStop = parseDate(r.actualStop);
-      const res = r.resourceName;
-      const pDuration = plannedDurationHrs(r) || 0;
+    return map[dateKey][resourceName];
+  }
 
-      let start, end;
-      if (aStart) {
-        start = aStart;
-        const aDuration = actualDurationHrs(r);
-        if (aStop) {
-          end = aStop;
-        } else if (isTaskStatus(r.status, "running", "paused")) {
-          end = new Date(aStart.getTime() + 3600000);
-        } else {
-          end = new Date(
-            start.getTime() +
-              (aDuration != null ? aDuration : pDuration) * 3600000,
+  filteredRows.forEach((row) => {
+    /*
+      IMPORTANT:
+      Occupancy is calculated ONLY from plannedStart and plannedStop.
+
+      actualStart, actualStop, and status are intentionally not used here.
+      Therefore, if a task is planned in October but starts in August,
+      occupancy will still be displayed in October only.
+    */
+    const plannedStart = parseDate(row.plannedStart);
+
+    if (!plannedStart) return;
+
+    const plannedHours = plannedDurationHrs(row) || 0;
+    const plannedStop = parseDate(row.plannedStop);
+
+    // Use planned stop. If it is missing, derive it from planned duration.
+    const start = plannedStart;
+    const end =
+      plannedStop ||
+      new Date(plannedStart.getTime() + plannedHours * 3600000);
+
+    const resourceName = row.resourceName;
+
+    const startMidnight = toMidnight(start);
+    const endMidnight = toMidnight(end);
+    const currentDay = new Date(startMidnight);
+
+    // Split multi-day planned tasks across every planned working day.
+    while (currentDay <= endMidnight) {
+      const dateKey = currentDay.toDateString();
+
+      const workDayStart = new Date(currentDay);
+      workDayStart.setHours(WORK_START_HR, 0, 0, 0);
+
+      const workDayEnd = new Date(currentDay);
+      workDayEnd.setHours(WORK_END_HR, 0, 0, 0);
+
+      // Only count the part of the planned task that falls during work hours.
+      const segmentStart = new Date(
+        Math.max(start.getTime(), workDayStart.getTime()),
+      );
+
+      const segmentEnd = new Date(
+        Math.min(end.getTime(), workDayEnd.getTime()),
+      );
+
+      const segmentHours =
+        Math.max(0, segmentEnd.getTime() - segmentStart.getTime()) / 3600000;
+
+      if (segmentHours > 0) {
+        const occupancyBucket = bucket(dateKey, resourceName);
+
+        occupancyBucket.hours += segmentHours;
+
+        // Fill individual hourly bars from 10:00 through 18:00.
+        for (let hourIndex = 0; hourIndex < BLOCKS; hourIndex++) {
+          const blockStart = new Date(currentDay);
+          blockStart.setHours(WORK_START_HR + hourIndex, 0, 0, 0);
+
+          const blockEnd = new Date(currentDay);
+          blockEnd.setHours(WORK_START_HR + hourIndex + 1, 0, 0, 0);
+
+          const overlapMs = Math.max(
+            0,
+            Math.min(segmentEnd.getTime(), blockEnd.getTime()) -
+              Math.max(segmentStart.getTime(), blockStart.getTime()),
           );
-        }
-      } else if (isTaskStatus(r.status, "completed", "finished")) {
-        start = pStart;
-        end = pStop || new Date(start.getTime() + pDuration * 3600000);
-      } else {
-        start = pStart;
-        end = pStop || new Date(start.getTime() + pDuration * 3600000);
-      }
 
-      const startMid = toMidnight(start);
-      const endMid = toMidnight(end);
-      const cur = new Date(startMid);
-
-      while (cur <= endMid) {
-        const dk = cur.toDateString();
-        const dayStartWork = new Date(cur);
-        dayStartWork.setHours(WORK_START_HR, 0, 0, 0);
-        const dayEndWork = new Date(cur);
-        dayEndWork.setHours(WORK_END_HR, 0, 0, 0);
-        const segStart = new Date(
-          Math.max(start.getTime(), dayStartWork.getTime()),
-        );
-        const segEnd = new Date(Math.min(end.getTime(), dayEndWork.getTime()));
-        const segHrs = Math.max(0, segEnd - segStart) / 3600000;
-
-        if (segHrs > 0) {
-          const b = bucket(dk, res);
-          b.hours += segHrs;
-          for (let h = 0; h < BLOCKS; h++) {
-            const blockStart = new Date(cur);
-            blockStart.setHours(WORK_START_HR + h, 0, 0, 0);
-            const blockEnd = new Date(cur);
-            blockEnd.setHours(WORK_START_HR + h + 1, 0, 0, 0);
-            const overlapMs = Math.max(
-              0,
-              Math.min(segEnd.getTime(), blockEnd.getTime()) -
-                Math.max(segStart.getTime(), blockStart.getTime()),
-            );
-            if (overlapMs > 0) b.hourly[h] += overlapMs / 3600000;
+          if (overlapMs > 0) {
+            occupancyBucket.hourly[hourIndex] += overlapMs / 3600000;
           }
-          b.tasks.push({
-            row: r,
-            hours: segHrs,
-            daysFromStart: daysBetween(toMidnight(start), cur),
-            originalPlannedStart: pStart,
-            originalPlannedStop: pStop,
-            totalPlannedHrs: pDuration,
-          });
         }
-        cur.setDate(cur.getDate() + 1);
-      }
-    });
-    return map;
-  }, [filteredRows]);
 
-  const taskOccupancyByResourceDate = useMemo(() => {
-    const map = {};
-    filteredRows.forEach((r) => {
-      const pS = parseDate(r.plannedStart);
-      if (!pS) return;
-      const aS = parseDate(r.actualStart);
-      const rn = r.resourceName,
-        tn = r.task || "Untitled";
-      if (!map[rn]) map[rn] = {};
-      if (!map[rn][tn]) map[rn][tn] = {};
-      if (aS) {
-        const dk = toMidnight(aS).toDateString();
-        const hrs = actualDurationHrs(r) || plannedDurationHrs(r) || 0;
-        map[rn][tn][dk] = (map[rn][tn][dk] || 0) + hrs;
-      } else {
-        const dk = toMidnight(pS).toDateString();
-        map[rn][tn][dk] = (map[rn][tn][dk] || 0) + (plannedDurationHrs(r) || 0);
+        occupancyBucket.tasks.push({
+          row,
+          hours: segmentHours,
+          daysFromStart: daysBetween(toMidnight(start), currentDay),
+
+          // These remain planned values for tooltip/details usage.
+          originalPlannedStart: plannedStart,
+          originalPlannedStop: plannedStop,
+          totalPlannedHrs: plannedHours,
+        });
       }
-    });
-    return map;
-  }, [filteredRows]);
+
+      currentDay.setDate(currentDay.getDate() + 1);
+    }
+  });
+
+  return map;
+}, [filteredRows]);
+
+ const taskOccupancyByResourceDate = useMemo(() => {
+  const map = {};
+
+  filteredRows.forEach((row) => {
+    /*
+      Task occupancy is also based exclusively on planned dates.
+
+      Do not use actualStart or actualStop here, otherwise an early or late
+      execution would incorrectly shift the resource occupancy visualization.
+    */
+    const plannedStart = parseDate(row.plannedStart);
+
+    if (!plannedStart) return;
+
+    const resourceName = row.resourceName;
+    const taskName = row.task || "Untitled";
+    const plannedHours = plannedDurationHrs(row) || 0;
+
+    if (!map[resourceName]) {
+      map[resourceName] = {};
+    }
+
+    if (!map[resourceName][taskName]) {
+      map[resourceName][taskName] = {};
+    }
+
+    const dateKey = toMidnight(plannedStart).toDateString();
+
+    map[resourceName][taskName][dateKey] =
+      (map[resourceName][taskName][dateKey] || 0) + plannedHours;
+  });
+
+  return map;
+}, [filteredRows]);
 
   const timelineResources = useMemo(() => {
     const l = selectedResources.length
