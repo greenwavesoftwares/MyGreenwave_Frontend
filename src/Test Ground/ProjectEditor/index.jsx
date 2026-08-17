@@ -1685,7 +1685,7 @@ export default function ProjectEditor({
               </>
             ) : draft.status === "finished" ? (
               <>
-                <CheckCircle2 size={11} /> Finished
+                <CheckCircle2 size={11} /> Published
               </>
             ) : motionSubmitted ? (
               <>
