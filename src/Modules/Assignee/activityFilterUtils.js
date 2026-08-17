@@ -49,6 +49,7 @@ export const nodeFieldValue = (field, node) => {
 export const updateStatus = (status, time) => {
   if(!status)
     return
+  console.log("Status:",status)
   const statusInLC=status.toLowerCase()
    console.log("status:", status);
     console.log("time:", time);
@@ -74,11 +75,11 @@ export const nodeMatchesSearch = (node, term) => {
   const t = term.toLowerCase();
   const updatedStatus=updateStatus(node.activityStatus,node.plannedStart)
   return (
-    node.name?.toLowerCase().includes(t) ||
-    node.resourceName?.toLowerCase().includes(t) ||
-    node.resource?.toLowerCase().includes(t) ||
+    node.name?.toLowerCase()?.includes(t) ||
+    node.resourceName?.toLowerCase()?.includes(t) ||
+    node.resource?.toLowerCase()?.includes(t) ||
     node.activityStatus?.toLowerCase().includes(t) ||
-    updateStatus(node.activityStatus,node.plannedStart).includes(t) ||
+    updateStatus(node.activityStatus,node.plannedStart)?.includes(t) ||
     node.type?.toLowerCase().includes(t)
   );
 };
