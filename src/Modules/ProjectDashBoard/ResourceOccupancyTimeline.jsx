@@ -980,7 +980,7 @@ function ResourceOccupancyTimeline({
                                 ),
                               }}
                             >
-                              {percentageText(metric?.resourceMonthUtilization)} util
+                              {percentageText(metric?.resourceMonthUtilization)} utilization
                             </span>
                             <span aria-hidden="true">·</span>
                             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
