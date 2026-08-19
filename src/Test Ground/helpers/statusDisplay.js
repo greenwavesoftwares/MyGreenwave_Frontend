@@ -10,7 +10,7 @@ import { parseISODateTime } from "./dateUtils";
  *
  * Rules:
  *   - Pending + plannedStart > now  → "Yet to Start"
- *   - Pending + plannedStart <= now → "Pending Late"
+ *   - Pending + plannedStart <= now → "Due to Start"
  *   - Pending + no plannedStart     → "Pending" (neutral fallback)
  *   - Running + plannedStop > now   → "Running"
  *   - Running + plannedStop <= now  → "Running Late"
@@ -31,7 +31,7 @@ export function getDisplayStatus(row) {
     if (!plannedStart || isNaN(plannedStart.getTime())) return "Pending";
 
     if (plannedStart.getTime() > now.getTime()) return "Yet to Start";
-    return "Pending Late";
+    return "Due to Start";
   }
 
   // ── Running logic ──
@@ -54,7 +54,7 @@ export function getDisplayStatus(row) {
 export const DISPLAY_STATUSES = [
   "Yet to Start",
   "Pending",
-  "Pending Late",
+  "Due to Start",
   "Running",
   "Running Late",
   "Paused",

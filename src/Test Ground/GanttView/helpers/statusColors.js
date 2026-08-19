@@ -21,8 +21,8 @@ export function makeStatusColors(t) {
       border: "#FDBA74",
       bar: "#F97316",
     },
-    // ── NEW: Pending Late ──
-    "pending late": {
+    // ── NEW: Due to Start ──
+    "due to start": {
       bg: "#FEE2E2",
       color: "#DC2626",
       border: "#FCA5A5",

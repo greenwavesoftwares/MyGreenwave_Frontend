@@ -33,13 +33,13 @@ export default function StatusBadge({ row, status: explicitStatus }) {
       label = "Yet to Start";
       break;
 
-    // ── NEW: Pending Late ──
-    case "pending late":
+    // ── NEW: Due to Start ──
+    case "due to start":
       bg = "#FEE2E2"; // red-100
       color = "#DC2626"; // red-600
       border = "#FCA5A5"; // red-300
       Icon = AlertTriangle;
-      label = "Pending Late";
+      label = "Due to Start";
       break;
 
     case "running":
