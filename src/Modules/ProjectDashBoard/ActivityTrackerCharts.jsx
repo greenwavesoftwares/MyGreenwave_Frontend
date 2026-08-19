@@ -20,7 +20,7 @@ import { getUserData } from "../Login/Encrypt";
 /* ================================================================
    THEME  –  reads localStorage "Theme" (light | dark)
    ================================================================ */
-
+//Fetching data from Local Storage to get the theme mode (light or dark) and returning the corresponding palette for the theme.
 function getThemeMode() {
   try {
     return localStorage.getItem("Theme") === "dark" ? "dark" : "light";
@@ -28,7 +28,7 @@ function getThemeMode() {
     return "light";
   }
 }
-
+// Palette for light and dark themes, defining colors for various UI elements.
 const PALETTES = {
   light: {
     rootBg: "#f8fafc",
@@ -238,6 +238,7 @@ const PALETTES = {
   },
 };
 
+// Custom hook to read the current theme mode and palette, and update on localStorage changes.
 function useTheme() {
   const [mode, setMode] = useState(getThemeMode);
   useEffect(() => {
@@ -279,6 +280,7 @@ const MONTH_NAMES = [
 const GOLDEN_ANGLE = 137.508;
 const RESOURCE_DAILY_CAPACITY_HRS = 8;
 
+//hueForIndex and resourceBaseColor functions are used to generate distinct colors for resources based on their index, ensuring a visually appealing and easily distinguishable color palette for different resources in the UI.
 function hueForIndex(i) {
   return Math.round((i * GOLDEN_ANGLE) % 360);
 }
@@ -337,13 +339,18 @@ function fmtDurationCompact(h) {
   const r = Math.round(h * 10) / 10;
   return `${r % 1 === 0 ? r.toFixed(0) : r.toFixed(1)}h`;
 }
+// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
+
+// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function plannedDurationHrs(row) {
   if (typeof row.durationHrs === "number") return row.durationHrs;
   return (parseDate(row.plannedStop) - parseDate(row.plannedStart)) / 3600000;
 }
+
+// actualDurationHrs function calculates the actual duration of a task in hours based on its actual start and stop times. If the actual start time is not available, it returns null. If the actual stop time is not available, it estimates the duration based on the task's status (running or paused) and assumes a default duration of 1 hour. If both actual start and stop times are available, it calculates the difference in hours between them.
 function actualDurationHrs(row) {
   if (!row.actualStart) return null;
   const s = parseDate(row.actualStart);
@@ -371,12 +378,15 @@ function finishedEarlyLateInfo(row) {
   if (d > EARLY_LATE_THRESHOLD_HRS) return { type: "late", diff: d };
   return { type: "ontime", diff: d };
 }
+// toMidnight function takes a Date object and returns a new Date object representing the same date but with the time set to midnight (00:00:00). This is useful for comparing dates without considering the time component.
 function toMidnight(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
+// daysBetween function calculates the number of full days between two dates (a and b). It first converts both dates to midnight using the toMidnight function, then calculates the difference in milliseconds and divides it by the number of milliseconds in a day (86400000) to get the number of days. The result is rounded to the nearest whole number.
 function daysBetween(a, b) {
   return Math.round((toMidnight(b) - toMidnight(a)) / 86400000);
 }
+// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function weeksForMonth(year, monthIdx) {
   const ms = new Date(year, monthIdx, 1),
     me = new Date(year, monthIdx + 1, 0);
@@ -439,15 +449,18 @@ function getOccupancyColor(hours) {
 function isWeekend(d) {
   return d.getDay() === 0 || d.getDay() === 6;
 }
+// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function normalizeStatus(status) {
   return String(status || "")
     .trim()
     .toLowerCase();
 }
+// isTaskStatus function checks if a given task status matches any of the provided values. It normalizes the input status and compares it against the normalized values to determine if there is a match.
 function isTaskStatus(status, ...values) {
   return values.includes(normalizeStatus(status));
 }
 
+// getTaskStatusMeta function returns metadata for a given task status, including label, color, background color, border color, border style, pulse effect, and icon. It normalizes the input status and provides specific metadata for "running", "completed", "finished", and "paused" statuses. For any other status, it returns default metadata with a label of "Unknown".
 function getTaskStatusMeta(status) {
   const s = normalizeStatus(status);
   if (s === "running")
@@ -491,6 +504,7 @@ function getTaskStatusMeta(status) {
   };
 }
 
+// TaskStatusBadge component displays a badge for a given task status, using the metadata provided by getTaskStatusMeta. It shows a colored dot or icon along with the status label, styled according to the status properties.
 function TaskStatusBadge({ status, t }) {
   const meta = getTaskStatusMeta(status);
   return (
@@ -585,6 +599,10 @@ export default function ActivityTrackerCharts() {
     return () => document.removeEventListener("mousedown", h);
   }, [hovered]);
 
+
+  // ================================================================
+  // State variables for API loading, error handling, and response data
+  // ================================================================
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [apiResponse, setApiResponse] = useState(null);
@@ -631,12 +649,18 @@ export default function ActivityTrackerCharts() {
   const [projectSlideDir, setProjectSlideDir] = useState(1);
   const [unallocatedResourcesList, setUnallocatedResourcesList] = useState([]);
 
+
+  // ================================================================
+  // Data fetching logic
+  // ================================================================
   function loadData(year = selectedYear, months = selectedMonths) {
     setApiLoading(true);
     setApiError(null);
     fetchProjects(year, months);
   }
 
+
+  // Fetches project data, unallocated resources, and resource metrics from the API based on the selected year and months. Updates the state with the fetched data or error messages.
   const fetchProjects = async (year, months) => {
     try {
       const r = await activityTrackerApi.getActivityTreesByMonthAndDate(
@@ -671,6 +695,10 @@ export default function ActivityTrackerCharts() {
     loadData(selectedYear, selectedMonths);
   }, [selectedYear, selectedMonths.join(",")]);
 
+
+  // ================================================================
+  // Effect to handle clicks outside of the month, project, and resource pickers to close them
+  // ================================================================
   useEffect(() => {
     function h(e) {
       if (monthPickerRef.current && !monthPickerRef.current.contains(e.target))
@@ -690,6 +718,11 @@ export default function ActivityTrackerCharts() {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+
+
+// ================================================================
+// Memoized data processing and filtering logic
+// ================================================================
   const projectsData = useMemo(() => {
     if (!apiResponse) return [];
     if (Array.isArray(apiResponse)) return apiResponse;
@@ -845,6 +878,7 @@ export default function ActivityTrackerCharts() {
     return `${selectedMonths.length} months selected, ${selectedYear}`;
   }, [selectedMonths, selectedYear]);
 
+  // Filtered rows based on selected year, months, projects, and resources
   const filteredRows = useMemo(() => {
     const ms = new Set(selectedMonthIndices);
     return flatRows.filter((r) => {
@@ -866,6 +900,8 @@ export default function ActivityTrackerCharts() {
     selectedProjects,
     selectedResources,
   ]);
+
+  // Group filtered rows by project
 
   const filteredProjectsData = useMemo(() => {
     const m = new Map();
@@ -966,6 +1002,10 @@ export default function ActivityTrackerCharts() {
     return res;
   }, [filteredRows]);
 
+
+  // ================================================================
+  // Occupancy calculation logic
+  // ================================================================
 const occupancyByResourceDate = useMemo(() => {
   const map = {};
   const WORK_START_HR = 10;
@@ -987,14 +1027,7 @@ const occupancyByResourceDate = useMemo(() => {
   }
 
   filteredRows.forEach((row) => {
-    /*
-      IMPORTANT:
-      Occupancy is calculated ONLY from plannedStart and plannedStop.
-
-      actualStart, actualStop, and status are intentionally not used here.
-      Therefore, if a task is planned in October but starts in August,
-      occupancy will still be displayed in October only.
-    */
+    
     const plannedStart = parseDate(row.plannedStart);
 
     if (!plannedStart) return;
@@ -1079,6 +1112,11 @@ const occupancyByResourceDate = useMemo(() => {
   return map;
 }, [filteredRows]);
 
+
+// ================================================================
+// Task occupancy calculation logic
+// ================================================================
+
  const taskOccupancyByResourceDate = useMemo(() => {
   const map = {};
 
@@ -1113,6 +1151,11 @@ const occupancyByResourceDate = useMemo(() => {
 
   return map;
 }, [filteredRows]);
+
+
+// ================================================================
+// Timeline chart data preparation
+// ================================================================
 
   const timelineResources = useMemo(() => {
     const l = selectedResources.length
@@ -1195,6 +1238,10 @@ const occupancyByResourceDate = useMemo(() => {
     boxSizing: "border-box",
   };
 
+
+  // ================================================================
+  // Project pagination logic
+  // ================================================================ 
   const projectBreakdownKey = `${selectedYear}|${selectedMonths}|${selectedProjects}|${selectedResources}`;
   const projectsPerPage = useMemo(() => {
     if (viewportWidth <= 480) return 1;
@@ -1255,7 +1302,7 @@ const occupancyByResourceDate = useMemo(() => {
     console.log('Selected Month : ',selectedMonths,"selected year : ",selectedYear,'unallocatedResourcesList : ',unallocatedResourcesList)
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto">
       <div
         className="wt-root"
         style={{
