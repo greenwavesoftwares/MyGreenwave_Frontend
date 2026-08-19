@@ -63,6 +63,11 @@ const useMobileLayout = (breakpoint = MOBILE_BREAKPOINT) => {
     typeof window === "undefined" ? false : window.matchMedia(query).matches,
   );
 
+
+  // ================================================================
+  // Effect to handle window resize and update isMobile state
+  // ================================================================
+
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const media = window.matchMedia(query);
@@ -79,6 +84,10 @@ const useMobileLayout = (breakpoint = MOBILE_BREAKPOINT) => {
   return isMobile;
 };
 
+// ================================================================
+// Utility functions for date and resource handling
+// ================================================================
+
 const initialsFor = (name) => {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -87,12 +96,18 @@ const initialsFor = (name) => {
     : `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
+
+//
+
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 const localDateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
     date.getDate(),
   ).padStart(2, "0")}`;
 
+  // ================================================================
+  // Utility functions for formatting and color coding
+  // ================================================================
 const duration = (hours) => {
   if (hours == null) return "";
   if (hours < 1) return `${Math.round(hours * 60)}m`;
@@ -100,6 +115,8 @@ const duration = (hours) => {
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}h`;
 };
 
+
+// Color coding for occupancy based on hours
 const occupancyColor = (hours) =>
   hours < 4
     ? "#22c55e"
@@ -126,6 +143,9 @@ const percentageColor = (value, fallback) =>
         : Number(value) < 90
           ? "#ea580c"
           : "#dc2626";
+
+
+// Calculate completion percentage based on completed and assigned tasks
 
 const completionPercentage = (completed, assigned) => {
   const completedNumber = Number(completed);
@@ -167,6 +187,8 @@ const parseLocalDate = (value) => {
   return null;
 };
 
+// Find the earliest date among the provided dates, ignoring invalid or null values
+
 const minDate = (...dates) => {
   const valid = dates.filter(Boolean);
   return valid.length ? new Date(Math.min(...valid.map((date) => date.getTime()))) : null;
@@ -192,6 +214,8 @@ const eachDayInRange = (start, stop, skipWeekends) => {
   return days;
 };
 
+// Read the task's hours from various possible fields, defaulting to 0 if none are valid
+
 const readTaskHours = (task) => {
   const raw =
     task?.durationHrs ??
@@ -206,6 +230,7 @@ const readTaskHours = (task) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
 
+// Check if a task matches a given resource name, considering various possible fields
 const taskMatchesResource = (task, name) => {
   const wanted = String(name || "")
     .trim()
@@ -224,7 +249,7 @@ const taskMatchesResource = (task, name) => {
     (candidate) => typeof candidate === "string" && candidate.trim().toLowerCase() === wanted,
   );
 };
-
+// Resolve tasks for a specific resource from a source object, which can be an array or an object with resource names as keys
 const resolveTasksForResource = (source, name) => {
   if (!source) return [];
   if (Array.isArray(source)) return source.filter((task) => taskMatchesResource(task, name));
@@ -236,6 +261,8 @@ const resolveTasksForResource = (source, name) => {
   return match && Array.isArray(source[match]) ? source[match] : [];
 };
 
+
+// Distribute total hours across the given span of days according to the specified spread mode and daily capacity
 const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   if (!spanDays.length) return [];
   if (totalHours <= 0) return spanDays.map(() => 0);
@@ -251,6 +278,8 @@ const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   return spanDays.map(() => perDay);
 };
 
+
+// Build a mapping of tasks by day, distributing their hours according to the specified spread mode and daily capacity
 const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
   const byDay = {};
   tasks.forEach((task) => {
@@ -334,6 +363,10 @@ function ResourceOccupancyTimeline({
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const todayKey = new Date().toDateString();
 
+
+  // ================================================================
+  // Effect to load unallocated users if not supplied and a fetch function is provided
+  // ================================================================
   useEffect(() => {
     if (suppliedUnallocatedUsers !== null || typeof getUnallocatedResources !== "function")
       return undefined;
@@ -365,6 +398,10 @@ function ResourceOccupancyTimeline({
 
   const unallocatedUsers = suppliedUnallocatedUsers ?? loadedUnallocatedUsers;
 
+
+  // ================================================================
+  // Memoized calculations for days, week boundaries, and current timeline month
+  // ================================================================
   const { days, weekBoundaries } = useMemo(() => {
     const flat = [];
     const boundaries = [];
@@ -378,6 +415,10 @@ function ResourceOccupancyTimeline({
     return { days: flat, weekBoundaries: boundaries };
   }, [weeks]);
 
+
+  // ================================================================
+  // Memoized calculation for the current timeline month based on the first valid day
+  // ================================================================
   const currentTimelineMonth = useMemo(() => {
     const date = days.find(Boolean);
     return date
@@ -385,6 +426,11 @@ function ResourceOccupancyTimeline({
       : null;
   }, [days]);
 
+
+
+// ================================================================
+// Memoized calculation for current month metrics based on resourceMetrics and currentTimelineMonth
+// ================================================================
   const currentMonthMetrics = useMemo(() => {
     if (!Array.isArray(resourceMetrics)) return [];
     const flat = resourceMetrics.some(
@@ -401,6 +447,9 @@ function ResourceOccupancyTimeline({
     );
   }, [resourceMetrics, currentTimelineMonth]);
 
+  // ================================================================
+  // Memoized mapping of metrics by resource name for quick lookup
+  // ================================================================
   const metricsByName = useMemo(
     () =>
       currentMonthMetrics.reduce((result, metric) => {
@@ -409,6 +458,10 @@ function ResourceOccupancyTimeline({
       }, {}),
     [currentMonthMetrics],
   );
+
+  // ================================================================
+  // Memoized calculation for timeline rows, combining allocated and unallocated resources
+  // ================================================================
 
   const timelineRows = useMemo(() => {
     const allocated = resources.map((name) => ({
@@ -461,6 +514,10 @@ function ResourceOccupancyTimeline({
     });
   }, [timelineRows, metricsByName, sortConfig]);
 
+
+  // ================================================================
+  // Memoized calculation for resource occupancy data by day, combining task and source occupancy
+  // ================================================================
   const resourceData = useMemo(() => {
     const taskMapsByResource = {};
     resources.forEach((name) => {
@@ -512,6 +569,10 @@ function ResourceOccupancyTimeline({
   const chipBorder = isDark ? "rgba(239,68,68,0.45)" : "#fecaca";
   const chipText = isDark ? "#fca5a5" : "#b91c1c";
   const chipDot = isDark ? "#f87171" : "#ef4444";
+
+  // ================================================================
+  // Handlers for hover activation and clearing
+  // ================================================================
 
   const activate = (event, row, date, data, key) => {
     setHoveredKey(key);
@@ -980,7 +1041,7 @@ function ResourceOccupancyTimeline({
                                 ),
                               }}
                             >
-                              {percentageText(metric?.resourceMonthUtilization)} util
+                              {percentageText(metric?.resourceMonthUtilization)} utilization
                             </span>
                             <span aria-hidden="true">·</span>
                             <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
