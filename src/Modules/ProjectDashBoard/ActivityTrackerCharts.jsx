@@ -234,7 +234,7 @@ const PALETTES = {
     loadingText: "#64748b",
     errorText: "#f87171",
     emptyText: "#64748b",
-    rangeLabelText: "#94a3b8",
+    rangeLabelText: "#64748b",
   },
 };
 
@@ -344,7 +344,6 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function plannedDurationHrs(row) {
   if (typeof row.durationHrs === "number") return row.durationHrs;
   return (parseDate(row.plannedStop) - parseDate(row.plannedStart)) / 3600000;
@@ -678,11 +677,11 @@ export default function ActivityTrackerCharts() {
       const resourceMetrics = await activityTrackerApi.getMonthlyResourceMetrics(
         year,
         months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
-        
+
       );
       setCurrentMonthResourceMetrics(resourceMetrics ?? []);
       setUnallocatedResourcesList(unallocatedResources)
-      
+
       setApiResponse(r ?? { data: [] });
     } catch (e) {
       setApiError(String(e?.message ?? e));
@@ -768,15 +767,55 @@ export default function ActivityTrackerCharts() {
     return m;
   }, [allResourceNames]);
 
-  function rowMatchesFilters(row, { months, projects, resources }, skip) {
-    const d = parseDate(row.plannedStart);
-    if (!d || d.getFullYear() !== selectedYear) return false;
-    if (
-      skip !== "month" &&
-      months.length &&
-      !months.includes(MONTH_NAMES[d.getMonth()])
-    )
-      return false;
+  const selectedMonthIndices = useMemo(() => {
+    if (selectedMonths.length === 0)
+      return MONTH_NAMES.map((_, index) => index);
+    return selectedMonths
+      .map((n) => MONTH_NAMES.indexOf(n))
+      .sort((a, b) => a - b);
+  }, [selectedMonths]);
+
+  // True when a row's [plannedStart, plannedStop] interval intersects any
+  // selected month-window of the selected year. If no specific months are
+  // picked, the window is the entire year. This is what makes a Dec -> Jan
+  // task show up when the user picks January in 2027, and what makes all
+  // three rows of the sample data visible once the strict start-date check
+  // is replaced with overlap.
+  const rowOverlapsSelectedWindow = useCallback((row) => {
+    const start = parseDate(row.plannedStart);
+    if (!start) return false;
+    const stop = parseDate(
+      row.plannedStop ??
+        row.plannedStopDate ??
+        row.plannedEndDate ??
+        row.endDate,
+    );
+
+    if (selectedMonths.length === 0) {
+      const yearStart = new Date(selectedYear, 0, 1);
+      const yearEnd = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
+      if (stop) return start <= yearEnd && stop >= yearStart;
+      return start.getFullYear() === selectedYear;
+    }
+
+    return selectedMonthIndices.some((monthIdx) => {
+      const monthStart = new Date(selectedYear, monthIdx, 1);
+      const monthEnd = new Date(
+        selectedYear,
+        monthIdx + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      if (stop) return start <= monthEnd && stop >= monthStart;
+      return start.getFullYear() === selectedYear && start.getMonth() === monthIdx;
+    });
+  }, [selectedYear, selectedMonths.join(","), selectedMonthIndices]);
+
+  function rowMatchesFilters(row, { projects, resources }, skip) {
+    if (!rowOverlapsSelectedWindow(row)) return false;
     if (
       skip !== "project" &&
       projects.length &&
@@ -803,11 +842,7 @@ export default function ActivityTrackerCharts() {
       if (
         rowMatchesFilters(
           r,
-          {
-            months: selectedMonths,
-            projects: [],
-            resources: selectedResources,
-          },
+          { projects: [], resources: selectedResources },
           "project",
         )
       )
@@ -816,10 +851,9 @@ export default function ActivityTrackerCharts() {
     return allProjectNames.filter((p) => s.has(p));
   }, [
     flatRows,
-    selectedYear,
-    selectedMonths,
     selectedResources,
     allProjectNames,
+    rowOverlapsSelectedWindow,
   ]);
 
   // Resource picker options - affected by year, month, and project filters
@@ -829,7 +863,7 @@ export default function ActivityTrackerCharts() {
       if (
         rowMatchesFilters(
           r,
-          { months: selectedMonths, projects: selectedProjects, resources: [] },
+          { projects: selectedProjects, resources: [] },
           "resource",
         )
       )
@@ -838,10 +872,9 @@ export default function ActivityTrackerCharts() {
     return allResourceNames.filter((r) => s.has(r));
   }, [
     flatRows,
-    selectedYear,
-    selectedMonths,
     selectedProjects,
     allResourceNames,
+    rowOverlapsSelectedWindow,
   ]);
 
   // No need to filter selected months since all 12 are always available
@@ -863,14 +896,6 @@ export default function ActivityTrackerCharts() {
     });
   }, [apiResponse, resourcePickerOptions]);
 
-  const selectedMonthIndices = useMemo(() => {
-    if (selectedMonths.length === 0)
-      return MONTH_NAMES.map((_, index) => index);
-    return selectedMonths
-      .map((n) => MONTH_NAMES.indexOf(n))
-      .sort((a, b) => a - b);
-  }, [selectedMonths]);
-
   const rangeLabel = useMemo(() => {
     if (selectedMonths.length === 0) return `All months, ${selectedYear}`;
     if (selectedMonths.length === 1)
@@ -878,15 +903,14 @@ export default function ActivityTrackerCharts() {
     return `${selectedMonths.length} months selected, ${selectedYear}`;
   }, [selectedMonths, selectedYear]);
 
-  // Filtered rows based on selected year, months, projects, and resources
+  // Filtered rows based on selected year, months, projects, and resources.
+  // The year+month gate is overlap-based (see rowOverlapsSelectedWindow), so
+  // a row that started in the previous year/month but runs into the visible
+  // window is included.
   const filteredRows = useMemo(() => {
-    const ms = new Set(selectedMonthIndices);
     return flatRows.filter((r) => {
-      const d = parseDate(r.plannedStart);
+      if (!rowOverlapsSelectedWindow(r)) return false;
       return (
-        d &&
-        d.getFullYear() === selectedYear &&
-        ms.has(d.getMonth()) &&
         (selectedProjects.length === 0 ||
           selectedProjects.includes(r.project)) &&
         (selectedResources.length === 0 ||
@@ -896,9 +920,11 @@ export default function ActivityTrackerCharts() {
   }, [
     flatRows,
     selectedYear,
+    selectedMonths.join(","),
     selectedMonthIndices,
     selectedProjects,
     selectedResources,
+    rowOverlapsSelectedWindow,
   ]);
 
   // Group filtered rows by project
@@ -1027,7 +1053,7 @@ const occupancyByResourceDate = useMemo(() => {
   }
 
   filteredRows.forEach((row) => {
-    
+
     const plannedStart = parseDate(row.plannedStart);
 
     if (!plannedStart) return;
@@ -1113,44 +1139,83 @@ const occupancyByResourceDate = useMemo(() => {
 }, [filteredRows]);
 
 
+
+
+
 // ================================================================
 // Task occupancy calculation logic
 // ================================================================
+//
+// The component passed this prop (ResourceOccupancyTimeline) reads it as
+// either an array of full task rows, or { [resourceName]: [tasks] }, and then
+// distributes `durationHrs` across the actual [plannedStart, plannedStop]
+// span. To make a December→January task fill bars in the January view we
+// must:
+//   1. NOT pre-aggregate hours onto a single date (otherwise only the
+//      start day would fill).
+//   2. NOT filter by `plannedStart` year/month (otherwise a Dec-starting
+//      task is dropped the moment you open January).
+//   3. Use an OVERLAP test against the currently displayed month block,
+//      not a "starts inside the window" test.
+const taskOccupancyByResourceDate = useMemo(() => {
+  // The visible timeline is whichever month the user is on right now.
+  const block = monthBlocks[safeOccMonthBlockIndex];
+  const weeks = block?.weeks ?? [];
+  if (!weeks.length) return [];
 
- const taskOccupancyByResourceDate = useMemo(() => {
-  const map = {};
+  // First non-null day of the first week.
+  const windowStart = weeks[0]?.[0] ?? null;
+  // Last non-null day of the last week (week array tails may contain nulls).
+  let windowEnd = null;
+  for (let i = weeks.length - 1; i >= 0; i -= 1) {
+    const wk = weeks[i] ?? [];
+    for (let j = wk.length - 1; j >= 0; j -= 1) {
+      if (wk[j]) {
+        windowEnd = wk[j];
+        break;
+      }
+    }
+    if (windowEnd) break;
+  }
+  if (!windowStart || !windowEnd) return [];
 
-  filteredRows.forEach((row) => {
-    /*
-      Task occupancy is also based exclusively on planned dates.
+  // Pull from flatRows (not filteredRows) so a task that *starts* in
+  // December is still present when the user is viewing January. The
+  // project and resource pickers are still honored, but year/month are
+  // replaced by the overlap check below.
+  return flatRows.filter((row) => {
+    if (
+      selectedProjects.length > 0 &&
+      !selectedProjects.includes(row.project)
+    )
+      return false;
+    if (
+      selectedResources.length > 0 &&
+      !selectedResources.includes(row.resourceName)
+    )
+      return false;
 
-      Do not use actualStart or actualStop here, otherwise an early or late
-      execution would incorrectly shift the resource occupancy visualization.
-    */
     const plannedStart = parseDate(row.plannedStart);
+    const plannedStop = parseDate(
+      row.plannedStop ?? row.plannedStopDate ?? row.plannedEndDate ?? row.endDate,
+    );
 
-    if (!plannedStart) return;
+    if (!(plannedStart instanceof Date) || Number.isNaN(plannedStart.getTime()))
+      return false;
+    if (!(plannedStop instanceof Date) || Number.isNaN(plannedStop.getTime()))
+      return false;
 
-    const resourceName = row.resourceName;
-    const taskName = row.task || "Untitled";
-    const plannedHours = plannedDurationHrs(row) || 0;
-
-    if (!map[resourceName]) {
-      map[resourceName] = {};
-    }
-
-    if (!map[resourceName][taskName]) {
-      map[resourceName][taskName] = {};
-    }
-
-    const dateKey = toMidnight(plannedStart).toDateString();
-
-    map[resourceName][taskName][dateKey] =
-      (map[resourceName][taskName][dateKey] || 0) + plannedHours;
+    // Keep tasks that OVERLAP the visible window:
+    //   start <= windowEnd AND stop >= windowStart
+    return plannedStart <= windowEnd && plannedStop >= windowStart;
   });
-
-  return map;
-}, [filteredRows]);
+}, [
+  flatRows,
+  monthBlocks,
+  safeOccMonthBlockIndex,
+  selectedProjects,
+  selectedResources,
+]);
 
 
 // ================================================================
@@ -1241,7 +1306,7 @@ const occupancyByResourceDate = useMemo(() => {
 
   // ================================================================
   // Project pagination logic
-  // ================================================================ 
+  // ================================================================
   const projectBreakdownKey = `${selectedYear}|${selectedMonths}|${selectedProjects}|${selectedResources}`;
   const projectsPerPage = useMemo(() => {
     if (viewportWidth <= 480) return 1;
@@ -1422,7 +1487,7 @@ const occupancyByResourceDate = useMemo(() => {
   // showHover={showHover}
   // hideHover={hideHover}
  currentMonthResourceMetrics={currentMonthResourceMetrics}
- 
+
             />
 
           {/* {  filteredUnallocatedResources.length > 0 && (

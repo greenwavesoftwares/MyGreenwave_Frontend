@@ -61,15 +61,17 @@ function FilterBar({
       }}
     >
       <FilterField label="Year" t={t}>
-        <select 
-          value={selectedYear} 
-          onChange={(e) => setSelectedYear(Number(e.target.value))} 
-          disabled={apiLoading} 
-          style={dropdownStyle}
-        >
-          {availableYears.map((y) => (<option key={y} value={y}>{y}</option>))}
-        </select>
-      </FilterField>
+  <select 
+    value={selectedYear} 
+    onChange={(e) => setSelectedYear(Number(e.target.value))} 
+    disabled={apiLoading} 
+    style={dropdownStyle}
+  >
+    {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2].map((y) => (
+      <option key={y} value={y}>{y}</option>
+    ))}
+  </select>
+</FilterField>
 
       <FilterField label="Month" t={t}>
         <MultiSelectPicker
