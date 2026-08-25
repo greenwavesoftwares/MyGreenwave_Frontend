@@ -59,7 +59,11 @@ import {
   makeBtnStyle,
 } from "../helpers/styles";
 import { generateRowId } from "../helpers/ids";
-import { isoDateTime, fmtDisplay } from "../helpers/dateUtils";
+import {
+  isoDateTime,
+  fmtDisplay,
+  parseISODateTime,
+} from "../helpers/dateUtils";
 import {
   ensureModuleId,
   syncModuleIds,
@@ -1564,6 +1568,33 @@ export default function ProjectEditor({
   const assigned = rows.filter((r) => r.resource).length;
   const unassigned = total - assigned;
   const totalComments = rows.reduce((s, r) => s + (r.comments || []).length, 0);
+  // ── Project-level Start and End dates calculation ──
+  const { projectStartDate, projectEndDate } = useMemo(() => {
+    let minStartMs = Infinity;
+    let maxStopMs = -Infinity;
+
+    rows.forEach((r) => {
+      if (r.plannedStart) {
+        const dt = parseISODateTime(r.plannedStart) || new Date(r.plannedStart);
+        if (dt && !isNaN(dt.getTime())) {
+          if (dt.getTime() < minStartMs) minStartMs = dt.getTime();
+        }
+      }
+      if (r.plannedStop) {
+        const dt = parseISODateTime(r.plannedStop) || new Date(r.plannedStop);
+        if (dt && !isNaN(dt.getTime())) {
+          if (dt.getTime() > maxStopMs) maxStopMs = dt.getTime();
+        }
+      }
+    });
+
+    return {
+      projectStartDate:
+        minStartMs !== Infinity ? isoDateTime(new Date(minStartMs)) : null,
+      projectEndDate:
+        maxStopMs !== -Infinity ? isoDateTime(new Date(maxStopMs)) : null,
+    };
+  }, [rows]);
   const allTasksDone = useMemo(
     () =>
       rows.length > 0 &&
@@ -3625,6 +3656,28 @@ export default function ProjectEditor({
                   ),
                   bg: t.violetBg,
                   color: t.violet,
+                },
+                // ── NEW: Project Start Date Chip ──
+                {
+                  label: (
+                    <>
+                      <Calendar size={12} />
+                      {` Start: ${projectStartDate ? fmtDisplay(projectStartDate) : "—"}`}
+                    </>
+                  ),
+                  bg: t.primaryBgSubtle,
+                  color: t.primary,
+                },
+                // ── NEW: Project End Date Chip ──
+                {
+                  label: (
+                    <>
+                      <Calendar size={12} />
+                      {` End: ${projectEndDate ? fmtDisplay(projectEndDate) : "—"}`}
+                    </>
+                  ),
+                  bg: t.primaryBgSubtle,
+                  color: t.primary,
                 },
               ].map((s, i) => (
                 <span
