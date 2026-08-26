@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const DESKTOP_LAYOUT = {
   cell: 46,
@@ -362,6 +362,7 @@ function ResourceOccupancyTimeline({
   const [loadingUnallocated, setLoadingUnallocated] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const todayKey = new Date().toDateString();
+  const timelineScrollRef = useRef(null);
 
 
   // ================================================================
@@ -397,6 +398,9 @@ function ResourceOccupancyTimeline({
   }, [getUnallocatedResources, suppliedUnallocatedUsers]);
 
   const unallocatedUsers = suppliedUnallocatedUsers ?? loadedUnallocatedUsers;
+
+
+
 
 
   // ================================================================
@@ -621,6 +625,46 @@ function ResourceOccupancyTimeline({
       </div>
     );
 
+
+
+      useEffect(() => {
+  if (!timelineScrollRef.current || !days.length) return;
+
+  const scrollContainer = timelineScrollRef.current;
+
+  // Use today's date if present.
+  // Otherwise, use the nearest date in the timeline.
+  let targetIndex = days.findIndex(
+    (date) => date.toDateString() === todayKey,
+  );
+
+  if (targetIndex === -1) {
+    const now = new Date();
+
+    targetIndex = days.reduce((closestIndex, date, index) => {
+      const closestDistance = Math.abs(days[closestIndex] - now);
+      const currentDistance = Math.abs(date - now);
+
+      return currentDistance < closestDistance ? index : closestIndex;
+    }, 0);
+  }
+
+  const targetPosition =
+    leftWidth +
+    targetIndex * layout.cell -
+    (scrollContainer.clientWidth - leftWidth) / 2 +
+    layout.cell / 2;
+
+  const maxScrollLeft =
+    scrollContainer.scrollWidth - scrollContainer.clientWidth;
+
+  scrollContainer.scrollTo({
+    left: Math.max(0, Math.min(targetPosition, maxScrollLeft)),
+    behavior: "smooth",
+  });
+}, [days, leftWidth, layout.cell, todayKey]);
+
+
   return (
     <div style={{ width: "100%", minWidth: 0 }}>
       <div
@@ -656,6 +700,7 @@ function ResourceOccupancyTimeline({
                 fontWeight: 700,
                 cursor: "pointer",
               }}
+              ref={timelineScrollRef}
             >
               Utilization {sortIndicator("monthlyUtilization")}
             </button>
@@ -680,6 +725,7 @@ function ResourceOccupancyTimeline({
           touchAction: "pan-x pan-y",
           scrollbarGutter: "stable",
         }}
+        ref={timelineScrollRef}
       >
         <div style={{ width: leftWidth + chartWidth, minWidth: "100%", position: "relative" }}>
           {/* Week header */}
