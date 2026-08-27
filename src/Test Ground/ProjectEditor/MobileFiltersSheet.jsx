@@ -25,6 +25,7 @@ export default function MobileFiltersSheet({
   onAddColumn,
   canAddColumn,
   hasActiveFilters,
+  customColumns = [],
 }) {
   const { t } = useTheme();
   const inputStyle = makeInputStyle(t);
@@ -243,7 +244,59 @@ export default function MobileFiltersSheet({
             </div>
           </div>
         )}
+        {/* ── NEW: Custom Column Filters ── */}
+        {customColumns.map((col) => {
+          const opts = filterOptions.customOpts?.[col.id] || [];
+          if (opts.length === 0) return null; // Hide if column has no values yet
 
+          const selected = columnFilters[col.id] || [];
+
+          return (
+            <div key={col.id} style={sectionStyle}>
+              <div style={labelStyle}>
+                <Filter size={12} />
+                {col.name}
+                {selected.length > 0 && (
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      background: t.primary,
+                      color: t.textInverse,
+                      borderRadius: 999,
+                      padding: "1px 8px",
+                      fontSize: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {selected.length} selected
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {opts.map((opt) => {
+                  const active = selected.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() =>
+                        onChangeColumnFilter(col.id, toggleValue(selected, opt))
+                      }
+                      style={chipStyle(
+                        active,
+                        t.violet,
+                        t.violetBg,
+                        t.violetBorder,
+                      )}
+                    >
+                      {active && <Check size={11} strokeWidth={3} />}
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
         {/* ── Add Custom Column ── */}
         {canAddColumn && (
           <div style={sectionStyle}>
