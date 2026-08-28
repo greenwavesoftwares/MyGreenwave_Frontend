@@ -33,13 +33,13 @@ export default function StatusBadge({ row, status: explicitStatus }) {
       label = "Yet to Start";
       break;
 
-    // ── NEW: Due to Start ──
-    case "due to start":
+    // ── NEW: Start Due ──
+    case "start due":
       bg = "#FEE2E2"; // red-100
       color = "#DC2626"; // red-600
       border = "#FCA5A5"; // red-300
       Icon = AlertTriangle;
-      label = "Due to Start";
+      label = "Start Due";
       break;
 
     case "running":

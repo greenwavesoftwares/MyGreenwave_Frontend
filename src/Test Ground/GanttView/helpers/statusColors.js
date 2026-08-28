@@ -21,8 +21,8 @@ export function makeStatusColors(t) {
       border: "#FDBA74",
       bar: "#F97316",
     },
-    // ── NEW: Due to Start ──
-    "due to start": {
+    // ── NEW: Start Due ──
+    "start due": {
       bg: "#FEE2E2",
       color: "#DC2626",
       border: "#FCA5A5",

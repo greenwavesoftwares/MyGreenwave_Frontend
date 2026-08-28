@@ -321,16 +321,27 @@ export default function ProjectEditor({
     const resList = [
       ...new Set(rows.filter((r) => r.resource).map((r) => r.resource)),
     ].sort();
-
-    // Use DISPLAY status (includes "Yet to Start" for past pending rows)
     const statuses = [...new Set(rows.map((r) => getDisplayStatus(r)))].sort();
-
     const resourceOpts = resList.map((userId) => {
       const row = rows.find((r) => r.resource === userId);
       return { value: userId, label: row?.resourceName || userId };
     });
-    return { modules, resourceOpts, statuses };
-  }, [rows]);
+
+    // ── NEW: Extract unique values for each custom column ──
+    const customOpts = {};
+    customColumns.forEach((col) => {
+      const uniqueVals = [
+        ...new Set(
+          rows
+            .map((r) => String(r.customValues?.[col.id] || "").trim())
+            .filter((v) => v !== ""),
+        ),
+      ].sort();
+      customOpts[col.id] = uniqueVals;
+    });
+
+    return { modules, resourceOpts, statuses, customOpts };
+  }, [rows, customColumns]);
 
   const moduleColorMap = useMemo(() => {
     const uniqueModules = [
@@ -1443,12 +1454,17 @@ export default function ProjectEditor({
       result = result.filter((r) => matched.has(r.id));
     }
 
+    // Check if any custom column filter is active
+    const hasCustomFilter = customColumns.some(
+      (col) => columnFilters[col.id] && columnFilters[col.id].length > 0,
+    );
+
     const hasColumnFilter =
       columnFilters.module.length > 0 ||
       columnFilters.task.trim() !== "" ||
       columnFilters.resource.length > 0 ||
-      columnFilters.status.length > 0;
-
+      columnFilters.status.length > 0 ||
+      hasCustomFilter;
     if (hasColumnFilter) {
       const matched = new Set();
       result.forEach((r) => {
@@ -1467,10 +1483,14 @@ export default function ProjectEditor({
           !columnFilters.resource.includes(r.resource || "")
         )
           pass = false;
-        if (columnFilters.status.length > 0) {
-          const rowDisplayStatus = getDisplayStatus(r);
-          if (!columnFilters.status.includes(rowDisplayStatus)) pass = false;
-        }
+        // ── NEW: Check custom columns ──
+        customColumns.forEach((col) => {
+          const selected = columnFilters[col.id];
+          if (selected && selected.length > 0) {
+            const rowVal = String(r.customValues?.[col.id] || "").trim();
+            if (!selected.includes(rowVal)) pass = false;
+          }
+        });
         if (pass) {
           matched.add(r.id);
           let cur = rows.find((x) => x.id === r.parentId);
@@ -1607,13 +1627,17 @@ export default function ProjectEditor({
     [rows],
   );
   const hasActiveColumnFilters = useMemo(() => {
+    const hasCustom = customColumns.some(
+      (col) => columnFilters[col.id] && columnFilters[col.id].length > 0,
+    );
     return (
       columnFilters.module.length > 0 ||
       columnFilters.task.trim() !== "" ||
       columnFilters.resource.length > 0 ||
-      columnFilters.status.length > 0
+      columnFilters.status.length > 0 ||
+      hasCustom
     );
-  }, [columnFilters]);
+  }, [columnFilters, customColumns]);
   const showTable = rows.length > 0 || groups.length > 0;
   const showEmpty = !showTable;
 
@@ -2569,6 +2593,9 @@ export default function ProjectEditor({
                               columnFilters.task.trim() ? 1 : 0,
                               columnFilters.resource.length,
                               columnFilters.status.length,
+                              ...customColumns.map(
+                                (c) => columnFilters[c.id]?.length || 0,
+                              ),
                             ].reduce((a, b) => a + b, 0)}
                           </span>
                         )}
@@ -3137,7 +3164,27 @@ export default function ProjectEditor({
                                     }
                                   />
                                 )}
-
+                                {/* ── NEW: Custom Column Filters ── */}
+                                {col.isCustom && (
+                                  <ColumnFilterDropdown
+                                    label={col.columnDef.name}
+                                    type="multi"
+                                    options={
+                                      filterOptions.customOpts?.[
+                                        col.columnDef.id
+                                      ] || []
+                                    }
+                                    selected={
+                                      columnFilters[col.columnDef.id] || []
+                                    }
+                                    onChange={(val) =>
+                                      setColumnFilters((prev) => ({
+                                        ...prev,
+                                        [col.columnDef.id]: val,
+                                      }))
+                                    }
+                                  />
+                                )}
                                 {/* + Add Column button (after last column before Actions) */}
                                 {(() => {
                                   const isLastBeforeActions =
@@ -3963,6 +4010,7 @@ export default function ProjectEditor({
           open={mobileFiltersOpen}
           onClose={() => setMobileFiltersOpen(false)}
           filterOptions={filterOptions}
+          customColumns={sortedCustomColumns}
           columnFilters={columnFilters}
           onChangeColumnFilter={(key, value) =>
             setColumnFilters((prev) => ({ ...prev, [key]: value }))
