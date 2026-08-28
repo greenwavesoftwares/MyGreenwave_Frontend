@@ -167,10 +167,10 @@ function TooltipContent({ entry, kind, t }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {entry.tasks.map(({ row, hours }, idx) => {
-                const pS = parseDate(row.plannedStart);
-                const pE = parseDate(row.plannedStop);
-                const aS = parseDate(row.actualStart);
-                const aE = parseDate(row.actualStop);
+                const pS = parseDate(row?.plannedStart);
+                const pE = parseDate(row?.plannedStop);
+                const aS = parseDate(row?.actualStart);
+                const aE = parseDate(row?.actualStop);
 
                 return (
                   <div
