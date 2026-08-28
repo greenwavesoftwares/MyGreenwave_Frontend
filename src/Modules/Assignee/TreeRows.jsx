@@ -98,7 +98,7 @@ export default function TreeRows({
   const handleCloseDependencies = () => {
     setDependencyDialogVisible(false);
   };
-  const formatDepTime = (value) =>
+  const formatDateTime = (value) =>
     value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY HH:mm") : "—";
   const toggleExpand = (nodeId) => {
     setExpanded((prev) => ({
@@ -446,7 +446,7 @@ export default function TreeRows({
                           SCHEDULED START
                         </Box>
                         <Typography className="dependency-time-box-value">
-                          {formatDepTime(dep?.plannedStart)}
+                          {formatDateTime(dep?.plannedStart)}
                         </Typography>
                       </Box>
                       <Box className="dependency-time-box dependency-time-box--scheduled">
@@ -455,7 +455,7 @@ export default function TreeRows({
                           SCHEDULED STOP
                         </Box>
                         <Typography className="dependency-time-box-value">
-                          {formatDepTime(dep?.plannedStop)}
+                          {formatDateTime(dep?.plannedStop)}
                         </Typography>
                       </Box>
                     </Box>
@@ -473,7 +473,7 @@ export default function TreeRows({
                           ACTUAL START
                         </Box>
                         <Typography className="dependency-time-box-value">
-                          {formatDepTime(dep?.actualStart)}
+                          {formatDateTime(dep?.actualStart)}
                         </Typography>
                       </Box>
                       <Box
@@ -488,7 +488,7 @@ export default function TreeRows({
                           ACTUAL STOP
                         </Box>
                         <Typography className="dependency-time-box-value">
-                          {formatDepTime(dep?.actualStop)}
+                          {formatDateTime(dep?.actualStop)}
                         </Typography>
                       </Box>
                     </Box>
@@ -654,18 +654,14 @@ export default function TreeRows({
             </TableCell>
 
             <TableCell>
-              {plannedStart && dayjs(plannedStart).isValid()
-                ? dayjs(plannedStart).format("DD-MM-YYYY HH:mm")
-                : "-"}
+              {formatDateTime(plannedStart)}
             </TableCell>
 
             <TableCell>
               <div className="duration-cell">{durationHrs ?? "—"}</div>
             </TableCell>
             <TableCell>
-              {plannedStop && dayjs(plannedStop).isValid()
-                ? dayjs(plannedStop).format("DD-MM-YYYY HH:mm")
-                : "-"}
+              {formatDateTime(plannedStop)}
             </TableCell>
             <TableCell>
               <Tooltip
@@ -692,15 +688,11 @@ export default function TreeRows({
             </TableCell>
 
             <TableCell>
-              {actualStart && dayjs(actualStart).isValid()
-                ? dayjs(actualStart).format("YYYY-MM-DD HH:mm")
-                : "-"}
+              {formatDateTime(actualStart)}
             </TableCell>
 
             <TableCell>
-              {actualStop && dayjs(actualStop).isValid()
-                ? dayjs(actualStop).format("YYYY-MM-DD HH:mm")
-                : "-"}
+              {formatDateTime(actualStop)}
             </TableCell>
 
             {/* <TableCell>{pauseStart && dayjs(pauseStart).isValid()
