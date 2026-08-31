@@ -49,6 +49,7 @@ function plannedDurationHrs(row) {
 }
 
 function actualDurationHrs(row) {
+  if (typeof row?.actualDurationHrs === "number" && !Number.isNaN(row?.actualDurationHrs)) return row?.actualDurationHrs;
   if (!row?.actualStart) return null;
   const s = parseDate(row?.actualStart);
   const e = row?.actualStop
@@ -240,7 +241,7 @@ function TooltipContent({ entry, kind, t }) {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          Planned - {fmtDurationCompact(totalPlannedHrs) || "—"}
+                          Actual - {fmtDurationCompact(actualDurationHrs(row)) || "—"}
                         </span>
                         <span
                           style={{
@@ -250,8 +251,9 @@ function TooltipContent({ entry, kind, t }) {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          Day's {fmtDurationCompact(hours) || "—"}
+                          Planned - {fmtDurationCompact(totalPlannedHrs) || "—"}
                         </span>
+                     
                         <TaskStatusBadge status={row?.status} />
                       </div>
                     </div>
