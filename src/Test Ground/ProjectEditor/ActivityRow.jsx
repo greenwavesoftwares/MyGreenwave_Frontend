@@ -114,6 +114,16 @@ const ActivityRow = React.memo(function ActivityRow({
         field === "durationHrs" ? (value === "" ? "" : Number(value)) : value,
     };
 
+    // Keep resourceName in sync when resource changes
+    if (field === "resource") {
+      if (!value) {
+        updated.resourceName = "";
+      } else {
+        const resObj = resources.find((r) => r.userId === value);
+        updated.resourceName = resObj?.name || value;
+      }
+    }
+
     // Auto-set planned start when a new resource is picked
     if (field === "resource" && value && !row.plannedStart) {
       try {
