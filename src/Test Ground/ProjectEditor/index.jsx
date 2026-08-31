@@ -318,16 +318,23 @@ export default function ProjectEditor({
     const modules = [
       ...new Set(rows.filter((r) => r.module).map((r) => r.module)),
     ].sort();
+
     const resList = [
       ...new Set(rows.filter((r) => r.resource).map((r) => r.resource)),
     ].sort();
-    const statuses = [...new Set(rows.map((r) => getDisplayStatus(r)))].sort();
+
+    // Prefer live resources list over stale row.resourceName
     const resourceOpts = resList.map((userId) => {
-      const row = rows.find((r) => r.resource === userId);
-      return { value: userId, label: row?.resourceName || userId };
+      const fromList = resources.find((r) => r.userId === userId);
+      const fromRow = rows.find((r) => r.resource === userId);
+      return {
+        value: userId,
+        label: fromList?.name || fromRow?.resourceName || userId,
+      };
     });
 
-    // ── NEW: Extract unique values for each custom column ──
+    const statuses = [...new Set(rows.map((r) => getDisplayStatus(r)))].sort();
+
     const customOpts = {};
     customColumns.forEach((col) => {
       const uniqueVals = [
@@ -341,7 +348,7 @@ export default function ProjectEditor({
     });
 
     return { modules, resourceOpts, statuses, customOpts };
-  }, [rows, customColumns]);
+  }, [rows, customColumns, resources]);
 
   const moduleColorMap = useMemo(() => {
     const uniqueModules = [
@@ -1458,7 +1465,9 @@ export default function ProjectEditor({
     const hasCustomFilter = customColumns.some(
       (col) => columnFilters[col.id] && columnFilters[col.id].length > 0,
     );
-
+    console.log("🔍 Filters:", columnFilters);
+    console.log("🔍 Status options:", filterOptions.statuses);
+    console.log("🔍 Custom options:", filterOptions.customOpts);
     const hasColumnFilter =
       columnFilters.module.length > 0 ||
       columnFilters.task.trim() !== "" ||
@@ -1483,7 +1492,14 @@ export default function ProjectEditor({
           !columnFilters.resource.includes(r.resource || "")
         )
           pass = false;
-        // ── NEW: Check custom columns ──
+
+        // ── Status filter (uses display status: Yet to Start / Pending Late / Running Late etc.) ──
+        if (columnFilters.status.length > 0) {
+          const rowDisplayStatus = getDisplayStatus(r);
+          if (!columnFilters.status.includes(rowDisplayStatus)) pass = false;
+        }
+
+        // ── Custom columns ──
         customColumns.forEach((col) => {
           const selected = columnFilters[col.id];
           if (selected && selected.length > 0) {
@@ -1513,7 +1529,7 @@ export default function ProjectEditor({
     }
 
     return result;
-  }, [orderedRows, searchTerm, columnFilters, rows]);
+  }, [orderedRows, searchTerm, columnFilters, rows, customColumns]);
 
   const sections = useMemo(() => {
     const seen = new Set();

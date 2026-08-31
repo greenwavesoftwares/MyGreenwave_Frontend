@@ -112,6 +112,16 @@ const ActivityCard = React.memo(function ActivityCard({
         field === "durationHrs" ? (value === "" ? "" : Number(value)) : value,
     };
 
+    // Keep resourceName in sync when resource changes
+    if (field === "resource") {
+      if (!value) {
+        updated.resourceName = "";
+      } else {
+        const resObj = resources.find((r) => r.userId === value);
+        updated.resourceName = resObj?.name || value;
+      }
+    }
+
     if (field === "resource" && value && !row.plannedStart) {
       try {
         const dt = defaultFirstStart(value, groupResources || {}, holidays);

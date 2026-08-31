@@ -24,21 +24,15 @@ import "./ColumnFilter.css";
  */
 const ICON_COLOR = "#3b5bdb";
 
-export default function ColumnFilterButton({
-  label,
-  options,
-  selected,
-  onChange,
-  color = "#3b5bdb",
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 230 });
+/** Shared portal-popup positioning + outside-click-to-close behavior used by
+ * both ColumnFilterButton (checkbox list) and PlannedStartFilterButton
+ * (radio-style All/Today). Keeping this in one place means every column's
+ * filter popup behaves identically (same flip-above-when-no-room logic,
+ * same dismiss behavior) even though the popup contents differ. */
+function useFilterPopup(open, onClose, popupWidth = 230) {
+  const [position, setPosition] = useState({ top: 0, left: 0, width: popupWidth });
   const buttonRef = useRef(null);
   const popupRef = useRef(null);
-
-  const selectedSet = selected || new Set();
-  const isActive = selectedSet.size > 0;
 
   const updatePosition = useCallback(() => {
     if (!buttonRef.current) return;
@@ -49,21 +43,21 @@ export default function ColumnFilterButton({
     const offsetLeft = vv ? vv.offsetLeft : 0;
     const offsetTop = vv ? vv.offsetTop : 0;
 
-    const popupWidth = Math.min(230, viewportWidth - 20);
-    const popupHeight = Math.min(320, viewportHeight - 20);
+    const width = Math.min(popupWidth, viewportWidth - 20);
+    const height = Math.min(320, viewportHeight - 20);
     const spacing = 4;
 
     let top = rect.bottom + spacing;
-    if (top + popupHeight > offsetTop + viewportHeight - 10) {
-      top = rect.top - popupHeight - spacing;
+    if (top + height > offsetTop + viewportHeight - 10) {
+      top = rect.top - height - spacing;
     }
     let left = rect.left;
-    if (left + popupWidth > offsetLeft + viewportWidth - 10) {
-      left = offsetLeft + viewportWidth - popupWidth - 10;
+    if (left + width > offsetLeft + viewportWidth - 10) {
+      left = offsetLeft + viewportWidth - width - 10;
     }
     if (left < offsetLeft + 10) left = offsetLeft + 10;
-    setPosition({ top, left, width: popupWidth });
-  }, []);
+    setPosition({ top, left, width });
+  }, [popupWidth]);
 
   useEffect(() => {
     if (!open) return;
@@ -86,8 +80,7 @@ export default function ColumnFilterButton({
     const handler = (e) => {
       if (buttonRef.current?.contains(e.target)) return;
       if (popupRef.current?.contains(e.target)) return;
-      setOpen(false);
-      setSearch("");
+      onClose();
     };
     const timer = setTimeout(
       () => document.addEventListener("mousedown", handler),
@@ -97,7 +90,29 @@ export default function ColumnFilterButton({
       clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
     };
-  }, [open]);
+  }, [open, onClose]);
+
+  return { position, buttonRef, popupRef };
+}
+
+export default function ColumnFilterButton({
+  label,
+  options,
+  selected,
+  onChange,
+  color = "#3b5bdb",
+  currentUser,
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const close = useCallback(() => {
+    setOpen(false);
+    setSearch("");
+  }, []);
+  const { position, buttonRef, popupRef } = useFilterPopup(open, close);
+
+  const selectedSet = selected || new Set();
+  const isActive = selectedSet.size > 0;
 
   const filteredOptions = useMemo(
     () =>
@@ -141,6 +156,41 @@ export default function ColumnFilterButton({
             placeholder={`Search ${label}...`}
             autoFocus
           />
+        </div>
+      )}
+
+      {label === "Resource" && currentUser && (
+        <div className="col-filter-panel__onlyme">
+          {(() => {
+            const onlyMeChecked =
+              selectedSet.size === 1 && selectedSet.has(currentUser);
+            return (
+              <div
+                className="col-filter-option"
+                onClick={() =>
+                  onChange(onlyMeChecked ? new Set() : new Set([currentUser]))
+                }
+                style={{
+                  background: onlyMeChecked ? `${color}1A` : undefined,
+                  borderLeft: `3px solid ${onlyMeChecked ? color : "transparent"}`,
+                }}
+              >
+                <span
+                  className={`col-filter-checkbox${onlyMeChecked ? " col-filter-checkbox--checked" : ""}`}
+                  style={
+                    onlyMeChecked
+                      ? { borderColor: color, background: color }
+                      : undefined
+                  }
+                >
+                  {onlyMeChecked && (
+                    <span className="col-filter-checkbox__mark">✓</span>
+                  )}
+                </span>
+                <span className="col-filter-option__label">Only me</span>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -199,6 +249,112 @@ export default function ColumnFilterButton({
         {isActive && (
           <span className="col-filter-badge" style={{ background: ICON_COLOR }}>
             {selectedSet.size}
+          </span>
+        )}
+      </button>
+      {open && createPortal(popup, document.body)}
+    </>
+  );
+}
+
+/** Bucket keys for the date-range quick filter, in the order they're
+ * presented in the dropdown: past → present (narrow → wide) → future.
+ * "Today" sits right before "Current Month" since it's the narrower,
+ * more specific slice of the same "now" the wider option covers. */
+export const DATE_RANGE_BUCKETS = [
+  { key: "Today", text: "Today" },
+  { key: "CurrentMonth", text: "Current Month" },
+  { key: "LastMonth", text: "Last Month" },
+  { key: "UpcomingMonth", text: "Upcoming Month" },
+];
+
+/**
+ * Filter icon for any date column (Planned Start, Planned Stop, Actual
+ * Start, Actual Stop, ...): same button/popup chrome as ColumnFilterButton,
+ * but a single-select radio list ("All" plus the DATE_RANGE_BUCKETS above)
+ * instead of a multi-select checkbox list, since only one date range can
+ * be active for a column at a time. `label` is whatever column this is
+ * attached to (e.g. "Actual Stop") so the popup title and tooltip are
+ * accurate for each column that reuses this component.
+ *
+ * `value` is the selected bucket key (one of DATE_RANGE_BUCKETS' `key`s)
+ * or null/undefined for "All". Stays open after a selection — same as
+ * ColumnFilterButton's checkboxes — so the person can see the choice
+ * register and dismiss it deliberately instead of it vanishing under
+ * their cursor.
+ */
+export function DateRangeFilterButton({
+  label = "Date",
+  value,
+  onChange,
+  color = "#B45309",
+}) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const { position, buttonRef, popupRef } = useFilterPopup(open, close, 180);
+
+  const select = (key) => {
+    // Clicking the option that's already selected unchecks it, same as a
+    // checkbox — falls back to "All" rather than being stuck once picked.
+    onChange(key === value ? null : key);
+  };
+
+  const optionList = [{ key: null, text: "All" }, ...DATE_RANGE_BUCKETS];
+
+  const popup = open ? (
+    <div
+      ref={popupRef}
+      onClick={(e) => e.stopPropagation()}
+      className="col-filter-panel"
+      style={{ position: "fixed", top: position.top, left: position.left, width: position.width }}
+    >
+      <div className="col-filter-panel__header">
+        <span className="col-filter-panel__title">Filter {label}</span>
+      </div>
+
+      <div className="col-filter-panel__list">
+        {optionList.map(({ key, text }) => {
+          const checked = (value || null) === key;
+          return (
+            <div
+              key={text}
+              className="col-filter-option"
+              onClick={() => select(key)}
+              style={{
+                background: checked ? `${color}1A` : undefined,
+                borderLeft: `3px solid ${checked ? color : "transparent"}`,
+              }}
+            >
+              <span
+                className={`col-filter-checkbox${checked ? " col-filter-checkbox--checked" : ""}`}
+                style={checked ? { borderColor: color, background: color } : undefined}
+              >
+                {checked && <span className="col-filter-checkbox__mark">✓</span>}
+              </span>
+              <span className="col-filter-option__label">{text}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ) : null;
+
+  const isActive = !!value;
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        title={`Filter ${label}`}
+        className={`col-filter-btn${isActive ? " col-filter-btn--active" : ""}`}
+        style={isActive ? { borderColor: color, color } : undefined}
+      >
+        <Filter size={11} />
+        {isActive && (
+          <span className="col-filter-badge" style={{ background: color }}>
+            1
           </span>
         )}
       </button>

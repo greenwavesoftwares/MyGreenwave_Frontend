@@ -18,11 +18,49 @@ import dayjs from "dayjs";
 export const formatDT = (val, fmt) =>
   val && dayjs(val).isValid() ? dayjs(val).format(fmt) : "-";
 
+/** Field-key -> node date property for every column's date-range quick
+ * filter (DateRangeFilterButton in ColumnFilter.jsx: All/Last Month/Today/
+ * Current Month/Upcoming Month). Adding a new date column's quick filter
+ * is just one more entry here. */
+const DATE_RANGE_BASE_FIELDS = {
+  plannedStart: "plannedStart",
+  plannedStop: "plannedStop",
+  actualStart: "actualStart",
+  actualStop: "actualStop",
+};
+
+/** How each bucket suffix decides whether a raw date value belongs to it. */
+const DATE_RANGE_BUCKET_CHECKS = {
+  Today: (raw) => dayjs(raw).isSame(dayjs(), "day"),
+  CurrentMonth: (raw) => dayjs(raw).isSame(dayjs(), "month"),
+  LastMonth: (raw) => dayjs(raw).isSame(dayjs().subtract(1, "month"), "month"),
+  UpcomingMonth: (raw) => dayjs(raw).isSame(dayjs().add(1, "month"), "month"),
+};
+
+/** Builds the full set of date-range filter field keys, e.g.
+ * "plannedStartToday", "plannedStartLastMonth", "actualStopCurrentMonth",
+ * ... one per (base date field) x (bucket) combination, each mapped back
+ * to the base field + bucket check needed to evaluate it. */
+const DATE_RANGE_FIELD_MAP = Object.keys(DATE_RANGE_BASE_FIELDS).reduce(
+  (map, base) => {
+    Object.keys(DATE_RANGE_BUCKET_CHECKS).forEach((bucket) => {
+      map[`${base}${bucket}`] = { base: DATE_RANGE_BASE_FIELDS[base], bucket };
+    });
+    return map;
+  },
+  {},
+);
+
 /** Read the display value for a given column ("field") off of a node. */
 export const nodeFieldValue = (field, node) => {
   if (field.startsWith("custom:")) {
     const colId = field.slice(7);
     return String(node.customValues?.[colId] ?? "-");
+  }
+  if (DATE_RANGE_FIELD_MAP[field]) {
+    const { base, bucket } = DATE_RANGE_FIELD_MAP[field];
+    const raw = node[base];
+    return raw && DATE_RANGE_BUCKET_CHECKS[bucket](raw) ? "true" : "false";
   }
   //find the field value based on field name
   switch (field) {

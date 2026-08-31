@@ -22,10 +22,14 @@ import FeedbackModal from "../../Test Ground/FeedbackModal";
 import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
-import ColumnFilterButton from "./ColumnFilter";
+import ColumnFilterButton, {
+  DateRangeFilterButton,
+  DATE_RANGE_BUCKETS,
+} from "./ColumnFilter";
 import {
   filterTree,
   computeFilterOptions,
+  flattenNodes,
 } from "./activityFilterUtils";
 
 dayjs.extend(isBetween); // ← add this
@@ -520,11 +524,53 @@ export default function ProjectActivityInfo({
     return filterTree(activityInfo.modules, search, columnFilters);
   }, [activityInfo, search, columnFilters]);
 
+  /* The Resource column filter matches on `resourceName` (the display
+     value shown in the table/options list), not on the resource id. The
+     logged-in user's own display name (currentUserName, from getUserData)
+     isn't guaranteed to be byte-identical to what the backend put in
+     resourceName for that user's rows — so instead of comparing names, we
+     look up a row that's actually assigned to this user by id
+     (node.resource === currentUserId, the same check used elsewhere, e.g.
+     the "assigned to me" sort) and reuse that row's resourceName. That
+     guarantees "Only me" always matches something in the filter's own
+     option list.
+     If the current user has no row at all in this tree, this resolves to
+     undefined so the "Only me" option is hidden entirely (see currentUser
+     prop on ColumnFilterButton) rather than showing an option that would
+     always filter to an empty table. */
+  const currentUserResourceName = useMemo(() => {
+    if (!activityInfo?.modules) return undefined;
+    const ownRow = flattenNodes(activityInfo.modules).find(
+      (n) => n.type !== "MODULE" && n.resource === currentUserId,
+    );
+    return ownRow ? ownRow.resourceName || ownRow.resource : undefined;
+  }, [activityInfo, currentUserId]);
+
   const setFilterForField = (field, valueSet) => {
     setColumnFilters((prev) => {
       const next = { ...prev };
       if (!valueSet || valueSet.size === 0) delete next[field];
       else next[field] = valueSet;
+      return next;
+    });
+  };
+
+  /* Date-range quick filter (All/Last Month/Today/Current Month/Upcoming
+     Month) for Planned Start/Stop and Actual Start/Stop. Only one bucket
+     can be active per column, stored as columnFilters["<baseField><Bucket>"]
+     = Set(["true"]) — see DATE_RANGE_FIELD_MAP in activityFilterUtils.js.
+     These two helpers translate that storage into/out of the single
+     "which bucket is selected" value the dropdown itself works with. */
+  const getDateRangeValue = (baseField) =>
+    DATE_RANGE_BUCKETS.find(({ key }) =>
+      columnFilters[`${baseField}${key}`]?.has("true"),
+    )?.key || null;
+
+  const setDateRangeFilter = (baseField, bucketKey) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      DATE_RANGE_BUCKETS.forEach(({ key }) => delete next[`${baseField}${key}`]);
+      if (bucketKey) next[`${baseField}${bucketKey}`] = new Set(["true"]);
       return next;
     });
   };
@@ -906,13 +952,20 @@ export default function ProjectActivityInfo({
                       selected={columnFilters.resource || new Set()}
                       onChange={(set) => setFilterForField("resource", set)}
                       color="#15803D"
+                      currentUser={currentUserResourceName}
                     />
                   </div>
                 </TableCell>
                 <TableCell className="pai-th">
                   <div className="pai-th-content">
                     <span>Planned Start</span>
-                    
+                    <DateRangeFilterButton
+                      label="Planned Start"
+                      value={getDateRangeValue("plannedStart")}
+                      onChange={(bucket) =>
+                        setDateRangeFilter("plannedStart", bucket)
+                      }
+                    />
                   </div>
                 </TableCell>
                 <TableCell className="pai-th">
@@ -926,7 +979,13 @@ export default function ProjectActivityInfo({
                 <TableCell className="pai-th">
                   <div className="pai-th-content">
                     <span>Planned Stop</span>
-                    
+                    <DateRangeFilterButton
+                      label="Planned Stop"
+                      value={getDateRangeValue("plannedStop")}
+                      onChange={(bucket) =>
+                        setDateRangeFilter("plannedStop", bucket)
+                      }
+                    />
                   </div>
                 </TableCell>
                 <TableCell className="pai-th">
@@ -944,13 +1003,25 @@ export default function ProjectActivityInfo({
                 <TableCell className="pai-th">
                   <div className="pai-th-content">
                     <span>Actual Start</span>
-                    
+                    <DateRangeFilterButton
+                      label="Actual Start"
+                      value={getDateRangeValue("actualStart")}
+                      onChange={(bucket) =>
+                        setDateRangeFilter("actualStart", bucket)
+                      }
+                    />
                   </div>
                 </TableCell>
                 <TableCell className="pai-th">
                   <div className="pai-th-content">
                     <span>Actual Stop</span>
-                    
+                    <DateRangeFilterButton
+                      label="Actual Stop"
+                      value={getDateRangeValue("actualStop")}
+                      onChange={(bucket) =>
+                        setDateRangeFilter("actualStop", bucket)
+                      }
+                    />
                   </div>
                 </TableCell>
                 {activityInfo?.customColumns?.map((col) => {

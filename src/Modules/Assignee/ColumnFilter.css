@@ -113,6 +113,11 @@
   color: var(--fontColor, #111827);
 }
 
+.col-filter-panel__onlyme {
+  border-bottom: 1px solid var(--divider-color, #e4e8f0);
+  padding: 4px 0;
+}
+
 .col-filter-panel__list {
   max-height: 200px;
   overflow-y: auto;
