@@ -927,6 +927,182 @@ export default function ActivityTrackerCharts() {
     rowOverlapsSelectedWindow,
   ]);
 
+  // ================================================================
+  // Calculated resource metrics (used while a Project filter is active)
+  // ================================================================
+  // When one or more projects are selected, the numbers shown in the
+  // resource metrics section are recalculated from the currently filtered
+  // rows instead of the static getMonthlyResourceMetrics response, so
+  // utilization / on-time / delayed / assigned / completed reflect the
+  // selected project(s) only.
+  //   - resourceMonthUtilization = planned hours inside the month window /
+  //       (working days of the month, minus API leave dates, * 8h), clamped
+  //       to 100.
+  //   - totalAssignedTasks   = distinct task rows overlapping the month.
+  //   - totalCompletedTasks  = tasks having an actualStop (or a
+  //       completed/finished status).
+  //   - delayedTasks         = tasks whose actualStop is later than their
+  //       plannedStop.
+  //   - onTimeTasks          = completed tasks whose actualStop is earlier
+  //       than or equal to their plannedStop.
+  //   - resourceId / leaveDates are carried over from the API entry.
+  const calculatedResourceMetrics = useMemo(() => {
+    if (selectedProjects.length === 0) return null;
+
+    const monthIndices =
+      selectedMonths.length === 0
+        ? MONTH_NAMES.map((_, i) => i)
+        : [...selectedMonthIndices];
+
+    // API lookup: month -> resourceName -> API metric entry
+    const apiLookup = {};
+    (currentMonthResourceMetrics || []).forEach((m) => {
+      apiLookup[m.month] = {};
+      (m.resourceMetrics || []).forEach((rm) => {
+        apiLookup[m.month][rm.resourceName] = rm;
+      });
+    });
+
+    // Working days in [start, end], excluding weekends and API leave dates.
+    function workdayCount(monthStart, monthEnd, leaveDates) {
+      const leaves = new Set((leaveDates || []).map((l) => l.date));
+      let n = 0;
+      const d = new Date(monthStart);
+      while (d <= monthEnd) {
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (!isWeekend(d) && !leaves.has(key)) n++;
+        d.setDate(d.getDate() + 1);
+      }
+      return n;
+    }
+
+    return monthIndices.map((monthIdx) => {
+      const monthName = MONTH_NAMES[monthIdx];
+      const monthStart = new Date(selectedYear, monthIdx, 1);
+      const monthEnd = new Date(selectedYear, monthIdx + 1, 0, 23, 59, 59, 999);
+
+      const resTasks = {}; // resourceName -> Map(taskId -> rows[])
+      const resHours = {}; // resourceName -> planned hours inside this month
+
+      filteredRows.forEach((row) => {
+        const s = parseDate(row.plannedStart);
+        const p = plannedDurationHrs(row) || 0;
+        if (!s || !p || p <= 0) return;
+        const e =
+          parseDate(row.plannedStop) ||
+          new Date(s.getTime() + p * 3600000);
+
+        const overlap =
+          Math.min(e.getTime(), monthEnd.getTime()) -
+          Math.max(s.getTime(), monthStart.getTime());
+        if (overlap <= 0) return;
+
+        const name = row.resourceName;
+        const taskId = row.id ?? row.task;
+
+        // Distribute the task's planned hours across its span proportionally
+        // to the part that falls inside this month.
+        resHours[name] =
+          (resHours[name] || 0) +
+          p * (overlap / Math.max(e.getTime() - s.getTime(), 1));
+
+        if (!resTasks[name]) resTasks[name] = new Map();
+        if (!resTasks[name].has(taskId)) resTasks[name].set(taskId, []);
+        resTasks[name].get(taskId).push(row);
+      });
+
+      const apiForMonth = apiLookup[monthName] || {};
+
+      // Include API resources with zero tasks so the section keeps its rows.
+      const resourceNames = Object.keys({ ...apiForMonth, ...resTasks });
+
+      const resourceMetrics = resourceNames.map((resourceName) => {
+        const apiEntry = apiForMonth[resourceName] || {};
+        const taskMap = resTasks[resourceName] || new Map();
+
+        let onTimeTasks = 0;
+        let delayedTasks = 0;
+        let totalCompletedTasks = 0;
+
+        taskMap.forEach((rows) => {
+          const doneRow = rows.find((r) => r.actualStop);
+          if (doneRow) {
+            totalCompletedTasks += 1;
+            const actualStop = parseDate(doneRow.actualStop);
+            const isCompleted = isTaskStatus(
+              doneRow.status,
+              "completed",
+              "finished",
+            );
+
+            // plannedStop, or derive it from plannedStart + planned duration.
+            let plannedStop = parseDate(doneRow.plannedStop);
+            if (!plannedStop) {
+              const s = parseDate(doneRow.plannedStart);
+              const p = plannedDurationHrs(doneRow);
+              if (s && p) plannedStop = new Date(s.getTime() + p * 3600000);
+            }
+
+            if (actualStop && plannedStop) {
+              if (actualStop.getTime() > plannedStop.getTime()) {
+                // Finished after the planned stop time -> delayed.
+                delayedTasks += 1;
+              } else if (isCompleted) {
+                // Finished before (or exactly at) planned stop -> on time.
+                onTimeTasks += 1;
+              }
+            } else if (isCompleted) {
+              // No planned stop to compare against; not delayed.
+              onTimeTasks += 1;
+            }
+          } else if (
+            rows.some((r) => isTaskStatus(r.status, "completed", "finished"))
+          ) {
+            totalCompletedTasks += 1;
+            onTimeTasks += 1;
+          }
+        });
+
+        const totalAssignedTasks = taskMap.size;
+        const capacityDays = workdayCount(
+          monthStart,
+          monthEnd,
+          apiEntry.leaveDates,
+        );
+        const capacityHrs = capacityDays * RESOURCE_DAILY_CAPACITY_HRS;
+        const hours = resHours[resourceName] || 0;
+        const resourceMonthUtilization =
+          capacityHrs > 0
+            ? Math.min(100, Math.round((hours / capacityHrs) * 10000) / 100)
+            : 0;
+
+        return {
+          resourceName,
+          resourceId: apiEntry.resourceId ?? resourceName,
+          resourceMonthUtilization,
+          onTimeTasks,
+          delayedTasks,
+          totalAssignedTasks,
+          totalCompletedTasks,
+          leaveDates: apiEntry.leaveDates || [],
+        };
+      });
+
+      return { month: monthName, resourceMetrics };
+    });
+  }, [
+    filteredRows,
+    selectedYear,
+    selectedMonths.join(","),
+    selectedMonthIndices,
+    selectedProjects,
+    currentMonthResourceMetrics,
+  ]);
+
+  // When no project is selected, fall back to the original API metrics.
+  const resourceMetricsForDisplay =
+    calculatedResourceMetrics ?? currentMonthResourceMetrics ?? [];
+
   // Group filtered rows by project
 
   const filteredProjectsData = useMemo(() => {
@@ -1486,7 +1662,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
   // isDark={isDark}
   // showHover={showHover}
   // hideHover={hideHover}
- currentMonthResourceMetrics={currentMonthResourceMetrics}
+ currentMonthResourceMetrics={resourceMetricsForDisplay}
 
             />
 

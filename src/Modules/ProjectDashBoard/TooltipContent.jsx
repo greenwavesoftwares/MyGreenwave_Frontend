@@ -233,17 +233,8 @@ function TooltipContent({ entry, kind, t }) {
                           marginLeft: "auto",
                         }}
                       >
-                        <span
-                          style={{
-                            color: t?.ttMuted,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          Actual - {fmtDurationCompact(actualDurationHrs(row)) || "—"}
-                        </span>
-                        <span
+
+                         <span
                           style={{
                             color: t?.ttMuted,
                             fontSize: 10,
@@ -253,6 +244,18 @@ function TooltipContent({ entry, kind, t }) {
                         >
                           Planned - {fmtDurationCompact(totalPlannedHrs) || "—"}
                         </span>
+                        
+                      { row?.status?.toLowerCase() =='completed' && <span
+                          style={{
+                            color: t?.ttMuted,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Actual - {fmtDurationCompact(actualDurationHrs(row)) || "—"}
+                        </span>}
+                       
                      
                         <TaskStatusBadge status={row?.status} />
                       </div>
