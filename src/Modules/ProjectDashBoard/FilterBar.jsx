@@ -6,6 +6,52 @@ import FilterField from "./FilterField";
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 /**
+ * Circular loader shown while data is refreshing.
+ * Pure SVG (SMIL animation) — no CSS keyframes or stylesheet required,
+ * so it works anywhere the component renders.
+ */
+function CircularProgress({
+  size = 14,
+  color = "#ffffff",
+  track = "rgba(255,255,255,0.35)",
+  strokeWidth = 5,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 50 50"
+      aria-hidden="true"
+      style={{ display: "block", flex: "0 0 auto" }}
+    >
+      {/* static track ring */}
+      <circle cx="25" cy="25" r="20" fill="none" stroke={track} strokeWidth={strokeWidth} />
+      {/* rotating arc */}
+      <circle
+        cx="25"
+        cy="25"
+        r="20"
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray="31.4 94.3"
+      >
+        <animateTransform
+          attributeName="transform"
+          attributeType="XML"
+          type="rotate"
+          from="0 25 25"
+          to="360 25 25"
+          dur="0.8s"
+          repeatCount="indefinite"
+        />
+      </circle>
+    </svg>
+  );
+}
+
+/**
  * Filter bar component with Year, Month, Project, and Resource filters
  */
 function FilterBar({
@@ -132,7 +178,14 @@ function FilterBar({
       <button
         onClick={() => loadData()}
         disabled={apiLoading}
+        aria-busy={apiLoading}
         style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 7,
+          minWidth: 128,
+          boxSizing: "border-box",
           fontSize: 12,
           fontWeight: 600,
           color: "#fff",
@@ -140,11 +193,19 @@ function FilterBar({
           border: "none",
           borderRadius: 8,
           padding: "7px 14px",
-          cursor: "pointer",
+          cursor: apiLoading ? "default" : "pointer",
+          opacity: apiLoading ? 0.9 : 1,
         }}
         className="wt-refresh-btn"
       >
-        {apiLoading ? "Refreshing…" : "Refresh data"}
+        {apiLoading ? (
+          <>
+            <CircularProgress />
+            <span>Refreshing…</span>
+          </>
+        ) : (
+          <span>Refresh data</span>
+        )}
       </button>
     </div>
   );

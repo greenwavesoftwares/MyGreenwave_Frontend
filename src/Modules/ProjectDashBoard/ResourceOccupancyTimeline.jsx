@@ -63,7 +63,6 @@ const useMobileLayout = (breakpoint = MOBILE_BREAKPOINT) => {
     typeof window === "undefined" ? false : window.matchMedia(query).matches,
   );
 
-
   // ================================================================
   // Effect to handle window resize and update isMobile state
   // ================================================================
@@ -96,25 +95,22 @@ const initialsFor = (name) => {
     : `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
-
-//
-
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 const localDateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
     date.getDate(),
   ).padStart(2, "0")}`;
 
-  // ================================================================
-  // Utility functions for formatting and color coding
-  // ================================================================
+// ================================================================
+// Utility functions for formatting and color coding
+// ================================================================
+
 const duration = (hours) => {
   if (hours == null) return "";
   if (hours < 1) return `${Math.round(hours * 60)}m`;
   const rounded = Math.round(hours * 10) / 10;
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}h`;
 };
-
 
 // Color coding for occupancy based on hours
 const occupancyColor = (hours) =>
@@ -144,9 +140,7 @@ const percentageColor = (value, fallback) =>
           ? "#ea580c"
           : "#dc2626";
 
-
 // Calculate completion percentage based on completed and assigned tasks
-
 const completionPercentage = (completed, assigned) => {
   const completedNumber = Number(completed);
   const assignedNumber = Number(assigned);
@@ -188,7 +182,6 @@ const parseLocalDate = (value) => {
 };
 
 // Find the earliest date among the provided dates, ignoring invalid or null values
-
 const minDate = (...dates) => {
   const valid = dates.filter(Boolean);
   return valid.length ? new Date(Math.min(...valid.map((date) => date.getTime()))) : null;
@@ -215,7 +208,6 @@ const eachDayInRange = (start, stop, skipWeekends) => {
 };
 
 // Read the task's hours from various possible fields, defaulting to 0 if none are valid
-
 const readTaskHours = (task) => {
   const raw =
     task?.durationHrs ??
@@ -249,6 +241,7 @@ const taskMatchesResource = (task, name) => {
     (candidate) => typeof candidate === "string" && candidate.trim().toLowerCase() === wanted,
   );
 };
+
 // Resolve tasks for a specific resource from a source object, which can be an array or an object with resource names as keys
 const resolveTasksForResource = (source, name) => {
   if (!source) return [];
@@ -261,23 +254,30 @@ const resolveTasksForResource = (source, name) => {
   return match && Array.isArray(source[match]) ? source[match] : [];
 };
 
-
-// Distribute total hours across the given span of days according to the specified spread mode and daily capacity
+/* ------------------------------------------------------------------ */
+/* FIX: per-day distribution                                          */
+/*                                                                    */
+/* The old default ("even") divided the task's TOTAL hours equally    */
+/* over every day of the span, which produced broken fractional       */
+/* chunks (e.g. 3.5h per day) and left the last day looking wrong.    */
+/*                                                                    */
+/* The default is now "fill": a task simply occupies EVERY working    */
+/* day between plannedStart and plannedStop at the full daily         */
+/* capacity (8h per day). Weekends are excluded (they never render    */
+/* occupancy) and leave days are excluded at render time (they show   */
+/* "Leave" with 0h). Pass spreadMode="even" explicitly to get the     */
+/* old proportional split back.                                       */
+/* ------------------------------------------------------------------ */
 const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   if (!spanDays.length) return [];
-  if (totalHours <= 0) return spanDays.map(() => 0);
-  if (spreadMode === "fill") {
-    let remaining = totalHours;
-    return spanDays.map(() => {
-      const take = Math.min(remaining, capacityHrs);
-      remaining -= take;
-      return take;
-    });
+  if (spreadMode === "even") {
+    if (totalHours <= 0) return spanDays.map(() => 0);
+    const perDay = totalHours / spanDays.length;
+    return spanDays.map(() => perDay);
   }
-  const perDay = totalHours / spanDays.length;
-  return spanDays.map(() => perDay);
+  // "fill" (default): book each day of the planned span at full capacity.
+  return spanDays.map(() => capacityHrs);
 };
-
 
 // Build a mapping of tasks by day, distributing their hours according to the specified spread mode and daily capacity
 const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
@@ -335,7 +335,7 @@ function ResourceOccupancyTimeline({
   getUnallocatedResources,
   occupancyByResourceDate = {},
   taskOccupancyByResourceDate = {},
-  spreadMode = "even",
+  spreadMode = "fill",
   skipWeekends = false,
   resourceColorMap = {},
   capacityHrs = DEFAULT_CAPACITY,
@@ -363,7 +363,6 @@ function ResourceOccupancyTimeline({
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const todayKey = new Date().toDateString();
   const timelineScrollRef = useRef(null);
-
 
   // ================================================================
   // Effect to load unallocated users if not supplied and a fetch function is provided
@@ -399,10 +398,6 @@ function ResourceOccupancyTimeline({
 
   const unallocatedUsers = suppliedUnallocatedUsers ?? loadedUnallocatedUsers;
 
-
-
-
-
   // ================================================================
   // Memoized calculations for days, week boundaries, and current timeline month
   // ================================================================
@@ -419,7 +414,6 @@ function ResourceOccupancyTimeline({
     return { days: flat, weekBoundaries: boundaries };
   }, [weeks]);
 
-
   // ================================================================
   // Memoized calculation for the current timeline month based on the first valid day
   // ================================================================
@@ -430,11 +424,9 @@ function ResourceOccupancyTimeline({
       : null;
   }, [days]);
 
-
-
-// ================================================================
-// Memoized calculation for current month metrics based on resourceMetrics and currentTimelineMonth
-// ================================================================
+  // ================================================================
+  // Memoized calculation for current month metrics based on resourceMetrics and currentTimelineMonth
+  // ================================================================
   const currentMonthMetrics = useMemo(() => {
     if (!Array.isArray(resourceMetrics)) return [];
     const flat = resourceMetrics.some(
@@ -466,7 +458,6 @@ function ResourceOccupancyTimeline({
   // ================================================================
   // Memoized calculation for timeline rows, combining allocated and unallocated resources
   // ================================================================
-
   const timelineRows = useMemo(() => {
     const allocated = resources.map((name) => ({
       id: `allocated-${name}`,
@@ -517,7 +508,6 @@ function ResourceOccupancyTimeline({
       return sortConfig.direction === "asc" ? comparison : -comparison;
     });
   }, [timelineRows, metricsByName, sortConfig]);
-
 
   // ================================================================
   // Memoized calculation for resource occupancy data by day, combining task and source occupancy
@@ -606,6 +596,45 @@ function ResourceOccupancyTimeline({
     hideHover();
   };
 
+  // ================================================================
+  // Effect to auto-scroll the timeline so today (or the nearest day) is centered.
+  // NOTE: hooks must run before any early return, so this lives above the
+  // "no data" guard.
+  // ================================================================
+  useEffect(() => {
+    if (!timelineScrollRef.current || !days.length) return;
+
+    const scrollContainer = timelineScrollRef.current;
+
+    // Use today's date if present.
+    // Otherwise, use the nearest date in the timeline.
+    let targetIndex = days.findIndex((date) => date.toDateString() === todayKey);
+
+    if (targetIndex === -1) {
+      const now = new Date();
+
+      targetIndex = days.reduce((closestIndex, date, index) => {
+        const closestDistance = Math.abs(days[closestIndex] - now);
+        const currentDistance = Math.abs(date - now);
+
+        return currentDistance < closestDistance ? index : closestIndex;
+      }, 0);
+    }
+
+    const targetPosition =
+      leftWidth +
+      targetIndex * layout.cell -
+      (scrollContainer.clientWidth - leftWidth) / 2 +
+      layout.cell / 2;
+
+    const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+
+    scrollContainer.scrollTo({
+      left: Math.max(0, Math.min(targetPosition, maxScrollLeft)),
+      behavior: "smooth",
+    });
+  }, [days, leftWidth, layout.cell, todayKey]);
+
   const headerStyle = {
     fontSize: 10,
     fontWeight: 700,
@@ -624,46 +653,6 @@ function ResourceOccupancyTimeline({
           : "No resource activity to show for this selection."}
       </div>
     );
-
-
-
-      useEffect(() => {
-  if (!timelineScrollRef.current || !days.length) return;
-
-  const scrollContainer = timelineScrollRef.current;
-
-  // Use today's date if present.
-  // Otherwise, use the nearest date in the timeline.
-  let targetIndex = days.findIndex(
-    (date) => date.toDateString() === todayKey,
-  );
-
-  if (targetIndex === -1) {
-    const now = new Date();
-
-    targetIndex = days.reduce((closestIndex, date, index) => {
-      const closestDistance = Math.abs(days[closestIndex] - now);
-      const currentDistance = Math.abs(date - now);
-
-      return currentDistance < closestDistance ? index : closestIndex;
-    }, 0);
-  }
-
-  const targetPosition =
-    leftWidth +
-    targetIndex * layout.cell -
-    (scrollContainer.clientWidth - leftWidth) / 2 +
-    layout.cell / 2;
-
-  const maxScrollLeft =
-    scrollContainer.scrollWidth - scrollContainer.clientWidth;
-
-  scrollContainer.scrollTo({
-    left: Math.max(0, Math.min(targetPosition, maxScrollLeft)),
-    behavior: "smooth",
-  });
-}, [days, leftWidth, layout.cell, todayKey]);
-
 
   return (
     <div style={{ width: "100%", minWidth: 0 }}>
@@ -700,7 +689,6 @@ function ResourceOccupancyTimeline({
                 fontWeight: 700,
                 cursor: "pointer",
               }}
-              ref={timelineScrollRef}
             >
               Utilization {sortIndicator("monthlyUtilization")}
             </button>

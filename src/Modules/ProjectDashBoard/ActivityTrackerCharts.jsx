@@ -280,6 +280,41 @@ const MONTH_NAMES = [
 const GOLDEN_ANGLE = 137.508;
 const RESOURCE_DAILY_CAPACITY_HRS = 8;
 
+/* ----------------------------------------------------------------
+   leaveDates handling
+   The API returns leaveDates as objects:  [{ "date": "2026-09-18" }]
+   Older code paths expected plain strings: ["2026-09-18"]
+   These helpers normalize both shapes to "YYYY-MM-DD" strings so
+   every consumer (workday count, timeline "Leave" cells) matches.
+   ---------------------------------------------------------------- */
+function leaveDateKeyOf(entry) {
+  if (entry == null) return null;
+  if (typeof entry === "string") return entry;
+  if (typeof entry === "object") return entry.date ?? entry.Date ?? null;
+  return null;
+}
+
+function normalizeLeaveDates(list) {
+  if (!Array.isArray(list)) return [];
+  return Array.from(new Set(list.map(leaveDateKeyOf).filter(Boolean)));
+}
+
+// Normalize a metrics payload (flat list or month-grouped list) so every
+// resource entry carries leaveDates as plain "YYYY-MM-DD" strings.
+function normalizeResourceMetricsPayload(payload) {
+  if (!Array.isArray(payload)) return [];
+  const normalizeEntry = (rm) =>
+    rm && typeof rm === "object"
+      ? { ...rm, leaveDates: normalizeLeaveDates(rm.leaveDates) }
+      : rm;
+  return payload.map((item) => {
+    if (item && Array.isArray(item.resourceMetrics))
+      return { ...item, resourceMetrics: item.resourceMetrics.map(normalizeEntry) };
+    if (item && typeof item === "object" && item.resourceName) return normalizeEntry(item);
+    return item;
+  });
+}
+
 //hueForIndex and resourceBaseColor functions are used to generate distinct colors for resources based on their index, ensuring a visually appealing and easily distinguishable color palette for different resources in the UI.
 function hueForIndex(i) {
   return Math.round((i * GOLDEN_ANGLE) % 360);
@@ -339,7 +374,6 @@ function fmtDurationCompact(h) {
   const r = Math.round(h * 10) / 10;
   return `${r % 1 === 0 ? r.toFixed(0) : r.toFixed(1)}h`;
 }
-// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
@@ -381,11 +415,10 @@ function finishedEarlyLateInfo(row) {
 function toMidnight(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
-// daysBetween function calculates the number of full days between two dates (a and b). It first converts both dates to midnight using the toMidnight function, then calculates the difference in milliseconds and divides it by the number of milliseconds in a day (86400000) to get the number of days. The result is rounded to the nearest whole number.
+// daysBetween function calculates the number of full days between two dates (a and b). It first converts both dates to midnight using the toMidnight function, then calculates the difference in milliseconds and divides by the number of milliseconds in a day (86400000) to get the number of days. The result is rounded to the nearest whole number.
 function daysBetween(a, b) {
   return Math.round((toMidnight(b) - toMidnight(a)) / 86400000);
 }
-// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function weeksForMonth(year, monthIdx) {
   const ms = new Date(year, monthIdx, 1),
     me = new Date(year, monthIdx + 1, 0);
@@ -448,7 +481,6 @@ function getOccupancyColor(hours) {
 function isWeekend(d) {
   return d.getDay() === 0 || d.getDay() === 6;
 }
-// percentageText function takes a decimal value (0 to 1) and returns a formatted percentage string. If the input is null or undefined, it returns "—". Otherwise, it multiplies the value by 100, rounds it to the nearest whole number, and appends a "%" sign.
 function normalizeStatus(status) {
   return String(status || "")
     .trim()
@@ -490,7 +522,7 @@ function getTaskStatusMeta(status) {
       borderColor: "rgba(245,158,11,0.45)",
       borderStyle: "dashed",
       pulse: false,
-      icon: "⏸",
+      icon: "",
     };
   return {
     label: status || "Unknown",
@@ -679,7 +711,9 @@ export default function ActivityTrackerCharts() {
         months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
 
       );
-      setCurrentMonthResourceMetrics(resourceMetrics ?? []);
+      // Normalize leaveDates ([{date}] -> ["YYYY-MM-DD"]) once, at the edge,
+      // so every downstream consumer sees plain date strings.
+      setCurrentMonthResourceMetrics(normalizeResourceMetricsPayload(resourceMetrics ?? []));
       setUnallocatedResourcesList(unallocatedResources)
 
       setApiResponse(r ?? { data: [] });
@@ -964,8 +998,9 @@ export default function ActivityTrackerCharts() {
     });
 
     // Working days in [start, end], excluding weekends and API leave dates.
+    // leaveDates are normalized "YYYY-MM-DD" strings (see normalizeLeaveDates).
     function workdayCount(monthStart, monthEnd, leaveDates) {
-      const leaves = new Set((leaveDates || []).map((l) => l.date));
+      const leaves = new Set(normalizeLeaveDates(leaveDates));
       let n = 0;
       const d = new Date(monthStart);
       while (d <= monthEnd) {
@@ -1084,7 +1119,7 @@ export default function ActivityTrackerCharts() {
           delayedTasks,
           totalAssignedTasks,
           totalCompletedTasks,
-          leaveDates: apiEntry.leaveDates || [],
+          leaveDates: normalizeLeaveDates(apiEntry.leaveDates),
         };
       });
 
@@ -1536,11 +1571,9 @@ const taskOccupancyByResourceDate = useMemo(() => {
     //   );
     // }, [unallocatedResourcesList, selectedResources, selectedMonths, selectedYear]);
 
-   const filteredUnallocatedResources = unallocatedResourcesList?.filter((r) =>
-  r.UnallocatedMonths?.split(",").some((month) => selectedMonths.includes(month))
+   const filteredUnallocatedResources = (unallocatedResourcesList || []).filter((r) =>
+  (r.UnallocatedMonths || "").split(",").some((month) => selectedMonths.includes(month.trim()))
 );
-
-    console.log('Selected Month : ',selectedMonths,"selected year : ",selectedYear,'unallocatedResourcesList : ',unallocatedResourcesList)
 
   return (
     <div className="container mx-auto">
