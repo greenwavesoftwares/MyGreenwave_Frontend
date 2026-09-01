@@ -159,7 +159,7 @@
 .pai-page {
   background: var(--pj-page-bg);
   min-height: 100vh;
-  padding: 24px 28px;
+  padding: 24px 44px;
   font-family: 'Sora', sans-serif;
   display: flex;
   flex-direction: column;
@@ -211,6 +211,38 @@
 }
 
 /* ══════════════════════════════════════
+   SHARED WIDTH WRAPPER — info card + activities card
+   Both cards used to be width: 100%, always spanning the full page
+   width regardless of how wide the table actually needed to be. That
+   left a big empty (white) strip inside the activities card whenever
+   the table's real content was narrower than the page, and let the
+   info card's width drift out of sync with the table below it.
+
+   Wrapping both in this inline-flex column container makes them
+   equal-width to whichever one is naturally wider (normally the
+   table): `align-items: stretch` (the default) stretches every flex
+   child to match the tallest... er, widest... item's own content
+   width, and the container itself shrink-wraps to that same width.
+   `align-self: flex-start` stops `.pai-page`'s own stretch behavior
+   from overriding this and forcing it back to full width.
+
+   When the table needs more room — many columns, or long activity
+   names wrapping — its natural content width grows past the page's
+   available width, `max-width: 100%` caps the wrapper there, and the
+   table's own horizontal scroll (.pai-table-wrapper) takes over. That
+   is the "full width" case the layout falls back to automatically. */
+.pai-page .pai-content-shrink {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: center;   /* was flex-start — centers the cards horizontally
+                            on the page once they're narrower than it,
+                            instead of leaving them pinned to the left edge */
+  max-width: 100%;
+  gap: 16px;
+}
+
+/* ══════════════════════════════════════
    PROJECT INFO CARD
 ══════════════════════════════════════ */
 .pai-page .pai-info-card {
@@ -221,6 +253,8 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  /* No explicit width: sized by .pai-content-shrink's stretch above,
+     so it always matches the activities card / table width. */
   animation: fadeUp 0.3s ease both;
 }
 
@@ -322,6 +356,10 @@
   border: 1px solid var(--pj-border);
   border-radius: 12px;
   overflow: hidden;
+  /* No explicit width: sized by .pai-content-shrink's stretch above —
+     it hugs the table's actual content width instead of always
+     filling the page, which is what was leaving a white gap to the
+     right of narrower tables. */
   animation: fadeUp 0.35s ease 0.06s both;
 }
 
@@ -366,6 +404,37 @@
   border: 1px solid var(--pj-primary-border);
   border-radius: 20px;
   padding: 2px 9px;
+}
+
+/* "My Tasks" / "Pending" stat pills, next to the Activities counter.
+   Same pill shape as .pai-counter / .module-tag, colored per stat like
+   the status pills above. */
+.pai-page .pai-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pai-page .pai-stat-pill svg {
+  flex-shrink: 0;
+}
+
+.pai-page .pai-stat-pill--mine {
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+  border-color: var(--pj-primary-border);
+}
+
+.pai-page .pai-stat-pill--pending {
+  color: var(--pj-warning);
+  background: var(--pj-warning-bg);
+  border-color: var(--pj-warning-border);
 }
 
 .pai-page .pai-header-right {
@@ -489,6 +558,7 @@
 .pai-page .pai-table-wrapper {
   overflow-x: auto;
   overflow-y: auto;
+  width: 100%;   /* fill the activity card instead of shrinking to the table's content width */
   /* Without a height cap this wrapper never overflows itself — it just
      grows to fit the full table, and the page/body scrolls instead.
      Sticky positioning anchors to the nearest ancestor that actually
@@ -498,7 +568,17 @@
 }
 
 .pai-page .pai-table {
-  width: 100%;
+  /* Was width: 100%, which forced the table to stretch to fill the
+     wrapper even when the columns' actual content was much narrower.
+     With table-layout: auto, a 100%-wide table distributes any extra
+     space out across every column, which is what was showing up as
+     big gaps between columns on wide screens. Switching to width:
+     auto lets the table size itself to its content (never smaller
+     than min-width below); any leftover space now sits once at the
+     end of the row instead of being spread between every column. */
+  width: auto;
+  max-width: 100%;
+  table-layout: auto;
   /* border-collapse switched from "collapse" to "separate" +
      border-spacing: 0 — visually identical, but "collapse" can
      cause sticky header cell borders to flicker/disappear on scroll
@@ -508,7 +588,9 @@
      to render reliably while scrolling. */
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 1100px;
+  min-width: 1100px;   /* floor below which columns can't compress further;
+                          horizontal scroll (via .pai-table-wrapper) kicks in
+                          below this instead of squashing columns unreadably */
   /* No fixed height/min-height here on purpose: the table should size
      to its actual rows. .pai-table-wrapper's max-height + overflow-y
      below already provides the scrollable area for long lists — a
@@ -552,7 +634,7 @@
   color: var(--pj-text-faint) !important;
   letter-spacing: 0.07em !important;
   text-transform: uppercase !important;
-  padding: 12px 14px !important;
+  padding: 12px 10px !important;
   white-space: nowrap;
   /* !important + background-color: forces this opaque token to win
      over any MUI default (e.g. background-color: inherit/transparent
@@ -604,7 +686,7 @@
 .pai-page .pai-table .MuiTableBody-root .MuiTableCell-root {
   font-size: 12.5px;
   color: var(--pj-text-muted);
-  padding: 12px 14px;
+  padding: 12px 10px;
 }
 
 /* ── animation ── */

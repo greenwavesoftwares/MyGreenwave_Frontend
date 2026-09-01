@@ -78,6 +78,11 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  /* Explicit full width: this skeleton must always span the whole
+     page regardless of how the real content's .pai-content-shrink
+     wrapper (info card + activities card) is sized once data loads —
+     the two are intentionally on separate width rules. */
+  width: 100%;
 }
 
 .pai-page .pai-skel-info-field {
@@ -97,6 +102,19 @@
   border: 1px solid var(--pj-border);
   border-radius: 12px;
   overflow: hidden;
+  /* Same reasoning as .pai-skel-info-card above: always full width,
+     independent of the real activities card's content-based sizing. */
+  width: 100%;
+}
+
+/* .pai-table itself is width: auto in ProjectActivityInfo.css so the
+   REAL table shrinks to its content instead of stretching. That rule
+   is shared (same classname), so inside this full-width skeleton card
+   it left a blank strip to the right of the placeholder table. The
+   skeleton has no real content to size against, so force it to fill
+   its full-width card here instead. */
+.pai-page .pai-skel-card .pai-table {
+  width: 100%;
 }
 
 .pai-page .pai-skel-header {

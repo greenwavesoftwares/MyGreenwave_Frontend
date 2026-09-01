@@ -788,7 +788,13 @@ export default function ProjectActivityInfo({
   }
   /* ── render ── */
   return (
-    <div className="pai-page container mx-auto">
+    <div className="pai-page">
+      {/* ── Info card + activities card share one width (see .pai-content-shrink) —
+          the topbar now lives inside the same wrapper so the "Back to
+          Projects" button's left edge always lines up with the cards
+          below it, instead of sitting flush against the page edge while
+          the cards are centered narrower than the page. */}
+      <div className="pai-content-shrink">
       {/* ── Breadcrumb / back bar ── */}
       <div className="pai-topbar">
         <button
@@ -1082,6 +1088,7 @@ export default function ProjectActivityInfo({
             </TableBody>
           </Table>
         </div>
+      </div>
       </div>
       <PauseReasonDialog
         open={!!pauseDelayTarget}

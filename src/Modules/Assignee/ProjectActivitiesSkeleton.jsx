@@ -105,7 +105,7 @@ function ActivityRow({ highlight = false }) {
 
 export default function ProjectActivitiesSkeleton() {
   return (
-    <div className="pai-page container mx-auto">
+    <div className="pai-page">
       {/* Topbar placeholder */}
       <div className="pai-topbar">
         <Bar w="8rem" h="1.75rem" />

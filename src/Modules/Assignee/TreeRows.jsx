@@ -307,7 +307,7 @@ export default function TreeRows({
 
     const actionItems = [];
 
-    if (dependsOn?.length > 0) {
+    if (dependsOn?.length > 0 && isAssignedUser) {
       actionItems.push(
         <Tooltip key="dependencies" title="View Dependencies">
           <button
@@ -733,6 +733,7 @@ export default function TreeRows({
                 customColumns={customColumns}
                 activityLookupMap={activityLookupMap}
                 loadingKeys={loadingKeys}
+                onOpenFeedbackForm={onOpenFeedbackForm}
               />
             ))}
         </>

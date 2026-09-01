@@ -50,10 +50,10 @@ export default function Toast({ toasts, onDismiss }) {
           )}
 
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600 }}>{t.title}</div>
+            <div style={{ fontWeight: 600, color:"black"}}>{t.title}</div>
 
             {t.msg && (
-              <div style={{ marginTop: 2, color: "#475569" }}>
+              <div style={{ marginTop: 2, color: "black" }}>
                 {t.msg}
               </div>
             )}

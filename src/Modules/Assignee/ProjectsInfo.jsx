@@ -1,9 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./ProjectsInfo.css";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import dayjs from "dayjs";
 import StatusChip from "./StatusChip";
-import { Lock, Rocket, Star } from "lucide-react";
+import {
+  Lock,
+  Rocket,
+  Star,
+  Filter as FilterIcon,
+  CalendarDays,
+  CalendarRange,
+  CalendarClock,
+  X as XIcon,
+} from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import AssignerFeedback from "./AssignerFeedback";
 import { getUserData } from "../Login/Encrypt";
 import { showToast } from "./toastService";
@@ -135,6 +146,21 @@ const SubtaskIcon = (p) => (
   </svg>
 );
 
+const UserIcon = (p) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    {...p}
+  >
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
 const ClockIcon = (p) => (
   <svg
     width="12"
@@ -252,12 +278,165 @@ const HARDCODED_FEEDBACK_RESPONSE = {
   ],
 };
 
+/* =========================
+   DATE FILTER (Projects toolbar)
+========================= */
+
+// Bucket keys for the "created" date quick-filter, offered via the
+// filter icon in the toolbar. "Custom" reveals an inline range
+// calendar instead of a fixed bucket.
+const PROJECT_DATE_BUCKETS = [
+  { key: "currentMonth", text: "Current Month", sub: "This calendar month", icon: CalendarDays },
+  { key: "last3Months", text: "Last 3 Months", sub: "Rolling 90 days", icon: CalendarClock },
+  { key: "custom", text: "Custom Range", sub: "Pick exact dates", icon: CalendarRange },
+];
+
+/**
+ * Toolbar filter icon + dropdown for narrowing the project list by
+ * "created" date. Visually matches the app's other filter popups
+ * (opaque surface via --dropdownBG, same header/option chrome as the
+ * Activities table's column filters) but is self-contained here since
+ * it isn't attached to a table column/header and doesn't need that
+ * component's portal-positioning logic — a plain absolutely positioned
+ * dropdown anchored to its own wrapper is enough for a toolbar button.
+ *
+ * "Custom Range" swaps in an inline two-date range calendar
+ * (react-datepicker, already used elsewhere in this app) instead of
+ * raw <input type="date"> fields — click a start day, then an end day,
+ * and the whole range highlights as you go, which reads far more
+ * clearly than two disconnected date boxes.
+ */
+function ProjectDateFilterButton({ mode, onModeChange, customFrom, customTo, onCustomChange }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (wrapperRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const timer = setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [open]);
+
+  const isActive =
+    mode === "currentMonth" ||
+    mode === "last3Months" ||
+    (mode === "custom" && customFrom && customTo);
+
+  const selectBucket = (key) => {
+    if (key === "custom") {
+      onModeChange("custom");
+      return;
+    }
+    onModeChange(key === mode ? null : key);
+  };
+
+  const handleClear = () => {
+    onModeChange(null);
+    onCustomChange(null, null);
+  };
+
+  const rangeLabel =
+    customFrom && customTo
+      ? `${dayjs(customFrom).format("D MMM YYYY")} – ${dayjs(customTo).format("D MMM YYYY")}`
+      : customFrom
+        ? `${dayjs(customFrom).format("D MMM YYYY")} – …`
+        : "Select a start and end date";
+
+  return (
+    <div className="proj-date-filter" ref={wrapperRef}>
+      <button
+        type="button"
+        className={`proj-date-filter-btn${isActive ? " proj-date-filter-btn--active" : ""}`}
+        onClick={() => setOpen((p) => !p)}
+        title="Filter by date"
+      >
+        <FilterIcon size={14} />
+        Date
+        {isActive && <span className="proj-date-filter-dot" />}
+      </button>
+
+      {open && (
+        <div
+          className={`proj-date-filter-panel${mode === "custom" ? " proj-date-filter-panel--wide" : ""}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="proj-date-filter-panel__header">
+            <span>Filter by created date</span>
+            {isActive && (
+              <button type="button" className="proj-date-filter-panel__clear" onClick={handleClear}>
+                <XIcon size={11} /> Clear
+              </button>
+            )}
+          </div>
+
+          <div className="proj-date-filter-panel__list">
+            {PROJECT_DATE_BUCKETS.map(({ key, text, sub, icon: Icon }) => {
+              const checked = mode === key;
+              return (
+                <div
+                  key={key}
+                  className={`proj-date-filter-option${checked ? " proj-date-filter-option--checked" : ""}`}
+                  onClick={() => selectBucket(key)}
+                >
+                  <span className="proj-date-filter-option__icon">
+                    <Icon size={15} />
+                  </span>
+                  <span className="proj-date-filter-option__text">
+                    <span className="proj-date-filter-option__label">{text}</span>
+                    <span className="proj-date-filter-option__sub">{sub}</span>
+                  </span>
+                  <span
+                    className={`proj-date-filter-option__radio${checked ? " proj-date-filter-option__radio--checked" : ""}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {mode === "custom" && (
+            <div className="proj-date-filter-panel__custom">
+              <div className="proj-date-filter-panel__custom-label">
+                <CalendarRange size={13} />
+                {rangeLabel}
+              </div>
+              <DatePicker
+                selectsRange
+                inline
+                monthsShown={1}
+                startDate={customFrom}
+                endDate={customTo}
+                onChange={(update) => {
+                  const [start, end] = update;
+                  onCustomChange(start, end);
+                }}
+                calendarStartDay={1}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectsInfo({ projectSelection }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [query, setQuery] = useState("");
+  // "created" date filter: mode is null | "currentMonth" | "last3Months" |
+  // "custom"; customFrom/customTo (Date objects, from the inline range
+  // calendar) only apply when mode === "custom".
+  const [dateFilterMode, setDateFilterMode] = useState(null);
+  const [customFrom, setCustomFrom] = useState(null);
+  const [customTo, setCustomTo] = useState(null);
   // Project currently open in the "rate your managers" dialog, or null.
   const [feedbackProject, setFeedbackProject] = useState(null);
   // projectId of the card whose feedback (ratings + assigners) is
@@ -417,8 +596,36 @@ export default function ProjectsInfo({ projectSelection }) {
           .some((v) => String(v).toLowerCase().includes(q)),
       );
     }
+    if (dateFilterMode) {
+      const now = dayjs();
+      list = list.filter((p) => {
+        if (!p.createdAt) return false;
+        const created = dayjs(p.createdAt);
+        if (!created.isValid()) return false;
+
+        if (dateFilterMode === "currentMonth") {
+          return created.isSame(now, "month");
+        }
+        if (dateFilterMode === "last3Months") {
+          const start = now.subtract(3, "month").startOf("day");
+          return (
+            (created.isAfter(start) || created.isSame(start)) &&
+            (created.isBefore(now) || created.isSame(now, "day"))
+          );
+        }
+        if (dateFilterMode === "custom") {
+          if (!customFrom && !customTo) return true;
+          const from = customFrom ? dayjs(customFrom).startOf("day") : null;
+          const to = customTo ? dayjs(customTo).endOf("day") : null;
+          if (from && created.isBefore(from)) return false;
+          if (to && created.isAfter(to)) return false;
+          return true;
+        }
+        return true;
+      });
+    }
     return list;
-  }, [projects, activeTab, query]);
+  }, [projects, activeTab, query, dateFilterMode, customFrom, customTo]);
 
   const renderBody = () => {
     if (loading) {
@@ -512,6 +719,29 @@ export default function ProjectsInfo({ projectSelection }) {
                     {project.subTaskCount === 1 ? "" : "s"}
                   </span>
                 )}
+                {project.myTaskCount != null && (
+                  <span
+                    className="proj-chip proj-chip--mine"
+                    title="Your pending tasks / total assigned to you"
+                  >
+                    <span className="proj-chip-segment proj-chip-segment--pending">
+                      <ClockIcon />
+                      <span className="proj-chip-segment-count">
+                        {project.myNotCompletedCount ?? 0}
+                        
+                      </span>
+                      <span className="proj-chip-segment-label">Not Completed</span>
+                    </span>
+                    <span className="proj-chip-segment proj-chip-segment--total">
+                      <UserIcon />
+                      <span className="proj-chip-segment-count">
+                        {project.myTaskCount}
+                        
+                      </span>
+                      <span className="proj-chip-segment-label">Assigned</span>
+                    </span>
+                  </span>
+                 )} 
               </div>
 
               {tags.length > 0 && (
@@ -543,7 +773,7 @@ export default function ProjectsInfo({ projectSelection }) {
   };
 
   return (
-    <div className="proj-page  container mx-auto">
+    <div className="proj-page ">
       <div className="proj-tabs">
         {TAB_DEFS.map(({ key, label, icon: Icon }) => (
           <button
@@ -581,6 +811,16 @@ export default function ProjectsInfo({ projectSelection }) {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
+          <ProjectDateFilterButton
+            mode={dateFilterMode}
+            onModeChange={setDateFilterMode}
+            customFrom={customFrom}
+            customTo={customTo}
+            onCustomChange={(from, to) => {
+              setCustomFrom(from);
+              setCustomTo(to);
+            }}
+          />
           <button
             className="proj-refresh-btn"
             onClick={fetchProjects}
