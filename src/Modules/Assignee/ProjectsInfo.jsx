@@ -8,6 +8,7 @@ import {
   Rocket,
   Star,
   Filter as FilterIcon,
+  ChevronDown,
   CalendarDays,
   CalendarRange,
   CalendarClock,
@@ -425,7 +426,98 @@ function ProjectDateFilterButton({ mode, onModeChange, customFrom, customTo, onC
   );
 }
 
+/* ── responsive layout helper ──
+   Same matchMedia approach as the activity table's useIsMobileLayout,
+   pinned to this page's own 720px breakpoint (the width everything
+   else in ProjectsInfo.css already collapses to a single column at). */
+const MOBILE_BREAKPOINT = "(max-width: 720px)";
+
+function useIsMobileLayout() {
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia(MOBILE_BREAKPOINT).matches,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia(MOBILE_BREAKPOINT);
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+
+  return isMobile;
+}
+
+/*
+ * Mobile replacement for the always-visible .proj-tabs row. Collapses
+ * "All Projects / Published / Closed" into a single button showing just
+ * the active filter — clicking it drops down the same three options as
+ * a vertical list instead of the horizontal pill row, which is what
+ * doesn't fit a phone width. Same outside-click-to-close pattern as
+ * ProjectDateFilterButton above, for consistency.
+ */
+function MobileTabFilter({ activeTab, onChange, counts }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (wrapperRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const timer = setTimeout(() => document.addEventListener("mousedown", handler), 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [open]);
+
+  const activeDef = TAB_DEFS.find((t) => t.key === activeTab) || TAB_DEFS[0];
+  const ActiveIcon = activeDef.icon;
+
+  return (
+    <div className="proj-tab-filter" ref={wrapperRef}>
+      <button
+        type="button"
+        className={`proj-tab-filter-btn${open ? " proj-tab-filter-btn--open" : ""}`}
+        onClick={() => setOpen((p) => !p)}
+      >
+        <ActiveIcon />
+        <span>{activeDef.label}</span>
+        <span className="proj-tab-count">{counts[activeDef.key]}</span>
+        <ChevronDown size={14} className="proj-tab-filter-chevron" />
+      </button>
+
+      {open && (
+        <div className="proj-tab-filter-panel">
+          {TAB_DEFS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              className={`proj-tab-filter-option${activeTab === key ? " proj-tab-filter-option--active" : ""}`}
+              onClick={() => {
+                onChange(key);
+                setOpen(false);
+              }}
+            >
+              <Icon />
+              <span>{label}</span>
+              <span className="proj-tab-count">{counts[key]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectsInfo({ projectSelection }) {
+  const isMobile = useIsMobileLayout();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -774,19 +866,23 @@ export default function ProjectsInfo({ projectSelection }) {
 
   return (
     <div className="proj-page ">
-      <div className="proj-tabs">
-        {TAB_DEFS.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            className={`proj-tab ${activeTab === key ? "proj-tab--active" : ""} proj-tab--${key}`}
-            onClick={() => setActiveTab(key)}
-          >
-            <Icon />
-            {label}
-            <span className="proj-tab-count">{counts[key]}</span>
-          </button>
-        ))}
-      </div>
+      {isMobile ? (
+        <MobileTabFilter activeTab={activeTab} onChange={setActiveTab} counts={counts} />
+      ) : (
+        <div className="proj-tabs">
+          {TAB_DEFS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              className={`proj-tab ${activeTab === key ? "proj-tab--active" : ""} proj-tab--${key}`}
+              onClick={() => setActiveTab(key)}
+            >
+              <Icon />
+              {label}
+              <span className="proj-tab-count">{counts[key]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="proj-toolbar">
         <div className="proj-toolbar-title">
@@ -811,7 +907,7 @@ export default function ProjectsInfo({ projectSelection }) {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <ProjectDateFilterButton
+          {/* <ProjectDateFilterButton
             mode={dateFilterMode}
             onModeChange={setDateFilterMode}
             customFrom={customFrom}
@@ -820,14 +916,15 @@ export default function ProjectsInfo({ projectSelection }) {
               setCustomFrom(from);
               setCustomTo(to);
             }}
-          />
+          /> */}
           <button
             className="proj-refresh-btn"
             onClick={fetchProjects}
             disabled={loading}
+            title="Refresh"
           >
-            {loading ? <span className="proj-btn-spinner" /> : <RefreshIcon />}{" "}
-            Refresh
+            {loading ? <span className="proj-btn-spinner" /> : <RefreshIcon />}
+            <span className="proj-refresh-btn-label">Refresh</span>
           </button>
         </div>
       </div>

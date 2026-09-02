@@ -1438,3 +1438,258 @@
 .pai-page .task-name-input:focus {
   border-color: var(--pj-primary);
 }
+
+/* ══════════════════════════════════════
+   MOBILE CARD LAYOUT
+   Below MOBILE_BREAKPOINT (see useIsMobileLayout in
+   ProjectActivityInfo.jsx) the 9+ column table is replaced entirely by
+   this stacked card list, and the per-column filters move from table
+   headers into the scrollable filter bar below. Everything here is
+   additive — it only applies to the .pai-mobile-* elements that render
+   when isMobile is true, so the desktop table styles above are
+   untouched.
+══════════════════════════════════════ */
+
+/* ── filter bar ── */
+.pai-page .pai-mobile-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--pj-border-subtle);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pai-page .pai-mobile-filterbar::-webkit-scrollbar {
+  display: none;
+}
+
+.pai-page .pai-mobile-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--pj-border);
+  background: var(--pj-surface-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pj-text-muted);
+  white-space: nowrap;
+}
+
+.pai-page .pai-mobile-filter-clearall {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+  border: 1px solid var(--pj-primary-border);
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── card list container ── */
+.pai-page .pai-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pai-page .pai-mobile-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--pj-text-faint);
+  font-size: 13px;
+}
+
+/* ── module section header (replaces the table's module-row) ── */
+.pai-page .pai-mobile-module {
+  margin-top: 4px;
+}
+
+.pai-page .pai-mobile-module:first-child {
+  margin-top: 0;
+}
+
+.pai-page .pai-mobile-module .module-header {
+  border-radius: 10px;
+  border: 1px solid var(--pj-notice-border);
+}
+
+/* ── activity card ──
+   Mirrors the desktop table's .my-activity-row / .other-activity-row
+   treatment exactly, using the same tokens, so "which rows are mine" reads
+   the same way on mobile as it does on desktop — only the current user's
+   activity is highlighted, everything else is visibly dimmed/disabled.
+   (Previously this used the per-resource pastel from fetchColor().rowBg as
+   the card background, which colored every card by resource instead of by
+   "is this mine", and didn't match the desktop convention at all.) */
+.pai-page .pai-mobile-card {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: var(--nest-indent, 0px);
+  position: relative;
+}
+
+/* Current user's activity — same warm highlight gradient + accent border
+   as .my-activity-row on desktop. Both tokens already have dark-mode
+   overrides in the block above, so this adapts automatically. */
+.pai-page .pai-mobile-card--mine {
+  background: linear-gradient(90deg, var(--pj-highlight-grad-start) 0%, var(--pj-highlight-grad-end) 100%);
+  /* border-left: 3px solid var(--pj-warning-border); */
+}
+
+/* Everyone else's activity — same "disabled" look as .other-activity-row
+   on desktop: plain surface, dimmed and desaturated rather than colored. */
+.pai-page .pai-mobile-card--other {
+  background: var(--pj-surface);
+  /* border-left: 3px solid transparent; */
+  opacity: 0.72;
+  filter: grayscale(0.25);
+}
+
+.pai-page .pai-mobile-card--nested {
+  /* border-left: 2px dashed var(--pj-border-strong); */
+}
+
+.pai-page .pai-mobile-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pai-page .pai-mobile-card__type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pai-page .pai-mobile-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pj-text-primary);
+}
+
+.pai-page .pai-mobile-card__name-input {
+  width: 100%;
+}
+
+/* Two-column label/value grid — collapses to one column on very narrow
+   phones so long values (timestamps, resource emails) never clip. */
+.pai-page .pai-mobile-card__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+
+@media (max-width: 400px) {
+  .pai-page .pai-mobile-card__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pai-page .pai-mobile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pai-page .pai-mobile-field--resource {
+  grid-column: 1 / -1;
+}
+
+.pai-page .pai-mobile-field__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pj-text-faint);
+}
+
+.pai-page .pai-mobile-field__value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pj-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pai-page .pai-mobile-field__value-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pai-page .pai-mobile-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid var(--pj-border-subtle);
+}
+
+.pai-page .pai-mobile-card__actions .action-container {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ── page padding tightened on mobile so cards use the available width ── */
+@media (max-width: 860px) {
+  .pai-page {
+    padding: 14px 12px;
+  }
+
+  .pai-page .pai-info-fields {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pai-page .pai-info-field {
+    border-right: none;
+    border-bottom: 1px solid var(--pj-border-subtle);
+    padding: 0 0 8px;
+  }
+
+  .pai-page .pai-info-field:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .pai-page .pai-activity-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pai-page .pai-header-right {
+    flex-wrap: wrap;
+  }
+
+  .pai-page .pai-search-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pai-page .pai-search {
+    width: 100%;
+  }
+}

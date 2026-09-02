@@ -33,6 +33,36 @@ import {
 } from "./activityFilterUtils";
 
 dayjs.extend(isBetween); // ← add this
+
+/* ── responsive layout helper ──
+   Below this width the activities table stops being usable — 9+ columns
+   of planned/actual timestamps just don't fit a phone screen, no matter
+   how much horizontal scrolling you allow. Rather than shrink the table
+   further, below the breakpoint we swap it for a stacked card list (see
+   TreeRows' `isMobile` prop) and move the per-column filters into a
+   single scrollable filter bar above the list. */
+const MOBILE_BREAKPOINT = "(max-width: 860px)";
+
+function useIsMobileLayout() {
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia(MOBILE_BREAKPOINT).matches,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia(MOBILE_BREAKPOINT);
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+
+  return isMobile;
+}
+
 /* ── helpers ── */
 function getInitials(name = "") {
   return name
@@ -48,6 +78,7 @@ export default function ProjectActivityInfo({
   selectedProject,
   setSelectedProject,
 }) {
+  const isMobile = useIsMobileLayout();
   const [search, setSearch] = useState("");
   const [columnFilters, setColumnFilters] = useState({}); // { fieldKey: Set(values) }
   const [expanded, setExpanded] = useState({});
@@ -284,6 +315,7 @@ export default function ProjectActivityInfo({
     const loadingKey = `submit-${activityData.id}`;
     startLoading(loadingKey);
     try {
+      console.log("Child node added:",payload)
       const response = await activityTrackerApi.createActivity(
         projectId,
         payload,
@@ -920,6 +952,138 @@ export default function ProjectActivityInfo({
           </div>
         </div>
 
+        {/* ── Mobile filter bar ──
+            On the card layout there's no table header to hang the
+            per-column filter icons off of, so they move into one
+            horizontally-scrollable row here instead. Same
+            ColumnFilterButton/DateRangeFilterButton components as the
+            desktop table header use — they already render as a bottom
+            sheet on this screen size (see ColumnFilter.jsx), so nothing
+            new had to be built for them, just relocated. */}
+        {isMobile && (
+          <div className="pai-mobile-filterbar">
+            <div className="pai-mobile-filter-chip">
+              <span>Module</span>
+              <ColumnFilterButton
+                label="Module"
+                options={filterOptions.module}
+                selected={columnFilters.module || new Set()}
+                onChange={(set) => setFilterForField("module", set)}
+                color="#7C3AED"
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Task</span>
+              <ColumnFilterButton
+                label="Task"
+                options={filterOptions.task}
+                selected={columnFilters.task || new Set()}
+                onChange={(set) => setFilterForField("task", set)}
+                color="#3b5bdb"
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Resource</span>
+              <ColumnFilterButton
+                label="Resource"
+                options={filterOptions.resource}
+                selected={columnFilters.resource || new Set()}
+                onChange={(set) => setFilterForField("resource", set)}
+                color="#15803D"
+                currentUser={currentUserResourceName}
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Status</span>
+              <ColumnFilterButton
+                label="Status"
+                options={filterOptions.status}
+                selected={columnFilters.status || new Set()}
+                onChange={(set) => setFilterForField("status", set)}
+                color="#B45309"
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Planned Start</span>
+              <DateRangeFilterButton
+                label="Planned Start"
+                value={getDateRangeValue("plannedStart")}
+                onChange={(bucket) => setDateRangeFilter("plannedStart", bucket)}
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Planned Stop</span>
+              <DateRangeFilterButton
+                label="Planned Stop"
+                value={getDateRangeValue("plannedStop")}
+                onChange={(bucket) => setDateRangeFilter("plannedStop", bucket)}
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Actual Start</span>
+              <DateRangeFilterButton
+                label="Actual Start"
+                value={getDateRangeValue("actualStart")}
+                onChange={(bucket) => setDateRangeFilter("actualStart", bucket)}
+              />
+            </div>
+            <div className="pai-mobile-filter-chip">
+              <span>Actual Stop</span>
+              <DateRangeFilterButton
+                label="Actual Stop"
+                value={getDateRangeValue("actualStop")}
+                onChange={(bucket) => setDateRangeFilter("actualStop", bucket)}
+              />
+            </div>
+            {activeFilterCount > 0 && (
+              <button className="pai-mobile-filter-clearall" onClick={clearAllFilters}>
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Card list (mobile) ──
+            Same data, same TreeRows component, same handlers as the
+            desktop table below — only the layout differs. Nothing about
+            how an activity behaves changes between the two. */}
+        {isMobile && (
+          <div className="pai-mobile-list">
+            {filteredModules.length === 0 && search && (
+              <div className="pai-mobile-empty">
+                No activities match &ldquo;{search}&rdquo;
+              </div>
+            )}
+            {filteredModules.map((module) => (
+              <TreeRows
+                key={module.id}
+                node={module}
+                expanded={expandedWithFilters}
+                setExpanded={setExpanded}
+                addChildNode={addChildNode}
+                submitAddedNode={submitAddedNode}
+                handleFieldChange={handleFieldChange}
+                addDuration={addDuration}
+                moduleId={module.id}
+                projectId={activityInfo.projectId}
+                currentUserId={currentUserId}
+                updateStatusOfActivity={updateStatusOfActivity}
+                onPauseDelayRequest={handlePauseDelayRequest}
+                onOpenCommentBox={onOpenCommentBox}
+                deleteNode={deleteNode}
+                onOpenFeedbackForm={onOpenFeedbackForm}
+                fetchColor={fetchColor}
+                customColumns={activityInfo?.customColumns}
+                activityLookupMap={activityLookupMap}
+                loadingKeys={loadingKeys}
+                isMobile
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ── Table (desktop) ── */}
+        {!isMobile && (
         <div className="pai-table-wrapper">
           <Table className="pai-table">
             <TableHead>
@@ -1088,6 +1252,7 @@ export default function ProjectActivityInfo({
             </TableBody>
           </Table>
         </div>
+        )}
       </div>
       </div>
       <PauseReasonDialog

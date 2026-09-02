@@ -1,38 +1,54 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Filter, Search } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import "./ColumnFilter.css";
 
 /**
  * Filter icon + checkbox dropdown for a single table column.
  *
- * Visual/behavioral pattern is deliberately the same as the Gantt view's
- * per-column filter button (ProjectColumnFilterButton): a small square icon
- * button (badge shows the active count) that opens a portal-rendered popup
- * positioned from the button's own bounding rect. Rendering the popup
- * through a portal — instead of relying on normal document flow like the
- * old MUI Popover did — keeps it from getting clipped by the table's scroll
- * container, and lets us flip it above the button when there isn't room
- * below.
+ * DESKTOP: a small square icon button (badge shows the active count) that
+ * opens a portal-rendered popup anchored to the button's own bounding
+ * rect. Rendering through a portal keeps it from getting clipped by the
+ * table's scroll container, and flips it above the button when there
+ * isn't room below.
  *
- * Selections apply immediately on click (no separate Apply step), matching
- * the Gantt reference. "Select All" is kept as a convenience for long lists.
+ * MOBILE / touch: anchoring a popover to a button's rect is fragile here
+ * — sticky table headers, the nested horizontal+vertical scroll container
+ * (.pai-table-wrapper), and the timing of getBoundingClientRect() right
+ * after a tap all made the popup land far from the button instead of next
+ * to it. Rather than keep patching that math, mobile skips anchoring
+ * entirely and renders the same panel as a bottom sheet: fixed to the
+ * bottom of the screen, full width, with a backdrop. There's no button
+ * position involved at all, so none of those failure modes apply.
  *
- * The icon itself uses one consistent color across every column (no
- * per-field tinting, no background fill) — only the border/icon color and
- * the count badge signal that a filter is active.
+ * Selections apply immediately on click (no separate Apply step).
  */
 const ICON_COLOR = "#3b5bdb";
+const MOBILE_QUERY = "(max-width: 640px), (pointer: coarse)";
 
-/** Shared portal-popup positioning + outside-click-to-close behavior used by
- * both ColumnFilterButton (checkbox list) and PlannedStartFilterButton
- * (radio-style All/Today). Keeping this in one place means every column's
- * filter popup behaves identically (same flip-above-when-no-room logic,
- * same dismiss behavior) even though the popup contents differ. */
+const isMobileLayout = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia &&
+  window.matchMedia(MOBILE_QUERY).matches;
+
+/** Shared popup positioning (desktop) + outside-click-to-close behavior
+ * used by both ColumnFilterButton (checkbox list) and DateRangeFilterButton
+ * (radio-style All/Today/etc). On mobile this hook skips the anchoring math
+ * entirely and just tracks open/close + a live `isMobile` flag, since the
+ * bottom sheet doesn't need a computed position. */
 function useFilterPopup(open, onClose, popupWidth = 230) {
   const [position, setPosition] = useState({ top: 0, left: 0, width: popupWidth });
+  const [isMobile, setIsMobile] = useState(isMobileLayout);
   const buttonRef = useRef(null);
   const popupRef = useRef(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
 
   const updatePosition = useCallback(() => {
     if (!buttonRef.current) return;
@@ -42,25 +58,37 @@ function useFilterPopup(open, onClose, popupWidth = 230) {
     const viewportHeight = vv ? vv.height : window.innerHeight;
     const offsetLeft = vv ? vv.offsetLeft : 0;
     const offsetTop = vv ? vv.offsetTop : 0;
-
-    const width = Math.min(popupWidth, viewportWidth - 20);
-    const height = Math.min(320, viewportHeight - 20);
+    const margin = 10;
     const spacing = 4;
 
-    let top = rect.bottom + spacing;
-    if (top + height > offsetTop + viewportHeight - 10) {
-      top = rect.top - height - spacing;
+    const width = Math.min(popupWidth, viewportWidth - margin * 2);
+
+    const spaceBelow = offsetTop + viewportHeight - rect.bottom - spacing - margin;
+    const spaceAbove = rect.top - offsetTop - spacing - margin;
+    const maxHeight = Math.min(320, Math.max(spaceBelow, spaceAbove, 120));
+
+    let top;
+    if (spaceBelow >= maxHeight || spaceBelow >= spaceAbove) {
+      top = rect.bottom + spacing;
+    } else {
+      top = rect.top - maxHeight - spacing;
     }
+    const minTop = offsetTop + margin;
+    const maxTop = offsetTop + viewportHeight - maxHeight - margin;
+    top = Math.max(minTop, Math.min(top, Math.max(minTop, maxTop)));
+
     let left = rect.left;
-    if (left + width > offsetLeft + viewportWidth - 10) {
-      left = offsetLeft + viewportWidth - width - 10;
+    if (left + width > offsetLeft + viewportWidth - margin) {
+      left = offsetLeft + viewportWidth - width - margin;
     }
-    if (left < offsetLeft + 10) left = offsetLeft + 10;
-    setPosition({ top, left, width });
+    if (left < offsetLeft + margin) left = offsetLeft + margin;
+
+    setPosition({ top, left, width, maxHeight });
   }, [popupWidth]);
 
   useEffect(() => {
-    if (!open) return;
+    // Bottom sheet on mobile needs no position tracking at all.
+    if (!open || isMobile) return;
     updatePosition();
     const reposition = () => updatePosition();
     window.addEventListener("scroll", reposition, true);
@@ -73,7 +101,7 @@ function useFilterPopup(open, onClose, popupWidth = 230) {
       window.visualViewport?.removeEventListener("resize", reposition);
       window.visualViewport?.removeEventListener("scroll", reposition);
     };
-  }, [open, updatePosition]);
+  }, [open, isMobile, updatePosition]);
 
   useEffect(() => {
     if (!open) return;
@@ -92,7 +120,53 @@ function useFilterPopup(open, onClose, popupWidth = 230) {
     };
   }, [open, onClose]);
 
-  return { position, buttonRef, popupRef };
+  return { position, buttonRef, popupRef, isMobile };
+}
+
+/** Wraps panel content: anchored popover on desktop, bottom sheet + backdrop
+ * on mobile. Keeping this in one place means both filter button components
+ * below share identical mobile behavior. */
+function FilterPopupShell({ isMobile, position, popupRef, onClose, title, children }) {
+  if (isMobile) {
+    return (
+      <>
+        <div className="col-filter-backdrop" onClick={onClose} />
+        <div ref={popupRef} className="col-filter-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="col-filter-sheet__handle" />
+          <div className="col-filter-sheet__header">
+            <span className="col-filter-panel__title">{title}</span>
+            <button
+              type="button"
+              className="col-filter-sheet__close"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="col-filter-sheet__body">{children}</div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div
+      ref={popupRef}
+      onClick={(e) => e.stopPropagation()}
+      className="col-filter-panel"
+      style={{
+        position: "fixed",
+        top: position.top,
+        left: position.left,
+        width: position.width,
+        maxHeight: position.maxHeight,
+        overflowY: "auto",
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 export default function ColumnFilterButton({
@@ -109,7 +183,7 @@ export default function ColumnFilterButton({
     setOpen(false);
     setSearch("");
   }, []);
-  const { position, buttonRef, popupRef } = useFilterPopup(open, close);
+  const { position, buttonRef, popupRef, isMobile } = useFilterPopup(open, close);
 
   const selectedSet = selected || new Set();
   const isActive = selectedSet.size > 0;
@@ -131,21 +205,24 @@ export default function ColumnFilterButton({
 
   const handleClear = () => onChange(new Set());
 
-  const popup = open ? (
-    <div
-      ref={popupRef}
-      onClick={(e) => e.stopPropagation()}
-      className="col-filter-panel"
-      style={{ position: "fixed", top: position.top, left: position.left, width: position.width }}
-    >
-      <div className="col-filter-panel__header">
-        <span className="col-filter-panel__title">Filter {label}</span>
-        {isActive && (
-          <button className="col-filter-panel__clear" onClick={handleClear}>
-            Clear
-          </button>
-        )}
-      </div>
+  const body = open ? (
+    <>
+      {!isMobile && (
+        <div className="col-filter-panel__header">
+          <span className="col-filter-panel__title">Filter {label}</span>
+          {isActive && (
+            <button className="col-filter-panel__clear" onClick={handleClear}>
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
+      {isMobile && isActive && (
+        <button className="col-filter-panel__clear col-filter-sheet__clear" onClick={handleClear}>
+          Clear
+        </button>
+      )}
 
       {(options || []).length > 5 && (
         <div className="col-filter-panel__search">
@@ -154,7 +231,7 @@ export default function ColumnFilterButton({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search ${label}...`}
-            autoFocus
+            autoFocus={!isMobile}
           />
         </div>
       )}
@@ -227,12 +304,12 @@ export default function ColumnFilterButton({
         )}
       </div>
 
-      {isActive && (
+      {isActive && !isMobile && (
         <div className="col-filter-panel__footer">
           {selectedSet.size} of {(options || []).length} selected
         </div>
       )}
-    </div>
+    </>
   ) : null;
 
   return (
@@ -252,7 +329,19 @@ export default function ColumnFilterButton({
           </span>
         )}
       </button>
-      {open && createPortal(popup, document.body)}
+      {open &&
+        createPortal(
+          <FilterPopupShell
+            isMobile={isMobile}
+            position={position}
+            popupRef={popupRef}
+            onClose={close}
+            title={`Filter ${label}`}
+          >
+            {body}
+          </FilterPopupShell>,
+          document.body,
+        )}
     </>
   );
 }
@@ -291,7 +380,7 @@ export function DateRangeFilterButton({
 }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
-  const { position, buttonRef, popupRef } = useFilterPopup(open, close, 180);
+  const { position, buttonRef, popupRef, isMobile } = useFilterPopup(open, close, 180);
 
   const select = (key) => {
     // Clicking the option that's already selected unchecks it, same as a
@@ -301,16 +390,13 @@ export function DateRangeFilterButton({
 
   const optionList = [{ key: null, text: "All" }, ...DATE_RANGE_BUCKETS];
 
-  const popup = open ? (
-    <div
-      ref={popupRef}
-      onClick={(e) => e.stopPropagation()}
-      className="col-filter-panel"
-      style={{ position: "fixed", top: position.top, left: position.left, width: position.width }}
-    >
-      <div className="col-filter-panel__header">
-        <span className="col-filter-panel__title">Filter {label}</span>
-      </div>
+  const body = open ? (
+    <>
+      {!isMobile && (
+        <div className="col-filter-panel__header">
+          <span className="col-filter-panel__title">Filter {label}</span>
+        </div>
+      )}
 
       <div className="col-filter-panel__list">
         {optionList.map(({ key, text }) => {
@@ -336,7 +422,7 @@ export function DateRangeFilterButton({
           );
         })}
       </div>
-    </div>
+    </>
   ) : null;
 
   const isActive = !!value;
@@ -358,7 +444,19 @@ export function DateRangeFilterButton({
           </span>
         )}
       </button>
-      {open && createPortal(popup, document.body)}
+      {open &&
+        createPortal(
+          <FilterPopupShell
+            isMobile={isMobile}
+            position={position}
+            popupRef={popupRef}
+            onClose={close}
+            title={`Filter ${label}`}
+          >
+            {body}
+          </FilterPopupShell>,
+          document.body,
+        )}
     </>
   );
 }

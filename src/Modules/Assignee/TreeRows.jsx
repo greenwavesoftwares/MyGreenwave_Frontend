@@ -65,6 +65,13 @@ export default function TreeRows({
   customColumns,
   activityLookupMap,
   loadingKeys,
+  // When true, renders each activity as a stacked card instead of a table
+  // row (see .pai-mobile-card / .pai-mobile-module in ProjectActivityInfo.css).
+  // All the row logic below (status actions, dependency dialog, name
+  // editing, formatting) is shared between both layouts — only the JSX
+  // returned at the bottom differs, so nothing about *how* an activity
+  // behaves changes between desktop and mobile, only how it's laid out.
+  isMobile = false,
 }) {
   const isKeyLoading = (key) => loadingKeys?.has(key) ?? false;
   const {
@@ -518,36 +525,29 @@ export default function TreeRows({
     );
   };
 
+  const moduleHeader = (
+    <Box className="module-header">
+      <Box className="module-left">
+        <button className="expand-btn" onClick={() => toggleExpand(id)}>
+          {isExpanded ? "−" : "+"}
+        </button>
+
+        <span className="module-tag">{name}</span>
+      </Box>
+    </Box>
+  );
+
   return (
     <>
       {type === "MODULE" && (
         <>
-          <TableRow className="module-row">
-            <TableCell colSpan={14}>
-              <Box className="module-header">
-                <Box className="module-left">
-                  <button
-                    className="expand-btn"
-                    onClick={() => toggleExpand(id)}
-                  >
-                    {isExpanded ? "−" : "+"}
-                  </button>
-
-                  <span className="module-tag">{name}</span>
-                </Box>
-
-                {/* <Box className="module-right">
-                  <button
-                    className="add-row-chip"
-                    onClick={() => addChildNode(node)}
-                  >
-                    <AddIcon sx={{ fontSize: 14 }} />
-                    <span>Add row to module</span>
-                  </button>
-                </Box>*/}
-              </Box>
-            </TableCell>
-          </TableRow>
+          {isMobile ? (
+            <div className="pai-mobile-module">{moduleHeader}</div>
+          ) : (
+            <TableRow className="module-row">
+              <TableCell colSpan={14}>{moduleHeader}</TableCell>
+            </TableRow>
+          )}
 
           {isExpanded &&
             children?.map((child) => (
@@ -573,142 +573,269 @@ export default function TreeRows({
                 customColumns={customColumns}
                 activityLookupMap={activityLookupMap}
                 loadingKeys={loadingKeys}
+                isMobile={isMobile}
               />
             ))}
         </>
       )}
       {type !== "MODULE" && (
         <>
-          <TableRow
-            className={
-              currentUserId?.toLowerCase() === resource?.toLowerCase()
-                ? "my-activity-row"
-                : "other-activity-row"
-            }
-            style={{ "--bg": fetchColor(resource).rowBg }}
-          >
-            <TableCell />
+          {isMobile ? (
+            <div
+              className={
+                (currentUserId?.toLowerCase() === resource?.toLowerCase()
+                  ? "pai-mobile-card pai-mobile-card--mine"
+                  : "pai-mobile-card pai-mobile-card--other") +
+                (level > 0 ? " pai-mobile-card--nested" : "")
+              }
+              style={{
+                "--bg": fetchColor(resource).rowBg,
+                "--nest-indent": `${level * 14}px`,
+              }}
+            >
+              <div className="pai-mobile-card__top">
+                <div className="pai-mobile-card__type">
+                  {hasChildren && (
+                    <button
+                      className="expand-btn small"
+                      onClick={() => toggleExpand(id)}
+                    >
+                      {isExpanded ? "−" : "+"}
+                    </button>
+                  )}
+                  {type === "SUBTASK" && (
+                    <span className="subtree-line">└</span>
+                  )}
+                  <span className="task-pill">{type}</span>
+                </div>
 
-            <TableCell>
-              <Box
-                className="tree-item"
-                sx={{
-                  pl: `${level * 3.5}px`,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {hasChildren && (
-                  <button
-                    className="expand-btn small"
-                    onClick={() => toggleExpand(id)}
-                  >
-                    {isExpanded ? "−" : "+"}
-                  </button>
-                )}
-
-                {type === "SUBTASK" && <span className="subtree-line">└</span>}
-
-                <span className="task-pill">{type}</span>
-              </Box>
-            </TableCell>
-
-            <TableCell>
-              {activityStatus === "Not Ready" && (
-                <TextareaAutosize
-                  placeholder="Enter Activity name..."
-                  // defaultValue={name}
-                  value={name}
-                  onChange={(e) =>
-                    handleFieldChange(id, {
-                      name: e.target.value,
-                    })
+                <Tooltip
+                  title={
+                    activityStatus?.toLowerCase() === "rejected" &&
+                    (latestRejectReason ?? activityStatus)
                   }
-                  className="task-name-input"
-                />
-              )}
-              {activityStatus !== "Not Ready" && (
-                <Typography variant="body2">{name}</Typography>
-              )}
-            </TableCell>
+                >
+                  <span>
+                    <StatusChip status={updatedStatus?.toLowerCase()} />
+                  </span>
+                </Tooltip>
+              </div>
 
-            <TableCell>
-              <Tooltip title={resource}>
-                <Box className="resource-cell">
-                  <div
-                    className={
-                      currentUserId?.toLowerCase() === resource?.toLowerCase()
-                        ? "avatar-resource"
-                        : "avatar-resource avatar-resource-disabled"
+              <div className="pai-mobile-card__name">
+                {activityStatus === "Not Ready" ? (
+                  <TextareaAutosize
+                    placeholder="Enter Activity name..."
+                    value={name}
+                    onChange={(e) =>
+                      handleFieldChange(id, { name: e.target.value })
                     }
-                    style={{
-                      "--avatar-bg": fetchColor(resource).bgColor,
-                      "--avatar-border": fetchColor(resource).border,
-                      "--avatar-text": fetchColor(resource).color,
-                    }}
-                  >
-                    {findInitials(resource)}
+                    className="task-name-input pai-mobile-card__name-input"
+                  />
+                ) : (
+                  <Typography variant="body2">{name || "—"}</Typography>
+                )}
+              </div>
+
+              <div className="pai-mobile-card__fields">
+                <div className="pai-mobile-field pai-mobile-field--resource">
+                  <span className="pai-mobile-field__label">Resource</span>
+                  <span className="pai-mobile-field__value">
+                    <div
+                      className={
+                        currentUserId?.toLowerCase() ===
+                        resource?.toLowerCase()
+                          ? "avatar-resource"
+                          : "avatar-resource avatar-resource-disabled"
+                      }
+                      style={{
+                        "--avatar-bg": fetchColor(resource).bgColor,
+                        "--avatar-border": fetchColor(resource).border,
+                        "--avatar-text": fetchColor(resource).color,
+                      }}
+                    >
+                      {findInitials(resource)}
+                    </div>
+                    <span className="pai-mobile-field__value-text">
+                      {resource}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="pai-mobile-field">
+                  <span className="pai-mobile-field__label">Duration</span>
+                  <span className="pai-mobile-field__value">
+                    {durationHrs ?? "—"} hrs
+                  </span>
+                </div>
+
+                <div className="pai-mobile-field">
+                  <span className="pai-mobile-field__label">
+                    Planned Start
+                  </span>
+                  <span className="pai-mobile-field__value">
+                    {formatDateTime(plannedStart)}
+                  </span>
+                </div>
+
+                <div className="pai-mobile-field">
+                  <span className="pai-mobile-field__label">
+                    Planned Stop
+                  </span>
+                  <span className="pai-mobile-field__value">
+                    {formatDateTime(plannedStop)}
+                  </span>
+                </div>
+
+                <div className="pai-mobile-field">
+                  <span className="pai-mobile-field__label">
+                    Actual Start
+                  </span>
+                  <span className="pai-mobile-field__value">
+                    {formatDateTime(actualStart)}
+                  </span>
+                </div>
+
+                <div className="pai-mobile-field">
+                  <span className="pai-mobile-field__label">
+                    Actual Stop
+                  </span>
+                  <span className="pai-mobile-field__value">
+                    {formatDateTime(actualStop)}
+                  </span>
+                </div>
+
+                {customColumns?.map((col) => (
+                  <div className="pai-mobile-field" key={col.id}>
+                    <span className="pai-mobile-field__label">
+                      {col.name}
+                    </span>
+                    <span className="pai-mobile-field__value">
+                      {customValues?.[col.id] ?? "-"}
+                    </span>
                   </div>
+                ))}
+              </div>
+
+              <div className="pai-mobile-card__actions">
+                <Box className="action-container">{renderActions()}</Box>
+              </div>
+            </div>
+          ) : (
+            <TableRow
+              className={
+                currentUserId?.toLowerCase() === resource?.toLowerCase()
+                  ? "my-activity-row"
+                  : "other-activity-row"
+              }
+              style={{ "--bg": fetchColor(resource).rowBg }}
+            >
+              <TableCell />
+
+              <TableCell>
+                <Box
+                  className="tree-item"
+                  sx={{
+                    pl: `${level * 3.5}px`,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {hasChildren && (
+                    <button
+                      className="expand-btn small"
+                      onClick={() => toggleExpand(id)}
+                    >
+                      {isExpanded ? "−" : "+"}
+                    </button>
+                  )}
+
+                  {type === "SUBTASK" && <span className="subtree-line">└</span>}
+
+                  <span className="task-pill">{type}</span>
                 </Box>
-              </Tooltip>
-            </TableCell>
-
-            <TableCell>
-              {formatDateTime(plannedStart)}
-            </TableCell>
-
-            <TableCell>
-              <div className="duration-cell">{durationHrs ?? "—"}</div>
-            </TableCell>
-            <TableCell>
-              {formatDateTime(plannedStop)}
-            </TableCell>
-            <TableCell>
-              <Tooltip
-                title={
-                  activityStatus?.toLowerCase() === "rejected" &&
-                  (latestRejectReason ?? activityStatus)
-                }
-              >
-                <span>
-                  {/* <Chip
-                size="small"
-                label={activityStatus || "-"}
-                color={
-                  activityStatus === "Running"
-                    ? "success"
-                    : activityStatus === "Paused"
-                      ? "warning"
-                      : "default"
-                }
-              /> */}
-                  <StatusChip status={updatedStatus?.toLowerCase()} />
-                </span>
-              </Tooltip>
-            </TableCell>
-
-            <TableCell>
-              {formatDateTime(actualStart)}
-            </TableCell>
-
-            <TableCell>
-              {formatDateTime(actualStop)}
-            </TableCell>
-
-            {/* <TableCell>{pauseStart && dayjs(pauseStart).isValid()
-                ? dayjs(pauseStart).format("YYYY-MM-DD HH:mm")
-                : "-"}</TableCell>
-
-            <TableCell>{pauseDuration || "-"}</TableCell> */}
-            {customColumns?.map((col) => (
-              <TableCell key={col.id}>
-                {customValues?.[col.id] ?? "-"}
               </TableCell>
-            ))}
-            <TableCell align="center">
-              <Box className="action-container">{renderActions()}</Box>
-            </TableCell>
-          </TableRow>
+
+              <TableCell>
+                {activityStatus === "Not Ready" && (
+                  <TextareaAutosize
+                    placeholder="Enter Activity name..."
+                    // defaultValue={name}
+                    value={name}
+                    onChange={(e) =>
+                      handleFieldChange(id, {
+                        name: e.target.value,
+                      })
+                    }
+                    className="task-name-input"
+                  />
+                )}
+                {activityStatus !== "Not Ready" && (
+                  <Typography variant="body2">{name}</Typography>
+                )}
+              </TableCell>
+
+              <TableCell>
+                <Tooltip title={resource}>
+                  <Box className="resource-cell">
+                    <div
+                      className={
+                        currentUserId?.toLowerCase() === resource?.toLowerCase()
+                          ? "avatar-resource"
+                          : "avatar-resource avatar-resource-disabled"
+                      }
+                      style={{
+                        "--avatar-bg": fetchColor(resource).bgColor,
+                        "--avatar-border": fetchColor(resource).border,
+                        "--avatar-text": fetchColor(resource).color,
+                      }}
+                    >
+                      {findInitials(resource)}
+                    </div>
+                  </Box>
+                </Tooltip>
+              </TableCell>
+
+              <TableCell>
+                {formatDateTime(plannedStart)}
+              </TableCell>
+
+              <TableCell>
+                <div className="duration-cell">{durationHrs ?? "—"}</div>
+              </TableCell>
+              <TableCell>
+                {formatDateTime(plannedStop)}
+              </TableCell>
+              <TableCell>
+                <Tooltip
+                  title={
+                    activityStatus?.toLowerCase() === "rejected" &&
+                    (latestRejectReason ?? activityStatus)
+                  }
+                >
+                  <span>
+                    <StatusChip status={updatedStatus?.toLowerCase()} />
+                  </span>
+                </Tooltip>
+              </TableCell>
+
+              <TableCell>
+                {formatDateTime(actualStart)}
+              </TableCell>
+
+              <TableCell>
+                {formatDateTime(actualStop)}
+              </TableCell>
+
+              {customColumns?.map((col) => (
+                <TableCell key={col.id}>
+                  {customValues?.[col.id] ?? "-"}
+                </TableCell>
+              ))}
+              <TableCell align="center">
+                <Box className="action-container">{renderActions()}</Box>
+              </TableCell>
+            </TableRow>
+          )}
           {hasChildren &&
             isExpanded &&
             children?.map((child) => (
@@ -734,6 +861,7 @@ export default function TreeRows({
                 activityLookupMap={activityLookupMap}
                 loadingKeys={loadingKeys}
                 onOpenFeedbackForm={onOpenFeedbackForm}
+                isMobile={isMobile}
               />
             ))}
         </>
