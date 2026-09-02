@@ -90,7 +90,7 @@ export default function TreeRows({
 
   const hasChildren = children?.length > 0;
   const isExpanded = expanded?.[id] ?? false;
-  const updatedStatus = updateStatus(node.activityStatus, node.plannedStart);
+  const updatedStatus = updateStatus(node.activityStatus, node.activityStatus==='Running'?node.plannedStop:node.plannedStart);
   const [dependencyDialogVisible, setDependencyDialogVisible] = useState(false);
   const handleOpenDependencies = () => {
     setDependencyDialogVisible(true);

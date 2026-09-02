@@ -744,7 +744,7 @@ export default function ProjectsInfo({ projectSelection }) {
                  )} 
               </div>
 
-              {tags.length > 0 && (
+              {/* {tags.length > 0 && (
                 <div className="proj-tag-row">
                   {tags.map((tag, i) => (
                     <span className="proj-tag" key={i}>
@@ -752,7 +752,7 @@ export default function ProjectsInfo({ projectSelection }) {
                     </span>
                   ))}
                 </div>
-              )}
+              )} */}
 
               <div className="proj-card-footer">
                 <span className="proj-card-date">
