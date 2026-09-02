@@ -692,37 +692,44 @@ export default function ActivityTrackerCharts() {
 
 
   // Fetches project data, unallocated resources, and resource metrics from the API based on the selected year and months. Updates the state with the fetched data or error messages.
-  const fetchProjects = async (year, months) => {
-    try {
-      const r = await activityTrackerApi.getActivityTreesByMonthAndDate(
-        months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
-        year,
-      );
-        const userDetails=getUserData()
-    const userId = userDetails?.userDetails?.userId;
-      const unallocatedResources = await activityTrackerApi.getAllUnallocatedUsersByManager(
-        userId,
-        months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
-        year,
-      );
+ const fetchProjects = async (year, months) => {
+  const monthsParam = months.length === 0 ? MONTH_NAMES.join(",") : months.join(",");
+  const userId = getUserData()?.userDetails?.userId;
 
-      const resourceMetrics = await activityTrackerApi.getMonthlyResourceMetrics(
-        year,
-        months.length === 0 ? MONTH_NAMES.join(",") : months.join(","),
+  setApiLoading(true);
+  setApiError(null);
 
-      );
-      // Normalize leaveDates ([{date}] -> ["YYYY-MM-DD"]) once, at the edge,
-      // so every downstream consumer sees plain date strings.
-      setCurrentMonthResourceMetrics(normalizeResourceMetricsPayload(resourceMetrics ?? []));
-      setUnallocatedResourcesList(unallocatedResources)
+  // Fire all three requests at once. Each one updates its own slice of state
+  // as soon as it resolves — no request waits for another.
+  const requests = [
+    activityTrackerApi
+      .getActivityTreesByMonthAndDate(monthsParam, year)
+      .then((r) => setApiResponse(r ?? { data: [] })),
 
-      setApiResponse(r ?? { data: [] });
-    } catch (e) {
-      setApiError(String(e?.message ?? e));
-    } finally {
-      setApiLoading(false);
-    }
-  };
+    activityTrackerApi
+      .getAllUnallocatedUsersByManager(userId, monthsParam, year)
+      .then((unallocatedResources) => setUnallocatedResourcesList(unallocatedResources)),
+
+    activityTrackerApi
+      .getMonthlyResourceMetrics(year, monthsParam)
+      .then((resourceMetrics) =>
+        // Normalize leaveDates ([{date}] -> ["YYYY-MM-DD"]) once, at the edge,
+        // so every downstream consumer sees plain date strings.
+        setCurrentMonthResourceMetrics(normalizeResourceMetricsPayload(resourceMetrics ?? [])),
+      ),
+  ];
+
+  // allSettled (not all) so one failing request doesn't hide the results of the others.
+  const results = await Promise.allSettled(requests);
+
+  const errors = results
+    .filter((res) => res.status === "rejected")
+    .map((res) => String(res.reason?.message ?? res.reason));
+
+  if (errors.length) setApiError(errors.join("; "));
+
+  setApiLoading(false);
+};
 
   useEffect(() => {
     loadData(selectedYear, selectedMonths);
