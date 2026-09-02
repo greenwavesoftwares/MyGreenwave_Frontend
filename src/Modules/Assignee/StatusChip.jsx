@@ -9,7 +9,8 @@ import {
   Loader2,
   Rocket,
   ShieldCheck,
-  Lock
+  Lock,
+  AlertTriangle
 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -27,6 +28,22 @@ const STATUS_CONFIG = {
   color: "#B45309",   // Dark amber text
   border: "#F59E0B",  // Amber border
 },
+"running late": {
+  label:"Running Late",
+      bg: "#FEE2E2",
+      Icon : PlayCircle,
+      color: "#DC2626",
+      border: "#FCA5A5",
+      bar: "#EF4444",
+    },
+    "start due": {
+      label:"Start Due",
+      bg: "#FEE2E2",
+      color: "#DC2626",
+      border: "#FCA5A5",
+      bar: "#EF4444",
+      Icon : AlertTriangle
+    },
   "not ready": {
     label: "Not Ready",
     Icon: AlertCircle,
