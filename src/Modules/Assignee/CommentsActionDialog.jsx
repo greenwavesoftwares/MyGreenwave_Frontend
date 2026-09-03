@@ -302,6 +302,32 @@ export default function CommentsActionDialog({
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
+  // "Added By" / reply-header names are frequently full email
+  // addresses. Left to overflow-wrap: break-word alone, the browser
+  // is free to break anywhere — including mid-word inside "johnson"
+  // or "example" — once the string doesn't fit. <wbr/> gives the
+  // browser explicit, meaningful break opportunities right after "@"
+  // and each "." (the natural segment boundaries in an email), which
+  // normal line-breaking always prefers over an arbitrary forced
+  // break. overflow-wrap: break-word stays on as a last-resort safety
+  // net only, for the rare segment (e.g. a long local-part with no
+  // dot) that's still too long even between those points.
+  const renderBreakableEmail = (text) => {
+    if (!text) return text;
+    return String(text)
+      .split(/([@.])/)
+      .map((part, i) =>
+        part === "@" || part === "." ? (
+          <React.Fragment key={i}>
+            {part}
+            <wbr />
+          </React.Fragment>
+        ) : (
+          part
+        ),
+      );
+  };
+
   const TruncatedText = ({ text }) => (
     <Tooltip
       title={text || ""}
@@ -309,7 +335,9 @@ export default function CommentsActionDialog({
       arrow
       disableHoverListener={!text || text.length < 60}
     >
-      <div className="table-text-clamp">{text || "—"}</div>
+      <div className="table-text-clamp">
+        {text || <span className="cell-empty">—</span>}
+      </div>
     </Tooltip>
   );
 
@@ -408,9 +436,32 @@ export default function CommentsActionDialog({
             </div>
           ) : (
             <Table size="small" className="comments-table">
+              {/* Fixed column widths (desktop only — see table-layout:
+                  fixed in the CSS, scoped to >1024px). Without this the
+                  browser's auto layout gives each column a share of
+                  width proportional to its *unbroken* content: a long,
+                  space-less filename in Attachment has no natural break
+                  point, so it was winning most of the row's width and
+                  squeezing Description/Action Point into a narrow,
+                  ragged column instead. Percentages go to the columns
+                  with genuinely variable-length prose; fixed px go to
+                  columns whose content is short and roughly constant
+                  width. They don't need to sum to 100% — the browser
+                  distributes any remainder across the % columns. */}
+              <colgroup>
+                <col style={{ width: "3%" }} />
+                <col style={{ width: "19%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "9.5%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "9%" }} />
+                <col style={{ width: "13.5%" }} />
+              </colgroup>
               <TableHead>
                   <TableRow>
-                    <TableCell>#</TableCell>
+                    <TableCell aria-hidden="true">#</TableCell>
                     <TableCell>
                       <span className="col-label">Description</span>
                     </TableCell>
@@ -440,28 +491,34 @@ export default function CommentsActionDialog({
                   {existingComments.map((entry, index) => (
                     <React.Fragment key={index}>
                       {/* COMMENT ROW */}
-                      <TableRow>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell>
+                      <TableRow
+                        className={index % 2 === 1 ? "row-alt" : undefined}
+                      >
+                        <TableCell data-label="#" className="cell-index">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell data-label="Description">
                           <TruncatedText text={entry.commentDescription} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Action Point">
                           <TruncatedText text={entry.actionPoint} />
                         </TableCell>
-                        <TableCell>{entry.resolutionDate}</TableCell>
-                        <TableCell>
+                        <TableCell data-label="Resolution Date">
+                          {entry.resolutionDate}
+                        </TableCell>
+                        <TableCell data-label="Responsibility">
                           <Chip
                             size="small"
                             color="primary"
                             label={entry.responsibility}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Others">
                           <TruncatedText text={entry.others} />
                         </TableCell>
 
                         {/* ATTACHMENT */}
-                        <TableCell>
+                        <TableCell data-label="Attachment">
                           {entry.attachment ? (
                             <div className="attachment-pill">
                               <InsertDriveFileOutlinedIcon fontSize="small" />
@@ -525,15 +582,15 @@ export default function CommentsActionDialog({
                               </Tooltip>
                             </div>
                           ) : (
-                            "—"
+                            <span className="cell-empty">—</span>
                           )}
                         </TableCell>
 
                         {/* ADDED BY */}
-                        <TableCell>
+                        <TableCell data-label="Added By">
                           <div className="added-cell">
                             <div className="added-cell-meta">
-                              <strong>{entry.createdBy}</strong>
+                              <strong>{renderBreakableEmail(entry.createdBy)}</strong>
                               <span>
                                 {new Date(entry.createdAt).toLocaleString()}
                               </span>
@@ -542,26 +599,30 @@ export default function CommentsActionDialog({
                         </TableCell>
 
                         {/* ACTIONS */}
-                        <TableCell>
+                        <TableCell data-label="Actions" className="cell-actions">
                           <div className="action-buttons">
                             {allowActions && (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={<ReplyOutlinedIcon />}
-                                onClick={() =>
-                                  setActiveReply(
-                                    activeReply === index ? null : index,
-                                  )
-                                }
-                              >
-                                Reply
-                                {!!entry.replies?.length && (
-                                  <span className="reply-count">
-                                    {entry.replies.length}
-                                  </span>
-                                )}
-                              </Button>
+                              <Tooltip title="Reply">
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  className="btn-reply"
+                                  startIcon={<ReplyOutlinedIcon />}
+                                  aria-label="Reply"
+                                  onClick={() =>
+                                    setActiveReply(
+                                      activeReply === index ? null : index,
+                                    )
+                                  }
+                                >
+                                  <span className="btn-reply-label">Reply</span>
+                                  {!!entry.replies?.length && (
+                                    <span className="reply-count">
+                                      {entry.replies.length}
+                                    </span>
+                                  )}
+                                </Button>
+                              </Tooltip>
                             )}
                             {allowActions && (
                               <IconButton
@@ -598,7 +659,7 @@ export default function CommentsActionDialog({
                                   >
                                     {getInitials(reply.createdBy)}
                                   </span>
-                                  <strong>{reply.createdBy}</strong>
+                                  <strong>{renderBreakableEmail(reply.createdBy)}</strong>
                                   <span>
                                     {new Date(reply.createdAt).toLocaleString()}
                                   </span>
