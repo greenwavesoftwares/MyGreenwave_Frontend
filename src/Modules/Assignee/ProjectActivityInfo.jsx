@@ -24,6 +24,7 @@ import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
 import ColumnFilterButton, {
   DateRangeFilterButton,
+  MobileFiltersSheet,
   DATE_RANGE_BUCKETS,
 } from "./ColumnFilter";
 import {
@@ -81,6 +82,7 @@ export default function ProjectActivityInfo({
   const isMobile = useIsMobileLayout();
   const [search, setSearch] = useState("");
   const [columnFilters, setColumnFilters] = useState({}); // { fieldKey: Set(values) }
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [expanded, setExpanded] = useState({});
   const [activityInfo, setActivityInfo] = useState(null);
   const [openCommentsDialog, setOpenCommentsDialog] = useState(null);
@@ -625,6 +627,79 @@ export default function ProjectActivityInfo({
     [activityInfo, columnFilters],
   );
 
+  /* Sections for the consolidated mobile filters sheet (see
+     MobileFiltersSheet in ColumnFilter.jsx) — same fields/handlers the
+     old horizontally-scrolling chip row used, just described
+     declaratively instead of as individual JSX buttons. Declared after
+     filterOptions since it reads from it. */
+  const mobileFilterSections = [
+    {
+      key: "module",
+      label: "Module",
+      color: "#7C3AED",
+      type: "checklist",
+      options: filterOptions.module,
+      selected: columnFilters.module || new Set(),
+      onChange: (set) => setFilterForField("module", set),
+    },
+    {
+      key: "task",
+      label: "Task",
+      color: "#3b5bdb",
+      type: "checklist",
+      options: filterOptions.task,
+      selected: columnFilters.task || new Set(),
+      onChange: (set) => setFilterForField("task", set),
+    },
+    {
+      key: "resource",
+      label: "Resource",
+      color: "#15803D",
+      type: "checklist",
+      options: filterOptions.resource,
+      selected: columnFilters.resource || new Set(),
+      onChange: (set) => setFilterForField("resource", set),
+      currentUser: currentUserResourceName,
+    },
+    {
+      key: "status",
+      label: "Status",
+      color: "#B45309",
+      type: "checklist",
+      options: filterOptions.status,
+      selected: columnFilters.status || new Set(),
+      onChange: (set) => setFilterForField("status", set),
+    },
+    {
+      key: "plannedStart",
+      label: "Planned Start",
+      type: "daterange",
+      value: getDateRangeValue("plannedStart"),
+      onChange: (bucket) => setDateRangeFilter("plannedStart", bucket),
+    },
+    {
+      key: "plannedStop",
+      label: "Planned Stop",
+      type: "daterange",
+      value: getDateRangeValue("plannedStop"),
+      onChange: (bucket) => setDateRangeFilter("plannedStop", bucket),
+    },
+    {
+      key: "actualStart",
+      label: "Actual Start",
+      type: "daterange",
+      value: getDateRangeValue("actualStart"),
+      onChange: (bucket) => setDateRangeFilter("actualStart", bucket),
+    },
+    {
+      key: "actualStop",
+      label: "Actual Stop",
+      type: "daterange",
+      value: getDateRangeValue("actualStop"),
+      onChange: (bucket) => setDateRangeFilter("actualStop", bucket),
+    },
+  ];
+
   /* When an upstream filter (e.g. module) changes, a downstream filter
      (e.g. task/resource/status) may have selections that are no longer
      valid options — prune those so the checked values on screen always
@@ -952,89 +1027,40 @@ export default function ProjectActivityInfo({
           </div>
         </div>
 
-        {/* ── Mobile filter bar ──
+        {/* ── Mobile filters trigger ──
             On the card layout there's no table header to hang the
-            per-column filter icons off of, so they move into one
-            horizontally-scrollable row here instead. Same
-            ColumnFilterButton/DateRangeFilterButton components as the
-            desktop table header use — they already render as a bottom
-            sheet on this screen size (see ColumnFilter.jsx), so nothing
-            new had to be built for them, just relocated. */}
+            per-column filter icons off of. Previously all 8 columns'
+            filter chips sat in one horizontally-scrollable row, which
+            meant scrolling sideways just to find the right one. Now a
+            single button opens MobileFiltersSheet — one bottom sheet
+            listing every column as a collapsed section; tapping a
+            section expands its own checkbox/radio list in place. */}
         {isMobile && (
           <div className="pai-mobile-filterbar">
-            <div className="pai-mobile-filter-chip">
-              <span>Module</span>
-              <ColumnFilterButton
-                label="Module"
-                options={filterOptions.module}
-                selected={columnFilters.module || new Set()}
-                onChange={(set) => setFilterForField("module", set)}
-                color="#7C3AED"
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Task</span>
-              <ColumnFilterButton
-                label="Task"
-                options={filterOptions.task}
-                selected={columnFilters.task || new Set()}
-                onChange={(set) => setFilterForField("task", set)}
-                color="#3b5bdb"
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Resource</span>
-              <ColumnFilterButton
-                label="Resource"
-                options={filterOptions.resource}
-                selected={columnFilters.resource || new Set()}
-                onChange={(set) => setFilterForField("resource", set)}
-                color="#15803D"
-                currentUser={currentUserResourceName}
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Status</span>
-              <ColumnFilterButton
-                label="Status"
-                options={filterOptions.status}
-                selected={columnFilters.status || new Set()}
-                onChange={(set) => setFilterForField("status", set)}
-                color="#B45309"
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Planned Start</span>
-              <DateRangeFilterButton
-                label="Planned Start"
-                value={getDateRangeValue("plannedStart")}
-                onChange={(bucket) => setDateRangeFilter("plannedStart", bucket)}
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Planned Stop</span>
-              <DateRangeFilterButton
-                label="Planned Stop"
-                value={getDateRangeValue("plannedStop")}
-                onChange={(bucket) => setDateRangeFilter("plannedStop", bucket)}
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Actual Start</span>
-              <DateRangeFilterButton
-                label="Actual Start"
-                value={getDateRangeValue("actualStart")}
-                onChange={(bucket) => setDateRangeFilter("actualStart", bucket)}
-              />
-            </div>
-            <div className="pai-mobile-filter-chip">
-              <span>Actual Stop</span>
-              <DateRangeFilterButton
-                label="Actual Stop"
-                value={getDateRangeValue("actualStop")}
-                onChange={(bucket) => setDateRangeFilter("actualStop", bucket)}
-              />
-            </div>
+            <button
+              type="button"
+              className={`pai-mobile-filters-trigger${
+                activeFilterCount > 0 ? " pai-mobile-filters-trigger--active" : ""
+              }`}
+              onClick={() => setMobileFiltersOpen(true)}
+            >
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 6h16M7 12h10M10 18h4" strokeLinecap="round" />
+              </svg>
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="pai-mobile-filters-trigger__badge">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
             {activeFilterCount > 0 && (
               <button className="pai-mobile-filter-clearall" onClick={clearAllFilters}>
                 Clear all
@@ -1042,6 +1068,14 @@ export default function ProjectActivityInfo({
             )}
           </div>
         )}
+
+        <MobileFiltersSheet
+          open={isMobile && mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          sections={mobileFilterSections}
+          activeCount={activeFilterCount}
+          onClearAll={clearAllFilters}
+        />
 
         {/* ── Card list (mobile) ──
             Same data, same TreeRows component, same handlers as the

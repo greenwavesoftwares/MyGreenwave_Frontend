@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Filter, Search, X } from "lucide-react";
+import { ChevronDown, Filter, Search, X } from "lucide-react";
 import "./ColumnFilter.css";
 
 /**
@@ -458,5 +458,314 @@ export function DateRangeFilterButton({
           document.body,
         )}
     </>
+  );
+}
+
+/**
+ * Mobile-only replacement for a row of individually-scrollable
+ * ColumnFilterButton/DateRangeFilterButton chips. Instead of scrolling
+ * sideways to find the right column, everything lives in one bottom
+ * sheet: each column is a collapsed "section" row (name + active-count
+ * badge + chevron); tapping one expands its option list — the
+ * checkbox/radio "subsection" — in place, and collapses whichever
+ * section was previously open. Selections still apply immediately on
+ * click, same as the per-column popups did.
+ *
+ * `sections` is an array of either:
+ *   { key, label, color, type: "checklist", options, selected: Set,
+ *     onChange(nextSet), currentUser? }
+ *   { key, label, color, type: "daterange", value, onChange(nextKey) }
+ */
+export function MobileFiltersSheet({
+  open,
+  onClose,
+  sections = [],
+  activeCount = 0,
+  onClearAll,
+}) {
+  const [expandedKey, setExpandedKey] = useState(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setExpandedKey(null);
+      setSearch("");
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const toggleSection = (key) => {
+    setExpandedKey((prev) => (prev === key ? null : key));
+    setSearch("");
+  };
+
+  return createPortal(
+    <>
+      <div className="col-filter-backdrop" onClick={onClose} />
+      <div
+        className="col-filter-sheet col-filters-sheet"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="col-filter-sheet__handle" />
+        <div className="col-filter-sheet__header">
+          <span className="col-filter-panel__title">
+            Filters
+            {activeCount > 0 && (
+              <span className="col-filters-sheet__count">{activeCount}</span>
+            )}
+          </span>
+          <button
+            type="button"
+            className="col-filter-sheet__close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {activeCount > 0 && (
+          <button
+            type="button"
+            className="col-filter-panel__clear col-filter-sheet__clear"
+            onClick={onClearAll}
+          >
+            Clear all
+          </button>
+        )}
+
+        <div className="col-filter-sheet__body">
+          {sections.map((section) => {
+            const isChecklist = section.type === "checklist";
+            const sectionCount = isChecklist
+              ? section.selected?.size || 0
+              : section.value
+                ? 1
+                : 0;
+            const isExpanded = expandedKey === section.key;
+            const color = section.color || "#3b5bdb";
+            const filteredOptions = isChecklist
+              ? (section.options || []).filter((opt) =>
+                  opt.toLowerCase().includes(search.toLowerCase()),
+                )
+              : [];
+            const onlyMeChecked =
+              isChecklist &&
+              section.label === "Resource" &&
+              section.currentUser &&
+              section.selected?.size === 1 &&
+              section.selected.has(section.currentUser);
+
+            return (
+              <div key={section.key} className="col-filters-sheet__section">
+                <button
+                  type="button"
+                  className={`col-filters-sheet__section-header${
+                    isExpanded ? " col-filters-sheet__section-header--open" : ""
+                  }`}
+                  onClick={() => toggleSection(section.key)}
+                  aria-expanded={isExpanded}
+                >
+                  <span className="col-filters-sheet__section-label">
+                    {section.label}
+                  </span>
+                  <span className="col-filters-sheet__section-meta">
+                    {sectionCount > 0 && (
+                      <span
+                        className="col-filters-sheet__section-badge"
+                        style={{ background: color }}
+                      >
+                        {sectionCount}
+                      </span>
+                    )}
+                    <ChevronDown
+                      size={16}
+                      className="col-filters-sheet__section-chevron"
+                    />
+                  </span>
+                </button>
+
+                {isExpanded && (
+                  <div className="col-filters-sheet__section-body">
+                    {isChecklist ? (
+                      <>
+                        {sectionCount > 0 && (
+                          <button
+                            type="button"
+                            className="col-filter-panel__clear col-filters-sheet__section-clear"
+                            onClick={() => section.onChange(new Set())}
+                          >
+                            Clear
+                          </button>
+                        )}
+
+                        {(section.options || []).length > 5 && (
+                          <div className="col-filter-panel__search">
+                            <Search
+                              size={13}
+                              className="col-filter-panel__search-icon"
+                            />
+                            <input
+                              value={search}
+                              onChange={(e) => setSearch(e.target.value)}
+                              placeholder={`Search ${section.label}...`}
+                            />
+                          </div>
+                        )}
+
+                        {section.label === "Resource" && section.currentUser && (
+                          <div className="col-filter-panel__onlyme">
+                            <div
+                              className="col-filter-option"
+                              onClick={() =>
+                                section.onChange(
+                                  onlyMeChecked
+                                    ? new Set()
+                                    : new Set([section.currentUser]),
+                                )
+                              }
+                              style={{
+                                background: onlyMeChecked
+                                  ? `${color}1A`
+                                  : undefined,
+                                borderLeft: `3px solid ${
+                                  onlyMeChecked ? color : "transparent"
+                                }`,
+                              }}
+                            >
+                              <span
+                                className={`col-filter-checkbox${
+                                  onlyMeChecked
+                                    ? " col-filter-checkbox--checked"
+                                    : ""
+                                }`}
+                                style={
+                                  onlyMeChecked
+                                    ? { borderColor: color, background: color }
+                                    : undefined
+                                }
+                              >
+                                {onlyMeChecked && (
+                                  <span className="col-filter-checkbox__mark">
+                                    ✓
+                                  </span>
+                                )}
+                              </span>
+                              <span className="col-filter-option__label">
+                                Only me
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="col-filter-panel__list col-filters-sheet__list">
+                          {filteredOptions.length === 0 ? (
+                            <div className="col-filter-panel__empty">
+                              No options
+                            </div>
+                          ) : (
+                            filteredOptions.map((opt) => {
+                              const checked = section.selected?.has(opt);
+                              return (
+                                <div
+                                  key={opt}
+                                  className="col-filter-option"
+                                  onClick={() => {
+                                    const next = new Set(section.selected || []);
+                                    if (next.has(opt)) next.delete(opt);
+                                    else next.add(opt);
+                                    section.onChange(next);
+                                  }}
+                                  style={{
+                                    background: checked ? `${color}1A` : undefined,
+                                    borderLeft: `3px solid ${
+                                      checked ? color : "transparent"
+                                    }`,
+                                  }}
+                                >
+                                  <span
+                                    className={`col-filter-checkbox${
+                                      checked ? " col-filter-checkbox--checked" : ""
+                                    }`}
+                                    style={
+                                      checked
+                                        ? { borderColor: color, background: color }
+                                        : undefined
+                                    }
+                                  >
+                                    {checked && (
+                                      <span className="col-filter-checkbox__mark">
+                                        ✓
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span
+                                    className="col-filter-option__label"
+                                    title={opt}
+                                  >
+                                    {opt}
+                                  </span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="col-filter-panel__list col-filters-sheet__list">
+                        {[{ key: null, text: "All" }, ...DATE_RANGE_BUCKETS].map(
+                          ({ key, text }) => {
+                            const checked = (section.value || null) === key;
+                            return (
+                              <div
+                                key={text}
+                                className="col-filter-option"
+                                onClick={() =>
+                                  section.onChange(
+                                    key === section.value ? null : key,
+                                  )
+                                }
+                                style={{
+                                  background: checked ? `${color}1A` : undefined,
+                                  borderLeft: `3px solid ${
+                                    checked ? color : "transparent"
+                                  }`,
+                                }}
+                              >
+                                <span
+                                  className={`col-filter-checkbox${
+                                    checked ? " col-filter-checkbox--checked" : ""
+                                  }`}
+                                  style={
+                                    checked
+                                      ? { borderColor: color, background: color }
+                                      : undefined
+                                  }
+                                >
+                                  {checked && (
+                                    <span className="col-filter-checkbox__mark">
+                                      ✓
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="col-filter-option__label">
+                                  {text}
+                                </span>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>,
+    document.body,
   );
 }

@@ -300,3 +300,117 @@
   align-self: flex-start;
   font-size: 12px;
 }
+
+/* ══════════════════════════════════════
+   CONSOLIDATED MOBILE FILTERS SHEET
+   MobileFiltersSheet in ColumnFilter.jsx — one bottom sheet replacing
+   the horizontally-scrolling row of per-column filter chips. Reuses
+   .col-filter-sheet/.col-filter-panel-* chrome above; these rules add
+   the accordion (section header + expandable subsection body) on top.
+   ══════════════════════════════════════ */
+
+.col-filters-sheet {
+  /* A bit taller than the single-column sheet (.col-filter-sheet's
+     default min(70vh, 520px)) since a fully expanded section here
+     sits below a stack of other section headers, not alone. */
+  max-height: min(82vh, 640px);
+}
+
+.col-filters-sheet__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--pj-primary, #3b5bdb);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.col-filters-sheet__section {
+  border-bottom: 1px solid var(--divider-color, #e4e8f0);
+}
+
+.col-filters-sheet__section:last-child {
+  border-bottom: none;
+}
+
+.col-filters-sheet__section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: "Sora", sans-serif;
+}
+
+.col-filters-sheet__section-header:active {
+  background: var(--hoverText, #95bff359);
+}
+
+.col-filters-sheet__section-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fontColor, #111827);
+}
+
+.col-filters-sheet__section-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.col-filters-sheet__section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.col-filters-sheet__section-chevron {
+  color: var(--tittleFontColor, #9aa3b5);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.col-filters-sheet__section-header--open .col-filters-sheet__section-chevron {
+  transform: rotate(180deg);
+}
+
+.col-filters-sheet__section-body {
+  padding-bottom: 6px;
+  background: var(--tableOddRow, #f8f9fb);
+  border-top: 1px solid var(--divider-color, #e4e8f0);
+  animation: col-filter-fade-in 0.12s ease both;
+}
+
+.col-filters-sheet__section-clear {
+  margin: 8px 16px 0;
+  align-self: flex-start;
+  font-size: 11.5px;
+}
+
+/* Subsection list: cap height so one long-expanded section can't push
+   every other section (and the header/footer) off-screen — it scrolls
+   internally instead, same idea as the single-column popup's own
+   .col-filter-panel__list. */
+.col-filters-sheet__list {
+  max-height: 240px;
+}
