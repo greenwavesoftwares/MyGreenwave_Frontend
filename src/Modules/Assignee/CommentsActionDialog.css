@@ -253,7 +253,15 @@
    ========================================================== */
 
 .comments-dialog .entries-container {
-  padding: 16px 20px;
+  /* No top padding here on purpose — position:sticky resolves its
+     "top" offset against this container's padding edge, so any
+     padding-top would never fully scroll away: the sticky header
+     would permanently stop that many px below the real top, leaving
+     a gap the scrolled-past row underneath shows through. The
+     equivalent top spacing is added back below via margin-top on
+     .comments-table / .empty-state instead, which scrolls away
+     completely like normal content. */
+  padding: 0 20px 16px;
   overflow-y: auto;
   overflow-x: auto;                   /* allows sideways scroll on narrow screens */
   -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
@@ -305,6 +313,9 @@
   justify-content: center;
   gap: 4px;
   transition: border-color .2s, background .2s;
+  /* Replaces the top spacing .entries-container used to give via its
+     own padding-top (removed — see the comment on .entries-container). */
+  margin-top: 16px;
 }
 
 .comments-dialog .empty-state:hover {
@@ -372,6 +383,12 @@
   box-shadow: var(--shadow-1);
   border-collapse: separate;
   border-spacing: 0;
+  /* Replaces the top spacing .entries-container used to give via its
+     own padding-top (removed — see the comment on .entries-container).
+     Unlike that padding, this margin is normal scrolling content, so
+     it scrolls fully out of view instead of leaving a permanent gap
+     above the sticky header. */
+  margin-top: 16px;
 }
 
 /* Desktop only: use the <colgroup> widths in the JSX instead of

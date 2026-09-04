@@ -328,6 +328,31 @@ export default function CommentsActionDialog({
       );
   };
 
+  // Attachment filenames are often long and have no spaces (e.g.
+  // "per_Day_1_ppt.pptx"), so left to overflow-wrap: break-word alone
+  // the browser breaks wherever it runs out of room — including mid
+  // word, like "per_ Day_ 1_p ptx". <wbr/> gives it explicit break
+  // opportunities right after the natural separators in a filename
+  // (".", "_", "-"), which normal line-breaking always prefers over
+  // an arbitrary forced break. overflow-wrap: break-word stays on in
+  // the CSS only as a last-resort safety net for a segment that's
+  // still too long even between those points.
+  const renderBreakableFilename = (text) => {
+    if (!text) return text;
+    return String(text)
+      .split(/([._-])/)
+      .map((part, i) =>
+        part === "." || part === "_" || part === "-" ? (
+          <React.Fragment key={i}>
+            {part}
+            <wbr />
+          </React.Fragment>
+        ) : (
+          part
+        ),
+      );
+  };
+
   const TruncatedText = ({ text }) => (
     <Tooltip
       title={text || ""}
@@ -451,11 +476,11 @@ export default function CommentsActionDialog({
               <colgroup>
                 <col style={{ width: "3%" }} />
                 <col style={{ width: "19%" }} />
-                <col style={{ width: "15%" }} />
+                <col style={{ width: "13%" }} />
                 <col style={{ width: "10%" }} />
                 <col style={{ width: "9.5%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "11%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "15%" }} />
                 <col style={{ width: "9%" }} />
                 <col style={{ width: "13.5%" }} />
               </colgroup>
@@ -554,7 +579,9 @@ export default function CommentsActionDialog({
                                     sx={{ mr: 0.5 }}
                                   />
                                 )}
-                                {getAttachmentFileName(entry.attachment)}
+                                {renderBreakableFilename(
+                                  getAttachmentFileName(entry.attachment),
+                                )}
                               </span>
                               
                               <Tooltip title="Download">
@@ -732,7 +759,11 @@ export default function CommentsActionDialog({
                                           sx={{ mr: 0.5 }}
                                         />
                                       )}
-                                      {getAttachmentFileName(reply.attachment)}
+                                      {renderBreakableFilename(
+                                        getAttachmentFileName(
+                                          reply.attachment,
+                                        ),
+                                      )}
                                     </span>
                                     <Tooltip title="Download">
                                       <IconButton
@@ -847,7 +878,10 @@ export default function CommentsActionDialog({
                                       <div className="attachment-pill">
                                         <InsertDriveFileOutlinedIcon fontSize="small" />
                                         <span className="attachment-name">
-                                          {replyAttachment[index].attachmentName}
+                                          {renderBreakableFilename(
+                                            replyAttachment[index]
+                                              .attachmentName,
+                                          )}
                                         </span>
                                         <IconButton
                                           size="small"
@@ -988,7 +1022,7 @@ export default function CommentsActionDialog({
                     className="attachment-name"
                     title={newComment?.attachmentName}
                   >
-                    {newComment?.attachmentName}
+                    {renderBreakableFilename(newComment?.attachmentName)}
                   </span>
                   <IconButton
                     size="small"
