@@ -614,6 +614,19 @@ export default function ProjectActivityInfo({
     (s) => s && s.size > 0,
   ).length;
 
+  // Message shown in place of the table/card list when there's nothing to
+  // display, worded differently depending on *why* it's empty: a search
+  // term with no matches, one or more column filters with no matches,
+  // both together, or — when neither is active — the activity list for
+  // this project simply has no rows yet.
+  const emptyStateMessage = search && activeFilterCount > 0
+    ? `No activities match \u201c${search}\u201d and the selected filters`
+    : search
+      ? `No activities match \u201c${search}\u201d`
+      : activeFilterCount > 0
+        ? "No activities match the selected filters"
+        : "No activities to display";
+
   const clearAllFilters = () => setColumnFilters({});
 
   /* options for every column's checkbox dropdown, built from the full
@@ -1091,9 +1104,9 @@ export default function ProjectActivityInfo({
             how an activity behaves changes between the two. */}
         {isMobile && (
           <div className="pai-mobile-list">
-            {filteredModules.length === 0 && search && (
+            {filteredModules.length === 0 && (
               <div className="pai-mobile-empty">
-                No activities match &ldquo;{search}&rdquo;
+                {emptyStateMessage}
               </div>
             )}
             {filteredModules.map((module) => (
@@ -1252,7 +1265,7 @@ export default function ProjectActivityInfo({
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredModules.length === 0 && search && (
+              {filteredModules.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={11}
@@ -1263,7 +1276,7 @@ export default function ProjectActivityInfo({
                       fontSize: "13px",
                     }}
                   >
-                    No activities match &ldquo;{search}&rdquo;
+                    {emptyStateMessage}
                   </TableCell>
                 </TableRow>
               )}
