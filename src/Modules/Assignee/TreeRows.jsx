@@ -97,7 +97,8 @@ export default function TreeRows({
 
   const hasChildren = children?.length > 0;
   const isExpanded = expanded?.[id] ?? false;
-  const updatedStatus = updateStatus(node.activityStatus, node.activityStatus==='Running'?node.plannedStop:node.plannedStart);
+   const time=node.activityStatus==='Running'?node.plannedStop:node.plannedStart
+  const updatedStatus = updateStatus(node.activityStatus, time);
   const [dependencyDialogVisible, setDependencyDialogVisible] = useState(false);
   const handleOpenDependencies = () => {
     setDependencyDialogVisible(true);
@@ -108,9 +109,16 @@ export default function TreeRows({
   const formatDateTime = (value) =>
     value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY HH:mm") : "—";
   const toggleExpand = (nodeId) => {
+    // Flip relative to `isExpanded` (what's actually on screen right now),
+    // not `prev[nodeId]` off the raw expanded state. While a search/filter
+    // is active, the row can be showing as expanded purely because of the
+    // auto-expand override in ProjectActivityInfo's `expandedWithFilters`,
+    // with no entry for it yet in the raw state — so `prev[nodeId] ?? false`
+    // reads as false even though the row is visibly open, and the "toggle"
+    // ends up setting it *back* to true instead of collapsing it.
     setExpanded((prev) => ({
       ...prev,
-      [nodeId]: !(prev[nodeId] ?? false),
+      [nodeId]: !isExpanded,
     }));
   };
 

@@ -355,7 +355,8 @@ export default function ProjectActivityInfo({
     sortOrder: 1, // no equivalent in source, default 0
     createdAt: new Date().toISOString(),
     createdBy: currentUserId, // assuming creator = assigned resource
-    creatorType: "Assignee", // "SUBTASK" → creatorType
+    creatorType: "Assignee" // "SUBTASK" → creatorType,
+    // ,dependsOn:""
   });
   const countTasks = (nodes) => {
     let count = 0;
@@ -740,7 +741,14 @@ export default function ProjectActivityInfo({
 
   const markExpanded = (nodes) => {
     nodes?.forEach((node) => {
-      allExpanded[node.id] = true;
+      // Only default a node to expanded if the user hasn't already set an
+      // explicit state for it (via the expand/collapse toggle). Without
+      // this check, every render re-forces every filtered node back open,
+      // so collapsing a row while a search/filter is active had no
+      // visible effect — it just got expanded again immediately.
+      if (allExpanded[node.id] === undefined) {
+        allExpanded[node.id] = true;
+      }
       if (node.children?.length) {
         markExpanded(node.children);
       }
