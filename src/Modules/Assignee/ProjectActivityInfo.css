@@ -1717,3 +1717,38 @@
     width: 100%;
   }
 }
+
+/* --- New User Toggle --- */
+.pai-page .pai-user-toggle {
+  display: inline-flex;
+  background-color: #f1f3f5;
+  border-radius: 12px;
+  padding: 3px;
+}
+
+.pai-page .pai-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pai-page .pai-toggle-btn:hover:not(:disabled):not(.active) {
+  color: #212529;
+}
+
+.pai-page .pai-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pai-page .pai-toggle-btn.active {
+  background-color: #ffffff;
+  color: #3b5bdb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

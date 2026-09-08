@@ -105,6 +105,8 @@ export default function ProjectActivityInfo({
   // loader/disabled state — not every row on the page.
   const [loadingKeys, setLoadingKeys] = useState(() => new Set());
 
+  const [hasSetDefaultUser, setHasSetDefaultUser] = useState(false);
+
   const startLoading = (key) =>
     setLoadingKeys((prev) => {
       const next = new Set(prev);
@@ -121,7 +123,6 @@ export default function ProjectActivityInfo({
   const WORK_START = 10;
   const WORK_END = 18;
   const WEEK_END = [0, 6];
-  
 
   /* ── tree helpers ── */
   const addDuration = (startTime, durationHrs) =>
@@ -237,26 +238,24 @@ export default function ProjectActivityInfo({
   ) => {
     const loadingKey = `comment-${activityId}`;
     startLoading(loadingKey);
-    try{
-    const existingCommentsResp =
-      await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
-        projectId,
-        activityId,
-      );
-    
-    console.log("Existing comments and replies::", existingCommentsResp);
-    const newCommentBody = addComment(projectId, activityId, moduleId);
-    if (status.toLowerCase() !== "finished") setAllowActions(true);
-    else setAllowActions(false);
-    setCommentActivityName(activityName);
-    setExistingComments(existingCommentsResp);
-    setNewComment(newCommentBody);
-    setOpenCommentDialog(true);
-    }
-    catch(e){
-      showToast("error","Error","Error in fetching comment")
-    }
-    finally {
+    try {
+      const existingCommentsResp =
+        await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+          projectId,
+          activityId,
+        );
+
+      console.log("Existing comments and replies::", existingCommentsResp);
+      const newCommentBody = addComment(projectId, activityId, moduleId);
+      if (status.toLowerCase() !== "finished") setAllowActions(true);
+      else setAllowActions(false);
+      setCommentActivityName(activityName);
+      setExistingComments(existingCommentsResp);
+      setNewComment(newCommentBody);
+      setOpenCommentDialog(true);
+    } catch (e) {
+      showToast("error", "Error", "Error in fetching comment");
+    } finally {
       stopLoading(loadingKey);
     }
   };
@@ -317,7 +316,7 @@ export default function ProjectActivityInfo({
     const loadingKey = `submit-${activityData.id}`;
     startLoading(loadingKey);
     try {
-      console.log("Child node added:",payload)
+      console.log("Child node added:", payload);
       const response = await activityTrackerApi.createActivity(
         projectId,
         payload,
@@ -355,7 +354,7 @@ export default function ProjectActivityInfo({
     sortOrder: 1, // no equivalent in source, default 0
     createdAt: new Date().toISOString(),
     createdBy: currentUserId, // assuming creator = assigned resource
-    creatorType: "Assignee" // "SUBTASK" → creatorType,
+    creatorType: "Assignee", // "SUBTASK" → creatorType,
     // ,dependsOn:""
   });
   const countTasks = (nodes) => {
@@ -416,7 +415,7 @@ export default function ProjectActivityInfo({
     );
   };
   const calculateDuration = async (activity, actualTime) => {
-    console.log("Inside calculate duration")
+    console.log("Inside calculate duration");
     const leavesOfEmployee =
       await activityTrackerApi.getLeavesWithHolidaysByUserId(currentUserId);
 
@@ -428,7 +427,7 @@ export default function ProjectActivityInfo({
       leaves,
     );
 
-    console.log("After calculating hours")
+    console.log("After calculating hours");
     const activityPauses = await activityTrackerApi.getActivityPauses(
       activity.id,
     );
@@ -444,7 +443,7 @@ export default function ProjectActivityInfo({
           )
         );
       }, 0) ?? 0;
-      console.log("After calculating pause hours")
+    console.log("After calculating pause hours");
     const activityRejections = await activityTrackerApi.getActivityRejections(
       activity.id,
     );
@@ -454,63 +453,69 @@ export default function ProjectActivityInfo({
           total +
           calculateWorkingHours(
             rejection.actualCompletionTime,
-             actualTime,
+            actualTime,
             leaves,
           )
         );
       }, 0) ?? 0;
-    
+
     console.log("Rejection Details::", totalRejectionHours);
-    totalWorkingHours = totalWorkingHours-(totalPauseHours+totalRejectionHours);
+    totalWorkingHours =
+      totalWorkingHours - (totalPauseHours + totalRejectionHours);
     console.log("Working Hours:", totalWorkingHours);
     console.log("Pause Hours:", totalRejectionHours);
 
     return Math.max(0, totalWorkingHours);
   };
-  const updateStatusOfActivity = async (activityId, status, activity, reason) => {
+  const updateStatusOfActivity = async (
+    activityId,
+    status,
+    activity,
+    reason,
+  ) => {
     const loadingKey = `status-${activityId}`;
     startLoading(loadingKey);
-    try{
-      console.log("Inside updateStatus")
-    const actualTime = new Date();
-    let duration = 0;
-    if (status.toLowerCase() === "completed") {
-      duration = await calculateDuration(activity, actualTime);
-      console.log("Completed duration:",duration)
-    console.log("After duration calculation")
-    }
-    const statusPayload = { status, actualTime, duration,reason };
+    try {
+      console.log("Inside updateStatus");
+      const actualTime = new Date();
+      let duration = 0;
+      if (status.toLowerCase() === "completed") {
+        duration = await calculateDuration(activity, actualTime);
+        console.log("Completed duration:", duration);
+        console.log("After duration calculation");
+      }
+      const statusPayload = { status, actualTime, duration, reason };
 
-    const response = await activityTrackerApi.updateActivityStatus(
-      activityId,
-      statusPayload,
-    );
-    showToast("success", "Status Updated", `Activity ${statusPayload.status}`);
-    await fetchActivities();
-  }catch(e){
-    showToast("error","Error","Error in status update")
-    
-  } finally {
-    stopLoading(loadingKey);
-  }
+      const response = await activityTrackerApi.updateActivityStatus(
+        activityId,
+        statusPayload,
+      );
+      showToast(
+        "success",
+        "Status Updated",
+        `Activity ${statusPayload.status}`,
+      );
+      await fetchActivities();
+    } catch (e) {
+      showToast("error", "Error", "Error in status update");
+    } finally {
+      stopLoading(loadingKey);
+    }
   };
 
   // Opens the pause-reason dialog instead of pausing immediately.
-  const handlePauseDelayRequest = (activityId, activity,pauseDelayType) => {
-    console.log("type::",pauseDelayType)
-    setPauseDelayTarget({ activityId, activity,pauseDelayType });
+  const handlePauseDelayRequest = (activityId, activity, pauseDelayType) => {
+    console.log("type::", pauseDelayType);
+    setPauseDelayTarget({ activityId, activity, pauseDelayType });
   };
 
   const handlePauseDelayConfirm = async (reason) => {
-    let status=null
-    if(pauseDelayTarget.pauseDelayType==='StartDelay')
-      status='Running'
-    else if(pauseDelayTarget.pauseDelayType==='StopDelay')
-      status='Completed'
-    else if(pauseDelayTarget.pauseDelayType==='Paused')
-      status='Paused'
-    else if(pauseDelayTarget.pauseDelayType==='Redo')
-      status='Running'
+    let status = null;
+    if (pauseDelayTarget.pauseDelayType === "StartDelay") status = "Running";
+    else if (pauseDelayTarget.pauseDelayType === "StopDelay")
+      status = "Completed";
+    else if (pauseDelayTarget.pauseDelayType === "Paused") status = "Paused";
+    else if (pauseDelayTarget.pauseDelayType === "Redo") status = "Running";
     if (pauseDelayTarget) {
       setPauseDelayLoading(true);
       try {
@@ -604,7 +609,9 @@ export default function ProjectActivityInfo({
   const setDateRangeFilter = (baseField, bucketKey) => {
     setColumnFilters((prev) => {
       const next = { ...prev };
-      DATE_RANGE_BUCKETS.forEach(({ key }) => delete next[`${baseField}${key}`]);
+      DATE_RANGE_BUCKETS.forEach(
+        ({ key }) => delete next[`${baseField}${key}`],
+      );
       if (bucketKey) next[`${baseField}${bucketKey}`] = new Set(["true"]);
       return next;
     });
@@ -619,13 +626,14 @@ export default function ProjectActivityInfo({
   // term with no matches, one or more column filters with no matches,
   // both together, or — when neither is active — the activity list for
   // this project simply has no rows yet.
-  const emptyStateMessage = search && activeFilterCount > 0
-    ? `No activities match \u201c${search}\u201d and the selected filters`
-    : search
-      ? `No activities match \u201c${search}\u201d`
-      : activeFilterCount > 0
-        ? "No activities match the selected filters"
-        : "No activities to display";
+  const emptyStateMessage =
+    search && activeFilterCount > 0
+      ? `No activities match \u201c${search}\u201d and the selected filters`
+      : search
+        ? `No activities match \u201c${search}\u201d`
+        : activeFilterCount > 0
+          ? "No activities match the selected filters"
+          : "No activities to display";
 
   const clearAllFilters = () => setColumnFilters({});
 
@@ -727,9 +735,7 @@ export default function ProjectActivityInfo({
         const validOptions = filterOptions[field];
         if (!validOptions) return;
         const validSet = new Set(validOptions);
-        const pruned = new Set(
-          [...next[field]].filter((v) => validSet.has(v)),
-        );
+        const pruned = new Set([...next[field]].filter((v) => validSet.has(v)));
         if (pruned.size !== next[field].size) {
           changed = true;
           if (pruned.size === 0) delete next[field];
@@ -740,38 +746,46 @@ export default function ProjectActivityInfo({
     });
   }, [filterOptions]);
 
+  useEffect(() => {
+    // If we haven't set the default yet, and we finally know the user's resource name
+    if (!hasSetDefaultUser && currentUserResourceName) {
+      setFilterForField("resource", new Set([currentUserResourceName]));
+      setHasSetDefaultUser(true);
+    }
+  }, [currentUserResourceName, hasSetDefaultUser, setFilterForField]);
+
   /* auto-expand all nodes when searching */
   const expandedWithFilters = useMemo(() => {
-  const hasColumnFilters = Object.values(columnFilters).some(
-    (set) => set && set.size > 0
-  );
+    const hasColumnFilters = Object.values(columnFilters).some(
+      (set) => set && set.size > 0,
+    );
 
-  if (!search && !hasColumnFilters) {
-    return expanded;
-  }
+    if (!search && !hasColumnFilters) {
+      return expanded;
+    }
 
-  const allExpanded = { ...expanded };
+    const allExpanded = { ...expanded };
 
-  const markExpanded = (nodes) => {
-    nodes?.forEach((node) => {
-      // Only default a node to expanded if the user hasn't already set an
-      // explicit state for it (via the expand/collapse toggle). Without
-      // this check, every render re-forces every filtered node back open,
-      // so collapsing a row while a search/filter is active had no
-      // visible effect — it just got expanded again immediately.
-      if (allExpanded[node.id] === undefined) {
-        allExpanded[node.id] = true;
-      }
-      if (node.children?.length) {
-        markExpanded(node.children);
-      }
-    });
-  };
+    const markExpanded = (nodes) => {
+      nodes?.forEach((node) => {
+        // Only default a node to expanded if the user hasn't already set an
+        // explicit state for it (via the expand/collapse toggle). Without
+        // this check, every render re-forces every filtered node back open,
+        // so collapsing a row while a search/filter is active had no
+        // visible effect — it just got expanded again immediately.
+        if (allExpanded[node.id] === undefined) {
+          allExpanded[node.id] = true;
+        }
+        if (node.children?.length) {
+          markExpanded(node.children);
+        }
+      });
+    };
 
-  markExpanded(filteredModules);
+    markExpanded(filteredModules);
 
-  return allExpanded;
-}, [search, columnFilters, filteredModules, expanded]);
+    return allExpanded;
+  }, [search, columnFilters, filteredModules, expanded]);
   const segregateBadgePerformers = (activityDetails) => {
     let resources = [];
     activityDetails.modules.map((module) => {
@@ -877,14 +891,16 @@ export default function ProjectActivityInfo({
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
-//     const firstActivity = activityDetails?.modules?.[1]?.children?.[2];
-// if (firstActivity) {
-//   firstActivity.dependsOn = [
-//     "1f475c83-101e-4c4a-b9cb-7785cec832b2",
-//     "e6b2fd02-8617-4ab8-97aa-6d1bb9dec0f2",
-//   ];
-// }
-      activityDetails.customColumns=[...(activityDetails.customColumns ?? [])].sort((a, b) => a.order - b.order)
+    //     const firstActivity = activityDetails?.modules?.[1]?.children?.[2];
+    // if (firstActivity) {
+    //   firstActivity.dependsOn = [
+    //     "1f475c83-101e-4c4a-b9cb-7785cec832b2",
+    //     "e6b2fd02-8617-4ab8-97aa-6d1bb9dec0f2",
+    //   ];
+    // }
+    activityDetails.customColumns = [
+      ...(activityDetails.customColumns ?? []),
+    ].sort((a, b) => a.order - b.order);
     console.log("Fetched activities:", activityDetails);
     if (!activityDetails) return;
     setActivityInfo(activityDetails);
@@ -906,14 +922,27 @@ export default function ProjectActivityInfo({
   useEffect(() => {
     fetchActivitiesOnLoad();
   }, []);
-  const projectStatusAssignee=(status)=>{
-    if(status==='finished')
-      return 'published'
-    return status
-  }
+  const projectStatusAssignee = (status) => {
+    if (status === "finished") return "published";
+    return status;
+  };
   if (loading) {
     return <ProjectActivitiesSkeleton />;
   }
+
+  const isOnlyMeActive =
+    columnFilters?.resource?.size === 1 &&
+    columnFilters.resource.has(currentUserResourceName);
+
+  const handleUserToggle = (showOnlyMe) => {
+    if (showOnlyMe && currentUserResourceName) {
+      setFilterForField("resource", new Set([currentUserResourceName]));
+    } else {
+      // Clear the resource filter to show all
+      setFilterForField("resource", new Set());
+    }
+  };
+
   /* ── render ── */
   return (
     <div className="pai-page">
@@ -923,132 +952,162 @@ export default function ProjectActivityInfo({
           below it, instead of sitting flush against the page edge while
           the cards are centered narrower than the page. */}
       <div className="pai-content-shrink">
-      {/* ── Breadcrumb / back bar ── */}
-      <div className="pai-topbar">
-        <button
-          onClick={() => {
-            console.log("On back home click");
-            setSelectedProject && setSelectedProject(null);
-          }}
-          className="back-to-draft"
-        >
-          <ArrowLeft size={14} /> Back to Projects
-        </button>
-      </div>
-
-      {/* ── Project info card ── */}
-      {activityInfo && (
-        <div className="pai-info-card">
-          <div className="pai-project-avatar">
-            {getInitials(activityInfo.projectName)}
-          </div>
-
-          <div className="pai-info-fields">
-            <div className="pai-info-field">
-              <span className="pai-field-label">Project</span>
-              <span className="pai-field-value">
-                {activityInfo.projectName}
-              </span>
-            </div>
-            <div className="pai-info-field">
-              <span className="pai-field-label">PO No</span>
-              <span className="pai-field-value">
-                {activityInfo.poNumber || "—"}
-              </span>
-            </div>
-            <div className="pai-info-field">
-              <span className="pai-field-label">Site / Customer</span>
-              <span className="pai-field-value">
-                {activityInfo.siteCustomer || "—"}
-              </span>
-            </div>
-            <div className="pai-info-field">
-              <span className="pai-field-label">Status</span>
-              <StatusChip status={projectStatusAssignee(activityInfo.projectStatus)} />
-            </div>
-            <div className="pai-info-field">
-              <span className="pai-field-label">Created By</span>
-              <span className="pai-field-value">{activityInfo.createdBy}</span>
-            </div>
-          </div>
+        {/* ── Breadcrumb / back bar ── */}
+        <div className="pai-topbar">
+          <button
+            onClick={() => {
+              console.log("On back home click");
+              setSelectedProject && setSelectedProject(null);
+            }}
+            className="back-to-draft"
+          >
+            <ArrowLeft size={14} /> Back to Projects
+          </button>
         </div>
-      )}
 
-      {/* ── Activities card ── */}
-      <div className="pai-activity-card">
-        <div className="pai-activity-header">
-          <div className="pai-header-left">
-            <div className="pai-section-icon">
-              <svg
-                width="13"
-                height="13"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="#3b5bdb"
-                strokeWidth="2"
-              >
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                <rect x="9" y="3" width="6" height="4" rx="1" />
-                <path d="M9 12h6M9 16h4" />
-              </svg>
+        {/* ── Project info card ── */}
+        {activityInfo && (
+          <div className="pai-info-card">
+            <div className="pai-project-avatar">
+              {getInitials(activityInfo.projectName)}
             </div>
-            <h2 className="pai-section-title">Activities</h2>
-            <span className="pai-counter">{totalActivities}</span>
+
+            <div className="pai-info-fields">
+              <div className="pai-info-field">
+                <span className="pai-field-label">Project</span>
+                <span className="pai-field-value">
+                  {activityInfo.projectName}
+                </span>
+              </div>
+              <div className="pai-info-field">
+                <span className="pai-field-label">PO No</span>
+                <span className="pai-field-value">
+                  {activityInfo.poNumber || "—"}
+                </span>
+              </div>
+              <div className="pai-info-field">
+                <span className="pai-field-label">Site / Customer</span>
+                <span className="pai-field-value">
+                  {activityInfo.siteCustomer || "—"}
+                </span>
+              </div>
+              <div className="pai-info-field">
+                <span className="pai-field-label">Status</span>
+                <StatusChip
+                  status={projectStatusAssignee(activityInfo.projectStatus)}
+                />
+              </div>
+              <div className="pai-info-field">
+                <span className="pai-field-label">Created By</span>
+                <span className="pai-field-value">
+                  {activityInfo.createdBy}
+                </span>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className="pai-header-right">
-            <div className="pai-search-wrap">
-              <svg
-                width="14"
-                height="14"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-              <input
-                className="pai-search"
-                placeholder="Search Activity or module..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+        {/* ── Activities card ── */}
+        <div className="pai-activity-card">
+          <div className="pai-activity-header">
+            <div className="pai-activity-header">
+              <div className="pai-header-left">
+                <div className="pai-section-icon">
+                  <svg
+                    width="13"
+                    height="13"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="#3b5bdb"
+                    strokeWidth="2"
+                  >
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                    <path d="M9 12h6M9 16h4" />
+                  </svg>
+                </div>
+                <h2 className="pai-section-title">Activities</h2>
+                <span className="pai-counter">{totalActivities}</span>
+              </div>
+
+              {/* NEW: Toggle button placed in the middle */}
+              <div className="pai-header-left">
+                <div className="pai-user-toggle">
+                  <button
+                    className={`pai-toggle-btn ${isOnlyMeActive ? "active" : ""}`}
+                    onClick={() => handleUserToggle(true)}
+                    disabled={!currentUserResourceName}
+                    title={
+                      !currentUserResourceName
+                        ? "You have no assigned tasks"
+                        : ""
+                    }
+                  >
+                    My Tasks
+                  </button>
+                  <button
+                    className={`pai-toggle-btn ${!isOnlyMeActive ? "active" : ""}`}
+                    onClick={() => handleUserToggle(false)}
+                  >
+                    All Users
+                  </button>
+                </div>
+              </div>
             </div>
-            <button
-              className="pai-refresh-btn"
-              onClick={fetchActivitiesOnLoad}
-              title="Refresh"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="icon-btn-spinner" />
-              ) : (
+
+            <div className="pai-header-right">
+              <div className="pai-search-wrap">
                 <svg
                   width="14"
                   height="14"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth="2.2"
+                  strokeWidth="2"
                 >
-                  <path d="M23 4v6h-6" />
-                  <path d="M1 20v-6h6" />
-                  <path d="M3.51 9a9 9 0 0114.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0020.49 15" />
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
                 </svg>
-              )}
-            </button>
-            {/* <button className="pai-add-btn">
+                <input
+                  className="pai-search"
+                  placeholder="Search Activity or module..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <button
+                className="pai-refresh-btn"
+                onClick={fetchActivitiesOnLoad}
+                title="Refresh"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="icon-btn-spinner" />
+                ) : (
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                  >
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0114.36-3.36L23 10M1 14l5.13 4.36A9 9 0 0020.49 15" />
+                  </svg>
+                )}
+              </button>
+              {/* <button className="pai-add-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 5v14M5 12h14"/>
               </svg>
               Add Activity
             </button> */}
+            </div>
           </div>
-        </div>
 
-        {/* ── Mobile filters trigger ──
+          {/* ── Mobile filters trigger ──
             On the card layout there's no table header to hang the
             per-column filter icons off of. Previously all 8 columns'
             filter chips sat in one horizontally-scrollable row, which
@@ -1056,229 +1115,61 @@ export default function ProjectActivityInfo({
             single button opens MobileFiltersSheet — one bottom sheet
             listing every column as a collapsed section; tapping a
             section expands its own checkbox/radio list in place. */}
-        {isMobile && (
-          <div className="pai-mobile-filterbar">
-            <button
-              type="button"
-              className={`pai-mobile-filters-trigger${
-                activeFilterCount > 0 ? " pai-mobile-filters-trigger--active" : ""
-              }`}
-              onClick={() => setMobileFiltersOpen(true)}
-            >
-              <svg
-                width="14"
-                height="14"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
+          {isMobile && (
+            <div className="pai-mobile-filterbar">
+              <button
+                type="button"
+                className={`pai-mobile-filters-trigger${
+                  activeFilterCount > 0
+                    ? " pai-mobile-filters-trigger--active"
+                    : ""
+                }`}
+                onClick={() => setMobileFiltersOpen(true)}
               >
-                <path d="M4 6h16M7 12h10M10 18h4" strokeLinecap="round" />
-              </svg>
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="pai-mobile-filters-trigger__badge">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-            {activeFilterCount > 0 && (
-              <button className="pai-mobile-filter-clearall" onClick={clearAllFilters}>
-                Clear all
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M4 6h16M7 12h10M10 18h4" strokeLinecap="round" />
+                </svg>
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="pai-mobile-filters-trigger__badge">
+                    {activeFilterCount}
+                  </span>
+                )}
               </button>
-            )}
-          </div>
-        )}
+              {activeFilterCount > 0 && (
+                <button
+                  className="pai-mobile-filter-clearall"
+                  onClick={clearAllFilters}
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+          )}
 
-        <MobileFiltersSheet
-          open={isMobile && mobileFiltersOpen}
-          onClose={() => setMobileFiltersOpen(false)}
-          sections={mobileFilterSections}
-          activeCount={activeFilterCount}
-          onClearAll={clearAllFilters}
-        />
+          <MobileFiltersSheet
+            open={isMobile && mobileFiltersOpen}
+            onClose={() => setMobileFiltersOpen(false)}
+            sections={mobileFilterSections}
+            activeCount={activeFilterCount}
+            onClearAll={clearAllFilters}
+          />
 
-        {/* ── Card list (mobile) ──
+          {/* ── Card list (mobile) ──
             Same data, same TreeRows component, same handlers as the
             desktop table below — only the layout differs. Nothing about
             how an activity behaves changes between the two. */}
-        {isMobile && (
-          <div className="pai-mobile-list">
-            {filteredModules.length === 0 && (
-              <div className="pai-mobile-empty">
-                {emptyStateMessage}
-              </div>
-            )}
-            {filteredModules.map((module) => (
-              <TreeRows
-                key={module.id}
-                node={module}
-                expanded={expandedWithFilters}
-                setExpanded={setExpanded}
-                addChildNode={addChildNode}
-                submitAddedNode={submitAddedNode}
-                handleFieldChange={handleFieldChange}
-                addDuration={addDuration}
-                moduleId={module.id}
-                projectId={activityInfo.projectId}
-                currentUserId={currentUserId}
-                updateStatusOfActivity={updateStatusOfActivity}
-                onPauseDelayRequest={handlePauseDelayRequest}
-                onOpenCommentBox={onOpenCommentBox}
-                deleteNode={deleteNode}
-                onOpenFeedbackForm={onOpenFeedbackForm}
-                fetchColor={fetchColor}
-                customColumns={activityInfo?.customColumns}
-                activityLookupMap={activityLookupMap}
-                loadingKeys={loadingKeys}
-                isMobile
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ── Table (desktop) ── */}
-        {!isMobile && (
-        <div className="pai-table-wrapper">
-          <Table className="pai-table">
-            <TableHead>
-              <TableRow className="pai-thead-row">
-                <TableCell className="pai-th pai-th-toggle" />
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Module</span>
-                    <ColumnFilterButton
-                      label="Module"
-                      options={filterOptions.module}
-                      selected={columnFilters.module || new Set()}
-                      onChange={(set) => setFilterForField("module", set)}
-                      color="#7C3AED"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Task</span>
-                    <ColumnFilterButton
-                      label="Task"
-                      options={filterOptions.task}
-                      selected={columnFilters.task || new Set()}
-                      onChange={(set) => setFilterForField("task", set)}
-                      color="#3b5bdb"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Resource</span>
-                    <ColumnFilterButton
-                      label="Resource"
-                      options={filterOptions.resource}
-                      selected={columnFilters.resource || new Set()}
-                      onChange={(set) => setFilterForField("resource", set)}
-                      color="#15803D"
-                      currentUser={currentUserResourceName}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Planned Start</span>
-                    <DateRangeFilterButton
-                      label="Planned Start"
-                      value={getDateRangeValue("plannedStart")}
-                      onChange={(bucket) =>
-                        setDateRangeFilter("plannedStart", bucket)
-                      }
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <div>
-                      <div>Duration(Hrs)</div>
-                    </div>
-                    
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Planned Stop</span>
-                    <DateRangeFilterButton
-                      label="Planned Stop"
-                      value={getDateRangeValue("plannedStop")}
-                      onChange={(bucket) =>
-                        setDateRangeFilter("plannedStop", bucket)
-                      }
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Status</span>
-                    <ColumnFilterButton
-                      label="Status"
-                      options={filterOptions.status}
-                      selected={columnFilters.status || new Set()}
-                      onChange={(set) => setFilterForField("status", set)}
-                      color="#B45309"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Actual Start</span>
-                    <DateRangeFilterButton
-                      label="Actual Start"
-                      value={getDateRangeValue("actualStart")}
-                      onChange={(bucket) =>
-                        setDateRangeFilter("actualStart", bucket)
-                      }
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="pai-th">
-                  <div className="pai-th-content">
-                    <span>Actual Stop</span>
-                    <DateRangeFilterButton
-                      label="Actual Stop"
-                      value={getDateRangeValue("actualStop")}
-                      onChange={(bucket) =>
-                        setDateRangeFilter("actualStop", bucket)
-                      }
-                    />
-                  </div>
-                </TableCell>
-                {activityInfo?.customColumns?.map((col) => {
-                  const field = `custom:${col.id}`;
-                  return (
-                    <TableCell className="pai-th" key={col.id}>
-                      <div className="pai-th-content">
-                        <span>{col.name}</span>
-                        
-                      </div>
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="pai-th">Action</TableCell>
-                
-              </TableRow>
-            </TableHead>
-            <TableBody>
+          {isMobile && (
+            <div className="pai-mobile-list">
               {filteredModules.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={11}
-                    align="center"
-                    style={{
-                      padding: "32px 0",
-                      color: "#94a3b8",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {emptyStateMessage}
-                  </TableCell>
-                </TableRow>
+                <div className="pai-mobile-empty">{emptyStateMessage}</div>
               )}
               {filteredModules.map((module) => (
                 <TreeRows
@@ -1302,13 +1193,181 @@ export default function ProjectActivityInfo({
                   customColumns={activityInfo?.customColumns}
                   activityLookupMap={activityLookupMap}
                   loadingKeys={loadingKeys}
+                  isMobile
                 />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          )}
+
+          {/* ── Table (desktop) ── */}
+          {!isMobile && (
+            <div className="pai-table-wrapper">
+              <Table className="pai-table">
+                <TableHead>
+                  <TableRow className="pai-thead-row">
+                    <TableCell className="pai-th pai-th-toggle" />
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Module</span>
+                        <ColumnFilterButton
+                          label="Module"
+                          options={filterOptions.module}
+                          selected={columnFilters.module || new Set()}
+                          onChange={(set) => setFilterForField("module", set)}
+                          color="#7C3AED"
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Task</span>
+                        <ColumnFilterButton
+                          label="Task"
+                          options={filterOptions.task}
+                          selected={columnFilters.task || new Set()}
+                          onChange={(set) => setFilterForField("task", set)}
+                          color="#3b5bdb"
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Resource</span>
+                        <ColumnFilterButton
+                          label="Resource"
+                          options={filterOptions.resource}
+                          selected={columnFilters.resource || new Set()}
+                          onChange={(set) => setFilterForField("resource", set)}
+                          color="#15803D"
+                          currentUser={currentUserResourceName}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Planned Start</span>
+                        <DateRangeFilterButton
+                          label="Planned Start"
+                          value={getDateRangeValue("plannedStart")}
+                          onChange={(bucket) =>
+                            setDateRangeFilter("plannedStart", bucket)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <div>
+                          <div>Duration(Hrs)</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Planned Stop</span>
+                        <DateRangeFilterButton
+                          label="Planned Stop"
+                          value={getDateRangeValue("plannedStop")}
+                          onChange={(bucket) =>
+                            setDateRangeFilter("plannedStop", bucket)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Status</span>
+                        <ColumnFilterButton
+                          label="Status"
+                          options={filterOptions.status}
+                          selected={columnFilters.status || new Set()}
+                          onChange={(set) => setFilterForField("status", set)}
+                          color="#B45309"
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Actual Start</span>
+                        <DateRangeFilterButton
+                          label="Actual Start"
+                          value={getDateRangeValue("actualStart")}
+                          onChange={(bucket) =>
+                            setDateRangeFilter("actualStart", bucket)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="pai-th">
+                      <div className="pai-th-content">
+                        <span>Actual Stop</span>
+                        <DateRangeFilterButton
+                          label="Actual Stop"
+                          value={getDateRangeValue("actualStop")}
+                          onChange={(bucket) =>
+                            setDateRangeFilter("actualStop", bucket)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    {activityInfo?.customColumns?.map((col) => {
+                      const field = `custom:${col.id}`;
+                      return (
+                        <TableCell className="pai-th" key={col.id}>
+                          <div className="pai-th-content">
+                            <span>{col.name}</span>
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="pai-th">Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredModules.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={11}
+                        align="center"
+                        style={{
+                          padding: "32px 0",
+                          color: "#94a3b8",
+                          fontSize: "13px",
+                        }}
+                      >
+                        {emptyStateMessage}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {filteredModules.map((module) => (
+                    <TreeRows
+                      key={module.id}
+                      node={module}
+                      expanded={expandedWithFilters}
+                      setExpanded={setExpanded}
+                      addChildNode={addChildNode}
+                      submitAddedNode={submitAddedNode}
+                      handleFieldChange={handleFieldChange}
+                      addDuration={addDuration}
+                      moduleId={module.id}
+                      projectId={activityInfo.projectId}
+                      currentUserId={currentUserId}
+                      updateStatusOfActivity={updateStatusOfActivity}
+                      onPauseDelayRequest={handlePauseDelayRequest}
+                      onOpenCommentBox={onOpenCommentBox}
+                      deleteNode={deleteNode}
+                      onOpenFeedbackForm={onOpenFeedbackForm}
+                      fetchColor={fetchColor}
+                      customColumns={activityInfo?.customColumns}
+                      activityLookupMap={activityLookupMap}
+                      loadingKeys={loadingKeys}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
-        )}
-      </div>
       </div>
       <PauseReasonDialog
         open={!!pauseDelayTarget}
