@@ -105,8 +105,6 @@ export default function ProjectActivityInfo({
   // loader/disabled state — not every row on the page.
   const [loadingKeys, setLoadingKeys] = useState(() => new Set());
 
-  const [hasSetDefaultUser, setHasSetDefaultUser] = useState(false);
-
   const startLoading = (key) =>
     setLoadingKeys((prev) => {
       const next = new Set(prev);
@@ -746,14 +744,6 @@ export default function ProjectActivityInfo({
     });
   }, [filterOptions]);
 
-  useEffect(() => {
-    // If we haven't set the default yet, and we finally know the user's resource name
-    if (!hasSetDefaultUser && currentUserResourceName) {
-      setFilterForField("resource", new Set([currentUserResourceName]));
-      setHasSetDefaultUser(true);
-    }
-  }, [currentUserResourceName, hasSetDefaultUser, setFilterForField]);
-
   /* auto-expand all nodes when searching */
   const expandedWithFilters = useMemo(() => {
     const hasColumnFilters = Object.values(columnFilters).some(
@@ -929,20 +919,6 @@ export default function ProjectActivityInfo({
   if (loading) {
     return <ProjectActivitiesSkeleton />;
   }
-
-  const isOnlyMeActive =
-    columnFilters?.resource?.size === 1 &&
-    columnFilters.resource.has(currentUserResourceName);
-
-  const handleUserToggle = (showOnlyMe) => {
-    if (showOnlyMe && currentUserResourceName) {
-      setFilterForField("resource", new Set([currentUserResourceName]));
-    } else {
-      // Clear the resource filter to show all
-      setFilterForField("resource", new Set());
-    }
-  };
-
   /* ── render ── */
   return (
     <div className="pai-page">
@@ -1010,49 +986,23 @@ export default function ProjectActivityInfo({
         {/* ── Activities card ── */}
         <div className="pai-activity-card">
           <div className="pai-activity-header">
-            <div className="pai-activity-header">
-              <div className="pai-header-left">
-                <div className="pai-section-icon">
-                  <svg
-                    width="13"
-                    height="13"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="#3b5bdb"
-                    strokeWidth="2"
-                  >
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                    <rect x="9" y="3" width="6" height="4" rx="1" />
-                    <path d="M9 12h6M9 16h4" />
-                  </svg>
-                </div>
-                <h2 className="pai-section-title">Activities</h2>
-                <span className="pai-counter">{totalActivities}</span>
+            <div className="pai-header-left">
+              <div className="pai-section-icon">
+                <svg
+                  width="13"
+                  height="13"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="#3b5bdb"
+                  strokeWidth="2"
+                >
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <path d="M9 12h6M9 16h4" />
+                </svg>
               </div>
-
-              {/* NEW: Toggle button placed in the middle */}
-              <div className="pai-header-left">
-                <div className="pai-user-toggle">
-                  <button
-                    className={`pai-toggle-btn ${isOnlyMeActive ? "active" : ""}`}
-                    onClick={() => handleUserToggle(true)}
-                    disabled={!currentUserResourceName}
-                    title={
-                      !currentUserResourceName
-                        ? "You have no assigned tasks"
-                        : ""
-                    }
-                  >
-                    My Tasks
-                  </button>
-                  <button
-                    className={`pai-toggle-btn ${!isOnlyMeActive ? "active" : ""}`}
-                    onClick={() => handleUserToggle(false)}
-                  >
-                    All Users
-                  </button>
-                </div>
-              </div>
+              <h2 className="pai-section-title">Activities</h2>
+              <span className="pai-counter">{totalActivities}</span>
             </div>
 
             <div className="pai-header-right">
