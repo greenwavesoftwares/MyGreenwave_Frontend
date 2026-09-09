@@ -180,3 +180,237 @@
   color: var(--tittleFontColor, #6b7589);
   text-align: center;
 }
+
+/* ══════════════════════════════════════
+   MOBILE BOTTOM SHEET (append to ColumnFilter.css)
+   Used instead of the anchored .col-filter-panel popup on small/touch
+   screens — see FilterPopupShell in ColumnFilter.jsx. Fixed to the
+   viewport, not to any button, so none of the anchoring/scroll issues
+   that affected the popover apply here.
+   ══════════════════════════════════════ */
+
+.col-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 99998;
+  animation: col-filter-fade-in 0.15s ease both;
+}
+
+@keyframes col-filter-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.col-filter-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  background: var(--dropdownBG, #fff);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
+  max-height: min(70vh, 520px);
+  display: flex;
+  flex-direction: column;
+  font-family: "Sora", sans-serif;
+  /* Respect iPhone home-indicator safe area so the list/footer isn't
+     hidden behind it. */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  animation: col-filter-sheet-up 0.2s ease both;
+}
+
+@keyframes col-filter-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.col-filter-sheet__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--borderColor, #cdd4e0);
+  margin: 8px auto 4px;
+  flex-shrink: 0;
+}
+
+.col-filter-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px 10px;
+  border-bottom: 1px solid var(--divider-color, #e4e8f0);
+  flex-shrink: 0;
+}
+
+.col-filter-sheet__header .col-filter-panel__title {
+  font-size: 14px;
+}
+
+.col-filter-sheet__close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--tableOddRow, #f1f5f9);
+  color: var(--fontColor, #111827);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.col-filter-sheet__body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Reuse .col-filter-panel__search, .col-filter-panel__onlyme,
+   .col-filter-panel__list, .col-filter-option, .col-filter-checkbox,
+   .col-filter-panel__empty as-is inside the sheet body — only a couple
+   of size tweaks for a comfortable touch target. */
+.col-filter-sheet .col-filter-option {
+  padding: 12px 16px;
+}
+
+.col-filter-sheet .col-filter-checkbox {
+  width: 18px;
+  height: 18px;
+}
+
+.col-filter-sheet .col-filter-option__label {
+  font-size: 13.5px;
+}
+
+.col-filter-sheet .col-filter-panel__search {
+  padding: 10px 16px;
+}
+
+.col-filter-sheet .col-filter-panel__search input {
+  height: 34px;
+  font-size: 13px;
+}
+
+.col-filter-sheet__clear {
+  margin: 8px 16px 0;
+  align-self: flex-start;
+  font-size: 12px;
+}
+
+/* ══════════════════════════════════════
+   CONSOLIDATED MOBILE FILTERS SHEET
+   MobileFiltersSheet in ColumnFilter.jsx — one bottom sheet replacing
+   the horizontally-scrolling row of per-column filter chips. Reuses
+   .col-filter-sheet/.col-filter-panel-* chrome above; these rules add
+   the accordion (section header + expandable subsection body) on top.
+   ══════════════════════════════════════ */
+
+.col-filters-sheet {
+  /* A bit taller than the single-column sheet (.col-filter-sheet's
+     default min(70vh, 520px)) since a fully expanded section here
+     sits below a stack of other section headers, not alone. */
+  max-height: min(82vh, 640px);
+}
+
+.col-filters-sheet__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--pj-primary, #3b5bdb);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.col-filters-sheet__section {
+  border-bottom: 1px solid var(--divider-color, #e4e8f0);
+}
+
+.col-filters-sheet__section:last-child {
+  border-bottom: none;
+}
+
+.col-filters-sheet__section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: "Sora", sans-serif;
+}
+
+.col-filters-sheet__section-header:active {
+  background: var(--hoverText, #95bff359);
+}
+
+.col-filters-sheet__section-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fontColor, #111827);
+}
+
+.col-filters-sheet__section-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.col-filters-sheet__section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.col-filters-sheet__section-chevron {
+  color: var(--tittleFontColor, #9aa3b5);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.col-filters-sheet__section-header--open .col-filters-sheet__section-chevron {
+  transform: rotate(180deg);
+}
+
+.col-filters-sheet__section-body {
+  padding-bottom: 6px;
+  background: var(--tableOddRow, #f8f9fb);
+  border-top: 1px solid var(--divider-color, #e4e8f0);
+  animation: col-filter-fade-in 0.12s ease both;
+}
+
+.col-filters-sheet__section-clear {
+  margin: 8px 16px 0;
+  align-self: flex-start;
+  font-size: 11.5px;
+}
+
+/* Subsection list: cap height so one long-expanded section can't push
+   every other section (and the header/footer) off-screen — it scrolls
+   internally instead, same idea as the single-column popup's own
+   .col-filter-panel__list. */
+.col-filters-sheet__list {
+  max-height: 240px;
+}

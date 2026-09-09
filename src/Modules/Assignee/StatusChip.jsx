@@ -128,7 +128,7 @@ closed: {
 const StatusChip = ({ status = "pending" }) => {
   const config =
     STATUS_CONFIG[status?.toLowerCase()] || STATUS_CONFIG.pending;
-
+console.log("Status in chip::",status)
   const Icon = config.Icon;
 
   return (

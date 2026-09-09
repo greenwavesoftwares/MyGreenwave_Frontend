@@ -51,6 +51,15 @@ const DATE_RANGE_FIELD_MAP = Object.keys(DATE_RANGE_BASE_FIELDS).reduce(
   {},
 );
 
+/** Type strings used for a sub-activity row, depending on whether it came
+ * back from the API ("SUBTASK") or was just created client-side and hasn't
+ * been saved yet (see addChildNode in ProjectActivityInfo.jsx, "SUBACTIVITY").
+ * The "task" column filter is conceptually a top-level-task filter, so a
+ * sub-activity row is never judged against it on its own — it's kept or
+ * dropped based on whether the task it lives under matches (see the
+ * taskFilterMatchedByParent cascade in filterTree). */
+const SUBTASK_TYPES = new Set(["SUBTASK", "SUBACTIVITY"]);
+
 /** Read the display value for a given column ("field") off of a node. */
 export const nodeFieldValue = (field, node) => {
   if (field.startsWith("custom:")) {
@@ -65,11 +74,16 @@ export const nodeFieldValue = (field, node) => {
   //find the field value based on field name
   switch (field) {
     case "task":
-      return node.name || "";
+      // Sub-activity rows aren't "tasks" themselves — leave this blank so
+      // they never surface as an option in the Task filter dropdown
+      // (uniqueSorted drops empty values) and never satisfy a task-name
+      // filter match off their own name.
+      return SUBTASK_TYPES.has(node.type) ? "" : node.name || "";
     case "resource":
       return node.resourceName || node.resource || "";
     case "status":
-      return updateStatus(node.activityStatus,node.plannedStart) || "";
+      const time=node.activityStatus==='Running'?node.plannedStop:node.plannedStart
+      return updateStatus(node.activityStatus, time) || "";
     case "plannedStart":
       return formatDT(node.plannedStart, "DD-MM-YYYY HH:mm");
     case "plannedStop":
@@ -115,13 +129,14 @@ export const updateStatus = (status, time) => {
 /** Free-text search match, same fields as the original search box. */
 export const nodeMatchesSearch = (node, term) => {
   const t = term.toLowerCase();
-  const updatedStatus=updateStatus(node.activityStatus,node.plannedStart)
+   const time=node.activityStatus==='Running'?node.plannedStop:node.plannedStart
+  const updatedStatus=updateStatus(node.activityStatus, time)
   return (
     node.name?.toLowerCase()?.includes(t) ||
     node.resourceName?.toLowerCase()?.includes(t) ||
     node.resource?.toLowerCase()?.includes(t) ||
     node.activityStatus?.toLowerCase().includes(t) ||
-    updateStatus(node.activityStatus,node.plannedStart)?.includes(t) ||
+    updateStatus(node.activityStatus,time)?.includes(t) ||
     node.type?.toLowerCase().includes(t)
   );
 };
@@ -134,7 +149,24 @@ export const matchesColumnFilters = (node, filters) => {
   for (const [field, selectedSet] of Object.entries(filters || {})) {
     if (!selectedSet || selectedSet.size === 0) continue;
     if (field === "module") continue;
-    if (node.type === "MODULE") continue; // these fields don't apply to module header rows
+    // The Task filter is a top-level-task filter — a sub-activity row has
+    // no task name of its own to compare against the selected set, so it's
+    // skipped here (like "module" above) rather than judged on this field.
+    // Whether a given sub-activity should be kept is instead decided by
+    // filterTree, which only recurses into a task's children once that
+    // task itself has passed the task filter — so a sub-activity still
+    // only survives under a genuinely matching parent task, it's just not
+    // required to match the task field on its own.
+    if (field === "task" && SUBTASK_TYPES.has(node.type)) continue;
+    // A module header row has no task/resource/status/date value of its own,
+    // so it can never genuinely satisfy a task-level filter. Previously this
+    // was a `continue`, which skipped the check entirely and let module rows
+    // trivially pass every filter — keeping modules in the result even when
+    // none of their children matched. Returning false here instead means a
+    // module now survives only via a real matching descendant in filterTree
+    // (filteredChildren.length > 0), so modules unrelated to the filtered
+    // tasks are correctly dropped.
+    if (node.type === "MODULE") return false;
     const value = nodeFieldValue(field, node);//find the value of the field based on field name
     if (!selectedSet.has(value)) return false;//checks whether the field value is present in the selected set,if not present then return false
   }
@@ -142,9 +174,18 @@ export const matchesColumnFilters = (node, filters) => {
 };
 
 /** Walk the module/activity tree, applying the search term and every
- * active column filter (checkbox selections keyed by field name). */
-export const filterTree = (nodes, term, filters) => {
+ * active column filter (checkbox selections keyed by field name).
+ *
+ * `taskFilterMatchedByParent` threads down whether the task-level ancestor
+ * a given node lives under has already passed the task filter. It's only
+ * meaningful for sub-activity rows (which have no task name of their own
+ * to check — see the "task" case in matchesColumnFilters), and defaults to
+ * true so it's a no-op wherever no task filter is active, or for nodes
+ * that aren't nested under a task at all (modules, and task rows
+ * themselves, which are judged on their own name below instead). */
+export const filterTree = (nodes, term, filters, taskFilterMatchedByParent = true) => {
   const moduleFilter = filters?.module;
+  const taskFilter = filters?.task;
   return (nodes || []).reduce((acc, node) => {
     if (
       node.type === "MODULE" &&
@@ -155,8 +196,30 @@ export const filterTree = (nodes, term, filters) => {
       return acc; // this whole module is filtered out
     }
 
+    const isSubtask = SUBTASK_TYPES.has(node.type);
+    const isTaskRow = node.type !== "MODULE" && !isSubtask;
+
+    // A task row's own name decides whether it satisfies the task filter.
+    // A module is judged on module-name filtering above, not this. A
+    // sub-activity has no task name of its own, so it simply inherits
+    // whatever its immediate parent task row worked out.
+    const taskFilterOk =
+      !taskFilter || taskFilter.size === 0
+        ? true
+        : isTaskRow
+          ? taskFilter.has(nodeFieldValue("task", node))
+          : taskFilterMatchedByParent;
+
+    if (isTaskRow && taskFilter?.size > 0 && !taskFilterOk) {
+      // This task doesn't match the task filter — drop it along with all
+      // of its sub-activities. A sub-activity that happens to satisfy
+      // every *other* active filter shouldn't resurrect a task the task
+      // filter itself excluded.
+      return acc;
+    }
+
     const filteredChildren = node.children?.length
-      ? filterTree(node.children, term, filters)
+      ? filterTree(node.children, term, filters, taskFilterOk)
       : [];
     const selfSearchOk = !term || nodeMatchesSearch(node, term);
     const selfFilterOk = matchesColumnFilters(node, filters);
@@ -165,7 +228,6 @@ export const filterTree = (nodes, term, filters) => {
     if (keepSelf || filteredChildren.length > 0) {
       acc.push({ ...node, children: filteredChildren });
     }
-    console.log("Filtered tree::", acc);
     return acc;
   }, []);
 };
@@ -189,13 +251,20 @@ const collectLeafNodesByModule = (modules) => {
   const result = [];
   (modules || []).forEach((moduleNode) => {
     const moduleName = moduleNode.name;
-    //pass each node along with module name in result array
-    const walk = (node) => {
-      result.push({ ...node, _moduleName: moduleName });//pushing the node in result
-      //pass child node along walk and pushing them in result
-      if (node.children?.length) node.children.forEach(walk);
+    //pass each node along with module name and its parent task's name in result array
+    const walk = (node, taskName) => {
+      result.push({ ...node, _moduleName: moduleName, _taskName: taskName });//pushing the node in result
+      //pass child node along walk and pushing them in result; a sub-activity
+      //has no task name of its own, so it keeps inheriting the task name
+      //passed down to it rather than overwriting it with its own
+      if (node.children?.length) {
+        const childTaskName = SUBTASK_TYPES.has(node.type) ? taskName : node.name;
+        node.children.forEach((child) => walk(child, childTaskName));
+      }
     };
-    (moduleNode.children || []).forEach(walk);//this is the start of walk for the children of module node
+    //this is the start of walk for the children of module node — each one
+    //is itself a task row, so it's tagged with its own name as the task name
+    (moduleNode.children || []).forEach((taskNode) => walk(taskNode, taskNode.name));
   });
   return result;
 };
@@ -228,10 +297,22 @@ const nodeMatchesFiltersExcept = (node, filters, exceptField) => {
       return false;
     }
   }
+  //same idea for the task filter: a task row is judged on its own name,
+  //but a sub-activity has no task name of its own, so it's judged on the
+  //name of the task it lives under (_taskName, set by collectLeafNodesByModule)
+  if (exceptField !== "task") {
+    const taskFilter = filters?.task;
+    if (taskFilter && taskFilter.size > 0) {
+      const taskValue = SUBTASK_TYPES.has(node.type)
+        ? node._taskName
+        : nodeFieldValue("task", node);
+      if (!taskFilter.has(taskValue)) return false;
+    }
+  }
   //iterates through the entries of the objects, suppose this array has two objects [{name:"Apple",id:"001"},{name:"Banana",id:"002"}]
   //the iteration will be done in this format {field:"name",selectedSet:["Apple","Banana"]}, {field:"id",selectedSet:["001","002"]}
   for (const [field, selectedSet] of Object.entries(filters || {})) {
-    if (field === "module" || field === exceptField) continue;//checks whether the field is module and whether module is included in ignored fields
+    if (field === "module" || field === "task" || field === exceptField) continue;//module and task are handled above; skip the field being computed too
     if (!selectedSet || selectedSet.size === 0) continue;//if size of the set is 0 or the set is null, then continues to next iteration
     const value = nodeFieldValue(field, node);
     if (!selectedSet.has(value)) return false;

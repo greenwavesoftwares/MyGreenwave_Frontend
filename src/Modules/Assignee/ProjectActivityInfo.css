@@ -12,35 +12,35 @@
    ========================================================== */
 
 .pai-page {
-  --pj-page-bg:        var(--bg-main, #F1F5F9);
-  --pj-border-subtle:  var(--tableOuterBorder, #F1F5F9);
-  --pj-surface:        var(--card-bg, #FFFFFF);
-  --pj-surface-2:      var(--tableOddRow, #F8FAFC);
-  --pj-border:         var(--divider-color, #E2E8F0);
-  --pj-border-strong:  var(--calBorder, #CBD5E1);
+  --pj-page-bg: var(--bg-main, #F1F5F9);
+  --pj-border-subtle: var(--tableOuterBorder, #F1F5F9);
+  --pj-surface: var(--card-bg, #FFFFFF);
+  --pj-surface-2: var(--tableOddRow, #F8FAFC);
+  --pj-border: var(--divider-color, #E2E8F0);
+  --pj-border-strong: var(--calBorder, #CBD5E1);
 
-  --pj-text-primary:   var(--menu-text, #0F172A);
+  --pj-text-primary: var(--menu-text, #0F172A);
   --pj-text-secondary: var(--fontColor, #475569);
-  --pj-text-muted:     var(--tittleFontColor, #64748B);
-  --pj-text-faint:     var(--FontAwesomeIcon, #94A3B8);
-  --pj-on-color:       #FFFFFF;
+  --pj-text-muted: var(--tittleFontColor, #64748B);
+  --pj-text-faint: var(--FontAwesomeIcon, #94A3B8);
+  --pj-on-color: #FFFFFF;
 
   /* Fixed brand bar — intentionally theme-invariant, overridden for
      dark below with a slightly deeper shade rather than tied to an
      app variable (no navbar-specific token exists in the theme). */
-  --pj-navbar-bg:      #0F172A;
+  --pj-navbar-bg: #0F172A;
 
   /* Brand blue — mirrors the app's own accent */
-  --pj-primary:        var(--avatar-bg, #1D4ED8);
-  --pj-primary-hover:  #1E40AF;
-  --pj-primary-bg:     var(--blueBG, #DBEAFE);
-  --pj-primary-bg-2:   var(--icon-blue-bg, #BFDBFE);
+  --pj-primary: var(--avatar-bg, #1D4ED8);
+  --pj-primary-hover: #1E40AF;
+  --pj-primary-bg: var(--blueBG, #DBEAFE);
+  --pj-primary-bg-2: var(--icon-blue-bg, #BFDBFE);
   --pj-primary-border: #93C5FD;
 
-  --pj-danger:          var(--redFontColor, #DC2626);
-  --pj-danger-bg:       var(--meal-app-red, #FEE2E2);
-  --pj-danger-bg-2:     var(--meal-app-red, #FEF2F2);
-  --pj-danger-border:   var(--redBorder, #FCA5A5);
+  --pj-danger: var(--redFontColor, #DC2626);
+  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
+  --pj-danger-bg-2: var(--meal-app-red, #FEF2F2);
+  --pj-danger-border: var(--redBorder, #FCA5A5);
   --pj-danger-border-2: var(--redBorder, #FECACA);
 
   /* NOTE: the app's --greenBG / --greenFontColor variables are
@@ -48,29 +48,29 @@
      not real colors) — success stays on bespoke, tested values
      rather than inheriting that bug. --greenBorder is a real color
      and is safe to use. */
-  --pj-success:          #15803D;
-  --pj-success-hover:    #16A34A;
-  --pj-success-bg:       var(--icon-green-bg, #DCFCE7);
-  --pj-success-border:   var(--greenBorder, #86EFAC);
+  --pj-success: #15803D;
+  --pj-success-hover: #16A34A;
+  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
+  --pj-success-border: var(--greenBorder, #86EFAC);
   --pj-success-border-2: var(--greenBorder, #BBF7D0);
 
-  --pj-warning:          #B45309;
-  --pj-warning-hover:    #D97706;
-  --pj-warning-bg:       #FEF3C7;
-  --pj-warning-bg-2:     #FFFBEB;
-  --pj-warning-border:   #FCD34D;
+  --pj-warning: #B45309;
+  --pj-warning-hover: #D97706;
+  --pj-warning-bg: #FEF3C7;
+  --pj-warning-bg-2: #FFFBEB;
+  --pj-warning-border: #FCD34D;
   --pj-warning-border-2: #FDE68A;
 
-  --pj-purple:            #7C3AED;
-  --pj-purple-bg:         var(--icon-purple-bg, #EDE9FE);
-  --pj-purple-bg-2:       #F5F3FF;
-  --pj-purple-border:     #DDD6FE;
-  --pj-purple-strong-bg:  #c5b8fc;
+  --pj-purple: #7C3AED;
+  --pj-purple-bg: var(--icon-purple-bg, #EDE9FE);
+  --pj-purple-bg-2: #F5F3FF;
+  --pj-purple-border: #DDD6FE;
+  --pj-purple-strong-bg: #c5b8fc;
 
   --pj-highlight-grad-start: hsl(48, 100%, 93%);
-  --pj-highlight-grad-end:   #faf7eb;
+  --pj-highlight-grad-end: #faf7eb;
 
-  --pj-notice-bg:     #F4F2EC;
+  --pj-notice-bg: #F4F2EC;
   --pj-notice-border: #EFEDE6;
 
   /* Dedicated solid background for the sticky table header only.
@@ -86,10 +86,10 @@
      in the app's real theme, which is unacceptable for a floating
      popover (page content would show through). These are hardcoded
      opaque and given their own dark override below instead. */
-  --pj-dep-popover-bg:  #FFFFFF;
-  --pj-dep-row-odd-bg:  #FFFFFF;
+  --pj-dep-popover-bg: #FFFFFF;
+  --pj-dep-row-odd-bg: #FFFFFF;
   --pj-dep-row-even-bg: #F3F6FB;
-  --pj-dep-heading:     var(--pj-primary, #1D4ED8);
+  --pj-dep-heading: var(--pj-primary, #1D4ED8);
 }
 
 /* ==========================================================
@@ -102,43 +102,43 @@
 [data-theme="dark"] .pai-page,
 .pai-page.dark,
 .pai-page[data-theme="dark"] {
-  --pj-navbar-bg:      #05070c;
+  --pj-navbar-bg: #05070c;
 
-  --pj-primary-hover:  #6d8dff;
+  --pj-primary-hover: #6d8dff;
   --pj-primary-border: #3a5a99;
-  
+
   --pj-danger: #f87171;
-  --pj-danger-border:   #7a3838;
+  --pj-danger-border: #7a3838;
   --pj-danger-border-2: #5a2626;
 
-  --pj-success:          #4ade80;
-  --pj-success-hover:    #22c55e;
+  --pj-success: #4ade80;
+  --pj-success-hover: #22c55e;
   --pj-success-border-2: #1c4f30;
 
-  --pj-warning:          #fbbf24;
-  --pj-warning-hover:    #f59e0b;
-  --pj-warning-bg:       #3a2a06;
-  --pj-warning-bg-2:     #2c2004;
-  --pj-warning-border:   #8a6a1c;
+  --pj-warning: #fbbf24;
+  --pj-warning-hover: #f59e0b;
+  --pj-warning-bg: #3a2a06;
+  --pj-warning-bg-2: #2c2004;
+  --pj-warning-border: #8a6a1c;
   --pj-warning-border-2: #6b5418;
 
-  --pj-purple:            #a78bfa;
-  --pj-purple-bg-2:       #1c1533;
-  --pj-purple-border:     #4c3d80;
-  --pj-purple-strong-bg:  #6650b8;
+  --pj-purple: #a78bfa;
+  --pj-purple-bg-2: #1c1533;
+  --pj-purple-border: #4c3d80;
+  --pj-purple-strong-bg: #6650b8;
 
   --pj-highlight-grad-start: hsl(48, 60%, 15%);
-  --pj-highlight-grad-end:   #2c260f;
+  --pj-highlight-grad-end: #2c260f;
 
-  --pj-notice-bg:     #262420;
+  --pj-notice-bg: #262420;
   --pj-notice-border: #35322b;
 
   --pj-thead-solid-bg: #1c2333;
 
-  --pj-dep-popover-bg:  #1B2333;
-  --pj-dep-row-odd-bg:  #1B2333;
+  --pj-dep-popover-bg: #1B2333;
+  --pj-dep-row-odd-bg: #1B2333;
   --pj-dep-row-even-bg: #242E44;
-  --pj-dep-heading:     var(--pj-primary, #6d8dff);
+  --pj-dep-heading: var(--pj-primary, #6d8dff);
 }
 
 
@@ -196,7 +196,9 @@
   box-shadow: 0 1px 4px rgba(59, 91, 219, 0.12);
 }
 
-.pai-page .pai-back-btn svg { flex-shrink: 0; }
+.pai-page .pai-back-btn svg {
+  flex-shrink: 0;
+}
 
 .pai-page .pai-breadcrumb-sep {
   color: var(--pj-text-faint);
@@ -235,7 +237,8 @@
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
-  align-self: center;   /* was flex-start — centers the cards horizontally
+  align-self: center;
+  /* was flex-start — centers the cards horizontally
                             on the page once they're narrower than it,
                             instead of leaving them pinned to the left edge */
   max-width: 100%;
@@ -289,8 +292,13 @@
   min-width: 140px;
 }
 
-.pai-page .pai-info-field:first-child { padding-left: 0; }
-.pai-page .pai-info-field:last-child  { border-right: none; }
+.pai-page .pai-info-field:first-child {
+  padding-left: 0;
+}
+
+.pai-page .pai-info-field:last-child {
+  border-right: none;
+}
 
 .pai-page .pai-field-label {
   font-size: 10.5px;
@@ -328,24 +336,63 @@
   flex-shrink: 0;
 }
 
-.pai-page .pill-active      { color: var(--pj-success); background: var(--pj-success-bg); }
-.pai-page .pill-active .pill-dot { background: var(--pj-success); animation: blink 2s ease-in-out infinite; }
+.pai-page .pill-active {
+  color: var(--pj-success);
+  background: var(--pj-success-bg);
+}
 
-.pai-page .pill-running     { color: var(--pj-primary); background: var(--pj-primary-bg); }
-.pai-page .pill-running .pill-dot { background: var(--pj-primary); animation: blink 1.5s ease-in-out infinite; }
+.pai-page .pill-active .pill-dot {
+  background: var(--pj-success);
+  animation: blink 2s ease-in-out infinite;
+}
 
-.pai-page .pill-paused      { color: var(--pj-warning); background: var(--pj-warning-bg); }
-.pai-page .pill-paused .pill-dot { background: var(--pj-warning); }
+.pai-page .pill-running {
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+}
 
-.pai-page .pill-not-started { color: var(--pj-text-muted); background: var(--pj-surface-2); }
-.pai-page .pill-not-started .pill-dot { background: var(--pj-text-faint); }
+.pai-page .pill-running .pill-dot {
+  background: var(--pj-primary);
+  animation: blink 1.5s ease-in-out infinite;
+}
 
-.pai-page .pill-closed      { color: var(--pj-text-muted); background: var(--pj-surface-2); }
-.pai-page .pill-closed .pill-dot { background: var(--pj-text-faint); }
+.pai-page .pill-paused {
+  color: var(--pj-warning);
+  background: var(--pj-warning-bg);
+}
+
+.pai-page .pill-paused .pill-dot {
+  background: var(--pj-warning);
+}
+
+.pai-page .pill-not-started {
+  color: var(--pj-text-muted);
+  background: var(--pj-surface-2);
+}
+
+.pai-page .pill-not-started .pill-dot {
+  background: var(--pj-text-faint);
+}
+
+.pai-page .pill-closed {
+  color: var(--pj-text-muted);
+  background: var(--pj-surface-2);
+}
+
+.pai-page .pill-closed .pill-dot {
+  background: var(--pj-text-faint);
+}
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
 }
 
 /* ══════════════════════════════════════
@@ -469,7 +516,9 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.pai-page .pai-search::placeholder { color: var(--pj-text-faint); }
+.pai-page .pai-search::placeholder {
+  color: var(--pj-text-faint);
+}
 
 .pai-page .pai-search:focus {
   border-color: var(--pj-primary-border);
@@ -534,7 +583,9 @@
 /* Generic small spinner reused inside icon-only buttons (refresh,
    row action buttons) while their API call is in flight. */
 @keyframes pai-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pai-page .icon-btn-spinner {
@@ -558,7 +609,8 @@
 .pai-page .pai-table-wrapper {
   overflow-x: auto;
   overflow-y: auto;
-  width: 100%;   /* fill the activity card instead of shrinking to the table's content width */
+  width: 100%;
+  /* fill the activity card instead of shrinking to the table's content width */
   /* Without a height cap this wrapper never overflows itself — it just
      grows to fit the full table, and the page/body scrolls instead.
      Sticky positioning anchors to the nearest ancestor that actually
@@ -588,7 +640,8 @@
      to render reliably while scrolling. */
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 1100px;   /* floor below which columns can't compress further;
+  min-width: 1100px;
+  /* floor below which columns can't compress further;
                           horizontal scroll (via .pai-table-wrapper) kicks in
                           below this instead of squashing columns unreadably */
   /* No fixed height/min-height here on purpose: the table should size
@@ -658,6 +711,7 @@
   justify-content: flex-start;
   gap: 0;
 }
+
 .pai-page .pai-clear-filters-btn {
   font-size: 12px;
   font-weight: 600;
@@ -691,8 +745,15 @@
 
 /* ── animation ── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .pai-page .my-activity-row {
@@ -1219,6 +1280,7 @@
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
+
 .pai-page .avatar-resource.disabled {
   opacity: 0.85;
   filter: saturate(90%);
@@ -1437,4 +1499,283 @@
 
 .pai-page .task-name-input:focus {
   border-color: var(--pj-primary);
+}
+
+/* ══════════════════════════════════════
+   MOBILE CARD LAYOUT
+   Below MOBILE_BREAKPOINT (see useIsMobileLayout in
+   ProjectActivityInfo.jsx) the 9+ column table is replaced entirely by
+   this stacked card list, and the per-column filters move from table
+   headers into the scrollable filter bar below. Everything here is
+   additive — it only applies to the .pai-mobile-* elements that render
+   when isMobile is true, so the desktop table styles above are
+   untouched.
+══════════════════════════════════════ */
+
+/* ── filter bar ──
+   Was a horizontally-scrollable row of one chip per column (Module,
+   Task, Resource, Status, 4 date ranges) — finding the right one
+   meant scrolling sideways through all 8. Replaced with a single
+   trigger button that opens MobileFiltersSheet (ColumnFilter.jsx): one
+   bottom sheet listing every column as a section, each expandable in
+   place to its own checkbox/radio list. No overflow-x here anymore —
+   the bar only ever holds the trigger + an optional "Clear all". */
+.pai-page .pai-mobile-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--pj-border-subtle);
+}
+
+.pai-page .pai-mobile-filters-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--pj-border);
+  background: var(--pj-surface-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pj-text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.pai-page .pai-mobile-filters-trigger:active {
+  background: var(--pj-primary-bg, #edf2ff);
+}
+
+.pai-page .pai-mobile-filters-trigger--active {
+  border-color: var(--pj-primary, #3b5bdb);
+  color: var(--pj-primary, #3b5bdb);
+  background: var(--pj-primary-bg, #edf2ff);
+}
+
+.pai-page .pai-mobile-filters-trigger__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pj-primary, #3b5bdb);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pai-page .pai-mobile-filter-clearall {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+  border: 1px solid var(--pj-primary-border);
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── card list container ── */
+.pai-page .pai-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pai-page .pai-mobile-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--pj-text-faint);
+  font-size: 13px;
+}
+
+/* ── module section header (replaces the table's module-row) ── */
+.pai-page .pai-mobile-module {
+  margin-top: 4px;
+}
+
+.pai-page .pai-mobile-module:first-child {
+  margin-top: 0;
+}
+
+.pai-page .pai-mobile-module .module-header {
+  border-radius: 10px;
+  border: 1px solid var(--pj-notice-border);
+}
+
+/* ── activity card ──
+   Mirrors the desktop table's .my-activity-row / .other-activity-row
+   treatment exactly, using the same tokens, so "which rows are mine" reads
+   the same way on mobile as it does on desktop — only the current user's
+   activity is highlighted, everything else is visibly dimmed/disabled.
+   (Previously this used the per-resource pastel from fetchColor().rowBg as
+   the card background, which colored every card by resource instead of by
+   "is this mine", and didn't match the desktop convention at all.) */
+.pai-page .pai-mobile-card {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: var(--nest-indent, 0px);
+  position: relative;
+}
+
+/* Current user's activity — same warm highlight gradient + accent border
+   as .my-activity-row on desktop. Both tokens already have dark-mode
+   overrides in the block above, so this adapts automatically. */
+.pai-page .pai-mobile-card--mine {
+  background: linear-gradient(90deg, var(--pj-highlight-grad-start) 0%, var(--pj-highlight-grad-end) 100%);
+  /* border-left: 3px solid var(--pj-warning-border); */
+}
+
+/* Everyone else's activity — same "disabled" look as .other-activity-row
+   on desktop: plain surface, dimmed and desaturated rather than colored. */
+.pai-page .pai-mobile-card--other {
+  background: var(--pj-surface);
+  /* border-left: 3px solid transparent; */
+  opacity: 0.72;
+  filter: grayscale(0.25);
+}
+
+.pai-page .pai-mobile-card--nested {
+  /* border-left: 2px dashed var(--pj-border-strong); */
+}
+
+.pai-page .pai-mobile-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pai-page .pai-mobile-card__type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pai-page .pai-mobile-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pj-text-primary);
+}
+
+.pai-page .pai-mobile-card__name-input {
+  width: 100%;
+}
+
+/* Two-column label/value grid — collapses to one column on very narrow
+   phones so long values (timestamps, resource emails) never clip. */
+.pai-page .pai-mobile-card__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+
+@media (max-width: 400px) {
+  .pai-page .pai-mobile-card__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pai-page .pai-mobile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pai-page .pai-mobile-field--resource {
+  grid-column: 1 / -1;
+}
+
+.pai-page .pai-mobile-field__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pj-text-faint);
+}
+
+.pai-page .pai-mobile-field__value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pj-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pai-page .pai-mobile-field__value-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pai-page .pai-mobile-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid var(--pj-border-subtle);
+}
+
+.pai-page .pai-mobile-card__actions .action-container {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ── page padding tightened on mobile so cards use the available width ── */
+@media (max-width: 860px) {
+  .pai-page {
+    padding: 14px 12px;
+  }
+
+  .pai-page .pai-info-fields {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pai-page .pai-info-field {
+    border-right: none;
+    border-bottom: 1px solid var(--pj-border-subtle);
+    padding: 0 0 8px;
+  }
+
+  .pai-page .pai-info-field:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .pai-page .pai-activity-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pai-page .pai-header-right {
+    flex-wrap: wrap;
+  }
+
+  .pai-page .pai-search-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pai-page .pai-search {
+    width: 100%;
+  }
 }
