@@ -764,14 +764,48 @@ export default function ProjectEditor({
   );
 
   // ═══════════════════════════════════════════════════════
+  // Case-Insensitive Module ID Helper
+  // ═══════════════════════════════════════════════════════
+  const getOrCreateModuleId = useCallback(
+    (name, currentRegistry, currentRows) => {
+      const trimmedName = (name || "").trim();
+      const lowerName = trimmedName.toLowerCase();
+
+      // 1. Search existing rows for a case-insensitive match
+      const matchingRow = currentRows.find(
+        (r) => (r.module || "").trim().toLowerCase() === lowerName,
+      );
+      if (matchingRow && matchingRow.moduleId) {
+        return { moduleId: matchingRow.moduleId, registry: currentRegistry };
+      }
+
+      // 2. Search registry keys for a case-insensitive match
+      const registryKey = Object.keys(currentRegistry).find(
+        (k) => k.trim().toLowerCase() === lowerName,
+      );
+      if (registryKey) {
+        return {
+          moduleId: currentRegistry[registryKey],
+          registry: currentRegistry,
+        };
+      }
+
+      // 3. Fallback to imported ensureModuleId helper
+      return ensureModuleId(trimmedName, currentRegistry);
+    },
+    [],
+  );
+
+  // ═══════════════════════════════════════════════════════
   // Row CRUD
   // ═══════════════════════════════════════════════════════
   const addRow = useCallback(
     (moduleName) => {
       const name = typeof moduleName === "string" ? moduleName : "";
-      const { moduleId, registry: newRegistry } = ensureModuleId(
+      const { moduleId, registry: newRegistry } = getOrCreateModuleId(
         name,
         moduleRegistry,
+        rows,
       );
       const newRow = {
         id: generateRowId(),
@@ -787,7 +821,7 @@ export default function ProjectEditor({
         comments: [],
         customValues: {},
         dependsOn: [],
-        isAnchor: false, // ← NEW
+        isAnchor: false,
       };
       customColumns.forEach((col) => {
         newRow.customValues[col.id] = "";
@@ -795,17 +829,17 @@ export default function ProjectEditor({
       setModuleRegistry(newRegistry);
       setRows((prev) => recomputeRows([...prev, newRow]));
     },
-    [moduleRegistry, customColumns, recomputeRows],
+    [moduleRegistry, rows, customColumns, recomputeRows, getOrCreateModuleId],
   );
 
-  // ── UPDATE addSubActivity — add isAnchor: false ──
+  // ── UPDATE addSubActivity ──
   const addSubActivity = useCallback(
     (parentRow) => {
       const newRow = {
         id: generateRowId(),
         parentId: parentRow.id,
         module: parentRow.module,
-        moduleId: parentRow.moduleId,
+        moduleId: parentRow.moduleId, // Copies parent's moduleId directly
         task: "",
         resource: parentRow.resource || "",
         plannedStart: "",
@@ -815,7 +849,7 @@ export default function ProjectEditor({
         comments: [],
         customValues: {},
         dependsOn: [],
-        isAnchor: false, // ← NEW
+        isAnchor: false,
       };
       customColumns.forEach((col) => {
         newRow.customValues[col.id] = "";
@@ -825,13 +859,14 @@ export default function ProjectEditor({
     [customColumns, recomputeRows],
   );
 
-  // ── UPDATE addRowBelow — add isAnchor: false ──
+  // ── UPDATE addRowBelow ──
   const addRowBelow = useCallback(
     (referenceRow) => {
       const name = referenceRow.module || "";
-      const { moduleId, registry: newRegistry } = ensureModuleId(
+      const { moduleId, registry: newRegistry } = getOrCreateModuleId(
         name,
         moduleRegistry,
+        rows,
       );
       const newRow = {
         id: generateRowId(),
@@ -846,7 +881,7 @@ export default function ProjectEditor({
         status: "Pending",
         comments: [],
         customValues: {},
-        isAnchor: false, // ← NEW
+        isAnchor: false,
       };
       customColumns.forEach((col) => {
         newRow.customValues[col.id] = "";
@@ -878,7 +913,7 @@ export default function ProjectEditor({
         return recomputeRows(updated);
       });
     },
-    [moduleRegistry, customColumns, recomputeRows],
+    [moduleRegistry, rows, customColumns, recomputeRows, getOrCreateModuleId],
   );
   // ── ADD new handler: handleToggleAnchor ──
   const handleToggleAnchor = useCallback(
@@ -912,11 +947,30 @@ export default function ProjectEditor({
         let replaced = prevRows.map((r) => (r.id === updated.id ? updated : r));
         const original = prevRows.find((r) => r.id === updated.id);
         const moduleChanged = original?.module !== updated.module;
+
         if (moduleChanged) {
+          // Case-insensitive matching fallback before running sync checks
+          const lowerNewName = (updated.module || "").trim().toLowerCase();
+          const existingMatch = replaced.find(
+            (r) =>
+              r.id !== updated.id &&
+              (r.module || "").trim().toLowerCase() === lowerNewName,
+          );
+
+          if (existingMatch && existingMatch.moduleId) {
+            updated.moduleId = existingMatch.moduleId;
+            replaced = replaced.map((r) =>
+              r.id === updated.id
+                ? { ...updated, moduleId: existingMatch.moduleId }
+                : r,
+            );
+          }
+
           const synced = syncModuleIds(replaced, moduleRegistry);
           setModuleRegistry(synced.registry);
           replaced = synced.rows;
         }
+
         return recompute && isResourcesReady
           ? recomputeRows(replaced)
           : replaced;
