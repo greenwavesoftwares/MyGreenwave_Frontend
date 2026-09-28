@@ -91,6 +91,7 @@ export default function ProjectActivityInfo({
   const [newComment, setNewComment] = useState(null);
   const [allowActions, setAllowActions] = useState(true);
   const [commentActivityName, setCommentActivityName] = useState(null);
+  const [commentActivityStatus,setCommentActivityStatus]=useState(null)
   const [openFeedback, setFeedback] = useState(false);
   const [openFeedbackRow, setOpenFeedbackRow] = useState(null);
   const currentUserId = getUserData()?.userDetails?.userId;
@@ -233,6 +234,7 @@ export default function ProjectActivityInfo({
     moduleId,
     status,
     activityName,
+    updatedActivityStatus
   ) => {
     const loadingKey = `comment-${activityId}`;
     startLoading(loadingKey);
@@ -248,6 +250,7 @@ export default function ProjectActivityInfo({
       if (status.toLowerCase() !== "finished") setAllowActions(true);
       else setAllowActions(false);
       setCommentActivityName(activityName);
+      setCommentActivityStatus(updatedActivityStatus)
       setExistingComments(existingCommentsResp);
       setNewComment(newCommentBody);
       setOpenCommentDialog(true);
@@ -1336,6 +1339,7 @@ export default function ProjectActivityInfo({
         onClose={onCloseCommentbox}
         allowActions={allowActions}
         activityName={commentActivityName}
+        activityStatus={commentActivityStatus}
       />
       {openFeedback && (
         <FeedbackModal

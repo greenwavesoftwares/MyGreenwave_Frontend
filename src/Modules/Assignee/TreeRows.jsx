@@ -356,6 +356,7 @@ export default function TreeRows({
                     moduleId,
                     activityStatus,
                     name,
+                    updatedStatus
                   )
                 }
               >

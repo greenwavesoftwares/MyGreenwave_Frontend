@@ -43,6 +43,7 @@ import {
   getAttachmentFileName,
   viewAttachmentFromMinio,
 } from "./AttachmentHelper";
+import StatusChip from "./StatusChip";
 
 export default function CommentsActionDialog({
   open,
@@ -53,6 +54,7 @@ export default function CommentsActionDialog({
   setNewComment,
   allowActions,
   activityName,
+  activityStatus,
 }) {
   const [activeReply, setActiveReply] = useState(null);
   const [replyText, setReplyText] = useState({});
@@ -66,7 +68,8 @@ export default function CommentsActionDialog({
   // Which attachment (by storage key) is currently being viewed/downloaded,
   // so only that specific row's button shows a loader.
   const [viewingAttachmentKey, setViewingAttachmentKey] = useState(null);
-  const [downloadingAttachmentKey, setDownloadingAttachmentKey] = useState(null);
+  const [downloadingAttachmentKey, setDownloadingAttachmentKey] =
+    useState(null);
   // Mobile-only: which panel is visible — "existing" comments or the "new" entry form.
   // Has no effect on desktop, where both panels are always shown stacked.
   const [mobileView, setMobileView] = useState("existing");
@@ -149,7 +152,9 @@ export default function CommentsActionDialog({
       responsibility: Array.isArray(newComment?.responsibility)
         ? newComment.responsibility.join(",")
         : "",
+      activityStatus: activityStatus,
     };
+    console.log("Comments Payload::",payload)
     setAddingComment(true);
     try {
       const response = await activityTrackerApi.addComment(
@@ -482,429 +487,438 @@ export default function CommentsActionDialog({
                 <col style={{ width: "8%" }} />
                 <col style={{ width: "15%" }} />
                 <col style={{ width: "9%" }} />
+                <col style={{ width: "14%" }} />
                 <col style={{ width: "13.5%" }} />
               </colgroup>
               <TableHead>
-                  <TableRow>
-                    <TableCell aria-hidden="true">#</TableCell>
-                    <TableCell>
-                      <span className="col-label">Description</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="col-label">Action Point</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="col-label">Resolution Date</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="col-label">Responsibility</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="col-label">Others</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="col-label">Attachment</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="col-label">Added By</span>
-                    </TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
+                <TableRow>
+                  <TableCell aria-hidden="true">#</TableCell>
+                  <TableCell>
+                    <span className="col-label">Description</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Action Point</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Resolution Date</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Responsibility</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Others</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Attachment</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Added By</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="col-label">Activity Status</span>
+                  </TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
 
-                <TableBody>
-                  {existingComments.map((entry, index) => (
-                    <React.Fragment key={index}>
-                      {/* COMMENT ROW */}
-                      <TableRow
-                        className={index % 2 === 1 ? "row-alt" : undefined}
-                      >
-                        <TableCell data-label="#" className="cell-index">
-                          {index + 1}
-                        </TableCell>
-                        <TableCell data-label="Description">
-                          <TruncatedText text={entry.commentDescription} />
-                        </TableCell>
-                        <TableCell data-label="Action Point">
-                          <TruncatedText text={entry.actionPoint} />
-                        </TableCell>
-                        <TableCell data-label="Resolution Date">
-                          {entry.resolutionDate}
-                        </TableCell>
-                        <TableCell data-label="Responsibility">
-                          <Chip
-                            size="small"
-                            color="primary"
-                            label={entry.responsibility}
-                          />
-                        </TableCell>
-                        <TableCell data-label="Others">
-                          <TruncatedText text={entry.others} />
-                        </TableCell>
+              <TableBody>
+                {existingComments.map((entry, index) => (
+                  <React.Fragment key={index}>
+                    {/* COMMENT ROW */}
+                    <TableRow
+                      className={index % 2 === 1 ? "row-alt" : undefined}
+                    >
+                      <TableCell data-label="#" className="cell-index">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell data-label="Description">
+                        <TruncatedText text={entry.commentDescription} />
+                      </TableCell>
+                      <TableCell data-label="Action Point">
+                        <TruncatedText text={entry.actionPoint} />
+                      </TableCell>
+                      <TableCell data-label="Resolution Date">
+                        {entry.resolutionDate}
+                      </TableCell>
+                      <TableCell data-label="Responsibility">
+                        <Chip
+                          size="small"
+                          color="primary"
+                          label={entry.responsibility}
+                        />
+                      </TableCell>
+                      <TableCell data-label="Others">
+                        <TruncatedText text={entry.others} />
+                      </TableCell>
 
-                        {/* ATTACHMENT */}
-                        <TableCell data-label="Attachment">
-                          {entry.attachment ? (
-                            <div className="attachment-pill">
-                              <InsertDriveFileOutlinedIcon fontSize="small" />
-                              <span
-                                className="attachment-name"
-                                title={getAttachmentFileName(
+                      {/* ATTACHMENT */}
+                      <TableCell data-label="Attachment">
+                        {entry.attachment ? (
+                          <div className="attachment-pill">
+                            <InsertDriveFileOutlinedIcon fontSize="small" />
+                            <span
+                              className="attachment-name"
+                              title={getAttachmentFileName(entry.attachment)}
+                              style={{
+                                cursor:
+                                  viewingAttachmentKey === entry.attachment
+                                    ? "wait"
+                                    : "pointer",
+                                pointerEvents:
+                                  viewingAttachmentKey === entry.attachment
+                                    ? "none"
+                                    : "auto",
+                                opacity:
+                                  viewingAttachmentKey === entry.attachment
+                                    ? 0.6
+                                    : 1,
+                              }}
+                              onClick={() =>
+                                handleViewAttachment(
                                   entry.attachment,
-                                )}
-                                style={{
-                                  cursor:
-                                    viewingAttachmentKey === entry.attachment
-                                      ? "wait"
-                                      : "pointer",
-                                  pointerEvents:
-                                    viewingAttachmentKey === entry.attachment
-                                      ? "none"
-                                      : "auto",
-                                  opacity:
-                                    viewingAttachmentKey === entry.attachment
-                                      ? 0.6
-                                      : 1,
-                                }}
+                                  "comments",
+                                )
+                              }
+                            >
+                              {viewingAttachmentKey === entry.attachment && (
+                                <CircularProgress size={12} sx={{ mr: 0.5 }} />
+                              )}
+                              {renderBreakableFilename(
+                                getAttachmentFileName(entry.attachment),
+                              )}
+                            </span>
+
+                            <Tooltip title="Download">
+                              <IconButton
+                                size="small"
+                                aria-label="Download attachment"
+                                disabled={
+                                  downloadingAttachmentKey === entry.attachment
+                                }
                                 onClick={() =>
-                                  handleViewAttachment(
+                                  handleDownloadAttachment(
                                     entry.attachment,
                                     "comments",
                                   )
                                 }
                               >
-                                {viewingAttachmentKey === entry.attachment && (
-                                  <CircularProgress
-                                    size={12}
-                                    sx={{ mr: 0.5 }}
-                                  />
+                                {downloadingAttachmentKey ===
+                                entry.attachment ? (
+                                  <CircularProgress size={14} />
+                                ) : (
+                                  <DownloadOutlinedIcon fontSize="small" />
                                 )}
-                                {renderBreakableFilename(
-                                  getAttachmentFileName(entry.attachment),
-                                )}
-                              </span>
-                              
-                              <Tooltip title="Download">
-                                <IconButton
-                                  size="small"
-                                  aria-label="Download attachment"
-                                  disabled={
-                                    downloadingAttachmentKey ===
-                                    entry.attachment
-                                  }
-                                  onClick={() =>
-                                    handleDownloadAttachment(
-                                      entry.attachment,
-                                      "comments",
-                                    )
-                                  }
-                                >
-                                  {downloadingAttachmentKey ===
-                                  entry.attachment ? (
-                                    <CircularProgress size={14} />
-                                  ) : (
-                                    <DownloadOutlinedIcon fontSize="small" />
-                                  )}
-                                </IconButton>
-                              </Tooltip>
-                            </div>
+                              </IconButton>
+                            </Tooltip>
+                          </div>
+                        ) : (
+                          <span className="cell-empty">—</span>
+                        )}
+                      </TableCell>
+
+                      {/* ADDED BY */}
+                      <TableCell data-label="Added By">
+                        <div className="added-cell">
+                          <div className="added-cell-meta">
+                            <strong>
+                              {renderBreakableEmail(entry.createdBy)}
+                            </strong>
+                            <span>
+                              {new Date(entry.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      {/* ADDED BY */}
+                      <TableCell data-label="Added By">
+                        <div className="added-cell">
+                          {entry?.activityStatus?.length > 0 ? (
+                            <StatusChip status={entry.activityStatus} />
                           ) : (
                             <span className="cell-empty">—</span>
                           )}
-                        </TableCell>
+                        </div>
+                      </TableCell>
 
-                        {/* ADDED BY */}
-                        <TableCell data-label="Added By">
-                          <div className="added-cell">
-                            <div className="added-cell-meta">
-                              <strong>{renderBreakableEmail(entry.createdBy)}</strong>
-                              <span>
-                                {new Date(entry.createdAt).toLocaleString()}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        {/* ACTIONS */}
-                        <TableCell data-label="Actions" className="cell-actions">
-                          <div className="action-buttons">
-                            {allowActions && (
-                              <Tooltip title="Reply">
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  className="btn-reply"
-                                  startIcon={<ReplyOutlinedIcon />}
-                                  aria-label="Reply"
-                                  onClick={() =>
-                                    setActiveReply(
-                                      activeReply === index ? null : index,
-                                    )
-                                  }
-                                >
-                                  <span className="btn-reply-label">Reply</span>
-                                  {!!entry.replies?.length && (
-                                    <span className="reply-count">
-                                      {entry.replies.length}
-                                    </span>
-                                  )}
-                                </Button>
-                              </Tooltip>
-                            )}
-                            {allowActions && (
-                              <IconButton
+                      {/* ACTIONS */}
+                      <TableCell data-label="Actions" className="cell-actions">
+                        <div className="action-buttons">
+                          {allowActions && (
+                            <Tooltip title="Reply">
+                              <Button
                                 size="small"
-                                disabled={
-                                  entry.createdBy !==
-                                  getUserData()?.userDetails?.userId
-                                }
-                                aria-label="Delete comment"
+                                variant="outlined"
+                                className="btn-reply"
+                                startIcon={<ReplyOutlinedIcon />}
+                                aria-label="Reply"
                                 onClick={() =>
-                                  openDeleteConfirmation("comment", index)
+                                  setActiveReply(
+                                    activeReply === index ? null : index,
+                                  )
                                 }
                               >
-                                <DeleteOutlineIcon
-                                  fontSize="small"
-                                  color="error"
-                                />
-                              </IconButton>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                                <span className="btn-reply-label">Reply</span>
+                                {!!entry.replies?.length && (
+                                  <span className="reply-count">
+                                    {entry.replies.length}
+                                  </span>
+                                )}
+                              </Button>
+                            </Tooltip>
+                          )}
+                          {allowActions && (
+                            <IconButton
+                              size="small"
+                              disabled={
+                                entry.createdBy !==
+                                getUserData()?.userDetails?.userId
+                              }
+                              aria-label="Delete comment"
+                              onClick={() =>
+                                openDeleteConfirmation("comment", index)
+                              }
+                            >
+                              <DeleteOutlineIcon
+                                fontSize="small"
+                                color="error"
+                              />
+                            </IconButton>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
 
-                      {/* REPLIES LIST */}
-                      {entry.replies?.length > 0 && (
-                        <TableRow>
-                          <TableCell colSpan={9} className="reply-history-cell">
-                            {entry.replies.map((reply) => (
-                              <div key={reply.replyId} className="reply-item">
-                                <div className="reply-header">
-                                  <span
-                                    className="avatar-badge avatar-badge-sm"
-                                    aria-hidden="true"
+                    {/* REPLIES LIST */}
+                    {entry.replies?.length > 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} className="reply-history-cell">
+                          {entry.replies.map((reply) => (
+                            <div key={reply.replyId} className="reply-item">
+                              <div className="reply-header">
+                                <span
+                                  className="avatar-badge avatar-badge-sm"
+                                  aria-hidden="true"
+                                >
+                                  {getInitials(reply.createdBy)}
+                                </span>
+                                <strong>
+                                  {renderBreakableEmail(reply.createdBy)}
+                                </strong>
+                                <span>
+                                  {new Date(reply.createdAt).toLocaleString()}
+                                </span>
+                                {allowActions && (
+                                  <IconButton
+                                    size="small"
+                                    disabled={
+                                      reply.createdBy !==
+                                      getUserData()?.userDetails?.userId
+                                    }
+                                    aria-label="Delete reply"
+                                    onClick={() =>
+                                      openDeleteConfirmation(
+                                        "reply",
+                                        index,
+                                        reply.replyId,
+                                      )
+                                    }
                                   >
-                                    {getInitials(reply.createdBy)}
+                                    <DeleteOutlineIcon
+                                      fontSize="small"
+                                      color="error"
+                                    />
+                                  </IconButton>
+                                )}
+                              </div>
+                              <div className="reply-text">
+                                <TruncatedText text={reply.replyText} />
+                              </div>
+
+                              {reply.attachment && (
+                                <div
+                                  className="attachment-pill"
+                                  style={{ marginTop: 8 }}
+                                >
+                                  <InsertDriveFileOutlinedIcon fontSize="small" />
+                                  <span
+                                    className="attachment-name"
+                                    title={getAttachmentFileName(
+                                      reply.attachment,
+                                    )}
+                                    style={{
+                                      cursor:
+                                        viewingAttachmentKey ===
+                                        reply.attachment
+                                          ? "wait"
+                                          : "pointer",
+                                      pointerEvents:
+                                        viewingAttachmentKey ===
+                                        reply.attachment
+                                          ? "none"
+                                          : "auto",
+                                      opacity:
+                                        viewingAttachmentKey ===
+                                        reply.attachment
+                                          ? 0.6
+                                          : 1,
+                                    }}
+                                    onClick={() =>
+                                      handleViewAttachment(
+                                        reply.attachment,
+                                        "replies",
+                                      )
+                                    }
+                                  >
+                                    {viewingAttachmentKey ===
+                                      reply.attachment && (
+                                      <CircularProgress
+                                        size={12}
+                                        sx={{ mr: 0.5 }}
+                                      />
+                                    )}
+                                    {renderBreakableFilename(
+                                      getAttachmentFileName(reply.attachment),
+                                    )}
                                   </span>
-                                  <strong>{renderBreakableEmail(reply.createdBy)}</strong>
-                                  <span>
-                                    {new Date(reply.createdAt).toLocaleString()}
-                                  </span>
-                                  {allowActions && (
+                                  <Tooltip title="Download">
                                     <IconButton
                                       size="small"
+                                      aria-label="Download attachment"
                                       disabled={
-                                        reply.createdBy !==
-                                        getUserData()?.userDetails?.userId
+                                        downloadingAttachmentKey ===
+                                        reply.attachment
                                       }
-                                      aria-label="Delete reply"
                                       onClick={() =>
-                                        openDeleteConfirmation(
-                                          "reply",
-                                          index,
-                                          reply.replyId,
-                                        )
-                                      }
-                                    >
-                                      <DeleteOutlineIcon
-                                        fontSize="small"
-                                        color="error"
-                                      />
-                                    </IconButton>
-                                  )}
-                                </div>
-                                <div className="reply-text">
-                                  <TruncatedText text={reply.replyText} />
-                                </div>
-
-                                {reply.attachment && (
-                                  <div
-                                    className="attachment-pill"
-                                    style={{ marginTop: 8 }}
-                                  >
-                                    <InsertDriveFileOutlinedIcon fontSize="small" />
-                                    <span
-                                      className="attachment-name"
-                                      title={getAttachmentFileName(
-                                        reply.attachment,
-                                      )}
-                                      style={{
-                                        cursor:
-                                          viewingAttachmentKey ===
-                                          reply.attachment
-                                            ? "wait"
-                                            : "pointer",
-                                        pointerEvents:
-                                          viewingAttachmentKey ===
-                                          reply.attachment
-                                            ? "none"
-                                            : "auto",
-                                        opacity:
-                                          viewingAttachmentKey ===
-                                          reply.attachment
-                                            ? 0.6
-                                            : 1,
-                                      }}
-                                      onClick={() =>
-                                        handleViewAttachment(
+                                        handleDownloadAttachment(
                                           reply.attachment,
                                           "replies",
                                         )
                                       }
                                     >
-                                      {viewingAttachmentKey ===
-                                        reply.attachment && (
-                                        <CircularProgress
-                                          size={12}
-                                          sx={{ mr: 0.5 }}
-                                        />
+                                      {downloadingAttachmentKey ===
+                                      reply.attachment ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <DownloadOutlinedIcon fontSize="small" />
                                       )}
-                                      {renderBreakableFilename(
-                                        getAttachmentFileName(
-                                          reply.attachment,
-                                        ),
-                                      )}
-                                    </span>
-                                    <Tooltip title="Download">
-                                      <IconButton
-                                        size="small"
-                                        aria-label="Download attachment"
-                                        disabled={
-                                          downloadingAttachmentKey ===
-                                          reply.attachment
-                                        }
-                                        onClick={() =>
-                                          handleDownloadAttachment(
-                                            reply.attachment,
-                                            "replies",
-                                          )
-                                        }
-                                      >
-                                        {downloadingAttachmentKey ===
-                                        reply.attachment ? (
-                                          <CircularProgress size={14} />
-                                        ) : (
-                                          <DownloadOutlinedIcon fontSize="small" />
-                                        )}
-                                      </IconButton>
-                                    </Tooltip>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </TableCell>
-                        </TableRow>
-                      )}
+                                    </IconButton>
+                                  </Tooltip>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </TableCell>
+                      </TableRow>
+                    )}
 
-                      {/* REPLY INPUT */}
-                      {activeReply === index && (
-                        <TableRow>
-                          <TableCell colSpan={9} className="reply-box-cell">
-                            <div className="reply-box">
-                              <div className="reply-avatar">
-                                {getUserData()?.userDetails?.userId ? (
-                                  <span aria-hidden="true">
-                                    {getInitials(
-                                      getUserData()?.userDetails?.userId,
-                                    )}
-                                  </span>
-                                ) : (
-                                  <PersonOutlineIcon />
-                                )}
-                              </div>
-                              <div className="reply-content">
-                                <TextField
-                                  fullWidth
-                                  multiline
-                                  rows={2}
-                                  placeholder="Write a reply…"
-                                  value={replyText[index] || ""}
-                                  onChange={(e) =>
-                                    setReplyText((prev) => ({
-                                      ...prev,
-                                      [index]: e.target.value,
-                                    }))
-                                  }
-                                />
-                                <div className="reply-footer">
-                                  <div className="reply-footer-actions">
+                    {/* REPLY INPUT */}
+                    {activeReply === index && (
+                      <TableRow>
+                        <TableCell colSpan={9} className="reply-box-cell">
+                          <div className="reply-box">
+                            <div className="reply-avatar">
+                              {getUserData()?.userDetails?.userId ? (
+                                <span aria-hidden="true">
+                                  {getInitials(
+                                    getUserData()?.userDetails?.userId,
+                                  )}
+                                </span>
+                              ) : (
+                                <PersonOutlineIcon />
+                              )}
+                            </div>
+                            <div className="reply-content">
+                              <TextField
+                                fullWidth
+                                multiline
+                                rows={2}
+                                placeholder="Write a reply…"
+                                value={replyText[index] || ""}
+                                onChange={(e) =>
+                                  setReplyText((prev) => ({
+                                    ...prev,
+                                    [index]: e.target.value,
+                                  }))
+                                }
+                              />
+                              <div className="reply-footer">
+                                <div className="reply-footer-actions">
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    className="btn-cancel"
+                                    onClick={() => setActiveReply(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    startIcon={
+                                      replyLoadingIndex === index ? (
+                                        <CircularProgress
+                                          size={14}
+                                          color="inherit"
+                                        />
+                                      ) : (
+                                        <SendOutlinedIcon />
+                                      )
+                                    }
+                                    disabled={replyLoadingIndex === index}
+                                    onClick={() => addReply(index)}
+                                  >
+                                    Send Reply
+                                  </Button>
+
+                                  <input
+                                    id={`reply-file-${index}`}
+                                    hidden
+                                    type="file"
+                                    onChange={(e) =>
+                                      handleReplyAttachment(index, e)
+                                    }
+                                  />
+                                  <label htmlFor={`reply-file-${index}`}>
                                     <Button
+                                      component="span"
                                       size="small"
                                       variant="outlined"
-                                      className="btn-cancel"
-                                      onClick={() => setActiveReply(null)}
+                                      startIcon={<AttachFileIcon />}
                                     >
-                                      Cancel
+                                      Attach
                                     </Button>
-                                    <Button
-                                      size="small"
-                                      variant="contained"
-                                      startIcon={
-                                        replyLoadingIndex === index ? (
-                                          <CircularProgress
-                                            size={14}
-                                            color="inherit"
-                                          />
-                                        ) : (
-                                          <SendOutlinedIcon />
-                                        )
-                                      }
-                                      disabled={replyLoadingIndex === index}
-                                      onClick={() => addReply(index)}
-                                    >
-                                      Send Reply
-                                    </Button>
+                                  </label>
 
-                                    <input
-                                      id={`reply-file-${index}`}
-                                      hidden
-                                      type="file"
-                                      onChange={(e) =>
-                                        handleReplyAttachment(index, e)
-                                      }
-                                    />
-                                    <label htmlFor={`reply-file-${index}`}>
-                                      <Button
-                                        component="span"
+                                  {replyAttachment[index]?.attachmentName && (
+                                    <div className="attachment-pill">
+                                      <InsertDriveFileOutlinedIcon fontSize="small" />
+                                      <span className="attachment-name">
+                                        {renderBreakableFilename(
+                                          replyAttachment[index].attachmentName,
+                                        )}
+                                      </span>
+                                      <IconButton
                                         size="small"
-                                        variant="outlined"
-                                        startIcon={<AttachFileIcon />}
+                                        aria-label="Remove attachment"
+                                        onClick={() =>
+                                          removeReplyAttachment(index)
+                                        }
                                       >
-                                        Attach
-                                      </Button>
-                                    </label>
-
-                                    {replyAttachment[index]?.attachmentName && (
-                                      <div className="attachment-pill">
-                                        <InsertDriveFileOutlinedIcon fontSize="small" />
-                                        <span className="attachment-name">
-                                          {renderBreakableFilename(
-                                            replyAttachment[index]
-                                              .attachmentName,
-                                          )}
-                                        </span>
-                                        <IconButton
-                                          size="small"
-                                          aria-label="Remove attachment"
-                                          onClick={() =>
-                                            removeReplyAttachment(index)
-                                          }
-                                        >
-                                          <CancelOutlinedIcon fontSize="small" />
-                                        </IconButton>
-                                      </div>
-                                    )}
-                                  </div>
+                                        <CancelOutlinedIcon fontSize="small" />
+                                      </IconButton>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </TableBody>
-              </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
 
