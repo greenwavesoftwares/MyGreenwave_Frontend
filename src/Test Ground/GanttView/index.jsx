@@ -19,6 +19,8 @@ import {
   COL_MODULE_WIDTH,
   COL_RESOURCE_WIDTH,
   COL_STATUS_WIDTH,
+  COL_DATE_WIDTH, // ← NEW
+  COL_CUSTOM_WIDTH, // ← NEW
 } from "./helpers/constants";
 
 // Hooks
@@ -37,8 +39,9 @@ import MobileTaskListSheet from "./components/mobile/MobileTaskListSheet";
 import MobileToolsSheet from "./components/mobile/MobileToolsSheet";
 import MobileTaskDetailSheet from "./components/mobile/MobileTaskDetailSheet";
 import { getDisplayStatus } from "../helpers/statusDisplay";
+import { fmtDateShort } from "./helpers/filterOptions"; // ← NEW
 import { RESOURCE_VIEW_PANEL_WIDTH } from "../helpers/constants";
-
+import { useColumnWidths } from "./hooks/useColumnWidths";
 /* ═══════════════════════════════════════════════════════
    GanttView — main orchestrator
    ═══════════════════════════════════════════════════════ */
@@ -64,9 +67,17 @@ export default function GanttView({
     ZOOM_CONFIGS.day.defaultColWidth,
   );
   const [tooltip, setTooltip] = useState(null);
-  const [expandedProjects, setExpandedProjects] = useState(
-    () => new Set(projects.map((p) => p.id)),
-  );
+  // const [expandedProjects, setExpandedProjects] = useState(
+  //   () => new Set(projects.map((p) => p.id)),
+  // );
+  const [expandedProjects, setExpandedProjects] = useState(() => {
+    // Fullscreen for one (or more) projects → expand them automatically
+    if (isFullScreen && projects?.length > 0) {
+      return new Set(projects.map((p) => p.id));
+    }
+    // Normal Gantt → all collapsed
+    return new Set();
+  });
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const [showDependencies, setShowDependencies] = useState(false);
@@ -80,6 +91,53 @@ export default function GanttView({
     [projects, fullScreenProjectId],
   );
 
+  const activeCustomColumns = useMemo(() => {
+    // Case 1: Current GanttView is already inside FullScreenProjectModal
+    // and showing a single project.
+    if (isFullScreen && projects.length === 1) {
+      return projects[0]?.customColumns || [];
+    }
+
+    // Case 2: Current GanttView is inside FullScreenProjectModal
+    // and showing all projects in resource fullscreen.
+    if (isFullScreen && projects.length > 1) {
+      const map = new Map();
+
+      projects.forEach((p) => {
+        (p.customColumns || []).forEach((c) => {
+          if (!map.has(c.id)) {
+            map.set(c.id, c);
+          }
+        });
+      });
+
+      return Array.from(map.values());
+    }
+
+    // Case 3: Main normal GanttView, a user has clicked fullscreen
+    // for one project, but modal not opened yet.
+    if (fullScreenProject) {
+      return fullScreenProject.customColumns || [];
+    }
+
+    // Case 4: Main normal GanttView, fullscreen all/resource mode.
+    if (fullScreenAll) {
+      const map = new Map();
+
+      projects.forEach((p) => {
+        (p.customColumns || []).forEach((c) => {
+          if (!map.has(c.id)) {
+            map.set(c.id, c);
+          }
+        });
+      });
+
+      return Array.from(map.values());
+    }
+
+    // Normal non-fullscreen view: custom columns hidden from dropdown.
+    return [];
+  }, [isFullScreen, projects, fullScreenProject, fullScreenAll]);
   // ── Refs ──
   const timelineRef = useRef(null);
   const leftPanelRef = useRef(null);
@@ -129,13 +187,10 @@ export default function GanttView({
   const hasProjectFilters = useCallback(
     (projectId) => {
       const f = getProjectFilter(projectId);
-      return (
-        f.module.length > 0 || f.resource.length > 0 || f.status.length > 0
-      );
+      return Object.values(f).some((v) => Array.isArray(v) && v.length > 0);
     },
     [getProjectFilter],
   );
-
   // Stage 2: compute data (depends on filter values)
   const {
     filteredProjects,
@@ -155,7 +210,16 @@ export default function GanttView({
     expandedRows,
     getProjectFilter,
   });
+  useEffect(() => {
+    if (!isFullScreen) return;
+    if (!projects?.length) return;
 
+    setExpandedProjects((prev) => {
+      // Only auto-expand when nothing is expanded yet (first open)
+      if (prev.size > 0) return prev;
+      return new Set(projects.map((p) => p.id));
+    });
+  }, [isFullScreen, projects]);
   // Stage 3: cleanup effects for filters (auto-remove invalid selections)
   useEffect(() => {
     setProjectFilters((prevFilters) => {
@@ -164,14 +228,16 @@ export default function GanttView({
       filteredProjects.forEach((project) => {
         const currentFilter = prevFilters[project.id];
         if (!currentFilter) return;
-        const isEmpty =
-          currentFilter.module.length === 0 &&
-          currentFilter.resource.length === 0 &&
-          currentFilter.status.length === 0;
-        if (isEmpty) return;
+        const hasAny = Object.values(currentFilter).some(
+          (v) => Array.isArray(v) && v.length > 0,
+        );
+        if (!hasAny) return;
 
-        // Recompute per-project filter opts
         const allProjectRows = project.rows || [];
+        const cleaned = { ...currentFilter };
+        let changed = false;
+
+        // Standard
         const validModules = new Set(
           allProjectRows.filter((r) => r.module).map((r) => r.module),
         );
@@ -182,34 +248,68 @@ export default function GanttView({
           allProjectRows.map((r) => getDisplayStatus(r)),
         );
 
-        const cleanedModule = currentFilter.module.filter((m) =>
-          validModules.has(m),
-        );
-        const cleanedResource = currentFilter.resource.filter((r) =>
-          validResources.has(r),
-        );
-        const cleanedStatus = currentFilter.status.filter((s) =>
-          validStatuses.has(s),
+        if (cleaned.module?.length > 0) {
+          const c = cleaned.module.filter((m) => validModules.has(m));
+          if (c.length !== cleaned.module.length) {
+            changed = true;
+            cleaned.module = c;
+          }
+        }
+        if (cleaned.resource?.length > 0) {
+          const c = cleaned.resource.filter((r) => validResources.has(r));
+          if (c.length !== cleaned.resource.length) {
+            changed = true;
+            cleaned.resource = c;
+          }
+        }
+        if (cleaned.status?.length > 0) {
+          const c = cleaned.status.filter((s) => validStatuses.has(s));
+          if (c.length !== cleaned.status.length) {
+            changed = true;
+            cleaned.status = c;
+          }
+        }
+
+        // ── NEW: Date filters ──
+        ["plannedStart", "plannedStop", "actualStart", "actualStop"].forEach(
+          (dk) => {
+            if (cleaned[dk]?.length > 0) {
+              const validDates = new Set(
+                allProjectRows.map((r) => fmtDateShort(r[dk])).filter(Boolean),
+              );
+              const c = cleaned[dk].filter((d) => validDates.has(d));
+              if (c.length !== cleaned[dk].length) {
+                changed = true;
+                cleaned[dk] = c;
+              }
+            }
+          },
         );
 
-        const changed =
-          cleanedModule.length !== currentFilter.module.length ||
-          cleanedResource.length !== currentFilter.resource.length ||
-          cleanedStatus.length !== currentFilter.status.length;
+        // ── NEW: Custom column filters ──
+        (project.customColumns || []).forEach((col) => {
+          if (cleaned[col.id]?.length > 0) {
+            const validVals = new Set(
+              allProjectRows
+                .map((r) => String(r.customValues?.[col.id] || "").trim())
+                .filter(Boolean),
+            );
+            const c = cleaned[col.id].filter((v) => validVals.has(v));
+            if (c.length !== cleaned[col.id].length) {
+              changed = true;
+              cleaned[col.id] = c;
+            }
+          }
+        });
 
         if (changed) {
           hasChanges = true;
-          newFilters[project.id] = {
-            module: cleanedModule,
-            resource: cleanedResource,
-            status: cleanedStatus,
-          };
+          newFilters[project.id] = cleaned;
         }
       });
       return hasChanges ? newFilters : prevFilters;
     });
   }, [filteredProjects]);
-
   useEffect(() => {
     const validModuleValues = filterOptions.moduleOpts.map((o) => o.value);
     const validResourceValues = filterOptions.resourceOpts.map((o) => o.value);
@@ -246,20 +346,23 @@ export default function GanttView({
   } = useGanttGeometry({ filteredProjects, zoom, colWidthPx });
 
   // ── Dynamic left panel width (based on view mode + visible columns) ──
-  const dynamicLeftPanelWidth = useMemo(() => {
-    // Resource view uses a single narrow column for resource names
-    if (viewMode === "resource") {
-      return RESOURCE_VIEW_PANEL_WIDTH;
-    }
+  // ── Column / panel widths (resizable, persisted) ──
+  const {
+    getWidth,
+    getMinWidth,
+    setWidth,
+    taskWidth,
+    contentWidth,
+    panelWidth,
+    setPanelWidth,
+  } = useColumnWidths(visibleColumns, activeCustomColumns);
 
-    // Task view uses multiple columns based on visibility
-    return (
-      COL_TASK_WIDTH +
-      (visibleColumns.module ? COL_MODULE_WIDTH : 0) +
-      (visibleColumns.resource ? COL_RESOURCE_WIDTH : 0) +
-      (visibleColumns.status ? COL_STATUS_WIDTH : 0)
-    );
-  }, [viewMode, visibleColumns]);
+  // Left panel width for task view = user-controlled panelWidth
+  // Resource view stays narrow
+  const dynamicLeftPanelWidth = useMemo(() => {
+    if (viewMode === "resource") return RESOURCE_VIEW_PANEL_WIDTH;
+    return panelWidth;
+  }, [viewMode, panelWidth]);
 
   // ── Sync scroll (timeline vertical → left panel) ──
   const syncScroll = useCallback((e) => {
@@ -417,6 +520,7 @@ export default function GanttView({
           toggleColumn={toggleColumn}
           showDependencies={showDependencies}
           setShowDependencies={setShowDependencies}
+          customColumns={activeCustomColumns}
         />
       ) : (
         <GanttMobileToolbar
@@ -428,6 +532,7 @@ export default function GanttView({
           onJumpToToday={handleJumpToToday}
           onOpenTools={() => setMobileToolsOpen(true)}
           todayEnabled={todayLeft !== null}
+          customColumns={activeCustomColumns}
         />
       )}
 
@@ -454,12 +559,57 @@ export default function GanttView({
             visibleColumns={visibleColumns}
             leftPanelWidth={dynamicLeftPanelWidth}
             leftPanelRef={leftPanelRef}
-            onOpenFullScreen={setFullScreenProjectId} // ← NEW
+            getWidth={getWidth}
+            getMinWidth={getMinWidth}
+            setWidth={setWidth}
+            taskWidth={taskWidth}
+            contentWidth={contentWidth}
+            setPanelWidth={setPanelWidth}
+            activeCustomColumns={activeCustomColumns}
+            onOpenFullScreen={setFullScreenProjectId}
             onOpenFullScreenAll={() => setFullScreenAll(true)}
             isFullScreen={isFullScreen}
           />
         )}
-
+        {/* Left panel resize handle (task view only) */}
+        {!isMobile && viewMode === "task" && (
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const startX = e.clientX;
+              const startW = panelWidth;
+              const onMove = (ev) => {
+                setPanelWidth(startW + (ev.clientX - startX));
+              };
+              const onUp = () => {
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+                document.body.style.cursor = "";
+                document.body.style.userSelect = "";
+              };
+              document.addEventListener("mousemove", onMove);
+              document.addEventListener("mouseup", onUp);
+              document.body.style.cursor = "col-resize";
+              document.body.style.userSelect = "none";
+            }}
+            title="Drag to resize panel"
+            style={{
+              width: 5,
+              flexShrink: 0,
+              cursor: "col-resize",
+              background: "transparent",
+              position: "relative",
+              zIndex: 25,
+              borderRight: `1px solid ${t.border}`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = t.primaryBgSubtle;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+          />
+        )}
         {/* Timeline */}
         <GanttTimeline
           timelineRef={timelineRef}

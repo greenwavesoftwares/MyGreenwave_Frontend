@@ -1,14 +1,19 @@
-/* ═══════════════════════════════════════════════════════
-   Filter Options Computation
-   ═══════════════════════════════════════════════════════ */
-
 import { getDisplayStatus } from "../../helpers/statusDisplay";
+
+// ── NEW: Date formatting helper ──
+function fmtDateShort(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 /**
  * Compute the top-level filter options (global toolbar).
- *
- * Scoping order: project → module → resource → status.
- * Each filter narrows the options available for the next.
  */
 export function computeGlobalFilterOptions({
   projects,
@@ -61,9 +66,9 @@ export function computeGlobalFilterOptions({
     );
   }
 
- const statuses = [
-  ...new Set(scopedRows.map((r) => getDisplayStatus(r))),
-].sort();
+  const statuses = [
+    ...new Set(scopedRows.map((r) => getDisplayStatus(r))),
+  ].sort();
   const statusOpts = statuses.map((s) => ({ value: s, label: s }));
 
   return { projectOpts, moduleOpts, resourceOpts, statusOpts };
@@ -71,39 +76,64 @@ export function computeGlobalFilterOptions({
 
 /**
  * Compute filter options for a single project (per-project column filters).
- * Uses cross-filtering so each dropdown shows only currently-valid options.
+ * Now includes date columns and custom columns.
  */
 export function computeProjectFilterOptions(project, currentFilter) {
   const allRows = project.rows || [];
+  const customColumns = project.customColumns || [];
 
   const matchesFilters = (row, excludeKey) => {
     if (
       excludeKey !== "module" &&
-      currentFilter.module.length > 0 &&
+      currentFilter.module?.length > 0 &&
       !currentFilter.module.includes(row.module || "")
     )
       return false;
     if (
       excludeKey !== "resource" &&
-      currentFilter.resource.length > 0 &&
+      currentFilter.resource?.length > 0 &&
       !currentFilter.resource.includes(row.resource || "")
     )
       return false;
-   if (
-  excludeKey !== "status" &&
-  currentFilter.status.length > 0 &&
-  !currentFilter.status.includes(getDisplayStatus(row))
-)
-  return false;
+    if (
+      excludeKey !== "status" &&
+      currentFilter.status?.length > 0 &&
+      !currentFilter.status.includes(getDisplayStatus(row))
+    )
+      return false;
+    // ── NEW: Date filters ──
+    const dateKeys = ["plannedStart", "plannedStop", "actualStart", "actualStop"];
+    for (const dk of dateKeys) {
+      if (
+        excludeKey !== dk &&
+        currentFilter[dk]?.length > 0 &&
+        !currentFilter[dk].includes(fmtDateShort(row[dk]))
+      )
+        return false;
+    }
+    // ── NEW: Custom column filters ──
+    for (const col of customColumns) {
+      if (
+        excludeKey !== col.id &&
+        currentFilter[col.id]?.length > 0 &&
+        !currentFilter[col.id].includes(
+          String(row.customValues?.[col.id] || "").trim(),
+        )
+      )
+        return false;
+    }
     return true;
   };
 
+  // Standard options
   const rowsForModules = allRows.filter((r) => matchesFilters(r, "module"));
   const modules = [
     ...new Set(rowsForModules.filter((r) => r.module).map((r) => r.module)),
   ].sort();
 
-  const rowsForResources = allRows.filter((r) => matchesFilters(r, "resource"));
+  const rowsForResources = allRows.filter((r) =>
+    matchesFilters(r, "resource"),
+  );
   const resourcesMap = new Map();
   rowsForResources
     .filter((r) => r.resource)
@@ -119,14 +149,43 @@ export function computeProjectFilterOptions(project, currentFilter) {
     a.label.localeCompare(b.label),
   );
 
-const rowsForStatuses = allRows.filter((r) => matchesFilters(r, "status"));
-const statuses = [
-  ...new Set(rowsForStatuses.map((r) => getDisplayStatus(r))),
-].sort();
+  const rowsForStatuses = allRows.filter((r) => matchesFilters(r, "status"));
+  const statuses = [
+    ...new Set(rowsForStatuses.map((r) => getDisplayStatus(r))),
+  ].sort();
+
+  // ── NEW: Date options ──
+  const dateKeys = ["plannedStart", "plannedStop", "actualStart", "actualStop"];
+  const dateOpts = {};
+  dateKeys.forEach((dk) => {
+    const rowsForDate = allRows.filter((r) => matchesFilters(r, dk));
+    const uniqueDates = [
+      ...new Set(rowsForDate.map((r) => fmtDateShort(r[dk])).filter(Boolean)),
+    ].sort();
+    dateOpts[dk] = uniqueDates.map((d) => ({ value: d, label: d }));
+  });
+
+  // ── NEW: Custom column options ──
+  const customOpts = {};
+  customColumns.forEach((col) => {
+    const rowsForCol = allRows.filter((r) => matchesFilters(r, col.id));
+    const uniqueVals = [
+      ...new Set(
+        rowsForCol
+          .map((r) => String(r.customValues?.[col.id] || "").trim())
+          .filter(Boolean),
+      ),
+    ].sort();
+    customOpts[col.id] = uniqueVals.map((v) => ({ value: v, label: v }));
+  });
 
   return {
     moduleOpts: modules.map((m) => ({ value: m, label: m })),
     resourceOpts: resources,
     statusOpts: statuses.map((s) => ({ value: s, label: s })),
+    ...dateOpts,                    // plannedStart, plannedStop, actualStart, actualStop
+    customOpts,                     // { [colId]: [{ value, label }] }
   };
 }
+
+export { fmtDateShort };

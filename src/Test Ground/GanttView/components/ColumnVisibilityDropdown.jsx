@@ -3,10 +3,16 @@ import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { useTheme } from "../../useTheme";
 
 /**
- * Dropdown toggler for showing/hiding Module, Resource, Status columns.
- * Task column is always visible (shown as disabled entry).
+ * Dropdown toggler for showing/hiding columns.
+ * Task column is always visible.
+ * Date columns are always available.
+ * Custom columns appear only when `customColumns` prop is provided (full-screen mode).
  */
-export default function ColumnVisibilityDropdown({ visibleColumns, onToggle }) {
+export default function ColumnVisibilityDropdown({
+  visibleColumns,
+  onToggle,
+  customColumns = [], // ← NEW: [{ id, name }] from the active project
+}) {
   const { t } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -19,15 +25,118 @@ export default function ColumnVisibilityDropdown({ visibleColumns, onToggle }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const totalCount = 3; // module, resource, status
-  const visibleCount = Object.values(visibleColumns).filter(Boolean).length;
-  const hasHidden = visibleCount < totalCount;
-
-  const columns = [
+  // ── Standard columns ──
+  const standardColumns = [
     { key: "module", label: "Module" },
     { key: "resource", label: "Resource" },
     { key: "status", label: "Status" },
   ];
+
+  // ── Date columns (always available) ──
+  const dateColumns = [
+    { key: "plannedStart", label: "Planned Start" },
+    { key: "plannedStop", label: "Planned Stop" },
+    { key: "actualStart", label: "Actual Start" },
+    { key: "actualStop", label: "Actual Stop" },
+  ];
+
+  // ── Custom columns (only from active project in full-screen) ──
+  const customCols = customColumns.map((c) => ({
+    key: c.id,
+    label: c.name,
+  }));
+
+  const allToggleable = [...standardColumns, ...dateColumns, ...customCols];
+  const totalCount = allToggleable.length;
+  const visibleCount = allToggleable.filter(
+    (c) => visibleColumns[c.key],
+  ).length;
+  const hasHidden = visibleCount < totalCount;
+
+  const renderColumnItem = (col, isAlwaysVisible = false) => {
+    const isVisible = isAlwaysVisible || visibleColumns[col.key];
+    return (
+      <div
+        key={col.key}
+        onClick={() => !isAlwaysVisible && onToggle(col.key)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "7px 12px",
+          cursor: isAlwaysVisible ? "not-allowed" : "pointer",
+          background: isVisible ? t.primaryBgSubtle : "transparent",
+          borderLeft: isVisible
+            ? `3px solid ${t.primary}`
+            : "3px solid transparent",
+          opacity: isAlwaysVisible ? 0.7 : 1,
+          transition: "background .1s",
+        }}
+        onMouseEnter={(e) => {
+          if (!isVisible && !isAlwaysVisible)
+            e.currentTarget.style.background = t.bgSubtle;
+        }}
+        onMouseLeave={(e) => {
+          if (!isVisible && !isAlwaysVisible)
+            e.currentTarget.style.background = "transparent";
+        }}
+      >
+        <span
+          style={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            border: `1.5px solid ${isVisible ? t.primary : t.borderStrong}`,
+            background: isVisible ? t.primary : t.bgCard,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: t.textInverse,
+            fontSize: 10,
+            fontWeight: 700,
+          }}
+        >
+          {isVisible && "✓"}
+        </span>
+        <span
+          style={{
+            fontSize: 11.5,
+            color: t.textPrimary,
+            fontWeight: isVisible ? 600 : 400,
+            flex: 1,
+          }}
+        >
+          {col.label}
+        </span>
+        {isAlwaysVisible ? (
+          <span style={{ fontSize: 9, color: t.textFaint }}>Always</span>
+        ) : isVisible ? (
+          <Eye size={12} color={t.primary} />
+        ) : (
+          <EyeOff size={12} color={t.textFaint} />
+        )}
+      </div>
+    );
+  };
+
+  const renderSectionLabel = (label) => (
+    <div
+      style={{
+        padding: "6px 12px 3px",
+        fontSize: 9,
+        fontWeight: 700,
+        color: t.textFaint,
+        textTransform: "uppercase",
+        letterSpacing: "0.5px",
+        background: t.bgSubtle,
+        borderTop: `1px solid ${t.border}`,
+        marginTop: 2,
+      }}
+    >
+      {label}
+    </div>
+  );
 
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
@@ -80,7 +189,9 @@ export default function ColumnVisibilityDropdown({ visibleColumns, onToggle }) {
             top: "100%",
             right: 0,
             marginTop: 4,
-            width: 200,
+            width: 220,
+            maxHeight: 400,
+            overflowY: "auto",
             background: t.bgCard,
             border: `1px solid ${t.borderStrong}`,
             borderRadius: 8,
@@ -104,114 +215,29 @@ export default function ColumnVisibilityDropdown({ visibleColumns, onToggle }) {
             </span>
           </div>
 
-          {/* Task always visible */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 12px",
-              background: t.bgSubtle,
-              opacity: 0.7,
-              cursor: "not-allowed",
-            }}
-            title="Task column is always visible"
-          >
-            <span
-              style={{
-                width: 16,
-                height: 16,
-                borderRadius: 4,
-                border: `1.5px solid ${t.borderStrong}`,
-                background: t.bgMuted,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                color: t.textMuted,
-                fontSize: 10,
-              }}
-            >
-              <Eye size={10} />
-            </span>
-            <span
-              style={{
-                fontSize: 11.5,
-                color: t.textMuted,
-                fontWeight: 500,
-                flex: 1,
-              }}
-            >
-              Task
-            </span>
-            <span style={{ fontSize: 9, color: t.textFaint }}>Always</span>
+          {/* Task — always visible */}
+          {renderColumnItem({ key: "task", label: "Task" }, true)}
+
+          {/* Standard columns */}
+          <div style={{ padding: "2px 0" }}>
+            {standardColumns.map((col) => renderColumnItem(col))}
           </div>
 
-          <div style={{ padding: "4px 0" }}>
-            {columns.map((col) => {
-              const isVisible = visibleColumns[col.key];
-              return (
-                <div
-                  key={col.key}
-                  onClick={() => onToggle(col.key)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    background: isVisible ? t.primaryBgSubtle : "transparent",
-                    borderLeft: isVisible
-                      ? `3px solid ${t.primary}`
-                      : "3px solid transparent",
-                    transition: "background .1s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isVisible)
-                      e.currentTarget.style.background = t.bgSubtle;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isVisible)
-                      e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 4,
-                      border: `1.5px solid ${isVisible ? t.primary : t.borderStrong}`,
-                      background: isVisible ? t.primary : t.bgCard,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      color: t.textInverse,
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {isVisible && "✓"}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 11.5,
-                      color: t.textPrimary,
-                      fontWeight: isVisible ? 600 : 400,
-                      flex: 1,
-                    }}
-                  >
-                    {col.label}
-                  </span>
-                  {isVisible ? (
-                    <Eye size={12} color={t.primary} />
-                  ) : (
-                    <EyeOff size={12} color={t.textFaint} />
-                  )}
-                </div>
-              );
-            })}
+          {/* Date columns */}
+          {false && renderSectionLabel("Date Columns")}
+          <div style={{ padding: "2px 0" }}>
+            {dateColumns.map((col) => renderColumnItem(col))}
           </div>
+
+          {/* Custom columns (only when provided) */}
+          {customCols.length > 0 && (
+            <>
+              {renderSectionLabel("Custom Columns")}
+              <div style={{ padding: "2px 0" }}>
+                {customCols.map((col) => renderColumnItem(col))}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

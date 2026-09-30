@@ -1,12 +1,16 @@
-/* ═══════════════════════════════════════════════════════
-   useColumnVisibility
-   Persists Module/Resource/Status column visibility to localStorage
-   ═══════════════════════════════════════════════════════ */
-
 import { useState, useEffect, useCallback } from "react";
 import { LS_VISIBLE_COLUMNS } from "../helpers/constants";
 
-const DEFAULT_VISIBLE = { module: true, resource: true, status: true };
+const DEFAULT_VISIBLE = {
+  module: true,
+  resource: true,
+  status: true,
+  // ── NEW: Date columns (hidden by default) ──
+  plannedStart: false,
+  plannedStop: false,
+  actualStart: false,
+  actualStop: false,
+};
 
 export function useColumnVisibility() {
   const [visibleColumns, setVisibleColumns] = useState(() => {

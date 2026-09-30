@@ -20,8 +20,9 @@ export default function GanttToolbar({
   setColWidthPx,
   visibleColumns,
   toggleColumn,
-  showDependencies, // ← NEW
+  showDependencies,
   setShowDependencies,
+  customColumns = [], // ← NEW
 }) {
   const { t } = useTheme();
 
@@ -166,10 +167,12 @@ export default function GanttToolbar({
           <div style={{ width: 1, height: 20, background: t.border }} />
         </>
       )}
+
       {/* Column visibility toggle */}
       <ColumnVisibilityDropdown
         visibleColumns={visibleColumns}
         onToggle={toggleColumn}
+        customColumns={customColumns} // ← NEW
       />
     </div>
   );

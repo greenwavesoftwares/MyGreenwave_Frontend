@@ -1,21 +1,10 @@
-/* ═══════════════════════════════════════════════════════
-   useGanttData
-   Computes:
-     - filteredProjects (global filters applied)
-     - allRows (respects expanded state + per-project filters)
-     - resourceViewData (grouped by resource w/ lanes)
-     - projectColorMap
-     - filterOptions
-     - hasChildren helper
-   ═══════════════════════════════════════════════════════ */
-
 import { useMemo, useCallback } from "react";
 import { PROJECT_COLORS } from "../helpers/constants";
-import { MODULE_COLORS } from "../../helpers/constants";  // ← from ProjectEditor's helpers
-import { getModuleColor } from "../../helpers/modules"; 
+import { MODULE_COLORS } from "../../helpers/constants";
 import { assignLanes } from "../helpers/lanes";
 import { computeGlobalFilterOptions } from "../helpers/filterOptions";
 import { getDisplayStatus } from "../../helpers/statusDisplay";
+import { fmtDateShort } from "../helpers/filterOptions"; // ← NEW
 
 export function useGanttData({
   projects,
@@ -53,11 +42,11 @@ export function useGanttData({
               !resourceFilter.includes(r.resource || "")
             )
               return false;
-           if (
-  statusFilter.length > 0 &&
-  !statusFilter.includes(getDisplayStatus(r))
-)
-  return false;
+            if (
+              statusFilter.length > 0 &&
+              !statusFilter.includes(getDisplayStatus(r))
+            )
+              return false;
             return true;
           });
           const finalIds = new Set(filteredRows.map((r) => r.id));
@@ -86,22 +75,24 @@ export function useGanttData({
     });
     return map;
   }, [filteredProjects]);
-// ── Module color mapping (global scope — same module = same color across projects) ──
-const moduleColorMap = useMemo(() => {
-  const uniqueModules = new Set();
-  filteredProjects.forEach((p) => {
-    (p.rows || []).forEach((r) => {
-      if (r.module) uniqueModules.add(r.module);
+
+  // ── Module color mapping ──
+  const moduleColorMap = useMemo(() => {
+    const uniqueModules = new Set();
+    filteredProjects.forEach((p) => {
+      (p.rows || []).forEach((r) => {
+        if (r.module) uniqueModules.add(r.module);
+      });
     });
-  });
-  const map = {};
-  Array.from(uniqueModules)
-    .sort()
-    .forEach((mod, idx) => {
-      map[mod] = MODULE_COLORS[idx % MODULE_COLORS.length];
-    });
-  return map;
-}, [filteredProjects]);
+    const map = {};
+    Array.from(uniqueModules)
+      .sort()
+      .forEach((mod, idx) => {
+        map[mod] = MODULE_COLORS[idx % MODULE_COLORS.length];
+      });
+    return map;
+  }, [filteredProjects]);
+
   // ── Global filter options ──
   const filterOptions = useMemo(
     () =>
@@ -115,7 +106,7 @@ const moduleColorMap = useMemo(() => {
     [projects, projectColorMap, projectFilter, moduleFilter, resourceFilter],
   );
 
-  // ── Resource view data (grouped by resource with lanes) ──
+  // ── Resource view data ──
   const resourceViewData = useMemo(() => {
     const map = new Map();
     filteredProjects.forEach((project) => {
@@ -158,30 +149,61 @@ const moduleColorMap = useMemo(() => {
     filteredProjects.forEach((project, pIdx) => {
       let rows = project.rows || [];
       const pFilter = getProjectFilter(project.id);
-      const hasAnyFilter =
-        pFilter.module.length > 0 ||
-        pFilter.resource.length > 0 ||
-        pFilter.status.length > 0;
+      const customColumns = project.customColumns || [];
+
+      // ── Check if ANY filter is active (generic) ──
+      const hasAnyFilter = Object.values(pFilter).some(
+        (v) => Array.isArray(v) && v.length > 0,
+      );
 
       if (hasAnyFilter) {
         const filteredRows = rows.filter((r) => {
+          // Standard filters
           if (
-            pFilter.module.length > 0 &&
+            pFilter.module?.length > 0 &&
             !pFilter.module.includes(r.module || "")
           )
             return false;
           if (
-            pFilter.resource.length > 0 &&
+            pFilter.resource?.length > 0 &&
             !pFilter.resource.includes(r.resource || "")
           )
             return false;
-         if (
-  pFilter.status.length > 0 &&
-  !pFilter.status.includes(getDisplayStatus(r))
-)
-  return false;
+          if (
+            pFilter.status?.length > 0 &&
+            !pFilter.status.includes(getDisplayStatus(r))
+          )
+            return false;
+
+          // ── NEW: Date filters ──
+          const dateKeys = [
+            "plannedStart",
+            "plannedStop",
+            "actualStart",
+            "actualStop",
+          ];
+          for (const dk of dateKeys) {
+            if (
+              pFilter[dk]?.length > 0 &&
+              !pFilter[dk].includes(fmtDateShort(r[dk]))
+            )
+              return false;
+          }
+
+          // ── NEW: Custom column filters ──
+          for (const col of customColumns) {
+            if (
+              pFilter[col.id]?.length > 0 &&
+              !pFilter[col.id].includes(
+                String(r.customValues?.[col.id] || "").trim(),
+              )
+            )
+              return false;
+          }
+
           return true;
         });
+
         const finalIds = new Set(filteredRows.map((r) => r.id));
         filteredRows.forEach((r) => {
           let cur = rows.find((x) => x.id === r.parentId);
@@ -229,7 +251,7 @@ const moduleColorMap = useMemo(() => {
   return {
     filteredProjects,
     projectColorMap,
-     moduleColorMap,
+    moduleColorMap,
     filterOptions,
     resourceViewData,
     allRows,

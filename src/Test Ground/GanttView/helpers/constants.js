@@ -6,9 +6,9 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 export const HOUR_MS = 60 * 60 * 1000;
 export const WEEK_MS = 7 * DAY_MS;
 
-export const ROW_HEIGHT = 44;
-export const SUB_HEADER_HEIGHT = 32;
-export const HEADER_HEIGHT = 56;
+// export const ROW_HEIGHT = 44;
+// export const SUB_HEADER_HEIGHT = 32;
+// export const HEADER_HEIGHT = 56;
 
 export const LEFT_PANEL_WIDTH_COLLAPSED = 300;
 export const LEFT_PANEL_WIDTH_EXPANDED = 480;
@@ -16,11 +16,17 @@ export const LEFT_PANEL_WIDTH_EXPANDED = 480;
 export const MIN_COL_WIDTH = 20;
 export const MAX_COL_WIDTH = 200;
 
-export const COL_TASK_WIDTH = 240;
-export const COL_MODULE_WIDTH = 120;
-export const COL_RESOURCE_WIDTH = 130;
-export const COL_STATUS_WIDTH = 100;
+// Keep these as DEFAULTS (used by the hook). Feel free to tune.
+export const COL_TASK_WIDTH = 260;
+export const COL_MODULE_WIDTH = 150;
+export const COL_RESOURCE_WIDTH = 64;
+export const COL_STATUS_WIDTH = 120;
+export const COL_DATE_WIDTH = 120;
+export const COL_CUSTOM_WIDTH = 160;
 
+export const ROW_HEIGHT = 44;
+export const SUB_HEADER_HEIGHT = 34;
+export const HEADER_HEIGHT = 56;
 /* ─── Zoom Configurations ─── */
 export const ZOOM_CONFIGS = {
 hour: {
