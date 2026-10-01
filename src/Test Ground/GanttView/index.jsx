@@ -42,6 +42,7 @@ import { getDisplayStatus } from "../helpers/statusDisplay";
 import { fmtDateShort } from "./helpers/filterOptions"; // ← NEW
 import { RESOURCE_VIEW_PANEL_WIDTH } from "../helpers/constants";
 import { useColumnWidths } from "./hooks/useColumnWidths";
+import { useColumnOrder } from "./hooks/useColumnOrder";
 /* ═══════════════════════════════════════════════════════
    GanttView — main orchestrator
    ═══════════════════════════════════════════════════════ */
@@ -55,7 +56,6 @@ export default function GanttView({
 }) {
   const { t } = useTheme();
   const { isMobile } = useResponsive();
-
   // ── Mobile-only UI state ──
   const [mobileLeftPanelOpen, setMobileLeftPanelOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
@@ -138,6 +138,8 @@ export default function GanttView({
     // Normal non-fullscreen view: custom columns hidden from dropdown.
     return [];
   }, [isFullScreen, projects, fullScreenProject, fullScreenAll]);
+
+  const { moveColumn, getVisibleOrder } = useColumnOrder(activeCustomColumns);
   // ── Refs ──
   const timelineRef = useRef(null);
   const leftPanelRef = useRef(null);
@@ -569,6 +571,8 @@ export default function GanttView({
             onOpenFullScreen={setFullScreenProjectId}
             onOpenFullScreenAll={() => setFullScreenAll(true)}
             isFullScreen={isFullScreen}
+            moveColumn={moveColumn}
+            getVisibleOrder={getVisibleOrder}
           />
         )}
         {/* Left panel resize handle (task view only) */}

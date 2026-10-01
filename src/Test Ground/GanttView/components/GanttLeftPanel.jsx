@@ -6,6 +6,7 @@ import {
   Filter,
   X,
   Maximize2,
+  GripVertical,
 } from "lucide-react";
 import { useTheme } from "../../useTheme";
 import {
@@ -43,21 +44,160 @@ function computeStatusSummary(rows) {
   });
   return counts;
 }
+// Helper to parse ISO strings safely to timestamps
+// Helper to parse ISO strings safely to timestamps
+function safeTime(isoStr) {
+  if (!isoStr) return null;
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
 
+// Format date with Year (e.g., "31 Jul 2026")
+function fmtDateWithYear(ms) {
+  if (!ms) return "—";
+  return new Date(ms).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/**
+ * Adds work hours starting from a date, skipping weekends (Sat/Sun) and non-work hours (10:00 - 18:00).
+ */
+function addWorkingHours(startDate, totalHours) {
+  if (!totalHours || totalHours <= 0) return startDate;
+
+  let current = new Date(startDate.getTime());
+
+  const WORK_START = 10; // 10:00 AM
+  const WORK_END = 18; // 6:00 PM
+
+  // Adjust if starting on a weekend
+  while (current.getDay() === 0 || current.getDay() === 6) {
+    // 0 = Sun, 6 = Sat
+    current.setDate(current.getDate() + 1);
+    current.setHours(WORK_START, 0, 0, 0);
+  }
+
+  // Adjust time of day
+  if (current.getHours() < WORK_START) {
+    current.setHours(WORK_START, 0, 0, 0);
+  } else if (current.getHours() >= WORK_END) {
+    current.setDate(current.getDate() + 1);
+    current.setHours(WORK_START, 0, 0, 0);
+    while (current.getDay() === 0 || current.getDay() === 6) {
+      current.setDate(current.getDate() + 1);
+    }
+  }
+
+  let hoursRemaining = totalHours;
+
+  while (hoursRemaining > 0) {
+    // Skip weekend
+    while (current.getDay() === 0 || current.getDay() === 6) {
+      current.setDate(current.getDate() + 1);
+      current.setHours(WORK_START, 0, 0, 0);
+    }
+
+    const currentHour = current.getHours() + current.getMinutes() / 60;
+    const hoursLeftToday = WORK_END - currentHour;
+
+    if (hoursRemaining <= hoursLeftToday) {
+      const minutesToAdd = hoursRemaining * 60;
+      current.setMinutes(current.getMinutes() + minutesToAdd);
+      hoursRemaining = 0;
+    } else {
+      hoursRemaining -= hoursLeftToday;
+      current.setDate(current.getDate() + 1);
+      current.setHours(WORK_START, 0, 0, 0);
+    }
+  }
+
+  return current;
+}
+
+/**
+ * Calculates Project Start, End, and Expected End (Option A)
+ */
+function computeProjectDates(rows) {
+  if (!rows || rows.length === 0)
+    return { start: null, end: null, expected: null };
+
+  let minStart = Infinity;
+  let maxStop = -Infinity;
+
+  rows.forEach((r) => {
+    const pStart = safeTime(r.plannedStart);
+    const pStop = safeTime(r.plannedStop);
+
+    if (pStart && pStart < minStart) minStart = pStart;
+    if (pStop && pStop > maxStop) maxStop = pStop;
+  });
+
+  // Separate non-completed tasks
+  const incompleteRows = rows.filter((r) => {
+    const status = String(r.status || "")
+      .toLowerCase()
+      .trim();
+    return (
+      status !== "completed" && status !== "finished" && status !== "closed"
+    );
+  });
+
+  let expectedDateMs = null;
+
+  if (incompleteRows.length === 0) {
+    // All tasks completed/finished/closed: Expected end = latest actualStop
+    let maxCompleteStop = -Infinity;
+    rows.forEach((r) => {
+      const stop = safeTime(r.actualStop) || safeTime(r.plannedStop);
+      if (stop && stop > maxCompleteStop) maxCompleteStop = stop;
+    });
+    expectedDateMs = maxCompleteStop !== -Infinity ? maxCompleteStop : maxStop;
+  } else {
+    // Schedule remaining tasks starting from TODAY (Option A)
+    const now = new Date();
+
+    // Group incomplete duration by resource (parallel execution across users)
+    const resourceDurations = {};
+
+    incompleteRows.forEach((r) => {
+      const resKey = r.resource || "__unassigned__";
+      const dur = Number(r.durationHrs) || 0;
+      resourceDurations[resKey] = (resourceDurations[resKey] || 0) + dur;
+    });
+
+    let maxResourceEndMs = -Infinity;
+
+    Object.values(resourceDurations).forEach((totalHrs) => {
+      const endDt = addWorkingHours(now, totalHrs);
+      if (endDt.getTime() > maxResourceEndMs) {
+        maxResourceEndMs = endDt.getTime();
+      }
+    });
+
+    expectedDateMs =
+      maxResourceEndMs !== -Infinity ? maxResourceEndMs : maxStop;
+  }
+
+  return {
+    start: minStart !== Infinity ? minStart : null,
+    end: maxStop !== -Infinity ? maxStop : null,
+    expected: expectedDateMs,
+  };
+}
 function StatusBadgesSummary({ summary, t }) {
   const active = DISPLAY_STATUSES.filter((s) => (summary[s] || 0) > 0);
   if (!active.length) return null;
+
   return (
     <div
       style={{
         display: "inline-flex",
         alignItems: "center",
+        flexWrap: "wrap",
         gap: 4,
-        marginLeft: 8,
-        flexShrink: 0,
-        maxWidth: "50%",
-        overflowX: "auto",
-        scrollbarWidth: "none",
       }}
     >
       {active.map((status) => {
@@ -99,7 +239,6 @@ function StatusBadgesSummary({ summary, t }) {
   );
 }
 
-/** Column resize handle — sits on the right edge of a header cell */
 function ColResizeHandle({ columnKey, getWidth, getMinWidth, setWidth, t }) {
   const onMouseDown = useCallback(
     (e) => {
@@ -151,7 +290,6 @@ function ColResizeHandle({ columnKey, getWidth, getMinWidth, setWidth, t }) {
   );
 }
 
-/** Shared cell shell for perfect column alignment */
 function cellShell(width, t, extra = {}) {
   return {
     width,
@@ -178,9 +316,6 @@ function headerShell(width, t, extra = {}) {
   };
 }
 
-/**
- * Desktop left panel — Excel-like table with resizable columns.
- */
 export default function GanttLeftPanel({
   viewMode,
   filteredProjects,
@@ -200,125 +335,96 @@ export default function GanttLeftPanel({
   visibleColumns,
   leftPanelWidth,
   leftPanelRef,
-  // resize API
   getWidth,
   getMinWidth,
   setWidth,
   taskWidth,
   contentWidth,
-  activeCustomColumns = [],
   onOpenFullScreen,
   onOpenFullScreenAll,
   isFullScreen,
+  moveColumn,
+  getVisibleOrder,
 }) {
   const { t } = useTheme();
 
-  // Fallback if parent hasn't wired resize yet
+  const [draggingKey, setDraggingKey] = React.useState(null);
+  const [dragOverKey, setDragOverKey] = React.useState(null);
+
   const gw = getWidth || ((k) => 120);
   const gmin = getMinWidth || (() => 60);
   const sw = setWidth || (() => {});
   const tw = taskWidth || 260;
   const cw = contentWidth || leftPanelWidth;
 
-  const projectCustomColsMap = React.useMemo(() => {
-    const map = {};
-    filteredProjects.forEach((p) => {
-      map[p.id] = p.customColumns || [];
-    });
-    return map;
-  }, [filteredProjects]);
-
-  // ── Column order for rendering (shared by header + rows) ──
-  // Returns array of { key, width, label, filterKey?, filterColor?, isCustom?, colDef? }
   const buildColumns = useCallback(
     (project) => {
-      const cols = [];
-      if (visibleColumns.module) {
-        cols.push({
-          key: "module",
-          width: gw("module"),
-          label: "MODULE",
-          filterKey: "module",
-          filterColor: t.violet,
-        });
-      }
-      cols.push({
-        key: "task",
-        width: tw, // flexed
-        label: "TASK",
-      });
-      if (visibleColumns.resource) {
-        cols.push({
-          key: "resource",
-          width: gw("resource"),
+      const customs = project?.customColumns || [];
+      const customMap = Object.fromEntries(customs.map((c) => [c.id, c]));
+
+      const keys =
+        typeof getVisibleOrder === "function"
+          ? getVisibleOrder(visibleColumns, customs)
+          : ["module", "task", "resource", "status"].filter(
+              (k) => k === "task" || visibleColumns?.[k],
+            );
+
+      const meta = {
+        module: { label: "MODULE", filterKey: "module", filterColor: t.violet },
+        task: { label: "TASK" },
+        resource: {
           label: "RES",
           filterKey: "resource",
           filterColor: t.success,
-        });
-      }
-      if (visibleColumns.plannedStart) {
-        cols.push({
-          key: "plannedStart",
-          width: gw("plannedStart"),
+        },
+        plannedStart: {
           label: "PLAN START",
           filterKey: "plannedStart",
           filterColor: t.primary,
-        });
-      }
-      if (visibleColumns.plannedStop) {
-        cols.push({
-          key: "plannedStop",
-          width: gw("plannedStop"),
+        },
+        plannedStop: {
           label: "PLAN STOP",
           filterKey: "plannedStop",
           filterColor: t.primary,
-        });
-      }
-      if (visibleColumns.actualStart) {
-        cols.push({
-          key: "actualStart",
-          width: gw("actualStart"),
+        },
+        actualStart: {
           label: "ACT START",
           filterKey: "actualStart",
           filterColor: t.warning,
-        });
-      }
-      if (visibleColumns.actualStop) {
-        cols.push({
-          key: "actualStop",
-          width: gw("actualStop"),
+        },
+        actualStop: {
           label: "ACT STOP",
           filterKey: "actualStop",
           filterColor: t.warning,
-        });
-      }
-      if (visibleColumns.status) {
-        cols.push({
-          key: "status",
-          width: gw("status"),
+        },
+        status: {
           label: "STATUS",
           filterKey: "status",
           filterColor: t.warning,
-        });
-      }
-      // Custom columns for this project that are visible
-      const customs = (project?.customColumns || []).filter(
-        (c) => visibleColumns[c.id],
-      );
-      customs.forEach((c) => {
-        cols.push({
-          key: c.id,
-          width: gw(c.id),
-          label: c.name.toUpperCase(),
-          filterKey: c.id,
+        },
+      };
+
+      return keys.map((key) => {
+        if (meta[key]) {
+          return {
+            key,
+            width: key === "task" ? tw : gw(key) || 120,
+            ...meta[key],
+          };
+        }
+        const c = customMap[key];
+        return {
+          key,
+          width: gw(key) || 120,
+          label: (c?.name || key).toUpperCase(),
+          filterKey: key,
           filterColor: t.violet,
           isCustom: true,
           colDef: c,
-        });
+        };
       });
-      return cols;
     },
-    [visibleColumns, gw, tw, t],
+    [visibleColumns, gw, tw, t, getVisibleOrder],
   );
 
   return (
@@ -382,20 +488,29 @@ export default function GanttLeftPanel({
           )}
       </div>
 
-      {/* Scrollable body (vertical locked to timeline; horizontal for wide tables) */}
       <div
         ref={leftPanelRef}
         style={{ flex: 1, overflowY: "hidden", overflowX: "auto" }}
       >
-        {/* Inner canvas = full content width so columns never squash */}
         <div style={{ width: Math.max(cw, leftPanelWidth), minWidth: "100%" }}>
           {viewMode === "task"
             ? filteredProjects.map((project) => {
                 const isExpanded = expandedProjects.has(project.id);
                 const pc = projectColorMap[project.id] || t.textMuted;
-                const projectRows = allRows.filter(
+
+                const projectRowsFromAll = allRows.filter(
                   (r) => r._projectId === project.id,
                 );
+                const projectRows =
+                  projectRowsFromAll.length > 0
+                    ? projectRowsFromAll
+                    : (project.rows || []).map((r) => ({
+                        ...r,
+                        depth: r.parentId ? 1 : 0,
+                        _projectId: project.id,
+                        _projectName: project.project || "Untitled",
+                      }));
+
                 const projectFilter = getProjectFilter(project.id);
                 const projectFilterOpts = computeProjectFilterOptions(
                   project,
@@ -406,7 +521,7 @@ export default function GanttLeftPanel({
 
                 return (
                   <React.Fragment key={project.id}>
-                    {/* ── Project header (merged row) ── */}
+                    {/* Project header */}
                     <div
                       onClick={() => {
                         setExpandedProjects((prev) => {
@@ -446,28 +561,33 @@ export default function GanttLeftPanel({
                         color={pc}
                         style={{ flexShrink: 0 }}
                       />
-                      <div
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: t.textPrimary,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                            title={project.project || "Untitled"}
-                          >
-                            {project.project || "Untitled"}
-                          </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Project Title */}
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: t.textPrimary,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={project.project || "Untitled"}
+                        >
+                          {project.project || "Untitled"}
+                        </div>
+
+                        {/* Meta + Dates + Status Summary */}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                            alignItems: "center",
+                            marginTop: 2,
+                          }}
+                        >
+                          {/* Task count / status / filters */}
                           <div
                             style={{
                               fontSize: 9.5,
@@ -475,6 +595,7 @@ export default function GanttLeftPanel({
                               display: "flex",
                               gap: 4,
                               alignItems: "center",
+                              whiteSpace: "nowrap",
                             }}
                           >
                             <span>{(project.rows || []).length} tasks</span>
@@ -499,11 +620,64 @@ export default function GanttLeftPanel({
                               </>
                             )}
                           </div>
+
+                          {/* Scheduled + Expected dates */}
+                          {(() => {
+                            const dates = computeProjectDates(project.rows);
+                            if (!dates.start && !dates.end) return null;
+
+                            const isDelayed =
+                              dates.expected &&
+                              dates.end &&
+                              dates.expected > dates.end;
+
+                            return (
+                              <div
+                                style={{
+                                  fontSize: 9.5,
+                                  color: t.textSecondary,
+                                  display: "flex",
+                                  gap: 6,
+                                  alignItems: "center",
+                                  background: t.bgMuted,
+                                  padding: "1px 6px",
+                                  borderRadius: 4,
+                                  border: `1px solid ${t.border}`,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                <span title="Scheduled Start – Scheduled End">
+                                  📅 {fmtDateWithYear(dates.start)} –{" "}
+                                  {fmtDateWithYear(dates.end)}
+                                </span>
+                                {dates.expected && (
+                                  <>
+                                    <span style={{ color: t.borderStrong }}>
+                                      |
+                                    </span>
+                                    <span
+                                      title="Expected/Actual Project End"
+                                      style={{
+                                        color: isDelayed
+                                          ? t.danger
+                                          : t.textSecondary,
+                                        fontWeight: isDelayed ? 700 : 500,
+                                      }}
+                                    >
+                                      🎯 Exp: {fmtDateWithYear(dates.expected)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Status summary badges — RESTORED */}
+                          <StatusBadgesSummary
+                            summary={computeStatusSummary(project.rows || [])}
+                            t={t}
+                          />
                         </div>
-                        <StatusBadgesSummary
-                          summary={computeStatusSummary(project.rows || [])}
-                          t={t}
-                        />
                       </div>
                       {!isFullScreen && (
                         <button
@@ -557,7 +731,7 @@ export default function GanttLeftPanel({
                       )}
                     </div>
 
-                    {/* ── Column sub-header ── */}
+                    {/* ── Column sub-header (DRAG LIVES HERE ONLY) ── */}
                     {isExpanded && (
                       <div
                         style={{
@@ -568,66 +742,173 @@ export default function GanttLeftPanel({
                           borderLeft: `4px solid ${pc}80`,
                         }}
                       >
-                        {columns.map((col) => (
-                          <div key={col.key} style={headerShell(col.width, t)}>
-                            <span
+                        {columns.map((col) => {
+                          const isDragging = draggingKey === col.key;
+                          const isDragOver =
+                            dragOverKey === col.key && draggingKey !== col.key;
+
+                          return (
+                            <div
+                              key={col.key}
                               style={{
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: col.isCustom ? t.violet : t.textFaint,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.3px",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
+                                ...headerShell(col.width, t),
+                                opacity: isDragging ? 0.4 : 1,
+                                boxShadow: isDragOver
+                                  ? `inset 3px 0 0 0 ${t.primary}`
+                                  : undefined,
+                                background: isDragOver
+                                  ? t.primaryBgSubtle
+                                  : undefined,
                               }}
-                              title={col.label}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                                if (dragOverKey !== col.key) {
+                                  setDragOverKey(col.key);
+                                }
+                              }}
+                              onDragLeave={() => {
+                                if (dragOverKey === col.key) {
+                                  setDragOverKey(null);
+                                }
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                const from =
+                                  e.dataTransfer.getData("text/col-key") ||
+                                  draggingKey;
+                                if (from && typeof moveColumn === "function") {
+                                  moveColumn(from, col.key);
+                                }
+                                setDraggingKey(null);
+                                setDragOverKey(null);
+                              }}
                             >
-                              {col.label}
-                            </span>
-                            {col.filterKey && (
-                              <ProjectColumnFilterButton
-                                color={col.filterColor}
-                                columnKey={col.filterKey}
-                                options={
-                                  col.isCustom
-                                    ? projectFilterOpts.customOpts?.[col.key] ||
-                                      []
-                                    : col.filterKey === "module"
-                                      ? projectFilterOpts.moduleOpts
-                                      : col.filterKey === "resource"
-                                        ? projectFilterOpts.resourceOpts
-                                        : col.filterKey === "status"
-                                          ? projectFilterOpts.statusOpts
-                                          : projectFilterOpts[col.filterKey] ||
-                                            []
-                                }
-                                selected={projectFilter[col.filterKey] || []}
-                                onChange={(vals) =>
-                                  updateProjectFilter(
-                                    project.id,
-                                    col.filterKey,
-                                    vals,
-                                  )
-                                }
+                              {/* Draggable header text */}
+                              <span
+                                draggable
+                                onDragStart={(e) => {
+                                  e.stopPropagation();
+                                  e.dataTransfer.effectAllowed = "move";
+                                  e.dataTransfer.setData(
+                                    "text/col-key",
+                                    col.key,
+                                  );
+                                  requestAnimationFrame(() =>
+                                    setDraggingKey(col.key),
+                                  );
+                                }}
+                                onDragEnd={() => {
+                                  setDraggingKey(null);
+                                  setDragOverKey(null);
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                title="Drag to reorder column"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                  flex: 1,
+                                  minWidth: 0,
+                                  cursor: "grab",
+                                  userSelect: "none",
+                                  borderRadius: 4,
+                                  padding: "2px 4px",
+                                  marginLeft: -4,
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = t.bgMuted;
+                                  const grip =
+                                    e.currentTarget.querySelector(
+                                      "[data-grip]",
+                                    );
+                                  if (grip) grip.style.opacity = "1";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background =
+                                    "transparent";
+                                  const grip =
+                                    e.currentTarget.querySelector(
+                                      "[data-grip]",
+                                    );
+                                  if (grip) grip.style.opacity = "0";
+                                }}
+                              >
+                                <GripVertical
+                                  data-grip="1"
+                                  size={11}
+                                  color={t.textFaint}
+                                  style={{
+                                    flexShrink: 0,
+                                    opacity: 0,
+                                    transition: "opacity .12s",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: col.isCustom
+                                      ? t.violet
+                                      : t.textFaint,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.3px",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {col.label}
+                                </span>
+                              </span>
+
+                              {col.filterKey && (
+                                <ProjectColumnFilterButton
+                                  color={col.filterColor}
+                                  columnKey={col.filterKey}
+                                  options={
+                                    col.isCustom
+                                      ? projectFilterOpts.customOpts?.[
+                                          col.key
+                                        ] || []
+                                      : col.filterKey === "module"
+                                        ? projectFilterOpts.moduleOpts || []
+                                        : col.filterKey === "resource"
+                                          ? projectFilterOpts.resourceOpts || []
+                                          : col.filterKey === "status"
+                                            ? projectFilterOpts.statusOpts || []
+                                            : projectFilterOpts[
+                                                col.filterKey
+                                              ] || []
+                                  }
+                                  selected={projectFilter[col.filterKey] || []}
+                                  onChange={(vals) =>
+                                    updateProjectFilter(
+                                      project.id,
+                                      col.filterKey,
+                                      vals,
+                                    )
+                                  }
+                                />
+                              )}
+
+                              <ColResizeHandle
+                                columnKey={col.key}
+                                getWidth={col.key === "task" ? () => tw : gw}
+                                getMinWidth={gmin}
+                                setWidth={sw}
+                                t={t}
                               />
-                            )}
-                            <ColResizeHandle
-                              columnKey={col.key}
-                              getWidth={col.key === "task" ? () => tw : gw}
-                              getMinWidth={gmin}
-                              setWidth={sw}
-                              t={t}
-                            />
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
-                    {/* ── Data rows ── */}
+                    {/* ── Data rows (ACTUAL CELL CONTENT) ── */}
                     {isExpanded &&
                       projectRows.map((row) => {
-                        const isParent = hasChildren(row.id);
+                        const isParent = hasChildren?.(row.id);
                         const isRowExpanded = expandedRows.has(row.id);
                         const displayStatus = getDisplayStatus(row);
                         const sc = getStatusColor(displayStatus, t);
@@ -643,7 +924,7 @@ export default function GanttLeftPanel({
                             }}
                           >
                             {columns.map((col) => {
-                              // ── MODULE ──
+                              // MODULE
                               if (col.key === "module") {
                                 const mc = row.module
                                   ? getModuleColor(row.module, moduleColorMap)
@@ -686,13 +967,13 @@ export default function GanttLeftPanel({
                                 );
                               }
 
-                              // ── TASK ──
+                              // TASK
                               if (col.key === "task") {
                                 return (
                                   <div
                                     key={col.key}
                                     style={cellShell(col.width, t, {
-                                      paddingLeft: 8 + row.depth * 14,
+                                      paddingLeft: 8 + (row.depth || 0) * 14,
                                       gap: 6,
                                     })}
                                   >
@@ -731,7 +1012,8 @@ export default function GanttLeftPanel({
                                     <span
                                       style={{
                                         fontSize: 11.5,
-                                        fontWeight: row.depth === 0 ? 600 : 400,
+                                        fontWeight:
+                                          (row.depth || 0) === 0 ? 600 : 400,
                                         color: t.textPrimary,
                                         overflow: "hidden",
                                         textOverflow: "ellipsis",
@@ -745,7 +1027,7 @@ export default function GanttLeftPanel({
                                 );
                               }
 
-                              // ── RESOURCE (initials only) ──
+                              // RESOURCE
                               if (col.key === "resource") {
                                 const full =
                                   row.resourceName || row.resource || "";
@@ -788,7 +1070,7 @@ export default function GanttLeftPanel({
                                 );
                               }
 
-                              // ── DATES ──
+                              // DATES
                               if (
                                 col.key === "plannedStart" ||
                                 col.key === "plannedStop" ||
@@ -824,7 +1106,7 @@ export default function GanttLeftPanel({
                                 );
                               }
 
-                              // ── STATUS ──
+                              // STATUS
                               if (col.key === "status") {
                                 return (
                                   <div
@@ -854,7 +1136,7 @@ export default function GanttLeftPanel({
                                 );
                               }
 
-                              // ── CUSTOM ──
+                              // CUSTOM
                               if (col.isCustom) {
                                 const val = String(
                                   row.customValues?.[col.key] || "",
@@ -883,13 +1165,17 @@ export default function GanttLeftPanel({
                                 );
                               }
 
-                              return null;
+                              return (
+                                <div
+                                  key={col.key}
+                                  style={cellShell(col.width, t)}
+                                />
+                              );
                             })}
                           </div>
                         );
                       })}
 
-                    {/* Empty filtered state */}
                     {isExpanded && hasFilters && projectRows.length === 0 && (
                       <div
                         style={{
@@ -942,8 +1228,7 @@ export default function GanttLeftPanel({
                   </React.Fragment>
                 );
               })
-            : /* ── Resource view ── */
-              resourceViewData.map((res) => {
+            : resourceViewData.map((res) => {
                 const rowHeight = ROW_HEIGHT * res.laneCount;
                 return (
                   <div
