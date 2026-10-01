@@ -44,160 +44,18 @@ function computeStatusSummary(rows) {
   });
   return counts;
 }
-// Helper to parse ISO strings safely to timestamps
-// Helper to parse ISO strings safely to timestamps
-function safeTime(isoStr) {
-  if (!isoStr) return null;
-  const d = new Date(isoStr);
-  return isNaN(d.getTime()) ? null : d.getTime();
-}
 
-// Format date with Year (e.g., "31 Jul 2026")
-function fmtDateWithYear(ms) {
-  if (!ms) return "—";
-  return new Date(ms).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-/**
- * Adds work hours starting from a date, skipping weekends (Sat/Sun) and non-work hours (10:00 - 18:00).
- */
-function addWorkingHours(startDate, totalHours) {
-  if (!totalHours || totalHours <= 0) return startDate;
-
-  let current = new Date(startDate.getTime());
-
-  const WORK_START = 10; // 10:00 AM
-  const WORK_END = 18; // 6:00 PM
-
-  // Adjust if starting on a weekend
-  while (current.getDay() === 0 || current.getDay() === 6) {
-    // 0 = Sun, 6 = Sat
-    current.setDate(current.getDate() + 1);
-    current.setHours(WORK_START, 0, 0, 0);
-  }
-
-  // Adjust time of day
-  if (current.getHours() < WORK_START) {
-    current.setHours(WORK_START, 0, 0, 0);
-  } else if (current.getHours() >= WORK_END) {
-    current.setDate(current.getDate() + 1);
-    current.setHours(WORK_START, 0, 0, 0);
-    while (current.getDay() === 0 || current.getDay() === 6) {
-      current.setDate(current.getDate() + 1);
-    }
-  }
-
-  let hoursRemaining = totalHours;
-
-  while (hoursRemaining > 0) {
-    // Skip weekend
-    while (current.getDay() === 0 || current.getDay() === 6) {
-      current.setDate(current.getDate() + 1);
-      current.setHours(WORK_START, 0, 0, 0);
-    }
-
-    const currentHour = current.getHours() + current.getMinutes() / 60;
-    const hoursLeftToday = WORK_END - currentHour;
-
-    if (hoursRemaining <= hoursLeftToday) {
-      const minutesToAdd = hoursRemaining * 60;
-      current.setMinutes(current.getMinutes() + minutesToAdd);
-      hoursRemaining = 0;
-    } else {
-      hoursRemaining -= hoursLeftToday;
-      current.setDate(current.getDate() + 1);
-      current.setHours(WORK_START, 0, 0, 0);
-    }
-  }
-
-  return current;
-}
-
-/**
- * Calculates Project Start, End, and Expected End (Option A)
- */
-function computeProjectDates(rows) {
-  if (!rows || rows.length === 0)
-    return { start: null, end: null, expected: null };
-
-  let minStart = Infinity;
-  let maxStop = -Infinity;
-
-  rows.forEach((r) => {
-    const pStart = safeTime(r.plannedStart);
-    const pStop = safeTime(r.plannedStop);
-
-    if (pStart && pStart < minStart) minStart = pStart;
-    if (pStop && pStop > maxStop) maxStop = pStop;
-  });
-
-  // Separate non-completed tasks
-  const incompleteRows = rows.filter((r) => {
-    const status = String(r.status || "")
-      .toLowerCase()
-      .trim();
-    return (
-      status !== "completed" && status !== "finished" && status !== "closed"
-    );
-  });
-
-  let expectedDateMs = null;
-
-  if (incompleteRows.length === 0) {
-    // All tasks completed/finished/closed: Expected end = latest actualStop
-    let maxCompleteStop = -Infinity;
-    rows.forEach((r) => {
-      const stop = safeTime(r.actualStop) || safeTime(r.plannedStop);
-      if (stop && stop > maxCompleteStop) maxCompleteStop = stop;
-    });
-    expectedDateMs = maxCompleteStop !== -Infinity ? maxCompleteStop : maxStop;
-  } else {
-    // Schedule remaining tasks starting from TODAY (Option A)
-    const now = new Date();
-
-    // Group incomplete duration by resource (parallel execution across users)
-    const resourceDurations = {};
-
-    incompleteRows.forEach((r) => {
-      const resKey = r.resource || "__unassigned__";
-      const dur = Number(r.durationHrs) || 0;
-      resourceDurations[resKey] = (resourceDurations[resKey] || 0) + dur;
-    });
-
-    let maxResourceEndMs = -Infinity;
-
-    Object.values(resourceDurations).forEach((totalHrs) => {
-      const endDt = addWorkingHours(now, totalHrs);
-      if (endDt.getTime() > maxResourceEndMs) {
-        maxResourceEndMs = endDt.getTime();
-      }
-    });
-
-    expectedDateMs =
-      maxResourceEndMs !== -Infinity ? maxResourceEndMs : maxStop;
-  }
-
-  return {
-    start: minStart !== Infinity ? minStart : null,
-    end: maxStop !== -Infinity ? maxStop : null,
-    expected: expectedDateMs,
-  };
-}
 function StatusBadgesSummary({ summary, t }) {
   const active = DISPLAY_STATUSES.filter((s) => (summary[s] || 0) > 0);
   if (!active.length) return null;
-
   return (
     <div
       style={{
         display: "inline-flex",
         alignItems: "center",
-        flexWrap: "wrap",
         gap: 4,
+        flexShrink: 0,
+        whiteSpace: "nowrap",
       }}
     >
       {active.map((status) => {
@@ -237,6 +95,76 @@ function StatusBadgesSummary({ summary, t }) {
       })}
     </div>
   );
+}
+
+function safeTime(isoStr) {
+  if (!isoStr) return null;
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+function fmtDateWithYear(ms) {
+  if (!ms) return "—";
+  return new Date(ms).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function computeProjectDates(rows) {
+  if (!rows || rows.length === 0)
+    return { start: null, end: null, expected: null };
+
+  let minStart = Infinity;
+  let maxStop = -Infinity;
+  let maxEffectiveStop = -Infinity;
+
+  const now = new Date().getTime();
+
+  rows.forEach((r) => {
+    const pStart = safeTime(r.plannedStart);
+    const pStop = safeTime(r.plannedStop);
+    const aStop = safeTime(r.actualStop);
+
+    if (pStart && pStart < minStart) minStart = pStart;
+    if (pStop && pStop > maxStop) maxStop = pStop;
+
+    const status = String(r.status || "")
+      .toLowerCase()
+      .trim();
+    const isComplete =
+      status === "completed" || status === "finished" || status === "closed";
+
+    let effectiveStop = pStop;
+
+    if (isComplete) {
+      effectiveStop = aStop || pStop;
+    } else {
+      if (pStart && pStart < now) {
+        const delayMs = now - pStart;
+        effectiveStop = pStop ? pStop + delayMs : now;
+      } else if (pStop && pStop < now) {
+        const delayMs = now - pStop;
+        effectiveStop = pStop + delayMs;
+      }
+    }
+
+    if (effectiveStop && effectiveStop > maxEffectiveStop) {
+      maxEffectiveStop = effectiveStop;
+    }
+  });
+
+  const finalStart = minStart !== Infinity ? minStart : null;
+  const finalEnd = maxStop !== -Infinity ? maxStop : null;
+  const finalExpected =
+    maxEffectiveStop !== -Infinity ? maxEffectiveStop : finalEnd;
+
+  return {
+    start: finalStart,
+    end: finalEnd,
+    expected: finalExpected,
+  };
 }
 
 function ColResizeHandle({ columnKey, getWidth, getMinWidth, setWidth, t }) {
@@ -439,6 +367,12 @@ export default function GanttLeftPanel({
         overflow: "hidden",
       }}
     >
+      {/* CSS to hide horizontal scrollbar in metadata container */}
+      <style>{`
+        .gantt-hdr-scroll::-webkit-scrollbar { display: none; }
+        .gantt-hdr-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
       {/* Top label bar */}
       <div
         style={{
@@ -521,7 +455,7 @@ export default function GanttLeftPanel({
 
                 return (
                   <React.Fragment key={project.id}>
-                    {/* Project header */}
+                    {/* ── Project Header (Strict 44px Row Height) ── */}
                     <div
                       onClick={() => {
                         setExpandedProjects((prev) => {
@@ -533,14 +467,18 @@ export default function GanttLeftPanel({
                       }}
                       style={{
                         height: ROW_HEIGHT,
+                        minHeight: ROW_HEIGHT,
+                        maxHeight: ROW_HEIGHT,
                         display: "flex",
                         alignItems: "center",
-                        padding: "0 10px",
+                        padding: "0 8px",
                         borderBottom: `1px solid ${t.border}`,
                         background: hasFilters ? t.primaryBgSubtle : t.bgSubtle,
                         cursor: "pointer",
                         gap: 6,
                         borderLeft: `4px solid ${pc}`,
+                        overflow: "hidden",
+                        boxSizing: "border-box",
                       }}
                     >
                       {isExpanded ? (
@@ -561,71 +499,87 @@ export default function GanttLeftPanel({
                         color={pc}
                         style={{ flexShrink: 0 }}
                       />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Project Title */}
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: t.textPrimary,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={project.project || "Untitled"}
-                        >
-                          {project.project || "Untitled"}
-                        </div>
 
-                        {/* Meta + Dates + Status Summary */}
+                      {/* Flex content area */}
+                      <div
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {/* Title & Task count */}
                         <div
                           style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 6,
-                            alignItems: "center",
-                            marginTop: 2,
+                            flexShrink: 0,
+                            maxWidth: "40%",
+                            minWidth: 70,
                           }}
                         >
-                          {/* Task count / status / filters */}
                           <div
                             style={{
-                              fontSize: 9.5,
-                              color: t.textFaint,
-                              display: "flex",
-                              gap: 4,
-                              alignItems: "center",
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              color: t.textPrimary,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                             }}
+                            title={project.project || "Untitled"}
                           >
-                            <span>{(project.rows || []).length} tasks</span>
-                            <span>•</span>
-                            <span style={{ textTransform: "capitalize" }}>
-                              {project.status || "draft"}
-                            </span>
-                            {hasFilters && (
-                              <>
-                                <span>•</span>
-                                <span
-                                  style={{
-                                    color: t.primary,
-                                    fontWeight: 700,
-                                    display: "inline-flex",
-                                    gap: 3,
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <Filter size={9} /> Filtered
-                                </span>
-                              </>
-                            )}
+                            {project.project || "Untitled"}
                           </div>
+                          <div
+                            style={{
+                              fontSize: 9,
+                              color: t.textFaint,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {(project.rows || []).length} tasks •{" "}
+                            {project.status || "draft"}
+                          </div>
+                        </div>
 
-                          {/* Scheduled + Expected dates */}
+                        {/* Metadata container (Single-line horizontal scroll) */}
+                        <div
+                          className="gantt-hdr-scroll"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            overflowX: "auto",
+                            flex: 1,
+                            minWidth: 0,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {/* Filtered tag */}
+                          {hasFilters && (
+                            <span
+                              style={{
+                                color: t.primary,
+                                fontWeight: 700,
+                                fontSize: 9,
+                                display: "inline-flex",
+                                gap: 3,
+                                alignItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Filter size={9} /> Filtered
+                            </span>
+                          )}
+
+                          {/* Calculated Dates */}
                           {(() => {
                             const dates = computeProjectDates(project.rows);
                             if (!dates.start && !dates.end) return null;
-
                             const isDelayed =
                               dates.expected &&
                               dates.end &&
@@ -634,20 +588,21 @@ export default function GanttLeftPanel({
                             return (
                               <div
                                 style={{
-                                  fontSize: 9.5,
+                                  fontSize: 9,
                                   color: t.textSecondary,
-                                  display: "flex",
-                                  gap: 6,
+                                  display: "inline-flex",
+                                  gap: 5,
                                   alignItems: "center",
                                   background: t.bgMuted,
-                                  padding: "1px 6px",
+                                  padding: "2px 6px",
                                   borderRadius: 4,
                                   border: `1px solid ${t.border}`,
+                                  flexShrink: 0,
                                   whiteSpace: "nowrap",
                                 }}
                               >
-                                <span title="Scheduled Start – Scheduled End">
-                                  📅 {fmtDateWithYear(dates.start)} –{" "}
+                                <span title="Scheduled Range">
+                                  📅 {fmtDateWithYear(dates.start)} -{" "}
                                   {fmtDateWithYear(dates.end)}
                                 </span>
                                 {dates.expected && (
@@ -656,7 +611,7 @@ export default function GanttLeftPanel({
                                       |
                                     </span>
                                     <span
-                                      title="Expected/Actual Project End"
+                                      title="Expected End"
                                       style={{
                                         color: isDelayed
                                           ? t.danger
@@ -672,13 +627,15 @@ export default function GanttLeftPanel({
                             );
                           })()}
 
-                          {/* Status summary badges — RESTORED */}
+                          {/* Status summary badges */}
                           <StatusBadgesSummary
                             summary={computeStatusSummary(project.rows || [])}
                             t={t}
                           />
                         </div>
                       </div>
+
+                      {/* Far-right action buttons */}
                       {!isFullScreen && (
                         <button
                           onClick={(e) => {
@@ -731,7 +688,7 @@ export default function GanttLeftPanel({
                       )}
                     </div>
 
-                    {/* ── Column sub-header (DRAG LIVES HERE ONLY) ── */}
+                    {/* ── Column Sub-Header ── */}
                     {isExpanded && (
                       <div
                         style={{
@@ -784,7 +741,7 @@ export default function GanttLeftPanel({
                                 setDragOverKey(null);
                               }}
                             >
-                              {/* Draggable header text */}
+                              {/* Draggable header label */}
                               <span
                                 draggable
                                 onDragStart={(e) => {
@@ -905,7 +862,7 @@ export default function GanttLeftPanel({
                       </div>
                     )}
 
-                    {/* ── Data rows (ACTUAL CELL CONTENT) ── */}
+                    {/* ── Data Rows ── */}
                     {isExpanded &&
                       projectRows.map((row) => {
                         const isParent = hasChildren?.(row.id);
@@ -1176,6 +1133,7 @@ export default function GanttLeftPanel({
                         );
                       })}
 
+                    {/* Empty state */}
                     {isExpanded && hasFilters && projectRows.length === 0 && (
                       <div
                         style={{
@@ -1228,7 +1186,8 @@ export default function GanttLeftPanel({
                   </React.Fragment>
                 );
               })
-            : resourceViewData.map((res) => {
+            : /* Resource View */
+              resourceViewData.map((res) => {
                 const rowHeight = ROW_HEIGHT * res.laneCount;
                 return (
                   <div
