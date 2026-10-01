@@ -125,7 +125,7 @@ closed: {
  
 };
 
-const StatusChip = ({ status = "pending" }) => {
+const StatusChip = ({ status = "pending",isPulseEnabled=true }) => {
   const config =
     STATUS_CONFIG[status?.toLowerCase()] || STATUS_CONFIG.pending;
 console.log("Status in chip::",status)
@@ -154,7 +154,7 @@ console.log("Status in chip::",status)
           style={{
             animation: config.spin
               ? "status-spin 1s linear infinite"
-              : config.pulse
+              : isPulseEnabled && config.pulse
               ? "status-pulse 1.5s ease-in-out infinite"
               : "none",
           }}

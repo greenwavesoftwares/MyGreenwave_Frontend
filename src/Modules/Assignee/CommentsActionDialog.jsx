@@ -480,15 +480,15 @@ export default function CommentsActionDialog({
                   distributes any remainder across the % columns. */}
               <colgroup>
                 <col style={{ width: "3%" }} />
-                <col style={{ width: "19%" }} />
-                <col style={{ width: "13%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "11%" }} />
                 <col style={{ width: "10%" }} />
-                <col style={{ width: "9.5%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "15%" }} />
                 <col style={{ width: "9%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "13.5%" }} />
+                <col style={{ width: "7%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "9%" }} />
               </colgroup>
               <TableHead>
                 <TableRow>
@@ -515,9 +515,11 @@ export default function CommentsActionDialog({
                     <span className="col-label">Added By</span>
                   </TableCell>
                   <TableCell>
-                    <span className="col-label">Activity Status</span>
+                    <span className="col-label">Entry Time Status</span>
                   </TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell>
+                    <span className="col-label">Actions</span>
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
@@ -633,7 +635,7 @@ export default function CommentsActionDialog({
                       <TableCell data-label="Added By">
                         <div className="added-cell">
                           {entry?.activityStatus?.length > 0 ? (
-                            <StatusChip status={entry.activityStatus} />
+                            <StatusChip status={entry.activityStatus} isPulseEnabled={false}/>
                           ) : (
                             <span className="cell-empty">—</span>
                           )}

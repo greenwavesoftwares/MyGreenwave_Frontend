@@ -1,8 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ==========================================================
-   DESIGN TOKENS
-   ========================================================== */
+/* DESIGN TOKENS */
 
 .comments-dialog {
   /* Reuses the exact same --pj-* palette PauseReasonDialog reads from
@@ -31,9 +29,7 @@
   --danger-50:    var(--pj-danger-bg-2, #fef2f2);
 
   /* boxShadowPaper already carries its own alpha per theme */
-  --shadow-1: 0 1px 3px var(--boxShadowPaper, rgba(17,24,39,.06)), 0 1px 2px var(--boxShadowPaper, rgba(17,24,39,.04));
-  --shadow-2: 0 4px 12px var(--boxShadowPaper, rgba(17,24,39,.08)), 0 1px 4px var(--boxShadowPaper, rgba(17,24,39,.04));
-  --shadow-3: 0 12px 32px var(--boxShadowPaper, rgba(17,24,39,.10)), 0 4px 12px var(--boxShadowPaper, rgba(17,24,39,.06));
+  --shadow-dialog: 0 8px 24px var(--boxShadowPaper, rgba(17,24,39,.12));
 
   --r-sm:  6px;
   --r-md:  10px;
@@ -42,37 +38,24 @@
 
   --ease: cubic-bezier(.4,0,.2,1);
 
-  /* Avatar accent rail — av-1/3/4 mirror pj's primary/warning/purple so
-     they land on the exact same hues PauseReasonDialog uses for those
-     same states. av-2 (teal) and av-5 (sky) have no --pj- equivalent,
-     so they keep bespoke values (overridden for dark below, same as
-     PauseReasonDialog does for its own equivalent-free tokens). */
-  --av-1: var(--pj-primary, #3b5bdb); --av-1-bg: var(--pj-primary-bg, #edf2ff);
-  --av-2: #0d9488; --av-2-bg: #f0fdfa;
-  --av-3: var(--pj-warning, #d97706); --av-3-bg: var(--pj-warning-bg, #fffbeb);
-  --av-4: var(--pj-purple, #9333ea); --av-4-bg: var(--pj-purple-bg, #faf5ff);
-  --av-5: #0284c7; --av-5-bg: #f0f9ff;
 
   --on-primary: var(--pj-on-color, #ffffff);
   --row-hover: var(--hoverText, #f9faff);
   --tab-count-overlay: rgba(255,255,255,.25);
-  --table-head-grad-start: var(--pj-surface-2, #f4f6fb);
-  --table-head-grad-end: var(--pj-border-subtle, #eef1f7);
   --table-head-text: var(--pj-text-muted, #4b5568);
   --table-head-border: var(--pj-border, #dde3ee);
   --table-head-muted: var(--pj-text-faint, #9aa5bb);
 
   /* Dedicated solid background for the sticky table header only.
-     Intentionally NOT derived from --table-head-grad-start/end (which
-     lean on --pj-surface-2 / --pj-border-subtle): in the real app
-     those can resolve to semi-transparent values, which would let
+     Intentionally NOT derived from --pj-surface-2 / --pj-border-subtle: in the
+     real app those can resolve to semi-transparent values, which would let
      body rows show through a sticky header while scrolling. This
      token is hardcoded opaque so there's no dependency chain that
      can reintroduce transparency. */
   --table-head-solid-bg: #f4f6fb;
 }
 
-/* ==========================================================
+/*
    DARK MODE — only for tokens with no --pj- equivalent.
    Everything else above (primary, danger, all neutrals, and the
    warning/purple-based av-3/av-4) resolves automatically the moment
@@ -81,7 +64,7 @@
    ProjectActivityInfo.css — the same mechanism PauseReasonDialog
    relies on. This block is now just the leftover bespoke colors
    (av-2 teal, av-5 sky) that don't exist in the --pj- palette.
-   ========================================================== */
+   */
 
 .dark .comments-dialog,
 [data-theme="dark"] .comments-dialog,
@@ -95,17 +78,13 @@
   --neutral-50:  #333849;
   --neutral-100: #3a3f52;
 
-  --av-2: #2dd4bf; --av-2-bg: #0f2b28;
-  --av-5: #38bdf8; --av-5-bg: #0c2536;
 
   --tab-count-overlay: rgba(255,255,255,.12);
 
   --table-head-solid-bg: #333849;
 }
 
-/* ==========================================================
-   RESET
-   ========================================================== */
+/* RESET */
 
 .comments-dialog,
 .comments-dialog * {
@@ -113,9 +92,7 @@
   box-sizing: border-box;
 }
 
-/* ==========================================================
-   DIALOG
-   ========================================================== */
+/* DIALOG */
 
 .comments-dialog {
   /* !important on width/max-width: MUI's Dialog applies a
@@ -137,13 +114,13 @@
      while its own children (using the same var) render correctly. */
   background: var(--neutral-0) !important;
   background-clip: padding-box;
-  box-shadow: var(--shadow-3);
-  animation: dialogIn .28s var(--ease);
+  box-shadow: var(--shadow-dialog);
+  animation: fadeIn .15s var(--ease);
 }
 
-@keyframes dialogIn  {
-  from  { opacity: 0; transform: translateY(10px) scale(.985); }
-  to    { opacity: 1; transform: translateY(0)    scale(1);    }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .comments-dialog .comments-content {
@@ -159,9 +136,7 @@
   outline-offset: 2px;
 }
 
-/* ==========================================================
-   HEADER
-   ========================================================== */
+/* HEADER */
 
 .comments-dialog .comments-header {
   display: flex;
@@ -239,18 +214,16 @@
   color: var(--neutral-700);
 }
 
-/* ==========================================================
+/*
    MOBILE VIEW SWITCHER (Existing / Add New)
    Hidden entirely on desktop — both panels are always visible there.
-   ========================================================== */
+   */
 
 .comments-dialog .mobile-view-tabs {
   display: none;
 }
 
-/* ==========================================================
-   SCROLLABLE LIST
-   ========================================================== */
+/* SCROLLABLE LIST */
 
 .comments-dialog .entries-container {
   /* No top padding here on purpose — position:sticky resolves its
@@ -298,9 +271,7 @@
    track horizontal scroll (headers move with the table naturally since
    only `top`, not `left`, is stickied). */
 
-/* ==========================================================
-   EMPTY STATE
-   ========================================================== */
+/* EMPTY STATE */
 
 .comments-dialog .empty-state {
   min-height: 180px;
@@ -355,7 +326,7 @@
   line-height: 1.6 !important;
 }
 
-/* ==========================================================
+/*
    TABLE
    Laptop/desktop (>1024px): no min-width — table sizes naturally
    within the 74vw / 1380px dialog, unchanged from before.
@@ -380,7 +351,6 @@
   border-radius: var(--r-lg);
   background: var(--neutral-0);
   border: 1px solid var(--neutral-200);
-  box-shadow: var(--shadow-1);
   border-collapse: separate;
   border-spacing: 0;
   /* Replaces the top spacing .entries-container used to give via its
@@ -531,9 +501,7 @@
   cursor: default;
 }
 
-/* ==========================================================
-   AVATAR
-   ========================================================== */
+/* AVATAR */
 
 .comments-dialog .avatar-badge {
   display: inline-flex;
@@ -545,36 +513,24 @@
   border-radius: 50%;
   font-size: 10px;
   font-weight: 700;
-  background: var(--av-1-bg);
-  color: var(--av-1);
-  border: 1px solid rgba(0,0,0,.06);
+  background: var(--neutral-100);
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
 }
 
 .comments-dialog .avatar-badge-sm { width: 22px; height: 22px; font-size: 9px; }
 
-.comments-dialog .MuiTableRow-root:nth-of-type(5n+1) .avatar-badge { background:var(--av-1-bg); color:var(--av-1); }
 
-.comments-dialog .MuiTableRow-root:nth-of-type(5n+2) .avatar-badge { background:var(--av-2-bg); color:var(--av-2); }
 
-.comments-dialog .MuiTableRow-root:nth-of-type(5n+3) .avatar-badge { background:var(--av-3-bg); color:var(--av-3); }
 
-.comments-dialog .MuiTableRow-root:nth-of-type(5n+4) .avatar-badge { background:var(--av-4-bg); color:var(--av-4); }
 
-.comments-dialog .MuiTableRow-root:nth-of-type(5n+5) .avatar-badge { background:var(--av-5-bg); color:var(--av-5); }
 
-.comments-dialog .reply-item:nth-of-type(5n+1) .avatar-badge { background:var(--av-2-bg); color:var(--av-2); }
 
-.comments-dialog .reply-item:nth-of-type(5n+2) .avatar-badge { background:var(--av-3-bg); color:var(--av-3); }
 
-.comments-dialog .reply-item:nth-of-type(5n+3) .avatar-badge { background:var(--av-4-bg); color:var(--av-4); }
 
-.comments-dialog .reply-item:nth-of-type(5n+4) .avatar-badge { background:var(--av-5-bg); color:var(--av-5); }
 
-.comments-dialog .reply-item:nth-of-type(5n+5) .avatar-badge { background:var(--av-1-bg); color:var(--av-1); }
 
-/* ==========================================================
-   ADDED-BY CELL
-   ========================================================== */
+/* ADDED-BY CELL */
 
 .comments-dialog .added-cell {
   display: flex;
@@ -611,9 +567,7 @@
   color: var(--neutral-400);
 }
 
-/* ==========================================================
-   ACTION BUTTONS
-   ========================================================== */
+/* ACTION BUTTONS */
 
 .comments-dialog .action-buttons {
   /* container-type only works on boxes that establish a normal
@@ -729,22 +683,16 @@
   margin-left: 5px;
 }
 
-/* ==========================================================
-   REPLIES
-   ========================================================== */
+/* REPLIES */
 
 .comments-dialog .reply-history-cell {
   background: var(--neutral-50) !important;
   padding: 12px 14px 12px 46px !important;
   border-bottom: 1px solid var(--neutral-100) !important;
   position: relative;
-  animation: revealDown .18s var(--ease);
+  animation: fadeIn .15s var(--ease);
 }
 
-@keyframes revealDown  {
-  from  { opacity: 0; transform: translateY(-4px); }
-  to    { opacity: 1; transform: translateY(0);    }
-}
 
 .comments-dialog .reply-history-cell::before {
   content: "";
@@ -768,7 +716,6 @@
 
 .comments-dialog .reply-item:hover {
   border-color: var(--neutral-300);
-  box-shadow: var(--shadow-1);
 }
 
 .comments-dialog .reply-item::before {
@@ -823,9 +770,7 @@
 
 }
 
-/* ==========================================================
-   REPLY INPUT  — no wrapper border, textarea is the input
-   ========================================================== */
+/* REPLY INPUT  — no wrapper border, textarea is the input */
 
 .comments-dialog .reply-box-cell {
   background: var(--neutral-50) !important;
@@ -838,7 +783,7 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  animation: revealDown .18s var(--ease);
+  animation: fadeIn .15s var(--ease);
 }
 
 .comments-dialog .reply-avatar {
@@ -868,9 +813,7 @@
   flex-wrap: wrap;
 }
 
-/* ==========================================================
-   ATTACHMENTS
-   ========================================================== */
+/* ATTACHMENTS */
 
 .comments-dialog .attachment-pill,
 .comments-dialog .attachment-staged {
@@ -959,9 +902,7 @@
 
 .comments-dialog .attachment-staged .MuiIconButton-root:hover { color: var(--danger); }
 
-/* ==========================================================
-   ADD NEW ENTRY SECTION
-   ========================================================== */
+/* ADD NEW ENTRY SECTION */
 
 .comments-dialog .entry-section {
   padding: 16px 20px 20px;
@@ -1011,9 +952,7 @@
   gap: 6px;
 }
 
-/* ==========================================================
-   FOOTER
-   ========================================================== */
+/* FOOTER */
 
 .comments-dialog .dialog-footer {
   display: flex;
@@ -1026,9 +965,7 @@
 
 .comments-dialog .footer-actions { display: flex; gap: 8px; }
 
-/* ==========================================================
-   MUI OVERRIDES
-   ========================================================== */
+/* MUI OVERRIDES */
 
 /* TextField */
 .comments-dialog .MuiOutlinedInput-root {
@@ -1079,7 +1016,6 @@
   border-color: var(--neutral-200) !important;
   color: var(--neutral-500) !important;
   background: var(--neutral-0) !important;
-  box-shadow: var(--shadow-1) !important;
 }
 
 .comments-dialog .MuiButton-outlined:hover {
@@ -1091,12 +1027,12 @@
 .comments-dialog .MuiButton-contained {
   background: var(--primary) !important;
   color: var(--on-primary) !important;
-  box-shadow: 0 1px 3px rgba(59,91,219,.3), 0 1px 2px rgba(59,91,219,.2) !important;
+  box-shadow: none !important;
 }
 
 .comments-dialog .MuiButton-contained:hover {
   background: var(--primary-600) !important;
-  box-shadow: 0 4px 10px rgba(59,91,219,.3) !important;
+  box-shadow: none !important;
 }
 
 .comments-dialog .MuiButton-contained.Mui-disabled {
@@ -1145,9 +1081,7 @@
   font-size: 11px !important;
 }
 
-/* ==========================================================
-   MOBILE
-   ========================================================== */
+/* MOBILE */
 
 @media (max-width: 768px)  {.comments-dialog {
     width: 100vw !important;
@@ -1214,7 +1148,6 @@
     background: var(--primary);
     border-color: var(--primary);
     color: var(--on-primary);
-    box-shadow: 0 1px 3px rgba(59,91,219,.3);
   }
 
 .comments-dialog .mobile-view-tab-count {
@@ -1266,7 +1199,7 @@
   }
 }
 
-/* ==========================================================
+/*
    MOBILE — EXISTING COMMENTS AS CARDS
    Below 768px, a 9-column table is unreadable no matter how far it
    scrolls sideways, so instead of a horizontal-scroll grid it's
@@ -1280,7 +1213,7 @@
    Rows with colSpan (reply history / reply input) carry no
    data-label and are exempted below, so they keep rendering as
    plain full-width sections instead of picking up a phantom label.
-   ========================================================== */
+   */
 
 @media (max-width: 768px) {
   .comments-dialog .comments-table,
@@ -1305,7 +1238,6 @@
     border: 1px solid var(--neutral-200) !important;
     border-radius: var(--r-lg);
     background: var(--neutral-0);
-    box-shadow: var(--shadow-1);
   }
 
   .comments-dialog .comments-table .MuiTableBody-root .MuiTableRow-root:last-child {
@@ -1524,7 +1456,7 @@
   }
 }
 
-/* ==========================================================
+/*
    COMMENTS TABLE — HEADER STYLES
    Imported separately; relies on Inter font + CSS vars
    from CommentsActionDialog.css
@@ -1533,7 +1465,7 @@
    the actual scrolling ancestor (overflow-y: auto, bounded by
    .comments-content's max-height: 88vh). Background is solid and set
    directly on the cell (not just the row) via --table-head-solid-bg
-   — a dedicated opaque token, NOT the gradient vars below it, since
+   — a dedicated opaque token, NOT --pj-* vars, since
    those lean on tokens that can resolve semi-transparent in the real
    app and would let body rows show through while scrolling.
 
@@ -1543,11 +1475,11 @@
    outside that box, so the header would stop tracking the scroll
    instead of staying pinned. Rounded corners are handled on the
    corner cells instead, up in the TABLE section.
-   ========================================================== */
+   */
 
 /* Head row background — kept for non-sticky context / fallback */
 .comments-dialog .comments-table .MuiTableHead-root {
-  background: linear-gradient(180deg, var(--table-head-grad-start) 0%, var(--table-head-grad-end) 100%);
+  background: var(--table-head-solid-bg);
 }
 
 /* Individual header cells */
@@ -1561,7 +1493,8 @@
   color: var(--table-head-text);
   letter-spacing: 0;
   text-transform: none;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.35;
   padding: 11px 14px;
   border-bottom: 1.5px solid var(--table-head-border);
   /* !important + background-color: forces this opaque token to win
