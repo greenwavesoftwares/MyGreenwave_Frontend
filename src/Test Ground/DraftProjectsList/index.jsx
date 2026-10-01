@@ -40,6 +40,9 @@ import { makeBtnStyle } from "../helpers/styles";
 import { useResponsive } from "../useResponsive";
 import BottomSheet from "../shared/BottomSheet";
 import { loadSavedDateRange, saveDateRange } from "../helpers/dateRangeStorage";
+import GreenWaveLoader, {
+  GreenWaveLoaderOverlay,
+} from "../loader/GreenWaveLoader";
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
   alignItems: "center",
@@ -986,7 +989,17 @@ export default function DraftProjectsList({
             fontSize: 13,
           }}
         >
-          <div style={{ fontSize: 32, marginBottom: 10 }}>⏳</div>
+          <div
+            style={{
+              fontSize: 32,
+              marginBottom: 10,
+              justifyContent: "center",
+              display: "flex",
+            }}
+          >
+            <GreenWaveLoader mode="draw" size={90} />
+            {/* <GreenWaveLoaderOverlay mode="draw-spin" show={true} size={110} /> */}
+          </div>
           Loading projects from server...
         </div>
       )}

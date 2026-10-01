@@ -31,6 +31,7 @@ import ProjectEditor from "./ProjectEditor";
 import { useResponsive } from "./useResponsive";
 import BottomTabBar from "./shared/BottomTabBar";
 import { getInitialDateRange } from "./helpers/dateRangeStorage";
+import GreenWaveLoader from "./loader/GreenWaveLoader";
 /* ═══════════════════════════════════════════════════════
    Root AssignerModule
    Handles: navigation, data fetching, drafts state
@@ -419,8 +420,16 @@ export default function AssignerModule() {
           background: t.bgApp,
         }}
       >
-        <div style={{ textAlign: "center", color: t.textMuted }}>
-          <Loader2 size={32} style={{ animation: "spin 1s linear infinite" }} />
+        <div
+          style={{
+            textAlign: "center",
+            color: t.textMuted,
+            jsustifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {/* <Loader2 size={32} style={{ animation: "spin 1s linear infinite" }} /> */}
+          <GreenWaveLoader mode="draw" size={90} />
           <div style={{ marginTop: 12, fontSize: 13 }}>
             Loading workspace...
           </div>
