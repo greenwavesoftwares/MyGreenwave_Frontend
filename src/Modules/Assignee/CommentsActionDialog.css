@@ -102,6 +102,9 @@
      rule, silently shrinking the dialog regardless of viewport size.
      Pass maxWidth={false} in JSX (see CommentsActionDialog.jsx) and
      keep these !important flags here as a safety net. */
+  /* Default = minimized (windowed) size. Maximized overrides below
+     via .is-maximized. !important on width/max-width is the safety net
+     against MUI's MuiDialog-paperWidthXX rules. */
   width: 74vw !important;
   max-width: 1380px !important;
   max-height: 88vh;
@@ -121,6 +124,47 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Maximized: fills the whole viewport (100dvh so mobile toolbars don't
+   cut off the footer). Paired with <Dialog fullScreen> in the JSX. */
+.comments-dialog.is-maximized {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.comments-dialog.is-maximized .comments-content {
+  height: 100%;
+  max-height: 100%;
+}
+
+/* Added By — initials avatar, identical styling to the Activities
+   table's .avatar-resource (copied here so it doesn't depend on the
+   .pai-page scope). */
+.comments-dialog .added-chip-cell .added-by-avatar {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  color: var(--avatar-text);
+  background-color: var(--avatar-bg);
+  border: 1px solid var(--avatar-border);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  user-select: none;
+  cursor: default;
+  transition: all 0.2s ease;
 }
 
 .comments-dialog .comments-content {
@@ -152,6 +196,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.comments-dialog .comments-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .comments-dialog .comments-icon {
@@ -361,18 +411,67 @@
   margin-top: 16px;
 }
 
-/* Desktop only: use the <colgroup> widths in the JSX instead of
-   letting the browser size columns from their content. Auto layout
-   was giving most of the row's width to whichever cell had the
-   longest *unbroken* run of characters — a long, space-less
-   filename in Attachment — starving Description/Action Point down
-   to a narrow, ragged column. Below 1024px this reverts to auto so
-   the existing horizontal-scroll behavior (min-width below) still
-   works, since fixed-width columns don't play well with a table
-   that's meant to grow past its container. */
+/* Desktop only: columns size themselves from their content (table-
+   layout: auto), each within a min / max width so no single column
+   can hog the row or collapse to a sliver:
+     - a column with short data (e.g. Others = "—") stays narrow;
+     - a column with long data (Description, Action Point, Added By)
+       grows up to its max-width, then wraps onto more lines.
+   max-width on a <td>/<th> is what caps the column in auto layout.
+   overflow-wrap: anywhere (rather than break-word) lets a long
+   unbroken string shrink the column's min-content width, so it can't
+   force the column wider than its cap. Below 1024px the existing
+   horizontal-scroll / card layouts take over, unchanged.
+   :not([colspan]) keeps these limits off the full-width
+   replies row, (reply history / reply box), whose single cell is also :first-child. */
 @media (min-width: 1025px) {
   .comments-dialog .comments-table {
-    table-layout: fixed;
+    table-layout: auto;
+  }
+
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]) {
+    overflow-wrap: anywhere;
+  }
+
+  /* 1 — # */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(1) {
+    min-width: 36px; max-width: 48px;
+  }
+  /* 2 — Description */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(2) {
+    min-width: 140px; max-width: 420px;
+  }
+  /* 3 — Action Point */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(3) {
+    min-width: 120px; max-width: 320px;
+  }
+  /* 4 — Resolution Date (fixed-format date: keep on one line) */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(4) {
+    min-width: 100px; max-width: 130px;
+  }
+  /* 5 — Owner (GW / Customer chip) */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(5) {
+    min-width: 70px; max-width: 100px;
+  }
+  /* 6 — Others */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(6) {
+    min-width: 70px; max-width: 260px;
+  }
+  /* 7 — Attachment */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(7) {
+    min-width: 130px; max-width: 220px;
+  }
+  /* 8 — Added By (email + timestamp) */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(8) {
+    min-width: 70px; max-width: 90px;
+  }
+  /* 9 — Entry Time Status (chip) */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(9) {
+    min-width: 110px; max-width: 150px;
+  }
+  /* 10 — Actions (Reply collapses to icon-only when tight) */
+  .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(10) {
+    min-width: 90px; max-width: 140px;
   }
 }
 
@@ -542,6 +641,26 @@
      to it. min-width:0 lets it actually respect the column. */
   min-width: 0;
 }
+
+/* ADDED BY chip — short name; full email + date shown in tooltip.
+   Uses its own wrapper (not .added-cell) so the .added-cell span/strong
+   text styles don't leak into the Chip's inner label. */
+.comments-dialog .added-chip-cell {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.added-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.added-tooltip strong { font-weight: 600; overflow-wrap: anywhere; }
+.added-tooltip span   { opacity: .85; }
 
 .comments-dialog .added-cell-meta {
   display: flex;
@@ -822,6 +941,7 @@
      no longer has a single center line to align the icon/button to —
      top-aligning keeps the icon level with the first line of text. */
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 5px;
   /* Without a width cap the pill only ever grows to fit its content,
      which is what pushed it past the edge of narrow columns/cards
@@ -861,7 +981,11 @@
      shrink narrower than my own content" — that's what let a long
      filename push the pill wider than its container. min-width: 0
      lets it actually shrink/wrap to the container's width. */
-  min-width: 0;
+  /* Never let the name collapse to a sliver (which made it wrap one
+     letter per line). If the column is too tight, the download
+     button wraps below instead (see flex-wrap on the pill). */
+  flex: 1 1 70px;
+  min-width: 70px;
 }
 
 .comments-dialog .attachment-pill:hover {
@@ -1083,7 +1207,9 @@
 
 /* MOBILE */
 
-@media (max-width: 768px)  {.comments-dialog {
+@media (max-width: 768px)  {.comments-dialog .btn-toggle-size { display: none; }
+
+.comments-dialog {
     width: 100vw !important;
     max-width: 100vw !important;
     max-height: 100vh;
@@ -1507,17 +1633,6 @@
   /* position: sticky above already establishes a positioning context,
      so the ::after divider below (position: absolute) anchors to
      this cell without needing position: relative separately. */
-}
-
-/* Vertical divider between columns */
-.comments-dialog .comments-table .MuiTableCell-head:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background: var(--table-head-border);
 }
 
 /* # column — smaller, centered, muted */

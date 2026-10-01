@@ -20,6 +20,8 @@ import {
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SpeakerNotesOffOutlinedIcon from "@mui/icons-material/SpeakerNotesOffOutlined";
 import CloseIcon from "@mui/icons-material/Close";
+import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import AddIcon from "@mui/icons-material/Add";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -55,7 +57,13 @@ export default function CommentsActionDialog({
   allowActions,
   activityName,
   activityStatus,
+  // Optional: same (userId) => {color, bgColor, border} lookup the
+  // Activities table uses for its resource avatars, so a person has the
+  // same colour in both places. Falls back to a stable colour per user.
+  fetchColor,
 }) {
+  // Opens maximized; the header icon toggles to the regular windowed size.
+  const [isMaximized, setIsMaximized] = useState(true);
   const [activeReply, setActiveReply] = useState(null);
   const [replyText, setReplyText] = useState({});
   const [replyAttachment, setReplyAttachment] = useState({});
@@ -300,6 +308,41 @@ export default function CommentsActionDialog({
     }
   };
 
+  // Same logic as findInitials in TreeRows.jsx: "sreepriya.roy@x.com" -> "SR"
+  const getUserInitials = (userId) => {
+    if (!userId) return "?";
+    const out = String(userId)
+      .split("@")[0]
+      .split(".")
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase();
+    return out || "?";
+  };
+
+  // Same palette as the Activities avatars (see ProjectActivityInfo.jsx).
+  const AVATAR_PALETTE = [
+    { color: "#2563EB", bgColor: "#DBEAFE", border: "#93C5FD" },
+    { color: "#059669", bgColor: "#D1FAE5", border: "#6EE7B7" },
+    { color: "#7C3AED", bgColor: "#F3E8FF", border: "#C4B5FD" },
+    { color: "#EC4899", bgColor: "#FCE7F3", border: "#F9A8D4" },
+    { color: "#F97316", bgColor: "#FFEDD5", border: "#FDBA74" },
+    { color: "#D97706", bgColor: "#FEF3C7", border: "#FCD34D" },
+    { color: "#0891B2", bgColor: "#CFFAFE", border: "#67E8F9" },
+    { color: "#65A30D", bgColor: "#ECFCCB", border: "#BEF264" },
+    { color: "#4F46E5", bgColor: "#E0E7FF", border: "#A5B4FC" },
+    { color: "#DC2626", bgColor: "#FEE2E2", border: "#FCA5A5" },
+  ];
+
+  const getAvatarColor = (userId) => {
+    const fromActivities = fetchColor?.(userId);
+    if (fromActivities) return fromActivities;
+    const key = String(userId || "").toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+  };
+
   const getInitials = (name) => {
     if (!name) return "?";
     const parts = String(name).trim().split(/\s+/);
@@ -380,13 +423,15 @@ export default function CommentsActionDialog({
       // which would otherwise silently override the width rules in
       // CommentsActionDialog.css regardless of viewport size.
       maxWidth={false}
-      fullWidth={false}
+      fullScreen={isMaximized}
       // Mounts the portal inside .pai-page — same as PauseReasonDialog —
       // so the shared --pj-* vars (and their dark-mode overrides) are
       // actually in scope. Falls back to the default body portal if
       // .pai-page isn't found.
       container={() => document.querySelector(".pai-page") || document.body}
-      PaperProps={{ className: "comments-dialog" }}
+      PaperProps={{
+        className: `comments-dialog ${isMaximized ? "is-maximized" : "is-restored"}`,
+      }}
     >
       <DialogContent className="comments-content">
         {/* ── HEADER ── */}
@@ -410,9 +455,25 @@ export default function CommentsActionDialog({
             </div>
           </div>
 
+          <div className="comments-header-actions">
+          <Tooltip title={isMaximized ? "Minimize" : "Maximize"}>
+            <IconButton
+              onClick={() => setIsMaximized((v) => !v)}
+              aria-label={isMaximized ? "Minimize dialog" : "Maximize dialog"}
+              size="small"
+              className="btn-toggle-size"
+            >
+              {isMaximized ? (
+                <FullscreenExitIcon fontSize="small" />
+              ) : (
+                <FullscreenIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
           <IconButton onClick={onClose} aria-label="Close dialog" size="small">
             <CloseIcon fontSize="small" />
           </IconButton>
+          </div>
         </div>
 
         {/* ── MOBILE VIEW SWITCHER (hidden on desktop) ── */}
@@ -466,30 +527,6 @@ export default function CommentsActionDialog({
             </div>
           ) : (
             <Table size="small" className="comments-table">
-              {/* Fixed column widths (desktop only — see table-layout:
-                  fixed in the CSS, scoped to >1024px). Without this the
-                  browser's auto layout gives each column a share of
-                  width proportional to its *unbroken* content: a long,
-                  space-less filename in Attachment has no natural break
-                  point, so it was winning most of the row's width and
-                  squeezing Description/Action Point into a narrow,
-                  ragged column instead. Percentages go to the columns
-                  with genuinely variable-length prose; fixed px go to
-                  columns whose content is short and roughly constant
-                  width. They don't need to sum to 100% — the browser
-                  distributes any remainder across the % columns. */}
-              <colgroup>
-                <col style={{ width: "3%" }} />
-                <col style={{ width: "16%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "9%" }} />
-                <col style={{ width: "7%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "16%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "9%" }} />
-              </colgroup>
               <TableHead>
                 <TableRow>
                   <TableCell aria-hidden="true">#</TableCell>
@@ -503,7 +540,7 @@ export default function CommentsActionDialog({
                     <span className="col-label">Resolution Date</span>
                   </TableCell>
                   <TableCell>
-                    <span className="col-label">Responsibility</span>
+                    <span className="col-label">Owner</span>
                   </TableCell>
                   <TableCell>
                     <span className="col-label">Others</span>
@@ -542,7 +579,7 @@ export default function CommentsActionDialog({
                       <TableCell data-label="Resolution Date">
                         {entry.resolutionDate}
                       </TableCell>
-                      <TableCell data-label="Responsibility">
+                      <TableCell data-label="Owner">
                         <Chip
                           size="small"
                           color="primary"
@@ -618,21 +655,43 @@ export default function CommentsActionDialog({
                         )}
                       </TableCell>
 
-                      {/* ADDED BY */}
+                      {/* ADDED BY — initials chip (same look as the Activities
+                          resource avatar); email + timestamp on hover. */}
                       <TableCell data-label="Added By">
-                        <div className="added-cell">
-                          <div className="added-cell-meta">
-                            <strong>
-                              {renderBreakableEmail(entry.createdBy)}
-                            </strong>
-                            <span>
-                              {new Date(entry.createdAt).toLocaleString()}
-                            </span>
-                          </div>
+                        <div className="added-chip-cell">
+                          <Tooltip
+                            arrow
+                            placement="top"
+                            enterTouchDelay={0}
+                            title={
+                              <div className="added-tooltip">
+                                <strong>{entry.createdBy || "Unknown"}</strong>
+                                <span>
+                                  {entry.createdAt
+                                    ? new Date(entry.createdAt).toLocaleString()
+                                    : "—"}
+                                </span>
+                              </div>
+                            }
+                          >
+                            <div
+                              className="added-by-avatar"
+                              tabIndex={0}
+                              role="img"
+                              aria-label={`Added by ${entry.createdBy || "unknown"}`}
+                              style={{
+                                "--avatar-bg": getAvatarColor(entry.createdBy).bgColor,
+                                "--avatar-border": getAvatarColor(entry.createdBy).border,
+                                "--avatar-text": getAvatarColor(entry.createdBy).color,
+                              }}
+                            >
+                              {getUserInitials(entry.createdBy)}
+                            </div>
+                          </Tooltip>
                         </div>
                       </TableCell>
-                      {/* ADDED BY */}
-                      <TableCell data-label="Added By">
+                      {/* ENTRY TIME STATUS */}
+                      <TableCell data-label="Entry Time Status">
                         <div className="added-cell">
                           {entry?.activityStatus?.length > 0 ? (
                             <StatusChip status={entry.activityStatus} isPulseEnabled={false}/>
@@ -693,7 +752,7 @@ export default function CommentsActionDialog({
                     {/* REPLIES LIST */}
                     {entry.replies?.length > 0 && (
                       <TableRow>
-                        <TableCell colSpan={9} className="reply-history-cell">
+                        <TableCell colSpan={10} className="reply-history-cell">
                           {entry.replies.map((reply) => (
                             <div key={reply.replyId} className="reply-item">
                               <div className="reply-header">
@@ -816,7 +875,7 @@ export default function CommentsActionDialog({
                     {/* REPLY INPUT */}
                     {activeReply === index && (
                       <TableRow>
-                        <TableCell colSpan={9} className="reply-box-cell">
+                        <TableCell colSpan={10} className="reply-box-cell">
                           <div className="reply-box">
                             <div className="reply-avatar">
                               {getUserData()?.userDetails?.userId ? (
@@ -982,7 +1041,7 @@ export default function CommentsActionDialog({
                 </div>
 
                 <div>
-                  <label>Responsibility *</label>
+                  <label>Owner *</label>
                   <div className="chip-group">
                     {["GW", "Customer"].map((opt) => (
                       <Chip
