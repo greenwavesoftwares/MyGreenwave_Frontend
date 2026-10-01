@@ -1340,6 +1340,7 @@ export default function ProjectActivityInfo({
         allowActions={allowActions}
         activityName={commentActivityName}
         activityStatus={commentActivityStatus}
+        fetchColor={fetchColor}
       />
       {openFeedback && (
         <FeedbackModal
