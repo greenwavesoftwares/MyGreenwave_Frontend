@@ -18,6 +18,7 @@ import { getStatusColor } from "../helpers/statusColors";
 import {
   computeProjectFilterOptions,
   fmtDateShort,
+  formatDurationHrs,
 } from "../helpers/filterOptions";
 import ProjectColumnFilterButton from "./ProjectColumnFilterButton";
 import { getModuleColor } from "../../helpers/modules";
@@ -328,6 +329,16 @@ export default function GanttLeftPanel({
         status: {
           label: "STATUS",
           filterKey: "status",
+          filterColor: t.warning,
+        },
+        plannedDuration: {
+          label: "PLANNED DUR",
+          filterKey: "plannedDuration",
+          filterColor: t.primary,
+        },
+        actualDuration: {
+          label: "ACTUAL DUR",
+          filterKey: "actualDuration",
           filterColor: t.warning,
         },
       };
@@ -834,9 +845,17 @@ export default function GanttLeftPanel({
                                           ? projectFilterOpts.resourceOpts || []
                                           : col.filterKey === "status"
                                             ? projectFilterOpts.statusOpts || []
-                                            : projectFilterOpts[
-                                                col.filterKey
-                                              ] || []
+                                            : col.filterKey ===
+                                                "plannedDuration"
+                                              ? projectFilterOpts.plannedDuration ||
+                                                []
+                                              : col.filterKey ===
+                                                  "actualDuration"
+                                                ? projectFilterOpts.actualDuration ||
+                                                  []
+                                                : projectFilterOpts[
+                                                    col.filterKey
+                                                  ] || []
                                   }
                                   selected={projectFilter[col.filterKey] || []}
                                   onChange={(vals) =>
@@ -1062,7 +1081,43 @@ export default function GanttLeftPanel({
                                   </div>
                                 );
                               }
-
+                              // PLANNED / ACTUAL DURATION
+                              if (
+                                col.key === "plannedDuration" ||
+                                col.key === "actualDuration"
+                              ) {
+                                const raw =
+                                  col.key === "plannedDuration"
+                                    ? row.durationHrs
+                                    : row.actualDurationHrs;
+                                const display = formatDurationHrs(raw);
+                                return (
+                                  <div
+                                    key={col.key}
+                                    style={cellShell(col.width, t, {
+                                      justifyContent: "flex-end",
+                                    })}
+                                  >
+                                    <span
+                                      style={{
+                                        fontSize: 10.5,
+                                        fontFamily:
+                                          "'JetBrains Mono', monospace",
+                                        color: display
+                                          ? t.textSecondary
+                                          : t.textDisabled,
+                                        fontStyle: display
+                                          ? "normal"
+                                          : "italic",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                      title={display || ""}
+                                    >
+                                      {display || "—"}
+                                    </span>
+                                  </div>
+                                );
+                              }
                               // STATUS
                               if (col.key === "status") {
                                 return (

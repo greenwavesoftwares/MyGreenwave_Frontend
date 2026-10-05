@@ -11,6 +11,8 @@ export const DEFAULT_COLUMN_ORDER = [
   "plannedStop",
   "actualStart",
   "actualStop",
+  "plannedDuration",  // NEW
+  "actualDuration",   // NEW
   "status",
 ];
 
@@ -83,18 +85,20 @@ export function useColumnOrder(customColumns = []) {
         if (customIds.has(key)) return !!visibleColumns[key];
         // standard toggle columns
         if (
-          [
-            "module",
-            "resource",
-            "status",
-            "plannedStart",
-            "plannedStop",
-            "actualStart",
-            "actualStop",
-          ].includes(key)
-        ) {
-          return !!visibleColumns[key];
-        }
+  [
+    "module",
+    "resource",
+    "status",
+    "plannedStart",
+    "plannedStop",
+    "actualStart",
+    "actualStop",
+    "plannedDuration",
+    "actualDuration",
+  ].includes(key)
+) {
+  return !!visibleColumns[key];
+}
         return false;
       });
     },

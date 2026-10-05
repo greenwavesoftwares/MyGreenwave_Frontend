@@ -287,6 +287,39 @@ export default function GanttView({
             }
           },
         );
+        // ── NEW: Duration filters cleanup ──
+        if (cleaned.plannedDuration?.length > 0) {
+          const validVals = new Set(
+            allProjectRows
+              .map((r) =>
+                r.durationHrs === "" || r.durationHrs == null
+                  ? ""
+                  : String(Number(r.durationHrs)),
+              )
+              .filter(Boolean),
+          );
+          const c = cleaned.plannedDuration.filter((v) => validVals.has(v));
+          if (c.length !== cleaned.plannedDuration.length) {
+            changed = true;
+            cleaned.plannedDuration = c;
+          }
+        }
+        if (cleaned.actualDuration?.length > 0) {
+          const validVals = new Set(
+            allProjectRows
+              .map((r) =>
+                r.actualDurationHrs === "" || r.actualDurationHrs == null
+                  ? ""
+                  : String(Number(r.actualDurationHrs)),
+              )
+              .filter(Boolean),
+          );
+          const c = cleaned.actualDuration.filter((v) => validVals.has(v));
+          if (c.length !== cleaned.actualDuration.length) {
+            changed = true;
+            cleaned.actualDuration = c;
+          }
+        }
 
         // ── NEW: Custom column filters ──
         (project.customColumns || []).forEach((col) => {

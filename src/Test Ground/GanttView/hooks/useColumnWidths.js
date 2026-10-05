@@ -12,6 +12,7 @@ import {
   COL_STATUS_WIDTH,
   COL_DATE_WIDTH,
   COL_CUSTOM_WIDTH,
+  COL_DURATION_WIDTH,
 } from "../helpers/constants";
 
 const LS_COL_WIDTHS = "gantt-column-widths";
@@ -26,6 +27,8 @@ const DEFAULT_WIDTHS = {
   plannedStop: COL_DATE_WIDTH,
   actualStart: COL_DATE_WIDTH,
   actualStop: COL_DATE_WIDTH,
+   plannedDuration: COL_DURATION_WIDTH,
+  actualDuration: COL_DURATION_WIDTH,
 };
 
 const MIN_WIDTHS = {
@@ -37,6 +40,8 @@ const MIN_WIDTHS = {
   plannedStop: 90,
   actualStart: 90,
   actualStop: 90,
+  plannedDuration: 72,
+  actualDuration: 72,
 };
 
 const DEFAULT_PANEL_WIDTH = 520;
@@ -123,6 +128,8 @@ export function useColumnWidths(visibleColumns = {}, customColumns = []) {
     if (visibleColumns.plannedStop) total += getWidth("plannedStop");
     if (visibleColumns.actualStart) total += getWidth("actualStart");
     if (visibleColumns.actualStop) total += getWidth("actualStop");
+    if (visibleColumns.plannedDuration) total += getWidth("plannedDuration");
+if (visibleColumns.actualDuration) total += getWidth("actualDuration");
     if (visibleColumns.status) total += getWidth("status");
     customColumns.forEach((c) => {
       if (visibleColumns[c.id]) total += getWidth(c.id);

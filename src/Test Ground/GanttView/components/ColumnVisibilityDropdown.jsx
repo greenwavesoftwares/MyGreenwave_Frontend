@@ -39,6 +39,10 @@ export default function ColumnVisibilityDropdown({
     { key: "actualStart", label: "Actual Start" },
     { key: "actualStop", label: "Actual Stop" },
   ];
+  const durationColumns = [
+    { key: "plannedDuration", label: "Planned Dur(hrs)" },
+    { key: "actualDuration", label: "Actual Dur(hrs)" },
+  ];
 
   // ── Custom columns (only from active project in full-screen) ──
   const customCols = customColumns.map((c) => ({
@@ -46,7 +50,12 @@ export default function ColumnVisibilityDropdown({
     label: c.name,
   }));
 
-  const allToggleable = [...standardColumns, ...dateColumns, ...customCols];
+  const allToggleable = [
+    ...standardColumns,
+    ...dateColumns,
+    ...customCols,
+    ...durationColumns,
+  ];
   const totalCount = allToggleable.length;
   const visibleCount = allToggleable.filter(
     (c) => visibleColumns[c.key],
@@ -227,6 +236,11 @@ export default function ColumnVisibilityDropdown({
           {false && renderSectionLabel("Date Columns")}
           <div style={{ padding: "2px 0" }}>
             {dateColumns.map((col) => renderColumnItem(col))}
+          </div>
+
+          {false && renderSectionLabel("Duration Columns")}
+          <div style={{ padding: "2px 0" }}>
+            {durationColumns.map((col) => renderColumnItem(col))}
           </div>
 
           {/* Custom columns (only when provided) */}

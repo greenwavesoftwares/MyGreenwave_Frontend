@@ -189,7 +189,15 @@ export function useGanttData({
             )
               return false;
           }
-
+ // ── NEW: Duration filters ──
+          if (pFilter.plannedDuration?.length > 0) {
+            const raw = r.durationHrs === "" || r.durationHrs == null ? "" : String(Number(r.durationHrs));
+            if (!pFilter.plannedDuration.includes(raw)) return false;
+          }
+          if (pFilter.actualDuration?.length > 0) {
+            const raw = r.actualDurationHrs === "" || r.actualDurationHrs == null ? "" : String(Number(r.actualDurationHrs));
+            if (!pFilter.actualDuration.includes(raw)) return false;
+          }
           // ── NEW: Custom column filters ──
           for (const col of customColumns) {
             if (

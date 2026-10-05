@@ -5,11 +5,13 @@ const DEFAULT_VISIBLE = {
   module: true,
   resource: true,
   status: true,
-  // ── NEW: Date columns (hidden by default) ──
   plannedStart: false,
   plannedStop: false,
   actualStart: false,
   actualStop: false,
+  // ── NEW ──
+  plannedDuration: false,
+  actualDuration: false,
 };
 
 export function useColumnVisibility() {
