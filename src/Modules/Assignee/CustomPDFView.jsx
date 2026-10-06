@@ -1,11 +1,8 @@
 // Import React and required hooks
 import React, { useEffect, useRef, useState } from "react";
 
-// Import PDF.js library for loading and rendering PDF files
 import * as pdfjsLib from "pdfjs-dist";
-
-// Import the PDF worker file URL (used by PDF.js for background processing)
-import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
 
 import "./CustomViews.css";
 import {
@@ -14,7 +11,7 @@ import {
 } from "./DocViewerMaximizedContext";
 
 // Configure PDF.js to use the imported worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
+pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
 
 /**
  * Custom PDF Viewer Component
