@@ -264,6 +264,7 @@ export default function GanttLeftPanel({
   visibleColumns,
   leftPanelWidth,
   leftPanelRef,
+  timelineRef,
   getWidth,
   getMinWidth,
   setWidth,
@@ -435,6 +436,11 @@ export default function GanttLeftPanel({
 
       <div
         ref={leftPanelRef}
+        onWheel={(e) => {
+          if (timelineRef?.current && e.deltaY) {
+            timelineRef.current.scrollTop += e.deltaY;
+          }
+        }}
         style={{ flex: 1, overflowY: "hidden", overflowX: "auto" }}
       >
         <div style={{ width: Math.max(cw, leftPanelWidth), minWidth: "100%" }}>

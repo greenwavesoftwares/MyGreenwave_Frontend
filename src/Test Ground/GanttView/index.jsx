@@ -594,6 +594,7 @@ export default function GanttView({
             visibleColumns={visibleColumns}
             leftPanelWidth={dynamicLeftPanelWidth}
             leftPanelRef={leftPanelRef}
+            timelineRef={timelineRef}
             getWidth={getWidth}
             getMinWidth={getMinWidth}
             setWidth={setWidth}
