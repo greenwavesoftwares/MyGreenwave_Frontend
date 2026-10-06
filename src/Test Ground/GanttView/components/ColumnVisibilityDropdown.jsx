@@ -4,14 +4,12 @@ import { useTheme } from "../../useTheme";
 
 /**
  * Dropdown toggler for showing/hiding columns.
- * Task column is always visible.
- * Date columns are always available.
- * Custom columns appear only when `customColumns` prop is provided (full-screen mode).
+ * Has a fixed header and a scrollable list body for handling many custom/standard columns.
  */
 export default function ColumnVisibilityDropdown({
   visibleColumns,
   onToggle,
-  customColumns = [], // ← NEW: [{ id, name }] from the active project
+  customColumns = [],
 }) {
   const { t } = useTheme();
   const [open, setOpen] = useState(false);
@@ -25,26 +23,24 @@ export default function ColumnVisibilityDropdown({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Standard columns ──
   const standardColumns = [
     { key: "module", label: "Module" },
     { key: "resource", label: "Resource" },
     { key: "status", label: "Status" },
   ];
 
-  // ── Date columns (always available) ──
   const dateColumns = [
     { key: "plannedStart", label: "Planned Start" },
     { key: "plannedStop", label: "Planned Stop" },
     { key: "actualStart", label: "Actual Start" },
     { key: "actualStop", label: "Actual Stop" },
   ];
+
   const durationColumns = [
     { key: "plannedDuration", label: "Planned Dur(hrs)" },
     { key: "actualDuration", label: "Actual Dur(hrs)" },
   ];
 
-  // ── Custom columns (only from active project in full-screen) ──
   const customCols = customColumns.map((c) => ({
     key: c.id,
     label: c.name,
@@ -53,8 +49,8 @@ export default function ColumnVisibilityDropdown({
   const allToggleable = [
     ...standardColumns,
     ...dateColumns,
-    ...customCols,
     ...durationColumns,
+    ...customCols,
   ];
   const totalCount = allToggleable.length;
   const visibleCount = allToggleable.filter(
@@ -199,8 +195,9 @@ export default function ColumnVisibilityDropdown({
             right: 0,
             marginTop: 4,
             width: 220,
-            maxHeight: 400,
-            overflowY: "auto",
+            maxHeight: 380, // Lock max height
+            display: "flex",
+            flexDirection: "column",
             background: t.bgCard,
             border: `1px solid ${t.borderStrong}`,
             borderRadius: 8,
@@ -210,11 +207,13 @@ export default function ColumnVisibilityDropdown({
             overflow: "hidden",
           }}
         >
+          {/* Header (stays fixed at top) */}
           <div
             style={{
               padding: "8px 10px",
               borderBottom: `1px solid ${t.border}`,
               background: t.bgSubtle,
+              flexShrink: 0,
             }}
           >
             <span
@@ -224,34 +223,30 @@ export default function ColumnVisibilityDropdown({
             </span>
           </div>
 
-          {/* Task — always visible */}
-          {renderColumnItem({ key: "task", label: "Task" }, true)}
+          {/* Scrollable List Body */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "2px 0" }}>
+            {/* Task — always visible */}
+            {renderColumnItem({ key: "task", label: "Task" }, true)}
 
-          {/* Standard columns */}
-          <div style={{ padding: "2px 0" }}>
+            {/* Standard columns */}
             {standardColumns.map((col) => renderColumnItem(col))}
-          </div>
 
-          {/* Date columns */}
-          {false && renderSectionLabel("Date Columns")}
-          <div style={{ padding: "2px 0" }}>
+            {/* Date columns */}
+            {/* {renderSectionLabel("Date Columns")} */}
             {dateColumns.map((col) => renderColumnItem(col))}
-          </div>
 
-          {false && renderSectionLabel("Duration Columns")}
-          <div style={{ padding: "2px 0" }}>
+            {/* Duration columns */}
+            {/* {renderSectionLabel("Duration Columns")} */}
             {durationColumns.map((col) => renderColumnItem(col))}
-          </div>
 
-          {/* Custom columns (only when provided) */}
-          {customCols.length > 0 && (
-            <>
-              {renderSectionLabel("Custom Columns")}
-              <div style={{ padding: "2px 0" }}>
+            {/* Custom columns */}
+            {customCols.length > 0 && (
+              <>
+                {renderSectionLabel("Custom Columns")}
                 {customCols.map((col) => renderColumnItem(col))}
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
