@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 
 import "./CustomViews.css";
+import { useDocViewerZoom } from "./DocViewerMaximizedContext";
 
 /**
  * Renders .xlsx/.xls/.csv as an HTML table with sheet tabs.
@@ -16,6 +17,7 @@ const CustomExcelView = ({ mainState: { currentDocument } }) => {
   const [sheets, setSheets] = useState([]);
   const [activeSheet, setActiveSheet] = useState(0);
   const [error, setError] = useState(null);
+  const zoom = useDocViewerZoom();
 
   useEffect(() => {
     if (!currentDocument) return;
@@ -60,7 +62,7 @@ const CustomExcelView = ({ mainState: { currentDocument } }) => {
         </div>
       )}
 
-      <table className="doc-excel-table">
+      <table className="doc-excel-table" style={{ fontSize: `${13 * zoom}px` }}>
         <tbody>
           {rows.map((row, rIdx) => (
             <tr key={rIdx}>

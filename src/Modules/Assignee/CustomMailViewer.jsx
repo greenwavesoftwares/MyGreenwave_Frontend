@@ -13,6 +13,7 @@ import "./CustomViews.css";
 import { ViewIcon } from "lucide-react";
 import { viewAttachment } from "./AttachmentHelper";
 import DocumentViewer from "./DocumentViewer";
+import { useDocViewerZoom } from "./DocViewerMaximizedContext";
 
 const EML_TYPES = ["eml", "message/rfc822"];
 const MSG_TYPES = ["msg", "application/vnd.ms-outlook"];
@@ -265,6 +266,15 @@ const CustomMailViewer = ({ mainState: { currentDocument } }) => {
   const [loading, setLoading] = useState(false);
   const attachmentUrlsRef = useRef([]);
   const documentViewerRef = useRef(null);
+  const frameRef = useRef(null);
+  const zoom = useDocViewerZoom();
+
+  // Apply zoom to the email body inside the iframe (same-origin via sandbox).
+  const applyFrameZoom = () => {
+    const doc = frameRef.current?.contentDocument;
+    if (doc?.documentElement) doc.documentElement.style.zoom = zoom;
+  };
+  useEffect(applyFrameZoom, [zoom, email]);
 
   useEffect(() => {
     if (!currentDocument) return;
@@ -362,6 +372,8 @@ const CustomMailViewer = ({ mainState: { currentDocument } }) => {
       </div>
 
       <iframe
+        ref={frameRef}
+        onLoad={applyFrameZoom}
         srcDoc={srcDoc}
         title="Mail Preview"
         sandbox="allow-same-origin"

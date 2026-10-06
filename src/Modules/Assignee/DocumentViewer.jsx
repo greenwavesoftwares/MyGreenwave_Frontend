@@ -3,11 +3,17 @@ import DocViewer from "react-doc-viewer";
 import { Dialog } from "primereact/dialog";
 import { IconButton, Tooltip } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import CustomPNGView from "./CustomPNGView";
 import CustomExcelView from "./CustomExcelView";
 import CustomPDFView from "./CustomPDFView";
 import CustomDialogHeader from "./CustomDialogHeader";
-import { DocViewerMaximizedContext } from "./DocViewerMaximizedContext";
+import {
+  DocViewerMaximizedContext,
+  DocViewerZoomContext,
+  ZOOM_STEPS,
+} from "./DocViewerMaximizedContext";
 import "./DocumentViewer.css";
 import CustomJPGView from "./CustomJPGView";
 import CustomMailViewer from "./CustomMailViewer";
@@ -48,6 +54,12 @@ const DocumentViewer = forwardRef(function DocumentViewer(
   const [dialogVisible, setDialogVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [zoom, setZoom] = useState(1);
+
+  const zoomIn = () => setZoom((z) => ZOOM_STEPS.find((s) => s > z + 0.001) ?? z);
+  const zoomOut = () =>
+    setZoom((z) => [...ZOOM_STEPS].reverse().find((s) => s < z - 0.001) ?? z);
+  const resetZoom = () => setZoom(1);
 
   const fileToDataUri = (file) =>
     new Promise((resolve, reject) => {
@@ -71,6 +83,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
       );
       setDocs(newDocs); // replace; use [...docs, ...newDocs] to append instead
       setActiveIndex(0);
+      setZoom(1);
       setDialogVisible(true);
     } finally {
       setLoading(false);
@@ -86,6 +99,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
     if (list.length === 0) return;
     setDocs(list);
     setActiveIndex(0);
+    setZoom(1);
     setDialogVisible(true);
   };
 
@@ -114,124 +128,120 @@ const DocumentViewer = forwardRef(function DocumentViewer(
     document.body.removeChild(a);
   };
 
-  return (
-
-      <Dialog
-        className="doc-viewer-dialog"
-        header={
-          <div className="doc-viewer-header-row">
-            <CustomDialogHeader docs={docs} activeIndex={activeIndex} />
-            {docs.length > 0 && (
-              <Tooltip title="Download">
+ return (
+  <Dialog
+    className="doc-viewer-dialog"
+    header={
+      <div className="doc-viewer-header-row">
+        <CustomDialogHeader docs={docs} activeIndex={activeIndex} />
+        {docs.length > 0 && (
+          <div className="doc-viewer-zoom" role="group" aria-label="Zoom">
+            <Tooltip title="Zoom out">
+              <span>
                 <IconButton
                   size="small"
-                  className="doc-viewer-download-btn"
-                  aria-label="Download file"
-                  onClick={downloadActiveDoc}
+                  aria-label="Zoom out"
+                  onClick={zoomOut}
+                  disabled={zoom <= ZOOM_STEPS[0]}
                 >
-                  <DownloadOutlinedIcon fontSize="small" />
+                  <ZoomOutIcon fontSize="small" />
                 </IconButton>
-              </Tooltip>
-            )}
+              </span>
+            </Tooltip>
+            <Tooltip title="Reset to fit">
+              <button
+                type="button"
+                className="doc-viewer-zoom-label"
+                onClick={resetZoom}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+            </Tooltip>
+            <Tooltip title="Zoom in">
+              <span>
+                <IconButton
+                  size="small"
+                  aria-label="Zoom in"
+                  onClick={zoomIn}
+                  disabled={zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+                >
+                  <ZoomInIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
           </div>
-        }
-        visible={dialogVisible}
-        onHide={() => setDialogVisible(false)}
-        // Rendered from inside a MUI Dialog (CommentsActionDialog), whose
-        // .MuiModal-root sits at z-index 1300. PrimeReact computes its own
-        // mask/panel z-index dynamically starting well below that, so
-        // without this it silently renders *behind* the MUI dialog.
-        // appendTo targets `.pai-page` — same container CommentsActionDialog's
-        // MUI Dialog uses — rather than raw doc'ument.body, so this stays a
-        // real DOM descendant of the page wrapper the app's .light/.dark
-        // theme class lives on and DocumentViewer.css's --dv-* tokens keep
-        // resolving correctly. baseZIndex pushes both the mask and the
-        // panel above 1300 regardless of where it's appended.
-        appendTo={() => document.querySelector(".pai-page") || document.body}
-        baseZIndex={1400}
-        style={{ width: "80vw", height: "85vh" }}
-        contentStyle={{ height: "100%", padding: 0 }}
-        maximizable
-        modal
-        dismissableMask
-        // PrimeReact Dialog only manages its own maximized state
-        // internally when you DON'T pass onMaximize. The moment you
-        // pass onMaximize, it flips into a controlled component
-        // (`var maximized = props.onMaximize ? props.maximized : ...`)
-        // and expects the `maximized` prop to be fed back in. Without
-        // it, `props.maximized` sits at its default (false) forever,
-        // so `.p-dialog-maximized` (width/height: 100vw/100vh
-        // !important) never gets applied — the click still fires and
-        // flips isMaximized (so the PDF canvas rescales via context),
-        // but the dialog panel itself never visually grows.
-        maximized={isMaximized}
-        onMaximize={(e) => setIsMaximized(e.maximized)}
-      >
-        {docs.length === 0 ? (
-          <p className="doc-viewer-empty-state">
-            No document loaded. Pick a PDF, Word, Excel, or PNG file above.
-          </p>
-        ) : (
-          // isMaximized is provided via context, NOT by rebuilding the
-          // `documents` array below. react-doc-viewer's AppProvider does
-          // `useEffect(() => dispatch(setAllDocuments(documents)), [documents])`
-          // — any new array/object reference there (even with identical
-          // uris) makes it reset currentDocument to a fresh object with no
-          // fileType/fileData. The effect that's supposed to re-fetch
-          // fileType only depends on [currentFileNo, documentURI], neither
-          // of which changes on a maximize toggle, so it never re-runs —
-          // fileType (and therefore CurrentRenderer) stays stuck
-          // `undefined`, and the library renders nothing, permanently.
-          // Passing `documents={docs}` keeps that array reference stable
-          // across maximize/restore, since `docs` only changes via
-          // setDocs/openDocs/openBlob (an actual new document set).
-          <DocViewerMaximizedContext.Provider value={isMaximized}>
-            <DocViewer
-              documents={docs}
-              pluginRenderers={[CustomPNGView, CustomExcelView, CustomPDFView,CustomJPGView,CustomMailViewer]}
-              onDocumentChange={(doc) => {
-                const idx = docs.findIndex((d) => d.uri === doc.uri);
-                if (idx !== -1) setActiveIndex(idx);
-              }}
-              config={{
-                header: {
-                  // react-doc-viewer's own FileName sub-component derives
-                  // its label from currentDocument.uri (never fileName),
-                  // by splitting on "/" and taking the last segment — that
-                  // logic assumes real URLs. Our data: URIs' MIME type
-                  // itself contains a "/", so the split lands mid-MIME-type
-                  // and the "last segment" ends up being
-                  // ";base64,<entire file>", rendered as a huge garbled
-                  // string across the dialog. CustomDialogHeader.jsx
-                  // already shows the correct name (from
-                  // currentDocument.fileName), so disable this. Keep the
-                  // header itself enabled — that's also where the
-                  // prev/next multi-document nav lives.
-                  disableHeader: false,
-                  disableFileName: true,
-                  retainURLParams: false,
-                }
-              }}
-              // HeaderBar (prev/next nav) reads its colors from this
-              // `theme` prop, merged over the library's own defaultTheme
-              // ({ primary: "#fff", text_primary: "#000", ... }) — not
-              // from DocumentViewer.css. Pointing it at our --dv-* custom
-              // properties means it's read live off whichever ancestor's
-              // tokens are in scope, so it tracks light/dark automatically.
-              theme={{
-                primary: "var(--dv-surface)",
-                secondary: "var(--dv-primary)",
-                tertiary: "var(--dv-surface-2)",
-                text_primary: "var(--dv-text)",
-                text_secondary: "#fff",
-                text_tertiary: "var(--dv-text-faint)",
-              }}
-              style={{ height: "100%" }}
-            />
-          </DocViewerMaximizedContext.Provider>
         )}
-      </Dialog>
-  );
+        {docs.length > 0 && (
+          <Tooltip title="Download">
+            <IconButton
+              size="small"
+              className="doc-viewer-download-btn"
+              aria-label="Download file"
+              onClick={downloadActiveDoc}
+            >
+              <DownloadOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </div>
+    }
+    visible={dialogVisible}
+    onHide={() => setDialogVisible(false)}
+    appendTo={() => document.querySelector(".pai-page") || document.body}
+    baseZIndex={1400}
+    style={{ width: "80vw", height: "85vh" }}
+    contentStyle={{ height: "100%", padding: 0 }}
+    maximizable
+    modal
+    dismissableMask
+    maximized={isMaximized}
+    onMaximize={(e) => setIsMaximized(e.maximized)}
+  >
+    {docs.length === 0 ? (
+      <p className="doc-viewer-empty-state">
+        No document loaded. Pick a PDF, Word, Excel, or PNG file above.
+      </p>
+    ) : (
+      <DocViewerMaximizedContext.Provider value={isMaximized}>
+       <DocViewerZoomContext.Provider value={zoom}>
+        <DocViewer
+          documents={docs}
+          pluginRenderers={[
+            CustomPNGView,
+            CustomExcelView,
+            CustomPDFView,
+            CustomJPGView,
+            CustomMailViewer,
+          ]}
+          onDocumentChange={(doc) => {
+            const idx = docs.findIndex((d) => d.uri === doc.uri);
+            if (idx !== -1 && idx !== activeIndex) {
+              setActiveIndex(idx);
+              setZoom(1); // new document → back to fit
+            }
+          }}
+          config={{
+            header: {
+              disableHeader: false,
+              disableFileName: true,
+              retainURLParams: false,
+            },
+          }}
+          theme={{
+            primary: "var(--dv-surface)",
+            secondary: "var(--dv-primary)",
+            tertiary: "var(--dv-surface-2)",
+            text_primary: "var(--dv-text)",
+            text_secondary: "#fff",
+            text_tertiary: "var(--dv-text-faint)",
+          }}
+          style={{ height: "100%" }}
+        />
+       </DocViewerZoomContext.Provider>
+      </DocViewerMaximizedContext.Provider>
+    )}
+  </Dialog>
+);
 });
 
 export default DocumentViewer;

@@ -16,3 +16,11 @@ import { createContext, useContext } from "react";
 export const DocViewerMaximizedContext = createContext(false);
 
 export const useDocViewerMaximized = () => useContext(DocViewerMaximizedContext);
+
+
+// Zoom level for the document body (1 = fit to the viewer, 0.5 = 50%, 2 = 200%).
+// Same reason as above for living in context: it must reach the plugin
+// renderers WITHOUT touching the `documents` array passed to <DocViewer>.
+export const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+export const DocViewerZoomContext = createContext(1);
+export const useDocViewerZoom = () => useContext(DocViewerZoomContext);

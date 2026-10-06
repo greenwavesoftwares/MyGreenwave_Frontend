@@ -8,7 +8,10 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 import "./CustomViews.css";
-import { useDocViewerMaximized } from "./DocViewerMaximizedContext";
+import {
+  useDocViewerMaximized,
+  useDocViewerZoom,
+} from "./DocViewerMaximizedContext";
 
 // Configure PDF.js to use the imported worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
@@ -31,6 +34,13 @@ const CustomPDFView = ({ mainState: { currentDocument } }) => {
   // no longer be spread onto each document object.
   const isMaximized = useDocViewerMaximized();
 
+  // Zoom is applied instantly via CSS (the canvases are width:100% of a
+  // container sized to zoom * 100%). The pages are only re-rendered at a
+  // higher resolution when zoom crosses a bucket threshold, so zooming
+  // stays smooth and text stays sharp.
+  const zoom = useDocViewerZoom();
+  const resolutionBoost = zoom <= 1.25 ? 1 : zoom <= 2 ? 1.6 : 2.2;
+
   // Runs whenever the selected document (or maximized state) changes
   useEffect(() => {
     // Exit if no document is selected
@@ -52,14 +62,17 @@ const CustomPDFView = ({ mainState: { currentDocument } }) => {
         // Get the container element
         const container = containerRef.current;
 
-        // Remove previously rendered pages
-        container.innerHTML = "";
+        // First render of this document → append pages as they finish.
+        // Re-render at a new resolution → build off-screen and swap in one go,
+        // so the view doesn't flash empty or lose its scroll position.
+        const isRerender = container.childElementCount > 0;
+        const fragment = isRerender ? document.createDocumentFragment() : null;
 
         // Loop through every page in the PDF
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           // Load the current page
           const page = await pdf.getPage(pageNum);
-          const scale = isMaximized ? 3 : 2.5;
+          const scale = (isMaximized ? 3 : 2.5) * resolutionBoost;
 
           // Create a viewport (controls page size and zoom level)
           const viewport = page.getViewport({ scale });
@@ -87,9 +100,11 @@ const CustomPDFView = ({ mainState: { currentDocument } }) => {
           // Stop rendering if component has unmounted
           if (cancelled) return;
 
-          // Add the rendered page to the container
-          container.appendChild(canvas);
+          // Add the rendered page to the container (or the off-screen fragment)
+          (fragment || container).appendChild(canvas);
         }
+
+        if (fragment) container.replaceChildren(fragment);
       } catch (err) {
         // Display error only if component is still mounted
         if (!cancelled) {
@@ -106,7 +121,7 @@ const CustomPDFView = ({ mainState: { currentDocument } }) => {
     return () => {
       cancelled = true;
     };
-  }, [currentDocument, isMaximized]); // Re-run when doc or maximized state changes
+  }, [currentDocument, isMaximized, resolutionBoost]); // Re-run when doc, maximized state or zoom bucket changes
 
   // Render nothing if no document is selected
   if (!currentDocument) return null;
@@ -118,7 +133,11 @@ const CustomPDFView = ({ mainState: { currentDocument } }) => {
         <p className="doc-pdf-error">{error}</p>
       ) : (
         // Container where PDF page canvases will be inserted
-        <div ref={containerRef} />
+        <div
+          ref={containerRef}
+          className="doc-pdf-pages"
+          style={{ width: `${zoom * 100}%` }}
+        />
       )}
     </div>
   );

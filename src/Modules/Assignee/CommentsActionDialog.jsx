@@ -580,11 +580,24 @@ export default function CommentsActionDialog({
                         {entry.resolutionDate}
                       </TableCell>
                       <TableCell data-label="Owner">
-                        <Chip
-                          size="small"
-                          color="primary"
-                          label={entry.responsibility}
-                        />
+                        {/* responsibility is stored as a comma-separated
+                            string (e.g. "GW,Customer") — one badge per owner */}
+                        <div className="owner-chips">
+                          {(Array.isArray(entry.responsibility)
+                            ? entry.responsibility
+                            : String(entry.responsibility || "").split(",")
+                          )
+                            .map((owner) => owner.trim())
+                            .filter(Boolean)
+                            .map((owner) => (
+                              <Chip
+                                key={owner}
+                                size="small"
+                                color="primary"
+                                label={owner}
+                              />
+                            ))}
+                        </div>
                       </TableCell>
                       <TableCell data-label="Others">
                         <TruncatedText text={entry.others} />

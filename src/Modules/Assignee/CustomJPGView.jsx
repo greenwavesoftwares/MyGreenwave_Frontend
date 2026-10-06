@@ -1,14 +1,9 @@
 import React from "react";
+import ZoomableImage from "./ZoomableImage";
 
 const CustomJPGView = ({ mainState: { currentDocument } }) => {
   if (!currentDocument) return null;
-  
-
-  return (
-    <div id="my-jpg-renderer">
-      <img id="jpg-img" src={currentDocument.fileData} />
-    </div>
-  );
+  return <ZoomableImage id="jpg-img" src={currentDocument.fileData} />;
 };
 
 CustomJPGView.fileTypes = ["jpg", "image/jpeg"];

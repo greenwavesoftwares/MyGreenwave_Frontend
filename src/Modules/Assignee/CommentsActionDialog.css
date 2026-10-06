@@ -449,9 +449,9 @@
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(4) {
     min-width: 100px; max-width: 130px;
   }
-  /* 5 — Owner (GW / Customer chip) */
+  /* 5 — Owner (one chip per owner; wraps when there are several) */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(5) {
-    min-width: 70px; max-width: 100px;
+    min-width: 70px; max-width: 150px;
   }
   /* 6 — Others */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(6) {
@@ -1074,6 +1074,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.comments-dialog .owner-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 /* FOOTER */
