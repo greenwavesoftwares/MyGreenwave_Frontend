@@ -21,12 +21,14 @@ export const COL_TASK_WIDTH = 260;
 export const COL_MODULE_WIDTH = 150;
 export const COL_RESOURCE_WIDTH = 64;
 export const COL_STATUS_WIDTH = 120;
-export const COL_DATE_WIDTH = 120;
+export const COL_DATE_WIDTH = 150;
 export const COL_CUSTOM_WIDTH = 160;
+export const COL_DURATION_WIDTH = 100;
 
 export const ROW_HEIGHT = 44;
 export const SUB_HEADER_HEIGHT = 34;
 export const HEADER_HEIGHT = 56;
+
 /* ─── Zoom Configurations ─── */
 export const ZOOM_CONFIGS = {
 hour: {
