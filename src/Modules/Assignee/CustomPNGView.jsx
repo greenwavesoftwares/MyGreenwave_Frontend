@@ -1,13 +1,9 @@
 import React from "react";
+import ZoomableImage from "./ZoomableImage";
 
 const CustomPNGView = ({ mainState: { currentDocument } }) => {
   if (!currentDocument) return null;
-
-  return (
-    <div id="my-png-renderer">
-      <img id="png-img" src={currentDocument.fileData} />
-    </div>
-  );
+  return <ZoomableImage id="png-img" src={currentDocument.fileData} />;
 };
 
 CustomPNGView.fileTypes = ["png", "image/png"];

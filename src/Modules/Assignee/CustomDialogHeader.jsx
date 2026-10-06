@@ -42,12 +42,12 @@ export default function CustomDialogHeader({ docs = [], activeIndex = 0 }) {
       </span>
 
       <span className="doc-viewer-filename" title={activeDoc?.fileName}>
-        {activeDoc?.fileName || "Document Viewer"}
+        {activeDoc?.fileName || "Document"}
       </span>
 
       {docs.length > 1 && (
         <span className="doc-viewer-position">
-          ({activeIndex + 1} of {docs.length})
+          {activeIndex + 1} / {docs.length}
         </span>
       )}
     </div>

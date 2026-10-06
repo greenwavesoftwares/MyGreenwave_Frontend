@@ -20,8 +20,15 @@
   background: var(--dv-surface-2, var(--card-bg, #f9fafb));
 }
 
+.doc-pdf-pages {
+  margin: 0 auto;
+}
+
 .doc-pdf-canvas {
   display: block;
+  /* width follows the zoomed .doc-pdf-pages container; height keeps aspect */
+  width: 100%;
+  height: auto;
   margin: 0 auto 16px;
   box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
   background: #ffffff; /* PDF page content itself stays white, like paper */
@@ -78,7 +85,7 @@
 
 .doc-excel-table td {
   border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
-  padding: 4px 8px;
+  padding: .3em .6em;
   white-space: nowrap;
 }
 
@@ -122,6 +129,26 @@
   width: 100%;
   height: 100%;
   object-fit: contain; /* Fill as much space as possible without cropping */
+  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
+}
+
+/* ---------- Zoomable images (PNG / JPG) ---------- */
+
+.doc-image-renderer {
+  height: 100%;
+  display: flex;
+  overflow: auto;
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+}
+
+/* margin:auto centers the image when it's smaller than the viewport but,
+   unlike justify/align-items:center, never clips it once it overflows. */
+.doc-image {
+  display: block;
+  margin: auto;
+  object-fit: contain;
   box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
 }
 

@@ -40,10 +40,7 @@ export async function viewAttachmentFromMinio(attachmentKey, folder, documentVie
 }
 export async function viewAttachment(fileBlob,documentViewerRef,filename){
   try {
-    await documentViewerRef?.current?.openBlob(
-      fileBlob,
-      
-    );
+    await documentViewerRef?.current?.openBlob(fileBlob, filename);
   } catch (error) {
     console.error("Failed to open file", error);
     showToast("error", "Error", "Unable to preview file");
