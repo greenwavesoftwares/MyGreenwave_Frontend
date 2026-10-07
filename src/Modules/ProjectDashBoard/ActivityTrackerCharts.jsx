@@ -968,6 +968,75 @@ export default function ActivityTrackerCharts() {
     rowOverlapsSelectedWindow,
   ]);
 
+
+
+  // ================================================================
+// Filtered API Response - maintains original API structure but
+// filters rows within each project based on user selections
+// ================================================================
+const filteredApiResponse = useMemo(() => {
+  if (!apiResponse) return null;
+
+  // Extract base array (same logic as projectsData)
+  const baseArray = Array.isArray(apiResponse)
+    ? apiResponse
+    : Array.isArray(apiResponse?.data)
+      ? apiResponse.data
+      : [];
+
+  // Filter each project's rows based on year/month overlap + project/resource filters
+  const filteredProjects = baseArray
+    .map((project) => {
+      const filteredProjectRows = (project.rows || []).filter((row) => {
+        // Merge project info into row for filter checks (same as flatRows does)
+        const rowWithProject = {
+          project: project.project,
+          po: project.po,
+          site: project.site,
+          id: project.id,
+          ...row,
+        };
+
+        // Apply same filters as filteredRows
+        if (!rowOverlapsSelectedWindow(rowWithProject)) return false;
+        if (
+          selectedProjects.length > 0 &&
+          !selectedProjects.includes(rowWithProject.project)
+        )
+          return false;
+        if (
+          selectedResources.length > 0 &&
+          !selectedResources.includes(rowWithProject.resourceName)
+        )
+          return false;
+
+        return true;
+      });
+
+      // Only include projects that have rows after filtering
+      if (filteredProjectRows.length === 0) return null;
+
+      return {
+        ...project,
+        rows: filteredProjectRows,
+      };
+    })
+    .filter(Boolean); // Remove projects with no matching rows
+
+  // Return in the same shape as apiResponse
+  if (Array.isArray(apiResponse)) {
+    return filteredProjects;
+  }
+  return { ...apiResponse, data: filteredProjects };
+}, [
+  apiResponse,
+  selectedYear,
+  selectedMonths.join(","),
+  selectedProjects,
+  selectedResources,
+  rowOverlapsSelectedWindow,
+]);
+
   // ================================================================
   // Calculated resource metrics (used while a Project filter is active)
   // ================================================================
@@ -1716,11 +1785,11 @@ const taskOccupancyByResourceDate = useMemo(() => {
   showHover={showHover}
   hideHover={hideHover}
 />)} */}
-
+{console.log('Filtered API Response:', filteredApiResponse)}
             {/* Resource Gantt Section */}
             <ResourceGanttSection
               t={t}
-              filteredProjectsData={filteredProjectsData}
+              filteredProjectsData={filteredApiResponse}
             />
           </>
         )}
