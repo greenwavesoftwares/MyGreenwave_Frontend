@@ -777,7 +777,8 @@ export default function GanttLeftPanel({
                                   setDragOverKey(null);
                                 }}
                                 onMouseDown={(e) => e.stopPropagation()}
-                                title="Drag to reorder column"
+                                // title={`Drag to reorder column (${col.label})`}
+                                title={`${col.label}`}
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
