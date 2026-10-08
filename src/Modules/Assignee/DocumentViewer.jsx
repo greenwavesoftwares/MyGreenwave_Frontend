@@ -7,6 +7,7 @@ import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import CustomPNGView from "./CustomPNGView";
 import CustomExcelView from "./CustomExcelView";
+import CustomDocxView from "./CustomDocxView";
 import CustomPDFView from "./CustomPDFView";
 import CustomDialogHeader from "./CustomDialogHeader";
 import {
@@ -17,6 +18,7 @@ import {
 import "./DocumentViewer.css";
 import CustomJPGView from "./CustomJPGView";
 import CustomMailViewer from "./CustomMailViewer";
+import CustomTXTView from "./CustomTXTView";
 
 /**
  * DocumentViewer — everything in one file, no Electron main/preload needed.
@@ -61,10 +63,28 @@ const DocumentViewer = forwardRef(function DocumentViewer(
     setZoom((z) => [...ZOOM_STEPS].reverse().find((s) => s < z - 0.001) ?? z);
   const resetZoom = () => setZoom(1);
 
-  const fileToDataUri = (file) =>
+  // Plain-text style files (.txt/.json/.log/.md). Browsers report wildly
+  // different MIME types for these (application/json, text/markdown, or an
+  // empty / octet-stream type for .log), and react-doc-viewer picks the
+  // renderer from the data: URI's MIME type. So for these extensions the
+  // MIME is normalised to text/plain, which CustomTXTView handles. The
+  // file name (and so its extension) is untouched, hence Download still
+  // saves it as the original .json/.log/.md file.
+  const TEXT_EXTENSIONS = ["txt", "json", "log", "md"];
+  const isTextFile = (name = "") =>
+    TEXT_EXTENSIONS.includes(name.split(".").pop()?.toLowerCase());
+
+  const fileToDataUri = (file, fileName = file?.name) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => {
+        const result = reader.result;
+        resolve(
+          isTextFile(fileName) && typeof result === "string"
+            ? result.replace(/^data:[^,]*?(;base64)?,/, "data:text/plain$1,")
+            : result,
+        );
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -77,7 +97,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
     try {
       const newDocs = await Promise.all(
         files.map(async (file) => ({
-          uri: await fileToDataUri(file),
+          uri: await fileToDataUri(file, file.name),
           fileName: file.name,
         }))
       );
@@ -108,7 +128,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
   const openBlob = async (blob, fileName) => {
     setLoading(true);
     try {
-      const uri = await fileToDataUri(blob);
+      const uri = await fileToDataUri(blob, fileName);
       openDocs([{ uri, fileName }]);
     } finally {
       setLoading(false);
@@ -199,7 +219,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
   >
     {docs.length === 0 ? (
       <p className="doc-viewer-empty-state">
-        No document loaded. Pick a PDF, Word, Excel, or PNG file above.
+        No document loaded. Pick a PDF, Word, Excel, PNG, JPG, TXT, JSON, LOG, MD, or email file above.
       </p>
     ) : (
       <DocViewerMaximizedContext.Provider value={isMaximized}>
@@ -209,9 +229,11 @@ const DocumentViewer = forwardRef(function DocumentViewer(
           pluginRenderers={[
             CustomPNGView,
             CustomExcelView,
+            CustomDocxView,
             CustomPDFView,
             CustomJPGView,
             CustomMailViewer,
+            CustomTXTView,
           ]}
           onDocumentChange={(doc) => {
             const idx = docs.findIndex((d) => d.uri === doc.uri);

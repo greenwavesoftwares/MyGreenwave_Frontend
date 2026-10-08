@@ -36,6 +36,7 @@
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.21",
+    "docx-preview": "^0.4.1",
     "email-validator": "^2.0.4",
     "file-saver": "^2.0.5",
     "html5-qrcode": "^2.3.8",

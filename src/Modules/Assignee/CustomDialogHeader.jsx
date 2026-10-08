@@ -3,7 +3,7 @@ import React from "react";
 import "./DocumentViewer.css";
 
 // Maps a file extension to the badge modifier class defined in
-// DocumentViewer.css (.doc-viewer-badge--pdf/--doc/--xls/--png), which
+// DocumentViewer.css (.doc-viewer-badge--pdf/--doc/--xls/--png/--jpg/--txt), which
 // themselves resolve their colors from the --dv-* tokens (light/dark
 // aware). Anything not listed falls back to the neutral base badge style.
 const TYPE_BADGE = {
@@ -14,6 +14,12 @@ const TYPE_BADGE = {
   xlsx: { label: "XLS", modifier: "xls" },
   csv: { label: "CSV", modifier: "xls" },
   png: { label: "PNG", modifier: "png" },
+  jpg: { label: "JPG", modifier: "jpg" },
+  jpeg: { label: "JPG", modifier: "jpg" },
+  txt: { label: "TXT", modifier: "txt" },
+  json: { label: "JSON", modifier: "txt" },
+  log: { label: "LOG", modifier: "txt" },
+  md: { label: "MD", modifier: "txt" },
   eml: { label: "EML", modifier: "mail" },
   msg: { label: "MSG", modifier: "mail" },
 };

@@ -311,6 +311,12 @@
 
 }
 
+.doc-viewer-badge--txt {
+  background: var(--dv-surface-2);
+  color: var(--dv-text);
+  border-color: var(--dv-border-strong);
+}
+
 .doc-viewer-badge--mail {
   background: var(--dv-primary-bg);
   color: var(--dv-primary-fg);

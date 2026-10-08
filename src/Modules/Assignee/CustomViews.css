@@ -135,6 +135,11 @@
 /* ---------- Zoomable images (PNG / JPG) ---------- */
 
 .doc-image-renderer {
+  /* react-doc-viewer renders plugins inside a flex ROW that doesn't stretch
+     them — without an explicit width this box hugs the left edge. */
+  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 100%;
   display: flex;
   overflow: auto;
@@ -392,4 +397,87 @@
 .doc-mail-error {
   padding: 16px;
   color: var(--dv-danger, var(--redFontColor, #cc0000));
+}
+
+
+/* ───────────── Word (.docx) viewer ───────────── */
+.doc-docx-renderer {
+  width: 100%;          /* see .doc-image-renderer: fill the flex row */
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+}
+
+/* Wide enough for the page, but never narrower than the viewer, so the page
+   is centered when small and scrolls (not clips) when zoomed in. */
+.doc-docx-stage {
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
+}
+
+/* docx-preview's own wrapper: drop its gray backdrop, center the pages. */
+.doc-docx-stage .docx-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Keep Word's colours accurate in dark mode: pages stay white paper and any
+   text without an explicit colour is black. Explicit colours from the
+   document are left untouched. */
+.doc-docx-stage section.docx {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
+  margin: 0 auto 16px !important;
+  overflow-wrap: anywhere;
+}
+
+.doc-docx-error {
+  padding: 16px;
+  color: var(--dv-danger, var(--redFontColor, #cc0000));
+}
+
+.doc-docx-loading {
+  padding: 16px;
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+}
+
+
+/* ───────────── Text (.txt) viewer ───────────── */
+.doc-txt-renderer {
+  width: 100%;          /* see .doc-image-renderer: fill the flex row */
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-txt-content {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  line-height: 1.5;
+  white-space: pre-wrap;      /* keep line breaks/indents, wrap long lines */
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  color: var(--dv-text, var(--fontColor, #263238));
+}
+
+.doc-txt-error {
+  color: var(--dv-danger, var(--redFontColor, #cc0000));
+}
+
+.doc-txt-empty {
+  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
 }
