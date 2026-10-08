@@ -142,8 +142,9 @@ export default function ProjectActivityInfo({
       ...prev,
       modules: addRecursively(prev.modules),
     }));
-    setExpanded({ ...expanded, [parent.id]: true });
-    console.log("Current Expanded Row:", { ...expanded, [parent.id]: true });
+    // Functional update so we never overwrite a newer `expanded` with the
+    // copy captured when this handler was created.
+    setExpanded((prev) => ({ ...prev, [parent.id]: true }));
 
     function generateRowId() {
       // Use native crypto.randomUUID (all modern browsers + Node 19+)
@@ -186,6 +187,11 @@ export default function ProjectActivityInfo({
             priority: "Medium",
             progress: 0,
             children: [],
+            // Draft row that only exists in the browser until it is
+            // submitted. filterTree always keeps these visible, otherwise an
+            // active search/column filter (a draft has no status, no name
+            // yet) silently hides the row that was just added.
+            _unsaved: true,
           };
           return { ...node, children: [...existing, newNode] };
         }
@@ -195,7 +201,11 @@ export default function ProjectActivityInfo({
       });
     }
 
-    showToast("success", "Success", "Submit the subactivity for confirmation");
+    showToast(
+      "info",
+      "Draft sub-activity added",
+      "Enter a name and click the Submit (send) icon on the new row to save it.",
+    );
 
     // setExpanded((prev) => ({ ...prev, [parent.id]: true }));
   };
@@ -299,34 +309,94 @@ export default function ProjectActivityInfo({
     });
   };
 
+  /* Some API wrappers (e.g. plain fetch) RESOLVE on HTTP 4xx/5xx instead of
+     throwing, which used to produce a "SubActivity added" toast for a row
+     that was never saved. Treat those responses as failures. */
+  const isFailedResponse = (res) =>
+    !!res &&
+    (res.ok === false ||
+      res.success === false ||
+      (typeof res.status === "number" &&
+        res.status >= 400 &&
+        "statusText" in res));
+
+  const findNodeById = (nodes, id) =>
+    flattenNodes(nodes).find((n) => n.id === id) || null;
+
   const submitAddedNode = async (projectId, moduleId, activityData) => {
-    console.log("Activity data:::", activityData);
-    console.log(
-      "Activity name:",
-      activityData.name,
-      "Duration:",
-      activityData.durationHrs,
-    );
-    console.log("Module id:", moduleId);
-    if (!(activityData?.name?.length > 0)) {
-      console.log("Enter actiivty name and duration");
+    const name = activityData?.name?.trim();
+    if (!name) {
       showToast("error", "Error", "Activity Name is required");
       return;
     }
-    const payload = mapToActivityPayload(activityData, projectId, moduleId);
     const loadingKey = `submit-${activityData.id}`;
+    if (loadingKeys.has(loadingKey)) return; // already submitting (double click)
+
+    const payload = mapToActivityPayload(activityData, projectId, moduleId);
+
+    // How many already-saved siblings the parent has now (the unsaved
+    // temporary row is excluded), so we can tell afterwards whether the
+    // server really added one.
+    const parentBefore = findNodeById(activityInfo?.modules, activityData.parentId);
+    const savedBefore = (parentBefore?.children || []).filter(
+      (c) => c.id !== activityData.id,
+    ).length;
+
     startLoading(loadingKey);
     try {
-      console.log("Child node added:", payload);
       const response = await activityTrackerApi.createActivity(
         projectId,
         payload,
       );
+      console.log("createActivity response::", response);
+      if (isFailedResponse(response)) {
+        throw new Error(
+          response?.message || `Server responded with ${response?.status}`,
+        );
+      }
 
-      showToast("success", "Success", "SubActivity added");
-      await fetchActivities();
+      // Replace the temporary local row with what the server really has.
+      const fresh = await fetchActivities();
 
-      console.log("Response::", response);
+      // Confirm the server actually persisted it before claiming success.
+      const freshParent = findNodeById(fresh?.modules, activityData.parentId);
+      const freshChildren = freshParent?.children || [];
+      const saved =
+        freshChildren.find((c) => c.id === activityData.id) ||
+        (freshChildren.length > savedBefore
+          ? freshChildren.find(
+              (c) => c.name?.trim() === name && c.id !== activityData.id,
+            )
+          : null);
+
+      if (!saved) {
+        console.error(
+          "SubActivity not found in refetched tree",
+          { payload, freshParent },
+        );
+        showToast(
+          "error",
+          "Error",
+          "SubActivity was not saved by the server. Please try again.",
+        );
+        return;
+      }
+
+      // Make sure the parent is open so the new row is actually visible.
+      setExpanded((prev) => ({ ...prev, [activityData.parentId]: true }));
+
+      // Saved, but an active search/filter may hide it — say so instead of
+      // leaving the user thinking nothing happened.
+      const visible = filterTree(fresh.modules, search, columnFilters);
+      if (!findNodeById(visible, saved.id)) {
+        showToast(
+          "info",
+          "SubActivity added",
+          "It is hidden by the current search/filters. Clear them to see it.",
+        );
+      } else {
+        showToast("success", "Success", "SubActivity added");
+      }
     } catch (e) {
       console.log("Error:", e);
       showToast("error", "Error", "Error in adding SubActivity");
@@ -884,25 +954,26 @@ export default function ProjectActivityInfo({
     const activityDetails = await activityTrackerApi.getAllActivities(
       selectedProject.projectId,
     );
-    //     const firstActivity = activityDetails?.modules?.[1]?.children?.[2];
-    // if (firstActivity) {
-    //   firstActivity.dependsOn = [
-    //     "1f475c83-101e-4c4a-b9cb-7785cec832b2",
-    //     "e6b2fd02-8617-4ab8-97aa-6d1bb9dec0f2",
-    //   ];
-    // }
+    console.log("Fetched activities:", activityDetails);
+    if (!activityDetails) return null;
     activityDetails.customColumns = [
       ...(activityDetails.customColumns ?? []),
     ].sort((a, b) => a.order - b.order);
-    console.log("Fetched activities:", activityDetails);
-    if (!activityDetails) return;
     setActivityInfo(activityDetails);
-    const expandedModules = activityDetails.modules.reduce((acc, module) => {
-      acc[module.id] = true;
-      return acc;
-    }, {});
+    const expandedModules = (activityDetails.modules ?? []).reduce(
+      (acc, module) => {
+        acc[module.id] = true;
+        return acc;
+      },
+      {},
+    );
     segregateBadgePerformers(activityDetails);
-    setExpanded({ ...expanded, ...expandedModules });
+    // Functional update: the old `{ ...expanded, ... }` used the `expanded`
+    // captured when this function was created, so anything expanded while
+    // the request was in flight (e.g. the parent of a just-added
+    // sub-activity) was overwritten with a stale value.
+    setExpanded((prev) => ({ ...prev, ...expandedModules }));
+    return activityDetails;
   };
   /**
    * Function to add loaded on page load or refresh

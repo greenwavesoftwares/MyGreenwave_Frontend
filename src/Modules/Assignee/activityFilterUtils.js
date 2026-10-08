@@ -196,6 +196,14 @@ export const filterTree = (nodes, term, filters, taskFilterMatchedByParent = tru
       return acc; // this whole module is filtered out
     }
 
+    // A draft row (added in the browser, not yet submitted — see
+    // addChildNode) must always stay visible: it has no status and an empty
+    // name, so it could never satisfy a search term or a column filter.
+    if (node._unsaved) {
+      acc.push({ ...node, children: [] });
+      return acc;
+    }
+
     const isSubtask = SUBTASK_TYPES.has(node.type);
     const isTaskRow = node.type !== "MODULE" && !isSubtask;
 
