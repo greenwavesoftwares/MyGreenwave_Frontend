@@ -47,6 +47,9 @@ export default function GanttTimeline({
   setHoveredRowId,
   showDependencies,
   dependencyArrows,
+  selectedRowId,
+  onSelectRow,
+  onClearSelection,
 }) {
   const { t } = useTheme();
 
@@ -58,9 +61,10 @@ export default function GanttTimeline({
         overflowX: "auto",
         overflowY: "auto",
         position: "relative",
-        WebkitOverflowScrolling: "touch",
+        //  WebkitOverflowScrolling: "touch",
       }}
       onScroll={syncScroll}
+      onClick={() => onClearSelection?.()}
     >
       <div style={{ width: totalChartWidth, position: "relative" }}>
         {/* ── Timeline header ── */}
@@ -146,7 +150,7 @@ export default function GanttTimeline({
         {/* ── Chart area ── */}
         <div style={{ position: "relative" }}>
           {/* Weekend shading */}
-          {weekendShades.map((s, i) => (
+          {/* {weekendShades.map((s, i) => (
             <div
               key={i}
               style={{
@@ -161,8 +165,33 @@ export default function GanttTimeline({
                 zIndex: 1,
               }}
             />
-          ))}
+          ))} */}
+          {/* Weekend shading — aligned with header ticks */}
+          {ticks.map((tick, i) => {
+            const day = tick.getDay(); // 0 = Sunday, 6 = Saturday
+            if (day !== 0 && day !== 6) return null;
 
+            const left =
+              ((tick.getTime() - projectStart) / totalMs) * totalChartWidth;
+
+            return (
+              <div
+                key={`weekend-${i}`}
+                style={{
+                  position: "absolute",
+                  left,
+                  top: 0,
+                  bottom: 0,
+                  width: colWidthPx,
+                  background: `${t.bgMuted}CC`,
+                  borderLeft: `1px solid ${t.border}`,
+                  pointerEvents: "none",
+                  zIndex: 1,
+                  boxSizing: "border-box",
+                }}
+              />
+            );
+          })}
           {/* Today line */}
           {todayLeft !== null && (
             <div
@@ -209,7 +238,7 @@ export default function GanttTimeline({
                   top: 0,
                   bottom: 0,
                   width: 1,
-                  background: t.borderSubtle,
+                  background: t.border,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -264,16 +293,32 @@ export default function GanttTimeline({
                         String(row.status || "")
                           .toLowerCase()
                           .trim() === "running";
-
+                      const isSelected = selectedRowId === row.id;
                       return (
                         <div
                           key={row.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectRow?.(row.id);
+                          }}
+                          // onClick={(e) => {
+                          //   e.stopPropagation();
+                          //   handleBarClick(e, row);
+                          // }}
                           style={{
                             height: ROW_HEIGHT,
                             position: "relative",
-                            borderBottom: `1px solid ${t.borderSubtle}`,
+                            borderBottom: `1px solid ${t.border}`, // stronger
                             minHeight: 24,
                             paddingBottom: 4,
+                            background: isSelected
+                              ? t.primaryBgSubtle
+                              : "transparent",
+                            boxShadow: isSelected
+                              ? `inset 0 0 0 1.5px ${t.primary}`
+                              : "none",
+                            zIndex: isSelected ? 4 : 0,
+                            cursor: "pointer",
                           }}
                         >
                           {/* Planned bar */}
@@ -300,6 +345,10 @@ export default function GanttTimeline({
                                 paddingLeft: 6,
                                 overflow: "hidden",
                                 boxShadow: t.shadowSm,
+                                outline: isSelected
+                                  ? `2px solid ${t.primary}`
+                                  : "none",
+                                outlineOffset: 1,
                                 transition: "opacity 0.12s",
                               }}
                               onMouseEnter={(e) => {
@@ -311,7 +360,7 @@ export default function GanttTimeline({
                                 setHoveredRowId(null);
                               }}
                             >
-                              <div
+                              {/* <div
                                 style={{
                                   position: "absolute",
                                   left: 0,
@@ -321,7 +370,7 @@ export default function GanttTimeline({
                                   background: pc,
                                   borderRadius: "3px 0 0 3px",
                                 }}
-                              />
+                              /> */}
                               {isRunning && (
                                 <div
                                   style={{
@@ -389,6 +438,10 @@ export default function GanttTimeline({
                                     alignItems: "center",
                                     paddingLeft: 6,
                                     overflow: "hidden",
+                                    outline: isSelected
+                                      ? `2px solid ${t.primary}`
+                                      : "none",
+                                    outlineOffset: 1,
                                   }}
                                 >
                                   {actualBar.width > 50 && (
@@ -450,14 +503,24 @@ export default function GanttTimeline({
               const BAR_HEIGHT_PLANNED = 16;
               const BAR_HEIGHT_ACTUAL = 10;
               const BAR_GAP = 2;
+              const hasSelectedTask = res.tasks.some(
+                (task) => task.id === selectedRowId,
+              );
 
               return (
                 <div
                   key={res.userId}
+                  onClick={(e) => e.stopPropagation()}
                   style={{
                     height: rowHeight,
                     position: "relative",
-                    borderBottom: `1px solid ${t.borderSubtle}`,
+                    borderBottom: `1px solid ${t.border}`,
+                    background: hasSelectedTask
+                      ? t.primaryBgSubtle
+                      : "transparent",
+                    boxShadow: hasSelectedTask
+                      ? `inset 0 0 0 1.5px ${t.primary}`
+                      : "none",
                   }}
                 >
                   {res.laneCount > 1 &&
@@ -470,7 +533,7 @@ export default function GanttTimeline({
                           right: 0,
                           top: (i + 1) * LANE_HEIGHT,
                           height: 1,
-                          background: t.borderSubtle,
+                          background: t.border,
                           pointerEvents: "none",
                           zIndex: 2,
                         }}
@@ -505,6 +568,11 @@ export default function GanttTimeline({
                             onClick={(e) => handleBarClick(e, row)}
                             title={`${row.task} — ${row._projectName} (Planned)`}
                             style={{
+                              outline:
+                                selectedRowId === row.id
+                                  ? `2px solid ${t.primary}`
+                                  : "none",
+                              outlineOffset: 1,
                               position: "absolute",
                               left: plannedBar.left,
                               width: plannedBar.width,
@@ -530,7 +598,7 @@ export default function GanttTimeline({
                               setHoveredRowId(null);
                             }}
                           >
-                            <div
+                            {/* <div
                               style={{
                                 position: "absolute",
                                 left: 0,
@@ -540,7 +608,7 @@ export default function GanttTimeline({
                                 background: pc,
                                 borderRadius: "3px 0 0 3px",
                               }}
-                            />
+                            /> */}
                             {plannedBar.width > 50 && (
                               <span
                                 style={{
@@ -578,6 +646,11 @@ export default function GanttTimeline({
                                 onClick={(e) => handleBarClick(e, row)}
                                 title={`${row.task} — ${row._projectName} (Actual)${isTaskDelayed ? " ⚠ DELAYED" : ""}`}
                                 style={{
+                                  outline:
+                                    selectedRowId === row.id
+                                      ? `2px solid ${t.primary}`
+                                      : "none",
+                                  outlineOffset: 1,
                                   position: "absolute",
                                   left: actualBar.left,
                                   width: actualBar.width,

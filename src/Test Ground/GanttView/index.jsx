@@ -80,6 +80,7 @@ export default function GanttView({
   });
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [hoveredRowId, setHoveredRowId] = useState(null);
+  const [selectedRowId, setSelectedRowId] = useState(null);
   const [showDependencies, setShowDependencies] = useState(false);
   // Full-screen project modal
   // Full-screen project modal (single project OR all projects)
@@ -162,6 +163,12 @@ export default function GanttView({
   const [statusFilter, setStatusFilter] = useState([]);
   const [projectFilters, setProjectFilters] = useState({});
 
+  const handleClearSelection = useCallback(() => {
+    setSelectedRowId(null);
+  }, []);
+  const handleSelectRow = useCallback((rowId) => {
+    setSelectedRowId((prev) => (prev === rowId ? null : rowId));
+  }, []);
   const getProjectFilter = useCallback(
     (projectId) =>
       projectFilters[projectId] || { module: [], resource: [], status: [] },
@@ -508,12 +515,60 @@ export default function GanttView({
       }
     });
   }, [isMobile, todayLeft]);
+  // ── Scroll selected row into view (both panels) ──
+  useEffect(() => {
+    if (!selectedRowId) return;
 
+    // 1) Vertical: left panel + timeline share scrollTop via syncScroll
+    //    Find the left-panel row element and scroll it into view vertically.
+    const leftEl = document.querySelector(
+      `[data-gantt-row-id="${selectedRowId}"]`,
+    );
+    if (leftEl && leftPanelRef.current) {
+      leftEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    // 2) Horizontal: scroll timeline so the bar is visible
+    const barEl = barsRef.current.get(selectedRowId);
+    const timeline = timelineRef.current;
+    if (barEl && timeline) {
+      const barRect = barEl.getBoundingClientRect();
+      const tlRect = timeline.getBoundingClientRect();
+      const barLeftInTimeline =
+        barRect.left - tlRect.left + timeline.scrollLeft;
+      const barRightInTimeline = barLeftInTimeline + barRect.width;
+
+      const margin = 40;
+      const viewLeft = timeline.scrollLeft;
+      const viewRight = viewLeft + timeline.clientWidth;
+
+      if (barLeftInTimeline < viewLeft + margin) {
+        timeline.scrollTo({
+          left: Math.max(0, barLeftInTimeline - margin),
+          behavior: "smooth",
+        });
+      } else if (barRightInTimeline > viewRight - margin) {
+        timeline.scrollTo({
+          left: barRightInTimeline - timeline.clientWidth + margin,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [selectedRowId]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") setSelectedRowId(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
   // ── Bar click handler ──
-  const handleBarClick = (e, row) => {
+  // Bar click: select + tooltip
+  const handleBarClick = useCallback((e, row) => {
     e.stopPropagation();
+    setSelectedRowId(row.id); // always select this row (don't toggle off from bar)
     setTooltip({ row, x: e.clientX, y: e.clientY });
-  };
+  }, []);
 
   // ── Mobile: jump to today ──
   const handleJumpToToday = useCallback(() => {
@@ -607,6 +662,8 @@ export default function GanttView({
             isFullScreen={isFullScreen}
             moveColumn={moveColumn}
             getVisibleOrder={getVisibleOrder}
+            selectedRowId={selectedRowId}
+            onSelectRow={handleSelectRow}
           />
         )}
         {/* Left panel resize handle (task view only) */}
@@ -671,11 +728,14 @@ export default function GanttView({
           hasProjectFilters={hasProjectFilters}
           getBarPosition={getBarPosition}
           barsRef={barsRef}
-          handleBarClick={handleBarClick}
           hoveredRowId={hoveredRowId}
           setHoveredRowId={setHoveredRowId}
           showDependencies={showDependencies}
           dependencyArrows={dependencyArrows}
+          selectedRowId={selectedRowId}
+          onSelectRow={handleSelectRow}
+          onClearSelection={handleClearSelection}
+          handleBarClick={handleBarClick}
         />
       </div>
 

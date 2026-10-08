@@ -46,9 +46,10 @@ function computeStatusSummary(rows) {
   return counts;
 }
 
-function StatusBadgesSummary({ summary, t }) {
+function StatusBadgesSummary({ summary, t, totalTasks = 0 }) {
   const active = DISPLAY_STATUSES.filter((s) => (summary[s] || 0) > 0);
   if (!active.length) return null;
+
   return (
     <div
       style={{
@@ -61,10 +62,13 @@ function StatusBadgesSummary({ summary, t }) {
     >
       {active.map((status) => {
         const sc = getStatusColor(status, t);
+        const count = summary[status] || 0;
+        const pct = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
+
         return (
           <span
             key={status}
-            title={`${status}: ${summary[status]}`}
+            title={`${status}: ${count} of ${totalTasks} (${pct}%)`}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -89,8 +93,8 @@ function StatusBadgesSummary({ summary, t }) {
                 flexShrink: 0,
               }}
             />
-            {status}{" "}
-            <strong style={{ opacity: 0.85 }}>{summary[status]}</strong>
+            {status} {count}
+            <span style={{ opacity: 0.85, fontWeight: 600 }}>({pct}%)</span>
           </span>
         );
       })}
@@ -227,7 +231,8 @@ function cellShell(width, t, extra = {}) {
     padding: "0 8px",
     display: "flex",
     alignItems: "center",
-    borderRight: `1px solid ${t.borderSubtle}`,
+    // borderRight: `1px solid ${t.borderSubtle}`,
+    borderRight: `1px solid ${t.border}`,
     overflow: "hidden",
     boxSizing: "border-box",
     position: "relative",
@@ -239,12 +244,11 @@ function cellShell(width, t, extra = {}) {
 function headerShell(width, t, extra = {}) {
   return {
     ...cellShell(width, t, extra),
-    borderRight: `1px solid ${t.border}`,
+    borderRight: `1px solid ${t.borderStrong || t.border}`,
     justifyContent: "space-between",
     gap: 4,
   };
 }
-
 export default function GanttLeftPanel({
   viewMode,
   filteredProjects,
@@ -275,6 +279,8 @@ export default function GanttLeftPanel({
   isFullScreen,
   moveColumn,
   getVisibleOrder,
+  selectedRowId,
+  onSelectRow,
 }) {
   const { t } = useTheme();
 
@@ -648,6 +654,7 @@ export default function GanttLeftPanel({
                           <StatusBadgesSummary
                             summary={computeStatusSummary(project.rows || [])}
                             t={t}
+                            totalTasks={(project.rows || []).length}
                           />
                         </div>
                       </div>
@@ -895,15 +902,32 @@ export default function GanttLeftPanel({
                         const isRowExpanded = expandedRows.has(row.id);
                         const displayStatus = getDisplayStatus(row);
                         const sc = getStatusColor(displayStatus, t);
+                        const isSelected = selectedRowId === row.id;
 
                         return (
                           <div
                             key={row.id}
+                            data-gantt-row-id={row.id} // ← for scroll-into-view
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectRow?.(row.id);
+                            }}
                             style={{
                               height: ROW_HEIGHT,
                               display: "flex",
-                              borderBottom: `1px solid ${t.borderSubtle}`,
-                              borderLeft: `4px solid transparent`,
+                              borderBottom: `1px solid ${t.border}`, // stronger than borderSubtle
+                              borderLeft: isSelected
+                                ? `3px solid ${t.primary}`
+                                : `4px solid transparent`,
+                              background: isSelected
+                                ? t.primaryBgSubtle
+                                : "transparent",
+                              boxShadow: isSelected
+                                ? `inset 0 0 0 1.5px ${t.primary}` // outline/ring
+                                : "none",
+                              cursor: "pointer",
+                              position: "relative",
+                              zIndex: isSelected ? 2 : 0,
                             }}
                           >
                             {columns.map((col) => {
@@ -1251,16 +1275,37 @@ export default function GanttLeftPanel({
             : /* Resource View */
               resourceViewData.map((res) => {
                 const rowHeight = ROW_HEIGHT * res.laneCount;
+                const isSelected =
+                  selectedRowId &&
+                  res.tasks.some((t) => t.id === selectedRowId);
+                // Or highlight the resource lane if any task selected — simpler: highlight when
+                // the clicked task belongs to this resource. Better: select by task id still.
+
+                // For resource view, when a task is selected, highlight the whole resource row
+                // OR only if you render per-task rows. Your resource left panel is one row per resource.
+                // Highlight resource row if any of res.tasks has id === selectedRowId:
+
+                // const isSelected = res.tasks.some((task) => task.id === selectedRowId);
                 return (
                   <div
                     key={res.userId}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // optional: select first task, or don't select from left in resource view
+                    }}
                     style={{
                       height: rowHeight,
                       display: "flex",
                       alignItems: "center",
                       padding: "0 12px",
-                      borderBottom: `1px solid ${t.borderSubtle}`,
+                      borderBottom: `1px solid ${t.border}`,
                       gap: 10,
+                      background: isSelected
+                        ? t.primaryBgSubtle
+                        : "transparent",
+                      boxShadow: isSelected
+                        ? `inset 0 0 0 1.5px ${t.primary}`
+                        : "none",
                     }}
                   >
                     <div
@@ -1310,6 +1355,7 @@ export default function GanttLeftPanel({
                       <StatusBadgesSummary
                         summary={computeStatusSummary(res.tasks || [])}
                         t={t}
+                        totalTasks={(res.tasks || []).length}
                       />
                     </div>
                   </div>
