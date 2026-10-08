@@ -1652,7 +1652,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
 );
 
   return (
-    <div className="container mx-auto">
+    <div>
       <div
         className="wt-root"
         style={{
@@ -1665,7 +1665,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
           transition: "background 0.2s, color 0.2s",
         }}
       >
-        <style>
+        {/* <style>
           {`
             .wt-root{--wt-chart-height:170px;--wt-bar-max-width:20px;--wt-dropdown-min-width:150px;}
             @keyframes wtSlideInRight{from{transform:translateX(28px);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -1675,7 +1675,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
             @media(max-width:900px){.wt-root{padding:14px!important;border-radius:12px!important;--wt-chart-height:150px;}.wt-filter-bar{flex-direction:column!important;align-items:stretch!important;}.wt-filter-field{width:100%;}.wt-refresh-btn{width:100%;}}
             .gantt-resource-row:hover{background:${t.occRowOdd};}
           `}
-        </style>
+        </style> */}
 
         {/* Filter Bar */}
         <FilterBar
