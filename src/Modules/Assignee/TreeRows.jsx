@@ -52,8 +52,6 @@ export default function TreeRows({
   submitAddedNode,
   handleFieldChange,
   addDuration,
-  openCommentsDialog,
-  setOpenCommentsDialog,
   moduleId,
   projectId,
   updateStatusOfActivity,
