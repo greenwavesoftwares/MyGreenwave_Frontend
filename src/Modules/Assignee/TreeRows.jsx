@@ -40,7 +40,7 @@ import StatusChip from "./StatusChip";
 import { RotateCcw, Star, Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
 import ActivityTimer from "./ActivityTimer";
-import { updateStatus } from "./activityFilterUtils";
+import { modifyStatus } from "./activityFilterUtils";
 
 export default function TreeRows({
   node,
@@ -96,7 +96,11 @@ export default function TreeRows({
   const hasChildren = children?.length > 0;
   const isExpanded = expanded?.[id] ?? false;
    const time=node.activityStatus==='Running'?node.plannedStop:node.plannedStart
-  const updatedStatus = updateStatus(node.activityStatus, time);
+   /**
+    * Function to update the status stored in the database to a human readable status that indicates the current state of the activity
+    * ,i.e. whether the activity is late to start, running late, or it is on time
+    */
+  const modifiedStatus = modifyStatus(node.activityStatus, time);
   const [dependencyDialogVisible, setDependencyDialogVisible] = useState(false);
   const handleOpenDependencies = () => {
     setDependencyDialogVisible(true);
@@ -354,7 +358,7 @@ export default function TreeRows({
                     moduleId,
                     activityStatus,
                     name,
-                    updatedStatus
+                    modifiedStatus
                   )
                 }
               >
@@ -623,7 +627,7 @@ export default function TreeRows({
                   }
                 >
                   <span>
-                    <StatusChip status={updatedStatus?.toLowerCase()} />
+                    <StatusChip status={modifiedStatus?.toLowerCase()} />
                   </span>
                 </Tooltip>
               </div>
@@ -820,7 +824,7 @@ export default function TreeRows({
                   }
                 >
                   <span>
-                    <StatusChip status={updatedStatus?.toLowerCase()} />
+                    <StatusChip status={modifiedStatus?.toLowerCase()} />
                   </span>
                 </Tooltip>
               </TableCell>

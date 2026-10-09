@@ -242,7 +242,7 @@ export default function ProjectActivityInfo({
     moduleId,
     status,
     activityName,
-    updatedActivityStatus
+    activityStatus
   ) => {
     const loadingKey = `comment-${activityId}`;
     startLoading(loadingKey);
@@ -258,7 +258,7 @@ export default function ProjectActivityInfo({
       if (status.toLowerCase() !== "finished") setAllowActions(true);
       else setAllowActions(false);
       setCommentActivityName(activityName);
-      setCommentActivityStatus(updatedActivityStatus)
+      setCommentActivityStatus(activityStatus)
       setExistingComments(existingCommentsResp);
       setNewComment(newCommentBody);
       setOpenCommentDialog(true);

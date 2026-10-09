@@ -83,7 +83,7 @@ export const nodeFieldValue = (field, node) => {
       return node.resourceName || node.resource || "";
     case "status":
       const time=node.activityStatus==='Running'?node.plannedStop:node.plannedStart
-      return updateStatus(node.activityStatus, time) || "";
+      return modifyStatus(node.activityStatus, time) || "";
     case "plannedStart":
       return formatDT(node.plannedStart, "DD-MM-YYYY HH:mm");
     case "plannedStop":
@@ -98,7 +98,15 @@ export const nodeFieldValue = (field, node) => {
       return "";
   }
 };
-export const updateStatus = (status, time) => {
+/**
+ * 
+ * @param {*} status 
+ * @param {*} time 
+ * @returns 
+ * Function to update the status stored in the database to a human readable status that indicates the current state of the activity
+ * , i.e. whether the activity is late to start, running late, or it is on time
+ */
+export const modifyStatus = (status, time) => {
   if(!status)
     return
   console.log("Status:",status)
@@ -130,13 +138,13 @@ export const updateStatus = (status, time) => {
 export const nodeMatchesSearch = (node, term) => {
   const t = term.toLowerCase();
    const time=node.activityStatus==='Running'?node.plannedStop:node.plannedStart
-  const updatedStatus=updateStatus(node.activityStatus, time)
+  const modifiedStatus=modifyStatus(node.activityStatus, time)
   return (
     node.name?.toLowerCase()?.includes(t) ||
     node.resourceName?.toLowerCase()?.includes(t) ||
     node.resource?.toLowerCase()?.includes(t) ||
     node.activityStatus?.toLowerCase().includes(t) ||
-    updateStatus(node.activityStatus,time)?.includes(t) ||
+    modifiedStatus?.includes(t) ||
     node.type?.toLowerCase().includes(t)
   );
 };
