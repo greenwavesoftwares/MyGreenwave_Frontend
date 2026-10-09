@@ -77,7 +77,8 @@ export default function AssignerModule() {
   const [ganttExistingComments, setGanttExistingComments] = useState([]);
   const [ganttNewComment, setGanttNewComment] = useState(null);
   const [ganttFeedbackRow, setGanttFeedbackRow] = useState(null);
-
+  const [currentRow, setCurrentRow] = useState(null);
+  const [currentProject, setCurrentProject] = useState(null);
   // ── Date range state ──
   const toSimpleDate = (d) => {
     const yyyy = d.getFullYear();
@@ -387,6 +388,10 @@ export default function AssignerModule() {
             row.id,
           );
         const newCommentBody = addComment(row._projectId, row.id, row.moduleId);
+        const currentRow = row;
+        const currentProject = drafts.find((d) => d.id === row._projectId);
+        setCurrentRow(currentRow);
+        setCurrentProject(currentProject);
         setGanttExistingComments(existingCommentsResp || []);
         setGanttNewComment(newCommentBody);
         setGanttCommentOpen(true);
@@ -734,6 +739,8 @@ export default function AssignerModule() {
           setExistingComments={setGanttExistingComments}
           newComment={ganttNewComment}
           setNewComment={setGanttNewComment}
+          allowActions={currentProject?.status?.toLowerCase() !== "closed"}
+          activityName={currentRow?.task || ""}
         />
       )}
 
