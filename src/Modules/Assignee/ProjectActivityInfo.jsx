@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
-import CommentsActionBox from "./CommentsActionDialog";
 import CommentsActionDialog from "./CommentsActionDialog";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "./AssigneeHelper";
@@ -19,7 +18,6 @@ import StatusChip from "./StatusChip";
 import { showToast } from "./toastService";
 import { ArrowLeft } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
-import { faTruckMedical } from "@fortawesome/free-solid-svg-icons";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
 import ColumnFilterButton, {
