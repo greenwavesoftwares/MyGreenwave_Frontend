@@ -89,7 +89,7 @@ export default function ProjectActivityInfo({
   const [newComment, setNewComment] = useState(null);
   const [allowActions, setAllowActions] = useState(true);
   const [commentActivityName, setCommentActivityName] = useState(null);
-  const [commentActivityStatus,setCommentActivityStatus]=useState(null)
+  const [commentActivityStatus, setCommentActivityStatus] = useState(null);
   const [openFeedback, setFeedback] = useState(false);
   const [openFeedbackRow, setOpenFeedbackRow] = useState(null);
   const currentUserId = getUserData()?.userDetails?.userId;
@@ -242,7 +242,7 @@ export default function ProjectActivityInfo({
     moduleId,
     status,
     activityName,
-    activityStatus
+    activityStatus,
   ) => {
     const loadingKey = `comment-${activityId}`;
     startLoading(loadingKey);
@@ -258,7 +258,7 @@ export default function ProjectActivityInfo({
       if (status.toLowerCase() !== "finished") setAllowActions(true);
       else setAllowActions(false);
       setCommentActivityName(activityName);
-      setCommentActivityStatus(activityStatus)
+      setCommentActivityStatus(activityStatus);
       setExistingComments(existingCommentsResp);
       setNewComment(newCommentBody);
       setOpenCommentDialog(true);
@@ -335,7 +335,10 @@ export default function ProjectActivityInfo({
     // How many already-saved siblings the parent has now (the unsaved
     // temporary row is excluded), so we can tell afterwards whether the
     // server really added one.
-    const parentBefore = findNodeById(activityInfo?.modules, activityData.parentId);
+    const parentBefore = findNodeById(
+      activityInfo?.modules,
+      activityData.parentId,
+    );
     const savedBefore = (parentBefore?.children || []).filter(
       (c) => c.id !== activityData.id,
     ).length;
@@ -368,10 +371,10 @@ export default function ProjectActivityInfo({
           : null);
 
       if (!saved) {
-        console.error(
-          "SubActivity not found in refetched tree",
-          { payload, freshParent },
-        );
+        console.error("SubActivity not found in refetched tree", {
+          payload,
+          freshParent,
+        });
         showToast(
           "error",
           "Error",
@@ -1399,18 +1402,20 @@ export default function ProjectActivityInfo({
         onCancel={() => setPauseDelayTarget(null)}
         loading={pauseDelayLoading}
       />
-      <CommentsActionDialog
-        existingComments={existingComments}
-        setExistingComments={setExistingComments}
-        newComment={newComment}
-        setNewComment={setNewComment}
-        open={openCommentDialog}
-        onClose={onCloseCommentbox}
-        allowActions={allowActions}
-        activityName={commentActivityName}
-        activityStatus={commentActivityStatus}
-        fetchColor={fetchColor}
-      />
+      {openCommentDialog && (
+        <CommentsActionDialog
+          existingComments={existingComments}
+          setExistingComments={setExistingComments}
+          newComment={newComment}
+          setNewComment={setNewComment}
+          open={openCommentDialog}
+          onClose={onCloseCommentbox}
+          allowActions={allowActions}
+          activityName={commentActivityName}
+          activityStatus={commentActivityStatus}
+          fetchColor={fetchColor}
+        />
+      )}
       {openFeedback && (
         <FeedbackModal
           row={openFeedbackRow}

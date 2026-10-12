@@ -63,7 +63,7 @@ export default function CommentsActionDialog({
   fetchColor,
 }) {
   // Opens maximized; the header icon toggles to the regular windowed size.
-  const [isMaximized, setIsMaximized] = useState(true);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [activeReply, setActiveReply] = useState(null);
   const [replyText, setReplyText] = useState({});
   const [replyAttachment, setReplyAttachment] = useState({});
