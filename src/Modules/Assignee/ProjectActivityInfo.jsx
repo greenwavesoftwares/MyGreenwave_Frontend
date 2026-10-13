@@ -15,6 +15,7 @@ import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "./AssigneeHelper";
 import { getUserData } from "../Login/Encrypt";
 import StatusChip from "./StatusChip";
+import CpmDialog from "./CpmDialog";
 import { showToast } from "./toastService";
 import { ArrowLeft } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
@@ -92,6 +93,7 @@ export default function ProjectActivityInfo({
   const [commentActivityStatus, setCommentActivityStatus] = useState(null);
   const [openFeedback, setFeedback] = useState(false);
   const [openFeedbackRow, setOpenFeedbackRow] = useState(null);
+  const [openCpm, setOpenCpm] = useState(false);
   const currentUserId = getUserData()?.userDetails?.userId;
   const currentUserName = getUserData()?.userDetails?.userName;
   const [resourceColor, setResourceColor] = useState({});
@@ -1123,6 +1125,29 @@ export default function ProjectActivityInfo({
                   </svg>
                 )}
               </button>
+              <button
+                className="pai-refresh-btn"
+                onClick={() => setOpenCpm(true)}
+                title="Critical path (CPM)"
+                aria-label="Open critical path view"
+                disabled={!activityInfo?.modules?.length}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="5" cy="6" r="2.2" />
+                  <circle cx="12" cy="18" r="2.2" />
+                  <circle cx="19" cy="6" r="2.2" />
+                  <path d="M6.8 7.6l3.9 8.6M13.3 16.2l3.9-8.6" />
+                </svg>
+              </button>
               {/* <button className="pai-add-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 5v14M5 12h14"/>
@@ -1401,6 +1426,12 @@ export default function ProjectActivityInfo({
         onConfirm={handlePauseDelayConfirm}
         onCancel={() => setPauseDelayTarget(null)}
         loading={pauseDelayLoading}
+      />
+      <CpmDialog
+        open={openCpm}
+        onClose={() => setOpenCpm(false)}
+        projectId={activityInfo?.projectId}
+        fetchColor={fetchColor}
       />
       {openCommentDialog && (
         <CommentsActionDialog
