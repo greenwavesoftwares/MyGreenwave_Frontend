@@ -81,7 +81,7 @@ const initialsOf = (userId) => {
 
 // Neutral colours used when no colour is available for a resource
 // (e.g. the resource has no entry in the parent's colour map yet).
-const NO_COLOR = { color: "#475569", bgColor: "#E2E8F0", border: "#CBD5E1" };
+const NO_COLOR = { color: "#3077da", bgColor: "#E2E8F0", border: "#CBD5E1" };
 
 // Look up a resource's colour via the `fetchColor` function the parent passes in
 // (the same one the Activities table uses, so a person has the SAME colour in
@@ -91,7 +91,7 @@ const colorOf = (fetchColor, resource) =>
 
 /* ── CPM engine ──
    Takes the module/activity tree and returns:
-     list            – all work items with computed CPM values, in dependency order
+     list            – all work items with computed CPM valuessss, in dependency order
      map             – the same items keyed by id
      total           – project duration in hours (length of the critical path)
      skipped         – number of items dropped because of a dependency cycle
