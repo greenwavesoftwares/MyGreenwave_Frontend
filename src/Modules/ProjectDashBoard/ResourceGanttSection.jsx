@@ -10,6 +10,7 @@ import GanttView from "../../Test Ground/GanttView/index";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "../../Modules/Assignee/AssigneeHelper";
 import CommentsActionDialog from "../../Modules/Assignee/CommentsActionDialog";
+import FeedbackModal from "../../Test Ground/FeedbackModal";
 
 /**
  * Resource Gantt Section
@@ -21,6 +22,8 @@ function ResourceGanttSection({ t, filteredProjectsData, showToast }) {
   const [newComment, setNewComment] = useState(null);
   const [rowData, setRowData] = useState(null);
   const [currentProject, setCurrentProject] = useState(null);
+  const [ganttFeedbackRow, setGanttFeedbackRow] = useState(null);
+
   const onOpenCommentBox = useCallback(
     async (row, projectId, activityId, moduleId) => {
       try {
@@ -44,6 +47,13 @@ function ResourceGanttSection({ t, filteredProjectsData, showToast }) {
     },
     [showToast],
   );
+  const handleGanttViewFeedback = useCallback((row) => {
+    const status = String(row.status || "")
+      .toLowerCase()
+      .trim();
+    if (status !== "finished") return;
+    setGanttFeedbackRow(row);
+  }, []);
   return (
     <>
       <AccordionSection title="Resource Gantt" t={t} defaultOpen>
@@ -53,6 +63,7 @@ function ResourceGanttSection({ t, filteredProjectsData, showToast }) {
             (row) => onOpenCommentBox(row, row._projectId, row.id, row.moduleId)
             // console.log("Row : ", row)
           }
+          onFeedback={handleGanttViewFeedback}
         />
       </AccordionSection>
       {/* ══ MODALS ══ */}
@@ -66,6 +77,14 @@ function ResourceGanttSection({ t, filteredProjectsData, showToast }) {
           setNewComment={setNewComment}
           allowActions={currentProject?.status?.toLowerCase() !== "closed"}
           activityName={rowData?.task || "—"}
+        />
+      )}
+      {ganttFeedbackRow && (
+        <FeedbackModal
+          row={ganttFeedbackRow}
+          onClose={() => setGanttFeedbackRow(null)}
+          onConfirm={() => {}}
+          isSubmitting={false}
         />
       )}
     </>
