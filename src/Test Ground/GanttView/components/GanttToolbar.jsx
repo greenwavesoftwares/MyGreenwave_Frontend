@@ -1,5 +1,13 @@
 import React from "react";
-import { ZoomIn, ZoomOut, Calendar, Users, Link2 } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  Calendar,
+  Users,
+  Download,
+  Link2,
+  Activity,
+} from "lucide-react"; // ← Add Download
 import { useTheme } from "../../useTheme";
 import {
   ZOOM_CONFIGS,
@@ -8,9 +16,6 @@ import {
 } from "../helpers/constants";
 import ColumnVisibilityDropdown from "./ColumnVisibilityDropdown";
 
-/**
- * Desktop toolbar with view toggle, zoom controls, column visibility.
- */
 export default function GanttToolbar({
   viewMode,
   setViewMode,
@@ -20,9 +25,11 @@ export default function GanttToolbar({
   setColWidthPx,
   visibleColumns,
   toggleColumn,
+  customColumns = [],
   showDependencies,
   setShowDependencies,
-  customColumns = [], // ← NEW
+  isFullScreen, // ← NEW
+  onDownloadExcel, // ← NEW
 }) {
   const { t } = useTheme();
 
@@ -66,11 +73,7 @@ export default function GanttToolbar({
         }}
       >
         {[
-          {
-            key: "task",
-            label: "Project View",
-            icon: <Calendar size={13} />,
-          },
+          { key: "task", label: "Project View", icon: <Calendar size={13} /> },
           {
             key: "resource",
             label: "Resource View",
@@ -141,8 +144,6 @@ export default function GanttToolbar({
       </button>
 
       <div style={{ width: 1, height: 20, background: t.border }} />
-
-      {/* Dependencies toggle */}
       {false && (
         <>
           <button
@@ -167,13 +168,38 @@ export default function GanttToolbar({
           <div style={{ width: 1, height: 20, background: t.border }} />
         </>
       )}
-
-      {/* Column visibility toggle */}
       <ColumnVisibilityDropdown
         visibleColumns={visibleColumns}
         onToggle={toggleColumn}
-        customColumns={customColumns} // ← NEW
+        customColumns={customColumns}
       />
+
+      {/* ── NEW: Export Button (Only in Full Screen) ── */}
+      {isFullScreen && (
+        <>
+          <div
+            style={{
+              width: 1,
+              height: 20,
+              background: t.border,
+              marginLeft: "auto",
+            }}
+          />
+          <button
+            onClick={onDownloadExcel}
+            style={{
+              ...btnStyle,
+              background: t.primaryBgSubtle,
+              color: t.primary,
+              borderColor: t.primaryBorder,
+              fontWeight: 700,
+            }}
+            title="Download colored Excel timeline"
+          >
+            <Download size={13} /> Export Excel
+          </button>
+        </>
+      )}
     </div>
   );
 }

@@ -43,6 +43,8 @@ import { fmtDateShort } from "./helpers/filterOptions"; // ← NEW
 import { RESOURCE_VIEW_PANEL_WIDTH } from "../helpers/constants";
 import { useColumnWidths } from "./hooks/useColumnWidths";
 import { useColumnOrder } from "./hooks/useColumnOrder";
+import { exportTimelineExcel } from "./helpers/exportTimelineExcel";
+import CpmDialog from "../../Modules/Assignee/CpmDialog";
 /* ═══════════════════════════════════════════════════════
    GanttView — main orchestrator
    ═══════════════════════════════════════════════════════ */
@@ -86,7 +88,18 @@ export default function GanttView({
   // Full-screen project modal (single project OR all projects)
   const [fullScreenProjectId, setFullScreenProjectId] = useState(null);
   const [fullScreenAll, setFullScreenAll] = useState(false);
+  const [openCpm, setOpenCpm] = useState(false);
+  const [cpmProjectId, setCpmProjectId] = useState(null);
 
+  const handleOpenCpm = useCallback((projectId) => {
+    setCpmProjectId(projectId || null);
+    setOpenCpm(true);
+  }, []);
+
+  const handleCloseCpm = useCallback(() => {
+    setOpenCpm(false);
+    setCpmProjectId(null);
+  }, []);
   const fullScreenProject = useMemo(
     () => projects.find((p) => p.id === fullScreenProjectId) || null,
     [projects, fullScreenProjectId],
@@ -579,7 +592,17 @@ export default function GanttView({
       });
     }
   }, [todayLeft]);
-
+  const handleDownloadExcel = async () => {
+    // If fullscreen, the focused project is either fullScreenProject or projects[0]
+    const targetProject = fullScreenProject || projects[0];
+    if (targetProject) {
+      try {
+        await exportTimelineExcel(targetProject);
+      } catch (err) {
+        console.error("Export failed", err);
+      }
+    }
+  };
   return (
     <div
       style={{
@@ -611,6 +634,8 @@ export default function GanttView({
           showDependencies={showDependencies}
           setShowDependencies={setShowDependencies}
           customColumns={activeCustomColumns}
+          isFullScreen={isFullScreen} // ← NEW
+          onDownloadExcel={handleDownloadExcel} // ← NEW
         />
       ) : (
         <GanttMobileToolbar
@@ -664,6 +689,7 @@ export default function GanttView({
             getVisibleOrder={getVisibleOrder}
             selectedRowId={selectedRowId}
             onSelectRow={handleSelectRow}
+            onOpenCpm={handleOpenCpm}
           />
         )}
         {/* Left panel resize handle (task view only) */}
@@ -805,7 +831,14 @@ export default function GanttView({
           onFeedback={onFeedback}
         />
       )}
-
+      {openCpm && cpmProjectId && (
+        <CpmDialog
+          open={openCpm}
+          onClose={handleCloseCpm}
+          projectId={cpmProjectId}
+          // fetchColor={fetchColor} // see note below
+        />
+      )}
       {/* Full-screen all projects (from resource view) */}
       {fullScreenAll && (
         <FullScreenProjectModal

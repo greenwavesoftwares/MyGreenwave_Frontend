@@ -7,6 +7,7 @@ import {
   X,
   Maximize2,
   GripVertical,
+  Activity,
 } from "lucide-react";
 import { useTheme } from "../../useTheme";
 import {
@@ -276,6 +277,7 @@ export default function GanttLeftPanel({
   contentWidth,
   onOpenFullScreen,
   onOpenFullScreenAll,
+  onOpenCpm,
   isFullScreen,
   moveColumn,
   getVisibleOrder,
@@ -660,31 +662,68 @@ export default function GanttLeftPanel({
                       </div>
 
                       {/* Far-right action buttons */}
-                      {!isFullScreen && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenFullScreen?.(project.id);
-                          }}
-                          title="Expand to full screen"
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: 5,
-                            border: `1px solid ${t.primaryBorder}`,
-                            background: t.primaryBgSubtle,
-                            color: t.primary,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: 0,
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Maximize2 size={11} />
-                        </button>
-                      )}
+                      {/* CPM + Fullscreen actions */}
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {/* Critical Path (CPM) */}
+                        {!isFullScreen && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation(); // don't toggle expand/collapse
+                              onOpenCpm?.(project.id);
+                            }}
+                            title="Critical Path (CPM)"
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 5,
+                              border: `1px solid ${t.dangerBorder || t.borderStrong}`,
+                              background: t.dangerBgSubtle || t.bgCard,
+                              color: t.danger || "#DC2626",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                            }}
+                          >
+                            <Activity size={11} />
+                          </button>
+                        )}
+                        {/* Existing fullscreen button */}
+                        {!isFullScreen && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenFullScreen?.(project.id);
+                            }}
+                            title="Expand to full screen"
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 5,
+                              border: `1px solid ${t.primaryBorder}`,
+                              background: t.primaryBgSubtle,
+                              color: t.primary,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                            }}
+                          >
+                            <Maximize2 size={11} />
+                          </button>
+                        )}
+                      </div>
                       {isExpanded && hasFilters && (
                         <button
                           onClick={(e) => {
