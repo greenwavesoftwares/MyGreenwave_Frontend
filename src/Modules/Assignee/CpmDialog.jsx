@@ -344,6 +344,7 @@ function PathStrip({ cpm }) {
   if (!crit.length) return null;
   return (
     <div className="cpm-chain" aria-label="Critical path">
+      <span className="cpm-chain-label">Critical path:</span>
       {crit.map((t, i) => (
         <React.Fragment key={t.id}>
           {i > 0 && <span className="cpm-arrow">→</span>}
@@ -358,6 +359,17 @@ function PathStrip({ cpm }) {
           </span>
         </React.Fragment>
       ))}
+    </div>
+  );
+}
+
+// Colour key so the reader knows what red / amber / neutral mean (and how near-critical is defined).
+function Legend() {
+  return (
+    <div className="cpm-legend" aria-label="Legend">
+      <span className="cpm-legend-item"><i className="cpm-dot cpm-dot--crit" /> Critical · 0h slack</span>
+      <span className="cpm-legend-item"><i className="cpm-dot cpm-dot--near" /> Near-critical · up to {NEAR_CRITICAL_HRS}h slack</span>
+      <span className="cpm-legend-item"><i className="cpm-dot cpm-dot--safe" /> Safe · more than {NEAR_CRITICAL_HRS}h slack</span>
     </div>
   );
 }
@@ -458,7 +470,7 @@ function Network({ cpm, fetchColor }) {
         {/* Task boxes, coloured by criticality */}
         {cpm.list.map((t) => {
           const q = pos[t.id];
-          const cls = t.critical ? " cpm-box--crit" : t.slack <= NEAR_CRITICAL_HRS ? " cpm-box--near" : "";
+          const cls = t.critical ? " cpm-box--crit" : t.slack <= NEAR_CRITICAL_HRS ? " cpm-box--near" : " cpm-box--safe";
           const rc = colorOf(fetchColor, t.resource);
           return (
             <g key={t.id}>
@@ -530,7 +542,10 @@ function CpmTable({ cpm, fetchColor }) {
         </thead>
         <tbody>
           {rows.map((t) => (
-            <tr key={t.id} className={t.critical ? "cpm-row--crit" : ""}>
+            <tr
+              key={t.id}
+              className={t.critical ? "cpm-row--crit" : t.slack <= NEAR_CRITICAL_HRS ? "cpm-row--near" : "cpm-row--safe"}
+            >
               <td className="cpm-l cpm-name" title={t.name}>{t.name}</td>
               <td className="cpm-l" style={{ width: "1%" }}><ResourceCell resource={t.resource} fetchColor={fetchColor} /></td>
               <td>{fmtH(t.dur)}</td>
@@ -732,6 +747,7 @@ export default function CpmDialog({ open, onClose, projectId, fetchColor }) {
 
             {/* The critical path as a chain of chips */}
             <PathStrip cpm={cpm} />
+            <Legend />
 
             {/* Tab switcher: [key, label] pairs */}
             <div className="cpm-tabs" role="tablist">
