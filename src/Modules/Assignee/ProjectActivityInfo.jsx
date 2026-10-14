@@ -1431,7 +1431,7 @@ export default function ProjectActivityInfo({
         open={openCpm}
         onClose={() => setOpenCpm(false)}
         projectId={activityInfo?.projectId}
-        fetchColor={fetchColor}
+        // fetchColor={fetchColor}
       />
       {openCommentDialog && (
         <CommentsActionDialog
