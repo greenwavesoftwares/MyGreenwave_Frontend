@@ -649,9 +649,9 @@ export default function CpmDialog({ open, onClose, projectId, fetchColor }) {
       onClose={onClose}
       fullScreen={fullScreen}
       maxWidth={false}
-      // MUI portals to document.body, outside `.pai-page` where the --pj-* theme
-      // variables (and the .dark class) live. Mount inside it so the dialog follows
-      // light/dark mode like PauseReasonDialog; fall back to body if it isn't found.
+      // MUI portals to document.body by default. On the Assignee page we mount inside `.pai-page`
+      // so the dialog inherits that page's theme; elsewhere (e.g. the project dashboard) it falls
+      // back to body. CpmDialog.css defines its own --pj-* tokens, so both look the same.
       container={() => document.querySelector(".pai-page") || document.body}
       PaperProps={{ className: `cpm-paper${fullScreen ? "" : " cpm-paper--window"}` }}
     >

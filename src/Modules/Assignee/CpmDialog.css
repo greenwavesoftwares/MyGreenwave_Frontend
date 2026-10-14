@@ -6,15 +6,44 @@
    dark-mode overridden) on `.pai-page` in ProjectActivityInfo.css,
    so this dialog follows the app's light/dark switch automatically.
 
-   IMPORTANT — MUI Dialog renders through a Portal into
-   document.body, OUTSIDE `.pai-page`, where the --pj-* vars live.
-   CpmDialog.jsx therefore mounts the portal inside `.pai-page`
-   (via the Dialog `container` prop). Fallback hex values are kept
-   after each var() so it still renders sensibly anywhere else.
+   The --pj-* tokens this dialog needs are defined on `.cpm-paper`
+   itself (see "Theme tokens" below), so it no longer depends on
+   being mounted inside `.pai-page`.
 
    Only tokens with no --pj-* equivalent get their own dark block
    at the bottom of the token section.
    ========================================================== */
+
+/* ── Theme tokens ──
+   These used to come from `.pai-page` (ProjectActivityInfo.css). That element only exists on the
+   Assignee page, so when this dialog was opened from another page (e.g. the project dashboard)
+   the --pj-* variables were undefined and every colour fell back to its LIGHT hex value while the
+   paper itself (--bg-drawer, a global app variable) was dark.
+   They are now defined on `.cpm-paper` itself from the same global app variables, so the dialog
+   looks the same wherever it is mounted. Where `.pai-page` does provide them, these values match. */
+.cpm-paper {
+  --pj-page-bg: var(--bg-main, #F1F5F9);
+  --pj-border: var(--divider-color, #E2E8F0);
+  --pj-border-strong: var(--calBorder, #CBD5E1);
+  --pj-text-primary: var(--menu-text, #0F172A);
+  --pj-text-muted: var(--tittleFontColor, #64748B);
+  --pj-primary: var(--avatar-bg, #1D4ED8);
+  --pj-danger: var(--redFontColor, #DC2626);
+  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
+  --pj-success: #15803D;
+  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
+  --pj-warning: #B45309;
+  --pj-warning-bg: #FEF3C7;
+}
+.dark .cpm-paper,
+[data-theme='dark'] .cpm-paper,
+.cpm-paper.dark,
+.cpm-paper[data-theme='dark'] {
+  --pj-danger: #f87171;
+  --pj-success: #4ade80;
+  --pj-warning: #fbbf24;
+  --pj-warning-bg: #3a2a06;
+}
 
 .cpm-paper {
   /* surfaces */
@@ -264,5 +293,21 @@
 
 /* Resource cell: coloured initials badge + name (colours come from fetchColor) */
 .cpm-resource { display: inline-flex; align-items: center; gap: 8px; max-width: 220px; }
-.cpm-resource .avatar-resource { width: 24px; height: 24px; }
+.cpm-resource .avatar-resource {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  color: var(--avatar-text);
+  background-color: var(--avatar-bg);
+  border: 1px solid var(--avatar-border);
+  user-select: none;
+  flex-shrink: 0;
+}
 .cpm-resource-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
