@@ -16,6 +16,7 @@ import TooltipComponent from "./Tooltip";
 import GanttView from "../../Test Ground/GanttView/index";
 import UnallocatedResourceOccupancy from "./UnallocatedResourceOccupancy";
 import { getUserData } from "../Login/Encrypt";
+import GreenWaveLoader from "../../Test Ground/loader/GreenWaveLoader";
 
 /* ================================================================
    THEME  –  reads localStorage "Theme" (light | dark)
@@ -694,7 +695,7 @@ export default function ActivityTrackerCharts() {
     }
 
     const handleGanttSelectionChange = async(selection) => {
-      setGanttSelection(selection);
+      setGanttSelection('pending');
       if(selection === 'open'){
         const activeProjects=await activityTrackerApi.getActiveProjects();
         setGanttData(activeProjects || []);
@@ -705,6 +706,8 @@ export default function ActivityTrackerCharts() {
         console.log('closedProjects : ', closedProjects); 
          setGanttData(closedProjects|| []);
       }
+      setGanttSelection(selection);
+      
     }
 
   
@@ -1740,16 +1743,23 @@ const taskOccupancyByResourceDate = useMemo(() => {
         /> */}
 
         {apiLoading && !apiResponse ? (
-          <div
-            style={{
-              padding: 40,
-              textAlign: "center",
-              color: t.loadingText,
-              fontSize: 13,
-            }}
-          >
-            Fetching schedule from API&hellip;
-          </div>
+         <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    padding: 40,
+    textAlign: "center",
+    color: t.loadingText,
+    fontSize: 13,
+    lineHeight: 1.5,
+  }}
+>
+  <span>Fetching schedule from API&hellip;</span>
+  <GreenWaveLoader size={70}/>
+</div>
         ) : apiError ? (
           <div
             style={{
