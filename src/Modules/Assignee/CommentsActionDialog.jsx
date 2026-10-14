@@ -34,7 +34,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 
 import "./CommentsActionDialog.css";
-import { addComment } from "./AssigneeHelper";
+import { addComment, generateId } from "./AssigneeHelper";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { getUserData } from "../Login/Encrypt";
 import ConfirmDialog from "./ConfirmDialog";
@@ -143,12 +143,14 @@ export default function CommentsActionDialog({
   };
 
   const addComments = async () => {
-    if (
-      !newComment.commentDescription.trim() ||
-      !newComment.resolutionDate ||
-      newComment?.responsibility?.length === 0
-    ) {
-      showToast("error", "Data Missing", "Fill in the required fields *");
+    if (!newComment) return;
+    // Say exactly which required field is missing instead of a generic message.
+    const missing = [];
+    if (!newComment.commentDescription?.trim()) missing.push("Description");
+    if (!newComment.resolutionDate) missing.push("Resolution Date");
+    if (!newComment.responsibility?.length) missing.push("Owner");
+    if (missing.length) {
+      showToast("error", "Data Missing", `Please fill in: ${missing.join(", ")}`);
       return;
     }
     const payload = {
@@ -156,13 +158,12 @@ export default function CommentsActionDialog({
       createdBy: getUserData()?.userDetails?.userId,
       createdAt: new Date().toISOString(),
       replies: [],
-      commentId: crypto.randomUUID(),
+      commentId: generateId(),
       responsibility: Array.isArray(newComment?.responsibility)
         ? newComment.responsibility.join(",")
         : "",
       activityStatus: activityStatus,
     };
-    console.log("Comments Payload::",payload)
     setAddingComment(true);
     try {
       const response = await activityTrackerApi.addComment(
@@ -170,23 +171,29 @@ export default function CommentsActionDialog({
         payload,
       );
 
-      if (response) {
-        const updatedComments =
-          await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
-            newComment.projectId,
-            newComment.activityId,
-          );
-        setExistingComments(updatedComments);
-        const newCommentPayload = addComment(
-          payload.projectId,
-          payload.activityId,
-          payload.moduleId,
-        );
-        setNewComment(newCommentPayload);
-        showToast("success", "Success", "Comment added successfully");
+      // Previously a falsy response did nothing at all (no toast), which looked
+      // like the button was dead. Now it is reported.
+      if (!response) {
+        showToast("error", "Error", "The entry was not saved. Please try again.");
+        return;
       }
+
+      const updatedComments =
+        await activityTrackerApi.getCommentReplyTreeByProjectIdAndActivityId(
+          newComment.projectId,
+          newComment.activityId,
+        );
+      setExistingComments(updatedComments);
+      setNewComment(
+        addComment(payload.projectId, payload.activityId, payload.moduleId),
+      );
+      showToast("success", "Success", "Comment added successfully");
     } catch (e) {
-      showToast("error", "Error", "Error in adding comment");
+      showToast(
+        "error",
+        "Error",
+        e?.response?.data?.message || e?.message || "Error in adding comment",
+      );
     } finally {
       setAddingComment(false);
     }
@@ -195,8 +202,11 @@ export default function CommentsActionDialog({
   const addReply = async (commentIndex) => {
     const comment = existingComments[commentIndex];
     const text = replyText[commentIndex];
-    if (!text?.trim()) return;
-    const replyId = crypto.randomUUID();
+    if (!text?.trim()) {
+      showToast("error", "Data Missing", "Write a reply before sending");
+      return;
+    }
+    const replyId = generateId();
     const payload = {
       commentId: comment.commentId,
       replyId,
@@ -391,6 +401,26 @@ export default function CommentsActionDialog({
       .split(/([._-])/)
       .map((part, i) =>
         part === "." || part === "_" || part === "-" ? (
+          <React.Fragment key={i}>
+            {part}
+            <wbr />
+          </React.Fragment>
+        ) : (
+          part
+        ),
+      );
+  };
+
+  // Reply text: where a line has to break, prefer the natural points — spaces and
+  // right after any special character (. , @ _ - / : ; ? & = etc.) — via <wbr/>.
+  // If a stretch has none of those (one long run of letters/digits), the CSS
+  // (overflow-wrap: anywhere) breaks it between letters as the last resort.
+  const renderBreakableText = (text) => {
+    if (!text) return text;
+    return String(text)
+      .split(/([^\p{L}\p{N}\s])/u)
+      .map((part, i) =>
+        i % 2 === 1 ? (
           <React.Fragment key={i}>
             {part}
             <wbr />
@@ -804,9 +834,7 @@ export default function CommentsActionDialog({
                                   </IconButton>
                                 )}
                               </div>
-                              <div className="reply-text">
-                                <TruncatedText text={reply.replyText} />
-                              </div>
+                              <div className="reply-text">{renderBreakableText(reply.replyText)}</div>
 
                               {reply.attachment && (
                                 <div
