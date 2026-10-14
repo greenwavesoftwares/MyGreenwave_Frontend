@@ -41,6 +41,21 @@ const activityTrackerApi = {
     return response.data;
   },
 
+  getActiveProjects: async () => {
+    const response = await axios.get(`${apiEndPoint}/getAllOpenProjectsActivityTreeCreatedByUser`, {
+      headers: getHeaders(),
+      // params: fromDate && toDate ? { fromDate, toDate } : undefined,
+    });
+    return response.data;
+  },
+
+  getClosedProjects: async () => {
+    const response = await axios.get(`${apiEndPoint}/getAllClosedProjectsActivityTreeCreatedByUser`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
   /**
    * GET /activityTracker/projects/assigneeGroup
    * Returns projects assigned to the user's group with counts.

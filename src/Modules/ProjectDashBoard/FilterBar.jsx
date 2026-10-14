@@ -2,14 +2,12 @@ import React from "react";
 import MultiSelectPicker from "./MultiSelectPicker";
 import FilterField from "./FilterField";
 
-// Hardcoded all 12 months
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTH_NAMES = [
+  "January", "February", "March", "April",
+  "May", "June", "July", "August",
+  "September", "October", "November", "December",
+];
 
-/**
- * Circular loader shown while data is refreshing.
- * Pure SVG (SMIL animation) — no CSS keyframes or stylesheet required,
- * so it works anywhere the component renders.
- */
 function CircularProgress({
   size = 14,
   color = "#ffffff",
@@ -24,9 +22,14 @@ function CircularProgress({
       aria-hidden="true"
       style={{ display: "block", flex: "0 0 auto" }}
     >
-      {/* static track ring */}
-      <circle cx="25" cy="25" r="20" fill="none" stroke={track} strokeWidth={strokeWidth} />
-      {/* rotating arc */}
+      <circle
+        cx="25"
+        cy="25"
+        r="20"
+        fill="none"
+        stroke={track}
+        strokeWidth={strokeWidth}
+      />
       <circle
         cx="25"
         cy="25"
@@ -52,21 +55,135 @@ function CircularProgress({
 }
 
 /**
- * Filter bar component with Year, Month, Project, and Resource filters
+ * Single-month previous/next navigator.
+ * selectedMonths remains an array for backward compatibility:
+ * - []              = all months
+ * - ["January"]     = one selected month
+ */
+function MonthNavigator({
+  t,
+  selectedMonths,
+  setSelectedMonths,
+  disabled,
+  dropdownStyle,
+}) {
+  const selectedMonth =
+    selectedMonths.length === 1 && MONTH_NAMES.includes(selectedMonths[0])
+      ? selectedMonths[0]
+      : null;
+
+  const selectedIndex = selectedMonth
+    ? MONTH_NAMES.indexOf(selectedMonth)
+    : -1;
+
+  const navigateMonth = (direction) => {
+    // From "all months", go to January on Next and December on Previous.
+    const nextIndex =
+      selectedIndex === -1
+        ? direction > 0
+          ? 0
+          : MONTH_NAMES.length - 1
+        : (selectedIndex + direction + MONTH_NAMES.length) %
+          MONTH_NAMES.length;
+
+    setSelectedMonths([MONTH_NAMES[nextIndex]]);
+  };
+
+  const iconButtonStyle = {
+    width: 28,
+    height: 28,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: `1px solid ${t.filterBarBorder}`,
+    borderRadius: 6,
+    background: t.filterBarBg,
+    color: t.textPrimary,
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.55 : 1,
+    fontSize: 18,
+    lineHeight: 1,
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => navigateMonth(-1)}
+        disabled={disabled}
+        aria-label="Previous month"
+        title="Previous month"
+        style={iconButtonStyle}
+      >
+        ‹
+      </button>
+
+      <div
+        aria-live="polite"
+        style={{
+          ...dropdownStyle,
+          minWidth: 110,
+          textAlign: "center",
+          cursor: "default",
+          userSelect: "none",
+        }}
+      >
+        {selectedMonth || "All months"}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => navigateMonth(1)}
+        disabled={disabled}
+        aria-label="Next month"
+        title="Next month"
+        style={iconButtonStyle}
+      >
+        ›
+      </button>
+
+      {/* {selectedMonth && (
+        <button
+          type="button"
+          onClick={() => setSelectedMonths([])}
+          disabled={disabled}
+          title="Show all months"
+          style={{
+            border: "none",
+            background: "transparent",
+            color: t.btnPrimary,
+            cursor: disabled ? "default" : "pointer",
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "4px 2px",
+            opacity: disabled ? 0.55 : 1,
+          }}
+        >
+          Show all
+        </button>
+      )} */}
+    </div>
+  );
+}
+
+/**
+ * Filter bar component with Year, Month navigation, Project,
+ * and Resource filters.
  */
 function FilterBar({
   t,
   apiLoading,
   selectedYear,
   setSelectedYear,
-  availableYears,
   currentYear,
   selectedMonths,
   setSelectedMonths,
-  monthPickerOpen,
-  setMonthPickerOpen,
-  monthPickerRef,
-  monthSummary,
   selectedProjects,
   setSelectedProjects,
   projectPickerOptions,
@@ -82,15 +199,21 @@ function FilterBar({
   resourcePickerRef,
   resourceSummary,
   loadData,
-  dropdownStyle
+  dropdownStyle,
 }) {
-  
-  // Always use all 12 months as options (hardcoded)
-  const monthPickerOptions = MONTH_NAMES;
-  
-  const toggleMonth = (n) => setSelectedMonths((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]);
-  const toggleProject = (n) => setSelectedProjects((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]);
-  const toggleResource = (n) => setSelectedResources((p) => p.includes(n) ? p.filter((x) => x !== n) : [...p, n]);
+  const toggleProject = (name) =>
+    setSelectedProjects((previous) =>
+      previous.includes(name)
+        ? previous.filter((item) => item !== name)
+        : [...previous, name]
+    );
+
+  const toggleResource = (name) =>
+    setSelectedResources((previous) =>
+      previous.includes(name)
+        ? previous.filter((item) => item !== name)
+        : [...previous, name]
+    );
 
   return (
     <div
@@ -107,32 +230,28 @@ function FilterBar({
       }}
     >
       <FilterField label="Year" t={t}>
-  <select 
-    value={selectedYear} 
-    onChange={(e) => setSelectedYear(Number(e.target.value))} 
-    disabled={apiLoading} 
-    style={dropdownStyle}
-  >
-    {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2].map((y) => (
-      <option key={y} value={y}>{y}</option>
-    ))}
-  </select>
-</FilterField>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(Number(e.target.value))}
+          disabled={apiLoading}
+          style={dropdownStyle}
+        >
+          {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2].map(
+            (year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            )
+          )}
+        </select>
+      </FilterField>
 
       <FilterField label="Month" t={t}>
-        <MultiSelectPicker
+        <MonthNavigator
           t={t}
-          pickerRef={monthPickerRef}
-          open={monthPickerOpen}
-          setOpen={setMonthPickerOpen}
+          selectedMonths={selectedMonths}
+          setSelectedMonths={setSelectedMonths}
           disabled={apiLoading}
-          summary={monthSummary}
-          allLabel="All months"
-          allSelected={selectedMonths.length === 0}
-          onSelectAll={() => setSelectedMonths([])}
-          options={MONTH_NAMES}
-          selected={selectedMonths}
-          onToggle={toggleMonth}
           dropdownStyle={dropdownStyle}
         />
       </FilterField>
@@ -143,10 +262,10 @@ function FilterBar({
           pickerRef={projectPickerRef}
           open={projectPickerOpen}
           setOpen={setProjectPickerOpen}
-          disabled={apiLoading || !projectPickerOptions.length}
+          disabled={apiLoading || !projectPickerOptions?.length}
           summary={projectSummary}
           allLabel="All projects"
-          allSelected={selectedProjects.length === 0}
+          allSelected={selectedProjects?.length === 0}
           onSelectAll={() => setSelectedProjects([])}
           options={projectPickerOptions}
           selected={selectedProjects}
@@ -161,10 +280,10 @@ function FilterBar({
           pickerRef={resourcePickerRef}
           open={resourcePickerOpen}
           setOpen={setResourcePickerOpen}
-          disabled={apiLoading || !resourcePickerOptions.length}
+          disabled={apiLoading || !resourcePickerOptions?.length}
           summary={resourceSummary}
           allLabel="All resources"
-          allSelected={selectedResources.length === 0}
+          allSelected={selectedResources?.length === 0}
           onSelectAll={() => setSelectedResources([])}
           options={resourcePickerOptions}
           selected={selectedResources}
@@ -174,11 +293,13 @@ function FilterBar({
       </FilterField>
 
       <div style={{ flex: 1 }} />
-      
+
       <button
-        onClick={() => loadData()}
+        onClick={()=>{
+          loadData(selectedYear,selectedMonths)}}
         disabled={apiLoading}
         aria-busy={apiLoading}
+        className="wt-refresh-btn"
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -196,7 +317,6 @@ function FilterBar({
           cursor: apiLoading ? "default" : "pointer",
           opacity: apiLoading ? 0.9 : 1,
         }}
-        className="wt-refresh-btn"
       >
         {apiLoading ? (
           <>

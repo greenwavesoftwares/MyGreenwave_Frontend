@@ -11,11 +11,12 @@ import activityTrackerApi from "../../Services/activityTrackerApi";
 import { addComment } from "../../Modules/Assignee/AssigneeHelper";
 import CommentsActionDialog from "../../Modules/Assignee/CommentsActionDialog";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
+import ProjectStatusTabs from "./ProjectStatusTabs";
 
 /**
  * Resource Gantt Section
  */
-function ResourceGanttSection({ t, filteredProjectsData, showToast }) {
+function ResourceGanttSection({ t, filteredProjectsData, showToast,ganttSelection, handleGanttSelectionChange ,isDark}) {
   // ─── Comments ───
   const [openCommentDialog, setOpenCommentDialog] = useState(false);
   const [existingComments, setExistingComments] = useState([]);
@@ -57,6 +58,11 @@ function ResourceGanttSection({ t, filteredProjectsData, showToast }) {
   return (
     <>
       <AccordionSection title="Resource Gantt" t={t} defaultOpen>
+          <ProjectStatusTabs
+        ganttSelection={ganttSelection}
+        handleGanttSelectionChange={handleGanttSelectionChange}
+        isDark={isDark}
+      />
         <GanttView
           projects={filteredProjectsData}
           onOpenComments={

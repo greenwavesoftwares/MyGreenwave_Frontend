@@ -667,6 +667,9 @@ export default function ActivityTrackerCharts() {
     typeof window !== "undefined" ? window.innerWidth : 1200,
   );
 
+  const [ganttData,setGanttData] = useState([]);
+  const [ganttSelection,setGanttSelection] = useState('open' );
+
   useEffect(() => {
     function h() {
       setViewportWidth(window.innerWidth);
@@ -679,6 +682,32 @@ export default function ActivityTrackerCharts() {
   const [projectPageIndex, setProjectPageIndex] = useState(0);
   const [projectSlideDir, setProjectSlideDir] = useState(1);
   const [unallocatedResourcesList, setUnallocatedResourcesList] = useState([]);
+
+  useEffect(() => {
+    fetchActiveProjects();
+  }, []);
+
+  const fetchActiveProjects = async () => {
+      const activeProjects = await activityTrackerApi.getActiveProjects();
+      console.log('activeProjects : ', activeProjects);
+      setGanttData(activeProjects  || []);
+    }
+
+    const handleGanttSelectionChange = async(selection) => {
+      setGanttSelection(selection);
+      if(selection === 'open'){
+        const activeProjects=await activityTrackerApi.getActiveProjects();
+        setGanttData(activeProjects || []);
+      }
+      else
+      {
+        const closedProjects = await activityTrackerApi.getClosedProjects();
+        console.log('closedProjects : ', closedProjects); 
+         setGanttData(closedProjects|| []);
+      }
+    }
+
+  
 
 
   // ================================================================
@@ -974,68 +1003,69 @@ export default function ActivityTrackerCharts() {
 // Filtered API Response - maintains original API structure but
 // filters rows within each project based on user selections
 // ================================================================
-const filteredApiResponse = useMemo(() => {
-  if (!apiResponse) return null;
+// const filteredApiResponse = useMemo(() => {
+//   if (!apiResponse) return null;
 
-  // Extract base array (same logic as projectsData)
-  const baseArray = Array.isArray(apiResponse)
-    ? apiResponse
-    : Array.isArray(apiResponse?.data)
-      ? apiResponse.data
-      : [];
+//   // Extract base array (same logic as projectsData)
+//   const baseArray = Array.isArray(apiResponse)
+//     ? apiResponse
+//     : Array.isArray(apiResponse?.data)
+//       ? apiResponse.data
+//       : [];
 
-  // Filter each project's rows based on year/month overlap + project/resource filters
-  const filteredProjects = baseArray
-    .map((project) => {
-      const filteredProjectRows = (project.rows || []).filter((row) => {
-        // Merge project info into row for filter checks (same as flatRows does)
-        const rowWithProject = {
-          project: project.project,
-          po: project.po,
-          site: project.site,
-          id: project.id,
-          ...row,
-        };
+//   // Filter each project's rows based on year/month overlap + project/resource filters
+//   const filteredProjects = baseArray
+//     .map((project) => {
+//       const filteredProjectRows = (project.rows || []).filter((row) => {
+//         // Merge project info into row for filter checks (same as flatRows does)
+//         const rowWithProject = {
+//           project: project.project,
+//           po: project.po,
+//           site: project.site,
+//           id: project.id,
+//           ...row,
+//         };
 
-        // Apply same filters as filteredRows
-        if (!rowOverlapsSelectedWindow(rowWithProject)) return false;
-        if (
-          selectedProjects.length > 0 &&
-          !selectedProjects.includes(rowWithProject.project)
-        )
-          return false;
-        if (
-          selectedResources.length > 0 &&
-          !selectedResources.includes(rowWithProject.resourceName)
-        )
-          return false;
+//         // Apply same filters as filteredRows
+//         if (!rowOverlapsSelectedWindow(rowWithProject)) return false;
+//         if (
+//           selectedProjects.length > 0 &&
+//           !selectedProjects.includes(rowWithProject.project)
+//         )
+//           return false;
+//         if (
+//           selectedResources.length > 0 &&
+//           !selectedResources.includes(rowWithProject.resourceName)
+//         )
+//           return false;
 
-        return true;
-      });
+//         return true;
+//       });
 
-      // Only include projects that have rows after filtering
-      if (filteredProjectRows.length === 0) return null;
+//       // Only include projects that have rows after filtering
+//       if (filteredProjectRows.length === 0) return null;
 
-      return {
-        ...project,
-        rows: filteredProjectRows,
-      };
-    })
-    .filter(Boolean); // Remove projects with no matching rows
+//       return {
+//         ...project,
+//         rows: filteredProjectRows,
+//       };
+//     })
+//     .filter(Boolean); // Remove projects with no matching rows
 
-  // Return in the same shape as apiResponse
-  if (Array.isArray(apiResponse)) {
-    return filteredProjects;
-  }
-  return { ...apiResponse, data: filteredProjects };
-}, [
-  apiResponse,
-  selectedYear,
-  selectedMonths.join(","),
-  selectedProjects,
-  selectedResources,
-  rowOverlapsSelectedWindow,
-]);
+//   // Return in the same shape as apiResponse
+//   if (Array.isArray(apiResponse)) {
+//     return filteredProjects;
+//   }
+//   return { ...apiResponse, data: filteredProjects };
+// }, [
+//   apiResponse,
+//   selectedYear,
+//   selectedMonths.join(","),
+//   selectedProjects,
+//   selectedResources,
+//   rowOverlapsSelectedWindow,
+// ]);
+
 
   // ================================================================
   // Calculated resource metrics (used while a Project filter is active)
@@ -1678,7 +1708,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
         </style> */}
 
         {/* Filter Bar */}
-        <FilterBar
+        {/* <FilterBar
           t={t}
           apiLoading={apiLoading}
           selectedYear={selectedYear}
@@ -1707,7 +1737,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
           resourceSummary={resourceSummary}
           loadData={loadData}
           dropdownStyle={dropdownStyle}
-        />
+        /> */}
 
         {apiLoading && !apiResponse ? (
           <div
@@ -1731,18 +1761,7 @@ const taskOccupancyByResourceDate = useMemo(() => {
           >
             Failed to load schedule: {apiError}
           </div>
-        ) : filteredRows.length === 0 ? (
-          <div
-            style={{
-              padding: 40,
-              textAlign: "center",
-              color: t.emptyText,
-              fontSize: 13,
-            }}
-          >
-            No scheduled activity for this selection.
-          </div>
-        ) : (
+        )  : (
           <>
             {/* Resource Occupancy Section */}
             <ResourceOccupancySection
@@ -1772,6 +1791,34 @@ const taskOccupancyByResourceDate = useMemo(() => {
   // showHover={showHover}
   // hideHover={hideHover}
  currentMonthResourceMetrics={resourceMetricsForDisplay}
+          apiLoading={apiLoading}
+          setSelectedYear={setSelectedYear}
+          availableYears={availableYears}
+          currentYear={currentYear}
+          selectedMonths={selectedMonths}
+          setSelectedMonths={setSelectedMonths}
+          monthPickerOpen={monthPickerOpen}
+          setMonthPickerOpen={setMonthPickerOpen}
+          monthPickerRef={monthPickerRef}
+          monthSummary={monthSummary}
+          selectedProjects={selectedProjects}
+          setSelectedProjects={setSelectedProjects}
+          projectPickerOptions={projectPickerOptions}
+          projectPickerOpen={projectPickerOpen}
+          setProjectPickerOpen={setProjectPickerOpen}
+          projectPickerRef={projectPickerRef}
+          projectSummary={projectSummary}
+          selectedResources={selectedResources}
+          setSelectedResources={setSelectedResources}
+          resourcePickerOptions={resourcePickerOptions}
+          resourcePickerOpen={resourcePickerOpen}
+          setResourcePickerOpen={setResourcePickerOpen}
+          resourcePickerRef={resourcePickerRef}
+          resourceSummary={resourceSummary}
+          loadData={loadData}
+          dropdownStyle={dropdownStyle}
+
+
 
             />
 
@@ -1785,12 +1832,17 @@ const taskOccupancyByResourceDate = useMemo(() => {
   showHover={showHover}
   hideHover={hideHover}
 />)} */}
-{console.log('Filtered API Response:', filteredApiResponse)}
+{/* {console.log('Filtered API Response:', filteredApiResponse)} */}
             {/* Resource Gantt Section */}
             <ResourceGanttSection
               t={t}
-              filteredProjectsData={filteredApiResponse}
+              filteredProjectsData={ganttData}
+              ganttSelection={ganttSelection}
+              handleGanttSelectionChange={handleGanttSelectionChange}
+              isDark={isDark}
+              
             />
+            
           </>
         )}
 

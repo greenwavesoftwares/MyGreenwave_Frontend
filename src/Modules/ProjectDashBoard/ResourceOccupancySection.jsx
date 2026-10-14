@@ -1,6 +1,7 @@
 import React from "react";
 import AccordionSection from "./AccordionSection";
 import ResourceOccupancyTimeline from "./ResourceOccupancyTimeline";
+import FilterBar from "./FilterBar";
 
 /**
  * Resource Occupancy Section with timeline view
@@ -25,7 +26,33 @@ function ResourceOccupancySection({
   isDark,
   selectedYear,
   filteredUnallocatedResources,
- currentMonthResourceMetrics
+ currentMonthResourceMetrics,
+  apiLoading,
+  setSelectedYear,
+  availableYears,
+  currentYear,
+  selectedMonths,
+  setSelectedMonths,
+  monthPickerOpen,
+  setMonthPickerOpen,
+  monthPickerRef,
+  monthSummary,
+  selectedProjects,
+  setSelectedProjects,
+  projectPickerOptions,
+  projectPickerOpen,
+  setProjectPickerOpen,
+  projectPickerRef,
+  projectSummary,
+  selectedResources,
+  setSelectedResources,
+  resourcePickerOptions,
+  resourcePickerOpen,
+  setResourcePickerOpen,
+  resourcePickerRef,
+  resourceSummary,
+  loadData,
+  dropdownStyle
 
 }) {
 
@@ -101,6 +128,36 @@ function ResourceOccupancySection({
           key={currentOccMonthBlock ? currentOccMonthBlock.key : "occ-empty"}
           style={{ animation: `${occMonthSlideDir === 1 ? "wtSlideInRight" : "wtSlideInLeft"} 0.28s ease` }}
         >
+           <FilterBar
+          t={t}
+          apiLoading={apiLoading}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          availableYears={availableYears}
+          currentYear={currentYear}
+          selectedMonths={selectedMonths}
+          setSelectedMonths={setSelectedMonths}
+          monthPickerOpen={monthPickerOpen}
+          setMonthPickerOpen={setMonthPickerOpen}
+          monthPickerRef={monthPickerRef}
+          monthSummary={monthSummary}
+          selectedProjects={selectedProjects}
+          setSelectedProjects={setSelectedProjects}
+          projectPickerOptions={projectPickerOptions}
+          projectPickerOpen={projectPickerOpen}
+          setProjectPickerOpen={setProjectPickerOpen}
+          projectPickerRef={projectPickerRef}
+          projectSummary={projectSummary}
+          selectedResources={selectedResources}
+          setSelectedResources={setSelectedResources}
+          resourcePickerOptions={resourcePickerOptions}
+          resourcePickerOpen={resourcePickerOpen}
+          setResourcePickerOpen={setResourcePickerOpen}
+          resourcePickerRef={resourcePickerRef}
+          resourceSummary={resourceSummary}
+          loadData={loadData}
+          dropdownStyle={dropdownStyle}
+        />
          <ResourceOccupancyTimeline
   weeks={currentOccMonthBlock?.weeks || []}
   resources={timelineResources}

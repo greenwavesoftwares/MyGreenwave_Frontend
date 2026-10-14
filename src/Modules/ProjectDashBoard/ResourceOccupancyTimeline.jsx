@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const DESKTOP_LAYOUT = {
@@ -56,16 +57,50 @@ const defaultTheme = {
   legendText: "#64748b",
 };
 
+/** Normalizes string for safe, whitespace-tolerant, case-insensitive comparison */
+const normalizeKey = (val) =>
+  String(val || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+/** Extracts resource name whether item is a string or object with resource / UserName / name */
+const getResourceName = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return item.trim();
+  return String(
+    item.resource ||
+      item.Resource ||
+      item.resourceName ||
+      item.UserName ||
+      item.userName ||
+      item.name ||
+      "",
+  ).trim();
+};
+
+/** Extracts resource ID or email */
+const getResourceId = (item, fallbackIndex = 0) => {
+  if (!item) return `user-${fallbackIndex}`;
+  if (typeof item === "string") return item.trim();
+  const rawId =
+    item.UserId ||
+    item.userId ||
+    item.id ||
+    item.email ||
+    item.emailId ||
+    item.resourceId ||
+    getResourceName(item) ||
+    `user-${fallbackIndex}`;
+  return String(rawId).trim();
+};
+
 /** Switch to the compact timeline layout on narrow/mobile viewports. */
 const useMobileLayout = (breakpoint = MOBILE_BREAKPOINT) => {
   const query = `(max-width: ${breakpoint}px)`;
   const [isMobile, setIsMobile] = useState(() =>
     typeof window === "undefined" ? false : window.matchMedia(query).matches,
   );
-
-  // ================================================================
-  // Effect to handle window resize and update isMobile state
-  // ================================================================
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -101,10 +136,6 @@ const localDateKey = (date) =>
     date.getDate(),
   ).padStart(2, "0")}`;
 
-// ================================================================
-// Utility functions for formatting and color coding
-// ================================================================
-
 const duration = (hours) => {
   if (hours == null) return "";
   if (hours < 1) return `${Math.round(hours * 60)}m`;
@@ -112,7 +143,6 @@ const duration = (hours) => {
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}h`;
 };
 
-// Color coding for occupancy based on hours
 const occupancyColor = (hours) =>
   hours < 4
     ? "#22c55e"
@@ -140,7 +170,6 @@ const percentageColor = (value, fallback) =>
           ? "#ea580c"
           : "#dc2626";
 
-// Calculate completion percentage based on completed and assigned tasks
 const completionPercentage = (completed, assigned) => {
   const completedNumber = Number(completed);
   const assignedNumber = Number(assigned);
@@ -181,7 +210,6 @@ const parseLocalDate = (value) => {
   return null;
 };
 
-// Find the earliest date among the provided dates, ignoring invalid or null values
 const minDate = (...dates) => {
   const valid = dates.filter(Boolean);
   return valid.length ? new Date(Math.min(...valid.map((date) => date.getTime()))) : null;
@@ -207,7 +235,6 @@ const eachDayInRange = (start, stop, skipWeekends) => {
   return days;
 };
 
-// Read the task's hours from various possible fields, defaulting to 0 if none are valid
 const readTaskHours = (task) => {
   const raw =
     task?.durationHrs ??
@@ -222,7 +249,6 @@ const readTaskHours = (task) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
 
-// Check if a task matches a given resource name, considering various possible fields
 const taskMatchesResource = (task, name) => {
   const wanted = String(name || "")
     .trim()
@@ -242,7 +268,6 @@ const taskMatchesResource = (task, name) => {
   );
 };
 
-// Resolve tasks for a specific resource from a source object, which can be an array or an object with resource names as keys
 const resolveTasksForResource = (source, name) => {
   if (!source) return [];
   if (Array.isArray(source)) return source.filter((task) => taskMatchesResource(task, name));
@@ -254,20 +279,6 @@ const resolveTasksForResource = (source, name) => {
   return match && Array.isArray(source[match]) ? source[match] : [];
 };
 
-/* ------------------------------------------------------------------ */
-/* FIX: per-day distribution                                          */
-/*                                                                    */
-/* The old default ("even") divided the task's TOTAL hours equally    */
-/* over every day of the span, which produced broken fractional       */
-/* chunks (e.g. 3.5h per day) and left the last day looking wrong.    */
-/*                                                                    */
-/* The default is now "fill": a task simply occupies EVERY working    */
-/* day between plannedStart and plannedStop at the full daily         */
-/* capacity (8h per day). Weekends are excluded (they never render    */
-/* occupancy) and leave days are excluded at render time (they show   */
-/* "Leave" with 0h). Pass spreadMode="even" explicitly to get the     */
-/* old proportional split back.                                       */
-/* ------------------------------------------------------------------ */
 const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   if (!spanDays.length) return [];
   if (spreadMode === "even") {
@@ -275,11 +286,9 @@ const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
     const perDay = totalHours / spanDays.length;
     return spanDays.map(() => perDay);
   }
-  // "fill" (default): book each day of the planned span at full capacity.
   return spanDays.map(() => capacityHrs);
 };
 
-// Build a mapping of tasks by day, distributing their hours according to the specified spread mode and daily capacity
 const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
   const byDay = {};
   tasks.forEach((task) => {
@@ -321,16 +330,10 @@ const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
   return byDay;
 };
 
-/**
- * Responsive behavior:
- * - Desktop keeps the three fixed columns from the original component.
- * - At <= 720px only the resource column remains sticky. Monthly utilization
- *   and completion move below the resource name, leaving room for timeline days.
- * - Touch users can swipe the grid and tap a weekday to open its details.
- */
 function ResourceOccupancyTimeline({
   weeks = [],
   resources = [],
+  unallocatedResources: suppliedUnallocatedResources = null,
   unallocatedUsers: suppliedUnallocatedUsers = null,
   getUnallocatedResources,
   occupancyByResourceDate = {},
@@ -364,11 +367,14 @@ function ResourceOccupancyTimeline({
   const todayKey = new Date().toDateString();
   const timelineScrollRef = useRef(null);
 
+  // Accept unallocated resources passed via either prop name
+  const explicitUnallocated = suppliedUnallocatedResources ?? suppliedUnallocatedUsers;
+
   // ================================================================
-  // Effect to load unallocated users if not supplied and a fetch function is provided
+  // Effect to load unallocated users if not supplied
   // ================================================================
   useEffect(() => {
-    if (suppliedUnallocatedUsers !== null || typeof getUnallocatedResources !== "function")
+    if (explicitUnallocated !== null || typeof getUnallocatedResources !== "function")
       return undefined;
     let mounted = true;
     async function loadUnallocatedUsers() {
@@ -381,7 +387,9 @@ function ResourceOccupancyTimeline({
             ? response.data
             : Array.isArray(response?.users)
               ? response.users
-              : [];
+              : Array.isArray(response?.resources)
+                ? response.resources
+                : [];
         if (mounted) setLoadedUnallocatedUsers(list);
       } catch (error) {
         console.warn("Could not load unallocated resources", error);
@@ -394,12 +402,12 @@ function ResourceOccupancyTimeline({
     return () => {
       mounted = false;
     };
-  }, [getUnallocatedResources, suppliedUnallocatedUsers]);
+  }, [getUnallocatedResources, explicitUnallocated]);
 
-  const unallocatedUsers = suppliedUnallocatedUsers ?? loadedUnallocatedUsers;
+  const unallocatedUsers = explicitUnallocated ?? loadedUnallocatedUsers;
 
   // ================================================================
-  // Memoized calculations for days, week boundaries, and current timeline month
+  // Memoized calculations for days & week boundaries
   // ================================================================
   const { days, weekBoundaries } = useMemo(() => {
     const flat = [];
@@ -414,9 +422,6 @@ function ResourceOccupancyTimeline({
     return { days: flat, weekBoundaries: boundaries };
   }, [weeks]);
 
-  // ================================================================
-  // Memoized calculation for the current timeline month based on the first valid day
-  // ================================================================
   const currentTimelineMonth = useMemo(() => {
     const date = days.find(Boolean);
     return date
@@ -424,9 +429,6 @@ function ResourceOccupancyTimeline({
       : null;
   }, [days]);
 
-  // ================================================================
-  // Memoized calculation for current month metrics based on resourceMetrics and currentTimelineMonth
-  // ================================================================
   const currentMonthMetrics = useMemo(() => {
     if (!Array.isArray(resourceMetrics)) return [];
     const flat = resourceMetrics.some(
@@ -443,9 +445,6 @@ function ResourceOccupancyTimeline({
     );
   }, [resourceMetrics, currentTimelineMonth]);
 
-  // ================================================================
-  // Memoized mapping of metrics by resource name for quick lookup
-  // ================================================================
   const metricsByName = useMemo(
     () =>
       currentMonthMetrics.reduce((result, metric) => {
@@ -456,20 +455,74 @@ function ResourceOccupancyTimeline({
   );
 
   // ================================================================
-  // Memoized calculation for timeline rows, combining allocated and unallocated resources
+  // Deduplicated timeline rows:
+  // If a resource is present in unallocated, it is excluded from allocated
   // ================================================================
   const timelineRows = useMemo(() => {
-    const allocated = resources.map((name) => ({
-      id: `allocated-${name}`,
-      name,
-      isUnallocated: false,
-    }));
-    const unallocated = (unallocatedUsers || []).map((user, index) => {
-      const name = user.UserName || user.userName || user.name || `User ${index + 1}`;
-      const userId =
-        user.UserId || user.userId || user.id || user.email || user.emailId || `${name}-${index}`;
-      return { id: `unallocated-${userId}`, name, userId, isUnallocated: true };
+    const unallocatedList = Array.isArray(unallocatedUsers) ? unallocatedUsers : [];
+
+    // 1. Process and deduplicate unallocated resources
+    const seenUnallocated = new Set();
+    const unallocatedIdentifierSet = new Set();
+    const unallocated = [];
+
+    unallocatedList.forEach((user, index) => {
+      const name = getResourceName(user) || `User ${index + 1}`;
+      const userId = getResourceId(user, index);
+      const nameKey = normalizeKey(name);
+      const idKey = normalizeKey(userId);
+
+      // Avoid duplicates within unallocated itself
+      const dedupeKey = idKey || nameKey;
+      if (seenUnallocated.has(dedupeKey)) return;
+      seenUnallocated.add(dedupeKey);
+
+      // Track all identifiers (name & userId) for exclusion lookup
+      if (nameKey) unallocatedIdentifierSet.add(nameKey);
+      if (idKey) unallocatedIdentifierSet.add(idKey);
+
+      unallocated.push({
+        id: `unallocated-${userId}`,
+        name,
+        resource: name,
+        userId,
+        isUnallocated: true,
+        unallocatedMonths: user.UnallocatedMonths || user.unallocatedMonths,
+      });
     });
+
+    // 2. Filter allocated resources:
+    // Exclude if already present in unallocated, and eliminate duplicates within resources
+    const seenAllocated = new Set();
+    const allocated = [];
+
+    (resources || []).forEach((item, index) => {
+      const name = getResourceName(item);
+      if (!name) return;
+
+      const nameKey = normalizeKey(name);
+      const idKey = typeof item === "object" ? normalizeKey(getResourceId(item, index)) : "";
+
+      // Exclude if this resource is in unallocated
+      const isPresentInUnallocated =
+        (nameKey && unallocatedIdentifierSet.has(nameKey)) ||
+        (idKey && unallocatedIdentifierSet.has(idKey));
+
+      if (isPresentInUnallocated) return;
+
+      // Deduplicate within allocated resources
+      const dedupeKey = idKey || nameKey;
+      if (seenAllocated.has(dedupeKey)) return;
+      seenAllocated.add(dedupeKey);
+
+      allocated.push({
+        id: `allocated-${name}`,
+        name,
+        resource: name,
+        isUnallocated: false,
+      });
+    });
+
     return [...allocated, ...unallocated];
   }, [resources, unallocatedUsers]);
 
@@ -510,11 +563,13 @@ function ResourceOccupancyTimeline({
   }, [timelineRows, metricsByName, sortConfig]);
 
   // ================================================================
-  // Memoized calculation for resource occupancy data by day, combining task and source occupancy
+  // Memoized occupancy data by day
   // ================================================================
   const resourceData = useMemo(() => {
     const taskMapsByResource = {};
-    resources.forEach((name) => {
+    resources.forEach((item) => {
+      const name = getResourceName(item);
+      if (!name) return;
       const tasks = resolveTasksForResource(taskOccupancyByResourceDate, name);
       taskMapsByResource[name] = tasks.length
         ? buildTaskDayMap(tasks, {
@@ -525,7 +580,9 @@ function ResourceOccupancyTimeline({
         : null;
     });
 
-    return resources.reduce((result, name) => {
+    return resources.reduce((result, item) => {
+      const name = getResourceName(item);
+      if (!name) return result;
       result[name] = {};
       const taskMap = taskMapsByResource[name];
       days.forEach((date) => {
@@ -564,10 +621,6 @@ function ResourceOccupancyTimeline({
   const chipText = isDark ? "#fca5a5" : "#b91c1c";
   const chipDot = isDark ? "#f87171" : "#ef4444";
 
-  // ================================================================
-  // Handlers for hover activation and clearing
-  // ================================================================
-
   const activate = (event, row, date, data, key) => {
     setHoveredKey(key);
     const rect = event.currentTarget.getBoundingClientRect();
@@ -579,6 +632,7 @@ function ResourceOccupancyTimeline({
       kind: "occupancy",
       entry: {
         resourceName: row.name,
+        resource: row.resource,
         userId: row.userId,
         date,
         hours: data.occupied,
@@ -596,27 +650,17 @@ function ResourceOccupancyTimeline({
     hideHover();
   };
 
-  // ================================================================
-  // Effect to auto-scroll the timeline so today (or the nearest day) is centered.
-  // NOTE: hooks must run before any early return, so this lives above the
-  // "no data" guard.
-  // ================================================================
   useEffect(() => {
     if (!timelineScrollRef.current || !days.length) return;
 
     const scrollContainer = timelineScrollRef.current;
-
-    // Use today's date if present.
-    // Otherwise, use the nearest date in the timeline.
     let targetIndex = days.findIndex((date) => date.toDateString() === todayKey);
 
     if (targetIndex === -1) {
       const now = new Date();
-
       targetIndex = days.reduce((closestIndex, date, index) => {
         const closestDistance = Math.abs(days[closestIndex] - now);
         const currentDistance = Math.abs(date - now);
-
         return currentDistance < closestDistance ? index : closestIndex;
       }, 0);
     }
