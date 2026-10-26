@@ -17,10 +17,11 @@ import { getUserData } from "../Login/Encrypt";
 import StatusChip from "./StatusChip";
 import CpmDialog from "./CpmDialog";
 import { showToast } from "./toastService";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
+import ProjectDocumentation from "./ProjectDocumentation";
 import ColumnFilterButton, {
   DateRangeFilterButton,
   MobileFiltersSheet,
@@ -94,6 +95,7 @@ export default function ProjectActivityInfo({
   const [openFeedback, setFeedback] = useState(false);
   const [openFeedbackRow, setOpenFeedbackRow] = useState(null);
   const [openCpm, setOpenCpm] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
   const currentUserId = getUserData()?.userDetails?.userId;
   const currentUserName = getUserData()?.userDetails?.userName;
   const [resourceColor, setResourceColor] = useState({});
@@ -1057,6 +1059,18 @@ export default function ProjectActivityInfo({
                 </span>
               </div>
             </div>
+
+            {/* <div className="pai-info-field pdoc-open-wrap">
+              <button
+                type="button"
+                className="pdoc-open-btn"
+                onClick={() => setShowDocs(true)}
+                aria-haspopup="dialog"
+              >
+                <BookOpen size={14} />
+                Knowledge Base
+              </button>
+            </div> */}
           </div>
         )}
 
@@ -1125,7 +1139,7 @@ export default function ProjectActivityInfo({
                   </svg>
                 )}
               </button>
-              <button
+              {/* <button
                 className="pai-refresh-btn"
                 onClick={() => setOpenCpm(true)}
                 title="Critical path (CPM)"
@@ -1147,7 +1161,7 @@ export default function ProjectActivityInfo({
                   <circle cx="19" cy="6" r="2.2" />
                   <path d="M6.8 7.6l3.9 8.6M13.3 16.2l3.9-8.6" />
                 </svg>
-              </button>
+              </button> */}
               {/* <button className="pai-add-btn">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 5v14M5 12h14"/>
@@ -1419,6 +1433,13 @@ export default function ProjectActivityInfo({
           )}
         </div>
       </div>
+      {activityInfo?.projectId && (
+        <ProjectDocumentation
+          open={showDocs}
+          projectId={activityInfo.projectId}
+          onClose={() => setShowDocs(false)}
+        />
+      )}
       <PauseReasonDialog
         open={!!pauseDelayTarget}
         activityName={pauseDelayTarget?.activity?.name}

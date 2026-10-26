@@ -344,3 +344,30 @@
   border: 1px solid var(--dv-border);
   color: var(--dv-text-muted);
 }
+
+/* ==========================================================
+   MOBILE — the dialog's inline size is 80vw x 85vh, which leaves a
+   phone with a postage-stamp preview. Fill the screen instead
+   (!important is needed to beat that inline style).
+   ========================================================== */
+@media (max-width: 860px) {
+  .doc-viewer-dialog.p-dialog {
+    width: 100vw !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .doc-viewer-dialog .p-dialog-header {
+    padding: 10px 12px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .doc-viewer-dialog .doc-viewer-header-row {
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+  }
+}

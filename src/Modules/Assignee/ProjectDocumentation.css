@@ -1,0 +1,678 @@
+/* ==========================================================
+   Project Documentation card
+   Scoped under `.pai-page` so it reuses that file's --pj-* tokens
+   (and its light/dark overrides) and can't leak into the rest of
+   the app. All class names are prefixed `pdoc-`.
+   ========================================================== */
+
+.pdoc-paper {
+  width: 720px;
+  max-width: 94vw;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  /* Opaque surface (same reasoning as .prd-paper): --dialogBG is
+     translucent in dark mode. */
+  background: var(--bg-drawer, #ffffff) !important;
+  background-clip: padding-box;
+}
+
+/* ── header ── */
+.pai-page .pdoc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+
+.pai-page .pdoc-header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Trigger button (lives in the project info card) */
+.pai-page .pdoc-open-btn {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid var(--pj-primary-border);
+  background: var(--pj-primary-bg);
+  color: var(--pj-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pai-page .pdoc-open-btn:hover {
+  background: var(--pj-primary);
+  border-color: var(--pj-primary);
+  color: var(--pj-on-color);
+}
+
+@media (max-width: 860px) {
+  .pai-page .pdoc-open-btn {
+    margin-left: 0;
+  }
+}
+
+.pai-page .pdoc-section-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--pj-primary-bg);
+  color: var(--pj-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pai-page .pdoc-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pj-text-primary);
+}
+
+.pai-page .pdoc-counter {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pj-primary);
+  background: var(--pj-primary-bg);
+  border: 1px solid var(--pj-primary-border);
+  border-radius: 20px;
+  padding: 2px 9px;
+}
+
+.pai-page .pdoc-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pai-page .pdoc-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--pj-border);
+  border-radius: 8px;
+  background: var(--pj-surface-2);
+  color: var(--pj-text-faint);
+}
+
+.pai-page .pdoc-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--pj-text-primary);
+  width: 170px;
+}
+
+.pai-page .pdoc-search:focus-within {
+  border-color: var(--pj-primary);
+}
+
+/* ── body / list ── */
+.pai-page .pdoc-body,
+.pdoc-paper .pdoc-body {
+  border-top: 1px solid var(--pj-border);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pai-page .pdoc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pai-page .pdoc-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--pj-border);
+  transition: background 0.15s ease;
+}
+
+.pai-page .pdoc-item:last-child {
+  border-bottom: none;
+}
+
+.pai-page .pdoc-item:hover {
+  background: var(--pj-surface-2);
+}
+
+.pai-page .pdoc-file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pai-page .pdoc-file-icon--red    { background: var(--pj-danger-bg);  color: var(--pj-danger); }
+.pai-page .pdoc-file-icon--blue   { background: var(--pj-primary-bg); color: var(--pj-primary); }
+.pai-page .pdoc-file-icon--green  { background: var(--pj-success-bg); color: var(--pj-success); }
+.pai-page .pdoc-file-icon--purple { background: var(--pj-purple-bg);  color: var(--pj-purple); }
+.pai-page .pdoc-file-icon--amber  { background: var(--pj-warning-bg); color: var(--pj-warning); }
+.pai-page .pdoc-file-icon--slate  { background: var(--pj-surface-2);  color: var(--pj-text-muted); }
+
+.pai-page .pdoc-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pai-page .pdoc-item-name {
+  align-self: flex-start;
+  max-width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pj-text-primary);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pai-page .pdoc-item-name:hover:not(:disabled) {
+  color: var(--pj-primary);
+  text-decoration: underline;
+}
+
+.pai-page .pdoc-item-name:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.pai-page .pdoc-item-filename,
+.pai-page .pdoc-item-meta {
+  font-size: 11.5px;
+  color: var(--pj-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pai-page .pdoc-item-desc {
+  font-size: 12px;
+  color: var(--pj-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pai-page .pdoc-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pai-page .pdoc-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--pj-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pai-page .pdoc-icon-btn:hover:not(:disabled) {
+  background: var(--pj-primary-bg);
+}
+
+.pai-page .pdoc-icon-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.pai-page .pdoc-icon-btn--bordered {
+  border: 1px solid var(--pj-border);
+  color: var(--pj-text-secondary);
+}
+
+/* ── empty / loading / error ── */
+.pai-page .pdoc-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 18px;
+  text-align: center;
+  color: var(--pj-text-faint);
+}
+
+.pai-page .pdoc-state-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pj-text-secondary);
+}
+
+.pai-page .pdoc-state-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--pj-text-muted);
+  max-width: 340px;
+}
+
+.pai-page .pdoc-state--error .pdoc-state-title {
+  color: var(--pj-danger);
+}
+
+.pai-page .pdoc-retry {
+  margin-top: 4px;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--pj-primary-border);
+  background: var(--pj-primary-bg);
+  color: var(--pj-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pai-page .pdoc-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--pj-border-strong);
+  border-top-color: var(--pj-primary);
+  animation: pdoc-spin 0.7s linear infinite;
+}
+
+.pai-page .pdoc-spinner--sm {
+  width: 13px;
+  height: 13px;
+  border-width: 2px;
+}
+
+@keyframes pdoc-spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ── upload / delete ── */
+.pai-page .pdoc-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--pj-primary);
+  background: var(--pj-primary);
+  color: var(--pj-on-color);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pai-page .pdoc-upload-btn:hover:not(:disabled) {
+  background: var(--pj-primary-hover);
+  border-color: var(--pj-primary-hover);
+}
+
+.pai-page .pdoc-upload-btn:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.pai-page .pdoc-upload-btn .pdoc-spinner {
+  border-color: rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+}
+
+.pai-page .pdoc-icon-btn--danger {
+  color: var(--pj-danger);
+}
+
+.pai-page .pdoc-icon-btn--danger:hover:not(:disabled) {
+  background: var(--pj-danger-bg);
+}
+
+/* ── add / edit form ── */
+.pai-page .pdoc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--pj-surface-2);
+  border-bottom: 1px solid var(--pj-border);
+}
+
+.pai-page .pdoc-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pj-text-primary);
+}
+
+.pai-page .pdoc-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pai-page .pdoc-form-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pj-text-muted);
+}
+
+.pai-page .pdoc-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pai-page .pdoc-choose-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--pj-primary-border);
+  background: var(--pj-primary-bg);
+  color: var(--pj-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pai-page .pdoc-choose-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pai-page .pdoc-file-picker-name {
+  font-size: 12.5px;
+  color: var(--pj-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.pai-page .pdoc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1px solid var(--pj-border);
+  border-radius: 8px;
+  background: var(--pj-surface);
+  color: var(--pj-text-primary);
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+}
+
+.pai-page .pdoc-textarea:focus {
+  border-color: var(--pj-primary);
+}
+
+.pai-page .pdoc-form-hint {
+  align-self: flex-end;
+  font-size: 11px;
+  color: var(--pj-text-faint);
+}
+
+.pai-page .pdoc-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pai-page .pdoc-form-createdby {
+  font-size: 12px;
+  color: var(--pj-text-muted);
+}
+
+.pai-page .pdoc-form-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.pai-page .pdoc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pai-page .pdoc-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.pai-page .pdoc-btn--ghost {
+  border: 1px solid var(--pj-border);
+  background: transparent;
+  color: var(--pj-text-secondary);
+}
+
+.pai-page .pdoc-btn--primary {
+  border: 1px solid var(--pj-primary);
+  background: var(--pj-primary);
+  color: var(--pj-on-color);
+}
+
+.pai-page .pdoc-btn--primary .pdoc-spinner {
+  border-color: rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+}
+
+/* ==========================================================
+   MOBILE (≤ 860px — same breakpoint as ProjectActivityInfo)
+   ========================================================== */
+@media (max-width: 860px) {
+  /* Info card: avatar + fields on top, Documentation button full-width
+     underneath instead of squeezed in a third column. */
+  .pai-page .pai-info-card {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .pai-page .pai-info-card .pai-info-fields {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .pai-page .pai-info-card .pai-info-field {
+    min-width: 0;
+  }
+
+  .pai-page .pai-info-card .pdoc-open-wrap {
+    flex: 1 1 100%;
+    padding: 12px 0 0;
+    border: none;
+    border-top: 1px solid var(--pj-border-subtle);
+  }
+
+  .pai-page .pdoc-open-btn {
+    width: 100%;
+    height: 40px;
+    justify-content: center;
+    margin-left: 0;
+  }
+
+  /* Dialog becomes a full-screen sheet (also fullScreen prop in JSX). */
+  .pai-page .pdoc-paper {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .pai-page .pdoc-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 12px;
+  }
+
+  .pai-page .pdoc-header-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .pai-page .pdoc-upload-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    height: 38px;
+  }
+
+  /* Bigger touch targets (≈38px; 28px is too small for a thumb). */
+  .pai-page .pdoc-header-tools .pdoc-icon-btn--bordered,
+  .pai-page .pdoc-actions .pdoc-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* Search drops to its own full-width row below the buttons. */
+  .pai-page .pdoc-search {
+    order: 5;
+    flex: 1 1 100%;
+    height: 38px;
+  }
+
+  /* 16px stops iOS Safari from zooming the page when a field is focused. */
+  .pai-page .pdoc-search input,
+  .pai-page .pdoc-textarea {
+    font-size: 16px;
+  }
+
+  .pai-page .pdoc-search input {
+    width: 100%;
+  }
+
+  .pai-page .pdoc-body {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* List rows: icon + details on top, action buttons on their own row
+     (4 buttons beside the name left it a sliver of width). */
+  .pai-page .pdoc-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 12px;
+    padding: 12px 14px;
+  }
+
+  .pai-page .pdoc-item-main {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* Let long names/meta wrap instead of being cut off with an ellipsis. */
+  .pai-page .pdoc-item-name,
+  .pai-page .pdoc-item-meta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .pai-page .pdoc-item-name {
+    text-align: left;
+  }
+
+  .pai-page .pdoc-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--pj-border-subtle);
+  }
+
+  /* Add / edit form */
+  .pai-page .pdoc-form {
+    padding: 14px;
+  }
+
+  .pai-page .pdoc-file-picker {
+    flex-wrap: wrap;
+  }
+
+  .pai-page .pdoc-choose-btn {
+    height: 38px;
+  }
+
+  .pai-page .pdoc-file-picker-name {
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .pai-page .pdoc-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .pai-page .pdoc-form-buttons {
+    width: 100%;
+  }
+
+  .pai-page .pdoc-btn {
+    flex: 1;
+    justify-content: center;
+    height: 40px;
+  }
+}
