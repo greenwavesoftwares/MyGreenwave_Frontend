@@ -70,6 +70,9 @@ export default function TreeRows({
   // returned at the bottom differs, so nothing about *how* an activity
   // behaves changes between desktop and mobile, only how it's laid out.
   isMobile = false,
+  // True when any ancestor activity is currently Paused. While set, this
+  // activity can't be started / resumed / completed — only paused.
+  isParentPaused = false,
 }) {
   const isKeyLoading = (key) => loadingKeys?.has(key) ?? false;
   const {
@@ -133,6 +136,15 @@ export default function TreeRows({
       .toUpperCase();
     return initials;
   };
+  const PARENT_PAUSED_MESSAGE =
+    "Parent activity is paused. Resume the parent activity before starting or stopping this activity.";
+  // Returns true (and shows a message) when the action must be blocked
+  // because the parent activity is paused.
+  const blockIfParentPaused = () => {
+    if (!isParentPaused) return false;
+    showToast("error", "Error", PARENT_PAUSED_MESSAGE);
+    return true;
+  };
   const renderActions = () => {
     const isAssignedUser =
       currentUserId?.toLowerCase() === resource?.toLowerCase();
@@ -147,6 +159,7 @@ export default function TreeRows({
             className="icon-button icon-btn--start"
             disabled={isStatusLoading}
             onClick={() => {
+              if (blockIfParentPaused()) return;
               const minutesLeft = dayjs().diff(dayjs(plannedStart), "minute");
               console.log("Minutes left::", minutesLeft);
               console.log("Activities Lookup map:", activityLookupMap);
@@ -205,6 +218,7 @@ export default function TreeRows({
               className="icon-button icon-btn--stop"
               disabled={isStatusLoading}
               onClick={() => {
+                if (blockIfParentPaused()) return;
                 if (!allChildrenCompleted(node)) {
                   showToast(
                     "error",
@@ -239,7 +253,10 @@ export default function TreeRows({
           <button
             className="icon-button icon-btn--start"
             disabled={isStatusLoading}
-            onClick={() => updateStatusOfActivity(id, "Running", node)}
+            onClick={() => {
+              if (blockIfParentPaused()) return;
+              updateStatusOfActivity(id, "Running", node);
+            }}
           >
             {isStatusLoading ? (
               <span className="icon-btn-spinner" />
@@ -255,7 +272,10 @@ export default function TreeRows({
           <button
             className="icon-button icon-btn--resume"
             disabled={isStatusLoading}
-            onClick={() => updateStatusOfActivity(id, "Running", node)}
+            onClick={() => {
+              if (blockIfParentPaused()) return;
+              updateStatusOfActivity(id, "Running", node);
+            }}
           >
             {isStatusLoading ? (
               <span className="icon-btn-spinner" />
@@ -585,6 +605,9 @@ export default function TreeRows({
                 activityLookupMap={activityLookupMap}
                 loadingKeys={loadingKeys}
                 isMobile={isMobile}
+                isParentPaused={
+                  isParentPaused || activityStatus === "Paused"
+                }
               />
             ))}
         </>
@@ -873,6 +896,9 @@ export default function TreeRows({
                 loadingKeys={loadingKeys}
                 onOpenFeedbackForm={onOpenFeedbackForm}
                 isMobile={isMobile}
+                isParentPaused={
+                  isParentPaused || activityStatus === "Paused"
+                }
               />
             ))}
         </>
