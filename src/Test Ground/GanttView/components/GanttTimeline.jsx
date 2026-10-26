@@ -12,6 +12,7 @@ import {
   isDelayed,
 } from "../helpers/statusColors";
 import DependencyArrows from "../../shared/DependencyArrows";
+import { getZebraRowStyle } from "../../helpers/zebraStyle";
 
 /**
  * Right timeline area:
@@ -50,8 +51,10 @@ export default function GanttTimeline({
   selectedRowId,
   onSelectRow,
   onClearSelection,
+  t,
+  isDark,
 }) {
-  const { t } = useTheme();
+  // const { t } = useTheme();
 
   return (
     <div
@@ -279,7 +282,7 @@ export default function GanttTimeline({
                   )}
 
                   {isExpanded &&
-                    projectRows.map((row) => {
+                    projectRows.map((row, rowIdx) => {
                       const plannedBar = getBarPosition(
                         row.plannedStart,
                         row.plannedStop,
@@ -294,6 +297,16 @@ export default function GanttTimeline({
                           .toLowerCase()
                           .trim() === "running";
                       const isSelected = selectedRowId === row.id;
+                      // const zebraBg = rowIdx % 2 === 0 ? t.bgSubtle : t.bgCard;
+                      // const zebraBg =
+                      //   rowIdx % 2 === 0
+                      //     ? t.bgMuted || "rgba(148, 163, 184, 0.12)"
+                      //     : t.bgCard || "transparent";
+                      const zebraStyle = getZebraRowStyle(
+                        rowIdx,
+                        isSelected,
+                        isDark,
+                      );
                       return (
                         <div
                           key={row.id}
@@ -308,17 +321,16 @@ export default function GanttTimeline({
                           style={{
                             height: ROW_HEIGHT,
                             position: "relative",
-                            borderBottom: `1px solid ${t.border}`, // stronger
+                            borderBottom: `1px solid ${t.border}`,
                             minHeight: 24,
                             paddingBottom: 4,
-                            background: isSelected
-                              ? t.primaryBgSubtle
-                              : "transparent",
+
                             boxShadow: isSelected
                               ? `inset 0 0 0 1.5px ${t.primary}`
                               : "none",
                             zIndex: isSelected ? 4 : 0,
                             cursor: "pointer",
+                            ...zebraStyle,
                           }}
                         >
                           {/* Planned bar */}
@@ -497,7 +509,7 @@ export default function GanttTimeline({
 
           {/* Resource view bars */}
           {viewMode === "resource" &&
-            resourceViewData.map((res) => {
+            resourceViewData.map((res, resIdx) => {
               const rowHeight = ROW_HEIGHT * res.laneCount;
               const LANE_HEIGHT = ROW_HEIGHT;
               const BAR_HEIGHT_PLANNED = 16;
@@ -506,7 +518,12 @@ export default function GanttTimeline({
               const hasSelectedTask = res.tasks.some(
                 (task) => task.id === selectedRowId,
               );
-
+              // const zebraBg = resIdx % 2 === 0 ? t.bgSubtle : t.bgCard;
+              const zebraStyle = getZebraRowStyle(
+                resIdx,
+                hasSelectedTask,
+                isDark,
+              );
               return (
                 <div
                   key={res.userId}
@@ -515,12 +532,10 @@ export default function GanttTimeline({
                     height: rowHeight,
                     position: "relative",
                     borderBottom: `1px solid ${t.border}`,
-                    background: hasSelectedTask
-                      ? t.primaryBgSubtle
-                      : "transparent",
                     boxShadow: hasSelectedTask
                       ? `inset 0 0 0 1.5px ${t.primary}`
                       : "none",
+                    ...zebraStyle,
                   }}
                 >
                   {res.laneCount > 1 &&

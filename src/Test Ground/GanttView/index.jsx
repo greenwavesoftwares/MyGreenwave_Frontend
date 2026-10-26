@@ -56,7 +56,7 @@ export default function GanttView({
   isFullScreen = false,
   initialViewMode = "task", // ← NEW
 }) {
-  const { t } = useTheme();
+  const { isDark, t } = useTheme();
   const { isMobile } = useResponsive();
   // ── Mobile-only UI state ──
   const [mobileLeftPanelOpen, setMobileLeftPanelOpen] = useState(false);
@@ -690,6 +690,8 @@ export default function GanttView({
             selectedRowId={selectedRowId}
             onSelectRow={handleSelectRow}
             onOpenCpm={handleOpenCpm}
+            t={t}
+            isDark={isDark}
           />
         )}
         {/* Left panel resize handle (task view only) */}
@@ -762,6 +764,8 @@ export default function GanttView({
           onSelectRow={handleSelectRow}
           onClearSelection={handleClearSelection}
           handleBarClick={handleBarClick}
+          t={t}
+          isDark={isDark}
         />
       </div>
 

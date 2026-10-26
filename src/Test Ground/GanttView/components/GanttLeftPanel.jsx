@@ -27,6 +27,7 @@ import {
   getDisplayStatus,
   DISPLAY_STATUSES,
 } from "../../helpers/statusDisplay";
+import { getZebraRowStyle } from "../../helpers/zebraStyle";
 
 /* ─── Helpers ─── */
 
@@ -232,12 +233,12 @@ function cellShell(width, t, extra = {}) {
     padding: "0 8px",
     display: "flex",
     alignItems: "center",
-    // borderRight: `1px solid ${t.borderSubtle}`,
     borderRight: `1px solid ${t.border}`,
     overflow: "hidden",
     boxSizing: "border-box",
     position: "relative",
     flexShrink: 0,
+    background: "transparent", // ← so parent zebra shows
     ...extra,
   };
 }
@@ -283,8 +284,10 @@ export default function GanttLeftPanel({
   getVisibleOrder,
   selectedRowId,
   onSelectRow,
+  t,
+  isDark,
 }) {
-  const { t } = useTheme();
+  // const { t } = useTheme();
 
   const [draggingKey, setDraggingKey] = React.useState(null);
   const [dragOverKey, setDragOverKey] = React.useState(null);
@@ -936,12 +939,17 @@ export default function GanttLeftPanel({
 
                     {/* ── Data Rows ── */}
                     {isExpanded &&
-                      projectRows.map((row) => {
+                      projectRows.map((row, rowIdx) => {
                         const isParent = hasChildren?.(row.id);
                         const isRowExpanded = expandedRows.has(row.id);
                         const displayStatus = getDisplayStatus(row);
                         const sc = getStatusColor(displayStatus, t);
                         const isSelected = selectedRowId === row.id;
+                        const zebraStyle = getZebraRowStyle(
+                          rowIdx,
+                          isSelected,
+                          isDark,
+                        );
 
                         return (
                           <div
@@ -954,19 +962,19 @@ export default function GanttLeftPanel({
                             style={{
                               height: ROW_HEIGHT,
                               display: "flex",
-                              borderBottom: `1px solid ${t.border}`, // stronger than borderSubtle
+                              borderBottom: `1px solid ${t.border}`,
                               borderLeft: isSelected
                                 ? `3px solid ${t.primary}`
                                 : `4px solid transparent`,
-                              background: isSelected
-                                ? t.primaryBgSubtle
-                                : "transparent",
+                              // Zebra under selection
+
                               boxShadow: isSelected
-                                ? `inset 0 0 0 1.5px ${t.primary}` // outline/ring
+                                ? `inset 0 0 0 1.5px ${t.primary}`
                                 : "none",
                               cursor: "pointer",
                               position: "relative",
                               zIndex: isSelected ? 2 : 0,
+                              ...zebraStyle,
                             }}
                           >
                             {columns.map((col) => {
@@ -1312,11 +1320,12 @@ export default function GanttLeftPanel({
                 );
               })
             : /* Resource View */
-              resourceViewData.map((res) => {
+              resourceViewData.map((res, resIdx) => {
                 const rowHeight = ROW_HEIGHT * res.laneCount;
                 const isSelected =
                   selectedRowId &&
                   res.tasks.some((t) => t.id === selectedRowId);
+                const zebraStyle = getZebraRowStyle(resIdx, isSelected, isDark);
                 // Or highlight the resource lane if any task selected — simpler: highlight when
                 // the clicked task belongs to this resource. Better: select by task id still.
 
@@ -1339,12 +1348,11 @@ export default function GanttLeftPanel({
                       padding: "0 12px",
                       borderBottom: `1px solid ${t.border}`,
                       gap: 10,
-                      background: isSelected
-                        ? t.primaryBgSubtle
-                        : "transparent",
+
                       boxShadow: isSelected
                         ? `inset 0 0 0 1.5px ${t.primary}`
                         : "none",
+                      ...zebraStyle,
                     }}
                   >
                     <div
