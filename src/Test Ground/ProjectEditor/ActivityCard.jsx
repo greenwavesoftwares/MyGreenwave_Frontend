@@ -17,6 +17,8 @@ import {
   User,
   Pin, // ← NEW
   PinOff,
+  Copy,
+  ClipboardPaste,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeInputStyle } from "../helpers/styles";
@@ -63,6 +65,9 @@ const ActivityCard = React.memo(function ActivityCard({
   onOpenDependencies,
   onViewSuccessors,
   onToggleAnchor,
+  copiedResourceUserId,
+  onCopyResource,
+  onPasteResource,
 }) {
   const { t } = useTheme();
   const inputStyle = makeInputStyle(t);
@@ -101,7 +106,10 @@ const ActivityCard = React.memo(function ActivityCard({
   const depBadge = allRows ? getDependencyBadgeInfo(row, allRows, t) : null;
   const successors = allRows ? getSuccessors(row.id, allRows) : [];
   const successorCount = successors.length;
-
+  // ── Copy/Paste derived state ──
+  const isCopied = copiedResourceUserId === row.resource;
+  const canPaste =
+    copiedResourceUserId && copiedResourceUserId !== row.resource && !isLocked;
   const handleField = (field, value) => {
     const TEXT_ONLY_FIELDS = ["module", "task"];
     const needsRecompute = !TEXT_ONLY_FIELDS.includes(field);
@@ -311,7 +319,41 @@ const ActivityCard = React.memo(function ActivityCard({
           </div>
         </div>
       </div>
-
+      {/* ── Copy / Paste Resource Buttons ── */}
+      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+        {row.resource && onCopyResource && (
+          <button
+            onClick={() => onCopyResource(row.resource)}
+            title={
+              isCopied ? "Click again to clear clipboard" : "Copy this resource"
+            }
+            style={{
+              ...actionBtnStyle(t),
+              color: isCopied ? t.success : t.textMuted,
+              borderColor: isCopied ? t.successBorder : t.border,
+              background: isCopied ? t.successBg : "transparent",
+            }}
+          >
+            <Copy size={13} />
+            <span>{isCopied ? "Copied!" : "Copy"}</span>
+          </button>
+        )}
+        {canPaste && onPasteResource && (
+          <button
+            onClick={() => onPasteResource(row)}
+            title="Paste copied resource here"
+            style={{
+              ...actionBtnStyle(t),
+              color: t.primary,
+              borderColor: t.primaryBorder,
+              background: t.primaryBgSubtle,
+            }}
+          >
+            <ClipboardPaste size={13} />
+            <span>Paste</span>
+          </button>
+        )}
+      </div>
       {/* Planned Start */}
       {/* Planned Start */}
       <div>

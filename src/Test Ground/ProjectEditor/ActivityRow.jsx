@@ -7,10 +7,12 @@ import {
   RotateCcw,
   Star,
   Trash2,
-  Link2, // ← NEW: for 🔗 predecessor
-  Lock, // ← NEW: for 🔒 successor
-  Pin, // ← NEW
+  Link2,
+  Lock,
+  Pin,
   PinOff,
+  Copy,
+  ClipboardPaste,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeInputStyle, makeIconBtn } from "../helpers/styles";
@@ -52,7 +54,7 @@ const ActivityRow = React.memo(function ActivityRow({
   autoCalculate,
   customColumns,
   colWidths,
-  allRows, // ← NEW: needed to compute deps
+  allRows,
   onUpdate,
   onDelete,
   onAddSub,
@@ -61,9 +63,13 @@ const ActivityRow = React.memo(function ActivityRow({
   onRedoReject,
   onFeedback,
   onUpdateCustomValue,
-  onOpenDependencies, // ← NEW: opens picker modal
-  onViewSuccessors, // ← NEW: opens successors view
+  onOpenDependencies,
+  onViewSuccessors,
   onToggleAnchor,
+  // ── NEW: Copy/Paste Resource ──
+  copiedResourceUserId,
+  onCopyResource,
+  onPasteResource,
 }) {
   const { t } = useTheme();
   const inputStyle = makeInputStyle(t);
@@ -98,11 +104,16 @@ const ActivityRow = React.memo(function ActivityRow({
     : false;
   const isLockedByParent = !!row.parentId && isParentNotPending;
   const isLocked = !isPending(row) || isLockedByParent;
-  // ── NEW: Compute dependency info ──
-  const depBadge = allRows ? getDependencyBadgeInfo(row, allRows, t) : null;
 
+  const depBadge = allRows ? getDependencyBadgeInfo(row, allRows, t) : null;
   const successors = allRows ? getSuccessors(row.id, allRows) : [];
   const successorCount = successors.length;
+
+  // ── Copy/Paste derived state ──
+  const isCopied = copiedResourceUserId === row.resource;
+  const canPaste =
+    copiedResourceUserId && copiedResourceUserId !== row.resource && !isLocked;
+
   // ── Handle field update ──
   const handleField = (field, value) => {
     const TEXT_ONLY_FIELDS = ["module", "task"];
@@ -114,7 +125,6 @@ const ActivityRow = React.memo(function ActivityRow({
         field === "durationHrs" ? (value === "" ? "" : Number(value)) : value,
     };
 
-    // Keep resourceName in sync when resource changes
     if (field === "resource") {
       if (!value) {
         updated.resourceName = "";
@@ -124,7 +134,6 @@ const ActivityRow = React.memo(function ActivityRow({
       }
     }
 
-    // Auto-set planned start when a new resource is picked
     if (field === "resource" && value && !row.plannedStart) {
       try {
         const dt = defaultFirstStart(value, groupResources || {}, holidays);
@@ -334,12 +343,12 @@ const ActivityRow = React.memo(function ActivityRow({
       </td>
 
       {/* ─── Resource ─── */}
-      <td style={{ ...tdStyle, width: 240 }}>
+      <td style={{ ...tdStyle, width: 280 }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 5,
             minWidth: 0,
             opacity: isLocked ? 0.65 : 1,
           }}
@@ -453,13 +462,52 @@ const ActivityRow = React.memo(function ActivityRow({
               )}
             />
           </div>
+
+          {/* ── Copy Resource Button ── */}
+          {row.resource && onCopyResource && (
+            <button
+              onClick={() => onCopyResource(row.resource)}
+              title={
+                isCopied
+                  ? "Click again to clear clipboard"
+                  : "Copy this resource"
+              }
+              style={{
+                ...iconBtn,
+                color: isCopied ? t.success : t.textFaint,
+                borderColor: isCopied ? t.successBorder : t.border,
+                background: isCopied ? t.successBg : "transparent",
+                flexShrink: 0,
+                transition: "all .15s",
+              }}
+            >
+              <Copy size={12} />
+            </button>
+          )}
+
+          {/* ── Paste Resource Button ── */}
+          {canPaste && onPasteResource && (
+            <button
+              onClick={() => onPasteResource(row)}
+              title="Paste copied resource here"
+              style={{
+                ...iconBtn,
+                color: t.primary,
+                borderColor: t.primaryBorder,
+                background: t.primaryBgSubtle,
+                flexShrink: 0,
+                animation: "pulse 1.5s ease-in-out infinite",
+              }}
+            >
+              <ClipboardPaste size={12} />
+            </button>
+          )}
         </div>
       </td>
 
       {/* ─── Planned Start ─── */}
       <td style={{ ...tdStyle, width: 180 }}>
         {hasChildren ? (
-          // Parent row — show aggregated start (read-only)
           !row.resource ? (
             <span
               style={{ fontSize: 11, color: t.textFaint, fontStyle: "italic" }}
@@ -507,7 +555,6 @@ const ActivityRow = React.memo(function ActivityRow({
                   flexWrap: "wrap",
                 }}
               >
-                {/* ── Auto-chained: read-only ── */}
                 {isAutoLocked ? (
                   <span
                     style={{
@@ -546,7 +593,6 @@ const ActivityRow = React.memo(function ActivityRow({
                     )}
                   </span>
                 ) : canPickDate ? (
-                  // ── Editable date picker ──
                   <>
                     {isPastStart && draft.status === "draft" && (
                       <span
@@ -601,7 +647,6 @@ const ActivityRow = React.memo(function ActivityRow({
                     )}
                   </>
                 ) : (
-                  // ── Locked: read-only ──
                   <span
                     style={{
                       fontSize: 11,
@@ -614,55 +659,6 @@ const ActivityRow = React.memo(function ActivityRow({
                   </span>
                 )}
 
-                {/* ── Anchor toggle badge ── */}
-                {/* {!isAutoLocked && ( */}
-                {/* ── Anchor toggle switch ── */}
-                {/* <div
-                  onClick={() => !isLocked && onToggleAnchor(row)}
-                  title={
-                    isLocked
-                      ? "Locked — cannot set anchor"
-                      : row.isAnchor
-                        ? "Anchor ON — click to remove"
-                        : "Set as anchor (auto-chain from here)"
-                  }
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    cursor: isLocked ? "not-allowed" : "pointer",
-                    opacity: isLocked ? 0.4 : 1,
-                    userSelect: "none",
-                    flexShrink: 0,
-                  }}
-                >
-                  <span style={{ fontSize: 11 }}>⚓</span>
-                  <span
-                    style={{
-                      position: "relative",
-                      display: "inline-block",
-                      width: 26,
-                      height: 14,
-                      background: row.isAnchor ? t.success : t.borderStrong,
-                      borderRadius: 999,
-                      transition: "background .2s",
-                    }}
-                  >
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: 2,
-                        left: row.isAnchor ? 14 : 2,
-                        width: 10,
-                        height: 10,
-                        background: "#fff",
-                        borderRadius: "50%",
-                        transition: "left .2s",
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                      }}
-                    />
-                  </span>
-                </div> */}
                 {/* ── Anchor toggle button ── */}
                 <button
                   onClick={() => !isLocked && onToggleAnchor(row)}
@@ -697,7 +693,6 @@ const ActivityRow = React.memo(function ActivityRow({
                     <PinOff size={12} />
                   )}
                 </button>
-                {/* )} */}
               </div>
             );
           })()
@@ -817,7 +812,6 @@ const ActivityRow = React.memo(function ActivityRow({
       })}
 
       {/* ─── Actions ─── */}
-      {/* Actions */}
       <td style={{ ...tdStyle, width: 190, textAlign: "center" }}>
         <div
           style={{
@@ -828,7 +822,6 @@ const ActivityRow = React.memo(function ActivityRow({
             flexWrap: "wrap",
           }}
         >
-          {/* Add row below */}
           {draft.status !== "closed" && row.sortOrder === 0 && (
             <button
               onClick={() => onAddRowBelow(row)}
@@ -844,7 +837,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* ─── NEW: 🔗 Dependencies (predecessors) ─── */}
           {onOpenDependencies && (
             <button
               onClick={() => !isLocked && onOpenDependencies(row)}
@@ -896,7 +888,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* ─── NEW: 🔒 Successors (this row blocks others) ─── */}
           {onViewSuccessors && successorCount > 0 && (
             <button
               onClick={() => onViewSuccessors(row)}
@@ -937,7 +928,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* Comments */}
           <button
             onClick={() => onOpenComments(row)}
             title={
@@ -982,7 +972,6 @@ const ActivityRow = React.memo(function ActivityRow({
             )}
           </button>
 
-          {/* Add sub-activity */}
           {row.sortOrder === 0 && isRowPending && !isLockedByParent && (
             <button
               onClick={() => onAddSub(row)}
@@ -998,7 +987,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* Redo */}
           {draft.status !== "closed" && isCompleted && (
             <button
               onClick={() => onRedoReject(row)}
@@ -1014,7 +1002,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* Feedback */}
           {(isCompleted || statusLower === "finished") && (
             <button
               onClick={() => onFeedback(row)}
@@ -1035,7 +1022,6 @@ const ActivityRow = React.memo(function ActivityRow({
             </button>
           )}
 
-          {/* Delete */}
           {isRowPending && !isLockedByParent && (
             <button
               onClick={() => onDelete(row)}

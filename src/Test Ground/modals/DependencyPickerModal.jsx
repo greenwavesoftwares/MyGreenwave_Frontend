@@ -6,16 +6,15 @@ import {
   Link2,
   AlertTriangle,
   CircleDot,
-  ChevronDown,
-  ChevronRight,
   Info,
   Filter,
   Loader2,
   ArrowRight,
+  Calendar,
 } from "lucide-react";
 import { useTheme } from "../useTheme";
 import { makeBtnStyle, makeInputStyle } from "../helpers/styles";
-import { fmtDisplay } from "../helpers/dateUtils";
+import { fmtDisplay, parseISODateTime } from "../helpers/dateUtils";
 import {
   getCycleBlockedIds,
   checkDependencyConflict,
@@ -24,6 +23,7 @@ import {
 import StatusBadge from "../shared/StatusBadge";
 import { useResponsive } from "../useResponsive";
 import BottomSheet from "../shared/BottomSheet";
+
 /**
  * DependencyPickerModal
  * Props:
@@ -50,7 +50,6 @@ export default function DependencyPickerModal({
   );
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState("");
-  const [collapsedModules, setCollapsedModules] = useState(new Set());
   const searchRef = useRef();
 
   useEffect(() => {
@@ -94,22 +93,33 @@ export default function DependencyPickerModal({
       .filter(Boolean);
   }, [selectedIds, rows]);
 
-  // ── Group filtered rows by module ──
-  const grouped = useMemo(() => {
-    const groups = {};
-    filteredRows.forEach((r) => {
-      // Exclude currently selected from "available" list
-      if (selectedIds.has(r.id)) return;
-      const key = r.module || "— No module —";
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(r);
+  // ── NEW: Flat sorted available rows (by planned start, ascending) ──
+  const sortedAvailable = useMemo(() => {
+    const unselected = filteredRows.filter((r) => !selectedIds.has(r.id));
+
+    const withDates = [];
+    const withoutDates = [];
+
+    unselected.forEach((r) => {
+      if (r.plannedStart) {
+        const dt = parseISODateTime(r.plannedStart);
+        if (dt && !isNaN(dt.getTime())) {
+          withDates.push({ row: r, dateMs: dt.getTime() });
+        } else {
+          withoutDates.push(r);
+        }
+      } else {
+        withoutDates.push(r);
+      }
     });
-    return Object.keys(groups)
-      .sort()
-      .reduce((acc, key) => {
-        acc[key] = groups[key];
-        return acc;
-      }, {});
+
+    // Sort ascending (earliest first)
+    withDates.sort((a, b) => a.dateMs - b.dateMs);
+
+    return {
+      dated: withDates.map((d) => d.row),
+      undated: withoutDates,
+    };
   }, [filteredRows, selectedIds]);
 
   // ── Compute conflict summary ──
@@ -128,7 +138,6 @@ export default function DependencyPickerModal({
 
   // ── Compute readiness of currently selected deps ──
   const readiness = useMemo(() => {
-    // Temporarily attach selected IDs to the row for computation
     const rowWithDeps = { ...row, dependsOn: Array.from(selectedIds) };
     return getDependencyReadiness(rowWithDeps, rows);
   }, [row, selectedIds, rows]);
@@ -140,15 +149,6 @@ export default function DependencyPickerModal({
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleModuleCollapse = (mod) => {
-    setCollapsedModules((prev) => {
-      const next = new Set(prev);
-      if (next.has(mod)) next.delete(mod);
-      else next.add(mod);
       return next;
     });
   };
@@ -354,6 +354,15 @@ export default function DependencyPickerModal({
               >
                 {fmtDisplay(r.plannedStart)} → {fmtDisplay(r.plannedStop)}
               </span>
+            ) : r.plannedStart ? (
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9.5,
+                }}
+              >
+                {fmtDisplay(r.plannedStart)}
+              </span>
             ) : (
               <span style={{ color: t.textFaint, fontStyle: "italic" }}>
                 No dates
@@ -369,6 +378,98 @@ export default function DependencyPickerModal({
       </div>
     );
   };
+
+  // ── Render the flat sorted list (shared by mobile + desktop) ──
+  const renderAvailableList = () => {
+    const totalAvailable =
+      sortedAvailable.dated.length + sortedAvailable.undated.length;
+
+    if (totalAvailable === 0 && selectedRows.length === 0) {
+      return (
+        <div
+          style={{
+            padding: 40,
+            textAlign: "center",
+            color: t.textFaint,
+            fontSize: isMobile ? 13 : 12,
+          }}
+        >
+          <Search
+            size={28}
+            strokeWidth={1.5}
+            style={{ marginBottom: 8, opacity: 0.5 }}
+          />
+          <div>
+            {search || moduleFilter
+              ? "No tasks match your filters"
+              : "No available tasks to depend on"}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {/* Dated tasks (sorted by planned start, ascending) */}
+        {sortedAvailable.dated.length > 0 && (
+          <>
+            <div
+              style={{
+                padding: isMobile ? "8px 16px" : "8px 20px",
+                background: t.bgSubtle,
+                borderBottom: `1px solid ${t.border}`,
+                fontSize: 10,
+                fontWeight: 700,
+                color: t.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                position: "sticky",
+                top: 0,
+                zIndex: 5,
+              }}
+            >
+              <Calendar size={11} />
+              By Planned Start ({sortedAvailable.dated.length})
+            </div>
+            {sortedAvailable.dated.map((r) => renderRow(r, false))}
+          </>
+        )}
+
+        {/* Undated tasks (separate section at the end) */}
+        {sortedAvailable.undated.length > 0 && (
+          <>
+            <div
+              style={{
+                padding: isMobile ? "8px 16px" : "8px 20px",
+                background: t.warningBgSubtle,
+                borderBottom: `1px solid ${t.warningBorder}`,
+                borderTop: `2px solid ${t.border}`,
+                fontSize: 10,
+                fontWeight: 700,
+                color: t.warning,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                position: "sticky",
+                top: 0,
+                zIndex: 5,
+              }}
+            >
+              <AlertTriangle size={11} />
+              No Start Date ({sortedAvailable.undated.length})
+            </div>
+            {sortedAvailable.undated.map((r) => renderRow(r, false))}
+          </>
+        )}
+      </>
+    );
+  };
+
   // ── Mobile: bottom sheet ──
   if (isMobile) {
     return (
@@ -559,87 +660,7 @@ export default function DependencyPickerModal({
               </>
             )}
 
-            {Object.keys(grouped).length === 0 && selectedRows.length === 0 ? (
-              <div
-                style={{
-                  padding: 40,
-                  textAlign: "center",
-                  color: t.textFaint,
-                  fontSize: 13,
-                }}
-              >
-                <Search
-                  size={28}
-                  strokeWidth={1.5}
-                  style={{ marginBottom: 8, opacity: 0.5 }}
-                />
-                <div>
-                  {search || moduleFilter
-                    ? "No tasks match your filters"
-                    : "No available tasks"}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div
-                  style={{
-                    padding: "8px 16px",
-                    background: t.bgSubtle,
-                    borderBottom: `1px solid ${t.border}`,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: t.textMuted,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 5,
-                  }}
-                >
-                  Available
-                </div>
-                {Object.entries(grouped).map(([mod, tasks]) => {
-                  const isCollapsed = collapsedModules.has(mod);
-                  return (
-                    <div key={mod}>
-                      <div
-                        onClick={() => toggleModuleCollapse(mod)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          padding: "8px 16px",
-                          background: t.bgSubtle,
-                          borderBottom: `1px solid ${t.borderSubtle}`,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: t.textSecondary,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {isCollapsed ? (
-                          <ChevronRight size={13} />
-                        ) : (
-                          <ChevronDown size={13} />
-                        )}
-                        <span>{mod}</span>
-                        <span
-                          style={{
-                            color: t.textFaint,
-                            fontWeight: 500,
-                            marginLeft: "auto",
-                            fontSize: 11,
-                          }}
-                        >
-                          {tasks.length}
-                        </span>
-                      </div>
-                      {!isCollapsed && tasks.map((r) => renderRow(r, false))}
-                    </div>
-                  );
-                })}
-              </>
-            )}
+            {renderAvailableList()}
           </div>
 
           {/* Footer */}
@@ -709,6 +730,8 @@ export default function DependencyPickerModal({
       </BottomSheet>
     );
   }
+
+  // ── Desktop ──
   return (
     <div
       onClick={(e) => !isSaving && e.target === e.currentTarget && onClose()}
@@ -1012,7 +1035,7 @@ export default function DependencyPickerModal({
 
         {/* ── Body ── */}
         <div style={{ flex: 1, overflowY: "auto", background: t.bgCard }}>
-          {/* Currently Selected Section */}
+          {/* Currently Selected Section (kept in current order) */}
           {selectedRows.length > 0 && (
             <>
               <div
@@ -1040,91 +1063,8 @@ export default function DependencyPickerModal({
             </>
           )}
 
-          {/* Available Section */}
-          {Object.keys(grouped).length === 0 ? (
-            selectedRows.length === 0 && (
-              <div
-                style={{
-                  padding: 40,
-                  textAlign: "center",
-                  color: t.textFaint,
-                  fontSize: 12,
-                }}
-              >
-                <Search
-                  size={28}
-                  strokeWidth={1.5}
-                  style={{ marginBottom: 8, opacity: 0.5 }}
-                />
-                <div>
-                  {search || moduleFilter
-                    ? "No tasks match your filters"
-                    : "No available tasks to depend on"}
-                </div>
-              </div>
-            )
-          ) : (
-            <>
-              <div
-                style={{
-                  padding: "8px 20px",
-                  background: t.bgSubtle,
-                  borderBottom: `1px solid ${t.border}`,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: t.textMuted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 5,
-                }}
-              >
-                Available Tasks
-              </div>
-              {Object.entries(grouped).map(([mod, tasks]) => {
-                const isCollapsed = collapsedModules.has(mod);
-                return (
-                  <div key={mod}>
-                    <div
-                      onClick={() => toggleModuleCollapse(mod)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "6px 20px",
-                        background: t.bgSubtle,
-                        borderBottom: `1px solid ${t.borderSubtle}`,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: t.textSecondary,
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      {isCollapsed ? (
-                        <ChevronRight size={12} />
-                      ) : (
-                        <ChevronDown size={12} />
-                      )}
-                      <span>{mod}</span>
-                      <span
-                        style={{
-                          color: t.textFaint,
-                          fontWeight: 500,
-                          marginLeft: "auto",
-                          fontSize: 10,
-                        }}
-                      >
-                        {tasks.length} task{tasks.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    {!isCollapsed && tasks.map((r) => renderRow(r, false))}
-                  </div>
-                );
-              })}
-            </>
-          )}
+          {/* Available tasks — flat, sorted by planned start */}
+          {renderAvailableList()}
         </div>
 
         {/* ── Legend ── */}

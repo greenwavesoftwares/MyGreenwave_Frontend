@@ -39,6 +39,8 @@ import {
   XCircle,
   Users,
   Filter,
+  Copy,
+  ClipboardPaste,
 } from "lucide-react";
 import { CheckCircle2 as CheckIcon } from "lucide-react";
 
@@ -80,6 +82,7 @@ import {
   recomputeChains,
   recomputeAnchorChains,
 } from "../helpers/chains";
+import { defaultFirstStart, addWorkHours } from "../helpers/workHours";
 import { runValidations } from "../helpers/validation";
 import {
   generateCustomColumnId,
@@ -208,7 +211,8 @@ export default function ProjectEditor({
 
   // ─── Auto Calculate ───
   const [autoCalculate, setAutoCalculate] = useState(false);
-
+  // ─── Copy/Paste Resource Clipboard ───
+  const [copiedResourceUserId, setCopiedResourceUserId] = useState(null);
   // ─── UI state ───
   const [view, setView] = useState("activities");
   const [motionSubmitted, setMotionSubmitted] = useState(
@@ -939,7 +943,6 @@ export default function ProjectEditor({
     },
     [showToast, recomputeRows],
   );
-
   const updateRow = useCallback(
     (updated, opts = {}) => {
       const { recompute = true } = opts;
@@ -978,6 +981,95 @@ export default function ProjectEditor({
     },
     [moduleRegistry, recomputeRows, isResourcesReady],
   );
+  // ═══════════════════════════════════════════════════════
+  // Copy / Paste Resource handlers
+  // ═══════════════════════════════════════════════════════
+  const handleCopyResource = useCallback(
+    (userId) => {
+      if (copiedResourceUserId === userId) {
+        setCopiedResourceUserId(null);
+        showToast("info", "Clipboard cleared", "No resource copied.");
+      } else {
+        setCopiedResourceUserId(userId);
+        const res = resources.find((r) => r.userId === userId);
+        showToast(
+          "success",
+          "Resource copied",
+          `${res?.name || userId} (${res?.code || ""})`,
+        );
+      }
+    },
+    [copiedResourceUserId, resources, showToast],
+  );
+
+  const handlePasteResource = useCallback(
+    (row) => {
+      if (!copiedResourceUserId) return;
+
+      // Validate resource is available in current groups
+      const validUserIds = new Set(resources.map((r) => r.userId));
+      if (!validUserIds.has(copiedResourceUserId)) {
+        showToast(
+          "error",
+          "Cannot paste",
+          "This resource is not available in the selected group(s).",
+        );
+        return;
+      }
+
+      const res = resources.find((r) => r.userId === copiedResourceUserId);
+      const updated = {
+        ...row,
+        resource: copiedResourceUserId,
+        resourceName: res?.name || copiedResourceUserId,
+      };
+
+      // Auto-set planned start if not already set (matches dropdown behavior)
+      if (!row.plannedStart && copiedResourceUserId) {
+        try {
+          const dt = defaultFirstStart(
+            copiedResourceUserId,
+            groupResources || {},
+            holidays,
+          );
+          if (dt instanceof Date && !isNaN(dt)) {
+            updated.plannedStart = isoDateTime(dt);
+            if (updated.durationHrs) {
+              const stop = addWorkHours(
+                dt,
+                Number(updated.durationHrs),
+                copiedResourceUserId,
+                groupResources || {},
+                holidays,
+              );
+              updated.plannedStop = isoDateTime(stop);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      updateRow(updated, { recompute: true });
+      showToast(
+        "success",
+        "Resource pasted",
+        `${res?.name || copiedResourceUserId} assigned.`,
+      );
+    },
+    [
+      copiedResourceUserId,
+      resources,
+      groupResources,
+      holidays,
+      updateRow,
+      showToast,
+    ],
+  );
+
+  const handleClearCopiedResource = useCallback(() => {
+    setCopiedResourceUserId(null);
+  }, []);
 
   const deleteRow = useCallback(
     (row) => {
@@ -2566,6 +2658,54 @@ export default function ProjectEditor({
                       flexWrap: "wrap",
                     }}
                   >
+                    {/* ── Clipboard indicator ── */}
+                    {copiedResourceUserId &&
+                      (() => {
+                        const copiedRes = resources.find(
+                          (r) => r.userId === copiedResourceUserId,
+                        );
+                        return (
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              padding: isMobile ? "6px 10px" : "4px 10px",
+                              borderRadius: 7,
+                              background: t.primaryBgSubtle,
+                              border: `1px solid ${t.primaryBorder}`,
+                              color: t.primary,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Copy size={11} />
+                            {!isMobile && (
+                              <span>
+                                {copiedRes?.name || copiedResourceUserId}
+                              </span>
+                            )}
+                            <button
+                              onClick={handleClearCopiedResource}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: t.primary,
+                                cursor: "pointer",
+                                padding: 0,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                marginLeft: 2,
+                              }}
+                              title="Clear clipboard"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     {/* Search — always visible */}
                     <div
                       style={{
@@ -2910,6 +3050,9 @@ export default function ProjectEditor({
                                   onOpenDependencies={handleOpenDependencies}
                                   onViewSuccessors={handleViewSuccessors}
                                   onToggleAnchor={handleToggleAnchor}
+                                  copiedResourceUserId={copiedResourceUserId}
+                                  onCopyResource={handleCopyResource}
+                                  onPasteResource={handlePasteResource}
                                 />
                               );
                             })}
@@ -2954,7 +3097,7 @@ export default function ProjectEditor({
                             },
                             {
                               label: "RESOURCE",
-                              width: 240,
+                              width: 280,
                               align: "left",
                               filterKey: "resource",
                             },
@@ -3456,6 +3599,9 @@ export default function ProjectEditor({
                                     onOpenDependencies={handleOpenDependencies} // ← NEW
                                     onViewSuccessors={handleViewSuccessors} // ← NEW
                                     onToggleAnchor={handleToggleAnchor}
+                                    copiedResourceUserId={copiedResourceUserId}
+                                    onCopyResource={handleCopyResource}
+                                    onPasteResource={handlePasteResource}
                                   />
                                 );
                               })}
