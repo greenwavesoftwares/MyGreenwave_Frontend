@@ -266,3 +266,78 @@ export function formatCyclePath(cycleIds, rows) {
     })
     .join(" → ");
 }
+
+/* ─── Compute auto-chain dependencies per resource ─── */
+export function computeAutoChain(rows, resources = []) {
+  const getUserName = (uid) => {
+    const res = resources.find((r) => r.userId === uid);
+    return res?.name || uid;
+  };
+
+  // 1. Filter eligible rows:
+  //    - Top-level only (skip sub-activities)
+  //    - Must have plannedStart
+  //    - Must have a resource (r.resource is a userId string)
+  const eligible = rows.filter((r) => {
+    if (r.parentId) return false;
+    if (!r.plannedStart) return false;
+    if (!r.resource) return false;
+    return true;
+  });
+
+  // 2. Group by resource userId (r.resource IS the userId string)
+  const byUser = {};
+  eligible.forEach((r) => {
+    const uid = r.resource;
+    if (!byUser[uid]) byUser[uid] = [];
+    byUser[uid].push(r);
+  });
+
+  const changes = [];
+  const updates = {};
+
+  Object.entries(byUser).forEach(([userId, tasks]) => {
+    // 3a. Sort by plannedStart ascending
+    tasks.sort((a, b) => {
+      const ta = parseISODateTime(a.plannedStart);
+      const tb = parseISODateTime(b.plannedStart);
+      if (!ta && !tb) return 0;
+      if (!ta) return 1;
+      if (!tb) return -1;
+      return ta.getTime() - tb.getTime();
+    });
+
+    const userName = getUserName(userId);
+
+    // 3b. Walk consecutive pairs
+    for (let i = 1; i < tasks.length; i++) {
+      const prev = tasks[i - 1];
+      const curr = tasks[i];
+
+      // Skip if same plannedStart (collision — parallel tasks)
+      const tPrev = parseISODateTime(prev.plannedStart);
+      const tCurr = parseISODateTime(curr.plannedStart);
+      if (tPrev && tCurr && tPrev.getTime() === tCurr.getTime()) continue;
+
+      // Skip if curr already depends on prev (preserve existing)
+      const currDeps = Array.isArray(curr.dependsOn) ? curr.dependsOn : [];
+      if (currDeps.includes(prev.id)) continue;
+
+      // Skip if adding prev as dependency of curr would create a cycle
+      if (wouldCreateCycle(curr.id, prev.id, rows)) continue;
+
+      // Record
+      if (!updates[curr.id]) updates[curr.id] = [];
+      updates[curr.id].push(prev.id);
+      changes.push({
+        taskId: curr.id,
+        taskName: curr.task || curr.module || `Row #${curr.id}`,
+        addedDepId: prev.id,
+        addedDepName: prev.task || prev.module || `Row #${prev.id}`,
+        userName,
+      });
+    }
+  });
+
+  return { changes, updates };
+}

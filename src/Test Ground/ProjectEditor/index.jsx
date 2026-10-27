@@ -41,6 +41,7 @@ import {
   Filter,
   Copy,
   ClipboardPaste,
+  Link2,
 } from "lucide-react";
 import { CheckCircle2 as CheckIcon } from "lucide-react";
 
@@ -126,6 +127,7 @@ import ActivityRow from "./ActivityRow";
 // ── Dependency helpers ──
 import {
   cleanupOrphanedDependencies,
+  computeAutoChain,
   getSuccessors,
 } from "../helpers/dependencies";
 
@@ -137,6 +139,7 @@ import ActivityCard from "./ActivityCard";
 import { List, LayoutGrid } from "lucide-react";
 import MobileFiltersSheet from "./MobileFiltersSheet";
 import { getDisplayStatus } from "../helpers/statusDisplay";
+import AutoChainConfirmModal from "../modals/AutoChainConfirmModal";
 /* ═══════════════════════════════════════════════════════
    ProjectEditor
    ═══════════════════════════════════════════════════════ */
@@ -199,6 +202,7 @@ export default function ProjectEditor({
   const [moduleRegistry, setModuleRegistry] = useState(
     draft.moduleRegistry || {},
   );
+  const [autoChainPreview, setAutoChainPreview] = useState(null);
 
   // ─── Custom Columns ───
   const [customColumns, setCustomColumns] = useState(draft.customColumns || []);
@@ -311,6 +315,46 @@ export default function ProjectEditor({
     return counts;
   }, [customColumns, rows]);
 
+  /* ── Auto Chain Dependencies ── */
+  const handleAutoChainClick = useCallback(() => {
+    const { changes, updates } = computeAutoChain(rows, resources);
+    if (changes.length === 0) {
+      showToast(
+        "info",
+        "Auto Chain",
+        "No new dependencies to add — all eligible tasks are already chained or have no valid pairs.",
+      );
+      return;
+    }
+    setAutoChainPreview({ changes, updates });
+  }, [rows, resources, showToast]);
+
+  const handleConfirmAutoChain = useCallback(() => {
+    if (!autoChainPreview) return;
+    const { changes, updates } = autoChainPreview;
+
+    setRows((prev) =>
+      prev.map((r) => {
+        if (updates[r.id]) {
+          const existing = Array.isArray(r.dependsOn) ? r.dependsOn : [];
+          return { ...r, dependsOn: [...existing, ...updates[r.id]] };
+        }
+        return r;
+      }),
+    );
+
+    const resourceCount = [...new Set(changes.map((c) => c.userName))].length;
+    showToast(
+      "success",
+      "Auto Chain Applied",
+      `Added ${changes.length} dependencies across ${resourceCount} resources.`,
+    );
+    setAutoChainPreview(null);
+  }, [autoChainPreview, showToast]);
+
+  const handleCancelAutoChain = useCallback(() => {
+    setAutoChainPreview(null);
+  }, []);
   const getColWidth = useCallback(
     (colId, defaultWidth = DEFAULT_CUSTOM_COL_WIDTH) => {
       return colWidths[colId] || defaultWidth;
@@ -2853,19 +2897,42 @@ export default function ProjectEditor({
 
                     {/* Add Module button */}
                     {draft.status !== "closed" && (
-                      <button
-                        onClick={() => addRow()}
-                        style={{
-                          ...btnStyle,
-                          background: t.primary,
-                          color: t.textInverse,
-                          borderColor: t.primary,
-                          height: isMobile ? 40 : 32,
-                          padding: isMobile ? "0 12px" : "0 14px",
-                        }}
-                      >
-                        <Plus size={14} /> {isMobile ? "Add" : "Add Module"}
-                      </button>
+                      <>
+                        <button
+                          onClick={handleAutoChainClick}
+                          title="Auto-chain tasks per resource by planned start date"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "7px 14px",
+                            borderRadius: 6,
+                            border: `1px solid ${t.primary}50`,
+                            background: `${t.primary}12`,
+                            color: t.primary,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <Link2 size={14} />
+                          Auto Chain
+                        </button>
+                        <button
+                          onClick={() => addRow()}
+                          style={{
+                            ...btnStyle,
+                            background: t.primary,
+                            color: t.textInverse,
+                            borderColor: t.primary,
+                            height: isMobile ? 40 : 32,
+                            padding: isMobile ? "0 12px" : "0 14px",
+                          }}
+                        >
+                          <Plus size={14} /> {isMobile ? "Add" : "Add Module"}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -4220,6 +4287,12 @@ export default function ProjectEditor({
           }}
         />
       )}
+      <AutoChainConfirmModal
+        preview={autoChainPreview}
+        onConfirm={handleConfirmAutoChain}
+        onCancel={handleCancelAutoChain}
+        theme={t}
+      />
       {/* Mobile filters bottom sheet */}
       {isMobile && (
         <MobileFiltersSheet

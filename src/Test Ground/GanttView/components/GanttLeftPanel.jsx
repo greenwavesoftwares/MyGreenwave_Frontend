@@ -639,7 +639,7 @@ export default function GanttLeftPanel({
                                       |
                                     </span>
                                     <span
-                                      title="Expected End"
+                                      title="Expected/Actual End"
                                       style={{
                                         color: isDelayed
                                           ? t.danger
