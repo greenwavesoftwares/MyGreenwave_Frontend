@@ -42,17 +42,23 @@ const activityTrackerApi = {
   },
 
   getActiveProjects: async () => {
-    const response = await axios.get(`${apiEndPoint}/getAllOpenProjectsActivityTreeCreatedByUser`, {
-      headers: getHeaders(),
-      // params: fromDate && toDate ? { fromDate, toDate } : undefined,
-    });
+    const response = await axios.get(
+      `${apiEndPoint}/getAllOpenProjectsActivityTreeCreatedByUser`,
+      {
+        headers: getHeaders(),
+        // params: fromDate && toDate ? { fromDate, toDate } : undefined,
+      },
+    );
     return response.data;
   },
 
   getClosedProjects: async () => {
-    const response = await axios.get(`${apiEndPoint}/getAllClosedProjectsActivityTreeCreatedByUser`, {
-      headers: getHeaders(),
-    });
+    const response = await axios.get(
+      `${apiEndPoint}/getAllClosedProjectsActivityTreeCreatedByUser`,
+      {
+        headers: getHeaders(),
+      },
+    );
     return response.data;
   },
 
@@ -1666,13 +1672,12 @@ const activityTrackerApi = {
     );
     return response.data;
   },
-getHolidays: async () => {
-  const response = await axios.get(
-    `${host}holidays/dates`,
-    { headers: getHeaders() },
-  );
-  return response.data;
-},
+  getHolidays: async () => {
+    const response = await axios.get(`${host}holidays/dates`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
   // ============================================================
   //                  USER ALLOCATION / ADMIN
   // ============================================================
@@ -1697,8 +1702,97 @@ getHolidays: async () => {
 
     return response.data;
   },
+
+  // ============================================================
+  //                    PROJECT DOCUMENTS
+  // ============================================================
+
+  /**
+   * GET /activityTracker/projects/{projectId}/documents
+   * Gets all documents uploaded for a project (newest first).
+   * @param {string} projectId
+   * @returns Array of ProjectDocument
+   */
+  getDocumentsByProjectId: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/projects/${projectId}/documents`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * POST /activityTracker/projects/{projectId}/documents
+   * Uploads a new document. The file is sent as a Base64 string inside JSON.
+   * @param {string} projectId
+   * @param {Object} documentPayload (ProjectDocument Model)
+   * @example
+   * {
+   * "fileBase64": "base64string", // plain Base64 or a data URL
+   * "fileName": "site-plan-v2.pdf",
+   * "description": "Updated site plan"
+   * }
+   */
+  addDocument: async (projectId, documentPayload) => {
+    const response = await axios.post(
+      `${apiEndPoint}/projects/${projectId}/documents`,
+      documentPayload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/documents/{id}
+   * Updates a document. fileBase64 and fileName are optional:
+   * send only description to change just the description.
+   * @param {string} id
+   * @param {Object} documentPayload (ProjectDocument Model)
+   * @example
+   * {
+   * "fileBase64": "base64string", // optional, replaces the file
+   * "fileName": "site-plan-v3.pdf", // optional
+   * "description": "Final site plan"
+   * }
+   */
+  updateDocument: async (id, documentPayload) => {
+    const response = await axios.put(
+      `${apiEndPoint}/documents/${id}`,
+      documentPayload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * DELETE /activityTracker/documents/{id}
+   * Deletes a document (database row and MinIO object).
+   * Returns 204 No Content, so response.data is empty.
+   * @param {string} id
+   */
+  deleteDocument: async (id) => {
+    const response = await axios.delete(`${apiEndPoint}/documents/${id}`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/documents/{id}/download
+   * Downloads the file for a document.
+   * @param {string} id
+   * @returns {Blob} Binary file data for download/rendering
+   */
+  downloadDocument: async (id) => {
+    const response = await axios.get(
+      `${apiEndPoint}/documents/${id}/download`,
+      {
+        headers: getHeaders(),
+        responseType: "blob",
+      },
+    );
+    return response.data;
+  },
 };
-
-
 
 export default activityTrackerApi;
