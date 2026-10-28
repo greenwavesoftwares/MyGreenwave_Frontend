@@ -1,9 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 /* ==========================================================
-   Project Documentation card
-   Scoped under `.pai-page` so it reuses that file's --pj-* tokens
-   (and its light/dark overrides) and can't leak into the rest of
-   the app. All class names are prefixed `pdoc-`.
+   Project Documentation dialog
+   Self-contained: everything inside the dialog is scoped under
+   `.pdoc-root` (the MUI Dialog root, which is portaled), and the
+   --pj-* tokens it needs are defined on `.pdoc-root` itself, so the
+   dialog looks right no matter where it is mounted (inside or
+   outside `.pai-page`). Only the "open" button / info-card tweaks
+   that live in the page itself stay scoped under `.pai-page`.
    ========================================================== */
+
+.pdoc-root {
+  --pj-surface: var(--card-bg, #FFFFFF);
+  --pj-surface-2: var(--tableOddRow, #F8FAFC);
+  --pj-border-subtle: var(--tableOuterBorder, #F1F5F9);
+  --pj-border: var(--divider-color, #E2E8F0);
+  --pj-border-strong: var(--calBorder, #CBD5E1);
+  --pj-text-primary: var(--menu-text, #0F172A);
+  --pj-text-secondary: var(--fontColor, #475569);
+  --pj-text-muted: var(--tittleFontColor, #64748B);
+  --pj-text-faint: var(--FontAwesomeIcon, #94A3B8);
+  --pj-on-color: #FFFFFF;
+  --pj-primary: var(--avatar-bg, #1D4ED8);
+  --pj-primary-hover: #1E40AF;
+  --pj-primary-bg: var(--blueBG, #DBEAFE);
+  --pj-primary-border: #93C5FD;
+  --pj-danger: var(--redFontColor, #DC2626);
+  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
+  --pj-success: #15803D;
+  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
+  --pj-warning: #B45309;
+  --pj-warning-bg: #FEF3C7;
+  --pj-purple: #7C3AED;
+  --pj-purple-bg: var(--icon-purple-bg, #EDE9FE);
+  font-family: "Sora", sans-serif;
+}
+
+.dark .pdoc-root,
+[data-theme="dark"] .pdoc-root,
+.pdoc-root.dark,
+.pdoc-root[data-theme="dark"] {
+  --pj-primary-hover: #6d8dff;
+  --pj-primary-border: #3a5a99;
+  --pj-danger: #f87171;
+  --pj-success: #4ade80;
+  --pj-warning: #fbbf24;
+  --pj-warning-bg: #3a2a06;
+  --pj-purple: #a78bfa;
+}
 
 .pdoc-paper {
   width: 720px;
@@ -20,7 +63,7 @@
 }
 
 /* ── header ── */
-.pai-page .pdoc-header {
+.pdoc-root .pdoc-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,7 +73,7 @@
   flex-shrink: 0;
 }
 
-.pai-page .pdoc-header-title {
+.pdoc-root .pdoc-header-title {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -69,7 +112,7 @@
   }
 }
 
-.pai-page .pdoc-section-icon {
+.pdoc-root .pdoc-section-icon {
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -81,14 +124,14 @@
   flex-shrink: 0;
 }
 
-.pai-page .pdoc-title {
+.pdoc-root .pdoc-title {
   margin: 0;
   font-size: 14px;
   font-weight: 700;
   color: var(--pj-text-primary);
 }
 
-.pai-page .pdoc-counter {
+.pdoc-root .pdoc-counter {
   font-size: 11.5px;
   font-weight: 600;
   color: var(--pj-primary);
@@ -98,13 +141,13 @@
   padding: 2px 9px;
 }
 
-.pai-page .pdoc-header-tools {
+.pdoc-root .pdoc-header-tools {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.pai-page .pdoc-search {
+.pdoc-root .pdoc-search {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -116,7 +159,7 @@
   color: var(--pj-text-faint);
 }
 
-.pai-page .pdoc-search input {
+.pdoc-root .pdoc-search input {
   border: none;
   outline: none;
   background: transparent;
@@ -126,12 +169,12 @@
   width: 170px;
 }
 
-.pai-page .pdoc-search:focus-within {
+.pdoc-root .pdoc-search:focus-within {
   border-color: var(--pj-primary);
 }
 
 /* ── body / list ── */
-.pai-page .pdoc-body,
+.pdoc-root .pdoc-body,
 .pdoc-paper .pdoc-body {
   border-top: 1px solid var(--pj-border);
   flex: 1;
@@ -139,13 +182,13 @@
   overflow-y: auto;
 }
 
-.pai-page .pdoc-list {
+.pdoc-root .pdoc-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.pai-page .pdoc-item {
+.pdoc-root .pdoc-item {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -154,15 +197,15 @@
   transition: background 0.15s ease;
 }
 
-.pai-page .pdoc-item:last-child {
+.pdoc-root .pdoc-item:last-child {
   border-bottom: none;
 }
 
-.pai-page .pdoc-item:hover {
+.pdoc-root .pdoc-item:hover {
   background: var(--pj-surface-2);
 }
 
-.pai-page .pdoc-file-icon {
+.pdoc-root .pdoc-file-icon {
   width: 36px;
   height: 36px;
   border-radius: 9px;
@@ -172,14 +215,14 @@
   flex-shrink: 0;
 }
 
-.pai-page .pdoc-file-icon--red    { background: var(--pj-danger-bg);  color: var(--pj-danger); }
-.pai-page .pdoc-file-icon--blue   { background: var(--pj-primary-bg); color: var(--pj-primary); }
-.pai-page .pdoc-file-icon--green  { background: var(--pj-success-bg); color: var(--pj-success); }
-.pai-page .pdoc-file-icon--purple { background: var(--pj-purple-bg);  color: var(--pj-purple); }
-.pai-page .pdoc-file-icon--amber  { background: var(--pj-warning-bg); color: var(--pj-warning); }
-.pai-page .pdoc-file-icon--slate  { background: var(--pj-surface-2);  color: var(--pj-text-muted); }
+.pdoc-root .pdoc-file-icon--red    { background: var(--pj-danger-bg);  color: var(--pj-danger); }
+.pdoc-root .pdoc-file-icon--blue   { background: var(--pj-primary-bg); color: var(--pj-primary); }
+.pdoc-root .pdoc-file-icon--green  { background: var(--pj-success-bg); color: var(--pj-success); }
+.pdoc-root .pdoc-file-icon--purple { background: var(--pj-purple-bg);  color: var(--pj-purple); }
+.pdoc-root .pdoc-file-icon--amber  { background: var(--pj-warning-bg); color: var(--pj-warning); }
+.pdoc-root .pdoc-file-icon--slate  { background: var(--pj-surface-2);  color: var(--pj-text-muted); }
 
-.pai-page .pdoc-item-main {
+.pdoc-root .pdoc-item-main {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -187,7 +230,7 @@
   flex: 1;
 }
 
-.pai-page .pdoc-item-name {
+.pdoc-root .pdoc-item-name {
   align-self: flex-start;
   max-width: 100%;
   background: none;
@@ -204,18 +247,18 @@
   white-space: nowrap;
 }
 
-.pai-page .pdoc-item-name:hover:not(:disabled) {
+.pdoc-root .pdoc-item-name:hover:not(:disabled) {
   color: var(--pj-primary);
   text-decoration: underline;
 }
 
-.pai-page .pdoc-item-name:disabled {
+.pdoc-root .pdoc-item-name:disabled {
   cursor: wait;
   opacity: 0.6;
 }
 
-.pai-page .pdoc-item-filename,
-.pai-page .pdoc-item-meta {
+.pdoc-root .pdoc-item-filename,
+.pdoc-root .pdoc-item-meta {
   font-size: 11.5px;
   color: var(--pj-text-muted);
   overflow: hidden;
@@ -223,7 +266,7 @@
   white-space: nowrap;
 }
 
-.pai-page .pdoc-item-desc {
+.pdoc-root .pdoc-item-desc {
   font-size: 12px;
   color: var(--pj-text-secondary);
   display: -webkit-box;
@@ -232,14 +275,14 @@
   overflow: hidden;
 }
 
-.pai-page .pdoc-actions {
+.pdoc-root .pdoc-actions {
   display: flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
 }
 
-.pai-page .pdoc-icon-btn {
+.pdoc-root .pdoc-icon-btn {
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -253,22 +296,22 @@
   transition: background 0.15s ease;
 }
 
-.pai-page .pdoc-icon-btn:hover:not(:disabled) {
+.pdoc-root .pdoc-icon-btn:hover:not(:disabled) {
   background: var(--pj-primary-bg);
 }
 
-.pai-page .pdoc-icon-btn:disabled {
+.pdoc-root .pdoc-icon-btn:disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
-.pai-page .pdoc-icon-btn--bordered {
+.pdoc-root .pdoc-icon-btn--bordered {
   border: 1px solid var(--pj-border);
   color: var(--pj-text-secondary);
 }
 
 /* ── empty / loading / error ── */
-.pai-page .pdoc-state {
+.pdoc-root .pdoc-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -278,25 +321,25 @@
   color: var(--pj-text-faint);
 }
 
-.pai-page .pdoc-state-title {
+.pdoc-root .pdoc-state-title {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--pj-text-secondary);
 }
 
-.pai-page .pdoc-state-sub {
+.pdoc-root .pdoc-state-sub {
   margin: 0;
   font-size: 12px;
   color: var(--pj-text-muted);
   max-width: 340px;
 }
 
-.pai-page .pdoc-state--error .pdoc-state-title {
+.pdoc-root .pdoc-state--error .pdoc-state-title {
   color: var(--pj-danger);
 }
 
-.pai-page .pdoc-retry {
+.pdoc-root .pdoc-retry {
   margin-top: 4px;
   padding: 5px 14px;
   border-radius: 8px;
@@ -309,7 +352,7 @@
   cursor: pointer;
 }
 
-.pai-page .pdoc-spinner {
+.pdoc-root .pdoc-spinner {
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -318,7 +361,7 @@
   animation: pdoc-spin 0.7s linear infinite;
 }
 
-.pai-page .pdoc-spinner--sm {
+.pdoc-root .pdoc-spinner--sm {
   width: 13px;
   height: 13px;
   border-width: 2px;
@@ -330,7 +373,7 @@
 
 
 /* ── upload / delete ── */
-.pai-page .pdoc-upload-btn {
+.pdoc-root .pdoc-upload-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -347,31 +390,31 @@
   white-space: nowrap;
 }
 
-.pai-page .pdoc-upload-btn:hover:not(:disabled) {
+.pdoc-root .pdoc-upload-btn:hover:not(:disabled) {
   background: var(--pj-primary-hover);
   border-color: var(--pj-primary-hover);
 }
 
-.pai-page .pdoc-upload-btn:disabled {
+.pdoc-root .pdoc-upload-btn:disabled {
   cursor: wait;
   opacity: 0.75;
 }
 
-.pai-page .pdoc-upload-btn .pdoc-spinner {
+.pdoc-root .pdoc-upload-btn .pdoc-spinner {
   border-color: rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
 }
 
-.pai-page .pdoc-icon-btn--danger {
+.pdoc-root .pdoc-icon-btn--danger {
   color: var(--pj-danger);
 }
 
-.pai-page .pdoc-icon-btn--danger:hover:not(:disabled) {
+.pdoc-root .pdoc-icon-btn--danger:hover:not(:disabled) {
   background: var(--pj-danger-bg);
 }
 
 /* ── add / edit form ── */
-.pai-page .pdoc-form {
+.pdoc-root .pdoc-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -380,32 +423,32 @@
   border-bottom: 1px solid var(--pj-border);
 }
 
-.pai-page .pdoc-form-title {
+.pdoc-root .pdoc-form-title {
   font-size: 13px;
   font-weight: 700;
   color: var(--pj-text-primary);
 }
 
-.pai-page .pdoc-form-row {
+.pdoc-root .pdoc-form-row {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.pai-page .pdoc-form-label {
+.pdoc-root .pdoc-form-label {
   font-size: 11.5px;
   font-weight: 600;
   color: var(--pj-text-muted);
 }
 
-.pai-page .pdoc-file-picker {
+.pdoc-root .pdoc-file-picker {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
 }
 
-.pai-page .pdoc-choose-btn {
+.pdoc-root .pdoc-choose-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -422,12 +465,12 @@
   cursor: pointer;
 }
 
-.pai-page .pdoc-choose-btn:disabled {
+.pdoc-root .pdoc-choose-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.pai-page .pdoc-file-picker-name {
+.pdoc-root .pdoc-file-picker-name {
   font-size: 12.5px;
   color: var(--pj-text-secondary);
   overflow: hidden;
@@ -436,7 +479,7 @@
   min-width: 0;
 }
 
-.pai-page .pdoc-textarea {
+.pdoc-root .pdoc-textarea {
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
@@ -451,17 +494,17 @@
   outline: none;
 }
 
-.pai-page .pdoc-textarea:focus {
+.pdoc-root .pdoc-textarea:focus {
   border-color: var(--pj-primary);
 }
 
-.pai-page .pdoc-form-hint {
+.pdoc-root .pdoc-form-hint {
   align-self: flex-end;
   font-size: 11px;
   color: var(--pj-text-faint);
 }
 
-.pai-page .pdoc-form-footer {
+.pdoc-root .pdoc-form-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -469,17 +512,17 @@
   flex-wrap: wrap;
 }
 
-.pai-page .pdoc-form-createdby {
+.pdoc-root .pdoc-form-createdby {
   font-size: 12px;
   color: var(--pj-text-muted);
 }
 
-.pai-page .pdoc-form-buttons {
+.pdoc-root .pdoc-form-buttons {
   display: flex;
   gap: 8px;
 }
 
-.pai-page .pdoc-btn {
+.pdoc-root .pdoc-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -492,24 +535,24 @@
   cursor: pointer;
 }
 
-.pai-page .pdoc-btn:disabled {
+.pdoc-root .pdoc-btn:disabled {
   opacity: 0.7;
   cursor: wait;
 }
 
-.pai-page .pdoc-btn--ghost {
+.pdoc-root .pdoc-btn--ghost {
   border: 1px solid var(--pj-border);
   background: transparent;
   color: var(--pj-text-secondary);
 }
 
-.pai-page .pdoc-btn--primary {
+.pdoc-root .pdoc-btn--primary {
   border: 1px solid var(--pj-primary);
   background: var(--pj-primary);
   color: var(--pj-on-color);
 }
 
-.pai-page .pdoc-btn--primary .pdoc-spinner {
+.pdoc-root .pdoc-btn--primary .pdoc-spinner {
   border-color: rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
 }
@@ -551,7 +594,7 @@
   }
 
   /* Dialog becomes a full-screen sheet (also fullScreen prop in JSX). */
-  .pai-page .pdoc-paper {
+  .pdoc-root .pdoc-paper {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
@@ -560,80 +603,80 @@
     border-radius: 0 !important;
   }
 
-  .pai-page .pdoc-header {
+  .pdoc-root .pdoc-header {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
     padding: calc(14px + env(safe-area-inset-top, 0px)) 14px 12px;
   }
 
-  .pai-page .pdoc-header-tools {
+  .pdoc-root .pdoc-header-tools {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     width: 100%;
   }
 
-  .pai-page .pdoc-upload-btn {
+  .pdoc-root .pdoc-upload-btn {
     flex: 1 1 auto;
     justify-content: center;
     height: 38px;
   }
 
   /* Bigger touch targets (≈38px; 28px is too small for a thumb). */
-  .pai-page .pdoc-header-tools .pdoc-icon-btn--bordered,
-  .pai-page .pdoc-actions .pdoc-icon-btn {
+  .pdoc-root .pdoc-header-tools .pdoc-icon-btn--bordered,
+  .pdoc-root .pdoc-actions .pdoc-icon-btn {
     width: 38px;
     height: 38px;
   }
 
   /* Search drops to its own full-width row below the buttons. */
-  .pai-page .pdoc-search {
+  .pdoc-root .pdoc-search {
     order: 5;
     flex: 1 1 100%;
     height: 38px;
   }
 
   /* 16px stops iOS Safari from zooming the page when a field is focused. */
-  .pai-page .pdoc-search input,
-  .pai-page .pdoc-textarea {
+  .pdoc-root .pdoc-search input,
+  .pdoc-root .pdoc-textarea {
     font-size: 16px;
   }
 
-  .pai-page .pdoc-search input {
+  .pdoc-root .pdoc-search input {
     width: 100%;
   }
 
-  .pai-page .pdoc-body {
+  .pdoc-root .pdoc-body {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* List rows: icon + details on top, action buttons on their own row
      (4 buttons beside the name left it a sliver of width). */
-  .pai-page .pdoc-item {
+  .pdoc-root .pdoc-item {
     flex-wrap: wrap;
     align-items: flex-start;
     gap: 10px 12px;
     padding: 12px 14px;
   }
 
-  .pai-page .pdoc-item-main {
+  .pdoc-root .pdoc-item-main {
     flex: 1 1 0;
     min-width: 0;
   }
 
   /* Let long names/meta wrap instead of being cut off with an ellipsis. */
-  .pai-page .pdoc-item-name,
-  .pai-page .pdoc-item-meta {
+  .pdoc-root .pdoc-item-name,
+  .pdoc-root .pdoc-item-meta {
     white-space: normal;
     overflow-wrap: anywhere;
   }
 
-  .pai-page .pdoc-item-name {
+  .pdoc-root .pdoc-item-name {
     text-align: left;
   }
 
-  .pai-page .pdoc-actions {
+  .pdoc-root .pdoc-actions {
     flex: 1 1 100%;
     justify-content: flex-end;
     gap: 6px;
@@ -642,35 +685,35 @@
   }
 
   /* Add / edit form */
-  .pai-page .pdoc-form {
+  .pdoc-root .pdoc-form {
     padding: 14px;
   }
 
-  .pai-page .pdoc-file-picker {
+  .pdoc-root .pdoc-file-picker {
     flex-wrap: wrap;
   }
 
-  .pai-page .pdoc-choose-btn {
+  .pdoc-root .pdoc-choose-btn {
     height: 38px;
   }
 
-  .pai-page .pdoc-file-picker-name {
+  .pdoc-root .pdoc-file-picker-name {
     flex: 1 1 100%;
     white-space: normal;
     overflow-wrap: anywhere;
   }
 
-  .pai-page .pdoc-form-footer {
+  .pdoc-root .pdoc-form-footer {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
 
-  .pai-page .pdoc-form-buttons {
+  .pdoc-root .pdoc-form-buttons {
     width: 100%;
   }
 
-  .pai-page .pdoc-btn {
+  .pdoc-root .pdoc-btn {
     flex: 1;
     justify-content: center;
     height: 40px;

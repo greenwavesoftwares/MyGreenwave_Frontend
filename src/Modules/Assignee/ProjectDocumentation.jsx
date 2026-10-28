@@ -39,6 +39,14 @@ const MAX_DESCRIPTION_CHARS = 500;
 const sameUser = (a, b) =>
   !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
 
+function getPortalContainer() {
+  const themed =
+    document.querySelector(".pai-page") ||
+    document.querySelector(".dark, .light, [data-theme]");
+  // Never portal into <html>; body inherits from it anyway.
+  return themed && themed !== document.documentElement ? themed : document.body;
+}
+
 function formatDate(value) {
   return value && dayjs(value).isValid()
     ? dayjs(value).format("D MMM YYYY, HH:mm")
@@ -569,9 +577,12 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
         onClose={onClose}
         maxWidth={false}
         fullScreen={isMobile}
-        // Portal into .pai-page so the --pj-* variables (and their dark
-        // mode overrides) are in scope — same as PauseReasonDialog.
-        container={() => document.querySelector(".pai-page") || document.body}
+        className="pdoc-root"
+        // Portal next to the nearest themed ancestor so the app's theme
+        // variables (.light/.dark, data-theme) still apply. The dialog
+        // defines its own --pj-* tokens, so this works with or without
+        // a .pai-page wrapper.
+        container={getPortalContainer}
         PaperProps={{ className: "pdoc-paper" }}
       >
         <div className="pdoc-header">
