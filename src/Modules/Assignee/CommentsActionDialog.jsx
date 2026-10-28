@@ -1191,7 +1191,7 @@ export default function CommentsActionDialog({
               </div>
 
               {/* ── SEND MAIL ── */}
-              <SendMailSection
+              {/* <SendMailSection
                 enabled={sendMail}
                 onToggle={setSendMail}
                 to={mailTo}
@@ -1202,7 +1202,7 @@ export default function CommentsActionDialog({
                 onNoteChange={setMailNote}
                 attachmentName={newComment?.attachmentName}
                 onPreview={() => setShowMailPreview(true)}
-              />
+              /> */}
             </div>
 
             {/* FOOTER */}
