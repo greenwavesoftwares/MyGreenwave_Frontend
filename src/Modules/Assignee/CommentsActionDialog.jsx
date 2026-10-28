@@ -46,6 +46,9 @@ import {
   viewAttachmentFromMinio,
 } from "./AttachmentHelper";
 import StatusChip from "./StatusChip";
+import { buildCommentMail } from "./commentMailTemplate";
+import SendMailSection, { MailPreviewDialog } from "./SendMailSection";
+import { sendCommentMail } from "./CommentMailApi";
 
 export default function CommentsActionDialog({
   open,
@@ -61,6 +64,10 @@ export default function CommentsActionDialog({
   // Activities table uses for its resource avatars, so a person has the
   // same colour in both places. Falls back to a stable colour per user.
   fetchColor,
+  // Optional: shown in the mail header/subject.
+  projectName,
+  // Optional: e-mail addresses pre-filled in "To" (e.g. assigners / owners).
+  defaultRecipients = [],
 }) {
   // Opens maximized; the header icon toggles to the regular windowed size.
   const [isMaximized, setIsMaximized] = useState(false);
@@ -85,6 +92,34 @@ export default function CommentsActionDialog({
   // comment and reply attachments — passed into viewAttachment() from
   // AttachmentHelper.js at each call site below.
   const documentViewerRef = useRef(null);
+
+  // ── send-mail state ──
+  const [sendMail, setSendMail] = useState(false);
+  const [mailTo, setMailTo] = useState(defaultRecipients);
+  const [mailCc, setMailCc] = useState([]);
+  const [mailNote, setMailNote] = useState("");
+  const [showMailPreview, setShowMailPreview] = useState(false);
+
+  const buildMailForComment = (comment) => {
+    const user = getUserData()?.userDetails;
+    return buildCommentMail({
+      projectName,
+      activityName,
+      activityStatus,
+      comment,
+      senderName: user?.userName || user?.name,
+      senderEmail: user?.userId,
+      personalNote: mailNote,
+    });
+  };
+
+  const resetMailState = () => {
+    setSendMail(false);
+    setMailTo(defaultRecipients);
+    setMailCc([]);
+    setMailNote("");
+    setShowMailPreview(false);
+  };
 
   const handleReplyAttachment = (commentIndex, event) => {
     const file = event.target.files?.[0];
@@ -149,6 +184,7 @@ export default function CommentsActionDialog({
     if (!newComment.commentDescription?.trim()) missing.push("Description");
     if (!newComment.resolutionDate) missing.push("Resolution Date");
     if (!newComment.responsibility?.length) missing.push("Owner");
+    if (sendMail && !mailTo.length) missing.push("Mail recipient (To)");
     if (missing.length) {
       showToast("error", "Data Missing", `Please fill in: ${missing.join(", ")}`);
       return;
@@ -187,7 +223,33 @@ export default function CommentsActionDialog({
       setNewComment(
         addComment(payload.projectId, payload.activityId, payload.moduleId),
       );
-      showToast("success", "Success", "Comment added successfully");
+
+      // The entry is already saved at this point, so a mail failure must
+      // never undo it — it is reported separately.
+      if (sendMail) {
+        try {
+          const { subject, html, text } = buildMailForComment(newComment);
+          await sendCommentMail(payload.projectId, payload.commentId, {
+            to: mailTo,
+            cc: mailCc,
+            subject,
+            html,
+            text,
+            attachmentName: newComment.attachmentName || null,
+            attachmentBase64: newComment.attachmentBase64 || null,
+          });
+          showToast("success", "Success", "Comment added and mail sent");
+        } catch (mailErr) {
+          showToast(
+            "error",
+            "Mail not sent",
+            `Comment was saved, but the mail failed: ${mailErr?.message || "unknown error"}`,
+          );
+        }
+        resetMailState();
+      } else {
+        showToast("success", "Success", "Comment added successfully");
+      }
     } catch (e) {
       showToast(
         "error",
@@ -1127,6 +1189,20 @@ export default function CommentsActionDialog({
                   />
                 </div>
               </div>
+
+              {/* ── SEND MAIL ── */}
+              {/* <SendMailSection
+                enabled={sendMail}
+                onToggle={setSendMail}
+                to={mailTo}
+                onToChange={setMailTo}
+                cc={mailCc}
+                onCcChange={setMailCc}
+                note={mailNote}
+                onNoteChange={setMailNote}
+                attachmentName={newComment?.attachmentName}
+                onPreview={() => setShowMailPreview(true)}
+              /> */}
             </div>
 
             {/* FOOTER */}
@@ -1181,6 +1257,8 @@ export default function CommentsActionDialog({
                   startIcon={
                     addingComment ? (
                       <CircularProgress size={14} color="inherit" />
+                    ) : sendMail ? (
+                      <SendOutlinedIcon />
                     ) : (
                       <AddIcon />
                     )
@@ -1188,12 +1266,20 @@ export default function CommentsActionDialog({
                   disabled={addingComment}
                   onClick={addComments}
                 >
-                  Add Entry
+                  {sendMail ? "Add Entry & Send Mail" : "Add Entry"}
                 </Button>
               </div>
             </div>
           </div>
         )}
+
+        <MailPreviewDialog
+          open={showMailPreview}
+          onClose={() => setShowMailPreview(false)}
+          mail={showMailPreview ? buildMailForComment(newComment || {}) : null}
+          to={mailTo}
+          cc={mailCc}
+        />
 
         <ConfirmDialog
           open={openConfirm}

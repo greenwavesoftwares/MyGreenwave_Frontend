@@ -230,17 +230,18 @@ const LockIcon = (props) => <Lock size={14} strokeWidth={2} {...props} />;
    HELPERS
 ========================= */
 
+// Backend statuses that are shown under the "Open" tab.
+const OPEN_STATUSES = new Set(["open", "published", "finished"]);
+
 function normalizeStatus(status) {
   const s = (status || "").toLowerCase();
-  if(s==='finished')
-    return 'published'
-  return s;
+  return OPEN_STATUSES.has(s) ? "open" : s;
 }
 
 const TAB_DEFS = [
   { key: "all", label: "All Projects", icon: BriefcaseIcon },
 
-  { key: "published", label: "Published", icon: RocketIcon },
+  { key: "open", label: "Open", icon: RocketIcon },
   { key: "closed", label: "Closed", icon: LockIcon },
 ];
 
@@ -603,7 +604,6 @@ export default function ProjectsInfo({ projectSelection }) {
       const assigners=(responseAssigners ?? []).filter(
         (m) => m.id?.toLowerCase() !== currentUserId,
       );
-      console.log("Assigner after filteration::",assigners)
 
       // Nobody left to rate once you exclude yourself — surface it as
       // an error instead of opening an empty feedback dialog.
@@ -642,14 +642,6 @@ export default function ProjectsInfo({ projectSelection }) {
     setError(null);
     try {
       const projectDetails = await activityTrackerApi.getProjectsByAssignee();
-      if (projectDetails?.[0]) {
-        console.log("Project details::", projectDetails[0]);
-        projectDetails[0].assignerId = "avrajit.roy@greenwave.co.in";
-        projectDetails[0].assignerName = "Avrajit Roy";
-        projectDetails[0].coAssigners = [
-          { userId: "ashok.singh@greenwave.co.in", userName: "Ashok Singh" },
-        ];
-      }
       setProjects(projectDetails ?? []);
     } catch (err) {
       console.error("Failed to fetch projects:", err);
@@ -663,14 +655,15 @@ export default function ProjectsInfo({ projectSelection }) {
     fetchProjects();
   }, []);
 
+  // Keys must match TAB_DEFS (all / open / closed) — both the desktop tabs
+  // and MobileTabFilter read `counts[key]`.
   const counts = useMemo(() => {
-    const published = projects.filter(
-      (p) => normalizeStatus(p.projectStatus) === "published",
-    ).length;
-    const closed = projects.filter(
-      (p) => normalizeStatus(p.projectStatus) === "closed",
-    ).length;
-    return { all: projects.length, published, closed };
+    const result = { all: projects.length, open: 0, closed: 0 };
+    projects.forEach((p) => {
+      const status = normalizeStatus(p.projectStatus);
+      if (status === "open" || status === "closed") result[status] += 1;
+    });
+    return result;
   }, [projects]);
 
   const visibleProjects = useMemo(() => {
@@ -678,8 +671,6 @@ export default function ProjectsInfo({ projectSelection }) {
     if (activeTab !== "all") {
       list = list.filter((p) => normalizeStatus(p.projectStatus) === activeTab);
     }
-    console.log("active tab::", activeTab);
-    console.log("List:", list);
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((p) =>
@@ -766,9 +757,9 @@ export default function ProjectsInfo({ projectSelection }) {
               onClick={() => projectSelection && projectSelection(project)}
             >
               <span className="proj-card-top-row">
-                <StatusChip status={status} />
+                <StatusChip status={project.projectStatus} />
                 
-                {project.projectStatus==='closed'&&<button
+                {status === "closed" && <button
                   type="button"
                   className="icon-button icon-btn--feedback"
                   title="Rate managers"

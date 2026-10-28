@@ -26,16 +26,9 @@ import { viewAttachment } from "./AttachmentHelper";
 import { showToast } from "./toastService";
 import ConfirmDialog from "./ConfirmDialog";
 import { getUserData } from "../Login/Encrypt";
-import {
-  addProjectDocument,
-  deleteProjectDocument,
-  listProjectDocuments,
-  updateProjectDocument,
-} from "./projectDocumentsLocalStore";
 
-// Documents are held in the browser (IndexedDB) for now — see
-// projectDocumentsLocalStore.js. Keep files modest so the browser store
-// stays snappy.
+// Keep in sync with the backend multipart limit
+// (e.g. spring.servlet.multipart.max-file-size).
 const MAX_UPLOAD_MB = 20;
 const MAX_DESCRIPTION_CHARS = 500;
 
@@ -45,14 +38,6 @@ const MAX_DESCRIPTION_CHARS = 500;
 
 const sameUser = (a, b) =>
   !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
-
-function formatSize(bytes) {
-  const n = Number(bytes);
-  if (!Number.isFinite(n) || n <= 0) return "";
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function formatDate(value) {
   return value && dayjs(value).isValid()
@@ -75,6 +60,27 @@ function getFileVisual(fileName = "") {
   return { Icon: FileIcon, tone: "slate" };
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    // Result is a data URL ("data:<mime>;base64,<data>"); the API accepts it.
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("Read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function triggerBrowserDownload(blob, fileName) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
 /* =========================
    COMPONENT
 ========================= */
@@ -82,16 +88,12 @@ function getFileVisual(fileName = "") {
 /**
  * "Project Documentation" dialog opened from a project's detail page.
  *
- * Permissions:
+ * Permissions (the backend is the authority; the checks here only decide
+ * which buttons to show):
  *  - view / download / add / edit (description or replace file): every
  *    resource assigned to the project
  *  - delete: assigners and co-assigners can delete any document;
  *    everyone else can delete only the documents they created.
- *
- * NOTE: storage is local to this browser for now (IndexedDB), so these
- * rules are UI-level only and documents are NOT shared between users or
- * devices yet. A backend must enforce the same rules when it replaces
- * projectDocumentsLocalStore.js.
  */
 export default function ProjectDocumentation({ open, projectId, onClose }) {
   const [documents, setDocuments] = useState([]);
@@ -99,10 +101,10 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [viewingId, setViewingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   // Phones get a full-screen sheet instead of a centred 720px dialog.
   const isMobile = useMediaQuery("(max-width: 860px)");
   const documentViewerRef = useRef(null);
-  const hasFetchedRef = useRef(false);
 
   const currentUser = getUserData()?.userDetails;
   const currentUserId = currentUser?.userId;
@@ -120,12 +122,14 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  /* ── data loading ── */
   const fetchDocuments = useCallback(async () => {
     if (!projectId) return;
     setLoading(true);
     setError(null);
     try {
-      setDocuments(await listProjectDocuments(projectId));
+      const data = await activityTrackerApi.getDocumentsByProjectId(projectId);
+      setDocuments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load project documents:", err);
       setError("Unable to load project documentation. Please try again.");
@@ -153,20 +157,22 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     }
   }, [projectId, currentUserId]);
 
+  // Reset local state when switching projects.
   useEffect(() => {
-    hasFetchedRef.current = false;
     setDocuments([]);
     setIsAssigner(false);
     setFormMode(null);
+    setEditingDoc(null);
+    setQuery("");
   }, [projectId]);
 
-  // Lazy: nothing is read until the dialog is first opened.
+  // Load every time the dialog opens (nothing is requested while it is
+  // closed), so the list is always fresh when "Knowledge Base" is clicked.
   useEffect(() => {
-    if (!open || hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
+    if (!open || !projectId) return;
     fetchDocuments();
     fetchAssignerRole();
-  }, [open, fetchDocuments, fetchAssignerRole]);
+  }, [open, projectId, fetchDocuments, fetchAssignerRole]);
 
   const visibleDocuments = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -182,6 +188,13 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     isAssigner || sameUser(doc.createdById, currentUserId);
 
   /* ── form ── */
+  const resetForm = () => {
+    setFormMode(null);
+    setEditingDoc(null);
+    setFormFile(null);
+    setFormDescription("");
+  };
+
   const openAddForm = () => {
     setEditingDoc(null);
     setFormFile(null);
@@ -198,10 +211,7 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
 
   const closeForm = () => {
     if (saving) return;
-    setFormMode(null);
-    setEditingDoc(null);
-    setFormFile(null);
-    setFormDescription("");
+    resetForm();
   };
 
   const handleFilePicked = (e) => {
@@ -221,7 +231,6 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
 
   const handleSave = async () => {
     if (saving) return;
-    const user = { id: currentUserId, name: currentUserName };
 
     if (formMode === "add" && !formFile) {
       showToast("error", "File required", "Choose a file to upload.");
@@ -230,32 +239,32 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
 
     setSaving(true);
     try {
+      // The backend reads the creator/updater from the auth token.
+      // Files travel as Base64 inside JSON; omit file fields to change
+      // only the description.
+      const payload = { description: formDescription.trim() };
+      if (formFile) {
+        payload.fileBase64 = await fileToBase64(formFile);
+        payload.fileName = formFile.name;
+      }
+
       if (formMode === "add") {
-        await addProjectDocument(projectId, {
-          file: formFile,
-          description: formDescription,
-          user,
-        });
+        await activityTrackerApi.addDocument(projectId, payload);
         showToast("success", "Saved", "Document added.");
       } else if (formMode === "edit" && editingDoc) {
-        await updateProjectDocument(editingDoc.id, {
-          file: formFile,
-          description: formDescription,
-          user,
-        });
+        await activityTrackerApi.updateDocument(editingDoc.id, payload);
         showToast("success", "Updated", "Document updated.");
       }
-      setFormMode(null);
-      setEditingDoc(null);
-      setFormFile(null);
-      setFormDescription("");
+      resetForm();
       await fetchDocuments();
     } catch (err) {
       console.error("Failed to save document:", err);
       showToast(
         "error",
         "Error",
-        "Unable to save the document in this browser. Storage may be full.",
+        err?.response?.status === 413
+          ? `The file is too large. The limit is ${MAX_UPLOAD_MB} MB.`
+          : "Unable to save the document. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -267,26 +276,28 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     if (viewingId) return;
     setViewingId(doc.id);
     try {
-      // viewAttachment already toasts on failure.
-      await viewAttachment(doc.blob, documentViewerRef, doc.fileName);
+      const blob = await activityTrackerApi.downloadDocument(doc.id);
+      // viewAttachment already toasts on its own failures.
+      await viewAttachment(blob, documentViewerRef, doc.fileName);
+    } catch (err) {
+      console.error("Failed to open file", err);
+      showToast("error", "Error", "Unable to open file");
     } finally {
       setViewingId(null);
     }
   };
 
-  const handleDownload = (doc) => {
+  const handleDownload = async (doc) => {
+    if (downloadingId) return;
+    setDownloadingId(doc.id);
     try {
-      const url = window.URL.createObjectURL(doc.blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const blob = await activityTrackerApi.downloadDocument(doc.id);
+      triggerBrowserDownload(blob, doc.fileName);
     } catch (err) {
       console.error("Failed to download file", err);
       showToast("error", "Error", "Unable to download file");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -295,19 +306,36 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     if (!doc) return;
     // Re-check at the moment of action, not just when the button rendered.
     if (!canDelete(doc)) {
-      showToast("error", "Not allowed", "You can only delete documents you created.");
+      showToast(
+        "error",
+        "Not allowed",
+        "You can only delete documents you created.",
+      );
       setDeleteTarget(null);
       return;
     }
     setDeleting(true);
     try {
-      await deleteProjectDocument(doc.id);
+      await activityTrackerApi.deleteDocument(doc.id);
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
       showToast("success", "Deleted", `${doc.fileName} was deleted.`);
       setDeleteTarget(null);
     } catch (err) {
       console.error("Failed to delete document:", err);
-      showToast("error", "Error", "Unable to delete document. Please try again.");
+      if (err?.response?.status === 403) {
+        showToast(
+          "error",
+          "Not allowed",
+          "You can only delete documents you created.",
+        );
+        setDeleteTarget(null);
+      } else {
+        showToast(
+          "error",
+          "Error",
+          "Unable to delete document. Please try again.",
+        );
+      }
     } finally {
       setDeleting(false);
     }
@@ -339,7 +367,7 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
             title={formFile?.name || editingDoc?.fileName}
           >
             {formFile
-              ? `${formFile.name} (${formatSize(formFile.size)})`
+              ? formFile.name
               : formMode === "edit"
                 ? `Current: ${editingDoc?.fileName}`
                 : "No file chosen"}
@@ -441,10 +469,10 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
         {visibleDocuments.map((doc) => {
           const { Icon, tone } = getFileVisual(doc.fileName);
           const isViewing = viewingId === doc.id;
+          const isDownloading = downloadingId === doc.id;
           const meta = [
             doc.createdByName && `Created by ${doc.createdByName}`,
             formatDate(doc.createdAt),
-            formatSize(doc.size),
           ].filter(Boolean);
           const updatedMeta = doc.updatedAt
             ? `Updated${doc.updatedByName ? ` by ${doc.updatedByName}` : ""} · ${formatDate(doc.updatedAt)}`
@@ -498,8 +526,13 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
                   title="Download"
                   aria-label={`Download ${doc.fileName}`}
                   onClick={() => handleDownload(doc)}
+                  disabled={isDownloading}
                 >
-                  <Download size={15} />
+                  {isDownloading ? (
+                    <span className="pdoc-spinner pdoc-spinner--sm" />
+                  ) : (
+                    <Download size={15} />
+                  )}
                 </button>
                 <button
                   type="button"

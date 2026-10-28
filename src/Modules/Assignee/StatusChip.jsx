@@ -85,6 +85,14 @@ const STATUS_CONFIG = {
     border: "#86EFAC",
   },
 
+  open: {
+    label: "Open",
+    Icon: Rocket,
+    bg: "#D1FAE5",
+    color: "#065F46",
+    border: "#6EE7B7",
+  },
+
   published: {
     label: "Published",
     Icon: Rocket,

@@ -1060,7 +1060,7 @@ export default function ProjectActivityInfo({
               </div>
             </div>
 
-            {/* <div className="pai-info-field pdoc-open-wrap">
+            <div className="pai-info-field pdoc-open-wrap">
               <button
                 type="button"
                 className="pdoc-open-btn"
@@ -1070,7 +1070,7 @@ export default function ProjectActivityInfo({
                 <BookOpen size={14} />
                 Knowledge Base
               </button>
-            </div> */}
+            </div>
           </div>
         )}
 
@@ -1466,6 +1466,7 @@ export default function ProjectActivityInfo({
           activityName={commentActivityName}
           activityStatus={commentActivityStatus}
           fetchColor={fetchColor}
+          projectName={activityInfo?.projectName}
         />
       )}
       {openFeedback && (

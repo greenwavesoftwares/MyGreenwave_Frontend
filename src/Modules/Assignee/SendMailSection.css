@@ -1,0 +1,270 @@
+/* ==========================================================
+   SEND MAIL SECTION  (inside .comments-dialog → "Add new entry")
+   Uses the dialog's --neutral-* / --primary-* tokens.
+   ========================================================== */
+
+.comments-dialog .send-mail {
+  margin-top: 14px;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--r-md);
+  background: var(--neutral-0);
+  overflow: hidden;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.comments-dialog .send-mail.is-on {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary-100);
+}
+
+/* ── header row: icon · title/subtitle · switch ── */
+
+.comments-dialog .send-mail__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.comments-dialog .send-mail__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--primary);
+  background: var(--primary-50);
+}
+
+.comments-dialog .send-mail__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.comments-dialog .send-mail__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neutral-900);
+}
+
+.comments-dialog .send-mail__sub {
+  font-size: 12px;
+  color: var(--neutral-500);
+}
+
+/* ── body ── */
+
+.comments-dialog .send-mail__body {
+  padding: 14px;
+  border-top: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+}
+
+.comments-dialog .send-mail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+}
+
+.comments-dialog .send-mail__field { min-width: 0; }
+
+.comments-dialog .send-mail__field--full { grid-column: 1 / -1; }
+
+.comments-dialog .send-mail__field > label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--neutral-500);
+}
+
+/* ── chip input ── */
+
+.comments-dialog .send-mail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 5px 8px;
+  background: var(--neutral-0);
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--r-sm);
+  cursor: text;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.comments-dialog .send-mail__chips:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-100);
+}
+
+.comments-dialog .send-mail__chips.is-invalid { border-color: var(--danger); }
+
+.comments-dialog .send-mail__chips .MuiChip-root {
+  max-width: 100%;
+  height: 24px;
+  font-size: 12px;
+}
+
+.comments-dialog .send-mail__chips-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 2px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--neutral-900);
+}
+
+.comments-dialog .send-mail__chips-input::placeholder { color: var(--neutral-400); }
+
+.comments-dialog .send-mail__error {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* ── footer row ── */
+
+.comments-dialog .send-mail__foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.comments-dialog .send-mail__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--neutral-500);
+  overflow-wrap: anywhere;
+}
+
+/* ── mobile ── */
+
+@media (max-width: 768px) {
+  .comments-dialog .send-mail__grid { grid-template-columns: 1fr; }
+  .comments-dialog .send-mail__sub { display: none; }
+}
+
+/* ==========================================================
+   ENTRY SECTION — keep the whole form reachable on desktop.
+   Before: .entry-section was flex-shrink:0 inside an
+   overflow:hidden container, so anything that made it taller
+   (the mail fields) was clipped with no way to scroll.
+   Now it is a flex column: title (fixed) · form card (scrolls)
+   · Attach/Cancel/Add buttons (fixed). The comments list keeps a
+   minimum height so it never collapses to nothing.
+   ========================================================== */
+
+@media (min-width: 769px) {
+  .comments-dialog .comments-content .entries-container {
+    min-height: 150px;
+  }
+
+  .comments-dialog .comments-content .entry-section {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 56vh;
+    overflow: hidden;
+    padding-bottom: 16px;
+  }
+
+  .comments-dialog .entry-section > .entry-title { flex-shrink: 0; }
+
+  .comments-dialog .entry-section > .entry-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .comments-dialog .entry-section > .dialog-footer {
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+}
+
+/* Wide screens: To · Cc · Message on a single row to save height. */
+@media (min-width: 1280px) {
+  .comments-dialog .send-mail__grid {
+    grid-template-columns: 1fr 1fr 1.2fr;
+  }
+  .comments-dialog .send-mail__field--full { grid-column: auto; }
+}
+
+/* ==========================================================
+   MAIL PREVIEW DIALOG  (portal — outside .comments-dialog, so
+   it does not inherit that scope's tokens; fallbacks are inline)
+   ========================================================== */
+
+.mail-preview-paper {
+  border-radius: 14px !important;
+  overflow: hidden;
+  max-height: 90vh;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.mail-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--pj-border, #e4e8f0);
+}
+
+.mail-preview-head-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mail-preview-meta {
+  padding: 10px 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  border-bottom: 1px solid var(--pj-border, #e4e8f0);
+  background: var(--pj-surface-2, #f8f9fb);
+  color: var(--pj-text-secondary, #374151);
+}
+
+.mail-preview-meta > div {
+  display: flex;
+  gap: 10px;
+  overflow-wrap: anywhere;
+}
+
+.mail-preview-meta span {
+  flex: 0 0 58px;
+  font-weight: 600;
+  color: var(--pj-text-muted, #6b7589);
+}
+
+.mail-preview-paper .mail-preview-content {
+  padding: 0 !important;
+  background: #f3f4f6;
+}
+
+.mail-preview-frame {
+  display: block;
+  width: 100%;
+  height: 65vh;
+  min-height: 360px;
+  border: 0;
+  background: #f3f4f6;
+}
