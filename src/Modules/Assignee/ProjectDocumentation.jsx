@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "./ProjectDocumentation.css";
 import dayjs from "dayjs";
 import {
@@ -192,7 +198,7 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     );
   }, [documents, query]);
 
-  const canDelete = (doc) =>
+  const canUpdateDelete = (doc) =>
     isAssigner || sameUser(doc.createdById, currentUserId);
 
   /* ── form ── */
@@ -313,7 +319,7 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     const doc = deleteTarget;
     if (!doc) return;
     // Re-check at the moment of action, not just when the button rendered.
-    if (!canDelete(doc)) {
+    if (!canUpdateDelete(doc)) {
       showToast(
         "error",
         "Not allowed",
@@ -542,16 +548,18 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
                     <Download size={15} />
                   )}
                 </button>
-                <button
-                  type="button"
-                  className="pdoc-icon-btn"
-                  title="Edit"
-                  aria-label={`Edit ${doc.fileName}`}
-                  onClick={() => openEditForm(doc)}
-                >
-                  <Pencil size={15} />
-                </button>
-                {canDelete(doc) && (
+                {canUpdateDelete(doc) && (
+                  <button
+                    type="button"
+                    className="pdoc-icon-btn"
+                    title="Edit"
+                    aria-label={`Edit ${doc.fileName}`}
+                    onClick={() => openEditForm(doc)}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                )}
+                {canUpdateDelete(doc) && (
                   <button
                     type="button"
                     className="pdoc-icon-btn pdoc-icon-btn--danger"
@@ -647,7 +655,12 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
         </div>
       </Dialog>
 
-      <input ref={fileInputRef} type="file" hidden onChange={handleFilePicked} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        hidden
+        onChange={handleFilePicked}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
