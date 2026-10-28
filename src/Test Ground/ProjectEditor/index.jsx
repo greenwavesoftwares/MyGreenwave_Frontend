@@ -42,6 +42,7 @@ import {
   Copy,
   ClipboardPaste,
   Link2,
+  BookOpen,
 } from "lucide-react";
 import { CheckCircle2 as CheckIcon } from "lucide-react";
 
@@ -140,6 +141,7 @@ import { List, LayoutGrid } from "lucide-react";
 import MobileFiltersSheet from "./MobileFiltersSheet";
 import { getDisplayStatus } from "../helpers/statusDisplay";
 import AutoChainConfirmModal from "../modals/AutoChainConfirmModal";
+import ProjectDocumentation from "../../Modules/Assignee/ProjectDocumentation";
 /* ═══════════════════════════════════════════════════════
    ProjectEditor
    ═══════════════════════════════════════════════════════ */
@@ -219,6 +221,7 @@ export default function ProjectEditor({
   const [copiedResourceUserId, setCopiedResourceUserId] = useState(null);
   // ─── UI state ───
   const [view, setView] = useState("activities");
+  const [showDocs, setShowDocs] = useState(false);
   const [motionSubmitted, setMotionSubmitted] = useState(
     draft.status === "published" ||
       draft.status === "finished" ||
@@ -1983,36 +1986,58 @@ export default function ProjectEditor({
           )}
 
           {!isNewProject && draft.createdBy && (
-            <button
-              onClick={() => setCoAssignerModalOpen(true)}
-              style={{
-                ...btnStyle,
-                marginLeft: isMobile ? 0 : "auto",
-                height: isMobile ? 38 : 32,
-                background: t.successBgSubtle,
-                color: t.success,
-                borderColor: t.successBorder,
-                fontWeight: 600,
-              }}
-            >
-              <Handshake size={13} />
-              {isMobile ? "" : "Co-Assigners"}
-              {(draft.coAssigners || []).length > 0 && (
-                <span
-                  style={{
-                    padding: "1px 7px",
-                    background: t.success,
-                    color: t.textInverse,
-                    borderRadius: 999,
-                    fontSize: 10,
-                    fontWeight: 700,
-                  }}
-                >
-                  {(draft.coAssigners || []).length}
-                </span>
-              )}
-            </button>
+            <>
+              <button
+                onClick={() => setCoAssignerModalOpen(true)}
+                style={{
+                  ...btnStyle,
+                  marginLeft: isMobile ? 0 : "auto",
+                  height: isMobile ? 38 : 32,
+                  background: t.successBgSubtle,
+                  color: t.success,
+                  borderColor: t.successBorder,
+                  fontWeight: 600,
+                }}
+              >
+                <Handshake size={13} />
+                {isMobile ? "" : "Co-Assigners"}
+                {(draft.coAssigners || []).length > 0 && (
+                  <span
+                    style={{
+                      padding: "1px 7px",
+                      background: t.success,
+                      color: t.textInverse,
+                      borderRadius: 999,
+                      fontSize: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {(draft.coAssigners || []).length}
+                  </span>
+                )}
+              </button>
+            </>
           )}
+          <button
+            type="button"
+            onClick={() => setShowDocs(true)}
+            style={{
+              ...btnStyle,
+              marginLeft: isMobile
+                ? 0
+                : !isNewProject && draft.createdBy
+                  ? 0
+                  : "auto",
+              height: isMobile ? 38 : 32,
+              background: t.primaryBgSubtle,
+              color: t.primary,
+              borderColor: t.primaryBorder,
+              fontWeight: 600,
+            }}
+          >
+            <BookOpen size={13} />
+            {isMobile ? "" : "Knowledge Base"}
+          </button>
         </div>
 
         {/* ── Mobile-only: project title (since it was hidden in banner) ── */}
@@ -4293,6 +4318,13 @@ export default function ProjectEditor({
         onCancel={handleCancelAutoChain}
         theme={t}
       />
+      {showDocs && (
+        <ProjectDocumentation
+          open={showDocs}
+          projectId={draft.id}
+          onClose={() => setShowDocs(false)}
+        />
+      )}
       {/* Mobile filters bottom sheet */}
       {isMobile && (
         <MobileFiltersSheet

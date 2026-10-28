@@ -276,16 +276,17 @@ export function computeAutoChain(rows, resources = []) {
 
   // 1. Filter eligible rows:
   //    - Top-level only (skip sub-activities)
-  //    - Must have plannedStart
+  //    - Must have plannedStart AND plannedStop
   //    - Must have a resource (r.resource is a userId string)
   const eligible = rows.filter((r) => {
     if (r.parentId) return false;
     if (!r.plannedStart) return false;
+    if (!r.plannedStop) return false;
     if (!r.resource) return false;
     return true;
   });
 
-  // 2. Group by resource userId (r.resource IS the userId string)
+  // 2. Group by resource userId
   const byUser = {};
   eligible.forEach((r) => {
     const uid = r.resource;
@@ -314,10 +315,12 @@ export function computeAutoChain(rows, resources = []) {
       const prev = tasks[i - 1];
       const curr = tasks[i];
 
-      // Skip if same plannedStart (collision — parallel tasks)
-      const tPrev = parseISODateTime(prev.plannedStart);
-      const tCurr = parseISODateTime(curr.plannedStart);
-      if (tPrev && tCurr && tPrev.getTime() === tCurr.getTime()) continue;
+      // FS rule: curr must start AFTER prev finishes
+      // (both dates already guaranteed to exist by the filter above)
+      const prevStop = parseISODateTime(prev.plannedStop);
+      const currStart = parseISODateTime(curr.plannedStart);
+      if (!prevStop || !currStart) continue;
+      if (currStart.getTime() < prevStop.getTime()) continue; // overlap → skip
 
       // Skip if curr already depends on prev (preserve existing)
       const currDeps = Array.isArray(curr.dependsOn) ? curr.dependsOn : [];
