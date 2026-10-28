@@ -42,6 +42,10 @@ import { showToast } from "./toastService";
 import ActivityTimer from "./ActivityTimer";
 import { modifyStatus } from "./activityFilterUtils";
 
+// Starting or completing an activity this many minutes (or more) after its
+// planned time asks the user for a delay reason.
+const DELAY_THRESHOLD_MINUTES = 24 * 60; // 24 hours
+
 export default function TreeRows({
   node,
   level = 0,
@@ -160,8 +164,8 @@ export default function TreeRows({
             disabled={isStatusLoading}
             onClick={() => {
               if (blockIfParentPaused()) return;
-              const minutesLeft = dayjs().diff(dayjs(plannedStart), "minute");
-              console.log("Minutes left::", minutesLeft);
+              const delayMinutes = dayjs().diff(dayjs(plannedStart), "minute");
+              console.log("Minutes left::", delayMinutes);
               console.log("Activities Lookup map:", activityLookupMap);
 
               if (node?.dependsOn?.length > 0) {
@@ -180,9 +184,7 @@ export default function TreeRows({
                   return;
                 }
               }
-              if (minutesLeft >= 60) {
-                // 15 minutes or less remaining
-
+              if (delayMinutes >= DELAY_THRESHOLD_MINUTES) {
                 onPauseDelayRequest(id, node, "StartDelay");
               } else {
                 updateStatusOfActivity(id, "Running", node);
@@ -227,11 +229,9 @@ export default function TreeRows({
                   );
                   return;
                 }
-                const minutesLeft = dayjs().diff(dayjs(plannedStop), "minute");
-                console.log("Minutes left:::", minutesLeft);
-                if (minutesLeft >= 60) {
-                  // 15 minutes or less remaining
-
+                const delayMinutes = dayjs().diff(dayjs(plannedStop), "minute");
+                console.log("Minutes left:::", delayMinutes);
+                if (delayMinutes >= DELAY_THRESHOLD_MINUTES) {
                   onPauseDelayRequest(id, node, "StopDelay");
                 } else {
                   updateStatusOfActivity(id, "Completed", node);
