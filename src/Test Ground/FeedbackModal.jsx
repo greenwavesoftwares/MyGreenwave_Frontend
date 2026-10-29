@@ -1952,7 +1952,7 @@ export default function FeedbackModal({
         position: "fixed",
         inset: 0,
         background: t.bgOverlay,
-        zIndex: 1000,
+        zIndex: 2100,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
