@@ -1,15 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* DESIGN TOKENS */
+/* ==========================================================================
+   STACKING FIX (new)
+   --------------------------------------------------------------------------
+   Give the <Dialog> root this extra class in JSX:
+     <Dialog className="comments-dialog-root" PaperProps={{ className: "comments-dialog pj-scope" }} ... />
+   MUI's Dialog root defaults to z-index 1300. If the app's drawer / header /
+   sidebar sits above that, the whole dialog opens underneath it. Raise the
+   dialog above the app chrome, and raise popups that portal OUTSIDE the
+   dialog (Select menus, date pickers, Autocomplete lists) above the dialog
+   so they don't end up hidden behind it.
+   NOTE: the popup rule is global because those popups are portaled to <body>.
+   Adjust the numbers to sit above your own app's highest z-index.
+   ========================================================================== */
+
+.comments-dialog-root.MuiDialog-root {
+  z-index: 20000 !important;
+}
+
+.MuiPopover-root,
+.MuiPopper-root,
+.MuiAutocomplete-popper {
+  z-index: 20000 !important;
+}
+
+/* ==========================================================================
+   DESIGN TOKENS
+   Reuses the --pj-* palette (assignee-theme.css, applied via `pj-scope`)
+   so the dark theme matches PauseReasonDialog. Hex values are fallbacks for
+   when the dialog is rendered outside `.pai-page`.
+   ========================================================================== */
 
 .comments-dialog {
-  /* Reuses the exact same --pj-* palette PauseReasonDialog reads from
-     (REFACTOR: now defined in assignee-theme.css and applied via the
-     `pj-scope` class on this Paper, with its own dark-mode overrides). That means this dialog's dark theme
-     is guaranteed to match PauseReasonDialog's — they're pulling from
-     the same source of truth, not two palettes kept in sync by hand.
-     Original bespoke hex values are kept only as fallbacks, in case
-     this dialog is ever rendered outside `.pai-page`. */
   --primary:        var(--pj-primary, #3b5bdb);
   --primary-50:     var(--pj-primary-bg, #edf2ff);
   --primary-100:    var(--pj-primary-bg-2, #dbe4ff);
@@ -28,7 +50,6 @@
   --danger:       var(--pj-danger, #dc2626);
   --danger-50:    var(--pj-danger-bg-2, #fef2f2);
 
-  /* boxShadowPaper already carries its own alpha per theme */
   --shadow-dialog: 0 8px 24px var(--boxShadowPaper, rgba(17,24,39,.12));
 
   --r-sm:  6px;
@@ -38,7 +59,6 @@
 
   --ease: cubic-bezier(.4,0,.2,1);
 
-
   --on-primary: var(--pj-on-color, #ffffff);
   --row-hover: var(--hoverText, #f9faff);
   --tab-count-overlay: rgba(255,255,255,.25);
@@ -46,45 +66,29 @@
   --table-head-border: var(--pj-border, #dde3ee);
   --table-head-muted: var(--pj-text-faint, #9aa5bb);
 
-  /* Dedicated solid background for the sticky table header only.
-     Intentionally NOT derived from --pj-surface-2 / --pj-border-subtle: in the
-     real app those can resolve to semi-transparent values, which would let
-     body rows show through a sticky header while scrolling. This
-     token is hardcoded opaque so there's no dependency chain that
-     can reintroduce transparency. */
+  /* Opaque on purpose: --pj-surface-2 / --pj-border-subtle can resolve to
+     semi-transparent values, which would let rows show through the sticky
+     header while scrolling. */
   --table-head-solid-bg: #f4f6fb;
+
+  /* Heights used for sticky/scroll offsets below */
+  --table-head-height: 44px;
 }
 
-/*
-   DARK MODE — only for tokens with no --pj- equivalent.
-   Everything else above (primary, danger, all neutrals, and the
-   warning/purple-based av-3/av-4) resolves automatically the moment
-   an ancestor carries `.dark`/`[data-theme="dark"]`, because the
-   underlying --pj-* vars already flip on `.pai-page` in
-   ProjectActivityInfo.css — the same mechanism PauseReasonDialog
-   relies on. This block is now just the leftover bespoke colors
-   (av-2 teal, av-5 sky) that don't exist in the --pj- palette.
-   */
-
+/* Dark mode: only tokens with no --pj- equivalent */
 .dark .comments-dialog,
 [data-theme="dark"] .comments-dialog,
 .comments-dialog.dark,
 .comments-dialog[data-theme="dark"] {
-  /* --pj-surface-2 / --pj-border-subtle lean on --tableOddRow /
-     --tableOuterBorder, which (unlike --bg-drawer) aren't proven to
-     have real dark variants — hence explicit bespoke overrides here,
-     a shade lighter than --bg-drawer's dark value (#2a2e3f) so
-     secondary surfaces still read as a step up from the base card. */
   --neutral-50:  #333849;
   --neutral-100: #3a3f52;
-
-
   --tab-count-overlay: rgba(255,255,255,.12);
-
   --table-head-solid-bg: #333849;
 }
 
-/* RESET */
+/* ==========================================================================
+   RESET
+   ========================================================================== */
 
 .comments-dialog,
 .comments-dialog * {
@@ -92,29 +96,18 @@
   box-sizing: border-box;
 }
 
-/* DIALOG */
+/* ==========================================================================
+   DIALOG
+   !important on width/max-width is a safety net against MUI's
+   MuiDialog-paperWidthXX classes. Also pass maxWidth={false} in JSX.
+   ========================================================================== */
 
 .comments-dialog {
-  /* !important on width/max-width: MUI's Dialog applies a
-     MuiDialog-paperWidthXX class (default "sm" = 600px max-width)
-     to the Paper unless maxWidth={false} is passed on the <Dialog>
-     component. That class can otherwise win the cascade over this
-     rule, silently shrinking the dialog regardless of viewport size.
-     Pass maxWidth={false} in JSX (see CommentsActionDialog.jsx) and
-     keep these !important flags here as a safety net. */
-  /* Default = minimized (windowed) size. Maximized overrides below
-     via .is-maximized. !important on width/max-width is the safety net
-     against MUI's MuiDialog-paperWidthXX rules. */
   width: 74vw !important;
   max-width: 1380px !important;
   max-height: 88vh;
   border-radius: var(--r-xl) !important;
   overflow: hidden;
-  /* !important defeats MUI's own Paper background — same reason
-     .prd-paper needs it in PauseReasonDialog.css. Without it, MUI's
-     default (light) Paper background can win the cascade even though
-     --neutral-0 correctly resolves dark, leaving the card itself pale
-     while its own children (using the same var) render correctly. */
   background: var(--neutral-0) !important;
   background-clip: padding-box;
   box-shadow: var(--shadow-dialog);
@@ -126,8 +119,7 @@
   to   { opacity: 1; }
 }
 
-/* Maximized: fills the whole viewport (100dvh so mobile toolbars don't
-   cut off the footer). Paired with <Dialog fullScreen> in the JSX. */
+/* Maximized: pair with <Dialog fullScreen> */
 .comments-dialog.is-maximized {
   width: 100vw !important;
   max-width: 100vw !important;
@@ -144,29 +136,6 @@
   max-height: 100%;
 }
 
-/* Added By — initials avatar, identical styling to the Activities
-   table's .avatar-resource (copied here so it doesn't depend on the
-   .pai-page scope). */
-.comments-dialog .added-chip-cell .added-by-avatar {
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.2px;
-  color: var(--avatar-text);
-  background-color: var(--avatar-bg);
-  border: 1px solid var(--avatar-border);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-  user-select: none;
-  cursor: default;
-  transition: all 0.2s ease;
-}
-
 .comments-dialog .comments-content {
   padding: 0 !important;
   display: flex;
@@ -180,7 +149,9 @@
   outline-offset: 2px;
 }
 
-/* HEADER */
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
 
 .comments-dialog .comments-header {
   display: flex;
@@ -264,34 +235,30 @@
   color: var(--neutral-700);
 }
 
-/*
-   MOBILE VIEW SWITCHER (Existing / Add New)
-   Hidden entirely on desktop — both panels are always visible there.
-   */
-
+/* Mobile view switcher (Existing / Add New) — hidden on desktop */
 .comments-dialog .mobile-view-tabs {
   display: none;
 }
 
-/* SCROLLABLE LIST */
+/* ==========================================================================
+   SCROLLABLE LIST
+   No padding-top on purpose: position:sticky resolves `top` against this
+   container's padding edge, so top padding would leave a permanent gap above
+   the sticky header. Top spacing is added via margin-top on the table /
+   empty state instead, which scrolls away normally.
+   ========================================================================== */
 
 .comments-dialog .entries-container {
-  /* No top padding here on purpose — position:sticky resolves its
-     "top" offset against this container's padding edge, so any
-     padding-top would never fully scroll away: the sticky header
-     would permanently stop that many px below the real top, leaving
-     a gap the scrolled-past row underneath shows through. The
-     equivalent top spacing is added back below via margin-top on
-     .comments-table / .empty-state instead, which scrolls away
-     completely like normal content. */
   padding: 0 20px 16px;
   overflow-y: auto;
-  overflow-x: auto;                   /* allows sideways scroll on narrow screens */
-  -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   flex: 1 1 auto;
-  min-height: 0;   /* flex children default to min-height:auto (content size), which
-                       silently defeats overflow-y:auto in a flex column */
+  min-height: 0;
   background: var(--neutral-50);
+  /* Anything scrolled into view (e.g. an opened reply box) lands below the
+     sticky header instead of underneath it. */
+  scroll-padding-top: var(--table-head-height);
 }
 
 .comments-dialog .entries-container::-webkit-scrollbar {
@@ -306,22 +273,13 @@
 
 .comments-dialog .entries-container::-webkit-scrollbar-track { background: transparent; }
 
-/* NOTE: the table is intentionally NOT wrapped in its own overflow-x
-   container. Per the CSS Overflow spec, giving an element overflow-x
-   something other than visible while leaving overflow-y at its
-   default forces overflow-y's *computed* value to auto too — that
-   element silently becomes a scroll container on both axes. Since
-   position:sticky binds to the NEAREST scroll-container ancestor, a
-   wrapper placed between .entries-container and the table would hijack
-   the sticky header away from .entries-container (the element that's
-   actually scrolling vertically) and onto a wrapper that never scrolls
-   vertically itself — the header would just scroll away instead of
-   sticking. Keeping both axes on .entries-container directly is what
-   makes it correctly stick during vertical scroll while columns still
-   track horizontal scroll (headers move with the table naturally since
-   only `top`, not `left`, is stickied). */
+/* The table is intentionally NOT wrapped in its own overflow-x container:
+   that would turn the wrapper into the nearest scroll container and hijack
+   the sticky header away from .entries-container. */
 
-/* EMPTY STATE */
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
 
 .comments-dialog .empty-state {
   min-height: 180px;
@@ -334,8 +292,6 @@
   justify-content: center;
   gap: 4px;
   transition: border-color .2s, background .2s;
-  /* Replaces the top spacing .entries-container used to give via its
-     own padding-top (removed — see the comment on .entries-container). */
   margin-top: 16px;
 }
 
@@ -376,25 +332,11 @@
   line-height: 1.6 !important;
 }
 
-/*
+/* ==========================================================================
    TABLE
-   Laptop/desktop (>1024px): no min-width — table sizes naturally
-   within the 74vw / 1380px dialog, unchanged from before.
-   Below 1024px: min-width shrinks in steps so the table scrolls
-   sideways (via .entries-container overflow-x) instead of the
-   columns getting crushed.
-
-   NOTE: overflow:hidden intentionally removed from this rule.
-   .comments-table sits between the sticky header cells
-   (position: sticky) and their actual scrolling ancestor
-   (.entries-container, overflow-y: auto). position:sticky only
-   works if every element in that chain has overflow:visible — an
-   overflow:hidden here clips the header the moment it needs to
-   render outside .comments-table's own box, so the header would
-   appear to stick briefly then get cut off instead of staying
-   pinned. Rounded corners are recreated below on the corner cells
-   themselves instead, and border-collapse:separate keeps the sticky
-   cell's own border from collapsing into the row beneath it. */
+   overflow:hidden is intentionally absent: it would clip the sticky header
+   cells. Rounded corners are recreated on the corner cells instead.
+   ========================================================================== */
 
 .comments-dialog .comments-table {
   width: 100%;
@@ -403,27 +345,11 @@
   border: 1px solid var(--neutral-200);
   border-collapse: separate;
   border-spacing: 0;
-  /* Replaces the top spacing .entries-container used to give via its
-     own padding-top (removed — see the comment on .entries-container).
-     Unlike that padding, this margin is normal scrolling content, so
-     it scrolls fully out of view instead of leaving a permanent gap
-     above the sticky header. */
   margin-top: 16px;
 }
 
-/* Desktop only: columns size themselves from their content (table-
-   layout: auto), each within a min / max width so no single column
-   can hog the row or collapse to a sliver:
-     - a column with short data (e.g. Others = "—") stays narrow;
-     - a column with long data (Description, Action Point, Added By)
-       grows up to its max-width, then wraps onto more lines.
-   max-width on a <td>/<th> is what caps the column in auto layout.
-   overflow-wrap: anywhere (rather than break-word) lets a long
-   unbroken string shrink the column's min-content width, so it can't
-   force the column wider than its cap. Below 1024px the existing
-   horizontal-scroll / card layouts take over, unchanged.
-   :not([colspan]) keeps these limits off the full-width
-   replies row, (reply history / reply box), whose single cell is also :first-child. */
+/* Desktop: auto layout, each column clamped between a min and max width.
+   :not([colspan]) keeps these limits off the full-width replies row. */
 @media (min-width: 1025px) {
   .comments-dialog .comments-table {
     table-layout: auto;
@@ -445,11 +371,11 @@
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(3) {
     min-width: 120px; max-width: 320px;
   }
-  /* 4 — Resolution Date (fixed-format date: keep on one line) */
+  /* 4 — Resolution Date */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(4) {
     min-width: 100px; max-width: 130px;
   }
-  /* 5 — Owner (one chip per owner; wraps when there are several) */
+  /* 5 — Owner */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(5) {
     min-width: 70px; max-width: 150px;
   }
@@ -461,21 +387,21 @@
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(7) {
     min-width: 130px; max-width: 220px;
   }
-  /* 8 — Added By (email + timestamp) */
+  /* 8 — Added By */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(8) {
     min-width: 70px; max-width: 90px;
   }
-  /* 9 — Entry Time Status (chip) */
+  /* 9 — Entry Time Status */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(9) {
     min-width: 110px; max-width: 150px;
   }
-  /* 10 — Actions (Reply collapses to icon-only when tight) */
+  /* 10 — Actions */
   .comments-dialog .comments-table .MuiTableCell-root:not([colspan]):nth-child(10) {
     min-width: 90px; max-width: 140px;
   }
 }
 
-/* Recreate the clipped-corner look without overflow:hidden */
+/* Rounded corners without overflow:hidden */
 .comments-dialog .comments-table .MuiTableCell-head:first-child {
   border-top-left-radius: var(--r-lg);
 }
@@ -498,13 +424,8 @@
   }
 }
 
-/* Below 768px the table stops being a table at all — see the
-   "MOBILE — COMMENTS LIST AS CARDS" block further down, which turns
-   each row into a stacked card instead of forcing a wide, sideways-
-   scrolling grid. min-width is explicitly cleared here so it can't
-   fight the card layout (a leftover min-width would force the card
-   ancestor wider than the viewport and reintroduce horizontal
-   scrolling everywhere, not just on the table). */
+/* Below 768px the table becomes cards (see MOBILE CARDS block). min-width is
+   cleared so it can't force horizontal scrolling. */
 @media (max-width: 768px) {
   .comments-dialog .comments-table {
     min-width: 0;
@@ -512,30 +433,61 @@
   }
 }
 
+/* ---- Sticky header (single merged rule set) ---- */
+
 .comments-dialog .comments-table .MuiTableHead-root {
-  background: var(--neutral-50);
+  background: var(--table-head-solid-bg);
 }
 
 .comments-dialog .comments-table .MuiTableCell-head {
-  padding: 10px 14px;
-  font-size: 10.5px;
+  position: sticky;
+  top: 0;
+  z-index: 3;                       /* above body cells and reply rows */
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--neutral-400);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  border-bottom: 1px solid var(--neutral-200);
-  /* Columns are a fixed % width on desktop now (see table-layout:
-     fixed above), so a label that doesn't fit on one line at that
-     width wraps onto a second line instead of silently clipping
-     ("Resolution Dat…" with no visual indication it was cut). */
+  color: var(--table-head-text);
+  letter-spacing: 0;
+  text-transform: none;
   white-space: normal;
   line-height: 1.35;
-  /* Safety net at the narrow end of the fixed-layout range: a single
-     long word (e.g. "Resolution") that still can't fit the column's
-     width on its own wraps mid-word rather than overflowing into the
-     next column. */
+  padding: 11px 14px;
+  border-bottom: 1.5px solid var(--table-head-border);
   overflow-wrap: break-word;
+  /* Opaque so body rows never show through while scrolling */
+  background: var(--table-head-solid-bg) !important;
+  background-color: var(--table-head-solid-bg) !important;
+  user-select: none;
 }
+
+/* # column */
+.comments-dialog .comments-table .MuiTableCell-head:first-child {
+  width: 36px;
+  text-align: center;
+  color: var(--table-head-muted);
+  font-size: 11px;
+  padding-right: 8px;
+}
+
+/* Actions column */
+.comments-dialog .comments-table .MuiTableCell-head:last-child {
+  text-align: right;
+  padding-right: 16px;
+}
+
+.comments-dialog .comments-table .MuiTableCell-head .col-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comments-dialog .comments-table .MuiTableCell-head .col-label svg {
+  font-size: 13px;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+/* ---- Body cells ---- */
 
 .comments-dialog .comments-table .MuiTableCell-root {
   padding: 12px 14px;
@@ -549,14 +501,8 @@
   transition: background .12s var(--ease);
 }
 
-/* Subtle zebra striping — with 8+ columns and full-height wrapped
-   text, rows can otherwise blend together and make it harder to
-   track a single row across the table. Applied via an explicit
-   .row-alt class set from the comment's own index in the JSX
-   (rather than nth-of-type/nth-child) because the number of <tr>s
-   per comment varies — a reply-history row and/or an open reply box
-   can each add an extra <tr> — so counting table rows positionally
-   would desync the stripe from the actual comment boundaries. */
+/* Zebra striping via explicit .row-alt (set from the comment's index in JSX),
+   because reply rows add extra <tr>s and would desync nth-child striping. */
 .comments-dialog .comments-table .MuiTableBody-root .row-alt {
   background: var(--neutral-50);
 }
@@ -565,10 +511,6 @@
   background: var(--row-hover);
 }
 
-/* A placeholder dash for an empty field ("Others: —") shouldn't
-   carry the same visual weight as actual content — it's the absence
-   of a value, not a value. Muting it makes real content easier to
-   scan for at a glance. */
 .comments-dialog .cell-empty {
   color: var(--neutral-300);
 }
@@ -584,23 +526,16 @@
 }
 
 .comments-dialog .table-text-clamp {
-  /* Previously clamped to 2 lines with a trailing ellipsis on
-     desktop (mobile already overrode this to show full text). Now
-     desktop matches mobile: no clamp, no "...", the full Description
-     / Action Point text just wraps and the row grows to fit it. */
   white-space: normal;
   line-height: 1.5;
-  /* Prefer wrapping at a normal word boundary; only break inside a
-     word (a long unbroken string) when that word alone still doesn't
-     fit the line. word-break: normal is the important half of this
-     pair — without it, break-word/anywhere can chop a word that
-     would have fit fine on its own next line. */
   word-break: normal;
   overflow-wrap: break-word;
   cursor: default;
 }
 
-/* AVATAR */
+/* ==========================================================================
+   AVATARS
+   ========================================================================== */
 
 .comments-dialog .avatar-badge {
   display: inline-flex;
@@ -619,32 +554,38 @@
 
 .comments-dialog .avatar-badge-sm { width: 22px; height: 22px; font-size: 9px; }
 
+/* Added By initials avatar (matches the Activities table's .avatar-resource) */
+.comments-dialog .added-chip-cell .added-by-avatar {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  color: var(--avatar-text);
+  background-color: var(--avatar-bg);
+  border: 1px solid var(--avatar-border);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  user-select: none;
+  cursor: default;
+  transition: all 0.2s ease;
+}
 
-
-
-
-
-
-
-
-
-
-/* ADDED-BY CELL */
+/* ==========================================================================
+   ADDED-BY CELL
+   ========================================================================== */
 
 .comments-dialog .added-cell {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  /* flex items default to min-width:auto ("never shrink below my
-     content"), which is what let a long nowrap createdBy string win
-     over this cell's fixed column width and bleed into Actions next
-     to it. min-width:0 lets it actually respect the column. */
   min-width: 0;
 }
 
-/* ADDED BY chip — short name; full email + date shown in tooltip.
-   Uses its own wrapper (not .added-cell) so the .added-cell span/strong
-   text styles don't leak into the Chip's inner label. */
 .comments-dialog .added-chip-cell {
   display: flex;
   align-items: flex-start;
@@ -673,10 +614,6 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--neutral-700);
-  /* was nowrap — a long name/email (this is often a full email
-     address) would overflow the fixed-width cell and visually sit
-     on top of the Actions column instead of wrapping inside its own
-     cell. */
   overflow-wrap: break-word;
   word-break: normal;
 }
@@ -686,32 +623,22 @@
   color: var(--neutral-400);
 }
 
-/* ACTION BUTTONS */
+/* ==========================================================================
+   ACTION BUTTONS
+   container-type must live on the inner <div>, not the <td>
+   ========================================================================== */
 
 .comments-dialog .action-buttons {
-  /* container-type only works on boxes that establish a normal
-     containing block — table-cell display roles are excluded from
-     size containment by spec (the table layout algorithm needs their
-     real content size), so this has to live on the inner <div>
-     (.action-buttons), not on the <td> (.cell-actions) itself. */
   container-type: inline-size;
   container-name: actions;
   width: 100%;
   display: flex;
   align-items: center;
-  /* Desktop: keep Reply + delete on a single row. The column was
-     widened (see colgroup in the JSX) to give this room; wrap was
-     what folded the delete icon onto its own line underneath. Mobile
-     re-enables wrap further down, where the card gives it a full row
-     to itself anyway. */
   flex-wrap: nowrap;
   gap: 6px;
   min-width: 0;
 }
 
-/* Browsers without container query support: fall back to wrapping
-   rather than a Reply button that's forced onto the delete icon's
-   row with no room and no collapse to bail it out. */
 @supports not (container-type: inline-size) {
   .comments-dialog .action-buttons {
     flex-wrap: wrap;
@@ -722,11 +649,7 @@
   white-space: nowrap;
 }
 
-/* Once the Reply button doesn't have room for its label alongside
-   the count badge and the delete icon, drop to icon-only — the
-   Tooltip wrapping the button (see JSX) still surfaces "Reply" on
-   hover/focus so the action isn't lost, just the always-visible
-   label. */
+/* Reply collapses to icon-only when the column is tight */
 @container actions (max-width: 150px) {
   .comments-dialog .action-buttons .btn-reply-label {
     display: none;
@@ -750,16 +673,11 @@
 .comments-dialog .action-buttons .MuiButton-root {
   border-color: var(--neutral-200) !important;
   color: var(--neutral-500) !important;
-  /* Tightened from 4px 12px so "Reply" + the count badge fit the
-     narrower Actions column without forcing the row to wrap. */
   padding: 4px 9px !important;
   font-size: 12px !important;
   border-radius: var(--r-sm) !important;
   background: var(--neutral-0) !important;
   transition: all .15s var(--ease) !important;
-  /* MUI's default Button min-width (64px) was reserving more room
-     than the label actually needs, squeezing the delete icon out —
-     the label content itself sets a sensible floor already. */
   min-width: 0 !important;
   white-space: nowrap;
   flex-shrink: 0;
@@ -802,16 +720,26 @@
   margin-left: 5px;
 }
 
-/* REPLIES */
+/* ==========================================================================
+   REPLIES
+   position:relative + z-index:1 keeps reply rows in their own layer, below
+   the sticky header (z-index 3). scroll-margin-top makes an opened reply
+   box scroll into view BELOW the sticky header instead of behind it.
+   ========================================================================== */
+
+.comments-dialog .reply-history-cell,
+.comments-dialog .reply-box-cell {
+  position: relative;
+  z-index: 1;
+  scroll-margin-top: calc(var(--table-head-height) + 8px);
+}
 
 .comments-dialog .reply-history-cell {
   background: var(--neutral-50) !important;
   padding: 12px 14px 12px 46px !important;
   border-bottom: 1px solid var(--neutral-100) !important;
-  position: relative;
   animation: fadeIn .15s var(--ease);
 }
-
 
 .comments-dialog .reply-history-cell::before {
   content: "";
@@ -831,7 +759,6 @@
   border-radius: var(--r-md);
   padding: 10px 14px 12px;
   margin-bottom: 8px;
-  min-width: 0;
   transition: border-color .15s, box-shadow .15s;
 }
 
@@ -893,15 +820,14 @@
   font-weight: 400;
   color: var(--neutral-700);
   line-height: 1.55;
-  /* Show the whole reply: keep the author's line breaks and wrap long
-     lines at word boundaries (break inside a word only as a last resort). */
   white-space: pre-wrap;
-  word-break: normal;
+  word-break: break-word;
   overflow-wrap: anywhere;
+  max-width: 100%;
   user-select: text;
 }
 
-/* REPLY INPUT  — no wrapper border, textarea is the input */
+/* ---- Reply input ---- */
 
 .comments-dialog .reply-box-cell {
   background: var(--neutral-50) !important;
@@ -909,7 +835,6 @@
   border-bottom: 1px solid var(--neutral-100) !important;
 }
 
-/* No container border — just a clean row with avatar + textarea */
 .comments-dialog .reply-box {
   display: flex;
   gap: 10px;
@@ -923,7 +848,6 @@
 
 .comments-dialog .reply-box:focus-within { border-color: var(--primary); }
 
-/* The card is the border; the textarea inside stays borderless and wraps long text. */
 .comments-dialog .reply-box .MuiOutlinedInput-root { background: transparent; padding: 0; }
 .comments-dialog .reply-box .MuiOutlinedInput-notchedOutline { border: 0 !important; }
 .comments-dialog .reply-box textarea {
@@ -959,21 +883,25 @@
   flex-wrap: wrap;
 }
 
-/* ATTACHMENTS */
+/* Replies must never widen the table: width:0 + min-width:100% removes them
+   from the auto-layout width calculation while still filling the cell. */
+.comments-dialog .reply-item,
+.comments-dialog .reply-box {
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
+}
+
+/* ==========================================================================
+   ATTACHMENTS
+   ========================================================================== */
 
 .comments-dialog .attachment-pill,
 .comments-dialog .attachment-staged {
   display: inline-flex;
-  /* flex-start (not center) because a wrapped, multi-line filename
-     no longer has a single center line to align the icon/button to —
-     top-aligning keeps the icon level with the first line of text. */
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 5px;
-  /* Without a width cap the pill only ever grows to fit its content,
-     which is what pushed it past the edge of narrow columns/cards
-     for long filenames. Capping to 100% means it always fits
-     whichever box it's placed in. */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -992,25 +920,13 @@
 .comments-dialog .attachment-staged svg {
   font-size: 13px;
   flex-shrink: 0;
-  /* Nudge the icon down to sit level with the first line of a
-     wrapped, multi-line filename instead of the vertical center. */
   margin-top: 2px;
 }
 
 .comments-dialog .attachment-name {
-  /* Desktop used to ellipsis-truncate long filenames to one line.
-     Now it wraps instead — same as mobile — so the full name is
-     always visible, just across more than one line when needed. */
   white-space: normal;
   word-break: normal;
   overflow-wrap: break-word;
-  /* Flex items default to min-width: auto, which means "never
-     shrink narrower than my own content" — that's what let a long
-     filename push the pill wider than its container. min-width: 0
-     lets it actually shrink/wrap to the container's width. */
-  /* Never let the name collapse to a sliver (which made it wrap one
-     letter per line). If the column is too tight, the download
-     button wraps below instead (see flex-wrap on the pill). */
   flex: 1 1 70px;
   min-width: 70px;
 }
@@ -1031,8 +947,6 @@
   color: var(--primary);
   border-radius: 4px;
   flex-shrink: 0;
-  /* Match the icon nudge above so the button lines up with the
-     first line of a wrapped, multi-line filename. */
   margin-top: 2px;
 }
 
@@ -1053,13 +967,17 @@
 
 .comments-dialog .attachment-staged .MuiIconButton-root:hover { color: var(--danger); }
 
-/* ADD NEW ENTRY SECTION */
+/* ==========================================================================
+   ADD NEW ENTRY SECTION
+   ========================================================================== */
 
 .comments-dialog .entry-section {
   padding: 16px 20px 20px;
   border-top: 1px solid var(--neutral-200);
   background: var(--neutral-0);
   flex-shrink: 0;
+  position: relative;
+  z-index: 4;                       /* always above the scrolling list */
 }
 
 .comments-dialog .entry-title {
@@ -1109,7 +1027,9 @@
   gap: 4px;
 }
 
-/* FOOTER */
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
 
 .comments-dialog .dialog-footer {
   display: flex;
@@ -1122,7 +1042,9 @@
 
 .comments-dialog .footer-actions { display: flex; gap: 8px; }
 
-/* MUI OVERRIDES */
+/* ==========================================================================
+   MUI OVERRIDES
+   ========================================================================== */
 
 /* TextField */
 .comments-dialog .MuiOutlinedInput-root {
@@ -1238,39 +1160,49 @@
   font-size: 11px !important;
 }
 
-/* MOBILE */
+/* The dialog paper can be user-select:none; keep fields typeable
+   (Safari ignores typing in inputs under a user-select:none ancestor). */
+.comments-dialog input,
+.comments-dialog textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
 
-@media (max-width: 768px)  {.comments-dialog .btn-toggle-size { display: none; }
+/* ==========================================================================
+   MOBILE LAYOUT (<= 768px)
+   ========================================================================== */
 
-.comments-dialog {
+@media (max-width: 768px) {
+  .comments-dialog .btn-toggle-size { display: none; }
+
+  .comments-dialog {
     width: 100vw !important;
     max-width: 100vw !important;
     max-height: 100vh;
     border-radius: 0 !important;
   }
 
-.comments-dialog .entries-container,
-.comments-dialog .entry-section { padding: 12px 14px; }
+  .comments-dialog .entries-container,
+  .comments-dialog .entry-section { padding: 12px 14px; }
 
-.comments-dialog .entry-grid { grid-template-columns: 1fr; }
+  .comments-dialog .entry-grid { grid-template-columns: 1fr; }
 
-.comments-dialog .reply-history-cell,
-.comments-dialog .reply-box-cell { padding-left: 14px !important; }
+  .comments-dialog .reply-history-cell,
+  .comments-dialog .reply-box-cell { padding-left: 14px !important; }
 
-.comments-dialog .reply-history-cell::before,
-.comments-dialog .reply-item::before { display: none; }
+  .comments-dialog .reply-history-cell::before,
+  .comments-dialog .reply-item::before { display: none; }
 
-.comments-dialog .dialog-footer {
+  .comments-dialog .dialog-footer {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
 
-.comments-dialog .footer-actions { width: 100%; }
+  .comments-dialog .footer-actions { width: 100%; }
+  .comments-dialog .footer-actions button { flex: 1; }
 
-.comments-dialog .footer-actions button { flex: 1; }
-
-/* ── Existing / Add New tab switcher ── */
+  /* Existing / Add New tab switcher */
   .comments-dialog .mobile-view-tabs {
     display: flex;
     gap: 8px;
@@ -1280,7 +1212,7 @@
     flex-shrink: 0;
   }
 
-.comments-dialog .mobile-view-tab {
+  .comments-dialog .mobile-view-tab {
     flex: 1;
     display: inline-flex;
     align-items: center;
@@ -1298,18 +1230,18 @@
     transition: all .15s var(--ease);
   }
 
-.comments-dialog .mobile-view-tab:hover {
+  .comments-dialog .mobile-view-tab:hover {
     border-color: var(--neutral-300);
     color: var(--neutral-700);
   }
 
-.comments-dialog .mobile-view-tab.active {
+  .comments-dialog .mobile-view-tab.active {
     background: var(--primary);
     border-color: var(--primary);
     color: var(--on-primary);
   }
 
-.comments-dialog .mobile-view-tab-count {
+  .comments-dialog .mobile-view-tab-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1322,34 +1254,24 @@
     font-weight: 700;
   }
 
-.comments-dialog .mobile-view-tab:not(.active) .mobile-view-tab-count {
+  .comments-dialog .mobile-view-tab:not(.active) .mobile-view-tab-count {
     background: var(--primary-50);
     color: var(--primary);
   }
 
-/* Only one panel visible at a time on mobile */
+  /* Only one panel visible at a time */
   .comments-dialog .entries-container.mobile-hidden,
-.comments-dialog .entry-section.mobile-hidden {
+  .comments-dialog .entry-section.mobile-hidden {
     display: none !important;
   }
 
-.comments-dialog .entries-container.mobile-visible,
-.comments-dialog .entry-section.mobile-visible {
+  .comments-dialog .entries-container.mobile-visible,
+  .comments-dialog .entry-section.mobile-visible {
     display: block;
   }
 
-/* Whichever panel is visible needs to be the flexible, scrolling
-   child of .comments-content (which is overflow:hidden by design).
-   .entries-container already has flex:1 1 auto + overflow-y:auto
-   from the base rules above, so it's covered on both mobile and
-   desktop. .entry-section, though, is written as a compact
-   flex-shrink:0 block that sits *below* the scrollable list on
-   desktop — on desktop that's correct since it never needs to
-   scroll on its own. On mobile it becomes the ONLY visible panel and
-   has to take over the scrolling role instead, or its content (the
-   full add-entry form + footer) just gets clipped by
-   .comments-content's overflow:hidden with no way to reach the rest
-   of it. */
+  /* The visible Add-New panel takes over the scrolling role, otherwise the
+     form is clipped by .comments-content's overflow:hidden. */
   .comments-dialog .entry-section.mobile-visible {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -1358,21 +1280,9 @@
   }
 }
 
-/*
-   MOBILE — EXISTING COMMENTS AS CARDS
-   Below 768px, a 9-column table is unreadable no matter how far it
-   scrolls sideways, so instead of a horizontal-scroll grid it's
-   turned into a stack of labelled cards — the standard "responsive
-   table" technique. Every table element drops to display:block, the
-   header row (now redundant) is hidden, and each cell grows its own
-   label from the data-label attribute set in the JSX via ::before —
-   as a full-width line ABOVE the value (not beside it), so the
-   value gets the card's whole width to wrap into rather than
-   sharing the row with a fixed label column.
-   Rows with colSpan (reply history / reply input) carry no
-   data-label and are exempted below, so they keep rendering as
-   plain full-width sections instead of picking up a phantom label.
-   */
+/* ==========================================================================
+   MOBILE CARDS (<= 768px) — each table row becomes a labelled card
+   ========================================================================== */
 
 @media (max-width: 768px) {
   .comments-dialog .comments-table,
@@ -1403,16 +1313,8 @@
     margin-bottom: 0;
   }
 
-  /* Default: every cell is a labelled field, full width, label
-     stacked above the value, one per line — display:block (not
-     flex) for the cell's OWN content is deliberate — a flex *item*
-     refuses to shrink below its content's intrinsic width by
-     default (min-width:auto), so a long unbroken string was
-     overflowing straight past the card edge instead of wrapping.
-     Block layout has no such floor: text wraps to the cell's actual
-     width. The row itself (above) is flex so that two short fields
-     — Resolution Date and Attachment, singled out below — can be
-     paired onto one line instead of each claiming a full row. */
+  /* Every cell is a full-width labelled field. display:block (not flex) so
+     long strings wrap instead of overflowing the card. */
   .comments-dialog .comments-table .MuiTableCell-root {
     position: relative;
     display: block;
@@ -1420,22 +1322,10 @@
     min-width: 0;
     padding: 8px 14px !important;
     border-bottom: 1px solid var(--neutral-100) !important;
-    /* Prefer wrapping at a normal word boundary; only break inside a
-       word (e.g. a long unbroken string) when that word alone still
-       doesn't fit on its own line. word-break:normal is the load-
-       bearing half of this pair — swapping it for break-all/anywhere
-       breaks words that would have fit fine on the next line. */
     word-break: normal;
     overflow-wrap: break-word;
   }
 
-  /* Resolution Date is short and single-line, so it keeps half the
-     row to itself. Attachment used to share that other half, but a
-     long filename can't shrink to fit 50% of the card width — it
-     just pushes the pill past the card's edge. Attachment now gets
-     the full row to itself (its own line, below the date) so long
-     names have room to truncate cleanly with an ellipsis instead of
-     overflowing. */
   .comments-dialog .comments-table .MuiTableCell-root[data-label="Resolution Date"] {
     flex: 1 1 calc(50% - 6px);
   }
@@ -1444,10 +1334,7 @@
     flex: 1 1 100%;
   }
 
-  /* Explicit visual order (independent of DOM order) so fields
-     render in a sensible sequence rather than wherever they happen
-     to fall in the underlying table's column order. Attachment sits
-     on its own line right after Resolution Date. */
+  /* Visual order independent of DOM order */
   .comments-dialog .comments-table .MuiTableCell-root[data-label="Description"]     { order: 1; }
   .comments-dialog .comments-table .MuiTableCell-root[data-label="Action Point"]    { order: 2; }
   .comments-dialog .comments-table .MuiTableCell-root[data-label="Resolution Date"] { order: 3; }
@@ -1461,8 +1348,7 @@
     border-bottom: none !important;
   }
 
-  /* Label sits on its own line above the value instead of in a fixed
-     left column, so the value always gets the card's full width. */
+  /* Label above the value */
   .comments-dialog .comments-table .MuiTableCell-root[data-label]::before {
     content: attr(data-label);
     display: block;
@@ -1474,13 +1360,6 @@
     letter-spacing: .05em;
   }
 
-  /* Anything actually rendered inside a cell — description text,
-     dates, the added-by name/email — wraps at the cell's real width
-     too, overriding elements that set their own white-space: nowrap
-     for the (non-mobile) table layout. Deliberately excludes
-     .attachment-name, which stays a single-line, ellipsis-truncated
-     pill by design — wrapping a filename inside a pill just looks
-     broken rather than more readable. */
   .comments-dialog .comments-table .table-text-clamp,
   .comments-dialog .comments-table .added-cell strong,
   .comments-dialog .comments-table .added-cell span {
@@ -1494,7 +1373,7 @@
     overflow: visible;
   }
 
-  /* "#" — a small corner badge instead of a full labelled row */
+  /* "#" — corner badge */
   .comments-dialog .comments-table .cell-index {
     position: absolute;
     top: 10px;
@@ -1518,12 +1397,7 @@
     content: none;
   }
 
-  /* The first labelled cell (Description) sits right below the "#"
-     badge's row — its own label line already clears the badge, so
-     no extra padding is needed to dodge it. */
-
-  /* Actions read better as a right-aligned toolbar than a labelled
-     field, so it opts out of the label treatment */
+  /* Actions: right-aligned toolbar, no label */
   .comments-dialog .comments-table .cell-actions {
     display: flex;
     align-items: center;
@@ -1534,12 +1408,13 @@
     content: none;
   }
 
-  /* Reply history / reply input cells already carry their own visual
-     hierarchy — no label, full-width */
+  /* Reply history / input: full-width, no label, no sticky offset needed
+     because the header is hidden on mobile */
   .comments-dialog .comments-table .reply-history-cell,
   .comments-dialog .comments-table .reply-box-cell {
     display: block !important;
     padding: 12px 14px !important;
+    scroll-margin-top: 8px;
   }
 
   .comments-dialog .comments-table .reply-history-cell::before,
@@ -1547,13 +1422,6 @@
     content: none;
   }
 
-  /* Reply author row (avatar + name + date + delete) was a single
-     no-wrap flex line — on a narrow card the name (often a full
-     email) left almost no room for the date, which got squeezed
-     into a sliver of space and hard-broken mid-digit ("10:4" / "5"
-     on separate lines). flex-wrap plus min-width:0 on the text items
-     lets the date (and, if needed, the name) drop to their own line
-     instead of being crushed into near-zero width. */
   .comments-dialog .reply-header {
     flex-wrap: wrap;
     row-gap: 3px;
@@ -1566,12 +1434,7 @@
     word-break: normal;
   }
 
-  /* ── Touch targets & readability ──
-     15px is under Safari's 16px auto-zoom threshold, so focusing any
-     text field on iOS was zooming the whole dialog in; bumping to
-     16px here (mobile only, to avoid changing desktop's tighter
-     density) stops that. Icon buttons and chips are widened past
-     MUI's 28px default toward the ~40px a thumb can reliably hit. */
+  /* Touch targets and readability: 16px stops iOS auto-zoom on focus */
   .comments-dialog .MuiInputBase-input,
   .comments-dialog .MuiOutlinedInput-root {
     font-size: 16px !important;
@@ -1599,126 +1462,20 @@
     justify-content: flex-end;
   }
 
-  /* Attachment pills were capped at a fixed 200px, which can overflow
-     a narrow phone screen once the label's left padding is added;
-     let them shrink with the viewport instead. */
   .comments-dialog .attachment-pill,
   .comments-dialog .attachment-staged {
     max-width: min(200px, 55vw);
   }
 }
 
-@media (prefers-reduced-motion: reduce)  {.comments-dialog,
-.comments-dialog * {
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .comments-dialog,
+  .comments-dialog * {
     animation: none !important;
     transition: none !important;
   }
-}
-
-/*
-   COMMENTS TABLE — HEADER STYLES
-   Imported separately; relies on Inter font + CSS vars
-   from CommentsActionDialog.css
-
-   Sticky header: anchors to the top of .entries-container, which is
-   the actual scrolling ancestor (overflow-y: auto, bounded by
-   .comments-content's max-height: 88vh). Background is solid and set
-   directly on the cell (not just the row) via --table-head-solid-bg
-   — a dedicated opaque token, NOT --pj-* vars, since
-   those lean on tokens that can resolve semi-transparent in the real
-   app and would let body rows show through while scrolling.
-
-   The overflow:hidden that used to live on .comments-table (up in
-   the TABLE section above) has been removed for exactly this reason
-   — it clipped the sticky cells the moment they needed to render
-   outside that box, so the header would stop tracking the scroll
-   instead of staying pinned. Rounded corners are handled on the
-   corner cells instead, up in the TABLE section.
-   */
-
-/* Head row background — kept for non-sticky context / fallback */
-.comments-dialog .comments-table .MuiTableHead-root {
-  background: var(--table-head-solid-bg);
-}
-
-/* Individual header cells */
-.comments-dialog .comments-table .MuiTableCell-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--table-head-text);
-  letter-spacing: 0;
-  text-transform: none;
-  white-space: normal;
-  line-height: 1.35;
-  padding: 11px 14px;
-  border-bottom: 1.5px solid var(--table-head-border);
-  /* !important + background-color: forces this opaque token to win
-     over any MUI default (e.g. background-color: inherit/transparent
-     baked into MuiTableCell-head) that could otherwise let body rows
-     show through the sticky header while scrolling. */
-  background: var(--table-head-solid-bg) !important;
-  background-color: var(--table-head-solid-bg) !important;
-  user-select: none;
-  /* position: sticky above already establishes a positioning context,
-     so the ::after divider below (position: absolute) anchors to
-     this cell without needing position: relative separately. */
-}
-
-/* # column — smaller, centered, muted */
-.comments-dialog .comments-table .MuiTableCell-head:first-child {
-  width: 36px;
-  text-align: center;
-  color: var(--table-head-muted);
-  font-size: 11px;
-  padding-right: 8px;
-}
-
-/* Actions column — right-aligned */
-.comments-dialog .comments-table .MuiTableCell-head:last-child {
-  text-align: right;
-  padding-right: 16px;
-}
-
-/* Tiny sort indicator placeholder (non-functional, visual only) */
-.comments-dialog .comments-table .MuiTableCell-head .col-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.comments-dialog .comments-table .MuiTableCell-head .col-label svg {
-  font-size: 13px;
-  opacity: 0.45;
-  flex-shrink: 0;
-}
-
-/* The dialog paper is user-select:none; make sure typing and selecting work in fields
-   (Safari ignores typing in inputs under a user-select:none ancestor). */
-.comments-dialog input,
-.comments-dialog textarea {
-  -webkit-user-select: text;
-  user-select: text;
-}
-
-/* ── Replies must never widen the table ──
-   Replies live in a full-width (colspan) table cell. In an auto-layout table, a cell's content
-   feeds into the table's width, so one long unbroken reply stretched the whole table (and
-   the sideways scrollbar) instead of wrapping. width:0 + min-width:100% takes the reply out of
-   that width calculation (it contributes 0) while still filling the cell once the table is laid
-   out, so the text wraps inside the cell. */
-.comments-dialog .reply-item,
-.comments-dialog .reply-box {
-  box-sizing: border-box;
-  width: 0;
-  min-width: 100%;
-}
-
-.comments-dialog .reply-text {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }

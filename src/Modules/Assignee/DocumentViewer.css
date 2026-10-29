@@ -31,6 +31,7 @@
      in light mode too. --bg-drawer is a fully OPAQUE solid surface in
      both themes (#ffffff / #2a2e3f) — same fix already used for this
      exact issue in PauseReasonDialog.css and CommentsActionDialog.css. */
+     z-index: 2200 !important;
   --dv-surface:        var(--bg-drawer, #ffffff);
   --dv-surface-2:      var(--card-bg, #f9fafb);
   --dv-row-alt:        var(--tableOddRow, #f7f7f7);

@@ -210,8 +210,8 @@ const DocumentViewer = forwardRef(function DocumentViewer(
     visible={dialogVisible}
     onHide={() => setDialogVisible(false)}
     appendTo={getPortalContainer} // REFACTOR: was `.pai-page || body`
-    baseZIndex={1400}
-    style={{ width: "80vw", height: "85vh" }}
+    baseZIndex={22000}
+    style={{ width: "80vw", height: "85vh", zIndex:2200 }}
     contentStyle={{ height: "100%", padding: 0 }}
     maximizable
     modal

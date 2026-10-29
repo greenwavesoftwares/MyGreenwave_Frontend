@@ -510,6 +510,7 @@ export default function CommentsActionDialog({
 
   return (
     <Dialog
+    sx={{ zIndex: 2000 }}
       open={open}
       onClose={onClose}
       // maxWidth={false} stops MUI from adding its default
