@@ -2,48 +2,19 @@
    CpmDialog — scoped to `.cpm-*` classNames only.
 
    Same approach as PauseReasonDialog / CommentsActionDialog:
-   every color is read from the --pj-* variables defined (and
-   dark-mode overridden) on `.pai-page` in ProjectActivityInfo.css,
-   so this dialog follows the app's light/dark switch automatically.
-
-   The --pj-* tokens this dialog needs are defined on `.cpm-paper`
-   itself (see "Theme tokens" below), so it no longer depends on
-   being mounted inside `.pai-page`.
+   every color is read from the --pj-* variables in assignee-theme.css
+   (applied through the `pj-scope` class on `.cpm-paper`), so this
+   dialog follows the app's light/dark switch automatically and does
+   not depend on being mounted inside `.pai-page`.
 
    Only tokens with no --pj-* equivalent get their own dark block
    at the bottom of the token section.
    ========================================================== */
 
 /* ── Theme tokens ──
-   These used to come from `.pai-page` (ProjectActivityInfo.css). That element only exists on the
-   Assignee page, so when this dialog was opened from another page (e.g. the project dashboard)
-   the --pj-* variables were undefined and every colour fell back to its LIGHT hex value while the
-   paper itself (--bg-drawer, a global app variable) was dark.
-   They are now defined on `.cpm-paper` itself from the same global app variables, so the dialog
-   looks the same wherever it is mounted. Where `.pai-page` does provide them, these values match. */
-.cpm-paper {
-  --pj-page-bg: var(--bg-main, #F1F5F9);
-  --pj-border: var(--divider-color, #E2E8F0);
-  --pj-border-strong: var(--calBorder, #CBD5E1);
-  --pj-text-primary: var(--menu-text, #0F172A);
-  --pj-text-muted: var(--tittleFontColor, #64748B);
-  --pj-primary: var(--avatar-bg, #1D4ED8);
-  --pj-danger: var(--redFontColor, #DC2626);
-  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
-  --pj-success: #15803D;
-  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
-  --pj-warning: #B45309;
-  --pj-warning-bg: #FEF3C7;
-}
-.dark .cpm-paper,
-[data-theme='dark'] .cpm-paper,
-.cpm-paper.dark,
-.cpm-paper[data-theme='dark'] {
-  --pj-danger: #f87171;
-  --pj-success: #4ade80;
-  --pj-warning: #fbbf24;
-  --pj-warning-bg: #3a2a06;
-}
+   REFACTOR: the --pj-* tokens (and their dark overrides) are no longer
+   duplicated here. `.cpm-paper` also carries the `pj-scope` class
+   (see CpmDialog.jsx), which gets them from assignee-theme.css. */
 
 .cpm-paper {
   /* surfaces */

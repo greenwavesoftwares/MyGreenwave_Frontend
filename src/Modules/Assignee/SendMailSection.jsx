@@ -13,7 +13,9 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import CloseIcon from "@mui/icons-material/Close";
 
+import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens
 import "./SendMailSection.css";
+import { getPortalContainer } from "./portalContainer";
 import { EMAIL_REGEX } from "./commentMailTemplate";
 
 /* ------------------------------------------------------------------ */
@@ -202,7 +204,8 @@ export function MailPreviewDialog({ open, onClose, mail, to = [], cc = [] }) {
       onClose={onClose}
       fullWidth
       maxWidth="md"
-      PaperProps={{ className: "mail-preview-paper" }}
+      container={getPortalContainer}
+      PaperProps={{ className: "pj-scope mail-preview-paper" }}
     >
       <div className="mail-preview-head">
         <div className="mail-preview-head-title">

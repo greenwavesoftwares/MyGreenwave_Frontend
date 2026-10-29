@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+/* ==========================================================
+   assignee-theme.css  (REFACTOR — single source of truth)
+
+   Shared by every Assignee screen AND every dialog they open.
+
+   WHY THIS FILE EXISTS
+   The --pj-* palette, the dark-mode overrides, the margin/padding reset
+   and the Sora font used to live only on `.pai-page`. Dialogs are
+   portaled out of the page, and when they were opened from a component
+   in another folder there was no `.pai-page` to mount into, so they lost
+   all of it. Now:
+
+     • `.pai-page`  → the Activities page (unchanged behaviour)
+     • `.pj-scope`  → put this class on ANY portaled dialog root/paper and
+                      it gets the same tokens, dark mode, reset and font,
+                      wherever it is mounted.
+
+   Import this file from every component that renders a `pj-scope`
+   element (each dialog's .jsx does so), so it can never be missing.
+   ========================================================== */
+
+/* ==========================================================
+   DESIGN TOKENS — shared "pj-" palette
+   Wired to the app's real .light/.dark theme variables
+   (--bg-main, --card-bg, --fontColor, --avatar-bg, etc.) with
+   the original design's hex values kept only as fallbacks, in
+   case those variables aren't present on an ancestor.
+
+   NOTE ON SCOPING: everything in this file is now scoped under
+   `.pai-page` (instead of `:root`, `*`, or bare classnames) so it
+   can no longer leak out and override the rest of the app.
+   ========================================================== */
+
+.pai-page,
+.pj-scope {
+  --pj-page-bg: var(--bg-main, #F1F5F9);
+  --pj-border-subtle: var(--tableOuterBorder, #F1F5F9);
+  --pj-surface: var(--card-bg, #FFFFFF);
+  --pj-surface-2: var(--tableOddRow, #F8FAFC);
+  --pj-border: var(--divider-color, #E2E8F0);
+  --pj-border-strong: var(--calBorder, #CBD5E1);
+
+  --pj-text-primary: var(--menu-text, #0F172A);
+  --pj-text-secondary: var(--fontColor, #475569);
+  --pj-text-muted: var(--tittleFontColor, #64748B);
+  --pj-text-faint: var(--FontAwesomeIcon, #94A3B8);
+  --pj-on-color: #FFFFFF;
+
+  /* Fixed brand bar — intentionally theme-invariant, overridden for
+     dark below with a slightly deeper shade rather than tied to an
+     app variable (no navbar-specific token exists in the theme). */
+  --pj-navbar-bg: #0F172A;
+
+  /* Brand blue — mirrors the app's own accent */
+  --pj-primary: var(--avatar-bg, #1D4ED8);
+  --pj-primary-hover: #1E40AF;
+  --pj-primary-bg: var(--blueBG, #DBEAFE);
+  --pj-primary-bg-2: var(--icon-blue-bg, #BFDBFE);
+  --pj-primary-border: #93C5FD;
+
+  --pj-danger: var(--redFontColor, #DC2626);
+  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
+  --pj-danger-bg-2: var(--meal-app-red, #FEF2F2);
+  --pj-danger-border: var(--redBorder, #FCA5A5);
+  --pj-danger-border-2: var(--redBorder, #FECACA);
+
+  /* NOTE: the app's --greenBG / --greenFontColor variables are
+     mistyped in both theme files (literal "green"/"blue" keywords,
+     not real colors) — success stays on bespoke, tested values
+     rather than inheriting that bug. --greenBorder is a real color
+     and is safe to use. */
+  --pj-success: #15803D;
+  --pj-success-hover: #16A34A;
+  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
+  --pj-success-border: var(--greenBorder, #86EFAC);
+  --pj-success-border-2: var(--greenBorder, #BBF7D0);
+
+  --pj-warning: #B45309;
+  --pj-warning-hover: #D97706;
+  --pj-warning-bg: #FEF3C7;
+  --pj-warning-bg-2: #FFFBEB;
+  --pj-warning-border: #FCD34D;
+  --pj-warning-border-2: #FDE68A;
+
+  --pj-purple: #7C3AED;
+  --pj-purple-bg: var(--icon-purple-bg, #EDE9FE);
+  --pj-purple-bg-2: #F5F3FF;
+  --pj-purple-border: #DDD6FE;
+  --pj-purple-strong-bg: #c5b8fc;
+
+  --pj-highlight-grad-start: hsl(48, 100%, 93%);
+  --pj-highlight-grad-end: #faf7eb;
+
+  --pj-notice-bg: #F4F2EC;
+  --pj-notice-border: #EFEDE6;
+
+  /* Dedicated solid background for the sticky table header only.
+     Intentionally NOT tied to --pj-surface-2 / --tableOddRow: that
+     variable resolves to a semi-transparent value elsewhere in the
+     app's real theme, which let scrolled-past rows show through the
+     sticky header. This token is hardcoded opaque so there's no
+     dependency chain that can reintroduce transparency. */
+  --pj-thead-solid-bg: #EEF1F6;
+
+  /* Dependencies popover — same reasoning as --pj-thead-solid-bg:
+     --pj-surface-2 / --tableOddRow can resolve to a translucent value
+     in the app's real theme, which is unacceptable for a floating
+     popover (page content would show through). These are hardcoded
+     opaque and given their own dark override below instead. */
+  --pj-dep-popover-bg: #FFFFFF;
+  --pj-dep-row-odd-bg: #FFFFFF;
+  --pj-dep-row-even-bg: #F3F6FB;
+  --pj-dep-heading: var(--pj-primary, #1D4ED8);
+}
+
+/* ==========================================================
+   DARK MODE — only for tokens with no matching app variable.
+   Scoped so it only fires when `.pai-page` itself is inside (or
+   carries) the app's dark theme class, never for the app at large.
+   ========================================================== */
+
+.dark .pai-page,
+[data-theme="dark"] .pai-page,
+.pai-page.dark,
+.pai-page[data-theme="dark"],
+.dark .pj-scope,
+[data-theme="dark"] .pj-scope,
+.pj-scope.dark,
+.pj-scope[data-theme="dark"] {
+  --pj-navbar-bg: #05070c;
+
+  --pj-primary-hover: #6d8dff;
+  --pj-primary-border: #3a5a99;
+
+  --pj-danger: #f87171;
+  --pj-danger-border: #7a3838;
+  --pj-danger-border-2: #5a2626;
+
+  --pj-success: #4ade80;
+  --pj-success-hover: #22c55e;
+  --pj-success-border-2: #1c4f30;
+
+  --pj-warning: #fbbf24;
+  --pj-warning-hover: #f59e0b;
+  --pj-warning-bg: #3a2a06;
+  --pj-warning-bg-2: #2c2004;
+  --pj-warning-border: #8a6a1c;
+  --pj-warning-border-2: #6b5418;
+
+  --pj-purple: #a78bfa;
+  --pj-purple-bg-2: #1c1533;
+  --pj-purple-border: #4c3d80;
+  --pj-purple-strong-bg: #6650b8;
+
+  --pj-highlight-grad-start: hsl(48, 60%, 15%);
+  --pj-highlight-grad-end: #2c260f;
+
+  --pj-notice-bg: #262420;
+  --pj-notice-border: #35322b;
+
+  --pj-thead-solid-bg: #1c2333;
+
+  --pj-dep-popover-bg: #1B2333;
+  --pj-dep-row-odd-bg: #1B2333;
+  --pj-dep-row-even-bg: #242E44;
+  --pj-dep-heading: var(--pj-primary, #6d8dff);
+}
+
+/* ── Reset + base font for portaled dialogs ──
+   Mirrors the reset `.pai-page` applies to its own subtree (see
+   ProjectActivityInfo.css), so a dialog looks identical inside or
+   outside the Activities page. Specificity is intentionally the same as
+   `.pai-page *` so behaviour matches what the dialogs were built against. */
+.pj-scope,
+.pj-scope *,
+.pj-scope *::before,
+.pj-scope *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.pj-scope {
+  font-family: 'Sora', sans-serif;
+}

@@ -1,145 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 /* ==========================================================
-   DESIGN TOKENS — shared "pj-" palette
-   Wired to the app's real .light/.dark theme variables
-   (--bg-main, --card-bg, --fontColor, --avatar-bg, etc.) with
-   the original design's hex values kept only as fallbacks, in
-   case those variables aren't present on an ancestor.
-
-   NOTE ON SCOPING: everything in this file is now scoped under
-   `.pai-page` (instead of `:root`, `*`, or bare classnames) so it
-   can no longer leak out and override the rest of the app.
+   DESIGN TOKENS — MOVED to ./assignee-theme.css
+   (REFACTOR) The --pj-* palette used to be defined only on `.pai-page`,
+   so any dialog opened from another page had no tokens and fell back to
+   hardcoded light colours. They now live in assignee-theme.css, scoped to
+   `.pai-page, .pj-scope`. ProjectActivityInfo.jsx imports that file
+   BEFORE this one.
    ========================================================== */
 
-.pai-page {
-  --pj-page-bg: var(--bg-main, #F1F5F9);
-  --pj-border-subtle: var(--tableOuterBorder, #F1F5F9);
-  --pj-surface: var(--card-bg, #FFFFFF);
-  --pj-surface-2: var(--tableOddRow, #F8FAFC);
-  --pj-border: var(--divider-color, #E2E8F0);
-  --pj-border-strong: var(--calBorder, #CBD5E1);
-
-  --pj-text-primary: var(--menu-text, #0F172A);
-  --pj-text-secondary: var(--fontColor, #475569);
-  --pj-text-muted: var(--tittleFontColor, #64748B);
-  --pj-text-faint: var(--FontAwesomeIcon, #94A3B8);
-  --pj-on-color: #FFFFFF;
-
-  /* Fixed brand bar — intentionally theme-invariant, overridden for
-     dark below with a slightly deeper shade rather than tied to an
-     app variable (no navbar-specific token exists in the theme). */
-  --pj-navbar-bg: #0F172A;
-
-  /* Brand blue — mirrors the app's own accent */
-  --pj-primary: var(--avatar-bg, #1D4ED8);
-  --pj-primary-hover: #1E40AF;
-  --pj-primary-bg: var(--blueBG, #DBEAFE);
-  --pj-primary-bg-2: var(--icon-blue-bg, #BFDBFE);
-  --pj-primary-border: #93C5FD;
-
-  --pj-danger: var(--redFontColor, #DC2626);
-  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
-  --pj-danger-bg-2: var(--meal-app-red, #FEF2F2);
-  --pj-danger-border: var(--redBorder, #FCA5A5);
-  --pj-danger-border-2: var(--redBorder, #FECACA);
-
-  /* NOTE: the app's --greenBG / --greenFontColor variables are
-     mistyped in both theme files (literal "green"/"blue" keywords,
-     not real colors) — success stays on bespoke, tested values
-     rather than inheriting that bug. --greenBorder is a real color
-     and is safe to use. */
-  --pj-success: #15803D;
-  --pj-success-hover: #16A34A;
-  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
-  --pj-success-border: var(--greenBorder, #86EFAC);
-  --pj-success-border-2: var(--greenBorder, #BBF7D0);
-
-  --pj-warning: #B45309;
-  --pj-warning-hover: #D97706;
-  --pj-warning-bg: #FEF3C7;
-  --pj-warning-bg-2: #FFFBEB;
-  --pj-warning-border: #FCD34D;
-  --pj-warning-border-2: #FDE68A;
-
-  --pj-purple: #7C3AED;
-  --pj-purple-bg: var(--icon-purple-bg, #EDE9FE);
-  --pj-purple-bg-2: #F5F3FF;
-  --pj-purple-border: #DDD6FE;
-  --pj-purple-strong-bg: #c5b8fc;
-
-  --pj-highlight-grad-start: hsl(48, 100%, 93%);
-  --pj-highlight-grad-end: #faf7eb;
-
-  --pj-notice-bg: #F4F2EC;
-  --pj-notice-border: #EFEDE6;
-
-  /* Dedicated solid background for the sticky table header only.
-     Intentionally NOT tied to --pj-surface-2 / --tableOddRow: that
-     variable resolves to a semi-transparent value elsewhere in the
-     app's real theme, which let scrolled-past rows show through the
-     sticky header. This token is hardcoded opaque so there's no
-     dependency chain that can reintroduce transparency. */
-  --pj-thead-solid-bg: #EEF1F6;
-
-  /* Dependencies popover — same reasoning as --pj-thead-solid-bg:
-     --pj-surface-2 / --tableOddRow can resolve to a translucent value
-     in the app's real theme, which is unacceptable for a floating
-     popover (page content would show through). These are hardcoded
-     opaque and given their own dark override below instead. */
-  --pj-dep-popover-bg: #FFFFFF;
-  --pj-dep-row-odd-bg: #FFFFFF;
-  --pj-dep-row-even-bg: #F3F6FB;
-  --pj-dep-heading: var(--pj-primary, #1D4ED8);
-}
-
-/* ==========================================================
-   DARK MODE — only for tokens with no matching app variable.
-   Scoped so it only fires when `.pai-page` itself is inside (or
-   carries) the app's dark theme class, never for the app at large.
-   ========================================================== */
-
-.dark .pai-page,
-[data-theme="dark"] .pai-page,
-.pai-page.dark,
-.pai-page[data-theme="dark"] {
-  --pj-navbar-bg: #05070c;
-
-  --pj-primary-hover: #6d8dff;
-  --pj-primary-border: #3a5a99;
-
-  --pj-danger: #f87171;
-  --pj-danger-border: #7a3838;
-  --pj-danger-border-2: #5a2626;
-
-  --pj-success: #4ade80;
-  --pj-success-hover: #22c55e;
-  --pj-success-border-2: #1c4f30;
-
-  --pj-warning: #fbbf24;
-  --pj-warning-hover: #f59e0b;
-  --pj-warning-bg: #3a2a06;
-  --pj-warning-bg-2: #2c2004;
-  --pj-warning-border: #8a6a1c;
-  --pj-warning-border-2: #6b5418;
-
-  --pj-purple: #a78bfa;
-  --pj-purple-bg-2: #1c1533;
-  --pj-purple-border: #4c3d80;
-  --pj-purple-strong-bg: #6650b8;
-
-  --pj-highlight-grad-start: hsl(48, 60%, 15%);
-  --pj-highlight-grad-end: #2c260f;
-
-  --pj-notice-bg: #262420;
-  --pj-notice-border: #35322b;
-
-  --pj-thead-solid-bg: #1c2333;
-
-  --pj-dep-popover-bg: #1B2333;
-  --pj-dep-row-odd-bg: #1B2333;
-  --pj-dep-row-even-bg: #242E44;
-  --pj-dep-heading: var(--pj-primary, #6d8dff);
-}
 
 
 /* ── Reset & base ──
@@ -628,7 +496,13 @@
      auto lets the table size itself to its content (never smaller
      than min-width below); any leftover space now sits once at the
      end of the row instead of being spread between every column. */
-  width: auto;
+  /* MODIFIED: was `width: auto`. With auto, the table hugged its own content
+     and stopped short of the card whenever it was narrower than the info
+     card (empty / few rows), leaving a gap at the right of the header bar.
+     .pai-content-shrink already sizes the card to the table's natural
+     width, so 100% only fills the small difference and does NOT spread
+     columns apart on wide screens. */
+  width: 100%;
   max-width: 100%;
   table-layout: auto;
   /* border-collapse switched from "collapse" to "separate" +
@@ -994,17 +868,17 @@
 
 /* ══════════════════════════════════════
    DEPENDENCIES DIALOG (PrimeReact Dialog)
-   Rendered via the Dialog's `appendTo` prop inside `.pai-page`
-   (same trick CommentsActionDialog/PauseReasonDialog/DocumentViewer
-   use for their portaled Dialogs) so it stays in scope of the
-   --pj-* tokens and picks up dark mode automatically — no separate
-   dark block needed for colors, only for the shadow (flat --pj-
-   shadows read too heavy/light once inverted). No anchor/position is
-   set on the Dialog itself, so it renders centered — PrimeReact's
-   own default overlay placement — rather than pinned to the trigger
-   button's location.
+   REFACTOR: rules below used to be nested under `.pai-page`; they are now
+   scoped to `.pj-scope.dependency-dialog` (the dialog root carries both
+   classes — see TreeRows.jsx) so they apply wherever it is portaled.
+   Dark mode: the tokens (and their dark overrides) come from
+   assignee-theme.css; only the shadow needs its own dark block below
+   (flat --pj- shadows read too heavy/light once inverted). No
+   anchor/position is set on the Dialog, so it renders centered —
+   PrimeReact's default overlay placement — rather than pinned to the
+   trigger button.
    ══════════════════════════════════════ */
-.pai-page .dependency-dialog.p-dialog {
+.pj-scope.dependency-dialog.p-dialog {
   background: var(--pj-dep-popover-bg) !important;
   border: 1px solid var(--pj-border) !important;
   border-radius: 12px !important;
@@ -1016,14 +890,14 @@
   overflow: hidden;
 }
 
-.dark .pai-page .dependency-dialog.p-dialog,
-[data-theme="dark"] .pai-page .dependency-dialog.p-dialog,
-.pai-page.dark .dependency-dialog.p-dialog,
-.pai-page[data-theme="dark"] .dependency-dialog.p-dialog {
+.dark .pj-scope.dependency-dialog.p-dialog,
+[data-theme="dark"] .pj-scope.dependency-dialog.p-dialog,
+.pj-scope.dark.dependency-dialog.p-dialog,
+.pj-scope[data-theme="dark"].dependency-dialog.p-dialog {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35) !important;
 }
 
-.pai-page .dependency-dialog .p-dialog-content {
+.pj-scope.dependency-dialog .p-dialog-content {
   padding: 0 !important;
   max-height: 480px;
   overflow-y: auto;
@@ -1034,7 +908,7 @@
 /* ── Header: icon chip + activity name/subtitle, mirrors the
    "Rate & Finish Task" style dialog header. PrimeReact keeps its own
    built-in close (×) button alongside this custom header content. ── */
-.pai-page .dependency-dialog .p-dialog-header {
+.pj-scope.dependency-dialog .p-dialog-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1043,14 +917,14 @@
   border-bottom: 1px solid var(--pj-primary-border) !important;
 }
 
-.pai-page .dependency-dialog-header {
+.pj-scope.dependency-dialog-header {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
 }
 
-.pai-page .dependency-dialog-icon {
+.pj-scope.dependency-dialog-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1062,7 +936,7 @@
   color: var(--pj-primary) !important;
 }
 
-.pai-page .dependency-dialog-title {
+.pj-scope.dependency-dialog-title {
   font-size: 13px !important;
   font-weight: 700 !important;
   letter-spacing: 0.01em;
@@ -1072,30 +946,30 @@
   word-break: break-word;
 }
 
-.pai-page .dependency-dialog-subtitle {
+.pj-scope.dependency-dialog-subtitle {
   font-size: 11px !important;
   color: var(--pj-text-muted) !important;
   margin: 0 !important;
   line-height: 1.3 !important;
 }
 
-.pai-page .dependency-dialog .p-dialog-header-icon {
+.pj-scope.dependency-dialog .p-dialog-header-icon {
   color: var(--pj-text-muted) !important;
 }
 
-.pai-page .dependency-dialog .p-dialog-header-icon:hover {
+.pj-scope.dependency-dialog .p-dialog-header-icon:hover {
   background: var(--pj-primary-bg-2) !important;
   color: var(--pj-primary) !important;
 }
 
-.pai-page .dependency-list {
+.pj-scope .dependency-list {
   display: flex !important;
   flex-direction: column !important;
   gap: 10px;
   padding: 10px !important;
 }
 
-.pai-page .dependency-item {
+.pj-scope .dependency-item {
   display: block !important;
   padding: 10px 12px !important;
   background: var(--pj-dep-row-odd-bg) !important;
@@ -1103,11 +977,11 @@
   border-radius: 10px !important;
 }
 
-.pai-page .dependency-item:last-of-type {
+.pj-scope .dependency-item:last-of-type {
   margin-bottom: 0;
 }
 
-.pai-page .dependency-empty {
+.pj-scope .dependency-empty {
   display: block;
   padding: 16px 14px;
   font-size: 12.5px !important;
@@ -1115,7 +989,7 @@
   text-align: center;
 }
 
-.pai-page .dependency-item-head {
+.pj-scope .dependency-item-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1123,14 +997,14 @@
   margin-bottom: 6px;
 }
 
-.pai-page .dependency-item-name {
+.pj-scope .dependency-item-name {
   font-size: 13px !important;
   font-weight: 600 !important;
   color: var(--pj-text-primary) !important;
   word-break: break-word;
 }
 
-.pai-page .dependency-item-resource {
+.pj-scope .dependency-item-resource {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -1138,12 +1012,12 @@
   color: var(--pj-text-muted) !important;
 }
 
-.pai-page .dependency-item-resource svg {
+.pj-scope .dependency-item-resource svg {
   color: var(--pj-text-faint) !important;
   flex: none;
 }
 
-.pai-page .dependency-item-resource span {
+.pj-scope .dependency-item-resource span {
   font-size: 11.5px !important;
   font-weight: 500;
   color: var(--pj-text-muted) !important;
@@ -1152,18 +1026,18 @@
 /* ── Scheduled / Actual time boxes: same "labeled bordered field"
    pattern as the PLANNED START/STOP and ACTUAL START/STOP fields
    in the Rate & Finish Task dialog ── */
-.pai-page .dependency-time-grid {
+.pj-scope .dependency-time-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-bottom: 6px;
 }
 
-.pai-page .dependency-time-grid:last-of-type {
+.pj-scope .dependency-time-grid:last-of-type {
   margin-bottom: 0;
 }
 
-.pai-page .dependency-time-box {
+.pj-scope .dependency-time-box {
   border-radius: 7px;
   padding: 5px 8px;
   border: 1px solid var(--pj-border);
@@ -1171,23 +1045,23 @@
   min-width: 0;
 }
 
-.pai-page .dependency-time-box--scheduled {
+.pj-scope .dependency-time-box--scheduled {
   background: var(--pj-primary-bg) !important;
   border-color: var(--pj-primary-border) !important;
 }
 
-.pai-page .dependency-time-box--actual {
+.pj-scope .dependency-time-box--actual {
   background: var(--pj-success-bg) !important;
   border-color: var(--pj-success-border) !important;
 }
 
-.pai-page .dependency-time-box--pending {
+.pj-scope .dependency-time-box--pending {
   background: transparent !important;
   border-color: var(--pj-border) !important;
   border-style: dashed !important;
 }
 
-.pai-page .dependency-time-box-label {
+.pj-scope .dependency-time-box-label {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1198,15 +1072,15 @@
   margin-bottom: 2px;
 }
 
-.pai-page .dependency-time-box--scheduled .dependency-time-box-label {
+.pj-scope .dependency-time-box--scheduled .dependency-time-box-label {
   color: var(--pj-primary) !important;
 }
 
-.pai-page .dependency-time-box--actual .dependency-time-box-label {
+.pj-scope .dependency-time-box--actual .dependency-time-box-label {
   color: var(--pj-success) !important;
 }
 
-.pai-page .dependency-time-box-value {
+.pj-scope .dependency-time-box-value {
   font-size: 11.5px !important;
   font-weight: 600 !important;
   color: var(--pj-text-primary) !important;
@@ -1215,12 +1089,12 @@
   text-overflow: ellipsis;
 }
 
-.pai-page .dependency-time-box--pending .dependency-time-box-value {
+.pj-scope .dependency-time-box--pending .dependency-time-box-value {
   color: var(--pj-text-faint) !important;
   font-weight: 500 !important;
 }
 
-.pai-page .dependency-item-id {
+.pj-scope .dependency-item-id {
   font-size: 11px !important;
   color: var(--pj-text-faint) !important;
   word-break: break-all;

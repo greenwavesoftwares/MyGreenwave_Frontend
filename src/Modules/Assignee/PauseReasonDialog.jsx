@@ -14,7 +14,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 import { PauseCircle, RotateCcw, StopCircleIcon } from "lucide-react";
+import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens + reset
 import "./PauseReasonDialog.css";
+import { getPortalContainer } from "./portalContainer";
 
 /* type → key used to build className suffixes ("Paused" -> "paused") */
 const TYPE_KEY = {
@@ -124,14 +126,11 @@ const PauseReasonDialog = ({
     <Dialog
       open={open}
       onClose={loading ? undefined : handleCancel}
-      // Mounts the portal inside .pai-page so the --pj-* CSS variables
-      // (and dark-mode overrides) defined there are actually in scope.
-      // Falls back to the default body portal if .pai-page isn't found.
-      container={() =>
-        document.querySelector(".pai-page") || document.body
-      }
+      // REFACTOR: self-contained — `pj-scope` supplies the tokens, so
+      // this works when opened from any page, not just `.pai-page`.
+      container={getPortalContainer}
       PaperProps={{
-        className: "prd-paper",
+        className: "pj-scope prd-paper",
         sx: { width: 480, maxWidth: "94vw" },
       }}
     >
@@ -184,12 +183,12 @@ const PauseReasonDialog = ({
           </Typography>
 
           <Box className="prd-status-row">
-            <Box className="prd-status-box prd-status-box--current">
+            <Box className={`prd-status-box prd-status-box--current prd-status-box--current-${key}`}>
               <Box className="prd-status-tag">
                 <Typography
                   variant="caption"
                   fontWeight={700}
-                  className="prd-status-tag-label--current"
+                  className={`prd-status-tag-label--current prd-status-tag-label--current-${key}`}
                 >
                   CURRENT
                 </Typography>
@@ -197,11 +196,11 @@ const PauseReasonDialog = ({
               <Typography
                 variant="body2"
                 fontWeight={700}
-                className="prd-status-value--current"
+                className={`prd-status-value--current prd-status-value--current-${key}`}
               >
                 {pauseDelayType === "Paused" && <>Running</>}
-                {pauseDelayType === "StartDelay" && <>Pending</>}
-                {pauseDelayType === "StopDelay" && <>Running</>}
+                {pauseDelayType === "StartDelay" && <>Start Due</>}
+                {pauseDelayType === "StopDelay" && <>Running Late</>}
                 {pauseDelayType === "Redo" && <>Completed</>}
               </Typography>
             </Box>

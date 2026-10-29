@@ -4,8 +4,8 @@
 
 .comments-dialog {
   /* Reuses the exact same --pj-* palette PauseReasonDialog reads from
-     (defined on `.pai-page` in ProjectActivityInfo.css, with its own
-     dark-mode overrides there). That means this dialog's dark theme
+     (REFACTOR: now defined in assignee-theme.css and applied via the
+     `pj-scope` class on this Paper, with its own dark-mode overrides). That means this dialog's dark theme
      is guaranteed to match PauseReasonDialog's — they're pulling from
      the same source of truth, not two palettes kept in sync by hand.
      Original bespoke hex values are kept only as fallbacks, in case

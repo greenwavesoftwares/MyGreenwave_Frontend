@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./assignee-theme.css"; // REFACTOR: tokens moved out of ProjectActivityInfo.css
 import "./ProjectActivityInfo.css";
 import TreeRows from "./TreeRows";
 import {
@@ -1400,6 +1401,21 @@ export default function ProjectActivityInfo({
                         }}
                       >
                         {emptyStateMessage}
+                        {/* MODIFIED: "Clear filters" shortcut in the empty state,
+                            shown only when a column filter is active (this is
+                            what was hiding all 10 rows in the screenshot).
+                            Reuses the existing clearAllFilters + .pai-clear-filters-btn. */}
+                        {activeFilterCount > 0 && (
+                          <div style={{ marginTop: 12 }}>
+                            <button
+                              type="button"
+                              className="pai-clear-filters-btn"
+                              onClick={clearAllFilters}
+                            >
+                              Clear filters
+                            </button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   )}

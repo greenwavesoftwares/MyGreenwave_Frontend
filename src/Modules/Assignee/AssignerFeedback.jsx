@@ -10,7 +10,9 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Star, StarHalf, Send, Check } from "lucide-react";
+import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens + reset
 import "./AssignerFeedback.css";
+import { getPortalContainer } from "./portalContainer";
 import { getUserData } from "../Login/Encrypt";
 import { managerFeedback } from "./AssigneeHelper";
 import { showToast } from "./toastService";
@@ -344,17 +346,11 @@ const AssignerFeedback = ({
     <Dialog
       open={open}
       onClose={handleClose}
-      // Mounts the portal inside whichever page-level element owns the
-      // --pj-* CSS variables (and dark-mode overrides) for this screen —
-      // ProjectActivityInfo (.pai-page) or ProjectsInfo (.proj-page).
-      // Falls back to the default body portal if neither is found.
-      container={() =>
-        document.querySelector(".pai-page") ||
-        document.querySelector(".proj-page") ||
-        document.body
-      }
+      // REFACTOR: no longer needs `.pai-page` / `.proj-page`. `pj-scope`
+      // supplies the tokens, so it renders the same from any screen.
+      container={getPortalContainer}
       PaperProps={{
-        className: "af-paper",
+        className: "pj-scope af-paper",
         sx: { width: 560, maxWidth: "94vw" },
       }}
     >
