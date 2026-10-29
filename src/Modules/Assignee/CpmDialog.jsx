@@ -7,7 +7,9 @@ import activityTrackerApi from "../../Services/activityTrackerApi";
 import StatusChip from "./StatusChip";
 import { modifyStatus } from "./activityFilterUtils";
 import dayjs from "dayjs";
+import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens + reset
 import "./CpmDialog.css";
+import { getPortalContainer } from "./portalContainer";
 
 /* ─────────────────────────────────────────────────────────────
    Critical Path Method (CPM) view for a project's activities.
@@ -649,11 +651,10 @@ export default function CpmDialog({ open, onClose, projectId, fetchColor }) {
       onClose={onClose}
       fullScreen={fullScreen}
       maxWidth={false}
-      // MUI portals to document.body by default. On the Assignee page we mount inside `.pai-page`
-      // so the dialog inherits that page's theme; elsewhere (e.g. the project dashboard) it falls
-      // back to body. CpmDialog.css defines its own --pj-* tokens, so both look the same.
-      container={() => document.querySelector(".pai-page") || document.body}
-      PaperProps={{ className: `cpm-paper${fullScreen ? "" : " cpm-paper--window"}` }}
+      // REFACTOR: `pj-scope` supplies the --pj-* tokens (assignee-theme.css), so the dialog
+      // looks identical on every page; no `.pai-page` lookup any more.
+      container={getPortalContainer}
+      PaperProps={{ className: `pj-scope cpm-paper${fullScreen ? "" : " cpm-paper--window"}` }}
     >
       {/* Header: title, subtitle, full-screen toggle and close button */}
       <div className="cpm-head">

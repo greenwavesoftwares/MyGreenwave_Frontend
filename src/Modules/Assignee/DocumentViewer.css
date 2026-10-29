@@ -6,11 +6,10 @@
    in case those variables aren't present on an ancestor.
 
    SCOPING: the PrimeReact <Dialog> is portaled with `appendTo`
-   pointing at `.pai-page` (see DocumentViewer.jsx), the same
-   container CommentsActionDialog's MUI Dialog uses — so even
-   though the Dialog isn't a JSX descendant of anything themed, it
-   stays a real DOM descendant of the page wrapper the app's theme
-   class lives on, and these vars resolve correctly.
+   = getPortalContainer (see DocumentViewer.jsx) — the nearest
+   element carrying the app's theme class, so these vars resolve
+   correctly — and the panel carries `pj-scope` (assignee-theme.css)
+   so it no longer depends on a `.pai-page` wrapper.
 
    Two selectors carry the same tokens because they sit in two
    structurally unrelated DOM subtrees:

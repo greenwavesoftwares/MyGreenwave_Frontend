@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./assignee-theme.css"; // REFACTOR: tokens moved out of ProjectActivityInfo.css
 import "./ProjectActivityInfo.css";
 import "./ProjectActivitiesSkeleton.css";
 import { Table, TableBody, TableHead, TableRow, TableCell } from "@mui/material";

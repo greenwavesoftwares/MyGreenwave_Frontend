@@ -2,24 +2,12 @@
    PauseReasonDialog — scoped to `.prd-*` classNames only.
 
    Deliberately has NO tokens of its own: every color reads
-   from the --pj-* variables already defined (and dark-mode
-   overridden) in ProjectActivityInfo.css. That means this
-   dialog stays in sync with the rest of the app automatically
-   — nothing here needs its own dark-mode block.
+   from the --pj-* variables in assignee-theme.css, which the
+   Paper receives through its `pj-scope` class (see
+   PauseReasonDialog.jsx). REFACTOR: the dialog no longer needs
+   to be mounted inside `.pai-page` — it brings its own scope.
 
-   IMPORTANT — MUI Dialog renders via a Portal into
-   document.body, OUTSIDE the `.pai-page` element that owns
-   the --pj-* variables. For these vars to resolve, mount the
-   Dialog's portal inside `.pai-page`:
-
-     <Dialog
-       container={() => document.querySelector('.pai-page')}
-       ...
-     >
-
-   Fallback hex values are included after each var() so the
-   dialog still renders sensibly if it's ever used somewhere
-   `.pai-page` isn't an ancestor.
+   Fallback hex values are kept after each var() as a safety net.
    ========================================================== */
 
 .prd-paper {

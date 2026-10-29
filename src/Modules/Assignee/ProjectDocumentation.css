@@ -3,49 +3,16 @@
    Project Documentation dialog
    Self-contained: everything inside the dialog is scoped under
    `.pdoc-root` (the MUI Dialog root, which is portaled), and the
-   --pj-* tokens it needs are defined on `.pdoc-root` itself, so the
-   dialog looks right no matter where it is mounted (inside or
-   outside `.pai-page`). Only the "open" button / info-card tweaks
+   --pj-* tokens come from assignee-theme.css through the `pj-scope`
+   class on `.pdoc-root`, so the dialog looks right no matter where it
+   is mounted (inside or outside `.pai-page`). Only the "open" button / info-card tweaks
    that live in the page itself stay scoped under `.pai-page`.
    ========================================================== */
 
 .pdoc-root {
-  --pj-surface: var(--card-bg, #FFFFFF);
-  --pj-surface-2: var(--tableOddRow, #F8FAFC);
-  --pj-border-subtle: var(--tableOuterBorder, #F1F5F9);
-  --pj-border: var(--divider-color, #E2E8F0);
-  --pj-border-strong: var(--calBorder, #CBD5E1);
-  --pj-text-primary: var(--menu-text, #0F172A);
-  --pj-text-secondary: var(--fontColor, #475569);
-  --pj-text-muted: var(--tittleFontColor, #64748B);
-  --pj-text-faint: var(--FontAwesomeIcon, #94A3B8);
-  --pj-on-color: #FFFFFF;
-  --pj-primary: var(--avatar-bg, #1D4ED8);
-  --pj-primary-hover: #1E40AF;
-  --pj-primary-bg: var(--blueBG, #DBEAFE);
-  --pj-primary-border: #93C5FD;
-  --pj-danger: var(--redFontColor, #DC2626);
-  --pj-danger-bg: var(--meal-app-red, #FEE2E2);
-  --pj-success: #15803D;
-  --pj-success-bg: var(--icon-green-bg, #DCFCE7);
-  --pj-warning: #B45309;
-  --pj-warning-bg: #FEF3C7;
-  --pj-purple: #7C3AED;
-  --pj-purple-bg: var(--icon-purple-bg, #EDE9FE);
+  /* REFACTOR: --pj-* tokens now come from assignee-theme.css via the
+     `pj-scope` class on this element (see ProjectDocumentation.jsx). */
   font-family: "Sora", sans-serif;
-}
-
-.dark .pdoc-root,
-[data-theme="dark"] .pdoc-root,
-.pdoc-root.dark,
-.pdoc-root[data-theme="dark"] {
-  --pj-primary-hover: #6d8dff;
-  --pj-primary-border: #3a5a99;
-  --pj-danger: #f87171;
-  --pj-success: #4ade80;
-  --pj-warning: #fbbf24;
-  --pj-warning-bg: #3a2a06;
-  --pj-purple: #a78bfa;
 }
 
 .pdoc-paper {

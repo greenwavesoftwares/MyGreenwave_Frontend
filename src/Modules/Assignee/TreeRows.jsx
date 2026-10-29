@@ -31,7 +31,9 @@ import SubdirectoryArrowLeftIcon from "@mui/icons-material/SubdirectoryArrowLeft
 import SendIcon from "@mui/icons-material/Send";
 import dayjs from "dayjs";
 import CommentsActionDialog from "./CommentsActionDialog";
+import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens + reset
 import "./ProjectActivityInfo.css";
+import { getPortalContainer } from "./portalContainer";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Badge from "@mui/material/Badge";
@@ -412,7 +414,7 @@ export default function TreeRows({
         <div className="action-container">{actionItems}</div>
 
         <Dialog
-          className="dependency-dialog"
+          className="pj-scope dependency-dialog"
           visible={dependencyDialogVisible}
           onHide={handleCloseDependencies}
           header={
@@ -431,12 +433,11 @@ export default function TreeRows({
               </Box>
             </Box>
           }
-          // Mounts the portal inside .pai-page — same trick
-          // CommentsActionDialog/PauseReasonDialog/DocumentViewer's
-          // PrimeReact Dialog use — so the shared --pj-* vars (and
-          // their dark-mode overrides) are in scope. Falls back to the
-          // default body portal if .pai-page isn't found.
-          appendTo={() => document.querySelector(".pai-page") || document.body}
+          // REFACTOR: `pj-scope` (on className above) supplies the --pj-*
+          // tokens, and the .dependency-* rules in ProjectActivityInfo.css
+          // are no longer nested under `.pai-page`, so this dialog is
+          // self-contained wherever TreeRows is rendered.
+          appendTo={getPortalContainer}
           baseZIndex={1400}
           // No anchor/position props — PrimeReact renders this in its
           // own default centered-overlay position rather than pinned

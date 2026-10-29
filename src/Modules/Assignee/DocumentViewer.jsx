@@ -15,7 +15,9 @@ import {
   DocViewerZoomContext,
   ZOOM_STEPS,
 } from "./DocViewerMaximizedContext";
+import "./assignee-theme.css"; // REFACTOR: shared reset/tokens
 import "./DocumentViewer.css";
+import { getPortalContainer } from "./portalContainer";
 import CustomJPGView from "./CustomJPGView";
 import CustomMailViewer from "./CustomMailViewer";
 import CustomTXTView from "./CustomTXTView";
@@ -150,7 +152,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
 
  return (
   <Dialog
-    className="doc-viewer-dialog"
+    className="pj-scope doc-viewer-dialog"
     header={
       <div className="doc-viewer-header-row">
         <CustomDialogHeader docs={docs} activeIndex={activeIndex} />
@@ -207,7 +209,7 @@ const DocumentViewer = forwardRef(function DocumentViewer(
     }
     visible={dialogVisible}
     onHide={() => setDialogVisible(false)}
-    appendTo={() => document.querySelector(".pai-page") || document.body}
+    appendTo={getPortalContainer} // REFACTOR: was `.pai-page || body`
     baseZIndex={1400}
     style={{ width: "80vw", height: "85vh" }}
     contentStyle={{ height: "100%", padding: 0 }}

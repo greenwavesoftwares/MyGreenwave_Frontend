@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./assignee-theme.css"; // REFACTOR: tokens moved out of ProjectActivityInfo.css
 import "./ProjectActivityInfo.css";
 import TreeRows from "./TreeRows";
 import {

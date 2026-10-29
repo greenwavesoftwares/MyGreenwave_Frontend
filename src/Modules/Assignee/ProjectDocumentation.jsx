@@ -5,7 +5,9 @@ import React, {
   useRef,
   useState,
 } from "react";
+import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens + reset
 import "./ProjectDocumentation.css";
+import { getPortalContainer } from "./portalContainer";
 import dayjs from "dayjs";
 import {
   BookOpen,
@@ -45,13 +47,8 @@ const MAX_DESCRIPTION_CHARS = 500;
 const sameUser = (a, b) =>
   !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
 
-function getPortalContainer() {
-  const themed =
-    document.querySelector(".pai-page") ||
-    document.querySelector(".dark, .light, [data-theme]");
-  // Never portal into <html>; body inherits from it anyway.
-  return themed && themed !== document.documentElement ? themed : document.body;
-}
+// REFACTOR: getPortalContainer now lives in ./portalContainer.js (shared by
+// every dialog) and no longer looks for `.pai-page`.
 
 function formatDate(value) {
   return value && dayjs(value).isValid()
@@ -585,11 +582,10 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
         onClose={onClose}
         maxWidth={false}
         fullScreen={isMobile}
-        className="pdoc-root"
+        className="pj-scope pdoc-root"
         // Portal next to the nearest themed ancestor so the app's theme
-        // variables (.light/.dark, data-theme) still apply. The dialog
-        // defines its own --pj-* tokens, so this works with or without
-        // a .pai-page wrapper.
+        // variables (.light/.dark, data-theme) still apply. `pj-scope`
+        // supplies the --pj-* tokens, so no page wrapper is needed.
         container={getPortalContainer}
         PaperProps={{ className: "pdoc-paper" }}
       >
@@ -673,7 +669,7 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
 
       {/* Mounted imperatively via documentViewerRef (same pattern as the
           comments dialog). Its own Dialog sits at z-index 1400, above
-          this one, and portals into .pai-page. */}
+          this one, and portals via getPortalContainer. */}
       <DocumentViewer ref={documentViewerRef} hideTrigger />
     </>
   );
