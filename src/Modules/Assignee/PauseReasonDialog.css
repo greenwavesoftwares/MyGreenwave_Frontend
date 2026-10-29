@@ -129,7 +129,7 @@
 }
 .prd-status-box--new-paused     { background: var(--pj-warning-bg, #FEF3C7); border: 1px solid var(--pj-warning-border, #FCD34D); }
 .prd-status-box--new-startdelay { background: var(--pj-success-bg, #DCFCE7); border: 1px solid var(--pj-success-border, #86EFAC); }
-.prd-status-box--new-stopdelay  { background: var(--pj-danger-bg, #FEE2E2); border: 1px solid var(--pj-danger-border, #FCA5A5); }
+.prd-status-box--new-stopdelay  { background: var(--pj-success-bg, #DCFCE7); border: 1px solid var(--pj-success-border, #86EFAC); }
 /* fallbacks were red/pink (copy-pasted from stopdelay) — switched to
    purple so Redo doesn't render as a "danger" color if vars are missing. */
 .prd-status-box--new-redo       { background: var(--pj-purple-bg, #F3E8FF); border: 1px solid var(--pj-purple-border, #D8B4FE); }
@@ -144,15 +144,33 @@
 .prd-status-tag-label--current        { color: var(--pj-primary, #2563EB) !important; }
 .prd-status-tag-label--new-paused     { color: var(--pj-warning, #B45309) !important; }
 .prd-status-tag-label--new-startdelay { color: var(--pj-success, #15803D) !important; }
-.prd-status-tag-label--new-stopdelay  { color: var(--pj-danger, #DC2626) !important; }
+.prd-status-tag-label--new-stopdelay  { color: var(--pj-success, #15803D) !important; }
 /* was missing entirely — JSX builds this exact class name for Redo,
    so the "NEW" tag label rendered with no color at all before. */
 .prd-status-tag-label--new-redo       { color: var(--pj-purple, #7C3AED) !important; }
 
 .prd-status-value--current        { color: var(--pj-primary-hover, #1E3A8A) !important; }
+
+/* CURRENT box: "Start Due" (StartDelay) and "Running Late" (StopDelay)
+   are overdue states, so they use the danger/red palette — same as
+   their chips in StatusChip.jsx. Paused ("Running") and Redo
+   ("Completed") keep the default blue CURRENT styling above. */
+.prd-status-box--current-startdelay,
+.prd-status-box--current-stopdelay {
+  background: var(--pj-danger-bg, #FEE2E2);
+  border: 1px solid var(--pj-danger-border, #FCA5A5);
+}
+.prd-status-tag-label--current-startdelay,
+.prd-status-tag-label--current-stopdelay {
+  color: var(--pj-danger, #DC2626) !important;
+}
+.prd-status-value--current-startdelay,
+.prd-status-value--current-stopdelay {
+  color: var(--pj-danger, #7F1D1D) !important;
+}
 .prd-status-value--new-paused     { color: var(--pj-warning, #7C4700) !important; }
 .prd-status-value--new-startdelay { color: var(--pj-success, #14532D) !important; }
-.prd-status-value--new-stopdelay  { color: var(--pj-danger, #7F1D1D) !important; }
+.prd-status-value--new-stopdelay  { color: var(--pj-success, #14532D) !important; }
 /* also missing — same issue as the tag label above. */
 .prd-status-value--new-redo       { color: var(--pj-purple-hover, #6D28D9) !important; }
 

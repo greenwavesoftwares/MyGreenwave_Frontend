@@ -183,12 +183,12 @@ const PauseReasonDialog = ({
           </Typography>
 
           <Box className="prd-status-row">
-            <Box className="prd-status-box prd-status-box--current">
+            <Box className={`prd-status-box prd-status-box--current prd-status-box--current-${key}`}>
               <Box className="prd-status-tag">
                 <Typography
                   variant="caption"
                   fontWeight={700}
-                  className="prd-status-tag-label--current"
+                  className={`prd-status-tag-label--current prd-status-tag-label--current-${key}`}
                 >
                   CURRENT
                 </Typography>
@@ -196,11 +196,11 @@ const PauseReasonDialog = ({
               <Typography
                 variant="body2"
                 fontWeight={700}
-                className="prd-status-value--current"
+                className={`prd-status-value--current prd-status-value--current-${key}`}
               >
                 {pauseDelayType === "Paused" && <>Running</>}
-                {pauseDelayType === "StartDelay" && <>Pending</>}
-                {pauseDelayType === "StopDelay" && <>Running</>}
+                {pauseDelayType === "StartDelay" && <>Start Due</>}
+                {pauseDelayType === "StopDelay" && <>Running Late</>}
                 {pauseDelayType === "Redo" && <>Completed</>}
               </Typography>
             </Box>
