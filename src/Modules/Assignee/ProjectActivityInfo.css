@@ -628,7 +628,13 @@
      auto lets the table size itself to its content (never smaller
      than min-width below); any leftover space now sits once at the
      end of the row instead of being spread between every column. */
-  width: auto;
+  /* MODIFIED: was `width: auto`. With auto, the table hugged its own content
+     and stopped short of the card whenever it was narrower than the info
+     card (empty / few rows), leaving a gap at the right of the header bar.
+     .pai-content-shrink already sizes the card to the table's natural
+     width, so 100% only fills the small difference and does NOT spread
+     columns apart on wide screens. */
+  width: 100%;
   max-width: 100%;
   table-layout: auto;
   /* border-collapse switched from "collapse" to "separate" +
