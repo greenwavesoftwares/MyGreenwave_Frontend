@@ -22,6 +22,7 @@ import { ArrowLeft, BookOpen } from "lucide-react";
 import FeedbackModal from "../../Test Ground/FeedbackModal";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
+import ResumeDialog from "./ResumeDialog";
 import ProjectDocumentation from "./ProjectDocumentation";
 import ColumnFilterButton, {
   DateRangeFilterButton,
@@ -103,6 +104,8 @@ export default function ProjectActivityInfo({
   const [loading, setLoading] = useState(true);
   const [pauseDelayTarget, setPauseDelayTarget] = useState(null); // { activityId, activity }
   const [pauseDelayLoading, setPauseDelayLoading] = useState(false);
+  const [resumeTarget, setResumeTarget] = useState(null); // { activityId, activity }
+  const [resumeLoading, setResumeLoading] = useState(false);
   // Tracks in-flight API calls that are triggered from row-level buttons
   // (start/complete/restart/resume, submit sub-activity, open comments),
   // keyed per-activity so only the button that started the call shows a
@@ -608,6 +611,80 @@ export default function ProjectActivityInfo({
     }
     setPauseDelayTarget(null);
   };
+
+  // Resume opens a dialog first, so the user can (optionally) request new
+  // planned start/stop dates for the activities that follow.
+  const handleResumeRequest = async (activityId, activity) => {
+    setResumeTarget({
+      activityId,
+      activity,
+      pauseStart: null,
+      pauseLoading: true,
+    });
+    let pauseStart = null;
+    try {
+      // The open pause is the one without a resumeAt; fall back to the
+      // most recent pause if none is open.
+      const pauses = (await activityTrackerApi.getActivityPauses(activityId)) ?? [];
+      const open = pauses.filter((p) => !p.resumeAt);
+      const pool = open.length ? open : pauses;
+      pauseStart =
+        [...pool].sort(
+          (a, b) => dayjs(b.pauseStart).valueOf() - dayjs(a.pauseStart).valueOf(),
+        )[0]?.pauseStart ?? null;
+    } catch (e) {
+      console.log("Error fetching pauses:", e);
+    }
+    setResumeTarget((prev) =>
+      prev && prev.activityId === activityId
+        ? { ...prev, pauseStart, pauseLoading: false }
+        : prev,
+    );
+  };
+
+  const handleResumeConfirm = async ({ reason, requests, pauseMs }) => {
+    if (!resumeTarget) return;
+    setResumeLoading(true);
+    try {
+      await updateStatusOfActivity(
+        resumeTarget.activityId,
+        "Running",
+        resumeTarget.activity,
+      );
+
+      if (requests?.length) {
+        try {
+          // NOTE: assumed API — adjust to your backend's endpoint/shape.
+          await activityTrackerApi.requestPlannedDateChange({
+            sourceActivityId: resumeTarget.activityId,
+            sourceActivityName: resumeTarget.activity?.name,
+            requestedBy: currentUserId,
+            requestedByName: currentUserName,
+            pauseMs, // shown to the assigner in the review dialog
+            reason,
+            changes: requests,
+          });
+          showToast(
+            "success",
+            "Change requested",
+            `Requested new dates for ${requests.length} ${
+              requests.length === 1 ? "activity" : "activities"
+            }`,
+          );
+        } catch (e) {
+          console.log("Error:", e);
+          showToast(
+            "error",
+            "Error",
+            "Activity resumed, but the date change request failed. Please try again.",
+          );
+        }
+      }
+    } finally {
+      setResumeLoading(false);
+      setResumeTarget(null);
+    }
+  };
   const totalTasks = useMemo(
     () => countTasks(activityInfo?.activities),
     [activityInfo],
@@ -621,6 +698,8 @@ export default function ProjectActivityInfo({
     const walk = (nodes) => {
       nodes?.forEach((n) => {
         map[n.id] = {
+          id: n.id,
+          dependsOn: n.dependsOn || [],
           name: n.name,
           activityStatus: n.activityStatus,
           resource: n.resource,
@@ -1251,6 +1330,7 @@ export default function ProjectActivityInfo({
                   currentUserId={currentUserId}
                   updateStatusOfActivity={updateStatusOfActivity}
                   onPauseDelayRequest={handlePauseDelayRequest}
+                  onResumeRequest={handleResumeRequest}
                   onOpenCommentBox={onOpenCommentBox}
                   deleteNode={deleteNode}
                   onOpenFeedbackForm={onOpenFeedbackForm}
@@ -1434,6 +1514,7 @@ export default function ProjectActivityInfo({
                       currentUserId={currentUserId}
                       updateStatusOfActivity={updateStatusOfActivity}
                       onPauseDelayRequest={handlePauseDelayRequest}
+                  onResumeRequest={handleResumeRequest}
                       onOpenCommentBox={onOpenCommentBox}
                       deleteNode={deleteNode}
                       onOpenFeedbackForm={onOpenFeedbackForm}
@@ -1463,6 +1544,17 @@ export default function ProjectActivityInfo({
         onConfirm={handlePauseDelayConfirm}
         onCancel={() => setPauseDelayTarget(null)}
         loading={pauseDelayLoading}
+      />
+      <ResumeDialog
+        open={!!resumeTarget}
+        activityId={resumeTarget?.activityId}
+        activityName={resumeTarget?.activity?.name}
+        activityLookupMap={activityLookupMap}
+        pauseStart={resumeTarget?.pauseStart}
+        pauseLoading={!!resumeTarget?.pauseLoading}
+        onConfirm={handleResumeConfirm}
+        onCancel={() => setResumeTarget(null)}
+        loading={resumeLoading}
       />
       <CpmDialog
         open={openCpm}

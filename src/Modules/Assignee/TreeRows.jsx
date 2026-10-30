@@ -62,6 +62,7 @@ export default function TreeRows({
   projectId,
   updateStatusOfActivity,
   onPauseDelayRequest,
+  onResumeRequest,
   onOpenCommentBox,
   onOpenFeedbackForm,
   deleteNode,
@@ -276,7 +277,9 @@ export default function TreeRows({
             disabled={isStatusLoading}
             onClick={() => {
               if (blockIfParentPaused()) return;
-              updateStatusOfActivity(id, "Running", node);
+              // Opens ResumeDialog so the user can request planned
+              // start/stop changes for the next activities first.
+              onResumeRequest(id, node);
             }}
           >
             {isStatusLoading ? (
@@ -598,6 +601,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onPauseDelayRequest={onPauseDelayRequest}
+                onResumeRequest={onResumeRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 onOpenFeedbackForm={onOpenFeedbackForm}
@@ -889,6 +893,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onPauseDelayRequest={onPauseDelayRequest}
+                onResumeRequest={onResumeRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 fetchColor={fetchColor}
