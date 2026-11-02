@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 
 import "./CustomViews.css";
+import "./DocViewerTokens.css";
 import { useDocViewerZoom } from "./DocViewerMaximizedContext";
 
 /**

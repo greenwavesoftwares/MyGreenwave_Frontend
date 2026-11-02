@@ -23,6 +23,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import "./CustomViews.css";
+import "./DocViewerTokens.css";
 import "./CustomPDFView.css";
 import { useDocViewerZoom } from "./DocViewerMaximizedContext";
 

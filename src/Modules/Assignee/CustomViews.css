@@ -1,41 +1,15 @@
 /* ==========================================================
    Custom react-doc-viewer plugin renderers
-   (CustomPDFView.jsx, CustomExcelView.jsx, CustomPNGView.jsx, CustomJPGView.jpg)
+   (Excel, images, mail, docx, txt — PDF lives in CustomPDFView.css)
 
-   These always render as descendants of `.doc-viewer-dialog`
-   (the PrimeReact Dialog panel — see DocumentViewer.css), so they
-   consume its --dv-* tokens rather than redefining them. Each var
-   reference still carries the underlying app variable as a second
-   fallback layer (e.g. var(--dv-text, var(--fontColor, ...))) so
-   these stay themed even if ever rendered standalone, outside that
-   dialog, during testing.
+   Colors come ONLY from the --dv-* tokens in DocViewerTokens.css, which
+   every renderer root declares itself — no dependency on being rendered
+   inside `.doc-viewer-dialog`. Document "paper" (PDF/docx pages) stays
+   white in dark mode on purpose.
    ========================================================== */
 
-/* ---------- PDF ---------- */
-
-.doc-pdf-renderer {
-  height: 100%;
-  overflow: auto;
-  padding: 16px;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-}
-
-.doc-pdf-pages {
-  margin: 0 auto;
-}
-
-.doc-pdf-canvas {
-  display: block;
-  /* width follows the zoomed .doc-pdf-pages container; height keeps aspect */
-  width: 100%;
-  height: auto;
-  margin: 0 auto 16px;
-  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
-  background: #ffffff; /* PDF page content itself stays white, like paper */
-}
-
 .doc-pdf-error {
-  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  color: var(--dv-danger);
   padding: 16px;
 }
 
@@ -45,15 +19,15 @@
   height: 100%;
   overflow: auto;
   padding: 8px;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-  color: var(--dv-text, var(--fontColor, #263238));
+  background: var(--dv-surface-2);
+  color: var(--dv-text);
 }
 
 .doc-excel-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 8px;
-  border-bottom: 1px solid var(--dv-border, var(--divider-color, #dddddd));
+  border-bottom: 1px solid var(--dv-border);
 }
 
 .doc-excel-tab {
@@ -61,75 +35,41 @@
   border: none;
   background: transparent;
   border-bottom: 2px solid transparent;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
   font-weight: 400;
   cursor: pointer;
   font-size: 13px;
 }
 
 .doc-excel-tab:hover {
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
 }
 
 .doc-excel-tab.active {
-  border-bottom-color: var(--dv-primary, var(--avatar-bg, #2563eb));
-  color: var(--dv-primary, var(--avatar-bg, #2563eb));
+  border-bottom-color: var(--dv-primary);
+  color: var(--dv-primary);
   font-weight: 600;
 }
 
 .doc-excel-table {
   border-collapse: collapse;
   font-size: 13px;
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
 }
 
 .doc-excel-table td {
-  border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  border: 1px solid var(--dv-border);
   padding: .3em .6em;
   white-space: nowrap;
 }
 
 .doc-excel-table tr:nth-child(even) {
-  background: var(--dv-row-alt, var(--tableOddRow, #f7f7f7));
+  background: var(--dv-row-alt);
 }
 
 .doc-excel-error {
-  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  color: var(--dv-danger);
   padding: 16px;
-}
-
-/* ---------- PNG / images ---------- */
-
-.doc-png-renderer {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
-  padding: 16px;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-}
-
-.doc-png-img {
-  max-width: 100%;
-  max-height: 100%;
-  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
-}
-.doc-jpg-renderer {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-}
-
-.doc-jpg-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Fill as much space as possible without cropping */
-  box-shadow: 0 1px 4px var(--boxShadowPaper, rgba(0, 0, 0, .2));
 }
 
 /* ---------- Zoomable images (PNG / JPG) ---------- */
@@ -145,7 +85,7 @@
   overflow: auto;
   padding: 16px;
   box-sizing: border-box;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+  background: var(--dv-surface-2);
 }
 
 /* margin:auto centers the image when it's smaller than the viewport but,
@@ -165,8 +105,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-  color: var(--dv-text, var(--fontColor, #263238));
+  background: var(--dv-surface-2);
+  color: var(--dv-text);
 }
 
 .doc-mail-header {
@@ -175,8 +115,8 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
-  background: var(--dv-surface, var(--bg-drawer, #ffffff));
+  border-bottom: 1px solid var(--dv-border);
+  background: var(--dv-surface);
   font-size: 13px;
 }
 
@@ -194,8 +134,8 @@
      "verified recipient" check read as one consistent color, and both
      flip together in dark mode (--dv-success has a dark-mode override in
      DocumentViewer.css). */
-  background: var(--dv-success-bg, #dcfce7);
-  color: var(--dv-success, #15803d);
+  background: var(--dv-success-bg);
+  color: var(--dv-success);
 }
 
 .doc-mail-sender-block {
@@ -214,7 +154,7 @@
 .doc-mail-sender-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -224,22 +164,22 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
 }
 
 .doc-mail-check-icon {
   font-size: 14px !important;
-  color: var(--dv-success, #15803d);
+  color: var(--dv-success);
 }
 
 .doc-mail-label {
   flex-shrink: 0;
   font-weight: 600;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
 }
 
 .doc-mail-value {
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -259,13 +199,13 @@
   font: inherit;
   cursor: pointer;
 
-  color: var(--dv-primary, var(--avatar-bg, #2563eb));
+  color: var(--dv-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .doc-mail-more:hover {
-  color: var(--dv-primary-fg, var(--blueFontColor, #1e40af));
+  color: var(--dv-primary-fg);
 }
 
 .doc-mail-more-popover {
@@ -281,8 +221,8 @@
   padding: 6px;
   list-style: none;
   border-radius: 6px;
-  background: var(--dv-surface, var(--bg-drawer, #ffffff));
-  border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
   box-shadow: var(--dv-shadow, 0 8px 24px rgba(17, 24, 39, .12));
 }
 
@@ -294,12 +234,12 @@
 }
 
 .doc-mail-more-item:hover {
-  background: var(--dv-row-alt, var(--tableOddRow, #f7f7f7));
+  background: var(--dv-row-alt);
 }
 
 .doc-mail-more-name {
   font-size: 13px;
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -307,7 +247,7 @@
 
 .doc-mail-more-address {
   font-size: 11px;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -316,7 +256,7 @@
 .doc-mail-date {
   flex-shrink: 0;
   padding-top: 2px;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -334,14 +274,14 @@
 .doc-mail-attachments {
   flex-shrink: 0;
   padding: 8px 12px;
-  border-top: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
-  background: var(--dv-surface, var(--bg-drawer, #ffffff));
+  border-top: 1px solid var(--dv-border);
+  background: var(--dv-surface);
   font-size: 13px;
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
 }
 
 .doc-mail-attachments-label {
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -358,23 +298,23 @@
   gap: 6px;
   padding: 5px 10px;
   border-radius: 16px;
-  border: 1px solid var(--dv-border, var(--divider-color, #e2e2e2));
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-  color: var(--dv-text, var(--fontColor, #263238));
+  border: 1px solid var(--dv-border);
+  background: var(--dv-surface-2);
+  color: var(--dv-text);
   text-decoration: none;
   max-width: 260px;
 }
 
 .doc-mail-attachment-chip:hover {
-  background: var(--dv-primary-bg, var(--icon-blue-bg, #dbeafe));
-  border-color: var(--dv-primary-bg, var(--icon-blue-bg, #dbeafe));
-  color: var(--dv-primary-fg, var(--blueFontColor, #1e40af));
+  background: var(--dv-primary-bg);
+  border-color: var(--dv-primary-bg);
+  color: var(--dv-primary-fg);
 }
 
 .doc-mail-attachment-icon {
   font-size: 16px !important;
   flex-shrink: 0;
-  color: var(--dv-primary, var(--avatar-bg, #2563eb));
+  color: var(--dv-primary);
 }
 
 .doc-mail-attachment-name {
@@ -385,18 +325,18 @@
 
 .doc-mail-attachment-size {
   flex-shrink: 0;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
   font-size: 11px;
 }
 
 .doc-mail-loading {
   padding: 16px;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
 }
 
 .doc-mail-error {
   padding: 16px;
-  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  color: var(--dv-danger);
 }
 
 
@@ -409,7 +349,7 @@
   overflow: auto;
   padding: 16px;
   box-sizing: border-box;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
+  background: var(--dv-surface-2);
 }
 
 /* Wide enough for the page, but never narrower than the viewer, so the page
@@ -442,12 +382,12 @@
 
 .doc-docx-error {
   padding: 16px;
-  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  color: var(--dv-danger);
 }
 
 .doc-docx-loading {
   padding: 16px;
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
 }
 
 
@@ -460,8 +400,8 @@
   overflow: auto;
   padding: 16px;
   box-sizing: border-box;
-  background: var(--dv-surface-2, var(--card-bg, #f9fafb));
-  color: var(--dv-text, var(--fontColor, #263238));
+  background: var(--dv-surface-2);
+  color: var(--dv-text);
 }
 
 .doc-txt-content {
@@ -471,13 +411,13 @@
   white-space: pre-wrap;      /* keep line breaks/indents, wrap long lines */
   overflow-wrap: anywhere;
   tab-size: 4;
-  color: var(--dv-text, var(--fontColor, #263238));
+  color: var(--dv-text);
 }
 
 .doc-txt-error {
-  color: var(--dv-danger, var(--redFontColor, #cc0000));
+  color: var(--dv-danger);
 }
 
 .doc-txt-empty {
-  color: var(--dv-text-muted, var(--tittleFontColor, #6b7280));
+  color: var(--dv-text-muted);
 }

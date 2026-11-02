@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { renderAsync } from "docx-preview";
 
 import "./CustomViews.css";
+import "./DocViewerTokens.css";
 import { useDocViewerZoom } from "./DocViewerMaximizedContext";
 
 /**

@@ -103,15 +103,6 @@
      dependency chain that can reintroduce transparency. */
   --pj-thead-solid-bg: #EEF1F6;
 
-  /* Dependencies popover — same reasoning as --pj-thead-solid-bg:
-     --pj-surface-2 / --tableOddRow can resolve to a translucent value
-     in the app's real theme, which is unacceptable for a floating
-     popover (page content would show through). These are hardcoded
-     opaque and given their own dark override below instead. */
-  --pj-dep-popover-bg: #FFFFFF;
-  --pj-dep-row-odd-bg: #FFFFFF;
-  --pj-dep-row-even-bg: #F3F6FB;
-  --pj-dep-heading: var(--pj-primary, #1D4ED8);
 }
 
 /* ==========================================================
@@ -160,11 +151,6 @@
   --pj-notice-border: #35322b;
 
   --pj-thead-solid-bg: #1c2333;
-
-  --pj-dep-popover-bg: #1B2333;
-  --pj-dep-row-odd-bg: #1B2333;
-  --pj-dep-row-even-bg: #242E44;
-  --pj-dep-heading: var(--pj-primary, #6d8dff);
 }
 
 /* ── Reset + base font for portaled dialogs ──

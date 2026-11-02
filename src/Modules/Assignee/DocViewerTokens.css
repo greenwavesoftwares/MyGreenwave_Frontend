@@ -1,0 +1,89 @@
+/* ==========================================================
+   DocViewerTokens.css — SINGLE SOURCE for the --dv-* design tokens
+   used by every document-viewer surface:
+     DocumentViewer.css   (dialog chrome, header, zoom, badges)
+     CustomViews.css      (Excel / image / mail / docx / txt renderers)
+     CustomPDFView.css    (PDF viewer)
+
+   Previously these were defined inside DocumentViewer.css while the
+   renderer stylesheets consumed them, so the renderers only looked
+   right if (a) DocumentViewer.css happened to be loaded and (b) they
+   were rendered inside `.doc-viewer-dialog`. CustomDialogHeader.jsx
+   even imported DocumentViewer.css purely to get this side effect.
+
+   Now every viewer component imports THIS file, and each renderer
+   root re-declares the tokens itself, so any renderer works standalone
+   (tests, Storybook, a future inline preview) with no dialog ancestor.
+   Tokens resolve to the same app theme vars everywhere, so declaring
+   them on nested elements is harmless.
+
+   Tokens wrap the app's real theme variables (--card-bg, --fontColor,
+   --divider-color, ...) with the original hex values as the only
+   fallback. Consumers use plain var(--dv-*) — no second fallback layer.
+   ========================================================== */
+
+:is(
+  .doc-viewer-trigger,
+  .doc-viewer-dialog,
+  .pdfv,
+  .doc-excel-renderer,
+  .doc-image-renderer,
+  .doc-mail-renderer,
+  .doc-docx-renderer,
+  .doc-txt-renderer
+) {
+  --dv-surface:        var(--bg-drawer, #ffffff);   /* opaque in both themes */
+  --dv-surface-2:      var(--card-bg, #f9fafb);
+  --dv-row-alt:        var(--tableOddRow, #f7f7f7);
+  --dv-border:         var(--divider-color, #e2e2e2);
+  --dv-border-strong:  var(--tableOuterBorder, #d7d3d3);
+
+  --dv-text:           var(--fontColor, #263238);
+  --dv-text-muted:     var(--tittleFontColor, #6b7280);
+  --dv-text-faint:     var(--FontAwesomeIcon, #8a94a6);
+
+  --dv-primary:        var(--avatar-bg, #2563eb);
+  --dv-primary-bg:     var(--icon-blue-bg, #dbeafe);
+  --dv-primary-fg:     var(--blueFontColor, #1e40af);
+
+  /* --meal-app-red mirrors ProjectActivityInfo.css's danger-bg token —
+     deliberately NOT --redBG (saturated solid red, not a soft tint). */
+  --dv-danger:         var(--redFontColor, #b30000);
+  --dv-danger-bg:      var(--meal-app-red, #fef2f2);
+  --dv-danger-border:  var(--redBorder, #fda0a0);
+
+  /* "success" stays bespoke: --greenFontColor/--greenBG are mistyped in
+     the app theme. --greenBorder is a real color in both themes. */
+  --dv-success:        #15803d;
+  --dv-success-bg:     var(--icon-green-bg, #dcfce7);
+  --dv-success-border: var(--greenBorder, #86efac);
+
+  --dv-purple:         #7c3aed;
+  --dv-purple-bg:      var(--icon-purple-bg, #f3e8ff);
+
+  --dv-shadow: 0 12px 32px var(--boxShadowPaper, rgba(17, 24, 39, .12)),
+               0 4px 12px var(--boxShadowPaper, rgba(17, 24, 39, .06));
+}
+
+/* Dark mode: only tokens with no matching app variable need overriding. */
+:is(
+  :is(.dark, [data-theme="dark"]) .doc-viewer-trigger,
+  .doc-viewer-trigger:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .doc-viewer-dialog,
+  .doc-viewer-dialog:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .pdfv,
+  .pdfv:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .doc-excel-renderer,
+  .doc-excel-renderer:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .doc-image-renderer,
+  .doc-image-renderer:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .doc-mail-renderer,
+  .doc-mail-renderer:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .doc-docx-renderer,
+  .doc-docx-renderer:is(.dark, [data-theme="dark"]),
+  :is(.dark, [data-theme="dark"]) .doc-txt-renderer,
+  .doc-txt-renderer:is(.dark, [data-theme="dark"])
+) {
+  --dv-success: #4ade80;
+  --dv-purple:  #c4b5fd;
+}
