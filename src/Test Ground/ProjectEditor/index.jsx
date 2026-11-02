@@ -2500,48 +2500,53 @@ export default function ProjectEditor({
               </div>
 
               {/* Upload status */}
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                  padding: "8px 12px",
-                  borderRadius: 7,
-                  background:
-                    uploadStatus.type === "ok"
-                      ? t.successBgSubtle
-                      : uploadStatus.type === "warn"
-                        ? t.warningBgSubtle
-                        : uploadStatus.type === "err"
-                          ? t.dangerBgSubtle
-                          : t.infoBg,
-                  border: `1px solid ${
-                    uploadStatus.type === "ok"
-                      ? t.successBorder
-                      : uploadStatus.type === "warn"
-                        ? t.warningBorder
-                        : uploadStatus.type === "err"
-                          ? t.dangerBorder
-                          : t.infoBorder
-                  }`,
-                  fontSize: 11.5,
-                  color: t.textSecondary,
-                }}
-              >
-                <span style={{ flexShrink: 0, fontSize: 13 }}>
-                  {uploadStatus.type === "ok" ? (
-                    <CheckCircle2 size={13} />
-                  ) : uploadStatus.type === "warn" ? (
-                    <AlertTriangle size={13} />
-                  ) : uploadStatus.type === "err" ? (
-                    <AlertCircle size={13} />
-                  ) : (
-                    <Info size={13} />
-                  )}
-                </span>
-                <span dangerouslySetInnerHTML={{ __html: uploadStatus.msg }} />
-              </div>
+              {draft.status === "draft" && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
+                    padding: "8px 12px",
+                    borderRadius: 7,
+                    background:
+                      uploadStatus.type === "ok"
+                        ? t.successBgSubtle
+                        : uploadStatus.type === "warn"
+                          ? t.warningBgSubtle
+                          : uploadStatus.type === "err"
+                            ? t.dangerBgSubtle
+                            : t.infoBg,
+                    border: `1px solid ${
+                      uploadStatus.type === "ok"
+                        ? t.successBorder
+                        : uploadStatus.type === "warn"
+                          ? t.warningBorder
+                          : uploadStatus.type === "err"
+                            ? t.dangerBorder
+                            : t.infoBorder
+                    }`,
+                    fontSize: 11.5,
+                    color: t.textSecondary,
+                  }}
+                >
+                  <span style={{ flexShrink: 0, fontSize: 13 }}>
+                    {uploadStatus.type === "ok" ? (
+                      <CheckCircle2 size={13} />
+                    ) : uploadStatus.type === "warn" ? (
+                      <AlertTriangle size={13} />
+                    ) : uploadStatus.type === "err" ? (
+                      <AlertCircle size={13} />
+                    ) : (
+                      <Info size={13} />
+                    )}
+                  </span>
+
+                  <span
+                    dangerouslySetInnerHTML={{ __html: uploadStatus.msg }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Empty state */}
@@ -2925,7 +2930,7 @@ export default function ProjectEditor({
                       <>
                         <button
                           onClick={handleAutoChainClick}
-                          title="Auto-chain tasks per resource by planned start date"
+                          title="Auto-Dependendecy tasks per resource"
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
@@ -2942,7 +2947,7 @@ export default function ProjectEditor({
                           }}
                         >
                           <Link2 size={14} />
-                          Auto Chain
+                          Auto Dependency
                         </button>
                         <button
                           onClick={() => addRow()}
