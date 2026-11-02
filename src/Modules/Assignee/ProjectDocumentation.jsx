@@ -579,6 +579,10 @@ export default function ProjectDocumentation({ open, projectId, onClose }) {
     <>
       <Dialog
         open={!!open}
+      // The DocumentViewer (PrimeReact dialog) is portalled to <body>, i.e.
+      // OUTSIDE this MUI modal. MUI's focus trap would yank focus back here
+      // every time an input in the viewer (Find / page no.) is focused.
+      disableEnforceFocus
         onClose={onClose}
         maxWidth={false}
         fullScreen={isMobile}
