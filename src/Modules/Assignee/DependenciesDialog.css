@@ -1,0 +1,235 @@
+/* ==========================================================
+   DependenciesDialog.css — everything for DependenciesDialog.jsx.
+   (Moved out of ProjectActivityInfo.css and the --pj-dep-* block in
+   assignee-theme.css; nothing else in the app uses these rules.)
+
+   - Root carries `pj-scope` for the shared --pj-* tokens + reset, and is
+     portaled, so rules are scoped to `.dependency-dialog`, never `.pai-page`.
+   - The header/title/icon rules used to be written as
+     `.pj-scope.dependency-dialog-title` (compound, same element) while the
+     markup only has `.dependency-dialog-title` — they never matched. They
+     are now plain descendants of `.dependency-dialog`.
+   - Every descendant selector has >= 2 classes, which beats PrimeReact's
+     and MUI's single-class rules, so the old `!important`s are gone.
+   ========================================================== */
+
+.dependency-dialog {
+  /* Floating dialog: must be fully OPAQUE. --pj-surface-2 / --tableOddRow
+     can resolve to a translucent value in the app theme, so these are
+     hardcoded solids with their own dark override. */
+  --dep-surface: #ffffff;
+  --dep-heading: var(--pj-primary);
+  --dep-shadow: 0 12px 32px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+:is(.dark, [data-theme="dark"]) .dependency-dialog,
+.dependency-dialog:is(.dark, [data-theme="dark"]) {
+  --dep-surface: #1b2333;
+  --dep-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Frame ── */
+.pj-scope.dependency-dialog.p-dialog {
+  background: var(--dep-surface);
+  background-clip: padding-box;
+  border: 1px solid var(--pj-border);
+  border-radius: 12px;
+  box-shadow: var(--dep-shadow);
+  overflow: hidden;
+}
+
+.dependency-dialog .p-dialog-content {
+  padding: 0;
+  max-height: 480px;
+  overflow-y: auto;
+  font-family: "Sora", sans-serif;
+  background: var(--dep-surface);
+}
+
+/* ── Header: icon chip + activity name/subtitle. PrimeReact keeps its own
+   close (×) button alongside this custom content. ── */
+.dependency-dialog .p-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--pj-primary-bg);
+  border-bottom: 1px solid var(--pj-primary-border);
+}
+
+.dependency-dialog .p-dialog-header-icon {
+  color: var(--pj-text-muted);
+}
+
+.dependency-dialog .p-dialog-header-icon:hover {
+  background: var(--pj-primary-bg-2);
+  color: var(--pj-primary);
+}
+
+.dependency-dialog .dependency-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dependency-dialog .dependency-dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--pj-primary-bg-2);
+  color: var(--pj-primary);
+}
+
+.dependency-dialog .dependency-dialog-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: var(--dep-heading);
+  word-break: break-word;
+}
+
+.dependency-dialog .dependency-dialog-subtitle {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--pj-text-muted);
+}
+
+/* ── List ── */
+.dependency-dialog .dependency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.dependency-dialog .dependency-empty {
+  display: block;
+  padding: 16px 14px;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--pj-text-muted);
+}
+
+.dependency-dialog .dependency-item {
+  padding: 10px 12px;
+  background: var(--dep-surface);
+  border: 1px solid var(--pj-border);
+  border-radius: 10px;
+}
+
+.dependency-dialog .dependency-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dependency-dialog .dependency-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pj-text-primary);
+  word-break: break-word;
+}
+
+.dependency-dialog .dependency-item-resource {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  color: var(--pj-text-muted);
+}
+
+.dependency-dialog .dependency-item-resource svg {
+  flex: none;
+  color: var(--pj-text-faint);
+}
+
+.dependency-dialog .dependency-item-resource span {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pj-text-muted);
+}
+
+.dependency-dialog .dependency-item-id {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--pj-text-faint);
+  word-break: break-all;
+}
+
+/* ── Scheduled / Actual boxes: same "labeled bordered field" pattern as
+   the PLANNED / ACTUAL fields in the Rate & Finish Task dialog ── */
+.dependency-dialog .dependency-time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.dependency-dialog .dependency-time-grid:last-child {
+  margin-bottom: 0;
+}
+
+/* Variants set a custom property pair once; the base rule consumes it,
+   so label/value colors don't need per-variant descendant overrides
+   beyond the label accent. */
+.dependency-dialog .dependency-time-box {
+  --box-bg: var(--pj-surface, transparent);
+  --box-border: var(--pj-border);
+  --box-accent: var(--pj-text-muted);
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--box-border);
+  border-radius: 7px;
+  background: var(--box-bg);
+}
+
+.dependency-dialog .dependency-time-box--scheduled {
+  --box-bg: var(--pj-primary-bg);
+  --box-border: var(--pj-primary-border);
+  --box-accent: var(--pj-primary);
+}
+
+.dependency-dialog .dependency-time-box--actual {
+  --box-bg: var(--pj-success-bg);
+  --box-border: var(--pj-success-border);
+  --box-accent: var(--pj-success);
+}
+
+.dependency-dialog .dependency-time-box--pending {
+  --box-bg: transparent;
+  border-style: dashed;
+}
+
+.dependency-dialog .dependency-time-box-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--box-accent);
+}
+
+.dependency-dialog .dependency-time-box-value {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pj-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dependency-dialog .dependency-time-box--pending .dependency-time-box-value {
+  font-weight: 500;
+  color: var(--pj-text-faint);
+}

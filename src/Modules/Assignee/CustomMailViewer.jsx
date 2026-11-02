@@ -10,6 +10,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 
 import "./CustomViews.css";
+import "./DocViewerTokens.css";
 import { ViewIcon } from "lucide-react";
 import { viewAttachment } from "./AttachmentHelper";
 import DocumentViewer from "./DocumentViewer";

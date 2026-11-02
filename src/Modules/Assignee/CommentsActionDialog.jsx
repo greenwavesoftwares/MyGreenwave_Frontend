@@ -512,6 +512,10 @@ export default function CommentsActionDialog({
     <Dialog
     sx={{ zIndex: 2000 }}
       open={open}
+      // The DocumentViewer (PrimeReact dialog) is portalled to <body>, i.e.
+      // OUTSIDE this MUI modal. MUI's focus trap would yank focus back here
+      // every time an input in the viewer (Find / page no.) is focused.
+      disableEnforceFocus
       onClose={onClose}
       // maxWidth={false} stops MUI from adding its default
       // MuiDialog-paperWidthSm class (max-width: 600px) to the Paper,

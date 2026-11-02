@@ -1,0 +1,348 @@
+/* ==========================================================
+   ResumeDialog — scoped to `.rsd-*` classNames only.
+
+   Same approach as PauseReasonDialog.css: no tokens of its own,
+   everything reads --pj-* variables from assignee-theme.css via the
+   Paper's `pj-scope` class. Fallback hex values follow each var().
+   ========================================================== */
+
+.rsd-paper {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: var(--bg-drawer, #ffffff) !important;
+  background-clip: padding-box;
+}
+
+/* ── Header ── */
+.rsd-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  background: linear-gradient(
+    135deg,
+    var(--pj-success-bg, #dcfce7) 0%,
+    transparent 100%
+  );
+  border-bottom: 1px solid var(--pj-success-border-2, #bbf7d0);
+}
+.rsd-icon-chip {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--pj-success-bg, #dcfce7);
+}
+.rsd-icon {
+  color: var(--pj-success, #15803d) !important;
+}
+.rsd-title {
+  color: var(--pj-text-primary, #0f172a) !important;
+}
+.rsd-subtitle {
+  color: var(--pj-text-secondary, #475569) !important;
+}
+.rsd-close-btn {
+  color: var(--pj-text-muted, #64748b) !important;
+  align-self: flex-start;
+}
+
+/* ── Content ── */
+.rsd-content {
+  padding: 20px 24px !important;
+  background: transparent;
+}
+.rsd-section-label {
+  color: var(--pj-text-primary, #0f172a) !important;
+}
+.rsd-section-hint {
+  color: var(--pj-text-muted, #64748b) !important;
+  display: block;
+  margin-bottom: 12px !important;
+}
+
+/* ── Single opt-in ── */
+.rsd-optin {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px 10px 6px;
+  margin-bottom: 12px;
+  border: 1px solid var(--pj-border, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rsd-optin:hover {
+  border-color: var(--pj-border-strong, #cbd5e1);
+}
+.rsd-optin--on {
+  border-color: var(--pj-primary-border, #93c5fd);
+  background: var(--pj-surface-2, #f8fafc);
+}
+.rsd-optin .rsd-section-hint {
+  margin-bottom: 0 !important;
+}
+.rsd-pad {
+  padding: 0 2px;
+}
+.rsd-plain {
+  color: var(--pj-text-secondary, #475569) !important;
+}
+
+/* ── Activity rows ── */
+.rsd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.rsd-row {
+  padding: 12px 14px 14px;
+  border: 1px solid var(--pj-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--pj-surface, #ffffff);
+  transition: border-color 0.15s, background 0.15s;
+}
+.rsd-row:hover {
+  border-color: var(--pj-border-strong, #cbd5e1);
+}
+.rsd-row--changed {
+  border-color: var(--pj-primary-border, #93c5fd);
+  background: var(--pj-surface-2, #f8fafc);
+}
+.rsd-checkbox {
+  color: var(--pj-text-faint, #94a3b8) !important;
+}
+.rsd-checkbox.Mui-checked {
+  color: var(--pj-primary, #1d4ed8) !important;
+}
+.rsd-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.rsd-row-name {
+  color: var(--pj-text-primary, #0f172a) !important;
+}
+.rsd-tag {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--pj-text-secondary, #475569);
+  background: var(--pj-surface-2, #f1f5f9);
+  border: 1px solid var(--pj-border, #e2e8f0);
+}
+.rsd-tag--next {
+  color: var(--pj-primary, #1d4ed8);
+  background: var(--pj-primary-bg, #dbeafe);
+  border-color: var(--pj-primary-border, #93c5fd);
+}
+.rsd-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 2px 0 10px;
+  font-size: 12px;
+  color: var(--pj-text-muted, #64748b);
+}
+.rsd-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rsd-date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ── Inputs ── */
+.rsd-textfield .MuiOutlinedInput-root {
+  border-radius: 8px;
+  background: var(--pj-surface-2, #f8fafc);
+  color: var(--pj-text-primary, #0f172a);
+}
+.rsd-textfield .MuiInputLabel-root {
+  color: var(--pj-text-muted, #64748b);
+}
+.rsd-textfield .MuiInputLabel-root.Mui-focused {
+  color: var(--pj-primary, #1d4ed8);
+}
+.rsd-textfield .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-border, #e2e8f0) !important;
+}
+.rsd-textfield .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-border-strong, #cbd5e1) !important;
+}
+.rsd-textfield .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--pj-primary, #1d4ed8) !important;
+}
+.rsd-textfield textarea::placeholder {
+  color: var(--pj-text-faint, #94a3b8);
+  opacity: 1;
+}
+/* Native pickers/selects follow the app's light/dark scheme. */
+.rsd-textfield input[type="datetime-local"],
+.rsd-textfield select {
+  color-scheme: light dark;
+}
+.dark .rsd-textfield input[type="datetime-local"],
+.dark .rsd-textfield select,
+[data-theme="dark"] .rsd-textfield input[type="datetime-local"],
+[data-theme="dark"] .rsd-textfield select {
+  color-scheme: dark;
+}
+
+.rsd-error-text {
+  color: var(--pj-danger, #dc2626) !important;
+}
+
+/* ── Footer ── */
+.rsd-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--pj-border-subtle, #f1f1f1);
+  background: transparent;
+}
+.rsd-cancel-btn {
+  border-color: var(--pj-border-strong, #e2e8f0) !important;
+  color: var(--pj-text-secondary, #475569) !important;
+}
+.rsd-cancel-btn:hover {
+  background: var(--pj-surface-2, #f8fafc) !important;
+}
+.rsd-confirm-btn {
+  background: var(--pj-success, #15803d) !important;
+  color: var(--pj-on-color, #ffffff) !important;
+  box-shadow: none !important;
+  transition: filter 0.15s, background 0.15s;
+}
+.rsd-confirm-btn:hover {
+  filter: brightness(0.92);
+  box-shadow: none !important;
+}
+
+/* ── Small screens ── */
+@media (max-width: 520px) {
+  .rsd-date-grid {
+    grid-template-columns: 1fr;
+  }
+    .rsd-footer {
+    flex-direction: column-reverse;
+  }
+  .rsd-footer .MuiButton-root {
+    width: 100%;
+  }
+}
+
+/* ── Opt-in states added for the auto-calculated version ── */
+.rsd-optin--disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+.rsd-optin-spinner {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--pj-text-muted, #64748b);
+}
+
+/* ── Per-activity checkbox list (auto-calculated dates, read-only) ── */
+.rsd-list {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+  margin-bottom: 0;
+}
+.rsd-row {
+  padding: 0;
+  cursor: pointer;
+}
+.rsd-row--checked {
+  border-color: var(--pj-primary-border, #93c5fd);
+  background: var(--pj-surface-2, #f8fafc);
+}
+.rsd-row--disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.rsd-row-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 12px 10px 6px;
+}
+.rsd-row-head .rsd-checkbox {
+  margin-top: -1px;
+}
+.rsd-row-meta {
+  margin: 2px 0 0;
+}
+.rsd-new {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pj-success, #15803d);
+}
+.rsd-selectall {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 12px 2px 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.rsd-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--pj-text-muted, #64748b);
+}
+.rsd-loading {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  color: var(--pj-text-muted, #64748b);
+}
+
+/* ── Review mode (assigner page) ── */
+.rsd-summary {
+  border: 1px solid var(--pj-border, #e2e8f0);
+  background: var(--pj-surface-2, #f8fafc);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.rsd-summary-line {
+  color: var(--pj-text-primary, #0f172a) !important;
+  line-height: 1.45 !important;
+}
+.rsd-summary-reason {
+  display: block;
+  margin-top: 6px;
+  color: var(--pj-text-muted, #64748b) !important;
+}
+.rsd-new--off {
+  color: var(--pj-text-faint, #94a3b8);
+  text-decoration: line-through;
+}
+.rsd-reject-btn {
+  border-color: var(--pj-danger-border, #fca5a5) !important;
+  color: var(--pj-danger, #dc2626) !important;
+}
+.rsd-reject-btn:hover {
+  background: var(--pj-danger-bg-2, #fef2f2) !important;
+}

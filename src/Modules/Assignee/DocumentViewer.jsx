@@ -16,6 +16,7 @@ import {
   ZOOM_STEPS,
 } from "./DocViewerMaximizedContext";
 import "./assignee-theme.css"; // REFACTOR: shared reset/tokens
+import "./DocViewerTokens.css";
 import "./DocumentViewer.css";
 import { getPortalContainer } from "./portalContainer";
 import CustomJPGView from "./CustomJPGView";

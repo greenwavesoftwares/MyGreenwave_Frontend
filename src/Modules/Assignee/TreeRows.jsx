@@ -13,12 +13,8 @@ import {
   TextField,
   TextareaAutosize,
 } from "@mui/material";
-import { Dialog } from "primereact/dialog";
 import ModeCommentOutlinedIcon from "@mui/icons-material/ModeCommentOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import UndoIcon from "@mui/icons-material/Undo";
@@ -33,12 +29,12 @@ import dayjs from "dayjs";
 import CommentsActionDialog from "./CommentsActionDialog";
 import "./assignee-theme.css"; // REFACTOR: shared --pj-* tokens + reset
 import "./ProjectActivityInfo.css";
-import { getPortalContainer } from "./portalContainer";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Badge from "@mui/material/Badge";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StatusChip from "./StatusChip";
+import DependenciesDialog from "./DependenciesDialog";
 import { RotateCcw, Star, Trash2 } from "lucide-react";
 import { showToast } from "./toastService";
 import ActivityTimer from "./ActivityTimer";
@@ -62,6 +58,7 @@ export default function TreeRows({
   projectId,
   updateStatusOfActivity,
   onPauseDelayRequest,
+  onResumeRequest,
   onOpenCommentBox,
   onOpenFeedbackForm,
   deleteNode,
@@ -276,7 +273,9 @@ export default function TreeRows({
             disabled={isStatusLoading}
             onClick={() => {
               if (blockIfParentPaused()) return;
-              updateStatusOfActivity(id, "Running", node);
+              // Opens ResumeDialog so the user can request planned
+              // start/stop changes for the next activities first.
+              onResumeRequest(id, node);
             }}
           >
             {isStatusLoading ? (
@@ -413,140 +412,13 @@ export default function TreeRows({
       <>
         <div className="action-container">{actionItems}</div>
 
-        <Dialog
-          className="pj-scope dependency-dialog"
+        <DependenciesDialog
           visible={dependencyDialogVisible}
           onHide={handleCloseDependencies}
-          header={
-            <Box className="dependency-dialog-header">
-              <Box className="dependency-dialog-icon">
-                <AccountTreeOutlinedIcon sx={{ fontSize: 16 }} />
-              </Box>
-              <Box>
-                <Typography className="dependency-dialog-title">
-                  {name || "Activity"}
-                </Typography>
-                <Typography className="dependency-dialog-subtitle">
-                  Dependencies · {dependsOn?.length ?? 0}{" "}
-                  {dependsOn?.length === 1 ? "linked task" : "linked tasks"}
-                </Typography>
-              </Box>
-            </Box>
-          }
-          // REFACTOR: `pj-scope` (on className above) supplies the --pj-*
-          // tokens, and the .dependency-* rules in ProjectActivityInfo.css
-          // are no longer nested under `.pai-page`, so this dialog is
-          // self-contained wherever TreeRows is rendered.
-          appendTo={getPortalContainer}
-          baseZIndex={1400}
-          // No anchor/position props — PrimeReact renders this in its
-          // own default centered-overlay position rather than pinned
-          // next to the trigger button.
-          modal
-          dismissableMask
-          draggable={false}
-          style={{ width: "420px" }}
-          breakpoints={{ "640px": "94vw" }}
-        >
-          {dependsOn?.length > 0 ? (
-            <Box className="dependency-list">
-              {dependsOn.map((depId) => {
-                const dep = activityLookupMap?.[depId];
-                const hasActual = Boolean(
-                  dep?.actualStart || dep?.actualStop,
-                );
-
-                return (
-                  <Box key={depId} className="dependency-item">
-                    <Box className="dependency-item-head">
-                      <Typography className="dependency-item-name">
-                        {dep?.name ?? "Unknown activity"}
-                      </Typography>
-                      {dep?.activityStatus && (
-                        <StatusChip
-                          status={dep.activityStatus.toLowerCase()}
-                        />
-                      )}
-                    </Box>
-
-                    {dep?.resource && (
-                      <Box className="dependency-item-resource">
-                        <PersonOutlineOutlinedIcon sx={{ fontSize: 13 }} />
-                        <Typography component="span">
-                          {dep.resource}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    <Box className="dependency-time-grid">
-                      <Box className="dependency-time-box dependency-time-box--scheduled">
-                        <Box className="dependency-time-box-label">
-                          <CalendarMonthOutlinedIcon sx={{ fontSize: 12 }} />
-                          SCHEDULED START
-                        </Box>
-                        <Typography className="dependency-time-box-value">
-                          {formatDateTime(dep?.plannedStart)}
-                        </Typography>
-                      </Box>
-                      <Box className="dependency-time-box dependency-time-box--scheduled">
-                        <Box className="dependency-time-box-label">
-                          <CalendarMonthOutlinedIcon sx={{ fontSize: 12 }} />
-                          SCHEDULED STOP
-                        </Box>
-                        <Typography className="dependency-time-box-value">
-                          {formatDateTime(dep?.plannedStop)}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Box className="dependency-time-grid">
-                      <Box
-                        className={`dependency-time-box ${
-                          hasActual
-                            ? "dependency-time-box--actual"
-                            : "dependency-time-box--pending"
-                        }`}
-                      >
-                        <Box className="dependency-time-box-label">
-                          <AccessTimeOutlinedIcon sx={{ fontSize: 12 }} />
-                          ACTUAL START
-                        </Box>
-                        <Typography className="dependency-time-box-value">
-                          {formatDateTime(dep?.actualStart)}
-                        </Typography>
-                      </Box>
-                      <Box
-                        className={`dependency-time-box ${
-                          hasActual
-                            ? "dependency-time-box--actual"
-                            : "dependency-time-box--pending"
-                        }`}
-                      >
-                        <Box className="dependency-time-box-label">
-                          <AccessTimeOutlinedIcon sx={{ fontSize: 12 }} />
-                          ACTUAL STOP
-                        </Box>
-                        <Typography className="dependency-time-box-value">
-                          {formatDateTime(dep?.actualStop)}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {!dep && (
-                      <Typography className="dependency-item-id">
-                        {depId}
-                      </Typography>
-                    )}
-                  </Box>
-                );
-              })}
-            </Box>
-          ) : (
-            <Typography className="dependency-empty">
-              No dependencies
-            </Typography>
-          )}
-        </Dialog>
+          activityName={name}
+          dependsOn={dependsOn}
+          activityLookupMap={activityLookupMap}
+        />
       </>
     );
   };
@@ -598,6 +470,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onPauseDelayRequest={onPauseDelayRequest}
+                onResumeRequest={onResumeRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 onOpenFeedbackForm={onOpenFeedbackForm}
@@ -889,6 +762,7 @@ export default function TreeRows({
                 currentUserId={currentUserId}
                 updateStatusOfActivity={updateStatusOfActivity}
                 onPauseDelayRequest={onPauseDelayRequest}
+                onResumeRequest={onResumeRequest}
                 onOpenCommentBox={onOpenCommentBox}
                 deleteNode={deleteNode}
                 fetchColor={fetchColor}

@@ -1,6 +1,7 @@
 import React from "react";
 
 import "./DocumentViewer.css";
+import "./DocViewerTokens.css";
 
 // Maps a file extension to the badge modifier class defined in
 // DocumentViewer.css (.doc-viewer-badge--pdf/--doc/--xls/--png/--jpg/--txt), which
