@@ -1793,6 +1793,106 @@ const activityTrackerApi = {
     );
     return response.data;
   },
+
+  // ============================================================
+  //                 RESUME DIALOG (PLANNED DATE CHANGE)
+  // ============================================================
+
+  /**
+   * POST /activityTracker/resumeDialog/plannedDateChangeRequests
+   * Creates a planned-date-change request after an activity was paused.
+   * @param {Object} payload (ResumeDialogCreateRequest)
+   * @example
+   * {
+   *   "sourceActivityId": "act123",
+   *   "sourceActivityName": "Design review",
+   *   "requestedBy": "u",
+   *   "pauseMins": 1562,
+   *   "reason": "\"Design review\" was paused for 1d 2h 2m; planned dates shifted by the same duration.",
+   *   "changes": [
+   *     {
+   *       "activityId": "act123",
+   *       "activityName": "Development",
+   *       "currentStart": "2026-11-02T04:00:00.000Z",
+   *       "currentStop": "2026-11-06T12:00:00.000Z",
+   *       "requestedStart": "2026-11-03T06:02:00.000Z",
+   *       "requestedStop": "2026-11-07T14:02:00.000Z"
+   *     }
+   *   ]
+   * }
+   * @returns {{ requestId: string }} (HTTP 201)
+   */
+  resumeDialogCreateRequest: async (payload) => {
+    const response = await axios.post(
+      `${apiEndPoint}/resumeDialog/plannedDateChangeRequests`,
+      payload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/resumeDialog/getResumeDialogGetRequestslist
+   * Lists planned-date-change requests of a project for the assigner.
+   * @param {string} projectId
+   * @param {string} [status="PENDING"] - PENDING | APPROVED | REJECTED
+   * @returns Array of ResumeDialogRequestView (each includes pauseMins and its changes)
+   */
+  getResumeDialogRequests: async (projectId, status = "PENDING") => {
+    const response = await axios.get(
+      `${apiEndPoint}/resumeDialog/getResumeDialogGetRequestslist`,
+      {
+        headers: getHeaders(),
+        params: { projectId, status },
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/resumeDialog/{requestId}/approve
+   * Approves a request. The dates sent here are applied to the activities,
+   * so the assigner can adjust them before approving.
+   * @param {string} requestId
+   * @param {Object} payload (ResumeDialogApproveRequest)
+   * @example
+   * {
+   *   "approvedBy": "u",
+   *   "changes": [
+   *     {
+   *       "activityId": "act123",
+   *       "requestedStart": "2026-11-03T06:02:00.000Z",
+   *       "requestedStop": "2026-11-07T14:02:00.000Z"
+   *     }
+   *   ]
+   * }
+   * @returns {boolean}
+   */
+  resumeDialogApprove: async (requestId, payload) => {
+    const response = await axios.put(
+      `${apiEndPoint}/resumeDialog/${requestId}/approve`,
+      payload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
+   * PUT /activityTracker/resumeDialog/{requestId}/reject
+   * Rejects a request.
+   * @param {string} requestId
+   * @param {Object} [payload] (ResumeDialogRejectRequest)
+   * @example { "rejectedBy": "u", "remarks": "" } // remarks optional
+   * @returns {boolean}
+   */
+  resumeDialogReject: async (requestId, payload = {}) => {
+    const response = await axios.put(
+      `${apiEndPoint}/resumeDialog/${requestId}/reject`,
+      payload,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
 };
 
 export default activityTrackerApi;
