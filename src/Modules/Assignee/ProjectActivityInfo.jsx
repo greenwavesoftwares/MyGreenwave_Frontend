@@ -1281,7 +1281,7 @@ export default function ProjectActivityInfo({
                 )}
               </button>
               {/* TEST ONLY — remove once the assigner view is verified */}
-              <button
+              {/* <button
                 className="pai-refresh-btn"
                 onClick={openAssignerViewTest}
                 title="Preview assigner view (test)"
@@ -1290,7 +1290,7 @@ export default function ProjectActivityInfo({
                 style={{ width: "auto", padding: "0 10px", fontSize: 12, fontWeight: 600 }}
               >
                 Assigner view (test)
-              </button>
+              </button> */}
               {/* <button
                 className="pai-refresh-btn"
                 onClick={() => setOpenCpm(true)}
