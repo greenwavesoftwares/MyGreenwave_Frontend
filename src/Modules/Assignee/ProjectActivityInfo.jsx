@@ -23,6 +23,11 @@ import FeedbackModal from "../../Test Ground/FeedbackModal";
 import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
 import ResumeDialog from "./ResumeDialog";
+import ResumeReviewDialog from "./ResumeReviewDialog";
+import {
+  calculateWorkingHours as calcWorkingHours,
+  addWorkingHours,
+} from "./workingTime";
 import ProjectDocumentation from "./ProjectDocumentation";
 import ColumnFilterButton, {
   DateRangeFilterButton,
@@ -106,6 +111,8 @@ export default function ProjectActivityInfo({
   const [pauseDelayLoading, setPauseDelayLoading] = useState(false);
   const [resumeTarget, setResumeTarget] = useState(null); // { activityId, activity }
   const [resumeLoading, setResumeLoading] = useState(false);
+  // TEST ONLY — previews the assigner's "Review Date Change Request" dialog.
+  const [testReview, setTestReview] = useState(null);
   // Tracks in-flight API calls that are triggered from row-level buttons
   // (start/complete/restart/resume, submit sub-activity, open comments),
   // keyed per-activity so only the button that started the call shows a
@@ -128,6 +135,11 @@ export default function ProjectActivityInfo({
   const WORK_START = 10;
   const WORK_END = 18;
   const WEEK_END = [0, 6];
+  const WORK_CFG = {
+    workStart: WORK_START,
+    workEnd: WORK_END,
+    weekEnd: WEEK_END,
+  };
 
   /* ── tree helpers ── */
   const addDuration = (startTime, durationHrs) =>
@@ -447,53 +459,11 @@ export default function ProjectActivityInfo({
     traverse(nodes);
     return count;
   };
-  const calculateWorkingHours = (start, end, leaves) => {
-    const startDate = dayjs(start);
-    const endDate = dayjs(end);
-
-    const startHour = startDate.hour() + startDate.minute() / 60;
-    const endHour = endDate.hour() + endDate.minute() / 60;
-
-    // Same day
-    if (startDate.isSame(endDate, "day")) {
-      if (WEEK_END.includes(startDate.day())) return 0;
-
-      return Math.max(
-        0,
-        Math.min(endHour, WORK_END) - Math.max(startHour, WORK_START),
-      );
-    }
-
-    let workingDaysBetween = 0;
-    let current = startDate.add(1, "day");
-
-    while (current.isBefore(endDate, "day")) {
-      if (!WEEK_END.includes(current.day())) {
-        workingDaysBetween++;
-      }
-      current = current.add(1, "day");
-    }
-
-    const leaveDays = leaves.reduce((count, leave) => {
-      return dayjs(leave).isBetween(startDate, endDate, "day", "()")
-        ? count + 1
-        : count;
-    }, 0);
-
-    const firstDayHours = WEEK_END.includes(startDate.day())
-      ? 0
-      : Math.max(0, WORK_END - Math.max(startHour, WORK_START));
-
-    const lastDayHours = WEEK_END.includes(endDate.day())
-      ? 0
-      : Math.max(0, Math.min(endHour, WORK_END) - WORK_START);
-
-    return (
-      firstDayHours +
-      lastDayHours +
-      (workingDaysBetween - leaveDays) * (WORK_END - WORK_START)
-    );
-  };
+  // Working hours between two moments — skips weekends, leave / holidays and
+  // time outside WORK_START–WORK_END. Shared with the resume / reschedule
+  // flow (see workingTime.js) so both always use the same rules.
+  const calculateWorkingHours = (start, end, leaves) =>
+    calcWorkingHours(start, end, leaves, WORK_CFG);
   const calculateDuration = async (activity, actualTime) => {
     console.log("Inside calculate duration");
     const leavesOfEmployee =
@@ -620,8 +590,40 @@ export default function ProjectActivityInfo({
       activity,
       pauseStart: null,
       pauseLoading: true,
+      leaves: [],
+      leavesByResource: {},
     });
     let pauseStart = null;
+    let leaves = [];
+    const leavesByResource = {};
+    try {
+      // Leaves / holidays are needed to turn the pause into WORKING time and
+      // to skip them when the planned dates are moved.
+      const getLeaves = async (userId) => {
+        const res = await activityTrackerApi.getLeavesWithHolidaysByUserId(userId);
+        return res?.[0]?.leaves ?? [];
+      };
+      leaves = await getLeaves(currentUserId);
+
+      // Owners of the other open activities — each is moved using their own
+      // leave calendar.
+      const owners = [
+        ...new Set(
+          Object.values(activityLookupMap || {})
+            .map((e) => e?.resource)
+            .filter((r) => r && r !== currentUserId),
+        ),
+      ];
+      const results = await Promise.allSettled(owners.map(getLeaves));
+      owners.forEach((o, i) => {
+        if (results[i].status === "fulfilled") {
+          leavesByResource[o] = results[i].value;
+        }
+      });
+    } catch (e) {
+      console.log("Error fetching leaves:", e);
+    }
+    leavesByResource[currentUserId] = leaves;
     try {
       // The open pause is the one without a resumeAt; fall back to the
       // most recent pause if none is open.
@@ -637,12 +639,17 @@ export default function ProjectActivityInfo({
     }
     setResumeTarget((prev) =>
       prev && prev.activityId === activityId
-        ? { ...prev, pauseStart, pauseLoading: false }
+        ? { ...prev, pauseStart, pauseLoading: false, leaves, leavesByResource }
         : prev,
     );
   };
 
-  const handleResumeConfirm = async ({ reason, requests, pauseMs }) => {
+  const handleResumeConfirm = async ({
+    reason,
+    requests,
+    pauseMs,
+    pauseWorkingHrs,
+  }) => {
     if (!resumeTarget) return;
     setResumeLoading(true);
     try {
@@ -655,14 +662,16 @@ export default function ProjectActivityInfo({
       if (requests?.length) {
         try {
           // NOTE: assumed API — adjust to your backend's endpoint/shape.
-          await activityTrackerApi.requestPlannedDateChange({
+          await activityTrackerApi.resumeDialogCreateRequest({
             sourceActivityId: resumeTarget.activityId,
             sourceActivityName: resumeTarget.activity?.name,
             requestedBy: currentUserId,
             requestedByName: currentUserName,
-            pauseMs, // shown to the assigner in the review dialog
+            // Working minutes of the pause (weekends / leave / off-hours
+            // excluded) — shown to the assigner in the review dialog.
+            pauseMins: Math.round((pauseWorkingHrs || 0) * 60),
             reason,
-            changes: requests,
+            resumeDialogChangeItems: requests,
           });
           showToast(
             "success",
@@ -714,6 +723,58 @@ export default function ProjectActivityInfo({
     walk(activityInfo?.modules);
     return map;
   }, [activityInfo]);
+
+  /* TEST ONLY — builds a sample change request from this page's own open
+     activities (first 3 with planned dates, each moved +4 working hours)
+     and opens the assigner review dialog. Nothing is sent to the API. */
+  const openAssignerViewTest = () => {
+    const open = Object.values(activityLookupMap || {}).filter(
+      (a) =>
+        a?.name &&
+        !["completed", "finished"].includes(
+          (a.activityStatus || "").toLowerCase(),
+        ) &&
+        dayjs(a.plannedStart).isValid() &&
+        dayjs(a.plannedStop).isValid(),
+    );
+    if (open.length < 2) {
+      showToast(
+        "error",
+        "Test",
+        "Need at least 2 open activities with planned dates to preview.",
+      );
+      return;
+    }
+    const [source, ...rest] = open;
+    const shiftHrs = 4;
+    setTestReview({
+      requestId: "TEST-REQUEST",
+      sourceActivityId: source.id,
+      requestedByName: currentUserName || "Assignee",
+      activityName: source.name,
+      pauseMs: shiftHrs * 60 * 60 * 1000,
+      reason: `"${source.name}" was paused for ${shiftHrs}h of working time (${shiftHrs}h elapsed); planned dates shifted by the same working time, skipping weekends, leave and non-working hours. (Sample data for testing.)`,
+      createdAt: new Date().toISOString(),
+      changes: rest.slice(0, 3).map((a) => ({
+        activityId: a.id,
+        activityName: a.name,
+        currentStart: a.plannedStart,
+        currentStop: a.plannedStop,
+        requestedStart: addWorkingHours(
+          a.plannedStart,
+          shiftHrs,
+          [],
+          WORK_CFG,
+        ).toISOString(),
+        requestedStop: addWorkingHours(
+          a.plannedStop,
+          shiftHrs,
+          [],
+          WORK_CFG,
+        ).toISOString(),
+      })),
+    });
+  };
 
   const filteredModules = useMemo(() => {
     if (!activityInfo?.modules) return [];
@@ -1219,6 +1280,17 @@ export default function ProjectActivityInfo({
                   </svg>
                 )}
               </button>
+              {/* TEST ONLY — remove once the assigner view is verified */}
+              <button
+                className="pai-refresh-btn"
+                onClick={openAssignerViewTest}
+                title="Preview assigner view (test)"
+                aria-label="Preview assigner view"
+                disabled={loading || !activityInfo?.modules?.length}
+                style={{ width: "auto", padding: "0 10px", fontSize: 12, fontWeight: 600 }}
+              >
+                Assigner view (test)
+              </button>
               {/* <button
                 className="pai-refresh-btn"
                 onClick={() => setOpenCpm(true)}
@@ -1480,7 +1552,7 @@ export default function ProjectActivityInfo({
                           fontSize: "13px",
                         }}
                       >
-                        {emptyStateMessage}
+                        {emptyStateMessage}/
                         {/* MODIFIED: "Clear filters" shortcut in the empty state,
                             shown only when a column filter is active (this is
                             what was hiding all 10 rows in the screenshot).
@@ -1552,9 +1624,19 @@ export default function ProjectActivityInfo({
         activityLookupMap={activityLookupMap}
         pauseStart={resumeTarget?.pauseStart}
         pauseLoading={!!resumeTarget?.pauseLoading}
+        leaves={resumeTarget?.leaves}
+        leavesByResource={resumeTarget?.leavesByResource}
+        workCfg={WORK_CFG}
         onConfirm={handleResumeConfirm}
         onCancel={() => setResumeTarget(null)}
         loading={resumeLoading}
+      />
+      <ResumeReviewDialog
+        projectId={activityInfo?.projectId}
+        open={!!testReview}
+        previewRequest={testReview}
+        dryRun
+        onClose={() => setTestReview(null)}
       />
       <CpmDialog
         open={openCpm}

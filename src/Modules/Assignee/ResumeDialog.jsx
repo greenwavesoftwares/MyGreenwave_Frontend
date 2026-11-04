@@ -17,6 +17,14 @@ import dayjs from "dayjs";
 import "./assignee-theme.css";
 import "./ResumeDialog.css";
 import { getPortalContainer } from "./portalContainer";
+import DateTimePickerPanel, { PICKER_FMT } from "./DateTimePickerPanel";
+import {
+  DEFAULT_WORK_CFG,
+  calculateWorkingHours,
+  addWorkingHours,
+  snapToWorkingTime,
+  formatWorkingHours,
+} from "./workingTime";
 
 /* ──────────────────────────────────────────────────────────
    ResumeDialog
@@ -30,10 +38,19 @@ import { getPortalContainer } from "./portalContainer";
    stop to be moved later by the time this activity was paused. Nothing
    is typed in — the new dates are calculated:
 
-       new planned start = existing planned start + pause duration
-       new planned stop  = existing planned stop  + pause duration
+       new planned start = existing planned start + pause WORKING duration
+       new planned stop  = existing planned stop  + pause WORKING duration
 
-   where pause duration = (moment of resume) − (moment paused).
+   where pause working duration = working hours between (moment paused) and
+   (moment of resume) — weekends, leave / holidays and non-working hours are
+   NOT counted (same rule as the actual-duration calculation). The shift is
+   then applied the same way: it is added as working time, so the new
+   dates skip weekends, leave and non-working hours too.
+
+   The assignee only ticks the activities to move. The calculated dates and
+   the pause duration are NOT shown to the assignee and cannot be edited —
+   they are calculated and sent to the API; only the assigner sees them (in
+   review mode).
 
    Requesting is OPTIONAL: leave step 1 unticked (or tick it but pick no
    activities) and the button just resumes. "Select all" ticks / clears
@@ -42,20 +59,31 @@ import { getPortalContainer } from "./portalContainer";
    TWO MODES, same dialog
    mode="request" (default) — the assignee's side, described above.
    mode="review"            — the assigner's side. Shows the request the
-     assignee made (who, how long the pause was, reason) and the same
-     per-activity checkbox list, read-only and pre-ticked, with the
-     current vs. requested dates. The assigner can untick any activity,
-     then either "Confirm Request" (applies the ticked ones) or
-     "Cancel Request" (declines it entirely). Nothing is recalculated —
-     the dates are exactly what the assignee asked for.
+     assignee made (who, how long the pause was, reason) and lists ALL open
+     activities. Only the activities the assignee requested are pre-ticked
+     (with their requested dates); the assigner can untick them, tick any
+     other activity, and for every ticked activity pick the new start date
+     & time (the stop keeps the planned working duration). Then either
+     "Confirm Request" (applies the ticked ones, with the final dates) or
+     "Cancel Request" (declines it entirely).
 
    Review-mode props
+     activityLookupMap  all activities (to list the non-requested ones)
+     leavesByResource   { [resource]: leaveDates[] } (optional)
+     workCfg            { workStart, workEnd, weekEnd } (optional)
      changeRequest   { requestId, requestedByName, activityName,
+                       sourceActivityId (optional — the resumed activity,
+                       left out of the list),
                        pauseMs, reason, createdAt,
                        changes: [{ activityId, activityName, currentStart,
                                    currentStop, requestedStart,
                                    requestedStop }] }
      onApprove(approvedChanges, changeRequest)   "Confirm Request"
+        approvedChanges = [{ activityId, activityName, currentStart,
+          currentStop, requestedStart, requestedStop, addedByAssigner }]
+        — requestedStart / requestedStop are the FINAL dates (as requested,
+        or as picked by the assigner); addedByAssigner is true for
+        activities the assignee did not request.
      onReject(changeRequest)                     "Cancel Request"
      onCancel()                                  X / click-away (no decision)
 
@@ -66,12 +94,19 @@ import { getPortalContainer } from "./portalContainer";
                            plannedStart, plannedStop, dependsOn } }
      pauseStart          when this activity was paused (Date | ISO string)
      pauseLoading        true while pauseStart is still being fetched
-     onConfirm({ reason, requests, pauseMs })
+     leaves              leave / holiday dates of the user who paused
+     leavesByResource    { [resource]: leaveDates[] } — leaves of each
+                         activity's owner, used when moving that activity
+                         (falls back to `leaves`)
+     workCfg             { workStart, workEnd, weekEnd } (optional)
+     onConfirm({ reason, requests, pauseMs, pauseWorkingHrs })
         requests = [] when nothing is ticked, otherwise
         [{ activityId, activityName, currentStart, currentStop,
            requestedStart, requestedStop }]  (ISO strings)
      onCancel()
    ────────────────────────────────────────────────────────── */
+
+const INPUT_FMT = PICKER_FMT; // "YYYY-MM-DDTHH:mm"
 
 const DONE = new Set(["completed", "finished"]);
 
@@ -136,20 +171,31 @@ const ResumeDialog = ({
   activityLookupMap,
   pauseStart,
   pauseLoading = false,
+  leaves = [],
+  leavesByResource = {},
+  workCfg = DEFAULT_WORK_CFG,
   onConfirm,
   onCancel,
   loading = false,
 }) => {
   const isReview = mode === "review";
+  // The pause-duration / date calculation is shown to the assigner (review
+  // mode) only. The assignee (request mode) still gets it calculated and
+  // sent to the API (see handleConfirm) — it just isn't displayed.
+  const showCalc = isReview;
   const [requestChange, setRequestChange] = useState(false); // step 1
   const [selected, setSelected] = useState(() => new Set()); // step 2
   // "Now" as of opening — drives the on-screen preview only; the request is
   // recalculated with the real time on confirm.
   const [openedAt, setOpenedAt] = useState(() => Date.now());
+  // Assigner only — per-activity chosen start:
+  //   { [id]: { on: boolean, value: "YYYY-MM-DDTHH:mm" } }
+  const [manual, setManual] = useState({});
 
   useEffect(() => {
     if (open) {
       setOpenedAt(Date.now());
+      setManual({});
       if (isReview) {
         setSelected(
           new Set((changeRequest?.changes || []).map((c) => c.activityId)),
@@ -158,35 +204,26 @@ const ResumeDialog = ({
     } else {
       setRequestChange(false);
       setSelected(new Set());
+      setManual({});
     }
   }, [open, isReview, changeRequest]);
 
   // Open activities with planned dates (not the one being resumed).
   // Dependents first (Next / Later), then the rest by planned start.
   const rows = useMemo(() => {
-    // Review mode: the rows are exactly the activities the assignee asked
-    // to move, with their requested dates carried along.
-    if (isReview) {
-      return (changeRequest?.changes || []).map((c) => ({
-        id: c.activityId,
-        depth: 0,
-        name: c.activityName,
-        resource: activityLookupMap?.[c.activityId]?.resource,
-        plannedStart: c.currentStart,
-        plannedStop: c.currentStop,
-        newStart: c.requestedStart,
-        newStop: c.requestedStop,
-      }));
-    }
+    const srcId = isReview ? changeRequest?.sourceActivityId : activityId;
+    const changes = isReview ? changeRequest?.changes || [] : [];
+    const requestedIds = new Set(changes.map((c) => c.activityId));
     const ok = (id, e) =>
-      id !== activityId &&
+      id !== srcId &&
+      !requestedIds.has(id) &&
       e?.name &&
       e?.activityStatus &&
       isOpenActivity(e) &&
       dayjs(e.plannedStart).isValid() &&
       dayjs(e.plannedStop).isValid();
 
-    const downstream = getDownstreamActivities(activityId, activityLookupMap)
+    const downstream = getDownstreamActivities(srcId, activityLookupMap)
       .filter(({ id }) => ok(id, activityLookupMap[id]))
       .map(({ id, depth }) => ({ id, depth, ...activityLookupMap[id] }));
     const taken = new Set(downstream.map((r) => r.id));
@@ -197,16 +234,133 @@ const ResumeDialog = ({
           dayjs(a.plannedStart).valueOf() - dayjs(b.plannedStart).valueOf(),
       )
       .map(([id, e]) => ({ id, depth: 0, ...e }));
-    return [...downstream, ...others];
+
+    // Review mode: the requested activities come first (pre-ticked, with the
+    // dates the assignee asked for), then every other open activity.
+    const requested = changes.map((c) => ({
+      ...(activityLookupMap?.[c.activityId] || {}),
+      id: c.activityId,
+      depth: 0,
+      isRequested: true,
+      name: c.activityName || activityLookupMap?.[c.activityId]?.name,
+      plannedStart: c.currentStart,
+      plannedStop: c.currentStop,
+      newStart: c.requestedStart,
+      newStop: c.requestedStop,
+    }));
+    return [...requested, ...downstream, ...others];
   }, [isReview, changeRequest, activityId, activityLookupMap]);
 
   const pauseValid = Boolean(pauseStart) && dayjs(pauseStart).isValid();
-  const previewMs = pauseValid
-    ? Math.max(0, openedAt - dayjs(pauseStart).valueOf())
+  // Working hours the activity was paused for (weekends / leave / off-hours
+  // excluded). Used for the calculation only — never displayed to the assignee.
+  const previewWorkingHrs = pauseValid
+    ? calculateWorkingHours(pauseStart, openedAt, leaves, workCfg)
     : 0;
+
+  // Move a planned date later by `hrs` working hours, using the leave
+  // calendar of the activity's owner (falls back to the pausing user's).
+  const shiftDate = (date, hrs, resource) =>
+    addWorkingHours(
+      date,
+      hrs,
+      leavesByResource?.[resource] ?? leaves,
+      workCfg,
+    );
   const canRequest = isReview
     ? rows.length > 0
     : pauseValid && !pauseLoading && rows.length > 0;
+
+  const leavesFor = (r) => leavesByResource?.[r.resource] ?? leaves;
+
+  // Dates for a row at moment `nowMs`.
+  //   request mode: planned + pause working time (never shown to the assignee)
+  //   review mode : as requested, or — when the assigner picks a start (always
+  //                 for rows the assignee did not request) — the picked start
+  //                 with the stop keeping the planned working duration.
+  const resolveDates = (r, nowMs) => {
+    if (!isReview) {
+      return {
+        start: shiftDate(r.plannedStart, previewWorkingHrs, r.resource),
+        stop: shiftDate(r.plannedStop, previewWorkingHrs, r.resource),
+        invalid: false,
+        adjusted: false,
+      };
+    }
+    const m = manual[r.id];
+    if (r.isRequested && !m?.on) {
+      return {
+        start: dayjs(r.newStart),
+        stop: dayjs(r.newStop),
+        invalid: false,
+        adjusted: false,
+      };
+    }
+    const picked = m?.value ? dayjs(m.value) : null;
+    if (!picked || !picked.isValid()) {
+      return { start: null, stop: null, invalid: true, adjusted: false };
+    }
+    const rowLeaves = leavesFor(r);
+    const start = snapToWorkingTime(picked, rowLeaves, workCfg);
+    const workHrs = calculateWorkingHours(
+      r.plannedStart,
+      r.plannedStop,
+      rowLeaves,
+      workCfg,
+    );
+    const stop =
+      workHrs > 0
+        ? addWorkingHours(start, workHrs, rowLeaves, workCfg)
+        : start.add(dayjs(r.plannedStop).diff(dayjs(r.plannedStart)), "ms");
+    const isRequestedStart =
+      r.isRequested && picked.isSame(dayjs(r.newStart), "minute");
+    return {
+      start,
+      stop,
+      // picked time is before now (minute precision) → not allowed
+      invalid:
+        !isRequestedStart && picked.isBefore(dayjs(nowMs).startOf("minute")),
+      adjusted: !start.isSame(picked, "minute"),
+    };
+  };
+
+  // Where the picker starts for a row: the requested start if there is one,
+  // otherwise the later of its planned start and now, on a working moment.
+  const defaultStartFor = (r) => {
+    const base = r.newStart
+      ? dayjs(r.newStart)
+      : dayjs(
+          Math.max(dayjs(r.plannedStart).valueOf(), dayjs(openedAt).valueOf()),
+        );
+    return snapToWorkingTime(base, leavesFor(r), workCfg).format(INPUT_FMT);
+  };
+
+  const setManualMode = (r, on) =>
+    setManual((prev) => {
+      const cur = prev[r.id] || {};
+      return { ...prev, [r.id]: { on, value: cur.value || defaultStartFor(r) } };
+    });
+
+  const setManualValue = (r, value) =>
+    setManual((prev) => ({ ...prev, [r.id]: { on: true, value } }));
+
+  // Rows the assignee did not request have no dates yet — as soon as the
+  // assigner ticks one, it opens in "choose date & time".
+  const initManualFor = (list) =>
+    setManual((prev) => {
+      const next = { ...prev };
+      list.forEach((r) => {
+        if (!r.isRequested && !next[r.id]?.on) {
+          next[r.id] = { on: true, value: next[r.id]?.value || defaultStartFor(r) };
+        }
+      });
+      return next;
+    });
+
+  // A ticked row with no / past picked date blocks the approval.
+  const hasInvalidManual =
+    isReview &&
+    rows.some((r) => selected.has(r.id) && resolveDates(r, openedAt).invalid);
 
   const toggleMaster = () => {
     if (loading || !canRequest) return;
@@ -217,6 +371,9 @@ const ResumeDialog = ({
 
   const toggleRow = (id) => {
     if (loading || !listActive) return;
+    if (isReview && !selected.has(id)) {
+      initManualFor(rows.filter((r) => r.id === id));
+    }
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -228,6 +385,7 @@ const ResumeDialog = ({
   const someSelected = selected.size > 0 && !allSelected;
   const toggleAll = () => {
     if (loading || !listActive) return;
+    if (isReview && !allSelected) initManualFor(rows);
     setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)));
   };
 
@@ -236,10 +394,17 @@ const ResumeDialog = ({
   const handleConfirm = () => {
     if (loading) return;
     if (n === 0) {
-      onConfirm({ reason: "", requests: [], pauseMs: 0 });
+      onConfirm({ reason: "", requests: [], pauseMs: 0, pauseWorkingHrs: 0 });
       return;
     }
-    const pauseMs = Math.max(0, Date.now() - dayjs(pauseStart).valueOf());
+    const now = Date.now();
+    const pauseMs = Math.max(0, now - dayjs(pauseStart).valueOf());
+    const pauseWorkingHrs = calculateWorkingHours(
+      pauseStart,
+      now,
+      leaves,
+      workCfg,
+    );
     const requests = rows
       .filter((r) => selected.has(r.id))
       .map((r) => ({
@@ -247,15 +412,19 @@ const ResumeDialog = ({
         activityName: r.name,
         currentStart: r.plannedStart,
         currentStop: r.plannedStop,
-        requestedStart: dayjs(r.plannedStart).add(pauseMs, "ms").toISOString(),
-        requestedStop: dayjs(r.plannedStop).add(pauseMs, "ms").toISOString(),
+        requestedStart: resolveDates(r).start.toISOString(),
+        requestedStop: resolveDates(r).stop.toISOString(),
       }));
     onConfirm({
-      reason: `"${activityName || "Activity"}" was paused for ${formatDuration(
+      reason: `"${activityName || "Activity"}" was paused for ${formatWorkingHours(
+        pauseWorkingHrs,
+        workCfg,
+      )} of working time (${formatDuration(
         pauseMs,
-      )}; planned dates shifted by the same duration.`,
+      )} elapsed); planned dates shifted by the same working time, skipping weekends, leave and non-working hours.`,
       requests,
       pauseMs,
+      pauseWorkingHrs,
     });
   };
 
@@ -266,10 +435,22 @@ const ResumeDialog = ({
 
   // Review mode: confirm the ticked activities / decline the whole request.
   const handleApprove = () => {
-    if (loading || selected.size === 0) return;
-    const approved = (changeRequest?.changes || []).filter((c) =>
-      selected.has(c.activityId),
-    );
+    if (loading || selected.size === 0 || hasInvalidManual) return;
+    const now = Date.now();
+    const approved = rows
+      .filter((r) => selected.has(r.id))
+      .map((r) => {
+        const d = resolveDates(r, now);
+        return {
+          activityId: r.id,
+          activityName: r.name,
+          currentStart: r.plannedStart,
+          currentStop: r.plannedStop,
+          requestedStart: d.start.toISOString(),
+          requestedStop: d.stop.toISOString(),
+          addedByAssigner: !r.isRequested,
+        };
+      });
     onApprove?.(approved, changeRequest);
   };
   const handleReject = () => {
@@ -286,9 +467,9 @@ const ResumeDialog = ({
   } else if (rows.length === 0) {
     hint = "There are no other open activities to reschedule.";
   } else {
-    hint = `Paused for ${formatDuration(
-      previewMs,
-    )}. New dates are calculated by moving each planned start & stop later by that amount. Optional.`;
+    // Assignee: no duration / calculation text.
+    hint =
+      "Ask for planned start & stop of other activities to be moved to account for the pause. Optional.";
   }
 
   return (
@@ -299,7 +480,12 @@ const ResumeDialog = ({
       scroll="paper"
       PaperProps={{
         className: "pj-scope rsd-paper",
-        sx: { width: 560, maxWidth: "94vw" },
+        sx: {
+          width: 560,
+          maxWidth: "calc(100% - 24px)",
+          maxHeight: "calc(100% - 24px)",
+          m: "12px",
+        },
       }}
     >
       {/* ── HEADER ── */}
@@ -407,7 +593,7 @@ const ResumeDialog = ({
             </Typography>
             <Typography variant="caption" className="rsd-section-hint">
               {isReview
-                ? "Untick any activity you don't want to move. Confirm applies the ticked ones."
+                ? "Requested activities are pre-ticked. Untick any you don't want to move, or tick any other activity and pick its new dates. Confirm applies the ticked ones."
                 : "Tick each activity whose dates should move. Leave all unticked to just resume."}
             </Typography>
             {/* Select all */}
@@ -437,16 +623,23 @@ const ResumeDialog = ({
             <Box className="rsd-list">
               {rows.map((r) => {
                 const checked = selected.has(r.id);
-                const newStart = r.newStart
-                  ? dayjs(r.newStart)
+                // request mode: calculated dates (computed, never displayed)
+                // review mode : the dates this row would get if confirmed
+                const d = isReview
+                  ? checked
+                    ? resolveDates(r, openedAt)
+                    : null
                   : pauseValid
-                    ? dayjs(r.plannedStart).add(previewMs, "ms")
+                    ? resolveDates(r)
                     : null;
-                const newStop = r.newStop
-                  ? dayjs(r.newStop)
-                  : pauseValid
-                    ? dayjs(r.plannedStop).add(previewMs, "ms")
-                    : null;
+                // Unticked requested rows still show what was requested.
+                const shown =
+                  d ||
+                  (isReview && r.newStart
+                    ? { start: dayjs(r.newStart), stop: dayjs(r.newStop) }
+                    : null);
+                const m = manual[r.id];
+                const asRequested = r.isRequested && !(checked && m?.on);
                 return (
                   <Box
                     key={r.id}
@@ -476,6 +669,11 @@ const ResumeDialog = ({
                           >
                             {r.name}
                           </Typography>
+                          {isReview && r.isRequested && (
+                            <span className="rsd-tag rsd-tag--next">
+                              Requested
+                            </span>
+                          )}
                           {r.depth > 0 && (
                             <span
                               className={`rsd-tag ${
@@ -490,7 +688,7 @@ const ResumeDialog = ({
                           {r.resource && (
                             <span className="rsd-meta-item">
                               <PersonOutlineOutlinedIcon sx={{ fontSize: 13 }} />
-                              {r.resource}
+                              {r.resourceName || r.resource}
                             </span>
                           )}
                           <span className="rsd-meta-item">
@@ -498,18 +696,118 @@ const ResumeDialog = ({
                             {fmtView(r.plannedStop)}
                           </span>
                         </Box>
-                        {(checked || isReview) && newStart && (
+                        {showCalc && shown?.start && (
                           <Box
                             className={`rsd-new ${
                               isReview && !checked ? "rsd-new--off" : ""
                             }`}
                           >
-                            {isReview ? "Requested" : "New"}:{" "}
-                            {fmtView(newStart)} → {fmtView(newStop)}
+                            {asRequested ? "Requested" : "New"}:{" "}
+                            {fmtView(shown.start)} → {fmtView(shown.stop)}
                           </Box>
                         )}
                       </Box>
                     </Box>
+
+                    {/* Assigner: date selection for every ticked activity.
+                        Requested rows can keep the requested dates or pick
+                        their own; rows the assignee didn't request always
+                        need a picked start. */}
+                    {isReview && checked && d && (
+                      <Box
+                        className="rsd-manual"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <Box className="rsd-manual-head">
+                          <span className="rsd-manual-badge">
+                            {r.isRequested
+                              ? "Dates requested by the assignee"
+                              : "Not requested — choose new dates"}
+                          </span>
+                          {r.isRequested && (
+                            <div
+                              className="rsd-seg"
+                              role="radiogroup"
+                              aria-label="Start date source"
+                            >
+                              {[
+                                ["auto", "As requested"],
+                                ["choose", "Choose date & time"],
+                              ].map(([val, label]) => {
+                                const active = (m?.on ? "choose" : "auto") === val;
+                                return (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    disabled={loading}
+                                    className={`rsd-seg-btn ${active ? "rsd-seg-btn--on" : ""}`}
+                                    onClick={() => setManualMode(r, val === "choose")}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </Box>
+
+                        {m?.on && (
+                          <Box className="rsd-manual-body">
+                            <DateTimePickerPanel
+                              value={m.value || ""}
+                              onChange={(v) => setManualValue(r, v)}
+                              minDate={dayjs(openedAt)}
+                              leaves={leavesFor(r)}
+                              workCfg={workCfg}
+                              disabled={loading}
+                            />
+                            <Box className="rsd-manual-side">
+                              <Box className="rsd-result">
+                                <span className="rsd-result-title">New schedule</span>
+                                <dl className="rsd-result-grid">
+                                  <dt>Start</dt>
+                                  <dd>{fmtView(d.start)}</dd>
+                                  <dt>Stop</dt>
+                                  <dd>{fmtView(d.stop)}</dd>
+                                  <dt>Duration</dt>
+                                  <dd>
+                                    {formatWorkingHours(
+                                      calculateWorkingHours(
+                                        r.plannedStart,
+                                        r.plannedStop,
+                                        leavesFor(r),
+                                        workCfg,
+                                      ),
+                                      workCfg,
+                                    )}{" "}
+                                    working time
+                                  </dd>
+                                </dl>
+                                <span
+                                  className={`rsd-result-note ${
+                                    d.invalid ? "rsd-result-note--error" : ""
+                                  }`}
+                                >
+                                  {d.invalid
+                                    ? "Pick a date & time from now onwards."
+                                    : d.adjusted
+                                      ? "Start moved to the next working time."
+                                      : "Stop keeps the planned working duration."}
+                                </span>
+                              </Box>
+                              {r.isRequested && (
+                                <Box className="rsd-manual-auto">
+                                  <span>As requested instead</span>
+                                  {fmtView(r.newStart)} → {fmtView(r.newStop)}
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 );
               })}
@@ -540,7 +838,7 @@ const ResumeDialog = ({
               )
             }
             onClick={handleApprove}
-            disabled={loading || selected.size === 0}
+            disabled={loading || selected.size === 0 || hasInvalidManual}
             className="rsd-confirm-btn"
             sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
           >
