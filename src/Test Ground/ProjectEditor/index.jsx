@@ -2958,51 +2958,6 @@ export default function ProjectEditor({
                     {draft.status !== "closed" && (
                       <>
                         {/* ── Auto Chain on Save toggle ── */}
-                        <label
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            cursor: "pointer",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: autoChainOnSave ? t.primary : t.textMuted,
-                            userSelect: "none",
-                            whiteSpace: "nowrap",
-                          }}
-                          title="Automatically chain dependencies per resource on save / publish"
-                        >
-                          <span
-                            onClick={() => setAutoChainOnSave((p) => !p)}
-                            style={{
-                              position: "relative",
-                              display: "inline-block",
-                              width: 30,
-                              height: 17,
-                              background: autoChainOnSave
-                                ? t.primary
-                                : t.borderStrong,
-                              borderRadius: 999,
-                              transition: "background .2s",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <span
-                              style={{
-                                position: "absolute",
-                                top: 2,
-                                left: autoChainOnSave ? 15 : 2,
-                                width: 13,
-                                height: 13,
-                                background: "#fff",
-                                borderRadius: "50%",
-                                transition: "left .2s",
-                                boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                              }}
-                            />
-                          </span>
-                          {!isMobile && "Chain on Save"}
-                        </label>
 
                         {false && (
                           <button
@@ -3917,7 +3872,50 @@ export default function ProjectEditor({
                   </span>
                 </div>
               )}
-
+              {/* ── Auto Chain on Save toggle ── */}
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: autoChainOnSave ? t.primary : t.textMuted,
+                  userSelect: "none",
+                  whiteSpace: "nowrap",
+                }}
+                title="Automatically chain dependencies per resource on save / publish"
+              >
+                <span
+                  onClick={() => setAutoChainOnSave((p) => !p)}
+                  style={{
+                    position: "relative",
+                    display: "inline-block",
+                    width: 30,
+                    height: 17,
+                    background: autoChainOnSave ? t.primary : t.borderStrong,
+                    borderRadius: 999,
+                    transition: "background .2s",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 2,
+                      left: autoChainOnSave ? 15 : 2,
+                      width: 13,
+                      height: 13,
+                      background: "#fff",
+                      borderRadius: "50%",
+                      transition: "left .2s",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                    }}
+                  />
+                </span>
+                {!isMobile && "Chain on Save"}
+              </label>
               {/* Save Draft */}
               <button
                 onClick={handleSaveDraftClick}
