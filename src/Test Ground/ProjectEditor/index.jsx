@@ -205,7 +205,7 @@ export default function ProjectEditor({
     draft.moduleRegistry || {},
   );
   const [autoChainPreview, setAutoChainPreview] = useState(null);
-
+  const [autoChainOnSave, setAutoChainOnSave] = useState(true);
   // ─── Custom Columns ───
   const [customColumns, setCustomColumns] = useState(draft.customColumns || []);
   const [colWidths, setColWidths] = useState({});
@@ -317,7 +317,22 @@ export default function ProjectEditor({
     });
     return counts;
   }, [customColumns, rows]);
-
+  /* ── Apply auto-chain to rows (used by save/publish) ── */
+  const applyAutoChainToRows = useCallback(
+    (currentRows) => {
+      if (!autoChainOnSave) return currentRows;
+      const { updates } = computeAutoChain(currentRows, resources);
+      if (Object.keys(updates).length === 0) return currentRows;
+      return currentRows.map((r) => {
+        if (updates[r.id]) {
+          const existing = Array.isArray(r.dependsOn) ? r.dependsOn : [];
+          return { ...r, dependsOn: [...existing, ...updates[r.id]] };
+        }
+        return r;
+      });
+    },
+    [autoChainOnSave, resources],
+  );
   /* ── Auto Chain Dependencies ── */
   const handleAutoChainClick = useCallback(() => {
     const { changes, updates } = computeAutoChain(rows, resources);
@@ -674,24 +689,28 @@ export default function ProjectEditor({
   // ═══════════════════════════════════════════════════════
   // Build payload
   // ═══════════════════════════════════════════════════════
-  const buildProjectData = useCallback(() => {
-    const formattedRows = rows.map((r) => ({
-      ...r,
-      customValues: r.customValues || {},
-      dependsOn: r.dependsOn || [], // ← safety fallback
-    }));
-    return {
-      ...draft,
-      project,
-      po,
-      site,
-      groups,
-      rows: formattedRows,
-      moduleRegistry,
-      customColumns,
-      status: draft.status === "published" ? "published" : "draft",
-    };
-  }, [draft, project, po, site, groups, rows, moduleRegistry, customColumns]);
+  const buildProjectData = useCallback(
+    (rowsOverride) => {
+      const sourceRows = rowsOverride || rows;
+      const formattedRows = sourceRows.map((r) => ({
+        ...r,
+        customValues: r.customValues || {},
+        dependsOn: r.dependsOn || [], // ← safety fallback
+      }));
+      return {
+        ...draft,
+        project,
+        po,
+        site,
+        groups,
+        rows: formattedRows,
+        moduleRegistry,
+        customColumns,
+        status: draft.status === "published" ? "published" : "draft",
+      };
+    },
+    [draft, project, po, site, groups, rows, moduleRegistry, customColumns],
+  );
 
   // ═══════════════════════════════════════════════════════
   // Publish / close / save
@@ -768,17 +787,28 @@ export default function ProjectEditor({
     if (isSaving || motionSubmitted || draft.status === "closed") return;
     setIsSaving(true);
     try {
-      await onSaveDraft(buildProjectData());
+      const chainedRows = applyAutoChainToRows(rows);
+      if (chainedRows !== rows) setRows(chainedRows);
+      await onSaveDraft(buildProjectData(chainedRows));
     } catch (err) {
       // toast shown by parent
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, motionSubmitted, draft.status, onSaveDraft, buildProjectData]);
-
+  }, [
+    isSaving,
+    motionSubmitted,
+    draft.status,
+    onSaveDraft,
+    buildProjectData,
+    applyAutoChainToRows,
+    rows,
+  ]);
   const handleSubmitMotion = () => {
+    const chainedRows = applyAutoChainToRows(rows);
+    if (chainedRows !== rows) setRows(chainedRows);
     const { results, warnings, overlapIds } = runValidations(
-      rows,
+      chainedRows,
       project,
       po,
       site,
@@ -791,7 +821,6 @@ export default function ProjectEditor({
     setOverlapRowIds(overlapIds);
     setValidationOpen(true);
   };
-
   // ═══════════════════════════════════════════════════════
   // Group update — clears invalid resources
   // ═══════════════════════════════════════════════════════
@@ -2928,27 +2957,76 @@ export default function ProjectEditor({
                     {/* Add Module button */}
                     {draft.status !== "closed" && (
                       <>
-                        <button
-                          onClick={handleAutoChainClick}
-                          title="Auto-Dependendecy tasks per resource"
+                        {/* ── Auto Chain on Save toggle ── */}
+                        <label
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: 6,
-                            padding: "7px 14px",
-                            borderRadius: 6,
-                            border: `1px solid ${t.primary}50`,
-                            background: `${t.primary}12`,
-                            color: t.primary,
-                            fontSize: 13,
-                            fontWeight: 600,
+                            gap: 5,
                             cursor: "pointer",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: autoChainOnSave ? t.primary : t.textMuted,
+                            userSelect: "none",
                             whiteSpace: "nowrap",
                           }}
+                          title="Automatically chain dependencies per resource on save / publish"
                         >
-                          <Link2 size={14} />
-                          Auto Dependency
-                        </button>
+                          <span
+                            onClick={() => setAutoChainOnSave((p) => !p)}
+                            style={{
+                              position: "relative",
+                              display: "inline-block",
+                              width: 30,
+                              height: 17,
+                              background: autoChainOnSave
+                                ? t.primary
+                                : t.borderStrong,
+                              borderRadius: 999,
+                              transition: "background .2s",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: 2,
+                                left: autoChainOnSave ? 15 : 2,
+                                width: 13,
+                                height: 13,
+                                background: "#fff",
+                                borderRadius: "50%",
+                                transition: "left .2s",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                              }}
+                            />
+                          </span>
+                          {!isMobile && "Chain on Save"}
+                        </label>
+
+                        {false && (
+                          <button
+                            onClick={handleAutoChainClick}
+                            title="Auto-Dependendecy tasks per resource"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                              padding: "7px 14px",
+                              borderRadius: 6,
+                              border: `1px solid ${t.primary}50`,
+                              background: `${t.primary}12`,
+                              color: t.primary,
+                              fontSize: 13,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <Link2 size={14} />
+                            Auto Dependency
+                          </button>
+                        )}
                         <button
                           onClick={() => addRow()}
                           style={{
