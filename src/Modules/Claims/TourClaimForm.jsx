@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
+import { Toast } from "primereact/toast";
 //import { Button } from "primereact/button";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -37,7 +38,16 @@ const TourClaimForm = ({
   setselectedtravelMode,
   formErrors,
   setFormErrors,
+  onDateRangeChange,
 }) => {
+  const toast = useRef(null);
+  const showError = (detail) =>
+    toast.current?.show({
+      severity: "error",
+      summary: "Error",
+      detail,
+      life: 5000,
+    });
   const [advance, setadvance] = useState(null);
   const [isFormExpanded, setIsFormExpanded] = useState(false);
   const handleChange = (field, value) => {
@@ -71,6 +81,7 @@ const TourClaimForm = ({
           claimFromDate: new Date(),
           claimToDate: new Date(),
         }));
+        onDateRangeChange?.(new Date(), new Date());
 
         setFormErrors({
           travelType: false,
@@ -90,11 +101,26 @@ const TourClaimForm = ({
         // console.log('data.porpus.',data.purpose)
         // console.log('data.projectName', data.projectName)
         // console.log('data.city', data.city)
-        let data = responseData.data;
+        let data = responseData?.data;
 
         console.log("data", data);
 
+        if (!data) {
+          showError(
+            "Could not load the details for this travel. Please select it again.",
+          );
+          setselectedtravelMode(null);
+          return;
+        }
+
         const dates = await getlatestclaimtodate(id);
+        if (!Array.isArray(dates) || !dates[0]) {
+          showError(
+            "Could not load the claim dates for this travel. Please try again or select another travel.",
+          );
+          setselectedtravelMode(null);
+          return;
+        }
         settourclaimformData((prev) => ({
           ...prev,
           advance: advance,
@@ -108,9 +134,12 @@ const TourClaimForm = ({
           claimFromDate: dates[0].claimformdate,
           claimToDate: dates[0].claimtodate,
         }));
+        onDateRangeChange?.(dates[0].claimformdate, dates[0].claimtodate);
       }
     } catch (error) {
       console.error("Error fetching tour claim details:", error);
+      showError("Failed to load the travel details. Please try again.");
+      setselectedtravelMode(null);
     }
   };
 
@@ -176,8 +205,10 @@ const TourClaimForm = ({
     }
   };
   const handleDownloadFile = async () => {
+      const claimId = tourclaimformData?.claim_id;   // <-- define it
+
     try {
-      let d = await downloadTourClaimExpanseDocument();
+      let d = await downloadTourClaimExpanseDocument(claimId);
     } catch (error) {
       console.log(error);
     }
@@ -188,6 +219,7 @@ const TourClaimForm = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   return (
     <div className="">
+      <Toast ref={toast} />
       <div className="mb-2 ">
         <div >
           {/* <AccordionSummary
@@ -559,11 +591,15 @@ const TourClaimForm = ({
                           //  className="w-62"
                           value={new Date(tourclaimformData.claimFromDate)}
                           onChange={(e) => {
-                            handleChange("claimFromDate", e.value),
-                              handleInputWithValidation(
-                                "claimFromDate",
-                                e.value
-                              );
+                            handleChange("claimFromDate", e.value);
+                            handleInputWithValidation("claimFromDate", e.value);
+                            // keep "to" >= "from", then rebuild the rows
+                            let to = tourclaimformData.claimToDate;
+                            if (e.value && new Date(to) < e.value) {
+                              to = e.value;
+                              handleChange("claimToDate", to);
+                            }
+                            onDateRangeChange?.(e.value, to);
                           }}
                           disabled={
                             (selectedtravelMode
@@ -612,8 +648,12 @@ const TourClaimForm = ({
                         //  className="w-62"
                         value={new Date(tourclaimformData.claimToDate)}
                         onChange={(e) => {
-                          handleChange("claimToDate", e.target.value),
-                            handleInputWithValidation("claimToDate", e.value);
+                          handleChange("claimToDate", e.value);
+                          handleInputWithValidation("claimToDate", e.value);
+                          onDateRangeChange?.(
+                            tourclaimformData.claimFromDate,
+                            e.value
+                          );
                         }}
                         minDate={
                           tourclaimformData.claimFromDate

@@ -7,6 +7,7 @@ import CustomDialog from "../../components/Dialog/DialogComponent";
  
 import { Toast } from "primereact/toast";
 import { FileUpload } from "primereact/fileupload";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import CustomButton from "../../components/Button/Button";
 import {
   showSuccessMessage,
@@ -46,6 +47,7 @@ import {
  
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import LinearProgressMUI from "../../components/LinearProgressMUI";
+import CameraCapture from "./CameraCapture";
  
 const DraftForm = ({
   draftData,
@@ -215,11 +217,25 @@ const DraftForm = ({
         label="Apply"
         className="p-button-sm p-button-success p-button-text"
         onClick={() => {
-          if (rowData.total_expense > 0) {
-            handleApplyApproval(rowData.claim_id, "Applied");
-          } else {
+          if (!(rowData.total_expense > 0)) {
             showErrorMessage(toastRef, "error", "claim amount is zero");
+            return;
           }
+          // No supporting document uploaded -> ask for confirmation first
+          if (!rowData.filename) {
+            confirmDialog({
+              header: "No Document Uploaded",
+              message:
+                "No supporting document has been uploaded for this claim. Are you sure you wish to proceed?",
+              icon: "pi pi-exclamation-triangle",
+              acceptLabel: "Yes, Proceed",
+              rejectLabel: "Cancel",
+              acceptClassName: "p-button-warning",
+              accept: () => handleApplyApproval(rowData.claim_id, "Applied"),
+            });
+            return;
+          }
+          handleApplyApproval(rowData.claim_id, "Applied");
         }}
         tooltip="Apply for Approval"
       />
@@ -286,6 +302,7 @@ const DraftForm = ({
     const [togglefileUpload, settogglefileUpload] = useState(
       rowData.filename ? false : true,
     );
+    const [cameraVisible, setCameraVisible] = useState(false);
     const handleDownloadFile = async (claim_id) => {
       try {
         let d = await downloadTourClaimSupportingDocument(claim_id);
@@ -295,6 +312,12 @@ const DraftForm = ({
     };
     const onFileSelect = async (event) => {
       const file = event.files[0]; // Get the uploaded file
+      if (!file) return;
+      // Videos are not allowed
+      if (file.type?.startsWith("video/")) {
+        showWarningMessage(toastRef, "warn", "Videos are not allowed.");
+        return;
+      }
       setFileUploaded(true);
       settogglefileUpload(false);
  
@@ -374,17 +397,33 @@ const DraftForm = ({
           <LinearProgressMUI value={progress} />
         )}
         {togglefileUpload ? (
-          <FileUpload
-            mode="basic"
-            name="file"
-            accept="*/*"
-            auto
-            customUpload
-            uploadHandler={onFileSelect}
-            maxFileSize={5000000000}
-            chooseLabel="Upload"
-          />
+          <div className="flex items-center gap-2">
+            <FileUpload
+              mode="basic"
+              name="file"
+              accept="*/*"
+              auto
+              customUpload
+              uploadHandler={onFileSelect}
+              maxFileSize={5000000000}
+              chooseLabel="Upload"
+            />
+            <CustomButton
+              icon="pi pi-camera"
+              className="p-button-sm p-button-outlined"
+              tooltip="Capture using camera"
+              onClick={() => setCameraVisible(true)}
+            />
+          </div>
         ) : null}
+
+        <CameraCapture
+          visible={cameraVisible}
+          onHide={() => setCameraVisible(false)}
+          fileNamePrefix={`claim_${rowData.claim_id}`}
+          onCapture={(file) => onFileSelect({ files: [file] })}
+          onReject={(msg) => showWarningMessage(toastRef, "warn", msg)}
+        />
  
         {fileUploaded && (
           <div>
@@ -519,6 +558,7 @@ const DraftForm = ({
   return (
     <div>
       <Toast ref={toastRef} />
+      <ConfirmDialog />
       <div>
         <DataTableComponent
           data={draftData}

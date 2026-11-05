@@ -57,6 +57,7 @@ const TourClaimTable = ({
   draftData,
   setFormErrors,
   formErrors,
+  setselectedtravelMode,
 }) => {
   // const [editingIndex, setEditingIndex] = useState(null);
   const [editingRows, setEditingRows] = useState({});
@@ -604,22 +605,34 @@ const TourClaimTable = ({
       />
     );
   };
+  // "2025-11-04" -> local Date (new Date("2025-11-04") would be read as UTC
+  // and could land on the previous day in some timezones)
+  const toLocalDate = (value) => {
+    if (typeof value === "string") {
+      const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    }
+    return new Date(value);
+  };
+
   const dateEditor = (options) => {
-    console.log("options", options);
+    // A row that already has a date shows it in a disabled calendar, so it
+    // looks like the editor but can't be changed. Only rows with a blank
+    // date (added with the "+" button) get a working calendar. We check the
+    // saved row in the table, not the row being edited, so a blank row
+    // doesn't lock itself the moment a date is picked.
+    const savedRow = tourClaimTableData[options.rowIndex];
+    options.value=toLocalDate(savedRow.Date)
     return (
       <CustomeCalender
         value={options.value}
         onChange={(e) => options.editorCallback(e.value)}
-        //className="p-inputtext-sm w-full calendarStyle"
-        // style={{ minWidth: "105px" }}
         minDate={new Date(tourclaimformData.claimFromDate)}
         maxDate={new Date(tourclaimformData.claimToDate)}
-        // className="text-xs p-1 w-full"
-
-        // minDate={new Date(formFields.fromDate)}
       />
     );
   };
+
   const calculateColumnTotals = () => {
     const totals = {};
 
