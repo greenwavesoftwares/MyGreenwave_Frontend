@@ -448,6 +448,43 @@
   cursor: not-allowed;
 }
 
+/* Text toolbar buttons (e.g. "Resume history"). Same look as the icon
+   buttons but NO rotate-on-press and a stable size, so they never move. */
+.pai-page .pai-text-btn {
+  height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--pj-text-secondary);
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-border);
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.pai-page .pai-text-btn:hover {
+  background: var(--pj-page-bg);
+  border-color: var(--pj-border-strong);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.pai-page .pai-text-btn:active {
+  background: var(--pj-border);
+  transform: none;
+}
+
+.pai-page .pai-text-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Generic small spinner reused inside icon-only buttons (refresh,
    row action buttons) while their API call is in flight. */
 @keyframes pai-spin {

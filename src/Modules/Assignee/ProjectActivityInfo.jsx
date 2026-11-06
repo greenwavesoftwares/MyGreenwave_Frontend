@@ -24,6 +24,7 @@ import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
 import ResumeDialog from "./ResumeDialog";
 import ResumeReviewDialog from "./ResumeReviewDialog";
+import ResumeRequestsHistory from "./ResumeRequestsHistory";
 import {
   calculateWorkingHours as calcWorkingHours,
   addWorkingHours,
@@ -111,7 +112,11 @@ export default function ProjectActivityInfo({
   const [pauseDelayLoading, setPauseDelayLoading] = useState(false);
   const [resumeTarget, setResumeTarget] = useState(null); // { activityId, activity }
   const [resumeLoading, setResumeLoading] = useState(false);
-  // TEST ONLY — previews the assigner's "Review Date Change Request" dialog.
+  // Assigner's "Review Date Change Requests" dialog.
+  const [openResumeHistory, setOpenResumeHistory] = useState(false);
+  const [testHistory, setTestHistory] = useState(null); // TEST ONLY — sample approved / rejected
+  const [openReview, setOpenReview] = useState(false);
+  // TEST ONLY — previews the assigner's review dialog with sample data (dry run).
   const [testReview, setTestReview] = useState(null);
   // Tracks in-flight API calls that are triggered from row-level buttons
   // (start/complete/restart/resume, submit sub-activity, open comments),
@@ -661,7 +666,6 @@ export default function ProjectActivityInfo({
 
       if (requests?.length) {
         try {
-          // NOTE: assumed API — adjust to your backend's endpoint/shape.
           await activityTrackerApi.resumeDialogCreateRequest({
             sourceActivityId: resumeTarget.activityId,
             sourceActivityName: resumeTarget.activity?.name,
@@ -671,7 +675,7 @@ export default function ProjectActivityInfo({
             // excluded) — shown to the assigner in the review dialog.
             pauseMins: Math.round((pauseWorkingHrs || 0) * 60),
             reason,
-            resumeDialogChangeItems: requests,
+            changes: requests,
           });
           showToast(
             "success",
@@ -724,9 +728,10 @@ export default function ProjectActivityInfo({
     return map;
   }, [activityInfo]);
 
-  /* TEST ONLY — builds a sample change request from this page's own open
-     activities (first 3 with planned dates, each moved +4 working hours)
-     and opens the assigner review dialog. Nothing is sent to the API. */
+  /* TEST ONLY — for users without assigner access. Builds sample change
+     requests from this page's own open activities (two "users", so the
+     grouped list is visible too) and opens the review dialog in dry-run
+     mode. Nothing is sent to the API. */
   const openAssignerViewTest = () => {
     const open = Object.values(activityLookupMap || {}).filter(
       (a) =>
@@ -745,17 +750,16 @@ export default function ProjectActivityInfo({
       );
       return;
     }
-    const [source, ...rest] = open;
-    const shiftHrs = 4;
-    setTestReview({
-      requestId: "TEST-REQUEST",
+    const makeRequest = (n, source, targets, shiftHrs, who) => ({
+      requestId: `TEST-REQUEST-${n}`,
       sourceActivityId: source.id,
-      requestedByName: currentUserName || "Assignee",
+      requestedBy: who,
+      requestedByName: who,
       activityName: source.name,
       pauseMs: shiftHrs * 60 * 60 * 1000,
       reason: `"${source.name}" was paused for ${shiftHrs}h of working time (${shiftHrs}h elapsed); planned dates shifted by the same working time, skipping weekends, leave and non-working hours. (Sample data for testing.)`,
-      createdAt: new Date().toISOString(),
-      changes: rest.slice(0, 3).map((a) => ({
+      createdAt: new Date(Date.now() - n * 3600000).toISOString(),
+      changes: targets.map((a) => ({
         activityId: a.id,
         activityName: a.name,
         currentStart: a.plannedStart,
@@ -774,6 +778,30 @@ export default function ProjectActivityInfo({
         ).toISOString(),
       })),
     });
+
+    const [first, ...rest] = open;
+    const samples = [
+      makeRequest(1, first, rest.slice(0, 3), 4, currentUserName || "Assignee"),
+    ];
+    if (open.length >= 3) {
+      samples.push(
+        makeRequest(2, open[1], open.slice(2, 4), 2, "Sample User 2"),
+      );
+    }
+    setTestReview(samples);
+
+    // Sample decided requests for the History tab (one approved, one rejected).
+    const decided = (n, source, targets, shiftHrs, who, status, remark) => ({
+      ...makeRequest(n, source, targets, shiftHrs, who),
+      status,
+      remark,
+      reviewedByName: "Sample Assigner",
+      reviewedAt: new Date(Date.now() - (n - 2) * 3600000).toISOString(),
+    });
+    setTestHistory([
+      decided(3, first, rest.slice(0, 2), 3, currentUserName || "Assignee", "APPROVED", "Approved as requested."),
+      decided(4, open[1], open.slice(2, 3), 5, "Sample User 2", "REJECTED", "Please re-plan after the client review."),
+    ]);
   };
 
   const filteredModules = useMemo(() => {
@@ -822,7 +850,7 @@ export default function ProjectActivityInfo({
     DATE_RANGE_BUCKETS.find(({ key }) =>
       columnFilters[`${baseField}${key}`]?.has("true"),
     )?.key || null;
-
+  
   const setDateRangeFilter = (baseField, bucketKey) => {
     setColumnFilters((prev) => {
       const next = { ...prev };
@@ -1280,17 +1308,25 @@ export default function ProjectActivityInfo({
                   </svg>
                 )}
               </button>
+              <button
+                className="pai-text-btn"
+                onClick={() => setOpenResumeHistory(true)}
+                title="Resume history"
+                aria-label="Open resume history"
+              >
+                Resume history
+              </button>
               {/* TEST ONLY — remove once the assigner view is verified */}
               <button
-                className="pai-refresh-btn"
+                className="pai-text-btn"
                 onClick={openAssignerViewTest}
                 title="Preview assigner view (test)"
                 aria-label="Preview assigner view"
                 disabled={loading || !activityInfo?.modules?.length}
-                style={{ width: "auto", padding: "0 10px", fontSize: 12, fontWeight: 600 }}
               >
-                Assigner view (test)
+                Resume Resquests (test)
               </button>
+              
               {/* <button
                 className="pai-refresh-btn"
                 onClick={() => setOpenCpm(true)}
@@ -1631,10 +1667,24 @@ export default function ProjectActivityInfo({
         onCancel={() => setResumeTarget(null)}
         loading={resumeLoading}
       />
+      <ResumeRequestsHistory
+        open={openResumeHistory}
+        onClose={() => setOpenResumeHistory(false)}
+        projectId={activityInfo?.projectId}
+        projectName={activityInfo?.projectName}
+      />
+      <ResumeReviewDialog
+        projectId={activityInfo?.projectId}
+        open={openReview}
+        onClose={() => setOpenReview(false)}
+        onDone={fetchActivitiesOnLoad} // approved dates → reload activities
+      />
+      {/* TEST ONLY — sample requests, dry run (no API calls) */}
       <ResumeReviewDialog
         projectId={activityInfo?.projectId}
         open={!!testReview}
         previewRequest={testReview}
+        previewHistory={testHistory}
         dryRun
         onClose={() => setTestReview(null)}
       />

@@ -78,13 +78,14 @@ import {
                        changes: [{ activityId, activityName, currentStart,
                                    currentStop, requestedStart,
                                    requestedStop }] }
-     onApprove(approvedChanges, changeRequest)   "Confirm Request"
+     onApprove(approvedChanges, changeRequest, remark)   "Confirm Request"
         approvedChanges = [{ activityId, activityName, currentStart,
           currentStop, requestedStart, requestedStop, addedByAssigner }]
         — requestedStart / requestedStop are the FINAL dates (as requested,
         or as picked by the assigner); addedByAssigner is true for
         activities the assignee did not request.
-     onReject(changeRequest)                     "Cancel Request"
+     onReject(changeRequest, remark)             "Cancel Request"
+        remark = the assigner's optional free-text note (trimmed string)
      onCancel()                                  X / click-away (no decision)
 
    Request-mode props
@@ -100,6 +101,7 @@ import {
                          (falls back to `leaves`)
      workCfg             { workStart, workEnd, weekEnd } (optional)
      onConfirm({ reason, requests, pauseMs, pauseWorkingHrs })
+        reason = the text the assignee typed (required when dates are requested)
         requests = [] when nothing is ticked, otherwise
         [{ activityId, activityName, currentStart, currentStop,
            requestedStart, requestedStop }]  (ISO strings)
@@ -160,6 +162,53 @@ export function getDownstreamActivities(rootId, lookup) {
   return out;
 }
 
+const NOTE_MAX = 500;
+
+/* Labelled free-text field (Reason / Remark). Native <textarea> so the look
+   is fully controlled by `.rsd-note-*` in ResumeDialog.css. */
+const NoteField = ({
+  id,
+  label,
+  placeholder,
+  value,
+  onChange,
+  required = false,
+  error = false,
+  errorText,
+  disabled = false,
+}) => (
+  <Box className={`rsd-note ${error ? "rsd-note--error" : ""}`}>
+    <Box className="rsd-note-head">
+      <label htmlFor={id} className="rsd-note-label">
+        {label}
+      </label>
+      <span
+        className={`rsd-note-tag ${required ? "rsd-note-tag--required" : ""}`}
+      >
+        {required ? "Required" : "Optional"}
+      </span>
+    </Box>
+    <textarea
+      id={id}
+      className="rsd-note-input"
+      rows={3}
+      maxLength={NOTE_MAX}
+      value={value}
+      placeholder={placeholder}
+      disabled={disabled}
+      aria-invalid={error}
+      aria-required={required}
+      onChange={(e) => onChange(e.target.value)}
+    />
+    <Box className="rsd-note-foot">
+      <span className="rsd-note-error">{error ? errorText : ""}</span>
+      <span className="rsd-note-count">
+        {value.length}/{NOTE_MAX}
+      </span>
+    </Box>
+  </Box>
+);
+
 const ResumeDialog = ({
   mode = "request",
   changeRequest,
@@ -191,11 +240,16 @@ const ResumeDialog = ({
   // Assigner only — per-activity chosen start:
   //   { [id]: { on: boolean, value: "YYYY-MM-DDTHH:mm" } }
   const [manual, setManual] = useState({});
+  // Free-text inputs: assignee's reason (request mode), assigner's remark (review mode).
+  const [reasonText, setReasonText] = useState("");
+  const [remark, setRemark] = useState("");
 
   useEffect(() => {
     if (open) {
       setOpenedAt(Date.now());
       setManual({});
+      setReasonText("");
+      setRemark("");
       if (isReview) {
         setSelected(
           new Set((changeRequest?.changes || []).map((c) => c.activityId)),
@@ -205,11 +259,14 @@ const ResumeDialog = ({
       setRequestChange(false);
       setSelected(new Set());
       setManual({});
+      setReasonText("");
+      setRemark("");
     }
   }, [open, isReview, changeRequest]);
 
   // Open activities with planned dates (not the one being resumed).
-  // Dependents first (Next / Later), then the rest by planned start.
+  // Only activities in the dependency chain (Next / Later) are listed, plus
+  // any the assignee explicitly requested (review mode).
   const rows = useMemo(() => {
     const srcId = isReview ? changeRequest?.sourceActivityId : activityId;
     const changes = isReview ? changeRequest?.changes || [] : [];
@@ -226,17 +283,8 @@ const ResumeDialog = ({
     const downstream = getDownstreamActivities(srcId, activityLookupMap)
       .filter(({ id }) => ok(id, activityLookupMap[id]))
       .map(({ id, depth }) => ({ id, depth, ...activityLookupMap[id] }));
-    const taken = new Set(downstream.map((r) => r.id));
-    const others = Object.entries(activityLookupMap || {})
-      .filter(([id, e]) => !taken.has(id) && ok(id, e))
-      .sort(
-        ([, a], [, b]) =>
-          dayjs(a.plannedStart).valueOf() - dayjs(b.plannedStart).valueOf(),
-      )
-      .map(([id, e]) => ({ id, depth: 0, ...e }));
-
     // Review mode: the requested activities come first (pre-ticked, with the
-    // dates the assignee asked for), then every other open activity.
+    // dates the assignee asked for), then the downstream dependency chain.
     const requested = changes.map((c) => ({
       ...(activityLookupMap?.[c.activityId] || {}),
       id: c.activityId,
@@ -248,7 +296,7 @@ const ResumeDialog = ({
       newStart: c.requestedStart,
       newStop: c.requestedStop,
     }));
-    return [...requested, ...downstream, ...others];
+    return [...requested, ...downstream];
   }, [isReview, changeRequest, activityId, activityLookupMap]);
 
   const pauseValid = Boolean(pauseStart) && dayjs(pauseStart).isValid();
@@ -391,8 +439,10 @@ const ResumeDialog = ({
 
   const n = listActive ? selected.size : 0;
 
+  const reasonMissing = n > 0 && !reasonText.trim();
+
   const handleConfirm = () => {
-    if (loading) return;
+    if (loading || reasonMissing) return;
     if (n === 0) {
       onConfirm({ reason: "", requests: [], pauseMs: 0, pauseWorkingHrs: 0 });
       return;
@@ -416,12 +466,7 @@ const ResumeDialog = ({
         requestedStop: resolveDates(r).stop.toISOString(),
       }));
     onConfirm({
-      reason: `"${activityName || "Activity"}" was paused for ${formatWorkingHours(
-        pauseWorkingHrs,
-        workCfg,
-      )} of working time (${formatDuration(
-        pauseMs,
-      )} elapsed); planned dates shifted by the same working time, skipping weekends, leave and non-working hours.`,
+      reason: reasonText.trim(),
       requests,
       pauseMs,
       pauseWorkingHrs,
@@ -451,11 +496,11 @@ const ResumeDialog = ({
           addedByAssigner: !r.isRequested,
         };
       });
-    onApprove?.(approved, changeRequest);
+    onApprove?.(approved, changeRequest, remark.trim());
   };
   const handleReject = () => {
     if (loading) return;
-    onReject?.(changeRequest);
+    onReject?.(changeRequest, remark.trim());
   };
 
   let hint;
@@ -465,7 +510,7 @@ const ResumeDialog = ({
     hint =
       "Couldn't find when this activity was paused, so new dates can't be calculated.";
   } else if (rows.length === 0) {
-    hint = "There are no other open activities to reschedule.";
+    hint = "There are no dependent activities to reschedule.";
   } else {
     // Assignee: no duration / calculation text.
     hint =
@@ -814,6 +859,33 @@ const ResumeDialog = ({
             </Box>
           </>
         )}
+
+        {/* Request mode: why the dates need to move (required when any are ticked). */}
+        {!isReview && listActive && (
+          <NoteField
+            id="rsd-reason"
+            label="Reason for the change"
+            placeholder="e.g. Waiting on client approval, so dependent tasks need to shift"
+            value={reasonText}
+            onChange={setReasonText}
+            required={n > 0}
+            error={reasonMissing}
+            errorText="Enter a reason for the change."
+            disabled={loading}
+          />
+        )}
+
+        {/* Review mode: optional note from the assigner, sent with approve / reject. */}
+        {isReview && (
+          <NoteField
+            id="rsd-remark"
+            label="Remark"
+            placeholder="Add a note for the assignee (optional)"
+            value={remark}
+            onChange={setRemark}
+            disabled={loading}
+          />
+        )}
       </DialogContent>
 
       {/* ── FOOTER ── */}
@@ -868,7 +940,7 @@ const ResumeDialog = ({
               )
             }
             onClick={handleConfirm}
-            disabled={loading}
+            disabled={loading || reasonMissing}
             className="rsd-confirm-btn"
             sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
           >

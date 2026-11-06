@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ResumeDialog from "./ResumeDialog";
 import activityTrackerApi from "../../Services/activityTrackerApi";
+import { getUserData } from "../Login/Encrypt";
 
 /* ──────────────────────────────────────────────────────────
    ResumeRequestReview — the assigner's "Review Date Change Request"
@@ -30,9 +31,13 @@ import activityTrackerApi from "../../Services/activityTrackerApi";
    ────────────────────────────────────────────────────────── */
 
 /* ═══════════ 1. API — the only backend-facing part; adjust here ═══════════
-   ⚠ resumeDialogApproveRequest / resumeDialogRejectRequest are ASSUMED names
-     (not in the code I was given) — rename to your real service methods.
-   getLeavesWithHolidaysByUserId already exists (used by the assignee flow). */
+   Service methods (activityTrackerApi):
+     resumeDialogApprove(requestId, { approvedBy, remarks, changes })
+     resumeDialogReject(requestId,  { rejectedBy, remarks })
+     getLeavesWithHolidaysByUserId(userId)
+   approvedBy / rejectedBy are taken from the logged-in user. */
+const currentUserId = () => getUserData()?.userDetails?.userId;
+
 const reviewApi = {
   async getLeaves(userId) {
     const res = await activityTrackerApi.getLeavesWithHolidaysByUserId(userId);
@@ -41,18 +46,24 @@ const reviewApi = {
 
   // approvedChanges: ticked activities with their FINAL dates
   // declinedChanges: requested activities the assigner unticked
-  approve({ requestId, projectId, approvedChanges, declinedChanges }) {
-    return activityTrackerApi.resumeDialogApproveRequest({
-      requestId,
-      projectId,
-      resumeDialogChangeItems: approvedChanges,
-      rejectedActivityIds: declinedChanges.map((c) => c.activityId),
+  // Both go out in ONE list; each item carries its own isApproved flag.
+  approve({ requestId, approvedChanges, declinedChanges, remark }) {
+    return activityTrackerApi.resumeDialogApprove(requestId, {
+      approvedBy: currentUserId(),
+      remarks: remark,
+      changes: [
+        ...approvedChanges.map((c) => ({ ...c, isApproved: true })),
+        ...declinedChanges.map((c) => ({ ...c, isApproved: false })),
+      ],
     });
   },
 
   // assigner cancelled the whole request
-  reject({ requestId, projectId }) {
-    return activityTrackerApi.resumeDialogRejectRequest({ requestId, projectId });
+  reject({ requestId, remark }) {
+    return activityTrackerApi.resumeDialogReject(requestId, {
+      rejectedBy: currentUserId(),
+      remarks: remark,
+    });
   },
 };
 
@@ -181,7 +192,7 @@ const ResumeRequestReview = ({
     }
   };
 
-  const handleApprove = (approvedChanges, req) => {
+  const handleApprove = (approvedChanges, req, remark) => {
     const approvedIds = new Set(approvedChanges.map((c) => c.activityId));
     const declinedChanges = (req?.changes || []).filter(
       (c) => !approvedIds.has(c.activityId),
@@ -190,16 +201,16 @@ const ResumeRequestReview = ({
     return run("approve", () =>
       reviewApi.approve({
         requestId: req?.requestId,
-        projectId,
         approvedChanges,
         declinedChanges,
+        remark,
       }),
     );
   };
 
-  const handleReject = (req) =>
+  const handleReject = (req, remark) =>
     run("reject", () =>
-      reviewApi.reject({ requestId: req?.requestId, projectId }),
+      reviewApi.reject({ requestId: req?.requestId, remark }),
     );
 
   return (
