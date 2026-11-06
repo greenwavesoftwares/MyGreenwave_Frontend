@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 //import { InputText } from "primereact/inputtext";
 import { CustomeFileUpload } from "../../components/FileUpload/CustomeFileUpload";
 //import { Button } from "primereact/button";
+import CameraCapture from "./CameraCapture";
 import { Toast } from "primereact/toast";
 import Dropdown from "../../components/Claim/Dropdown";
 import { ApplyOtherClaim } from "./claimServices";
@@ -24,7 +25,8 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import { Chip, Grid, Typography } from "@mui/material";
 
 const MiscellaneousClaimForm = () => {
-    const [fileUploaded, setFileUploaded] = useState(false);
+  const [fileUploaded, setFileUploaded] = useState(false);
+  const [cameraVisible, setCameraVisible] = useState(false);
   const toastRef = useRef(null);
   const fileUploadRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -45,11 +47,19 @@ const MiscellaneousClaimForm = () => {
 
   const placeholder = "Select Claim Type";
 
+  // Used by both the file picker and the camera (photo -> JPEG, 2+ -> ZIP)
   const onUpload = async (event) => {
     if (event.files && event.files.length > 0) {
-      setFile(event.files[0]);
+      const selected = event.files[0];
+      // Videos are not allowed
+      if (selected.type?.startsWith("video/")) {
+        showWarningMessage(toastRef, "warn", "Videos are not allowed.");
+        fileUploadRef.current?.clear();
+        return;
+      }
+      setFile(selected);
       showSuccessMessage(toastRef, "success", "File Uploaded");
-       setFileUploaded(true);
+      setFileUploaded(true);
     }
   };
 
@@ -76,6 +86,7 @@ const MiscellaneousClaimForm = () => {
         showSuccessMessage(toastRef, "success", data.message);
 
         setFile(null);
+        setFileUploaded(false);
         setClaimAmount("");
         setClaimDetails("");
         fileUploadRef.current?.clear();
@@ -198,17 +209,27 @@ const MiscellaneousClaimForm = () => {
               </label> */}
               <div >
                  {!fileUploaded ? (
-                          <FileUpload
-                            mode="basic"
-                            name="file"
-                           accept="*/*"
-                            customUpload
-                            auto
-                            uploadHandler={onUpload}
-                            maxFileSize={1000000000}
-                            chooseLabel="Upload Document"
-                            className="selectButtonStyle"
-                          />
+                          <div className="flex items-center gap-2">
+                            <FileUpload
+                              ref={fileUploadRef}
+                              mode="basic"
+                              name="file"
+                              accept="*/*"
+                              customUpload
+                              auto
+                              uploadHandler={onUpload}
+                              maxFileSize={1000000000}
+                              chooseLabel="Upload Document"
+                              className="selectButtonStyle"
+                            />
+                            <CustomButton
+                              icon="pi pi-camera"
+                              className="p-button-sm p-button-outlined"
+                              tooltip="Capture using camera"
+                              tooltipOptions={{ position: "top" }}
+                              onClick={() => setCameraVisible(true)}
+                            />
+                          </div>
                         ) : (
                           <div className="flex align-items-center gap-2 mt-2">
                             <span className="text-green-600 font-medium">
@@ -244,6 +265,14 @@ const MiscellaneousClaimForm = () => {
           </Grid>
         </Grid>
       </div>
+
+      <CameraCapture
+        visible={cameraVisible}
+        onHide={() => setCameraVisible(false)}
+        fileNamePrefix={`misc_claim_${userDetails?.employeeId || "emp"}`}
+        onCapture={(capturedFile) => onUpload({ files: [capturedFile] })}
+        onReject={(msg) => showWarningMessage(toastRef, "warn", msg)}
+      />
     </div>
   );
 };
