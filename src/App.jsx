@@ -35,6 +35,11 @@ function App() {
       );
 
     window.addEventListener("mousemove", setLastActionTime);
+    const loader = document.getElementById("loaderGW");
+    console.log("Loader found : ",loader)
+    if (loader) {
+      loader.remove();
+    }
 
     return () => {
       window.removeEventListener("mousemove", setLastActionTime);
