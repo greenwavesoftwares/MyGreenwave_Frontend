@@ -28,7 +28,7 @@ import ActivityTrackerCharts from "../../Modules/ProjectDashBoard/ActivityTracke
 
 function WrappedRoutes() {
   return (
-    <React.Fragment>
+   <Routes>
       {/* Redirect base to home */}
       <Route index element={<Navigate to="home" />} />
 
@@ -63,7 +63,7 @@ function WrappedRoutes() {
       {/* For wrong routing go to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
       <Route path="restricted" element={<Restricted />} />
-    </React.Fragment>
+   </Routes>
   );
 }
 

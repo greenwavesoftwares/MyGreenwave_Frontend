@@ -11,13 +11,17 @@ import "primereact/resources/themes/lara-light-indigo/theme.css";
 
 import PrivateRoute from "./components/PrivateRouter/PrivateRouter";
 import MenuBar from "./components/MenuBar/MenuBar";
-import WrappedRoutes from "./components/Routes/WrappedRoutes";
+// import WrappedRoutes from "./components/Routes/WrappedRoutes";
 import Login from "./Modules/Login/Login";
 import { getUserData } from "./Modules/Login/Encrypt";
-import { useEffect } from "react";
+import { Fragment, lazy, Suspense, useEffect } from "react";
 import Restricted from "./Restricted";
 import ActivityAssigner from "./Test Ground/Example";
 import ActivityTrackerCharts from "./Modules/ProjectDashBoard/ActivityTrackerCharts";
+import GreenWaveLoader from "./Test Ground/loader/GreenWaveLoader";
+const WrappedRoutesLazy = lazy(() => import("./components/Routes/WrappedRoutes"));
+
+console.log('WrappedRoutesLazy', WrappedRoutesLazy)
 
 function App() {
   console.log("rendering app component");
@@ -55,7 +59,15 @@ function App() {
           }
         />
         <Route path={`${baseRoute}`} element={<MenuBar />}>
-          {WrappedRoutes()}
+        <Route
+    path="*"
+    element={
+      <Suspense fallback={<center><GreenWaveLoader size={70}/></center>}>
+        <WrappedRoutesLazy />
+      </Suspense>
+    }
+  />
+          
         </Route>
       </Route>
 
