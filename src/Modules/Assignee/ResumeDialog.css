@@ -979,6 +979,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* Re-applied here: the checkbox-list rule `.rsd-row { padding: 0 }` above
+     would otherwise strip the card's inner spacing. */
+  padding: 12px 14px 12px 12px;
+  cursor: default;
+  list-style: none;
   border-left-width: 3px;
 }
 .rsd-hist-card--pending {

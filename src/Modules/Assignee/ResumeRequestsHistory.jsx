@@ -44,8 +44,8 @@ import "./ResumeDialog.css";
      />
 
    API (one call, scoped on the server)
-       GET /activityTracker/resumeDialog/myRequests?projectId=
-       activityTrackerApi.getMyResumeDialogRequests(projectId)   // NEW method
+       GET /activityTracker/resumeDialog/getResumeDialogGetRequestslistByAssignee?projectId=
+       activityTrackerApi.getResumeDialogRequestsByAssignee(projectId)
      The server returns only the requests RAISED BY THE CALLER (requested_by,
      taken from the auth token), with ANY status. The browser does not filter
      by user — the status tabs below filter this one response on `status`.
@@ -67,7 +67,34 @@ const asArray = (res) => (Array.isArray(res) ? res : res ? [res] : []);
 // The caller's own requests, every status. A failure is thrown to the caller
 // (the dialog shows an inline error with a retry).
 const fetchMyRequests = async (projectId) =>
-  asArray(await activityTrackerApi.getMyResumeDialogRequests(projectId));
+  asArray(await activityTrackerApi.getResumeDialogRequestsByAssignee(projectId));
+
+// The per-activity date changes of a request. The backend may name the list
+// differently (changes / resumeDialogChangeItems / ...), so known names are
+// tried first, then any array of objects that carry requestedStart/Stop.
+export const getRequestChanges = (r) => {
+  if (!r) return [];
+  const known = [
+    "changes",
+    "resumeDialogChangeItems",
+    "changeItems",
+    "resumeDialogChanges",
+    "requestChanges",
+    "items",
+  ];
+  for (const k of known) {
+    if (Array.isArray(r[k]) && r[k].length) return r[k];
+  }
+  const found = Object.values(r).find(
+    (v) =>
+      Array.isArray(v) &&
+      v.length &&
+      v[0] &&
+      typeof v[0] === "object" &&
+      ("requestedStart" in v[0] || "requestedStop" in v[0]),
+  );
+  return found || [];
+};
 
 export const normStatus = (r) => {
   const s = String(r.status ?? r.requestStatus ?? "pending").toLowerCase();
@@ -93,7 +120,7 @@ const fmtPause = (mins) => {
 export const RequestCard = ({ r, view = "mine" }) => {
   const [open, setOpen] = useState(false);
   const status = normStatus(r);
-  const changes = r.resumeDialogChangeItems ?? r.changes ?? [];
+  const changes = getRequestChanges(r);
   const remark = r.remark ?? r.assignerRemark ?? r.reviewRemark;
   const reviewedBy = r.reviewedByName;
   const reviewedAt = r.reviewedAt;

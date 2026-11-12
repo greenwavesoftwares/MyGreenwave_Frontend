@@ -85,7 +85,7 @@ import {
         or as picked by the assigner); addedByAssigner is true for
         activities the assignee did not request.
      onReject(changeRequest, remark)             "Cancel Request"
-        remark = the assigner's optional free-text note (trimmed string)
+        remark = the assigner's free-text note (trimmed string); REQUIRED to cancel
      onCancel()                                  X / click-away (no decision)
 
    Request-mode props
@@ -173,6 +173,7 @@ const NoteField = ({
   value,
   onChange,
   required = false,
+  tagText,
   error = false,
   errorText,
   disabled = false,
@@ -185,7 +186,7 @@ const NoteField = ({
       <span
         className={`rsd-note-tag ${required ? "rsd-note-tag--required" : ""}`}
       >
-        {required ? "Required" : "Optional"}
+        {tagText ?? (required ? "Required" : "Optional")}
       </span>
     </Box>
     <textarea
@@ -226,6 +227,9 @@ const ResumeDialog = ({
   onConfirm,
   onCancel,
   loading = false,
+  // Request mode: the user already has a PENDING date-change request for
+  // this project, so a new one can't be sent until it is reviewed.
+  hasPendingRequest = false,
 }) => {
   const isReview = mode === "review";
   // The pause-duration / date calculation is shown to the assigner (review
@@ -243,6 +247,8 @@ const ResumeDialog = ({
   // Free-text inputs: assignee's reason (request mode), assigner's remark (review mode).
   const [reasonText, setReasonText] = useState("");
   const [remark, setRemark] = useState("");
+  // Review mode: set once the assigner tries to cancel without a remark.
+  const [rejectTried, setRejectTried] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -250,6 +256,7 @@ const ResumeDialog = ({
       setManual({});
       setReasonText("");
       setRemark("");
+      setRejectTried(false);
       if (isReview) {
         setSelected(
           new Set((changeRequest?.changes || []).map((c) => c.activityId)),
@@ -261,6 +268,7 @@ const ResumeDialog = ({
       setManual({});
       setReasonText("");
       setRemark("");
+      setRejectTried(false);
     }
   }, [open, isReview, changeRequest]);
 
@@ -317,7 +325,7 @@ const ResumeDialog = ({
     );
   const canRequest = isReview
     ? rows.length > 0
-    : pauseValid && !pauseLoading && rows.length > 0;
+    : pauseValid && !pauseLoading && rows.length > 0 && !hasPendingRequest;
 
   const leavesFor = (r) => leavesByResource?.[r.resource] ?? leaves;
 
@@ -498,13 +506,22 @@ const ResumeDialog = ({
       });
     onApprove?.(approved, changeRequest, remark.trim());
   };
+  // A remark is compulsory when cancelling (declining) a request.
+  const remarkMissing = isReview && !remark.trim();
   const handleReject = () => {
     if (loading) return;
+    if (remarkMissing) {
+      setRejectTried(true);
+      return;
+    }
     onReject?.(changeRequest, remark.trim());
   };
 
   let hint;
-  if (pauseLoading) {
+  if (hasPendingRequest) {
+    hint =
+      "You already have a pending date change request for this project. You can resume the activity, but you can't send another request until the assigner reviews it.";
+  } else if (pauseLoading) {
     hint = "Calculating pause duration…";
   } else if (!pauseValid) {
     hint =
@@ -880,9 +897,12 @@ const ResumeDialog = ({
           <NoteField
             id="rsd-remark"
             label="Remark"
-            placeholder="Add a note for the assignee (optional)"
+            placeholder="Add a note for the assignee (required to cancel the request)"
             value={remark}
             onChange={setRemark}
+            tagText="Required to cancel"
+            error={rejectTried && remarkMissing}
+            errorText="Enter a remark to cancel this request."
             disabled={loading}
           />
         )}
