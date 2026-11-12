@@ -32,6 +32,7 @@ import {
   WifiOff,
   Package,
   CheckCircle2,
+  Bell,
 } from "lucide-react";
 
 import { useTheme } from "../useTheme";
@@ -43,6 +44,7 @@ import { loadSavedDateRange, saveDateRange } from "../helpers/dateRangeStorage";
 import GreenWaveLoader, {
   GreenWaveLoaderOverlay,
 } from "../loader/GreenWaveLoader";
+import ResumeReviewDialog from "../../Modules/Assignee/ResumeReviewDialog";
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
   alignItems: "center",
@@ -80,7 +82,7 @@ export default function DraftProjectsList({
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
-
+  const [reviewDialogId, setReviewDialogId] = useState(null);
   // Date range state
   // Date range state — restore from localStorage
   const [dateMode, setDateMode] = useState(
@@ -1349,6 +1351,55 @@ export default function DraftProjectsList({
                           alignItems: "center",
                         }}
                       >
+                        {/* ── Pending Requests Button ── */}
+                        {d.requestCount > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReviewDialogId(d.id);
+                            }}
+                            title={`${d.requestCount} pending request${d.requestCount !== 1 ? "s" : ""}`}
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 6,
+                              border: `1px solid ${t.warningBorder}`,
+                              background: t.warningBg,
+                              color: t.warning,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                              flexShrink: 0,
+                              position: "relative",
+                            }}
+                          >
+                            <Bell size={14} />
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: -6,
+                                right: -6,
+                                minWidth: 16,
+                                height: 16,
+                                borderRadius: 999,
+                                background: t.danger,
+                                color: "#fff",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "0 4px",
+                                lineHeight: 1,
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                              }}
+                            >
+                              {d.requestCount}
+                            </span>
+                          </button>
+                        )}
                         <span
                           style={{
                             display: "inline-flex",
@@ -2061,6 +2112,12 @@ export default function DraftProjectsList({
           </div>
         </BottomSheet>
       )}
+      {/* ── Resume Review Dialog (single shared instance) ── */}
+      <ResumeReviewDialog
+        projectId={reviewDialogId}
+        open={!!reviewDialogId}
+        onClose={() => setReviewDialogId(null)}
+      />
     </div>
   );
 }
