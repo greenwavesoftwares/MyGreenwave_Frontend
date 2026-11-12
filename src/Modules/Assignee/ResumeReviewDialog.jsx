@@ -14,10 +14,11 @@ import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlin
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import dayjs from "dayjs";
 import "./assignee-theme.css";
-import ResumeRequestReview from "./ResumeRequestReview";
+import ResumeRequestReview, { apiErrorMessage } from "./ResumeRequestReview";
 import {
   RequestCard,
   normStatus,
+  getRequestChanges,
   STATUS_LABEL,
 } from "./ResumeRequestsHistory";
 import { formatDuration } from "./ResumeDialog";
@@ -44,20 +45,32 @@ import "./ResumeDialog.css";
        onDone={(action) => refetch()}        // optional
      />
 
-   Uses getResumeDialogRequests(projectId, status) — "PENDING" for the Pending
-   tab, "APPROVED" + "REJECTED" for the History tab. If it returns an array
-   you get every request, if it returns one object you get that one.
+   Uses getAllResumeDialogRequestsByAssigner(projectId) — one call; requests
+   with status PENDING fill the Pending tab, APPROVED / REJECTED the History tab.
    ────────────────────────────────────────────────────────── */
 
 const WORK_CFG = { workStart: 9, workEnd: 18, weekEnd: [0, 6] }; // keep in sync with ProjectActivityInfo
 
 const asArray = (res) => (Array.isArray(res) ? res : res ? [res] : []);
 
-const fetchPendingRequests = async (projectId) =>
-  asArray(await activityTrackerApi.getResumeDialogRequests(projectId, "PENDING"));
+// ONE call returns every request of the project (any status) for the assigner;
+// it is split here into pending (to review) and decided (History tab).
+const fetchAllRequests = async (projectId) => {
+  const res = asArray(
+    await activityTrackerApi.getAllResumeDialogRequestsByAssigner(projectId),
+  );
+  // Debug aid: shows the exact field names the backend returns.
+  console.log("[ResumeReview] requests from API:", res);
+  return res;
+};
+
+const splitByStatus = (all) => ({
+  pending: all.filter((r) => normStatus(r) === "pending"),
+  decided: all.filter((r) => normStatus(r) !== "pending"),
+});
 
 const reqId = (r) => r.requestId ?? r.id;
-const reqChanges = (r) => r.changes ?? r.resumeDialogChangeItems ?? [];
+const reqChanges = (r) => getRequestChanges(r);
 
 const pauseMsOf = (r) =>
   r.pauseMs ?? (Number.isFinite(r.pauseMins) ? r.pauseMins * 60000 : 0);
@@ -70,31 +83,14 @@ const initials = (name = "") =>
     .map((w) => w[0].toUpperCase())
     .join("") || "?";
 
-// Decided (approved / rejected) requests of a project — the "History" tab.
-// Never blocks the pending list: a failure just means an empty history.
-const fetchHistory = async (projectId) => {
-  try {
-    const [approved, rejected] = await Promise.all([
-      activityTrackerApi.getResumeDialogRequests(projectId, "APPROVED"),
-      activityTrackerApi.getResumeDialogRequests(projectId, "REJECTED"),
-    ]);
-    return [...asArray(approved), ...asArray(rejected)];
-  } catch (err) {
-    console.log("Error:", err);
-    return [];
-  }
-};
-
-// TEST-ONLY props: previewRequest skips the pending-request fetch (pass a
-// sample request, or an array of them to preview the list); previewHistory
-// does the same for the History tab; dryRun logs approve/reject instead of calling the API.
+// previewRequest (used by ResumeRequestsList) skips the fetch and reviews the
+// request(s) passed in; dryRun logs approve/reject instead of calling the API.
 const ResumeReviewDialog = ({
   projectId,
   open,
   onClose,
   onDone,
   previewRequest,
-  previewHistory,
   dryRun = false,
 }) => {
   const [project, setProject] = useState(null);
@@ -113,17 +109,15 @@ const ResumeReviewDialog = ({
 
     (async () => {
       try {
-        const [projectData, list, past] = await Promise.all([
+        const [projectData, all] = await Promise.all([
           loadProject(),
           previewRequest
             ? Promise.resolve([].concat(previewRequest))
-            : fetchPendingRequests(projectId),
-          previewHistory
-            ? Promise.resolve([].concat(previewHistory))
-            : previewRequest
-              ? Promise.resolve([]) // preview of pending only — don't hit the API
-              : fetchHistory(projectId),
+            : fetchAllRequests(projectId),
         ]);
+        const { pending: list, decided: past } = previewRequest
+          ? { pending: all, decided: [] }
+          : splitByStatus(all);
         if (cancelled) return;
 
         if (!list.length && !past.length) {
@@ -466,13 +460,14 @@ const ResumeReviewDialog = ({
         dryRun={dryRun}
         onClose={closeReview}
         onSuccess={finishReview}
-        onError={(action) =>
+        onError={(action, err) => {
+          const reason = apiErrorMessage(err);
           showToast(
             "error",
             "Error",
-            `Could not ${action} the request. Please try again.`,
-          )
-        }
+            `Could not ${action} the request.${reason ? ` ${reason}` : " Please try again."}`,
+          );
+        }}
       />
     </>
   );

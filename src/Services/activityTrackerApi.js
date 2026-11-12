@@ -1893,6 +1893,40 @@ const activityTrackerApi = {
     );
     return response.data;
   },
+
+  /**
+   * GET /activityTracker/resumeDialog/getResumeDialogGetRequestslistByAssignee
+   * Lists planned-date-change requests for the assignee.
+   * @param {string} projectId
+   * @returns Array of ResumeDialogRequestView
+   */
+  getResumeDialogRequestsByAssignee: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/resumeDialog/getResumeDialogGetRequestslistByAssignee`,
+      {
+        headers: getHeaders(),
+        params: { projectId },
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * GET /activityTracker/resumeDialog/getResumeDialogGetAllRequestslistByAssigner
+   * Lists all planned-date-change requests for the assigner.
+   * @param {string} projectId
+   * @returns Array of ResumeDialogRequestView
+   */
+  getAllResumeDialogRequestsByAssigner: async (projectId) => {
+    const response = await axios.get(
+      `${apiEndPoint}/resumeDialog/getResumeDialogGetAllRequestslistByAssigner`,
+      {
+        headers: getHeaders(),
+        params: { projectId },
+      },
+    );
+    return response.data;
+  },
 };
 
 export default activityTrackerApi;

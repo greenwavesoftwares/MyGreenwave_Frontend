@@ -24,7 +24,7 @@ import ProjectActivitiesSkeleton from "./ProjectActivitiesSkeleton";
 import PauseReasonDialog from "./PauseReasonDialog";
 import ResumeDialog from "./ResumeDialog";
 import ResumeReviewDialog from "./ResumeReviewDialog";
-import ResumeRequestsHistory from "./ResumeRequestsHistory";
+import ResumeRequestsHistory, { normStatus } from "./ResumeRequestsHistory";
 import {
   calculateWorkingHours as calcWorkingHours,
   addWorkingHours,
@@ -114,10 +114,7 @@ export default function ProjectActivityInfo({
   const [resumeLoading, setResumeLoading] = useState(false);
   // Assigner's "Review Date Change Requests" dialog.
   const [openResumeHistory, setOpenResumeHistory] = useState(false);
-  const [testHistory, setTestHistory] = useState(null); // TEST ONLY — sample approved / rejected
   const [openReview, setOpenReview] = useState(false);
-  // TEST ONLY — previews the assigner's review dialog with sample data (dry run).
-  const [testReview, setTestReview] = useState(null);
   // Tracks in-flight API calls that are triggered from row-level buttons
   // (start/complete/restart/resume, submit sub-activity, open comments),
   // keyed per-activity so only the button that started the call shows a
@@ -642,11 +639,34 @@ export default function ProjectActivityInfo({
     } catch (e) {
       console.log("Error fetching pauses:", e);
     }
+    const hasPending = await hasPendingResumeRequest();
     setResumeTarget((prev) =>
       prev && prev.activityId === activityId
-        ? { ...prev, pauseStart, pauseLoading: false, leaves, leavesByResource }
+        ? {
+            ...prev,
+            pauseStart,
+            pauseLoading: false,
+            leaves,
+            leavesByResource,
+            hasPending,
+          }
         : prev,
     );
+  };
+
+  // True when the logged-in user already has a PENDING date-change request
+  // in this project. A failed lookup never blocks (the server should enforce).
+  const hasPendingResumeRequest = async () => {
+    try {
+      const res = await activityTrackerApi.getResumeDialogRequestsByAssignee(
+        activityInfo?.projectId,
+      );
+      const list = Array.isArray(res) ? res : res ? [res] : [];
+      return list.some((r) => normStatus(r) === "pending");
+    } catch (e) {
+      console.log("Error checking pending resume requests:", e);
+      return false;
+    }
   };
 
   const handleResumeConfirm = async ({
@@ -657,14 +677,22 @@ export default function ProjectActivityInfo({
   }) => {
     if (!resumeTarget) return;
     setResumeLoading(true);
+    // When the date-change request can't be sent, the activity is NOT resumed
+    // and the dialog stays open so the user can retry.
+    let keepOpen = false;
     try {
-      await updateStatusOfActivity(
-        resumeTarget.activityId,
-        "Running",
-        resumeTarget.activity,
-      );
-
       if (requests?.length) {
+        // One pending request per project: re-check right before sending.
+        if (await hasPendingResumeRequest()) {
+          showToast(
+            "error",
+            "Request pending",
+            "You already have a pending date change request for this project. The activity was not resumed.",
+          );
+          setResumeTarget((prev) => (prev ? { ...prev, hasPending: true } : prev));
+          keepOpen = true;
+          return;
+        }
         try {
           await activityTrackerApi.resumeDialogCreateRequest({
             sourceActivityId: resumeTarget.activityId,
@@ -689,13 +717,21 @@ export default function ProjectActivityInfo({
           showToast(
             "error",
             "Error",
-            "Activity resumed, but the date change request failed. Please try again.",
+            "The date change request failed, so the activity was not resumed. Please try again.",
           );
+          keepOpen = true;
+          return;
         }
       }
+
+      await updateStatusOfActivity(
+        resumeTarget.activityId,
+        "Running",
+        resumeTarget.activity,
+      );
     } finally {
       setResumeLoading(false);
-      setResumeTarget(null);
+      if (!keepOpen) setResumeTarget(null);
     }
   };
   const totalTasks = useMemo(
@@ -727,82 +763,6 @@ export default function ProjectActivityInfo({
     walk(activityInfo?.modules);
     return map;
   }, [activityInfo]);
-
-  /* TEST ONLY — for users without assigner access. Builds sample change
-     requests from this page's own open activities (two "users", so the
-     grouped list is visible too) and opens the review dialog in dry-run
-     mode. Nothing is sent to the API. */
-  const openAssignerViewTest = () => {
-    const open = Object.values(activityLookupMap || {}).filter(
-      (a) =>
-        a?.name &&
-        !["completed", "finished"].includes(
-          (a.activityStatus || "").toLowerCase(),
-        ) &&
-        dayjs(a.plannedStart).isValid() &&
-        dayjs(a.plannedStop).isValid(),
-    );
-    if (open.length < 2) {
-      showToast(
-        "error",
-        "Test",
-        "Need at least 2 open activities with planned dates to preview.",
-      );
-      return;
-    }
-    const makeRequest = (n, source, targets, shiftHrs, who) => ({
-      requestId: `TEST-REQUEST-${n}`,
-      sourceActivityId: source.id,
-      requestedBy: who,
-      requestedByName: who,
-      activityName: source.name,
-      pauseMs: shiftHrs * 60 * 60 * 1000,
-      reason: `"${source.name}" was paused for ${shiftHrs}h of working time (${shiftHrs}h elapsed); planned dates shifted by the same working time, skipping weekends, leave and non-working hours. (Sample data for testing.)`,
-      createdAt: new Date(Date.now() - n * 3600000).toISOString(),
-      changes: targets.map((a) => ({
-        activityId: a.id,
-        activityName: a.name,
-        currentStart: a.plannedStart,
-        currentStop: a.plannedStop,
-        requestedStart: addWorkingHours(
-          a.plannedStart,
-          shiftHrs,
-          [],
-          WORK_CFG,
-        ).toISOString(),
-        requestedStop: addWorkingHours(
-          a.plannedStop,
-          shiftHrs,
-          [],
-          WORK_CFG,
-        ).toISOString(),
-      })),
-    });
-
-    const [first, ...rest] = open;
-    const samples = [
-      makeRequest(1, first, rest.slice(0, 3), 4, currentUserName || "Assignee"),
-    ];
-    if (open.length >= 3) {
-      samples.push(
-        makeRequest(2, open[1], open.slice(2, 4), 2, "Sample User 2"),
-      );
-    }
-    setTestReview(samples);
-
-    // Sample decided requests for the History tab (one approved, one rejected).
-    const decided = (n, source, targets, shiftHrs, who, status, remark) => ({
-      ...makeRequest(n, source, targets, shiftHrs, who),
-      status,
-      remark,
-      reviewedByName: "Sample Assigner",
-      reviewedAt: new Date(Date.now() - (n - 2) * 3600000).toISOString(),
-    });
-    setTestHistory([
-      decided(3, first, rest.slice(0, 2), 3, currentUserName || "Assignee", "APPROVED", "Approved as requested."),
-      decided(4, open[1], open.slice(2, 3), 5, "Sample User 2", "REJECTED", "Please re-plan after the client review."),
-    ]);
-  };
 
   const filteredModules = useMemo(() => {
     if (!activityInfo?.modules) return [];
@@ -1316,17 +1276,6 @@ export default function ProjectActivityInfo({
               >
                 Resume history
               </button>
-              {/* TEST ONLY — remove once the assigner view is verified */}
-              <button
-                className="pai-text-btn"
-                onClick={openAssignerViewTest}
-                title="Preview assigner view (test)"
-                aria-label="Preview assigner view"
-                disabled={loading || !activityInfo?.modules?.length}
-              >
-                Resume Resquests (test)
-              </button>
-              
               {/* <button
                 className="pai-refresh-btn"
                 onClick={() => setOpenCpm(true)}
@@ -1666,6 +1615,7 @@ export default function ProjectActivityInfo({
         onConfirm={handleResumeConfirm}
         onCancel={() => setResumeTarget(null)}
         loading={resumeLoading}
+        hasPendingRequest={!!resumeTarget?.hasPending}
       />
       <ResumeRequestsHistory
         open={openResumeHistory}
@@ -1678,15 +1628,6 @@ export default function ProjectActivityInfo({
         open={openReview}
         onClose={() => setOpenReview(false)}
         onDone={fetchActivitiesOnLoad} // approved dates → reload activities
-      />
-      {/* TEST ONLY — sample requests, dry run (no API calls) */}
-      <ResumeReviewDialog
-        projectId={activityInfo?.projectId}
-        open={!!testReview}
-        previewRequest={testReview}
-        previewHistory={testHistory}
-        dryRun
-        onClose={() => setTestReview(null)}
       />
       <CpmDialog
         open={openCpm}

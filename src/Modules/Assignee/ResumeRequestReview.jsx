@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ResumeDialog from "./ResumeDialog";
+import { getRequestChanges } from "./ResumeRequestsHistory";
 import activityTrackerApi from "../../Services/activityTrackerApi";
 import { getUserData } from "../Login/Encrypt";
 
@@ -30,6 +31,15 @@ import { getUserData } from "../Login/Encrypt";
      dryRun   boolean — log instead of calling approve / reject (testing)
    ────────────────────────────────────────────────────────── */
 
+// Readable message from an axios error (e.g. the reason behind an HTTP 400).
+export const apiErrorMessage = (err) => {
+  const d = err?.response?.data;
+  if (typeof d === "string" && d.trim()) return d.trim();
+  const m = d?.message || d?.error || d?.detail || d?.reason;
+  if (typeof m === "string" && m.trim()) return m.trim();
+  return err?.message || "";
+};
+
 /* ═══════════ 1. API — the only backend-facing part; adjust here ═══════════
    Service methods (activityTrackerApi):
      resumeDialogApprove(requestId, { approvedBy, remarks, changes })
@@ -44,18 +54,41 @@ const reviewApi = {
     return res?.[0]?.leaves ?? [];
   },
 
-  // approvedChanges: ticked activities with their FINAL dates
-  // declinedChanges: requested activities the assigner unticked
-  // Both go out in ONE list; each item carries its own isApproved flag.
-  approve({ requestId, approvedChanges, declinedChanges, remark }) {
-    return activityTrackerApi.resumeDialogApprove(requestId, {
-      approvedBy: currentUserId(),
-      remarks: remark,
-      changes: [
-        ...approvedChanges.map((c) => ({ ...c, isApproved: true })),
-        ...declinedChanges.map((c) => ({ ...c, isApproved: false })),
-      ],
-    });
+  // approvedChanges: ticked activities with their FINAL dates.
+  // The approve endpoint (ResumeDialogApproveRequest) takes ONLY
+  //   { approvedBy, changes: [{ activityId, requestedStart, requestedStop }] }
+  // — those dates are applied to the activities. Unticked (declined)
+  // activities are simply left out; extra fields are not sent.
+  approve({ requestId, approvedChanges, remark }) {
+    const approvedBy = currentUserId();
+    if (!requestId || !approvedBy) {
+      return Promise.reject(
+        new Error(
+          !requestId
+            ? "Request id is missing in the request data."
+            : "Logged-in user id is missing.",
+        ),
+      );
+    }
+    // Backend fields are java.sql.Timestamp: send clean ISO-8601 strings.
+    const iso = (d) => {
+      const t = new Date(d);
+      return Number.isNaN(t.getTime()) ? null : t.toISOString();
+    };
+    const changes = approvedChanges.map((c) => ({
+      activityId: c.activityId,
+      requestedStart: iso(c.requestedStart),
+      requestedStop: iso(c.requestedStop),
+    }));
+    if (changes.some((c) => !c.activityId || !c.requestedStart || !c.requestedStop)) {
+      return Promise.reject(
+        new Error("A ticked activity has an invalid or missing date."),
+      );
+    }
+    const payload = { approvedBy, resumeDialogapprovedChanges:changes };
+    if (remark) payload.remarks = remark;
+    console.log("[ResumeReview] approve", requestId, payload);
+    return activityTrackerApi.resumeDialogApprove(requestId, payload);
   },
 
   // assigner cancelled the whole request
@@ -107,7 +140,7 @@ export function buildActivityLookupMap(project) {
    review shape ({ pauseMs, changes, activityName, ... }). */
 export function toChangeRequest(raw) {
   if (!raw) return null;
-  const items = raw.changes || raw.resumeDialogChangeItems || [];
+  const items = getRequestChanges(raw);
   return {
     requestId: raw.requestId ?? raw.id,
     projectId: raw.projectId,
@@ -185,7 +218,7 @@ const ResumeRequestReview = ({
       if (onSuccess) onSuccess(action);
       else onClose?.();
     } catch (err) {
-      console.log("Error:", err);
+      console.log("Error:", err, err?.response?.data);
       onError?.(action, err);
     } finally {
       setLoading(false);
@@ -193,25 +226,22 @@ const ResumeRequestReview = ({
   };
 
   const handleApprove = (approvedChanges, req, remark) => {
-    const approvedIds = new Set(approvedChanges.map((c) => c.activityId));
-    const declinedChanges = (req?.changes || []).filter(
-      (c) => !approvedIds.has(c.activityId),
-    );
     if (dryRun) console.log("[ResumeReview dry run] approved →", approvedChanges);
     return run("approve", () =>
       reviewApi.approve({
         requestId: req?.requestId,
         approvedChanges,
-        declinedChanges,
         remark,
       }),
     );
   };
 
-  const handleReject = (req, remark) =>
-    run("reject", () =>
+  const handleReject = (req, remark) => {
+    if (!remark?.trim()) return; // remark is compulsory to cancel a request
+    return run("reject", () =>
       reviewApi.reject({ requestId: req?.requestId, remark }),
     );
+  };
 
   return (
     <ResumeDialog
