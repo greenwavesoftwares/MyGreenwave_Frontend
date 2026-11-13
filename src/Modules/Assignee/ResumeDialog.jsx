@@ -468,11 +468,12 @@ const ResumeDialog = ({
       .map((r) => ({
         activityId: r.id,
         activityName: r.name,
-        currentStart: r.plannedStart,
-        currentStop: r.plannedStop,
+        currentStart: dayjs(r.plannedStart).toISOString(),
+        currentStop: dayjs(r.plannedStop).toISOString(),
         requestedStart: resolveDates(r).start.toISOString(),
         requestedStop: resolveDates(r).stop.toISOString(),
       }));
+      console.log("Resquests on resume dialog:",requests)
     onConfirm({
       reason: reasonText.trim(),
       requests,
