@@ -6,7 +6,7 @@ import { useResponsive } from "../useResponsive";
 import BottomSheet from "./BottomSheet";
 import { WORK_START_HR, WORK_END_HR } from "../helpers/constants";
 import { parseISODateTime, isoDateTime } from "../helpers/dateUtils";
-import { leaveOnDay } from "../helpers/workHours";
+import { leaveOnDay, isWorkDay } from "../helpers/workHours";
 import { makeNavBtn, makeTimeSelect, makePickerBtn } from "../helpers/styles";
 import TimePickerSection from "./TimePickerSection";
 import { isHoliday } from "../helpers/holidays";
@@ -17,6 +17,7 @@ export default function WorkingDatePicker({
   resourceUserId,
   groupResources,
   holidays = [],
+  weekendConfig = {},
   onClose,
   anchorRef,
 }) {
@@ -123,7 +124,7 @@ export default function WorkingDatePicker({
 
   const handleDayClick = (d) => {
     if (!d) return;
-    const isWknd = d.getDay() === 0 || d.getDay() === 6;
+    const isWknd = !isWorkDay(d, weekendConfig);
     const onLeave = leaveOnDay(resourceUserId, d, groupResources);
     const isHol = isHoliday(d, holidays); // ← NEW
     const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -313,33 +314,33 @@ export default function WorkingDatePicker({
       </div>
 
       {/* Weekday headers */}
-      {isMobile && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
-            gap: 2,
-            marginBottom: 4,
-          }}
-        >
-          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <div
-              key={i}
-              style={{
-                textAlign: "center",
-                fontSize: 10,
-                fontWeight: 700,
-                color: t.textMuted,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                paddingBottom: 4,
-              }}
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* {isMobile && ( */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: 2,
+          marginBottom: 4,
+        }}
+      >
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, i) => (
+          <div
+            key={i}
+            style={{
+              textAlign: "center",
+              fontSize: 10,
+              fontWeight: 700,
+              color: t.textMuted,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              paddingBottom: 4,
+            }}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+      {/* )} */}
 
       {/* Days grid */}
       <div
@@ -352,7 +353,7 @@ export default function WorkingDatePicker({
         {cells.map((d, i) => {
           if (!d) return <div key={i} />;
           const day = d.getDay();
-          const isWknd = day === 0 || day === 6;
+          const isWknd = !isWorkDay(d, weekendConfig);
           const onLeave = leaveOnDay(resourceUserId, d, groupResources);
           const isHol = isHoliday(d, holidays); // ← NEW
           const startOfDay = new Date(
@@ -416,7 +417,7 @@ export default function WorkingDatePicker({
                   : isHol
                     ? "Holiday"
                     : isWknd
-                      ? "Weekend — disabled"
+                      ? `${d.getDay() === 0 ? "Sunday" : "Saturday"} — disabled`
                       : onLeave
                         ? `Leave (${onLeave.date})`
                         : ""

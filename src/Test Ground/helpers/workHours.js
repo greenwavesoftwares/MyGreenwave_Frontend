@@ -22,11 +22,19 @@ export function leaveOnDay(userId, d, groupResources) {
   return leavesFor(userId, groupResources).find((l) => l.date === key) || null;
 }
 
-export function nextWorkMoment(dt, userId, groupResources = {}, holidays = []) {
+/* ── NEW: Check if a day is a working day based on weekend config ── */
+export function isWorkDay(d, weekendConfig = {}) {
+  const day = d.getDay();
+  if (day === 6 && !weekendConfig.includeSaturday) return false;
+  if (day === 0 && !weekendConfig.includeSunday) return false;
+  return true;
+}
+
+export function nextWorkMoment(dt, userId, groupResources = {}, holidays = [], weekendConfig = {}) {
   let d = new Date(dt);
   for (let i = 0; i < 730; i++) {
-    // Skip weekends
-    if (!isWeekday(d)) {
+    // Skip non-working days (weekends based on config)
+    if (!isWorkDay(d, weekendConfig)) {
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
       continue;
@@ -64,8 +72,9 @@ export function addWorkHours(
   userId,
   groupResources = {},
   holidays = [],
+  weekendConfig = {},
 ) {
-  let d = nextWorkMoment(new Date(startDt), userId, groupResources, holidays);
+  let d = nextWorkMoment(new Date(startDt), userId, groupResources, holidays, weekendConfig);
   let remaining = Number(hours) || 0;
   if (remaining <= 0) return d;
   for (let i = 0; i < 730 && remaining > 0; i++) {
@@ -74,7 +83,7 @@ export function addWorkHours(
     if (avail <= 0) {
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
-      d = nextWorkMoment(d, userId, groupResources, holidays);
+      d = nextWorkMoment(d, userId, groupResources, holidays, weekendConfig);
       continue;
     }
     if (remaining <= avail + 1e-9) {
@@ -84,13 +93,13 @@ export function addWorkHours(
       remaining -= avail;
       d.setDate(d.getDate() + 1);
       d.setHours(WORK_START_HR, 0, 0, 0);
-      d = nextWorkMoment(d, userId, groupResources, holidays);
+      d = nextWorkMoment(d, userId, groupResources, holidays, weekendConfig);
     }
   }
   return d;
 }
 
-export function defaultFirstStart(userId, groupResources = {}, holidays = []) {
+export function defaultFirstStart(userId, groupResources = {}, holidays = [], weekendConfig = {}) {
   const now = new Date();
   const hr = now.getHours() + now.getMinutes() / 60;
   let baseDate;
@@ -120,5 +129,5 @@ export function defaultFirstStart(userId, groupResources = {}, holidays = []) {
     }
   }
 
-  return nextWorkMoment(baseDate, userId, groupResources, holidays);
+  return nextWorkMoment(baseDate, userId, groupResources, holidays, weekendConfig);
 }

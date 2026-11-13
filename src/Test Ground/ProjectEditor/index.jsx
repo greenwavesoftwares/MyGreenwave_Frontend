@@ -84,7 +84,11 @@ import {
   recomputeChains,
   recomputeAnchorChains,
 } from "../helpers/chains";
-import { defaultFirstStart, addWorkHours } from "../helpers/workHours";
+import {
+  defaultFirstStart,
+  addWorkHours,
+  isWorkDay,
+} from "../helpers/workHours";
 import { runValidations } from "../helpers/validation";
 import {
   generateCustomColumnId,
@@ -206,6 +210,11 @@ export default function ProjectEditor({
   );
   const [autoChainPreview, setAutoChainPreview] = useState(null);
   const [autoChainOnSave, setAutoChainOnSave] = useState(true);
+  const [weekendConfig, setWeekendConfig] = useState({
+    includeSaturday: false,
+    includeSunday: false,
+  });
+  const [weekendDropdownOpen, setWeekendDropdownOpen] = useState(false);
   // ─── Custom Columns ───
   const [customColumns, setCustomColumns] = useState(draft.customColumns || []);
   const [colWidths, setColWidths] = useState({});
@@ -491,17 +500,31 @@ export default function ProjectEditor({
     (rowsToProcess) => {
       const hasAnchors = rowsToProcess.some((r) => r.isAnchor);
       if (hasAnchors) {
-        return recomputeAnchorChains(rowsToProcess, groupResources, holidays);
+        return recomputeAnchorChains(
+          rowsToProcess,
+          groupResources,
+          holidays,
+          weekendConfig,
+        );
       }
-      return recomputeChains(rowsToProcess, groupResources, holidays);
+      return recomputeChains(
+        rowsToProcess,
+        groupResources,
+        holidays,
+        weekendConfig,
+      );
     },
-    [groupResources, holidays],
+    [groupResources, holidays, weekendConfig],
   );
 
   useEffect(() => {
     setRows((prev) => recomputeRows(prev));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCalculate]);
+  useEffect(() => {
+    setRows((prev) => recomputeRows(prev));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekendConfig]);
   // Auto-recompute plannedStop when holidays list becomes available
   useEffect(() => {
     if (holidays.length === 0) return;
@@ -1107,6 +1130,7 @@ export default function ProjectEditor({
             copiedResourceUserId,
             groupResources || {},
             holidays,
+            weekendConfig,
           );
           if (dt instanceof Date && !isNaN(dt)) {
             updated.plannedStart = isoDateTime(dt);
@@ -2982,6 +3006,181 @@ export default function ProjectEditor({
                             Auto Dependency
                           </button>
                         )}
+                        {/* ── Weekend Config Dropdown ── */}
+                        <div style={{ position: "relative" }}>
+                          <button
+                            type="button"
+                            onClick={() => setWeekendDropdownOpen((p) => !p)}
+                            style={{
+                              ...btnStyle,
+                              height: isMobile ? 40 : 32,
+                              padding: isMobile ? "0 10px" : "0 12px",
+                              color:
+                                weekendConfig.includeSaturday ||
+                                weekendConfig.includeSunday
+                                  ? t.primary
+                                  : t.textSecondary,
+                              borderColor:
+                                weekendConfig.includeSaturday ||
+                                weekendConfig.includeSunday
+                                  ? t.primaryBorder
+                                  : t.borderStrong,
+                              background:
+                                weekendConfig.includeSaturday ||
+                                weekendConfig.includeSunday
+                                  ? t.primaryBgSubtle
+                                  : t.bgCard,
+                              fontWeight: 600,
+                            }}
+                            title="Configure which weekend days count as working days"
+                          >
+                            <Calendar size={13} />
+                            {!isMobile && "Weekends"}
+                            {(weekendConfig.includeSaturday ||
+                              weekendConfig.includeSunday) && (
+                              <span
+                                style={{
+                                  marginLeft: 4,
+                                  padding: "0 5px",
+                                  borderRadius: 999,
+                                  background: t.primary,
+                                  color: t.textInverse,
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  lineHeight: "16px",
+                                }}
+                              >
+                                {(weekendConfig.includeSaturday ? 1 : 0) +
+                                  (weekendConfig.includeSunday ? 1 : 0)}
+                              </span>
+                            )}
+                          </button>
+
+                          {weekendDropdownOpen && (
+                            <>
+                              <div
+                                style={{
+                                  position: "fixed",
+                                  inset: 0,
+                                  zIndex: 99,
+                                }}
+                                onClick={() => setWeekendDropdownOpen(false)}
+                              />
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  right: 0,
+                                  marginTop: 4,
+                                  zIndex: 100,
+                                  background: t.bgCard,
+                                  border: `1px solid ${t.borderStrong}`,
+                                  borderRadius: 8,
+                                  boxShadow: t.shadowLg,
+                                  padding: 6,
+                                  minWidth: 170,
+                                }}
+                              >
+                                {[
+                                  {
+                                    key: "includeSaturday",
+                                    label: "Include Saturday",
+                                  },
+                                  {
+                                    key: "includeSunday",
+                                    label: "Include Sunday",
+                                  },
+                                ].map((opt) => (
+                                  <label
+                                    key={opt.key}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                      padding: "7px 10px",
+                                      borderRadius: 5,
+                                      cursor: "pointer",
+                                      fontSize: 12,
+                                      fontWeight: 500,
+                                      color: t.textPrimary,
+                                      background: weekendConfig[opt.key]
+                                        ? t.primaryBgSubtle
+                                        : "transparent",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (!weekendConfig[opt.key])
+                                        e.currentTarget.style.background =
+                                          t.bgMuted;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background =
+                                        weekendConfig[opt.key]
+                                          ? t.primaryBgSubtle
+                                          : "transparent";
+                                    }}
+                                  >
+                                    <span
+                                      onClick={() => {
+                                        setWeekendConfig((prev) => ({
+                                          ...prev,
+                                          [opt.key]: !prev[opt.key],
+                                        }));
+                                      }}
+                                      style={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: 4,
+                                        border: `2px solid ${
+                                          weekendConfig[opt.key]
+                                            ? t.primary
+                                            : t.borderStrong
+                                        }`,
+                                        background: weekendConfig[opt.key]
+                                          ? t.primary
+                                          : "transparent",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                        transition: "all .15s",
+                                      }}
+                                    >
+                                      {weekendConfig[opt.key] && (
+                                        <svg
+                                          width="10"
+                                          height="10"
+                                          viewBox="0 0 12 12"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M2 6l3 3 5-5"
+                                            stroke="#fff"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </span>
+                                    {opt.label}
+                                  </label>
+                                ))}
+                                <div
+                                  style={{
+                                    padding: "5px 10px 2px",
+                                    fontSize: 10,
+                                    color: t.textFaint,
+                                    borderTop: `1px solid ${t.border}`,
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  Holidays & Leaves always skipped
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
                         <button
                           onClick={() => addRow()}
                           style={{
@@ -3183,6 +3382,7 @@ export default function ProjectEditor({
                                   copiedResourceUserId={copiedResourceUserId}
                                   onCopyResource={handleCopyResource}
                                   onPasteResource={handlePasteResource}
+                                  weekendConfig={weekendConfig}
                                 />
                               );
                             })}
@@ -3732,6 +3932,7 @@ export default function ProjectEditor({
                                     copiedResourceUserId={copiedResourceUserId}
                                     onCopyResource={handleCopyResource}
                                     onPasteResource={handlePasteResource}
+                                    weekendConfig={weekendConfig}
                                   />
                                 );
                               })}

@@ -70,6 +70,7 @@ const ActivityRow = React.memo(function ActivityRow({
   copiedResourceUserId,
   onCopyResource,
   onPasteResource,
+  weekendConfig,
 }) {
   const { t } = useTheme();
   const inputStyle = makeInputStyle(t);
@@ -643,6 +644,7 @@ const ActivityRow = React.memo(function ActivityRow({
                         anchorRef={dateBtnRef}
                         onChange={(val) => handleField("plannedStart", val)}
                         onClose={() => setPickerOpen(false)}
+                        weekendConfig={weekendConfig}
                       />
                     )}
                   </>

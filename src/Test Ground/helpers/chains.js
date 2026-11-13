@@ -51,13 +51,12 @@ export function flattenOrdered(rows, { withDepth = true } = {}) {
 export function recomputeAnchorChains(
   rows,
   groupResources = {},
-  holidays = [], // ← NEW
+  holidays = [],
+  weekendConfig = {},
 ) {
-  // 1. Clone all rows
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
 
-  // 2. Build childrenMap
   const childrenMap = new Map();
   updated.forEach((r) => {
     const pid = r.parentId || "__ROOT__";
@@ -67,16 +66,13 @@ export function recomputeAnchorChains(
 
   const getChildren = (id) => childrenMap.get(id) || [];
 
-  // 3. Reset auto-chain flags on all rows
   updated.forEach((r) => {
     r._autoChained = false;
     r._isAnchor = false;
   });
 
-  // 4. Get ordered rows (respects tree order)
   const ordered = flattenOrdered(updated);
 
-  // 5. Group rows by resource (ordered)
   const byResource = new Map();
   ordered.forEach((r) => {
     const row = byId.get(r.id);
@@ -85,7 +81,6 @@ export function recomputeAnchorChains(
     byResource.get(row.resource).push(row);
   });
 
-  // 6. Process each resource
   byResource.forEach((resourceRows, userId) => {
     let currentSegmentStart = -1;
 
@@ -93,7 +88,6 @@ export function recomputeAnchorChains(
       const row = resourceRows[i];
 
       if (row.isAnchor) {
-        // ── This row is an anchor ──
         row._isAnchor = true;
         row._autoChained = false;
 
@@ -115,11 +109,7 @@ export function recomputeAnchorChains(
 
         if (hasValidDur && dur > 0) {
           const stop = addWorkHours(
-            anchorStart,
-            dur,
-            userId,
-            groupResources,
-            holidays, // ← NEW
+            anchorStart, dur, userId, groupResources, holidays, weekendConfig,
           );
           row.plannedStop = isoDateTime(stop);
         } else if (hasValidDur && dur === 0) {
@@ -130,7 +120,6 @@ export function recomputeAnchorChains(
 
         currentSegmentStart = i;
       } else if (currentSegmentStart !== -1) {
-        // ── This row is inside a segment (after an anchor) ──
         row._autoChained = true;
         row._isAnchor = false;
 
@@ -146,10 +135,7 @@ export function recomputeAnchorChains(
         }
 
         const start = nextWorkMoment(
-          new Date(prevEnd),
-          userId,
-          groupResources,
-          holidays, // ← NEW
+          new Date(prevEnd), userId, groupResources, holidays, weekendConfig,
         );
         row.plannedStart = isoDateTime(start);
 
@@ -162,11 +148,7 @@ export function recomputeAnchorChains(
 
         if (hasValidDur && dur > 0) {
           const stop = addWorkHours(
-            start,
-            dur,
-            userId,
-            groupResources,
-            holidays, // ← NEW
+            start, dur, userId, groupResources, holidays, weekendConfig,
           );
           row.plannedStop = isoDateTime(stop);
         } else if (hasValidDur && dur === 0) {
@@ -175,11 +157,9 @@ export function recomputeAnchorChains(
           row.plannedStop = "";
         }
       } else {
-        // ── No segment started yet → manual mode ──
         row._autoChained = false;
         row._isAnchor = false;
 
-        // Still compute plannedStop from plannedStart + duration
         if (row.plannedStart) {
           const start = parseISODateTime(row.plannedStart);
           const dur = Number(row.durationHrs);
@@ -194,11 +174,7 @@ export function recomputeAnchorChains(
               row.plannedStop = isoDateTime(start);
             } else {
               const stop = addWorkHours(
-                start,
-                dur,
-                userId,
-                groupResources,
-                holidays, // ← NEW
+                start, dur, userId, groupResources, holidays, weekendConfig,
               );
               row.plannedStop = isoDateTime(stop);
             }
@@ -212,7 +188,7 @@ export function recomputeAnchorChains(
     }
   });
 
-  // 7. Parent aggregation
+  // Parent aggregation
   const parentIds = Array.from(childrenMap.keys()).filter(
     (k) => k !== "__ROOT__",
   );
@@ -284,23 +260,22 @@ export function recomputeAnchorChains(
   return updated;
 }
 
-/* ─── Manual mode chain computation (kept for plannedStop calc) ─── */
+/* ─── Manual mode chain computation ─── */
 export function recomputeChains(
   rows,
   groupResources = {},
-  holidays = [], // ← NEW
+  holidays = [],
+  weekendConfig = {},
 ) {
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
   const childrenMap = new Map();
 
-  // ── Reset anchor-mode flags (in case they persisted) ──
   updated.forEach((r) => {
     r._autoChained = false;
     r._isAnchor = false;
   });
 
-  // Build children map (was missing in the original — needs to populate childrenMap)
   updated.forEach((r) => {
     const pid = r.parentId || "__ROOT__";
     if (!childrenMap.has(pid)) childrenMap.set(pid, []);
@@ -310,7 +285,6 @@ export function recomputeChains(
   const getChildren = (id) => childrenMap.get(id) || [];
   const topRows = childrenMap.get("__ROOT__") || [];
 
-  // Sub-tasks plannedStop computation
   const processChildren = (parentId) => {
     const children = getChildren(parentId);
     children.forEach((child) => {
@@ -343,9 +317,8 @@ export function recomputeChains(
 
   topRows.forEach((row) => processChildren(row.id));
 
-  // Compute plannedStop for top-level rows
   updated.forEach((r) => {
-    if (r.parentId) return; // already handled
+    if (r.parentId) return;
     if (!isPending(r)) return;
     if (!r.plannedStart) {
       r.plannedStop = "";
@@ -365,11 +338,7 @@ export function recomputeChains(
           r.plannedStop = isoDateTime(start);
         } else {
           const stop = addWorkHours(
-            start,
-            dur,
-            r.resource,
-            groupResources,
-            holidays, // ← NEW
+            start, dur, r.resource, groupResources, holidays, weekendConfig,
           );
           r.plannedStop = isoDateTime(stop);
         }

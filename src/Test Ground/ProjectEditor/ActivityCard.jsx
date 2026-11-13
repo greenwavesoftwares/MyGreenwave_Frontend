@@ -68,6 +68,7 @@ const ActivityCard = React.memo(function ActivityCard({
   copiedResourceUserId,
   onCopyResource,
   onPasteResource,
+  weekendConfig,
 }) {
   const { t } = useTheme();
   const inputStyle = makeInputStyle(t);
@@ -476,6 +477,7 @@ const ActivityCard = React.memo(function ActivityCard({
                         anchorRef={dateBtnRef}
                         onChange={(val) => handleField("plannedStart", val)}
                         onClose={() => setPickerOpen(false)}
+                        weekendConfig={weekendConfig}
                       />
                     )}
                   </>
