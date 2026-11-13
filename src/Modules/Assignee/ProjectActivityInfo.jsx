@@ -703,7 +703,7 @@ export default function ProjectActivityInfo({
             // excluded) — shown to the assigner in the review dialog.
             pauseMins: Math.round((pauseWorkingHrs || 0) * 60),
             reason,
-            changes: requests,
+            resumeDialogChangeItems: requests,
           });
           showToast(
             "success",

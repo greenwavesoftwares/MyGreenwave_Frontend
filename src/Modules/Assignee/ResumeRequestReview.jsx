@@ -85,7 +85,7 @@ const reviewApi = {
         new Error("A ticked activity has an invalid or missing date."),
       );
     }
-    const payload = { approvedBy, resumeDialogapprovedChanges:changes };
+    const payload = { approvedBy, resumeDialogApprovedChanges:changes };
     if (remark) payload.remarks = remark;
     console.log("[ResumeReview] approve", requestId, payload);
     return activityTrackerApi.resumeDialogApprove(requestId, payload);
