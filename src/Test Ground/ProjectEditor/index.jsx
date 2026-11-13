@@ -3024,494 +3024,508 @@ export default function ProjectEditor({
                           </button>
                         )}
                         {/* ── Work Hours button + popover ── */}
-                        <div style={{ position: "relative" }}>
-                          {(() => {
-                            const totalHrs =
-                              workHoursConfig.end - workHoursConfig.start;
-                            const isCustom =
-                              workHoursConfig.start !== 10 ||
-                              workHoursConfig.end !== 18;
-                            return (
-                              <button
-                                ref={workHoursBtnRef}
-                                type="button"
-                                onClick={() => {
-                                  setWorkHoursDraft({ ...workHoursConfig });
-                                  setWorkHoursOpen((p) => !p);
-                                }}
-                                title="Configure daily work hours"
-                                style={{
-                                  ...btnStyle,
-                                  height: isMobile ? 40 : 32,
-                                  padding: isMobile ? "0 10px" : "0 12px",
-                                  color:
-                                    isCustom || workHoursOpen
-                                      ? t.primary
-                                      : t.textSecondary,
-                                  borderColor:
-                                    isCustom || workHoursOpen
-                                      ? t.primaryBorder
-                                      : t.borderStrong,
-                                  background:
-                                    isCustom || workHoursOpen
-                                      ? t.primaryBgSubtle
-                                      : t.bgCard,
-                                  fontWeight: 600,
-                                  fontVariantNumeric: "tabular-nums",
-                                }}
-                              >
-                                WH · {totalHrs}h
-                              </button>
-                            );
-                          })()}
-
-                          {workHoursOpen &&
-                            createPortal(
-                              <>
-                                {/* Backdrop */}
-                                <div
-                                  style={{
-                                    position: "fixed",
-                                    inset: 0,
-                                    zIndex: 99998,
+                        {false && (
+                          <div style={{ position: "relative" }}>
+                            {(() => {
+                              const totalHrs =
+                                workHoursConfig.end - workHoursConfig.start;
+                              const isCustom =
+                                workHoursConfig.start !== 10 ||
+                                workHoursConfig.end !== 18;
+                              return (
+                                <button
+                                  ref={workHoursBtnRef}
+                                  type="button"
+                                  onClick={() => {
+                                    setWorkHoursDraft({ ...workHoursConfig });
+                                    setWorkHoursOpen((p) => !p);
                                   }}
-                                  onClick={() => setWorkHoursOpen(false)}
-                                />
-
-                                {/* Popover */}
-                                <div
-                                  style={(() => {
-                                    const rect =
-                                      workHoursBtnRef.current?.getBoundingClientRect();
-                                    const popW = 240;
-                                    const popH = 280;
-                                    let top = (rect?.bottom ?? 0) + 6;
-                                    let left = (rect?.right ?? 0) - popW;
-
-                                    // Keep on screen
-                                    if (left < 8) left = 8;
-                                    if (left + popW > window.innerWidth - 8) {
-                                      left = window.innerWidth - popW - 8;
-                                    }
-                                    if (top + popH > window.innerHeight - 8) {
-                                      top = (rect?.top ?? 0) - popH - 6;
-                                    }
-
-                                    return {
-                                      position: "fixed",
-                                      top,
-                                      left,
-                                      zIndex: 99999,
-                                      background: t.bgCard,
-                                      border: `1px solid ${t.borderStrong}`,
-                                      borderRadius: 10,
-                                      boxShadow:
-                                        t.shadowLg ||
-                                        "0 12px 40px rgba(0,0,0,0.18)",
-                                      padding: 14,
-                                      width: popW,
-                                      fontFamily: "Sora,sans-serif",
-                                      boxSizing: "border-box",
-                                    };
-                                  })()}
-                                  onClick={(e) => e.stopPropagation()}
+                                  title="Configure daily work hours"
+                                  style={{
+                                    ...btnStyle,
+                                    height: isMobile ? 40 : 32,
+                                    padding: isMobile ? "0 10px" : "0 12px",
+                                    color:
+                                      isCustom || workHoursOpen
+                                        ? t.primary
+                                        : t.textSecondary,
+                                    borderColor:
+                                      isCustom || workHoursOpen
+                                        ? t.primaryBorder
+                                        : t.borderStrong,
+                                    background:
+                                      isCustom || workHoursOpen
+                                        ? t.primaryBgSubtle
+                                        : t.bgCard,
+                                    fontWeight: 600,
+                                    fontVariantNumeric: "tabular-nums",
+                                  }}
                                 >
-                                  {/* Title */}
-                                  <div
-                                    style={{
-                                      fontSize: 13,
-                                      fontWeight: 700,
-                                      color: t.textPrimary,
-                                      marginBottom: 14,
-                                    }}
-                                  >
-                                    Work Hours
-                                  </div>
+                                  WH · {totalHrs}h
+                                </button>
+                              );
+                            })()}
 
-                                  {/* Start */}
+                            {workHoursOpen &&
+                              createPortal(
+                                <>
+                                  {/* Backdrop */}
                                   <div
                                     style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                      marginBottom: 10,
+                                      position: "fixed",
+                                      inset: 0,
+                                      zIndex: 99998,
                                     }}
-                                  >
-                                    <span
-                                      style={{
-                                        fontSize: 12,
-                                        color: t.textMuted,
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      Start
-                                    </span>
-                                    <select
-                                      value={workHoursDraft.start}
-                                      onChange={(e) => {
-                                        const newStart = Number(e.target.value);
-                                        setWorkHoursDraft((prev) => {
-                                          let newEnd = prev.end;
-                                          if (newEnd - newStart < 8) {
-                                            newEnd = Math.min(newStart + 8, 23);
-                                          }
-                                          return {
-                                            start: newStart,
-                                            end: newEnd,
-                                          };
-                                        });
-                                      }}
-                                      style={{
-                                        height: 34,
-                                        border: `1px solid ${t.borderStrong}`,
-                                        borderRadius: 6,
-                                        background: t.bgInput || t.bgCard,
-                                        color: t.textPrimary,
-                                        fontSize: 12,
-                                        fontWeight: 600,
-                                        padding: "0 8px",
-                                        fontFamily: "Sora,sans-serif",
-                                        cursor: "pointer",
-                                        width: 96,
-                                      }}
-                                    >
-                                      {Array.from(
-                                        { length: 16 },
-                                        (_, i) => i,
-                                      ).map((h) => (
-                                        <option key={h} value={h}>
-                                          {String(h).padStart(2, "0")}:00
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
+                                    onClick={() => setWorkHoursOpen(false)}
+                                  />
 
-                                  {/* End */}
+                                  {/* Popover */}
                                   <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                      marginBottom: 14,
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        fontSize: 12,
-                                        color: t.textMuted,
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      End
-                                    </span>
-                                    <select
-                                      value={workHoursDraft.end}
-                                      onChange={(e) => {
-                                        const newEnd = Number(e.target.value);
-                                        setWorkHoursDraft((prev) => {
-                                          let newStart = prev.start;
-                                          if (newEnd - newStart < 8) {
-                                            newStart = Math.max(newEnd - 8, 0);
-                                          }
-                                          return {
-                                            start: newStart,
-                                            end: newEnd,
-                                          };
-                                        });
-                                      }}
-                                      style={{
-                                        height: 34,
+                                    style={(() => {
+                                      const rect =
+                                        workHoursBtnRef.current?.getBoundingClientRect();
+                                      const popW = 240;
+                                      const popH = 280;
+                                      let top = (rect?.bottom ?? 0) + 6;
+                                      let left = (rect?.right ?? 0) - popW;
+
+                                      // Keep on screen
+                                      if (left < 8) left = 8;
+                                      if (left + popW > window.innerWidth - 8) {
+                                        left = window.innerWidth - popW - 8;
+                                      }
+                                      if (top + popH > window.innerHeight - 8) {
+                                        top = (rect?.top ?? 0) - popH - 6;
+                                      }
+
+                                      return {
+                                        position: "fixed",
+                                        top,
+                                        left,
+                                        zIndex: 99999,
+                                        background: t.bgCard,
                                         border: `1px solid ${t.borderStrong}`,
-                                        borderRadius: 6,
-                                        background: t.bgInput || t.bgCard,
-                                        color: t.textPrimary,
-                                        fontSize: 12,
-                                        fontWeight: 600,
-                                        padding: "0 8px",
+                                        borderRadius: 10,
+                                        boxShadow:
+                                          t.shadowLg ||
+                                          "0 12px 40px rgba(0,0,0,0.18)",
+                                        padding: 14,
+                                        width: popW,
                                         fontFamily: "Sora,sans-serif",
-                                        cursor: "pointer",
-                                        width: 96,
+                                        boxSizing: "border-box",
+                                      };
+                                    })()}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {/* Title */}
+                                    <div
+                                      style={{
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        color: t.textPrimary,
+                                        marginBottom: 14,
                                       }}
                                     >
-                                      {Array.from(
-                                        {
-                                          length:
-                                            24 - (workHoursDraft.start + 8) + 1,
-                                        },
-                                        (_, i) => workHoursDraft.start + 8 + i,
-                                      )
-                                        .filter((h) => h <= 23)
-                                        .map((h) => (
+                                      Work Hours
+                                    </div>
+
+                                    {/* Start */}
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        marginBottom: 10,
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          fontSize: 12,
+                                          color: t.textMuted,
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Start
+                                      </span>
+                                      <select
+                                        value={workHoursDraft.start}
+                                        onChange={(e) => {
+                                          const newStart = Number(
+                                            e.target.value,
+                                          );
+                                          setWorkHoursDraft((prev) => {
+                                            let newEnd = prev.end;
+                                            if (newEnd - newStart < 8) {
+                                              newEnd = Math.min(
+                                                newStart + 8,
+                                                23,
+                                              );
+                                            }
+                                            return {
+                                              start: newStart,
+                                              end: newEnd,
+                                            };
+                                          });
+                                        }}
+                                        style={{
+                                          height: 34,
+                                          border: `1px solid ${t.borderStrong}`,
+                                          borderRadius: 6,
+                                          background: t.bgInput || t.bgCard,
+                                          color: t.textPrimary,
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          padding: "0 8px",
+                                          fontFamily: "Sora,sans-serif",
+                                          cursor: "pointer",
+                                          width: 96,
+                                        }}
+                                      >
+                                        {Array.from(
+                                          { length: 16 },
+                                          (_, i) => i,
+                                        ).map((h) => (
                                           <option key={h} value={h}>
                                             {String(h).padStart(2, "0")}:00
                                           </option>
                                         ))}
-                                    </select>
-                                  </div>
+                                      </select>
+                                    </div>
 
-                                  {/* Live total */}
-                                  <div
-                                    style={{
-                                      padding: "10px 12px",
-                                      borderRadius: 8,
-                                      background:
-                                        t.primaryBgSubtle || `${t.primary}14`,
-                                      border: `1px solid ${t.primaryBorder || t.border}`,
-                                      textAlign: "center",
-                                      marginBottom: 8,
-                                    }}
-                                  >
-                                    <span
+                                    {/* End */}
+                                    <div
                                       style={{
-                                        fontSize: 13,
-                                        fontWeight: 700,
-                                        color: t.primary,
-                                        fontVariantNumeric: "tabular-nums",
-                                      }}
-                                    >
-                                      ={" "}
-                                      {workHoursDraft.end -
-                                        workHoursDraft.start}{" "}
-                                      hours / day
-                                    </span>
-                                  </div>
-
-                                  <div
-                                    style={{
-                                      fontSize: 10,
-                                      color: t.textFaint,
-                                      marginBottom: 14,
-                                      textAlign: "center",
-                                      lineHeight: 1.4,
-                                    }}
-                                  >
-                                    Holidays &amp; Leaves always skipped
-                                  </div>
-
-                                  {/* Actions */}
-                                  <div style={{ display: "flex", gap: 8 }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => setWorkHoursOpen(false)}
-                                      style={{
-                                        flex: 1,
-                                        height: 36,
-                                        borderRadius: 7,
-                                        border: `1px solid ${t.borderStrong}`,
-                                        background: t.bgMuted || t.bgSubtle,
-                                        color: t.textSecondary,
-                                        fontSize: 12,
-                                        fontWeight: 600,
-                                        cursor: "pointer",
-                                        fontFamily: "Sora,sans-serif",
-                                      }}
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setWorkHoursConfig({
-                                          ...workHoursDraft,
-                                        });
-                                        setWorkHoursOpen(false);
-                                      }}
-                                      style={{
-                                        flex: 1.2,
-                                        height: 36,
-                                        borderRadius: 7,
-                                        border: "none",
-                                        background: t.primary,
-                                        color: t.textInverse || "#fff",
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        cursor: "pointer",
-                                        fontFamily: "Sora,sans-serif",
-                                      }}
-                                    >
-                                      Apply
-                                    </button>
-                                  </div>
-                                </div>
-                              </>,
-                              document.body,
-                            )}
-                        </div>
-                        {/* ── Weekend Config Dropdown ── */}
-                        <div style={{ position: "relative" }}>
-                          <button
-                            type="button"
-                            onClick={() => setWeekendDropdownOpen((p) => !p)}
-                            style={{
-                              ...btnStyle,
-                              height: isMobile ? 40 : 32,
-                              padding: isMobile ? "0 10px" : "0 12px",
-                              color:
-                                weekendConfig.includeSaturday ||
-                                weekendConfig.includeSunday
-                                  ? t.primary
-                                  : t.textSecondary,
-                              borderColor:
-                                weekendConfig.includeSaturday ||
-                                weekendConfig.includeSunday
-                                  ? t.primaryBorder
-                                  : t.borderStrong,
-                              background:
-                                weekendConfig.includeSaturday ||
-                                weekendConfig.includeSunday
-                                  ? t.primaryBgSubtle
-                                  : t.bgCard,
-                              fontWeight: 600,
-                            }}
-                            title="Configure which weekend days count as working days"
-                          >
-                            <Calendar size={13} />
-                            {!isMobile && "Weekends"}
-                            {(weekendConfig.includeSaturday ||
-                              weekendConfig.includeSunday) && (
-                              <span
-                                style={{
-                                  marginLeft: 4,
-                                  padding: "0 5px",
-                                  borderRadius: 999,
-                                  background: t.primary,
-                                  color: t.textInverse,
-                                  fontSize: 9,
-                                  fontWeight: 700,
-                                  lineHeight: "16px",
-                                }}
-                              >
-                                {(weekendConfig.includeSaturday ? 1 : 0) +
-                                  (weekendConfig.includeSunday ? 1 : 0)}
-                              </span>
-                            )}
-                          </button>
-
-                          {weekendDropdownOpen && (
-                            <>
-                              <div
-                                style={{
-                                  position: "fixed",
-                                  inset: 0,
-                                  zIndex: 99,
-                                }}
-                                onClick={() => setWeekendDropdownOpen(false)}
-                              />
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  top: "100%",
-                                  right: 0,
-                                  marginTop: 4,
-                                  zIndex: 100,
-                                  background: t.bgCard,
-                                  border: `1px solid ${t.borderStrong}`,
-                                  borderRadius: 8,
-                                  boxShadow: t.shadowLg,
-                                  padding: 6,
-                                  minWidth: 170,
-                                }}
-                              >
-                                {[
-                                  {
-                                    key: "includeSaturday",
-                                    label: "Include Saturday",
-                                  },
-                                  {
-                                    key: "includeSunday",
-                                    label: "Include Sunday",
-                                  },
-                                ].map((opt) => (
-                                  <label
-                                    key={opt.key}
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 8,
-                                      padding: "7px 10px",
-                                      borderRadius: 5,
-                                      cursor: "pointer",
-                                      fontSize: 12,
-                                      fontWeight: 500,
-                                      color: t.textPrimary,
-                                      background: weekendConfig[opt.key]
-                                        ? t.primaryBgSubtle
-                                        : "transparent",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      if (!weekendConfig[opt.key])
-                                        e.currentTarget.style.background =
-                                          t.bgMuted;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.background =
-                                        weekendConfig[opt.key]
-                                          ? t.primaryBgSubtle
-                                          : "transparent";
-                                    }}
-                                  >
-                                    <span
-                                      onClick={() => {
-                                        setWeekendConfig((prev) => ({
-                                          ...prev,
-                                          [opt.key]: !prev[opt.key],
-                                        }));
-                                      }}
-                                      style={{
-                                        width: 16,
-                                        height: 16,
-                                        borderRadius: 4,
-                                        border: `2px solid ${
-                                          weekendConfig[opt.key]
-                                            ? t.primary
-                                            : t.borderStrong
-                                        }`,
-                                        background: weekendConfig[opt.key]
-                                          ? t.primary
-                                          : "transparent",
-                                        display: "inline-flex",
+                                        display: "flex",
                                         alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                        transition: "all .15s",
+                                        justifyContent: "space-between",
+                                        marginBottom: 14,
                                       }}
                                     >
-                                      {weekendConfig[opt.key] && (
-                                        <svg
-                                          width="10"
-                                          height="10"
-                                          viewBox="0 0 12 12"
-                                          fill="none"
-                                        >
-                                          <path
-                                            d="M2 6l3 3 5-5"
-                                            stroke="#fff"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                          />
-                                        </svg>
-                                      )}
-                                    </span>
-                                    {opt.label}
-                                  </label>
-                                ))}
-                                <div
+                                      <span
+                                        style={{
+                                          fontSize: 12,
+                                          color: t.textMuted,
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        End
+                                      </span>
+                                      <select
+                                        value={workHoursDraft.end}
+                                        onChange={(e) => {
+                                          const newEnd = Number(e.target.value);
+                                          setWorkHoursDraft((prev) => {
+                                            let newStart = prev.start;
+                                            if (newEnd - newStart < 8) {
+                                              newStart = Math.max(
+                                                newEnd - 8,
+                                                0,
+                                              );
+                                            }
+                                            return {
+                                              start: newStart,
+                                              end: newEnd,
+                                            };
+                                          });
+                                        }}
+                                        style={{
+                                          height: 34,
+                                          border: `1px solid ${t.borderStrong}`,
+                                          borderRadius: 6,
+                                          background: t.bgInput || t.bgCard,
+                                          color: t.textPrimary,
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          padding: "0 8px",
+                                          fontFamily: "Sora,sans-serif",
+                                          cursor: "pointer",
+                                          width: 96,
+                                        }}
+                                      >
+                                        {Array.from(
+                                          {
+                                            length:
+                                              24 -
+                                              (workHoursDraft.start + 8) +
+                                              1,
+                                          },
+                                          (_, i) =>
+                                            workHoursDraft.start + 8 + i,
+                                        )
+                                          .filter((h) => h <= 23)
+                                          .map((h) => (
+                                            <option key={h} value={h}>
+                                              {String(h).padStart(2, "0")}:00
+                                            </option>
+                                          ))}
+                                      </select>
+                                    </div>
+
+                                    {/* Live total */}
+                                    <div
+                                      style={{
+                                        padding: "10px 12px",
+                                        borderRadius: 8,
+                                        background:
+                                          t.primaryBgSubtle || `${t.primary}14`,
+                                        border: `1px solid ${t.primaryBorder || t.border}`,
+                                        textAlign: "center",
+                                        marginBottom: 8,
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          fontSize: 13,
+                                          fontWeight: 700,
+                                          color: t.primary,
+                                          fontVariantNumeric: "tabular-nums",
+                                        }}
+                                      >
+                                        ={" "}
+                                        {workHoursDraft.end -
+                                          workHoursDraft.start}{" "}
+                                        hours / day
+                                      </span>
+                                    </div>
+
+                                    <div
+                                      style={{
+                                        fontSize: 10,
+                                        color: t.textFaint,
+                                        marginBottom: 14,
+                                        textAlign: "center",
+                                        lineHeight: 1.4,
+                                      }}
+                                    >
+                                      Holidays &amp; Leaves always skipped
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => setWorkHoursOpen(false)}
+                                        style={{
+                                          flex: 1,
+                                          height: 36,
+                                          borderRadius: 7,
+                                          border: `1px solid ${t.borderStrong}`,
+                                          background: t.bgMuted || t.bgSubtle,
+                                          color: t.textSecondary,
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          cursor: "pointer",
+                                          fontFamily: "Sora,sans-serif",
+                                        }}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setWorkHoursConfig({
+                                            ...workHoursDraft,
+                                          });
+                                          setWorkHoursOpen(false);
+                                        }}
+                                        style={{
+                                          flex: 1.2,
+                                          height: 36,
+                                          borderRadius: 7,
+                                          border: "none",
+                                          background: t.primary,
+                                          color: t.textInverse || "#fff",
+                                          fontSize: 12,
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                          fontFamily: "Sora,sans-serif",
+                                        }}
+                                      >
+                                        Apply
+                                      </button>
+                                    </div>
+                                  </div>
+                                </>,
+                                document.body,
+                              )}
+                          </div>
+                        )}
+                        {/* ── Weekend Config Dropdown ── */}
+                        {false && (
+                          <div style={{ position: "relative" }}>
+                            <button
+                              type="button"
+                              onClick={() => setWeekendDropdownOpen((p) => !p)}
+                              style={{
+                                ...btnStyle,
+                                height: isMobile ? 40 : 32,
+                                padding: isMobile ? "0 10px" : "0 12px",
+                                color:
+                                  weekendConfig.includeSaturday ||
+                                  weekendConfig.includeSunday
+                                    ? t.primary
+                                    : t.textSecondary,
+                                borderColor:
+                                  weekendConfig.includeSaturday ||
+                                  weekendConfig.includeSunday
+                                    ? t.primaryBorder
+                                    : t.borderStrong,
+                                background:
+                                  weekendConfig.includeSaturday ||
+                                  weekendConfig.includeSunday
+                                    ? t.primaryBgSubtle
+                                    : t.bgCard,
+                                fontWeight: 600,
+                              }}
+                              title="Configure which weekend days count as working days"
+                            >
+                              <Calendar size={13} />
+                              {!isMobile && "Weekends"}
+                              {(weekendConfig.includeSaturday ||
+                                weekendConfig.includeSunday) && (
+                                <span
                                   style={{
-                                    padding: "5px 10px 2px",
-                                    fontSize: 10,
-                                    color: t.textFaint,
-                                    borderTop: `1px solid ${t.border}`,
-                                    marginTop: 4,
+                                    marginLeft: 4,
+                                    padding: "0 5px",
+                                    borderRadius: 999,
+                                    background: t.primary,
+                                    color: t.textInverse,
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    lineHeight: "16px",
                                   }}
                                 >
-                                  Holidays & Leaves always skipped
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                                  {(weekendConfig.includeSaturday ? 1 : 0) +
+                                    (weekendConfig.includeSunday ? 1 : 0)}
+                                </span>
+                              )}
+                            </button>
 
+                            {weekendDropdownOpen && (
+                              <>
+                                <div
+                                  style={{
+                                    position: "fixed",
+                                    inset: 0,
+                                    zIndex: 99,
+                                  }}
+                                  onClick={() => setWeekendDropdownOpen(false)}
+                                />
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    right: 0,
+                                    marginTop: 4,
+                                    zIndex: 100,
+                                    background: t.bgCard,
+                                    border: `1px solid ${t.borderStrong}`,
+                                    borderRadius: 8,
+                                    boxShadow: t.shadowLg,
+                                    padding: 6,
+                                    minWidth: 170,
+                                  }}
+                                >
+                                  {[
+                                    {
+                                      key: "includeSaturday",
+                                      label: "Include Saturday",
+                                    },
+                                    {
+                                      key: "includeSunday",
+                                      label: "Include Sunday",
+                                    },
+                                  ].map((opt) => (
+                                    <label
+                                      key={opt.key}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        padding: "7px 10px",
+                                        borderRadius: 5,
+                                        cursor: "pointer",
+                                        fontSize: 12,
+                                        fontWeight: 500,
+                                        color: t.textPrimary,
+                                        background: weekendConfig[opt.key]
+                                          ? t.primaryBgSubtle
+                                          : "transparent",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (!weekendConfig[opt.key])
+                                          e.currentTarget.style.background =
+                                            t.bgMuted;
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background =
+                                          weekendConfig[opt.key]
+                                            ? t.primaryBgSubtle
+                                            : "transparent";
+                                      }}
+                                    >
+                                      <span
+                                        onClick={() => {
+                                          setWeekendConfig((prev) => ({
+                                            ...prev,
+                                            [opt.key]: !prev[opt.key],
+                                          }));
+                                        }}
+                                        style={{
+                                          width: 16,
+                                          height: 16,
+                                          borderRadius: 4,
+                                          border: `2px solid ${
+                                            weekendConfig[opt.key]
+                                              ? t.primary
+                                              : t.borderStrong
+                                          }`,
+                                          background: weekendConfig[opt.key]
+                                            ? t.primary
+                                            : "transparent",
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          flexShrink: 0,
+                                          transition: "all .15s",
+                                        }}
+                                      >
+                                        {weekendConfig[opt.key] && (
+                                          <svg
+                                            width="10"
+                                            height="10"
+                                            viewBox="0 0 12 12"
+                                            fill="none"
+                                          >
+                                            <path
+                                              d="M2 6l3 3 5-5"
+                                              stroke="#fff"
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                          </svg>
+                                        )}
+                                      </span>
+                                      {opt.label}
+                                    </label>
+                                  ))}
+                                  <div
+                                    style={{
+                                      padding: "5px 10px 2px",
+                                      fontSize: 10,
+                                      color: t.textFaint,
+                                      borderTop: `1px solid ${t.border}`,
+                                      marginTop: 4,
+                                    }}
+                                  >
+                                    Holidays & Leaves always skipped
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
                         <button
                           onClick={() => addRow()}
                           style={{
