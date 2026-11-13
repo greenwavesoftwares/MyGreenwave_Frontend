@@ -315,30 +315,34 @@ export default function WorkingDatePicker({
 
       {/* Weekday headers */}
       {/* {isMobile && ( */}
+      {/* Weekday headers */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(7, 1fr)",
-          gap: 2,
+          gap: isMobile ? 2 : 1,
           marginBottom: 4,
         }}
       >
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, i) => (
-          <div
-            key={i}
-            style={{
-              textAlign: "center",
-              fontSize: 10,
-              fontWeight: 700,
-              color: t.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              paddingBottom: 4,
-            }}
-          >
-            {d}
-          </div>
-        ))}
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, i) => {
+          const isWeekendDay = i === 0 || i === 6;
+          return (
+            <div
+              key={i}
+              style={{
+                textAlign: "center",
+                fontSize: isMobile ? 10 : 9.5,
+                fontWeight: 700,
+                color: isWeekendDay ? t.danger : t.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                paddingBottom: 4,
+              }}
+            >
+              {d}
+            </div>
+          );
+        })}
       </div>
       {/* )} */}
 
