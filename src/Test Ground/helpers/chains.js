@@ -53,6 +53,7 @@ export function recomputeAnchorChains(
   groupResources = {},
   holidays = [],
   weekendConfig = {},
+  workHoursConfig = {},
 ) {
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
@@ -91,14 +92,20 @@ export function recomputeAnchorChains(
         row._isAnchor = true;
         row._autoChained = false;
 
-        const anchorStart = row.plannedStart
+        const rawAnchorStart = row.plannedStart
           ? parseISODateTime(row.plannedStart)
           : null;
 
-        if (!anchorStart) {
+        if (!rawAnchorStart) {
           currentSegmentStart = -1;
           continue;
         }
+
+        // Align start date to valid working moment
+        const anchorStart = nextWorkMoment(
+          rawAnchorStart, userId, groupResources, holidays, weekendConfig, workHoursConfig,
+        );
+        row.plannedStart = isoDateTime(anchorStart);
 
         const dur = Number(row.durationHrs);
         const hasValidDur =
@@ -109,7 +116,7 @@ export function recomputeAnchorChains(
 
         if (hasValidDur && dur > 0) {
           const stop = addWorkHours(
-            anchorStart, dur, userId, groupResources, holidays, weekendConfig,
+            anchorStart, dur, userId, groupResources, holidays, weekendConfig, workHoursConfig,
           );
           row.plannedStop = isoDateTime(stop);
         } else if (hasValidDur && dur === 0) {
@@ -135,7 +142,7 @@ export function recomputeAnchorChains(
         }
 
         const start = nextWorkMoment(
-          new Date(prevEnd), userId, groupResources, holidays, weekendConfig,
+          new Date(prevEnd), userId, groupResources, holidays, weekendConfig, workHoursConfig,
         );
         row.plannedStart = isoDateTime(start);
 
@@ -148,7 +155,7 @@ export function recomputeAnchorChains(
 
         if (hasValidDur && dur > 0) {
           const stop = addWorkHours(
-            start, dur, userId, groupResources, holidays, weekendConfig,
+            start, dur, userId, groupResources, holidays, weekendConfig, workHoursConfig,
           );
           row.plannedStop = isoDateTime(stop);
         } else if (hasValidDur && dur === 0) {
@@ -161,7 +168,7 @@ export function recomputeAnchorChains(
         row._isAnchor = false;
 
         if (row.plannedStart) {
-          const start = parseISODateTime(row.plannedStart);
+          const rawStart = parseISODateTime(row.plannedStart);
           const dur = Number(row.durationHrs);
           const hasValidDur =
             row.durationHrs !== "" &&
@@ -169,12 +176,18 @@ export function recomputeAnchorChains(
             row.durationHrs !== undefined &&
             !isNaN(dur);
 
-          if (start && hasValidDur) {
+          if (rawStart && hasValidDur) {
+            // Align start date to valid working moment
+            const start = nextWorkMoment(
+              rawStart, userId, groupResources, holidays, weekendConfig, workHoursConfig,
+            );
+            row.plannedStart = isoDateTime(start);
+
             if (dur === 0) {
               row.plannedStop = isoDateTime(start);
             } else {
               const stop = addWorkHours(
-                start, dur, userId, groupResources, holidays, weekendConfig,
+                start, dur, userId, groupResources, holidays, weekendConfig, workHoursConfig,
               );
               row.plannedStop = isoDateTime(stop);
             }
@@ -266,6 +279,7 @@ export function recomputeChains(
   groupResources = {},
   holidays = [],
   weekendConfig = {},
+  workHoursConfig = {},
 ) {
   const updated = rows.map((r) => ({ ...r }));
   const byId = new Map(updated.map((r) => [r.id, r]));
@@ -301,11 +315,16 @@ export function recomputeChains(
         !isNaN(dur);
 
       if (realChild.plannedStart && hasValidDuration) {
-        const start = parseISODateTime(realChild.plannedStart);
-        if (start) {
+        const rawStart = parseISODateTime(realChild.plannedStart);
+        if (rawStart) {
+          const start = nextWorkMoment(
+            rawStart, realChild.resource, groupResources, holidays, weekendConfig, workHoursConfig,
+          );
+          realChild.plannedStart = isoDateTime(start);
+
           let end;
           if (dur === 0) end = new Date(start);
-          else end = new Date(start.getTime() + dur * 60 * 60 * 1000);
+          else end = addWorkHours(start, dur, realChild.resource, groupResources, holidays, weekendConfig, workHoursConfig);
           realChild.plannedStop = isoDateTime(end);
         }
       } else {
@@ -332,13 +351,19 @@ export function recomputeChains(
       !isNaN(dur);
 
     if (hasValidDur) {
-      const start = parseISODateTime(r.plannedStart);
-      if (start) {
+      const rawStart = parseISODateTime(r.plannedStart);
+      if (rawStart) {
+        // Align start date to valid working moment
+        const start = nextWorkMoment(
+          rawStart, r.resource, groupResources, holidays, weekendConfig, workHoursConfig,
+        );
+        r.plannedStart = isoDateTime(start);
+
         if (dur === 0) {
           r.plannedStop = isoDateTime(start);
         } else {
           const stop = addWorkHours(
-            start, dur, r.resource, groupResources, holidays, weekendConfig,
+            start, dur, r.resource, groupResources, holidays, weekendConfig, workHoursConfig,
           );
           r.plannedStop = isoDateTime(stop);
         }

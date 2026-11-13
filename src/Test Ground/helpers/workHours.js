@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════ */
 
 import { WORK_START_HR, WORK_END_HR } from "./constants";
-import { isoDate, isWeekday } from "./dateUtils";
+import { isoDate } from "./dateUtils";
 import { isHoliday } from "./holidays";
 
 export function leavesFor(userId, groupResources) {
@@ -22,7 +22,6 @@ export function leaveOnDay(userId, d, groupResources) {
   return leavesFor(userId, groupResources).find((l) => l.date === key) || null;
 }
 
-/* ── NEW: Check if a day is a working day based on weekend config ── */
 export function isWorkDay(d, weekendConfig = {}) {
   const day = d.getDay();
   if (day === 6 && !weekendConfig.includeSaturday) return false;
@@ -30,35 +29,47 @@ export function isWorkDay(d, weekendConfig = {}) {
   return true;
 }
 
-export function nextWorkMoment(dt, userId, groupResources = {}, holidays = [], weekendConfig = {}) {
+/* ── Resolve work-hour boundaries with defaults ── */
+function resolveHours(workHoursConfig) {
+  const start = workHoursConfig?.start ?? WORK_START_HR;
+  const end = workHoursConfig?.end ?? WORK_END_HR;
+  return { startHr: start, endHr: end };
+}
+
+export function nextWorkMoment(
+  dt,
+  userId,
+  groupResources = {},
+  holidays = [],
+  weekendConfig = {},
+  workHoursConfig = {},
+) {
+  const { startHr, endHr } = resolveHours(workHoursConfig);
   let d = new Date(dt);
   for (let i = 0; i < 730; i++) {
-    // Skip non-working days (weekends based on config)
     if (!isWorkDay(d, weekendConfig)) {
       d.setDate(d.getDate() + 1);
-      d.setHours(WORK_START_HR, 0, 0, 0);
+      d.setHours(startHr, 0, 0, 0);
       continue;
     }
-    // Skip company holidays
     if (isHoliday(d, holidays)) {
       d.setDate(d.getDate() + 1);
-      d.setHours(WORK_START_HR, 0, 0, 0);
+      d.setHours(startHr, 0, 0, 0);
       continue;
     }
-    // Skip personal leaves
     if (leaveOnDay(userId, d, groupResources)) {
       d.setDate(d.getDate() + 1);
-      d.setHours(WORK_START_HR, 0, 0, 0);
+      d.setHours(startHr, 0, 0, 0);
       continue;
     }
     const hr = d.getHours() + d.getMinutes() / 60;
-    if (hr < WORK_START_HR) {
-      d.setHours(WORK_START_HR, 0, 0, 0);
+    if (hr < startHr) {
+      d.setHours(startHr, 0, 0, 0);
       continue;
     }
-    if (hr >= WORK_END_HR) {
+    if (hr >= endHr) {
       d.setDate(d.getDate() + 1);
-      d.setHours(WORK_START_HR, 0, 0, 0);
+      d.setHours(startHr, 0, 0, 0);
       continue;
     }
     return d;
@@ -73,17 +84,21 @@ export function addWorkHours(
   groupResources = {},
   holidays = [],
   weekendConfig = {},
+  workHoursConfig = {},
 ) {
-  let d = nextWorkMoment(new Date(startDt), userId, groupResources, holidays, weekendConfig);
+  const { startHr, endHr } = resolveHours(workHoursConfig);
+  let d = nextWorkMoment(
+    new Date(startDt), userId, groupResources, holidays, weekendConfig, workHoursConfig,
+  );
   let remaining = Number(hours) || 0;
   if (remaining <= 0) return d;
   for (let i = 0; i < 730 && remaining > 0; i++) {
     const hr = d.getHours() + d.getMinutes() / 60;
-    const avail = WORK_END_HR - hr;
+    const avail = endHr - hr;
     if (avail <= 0) {
       d.setDate(d.getDate() + 1);
-      d.setHours(WORK_START_HR, 0, 0, 0);
-      d = nextWorkMoment(d, userId, groupResources, holidays, weekendConfig);
+      d.setHours(startHr, 0, 0, 0);
+      d = nextWorkMoment(d, userId, groupResources, holidays, weekendConfig, workHoursConfig);
       continue;
     }
     if (remaining <= avail + 1e-9) {
@@ -92,27 +107,34 @@ export function addWorkHours(
     } else {
       remaining -= avail;
       d.setDate(d.getDate() + 1);
-      d.setHours(WORK_START_HR, 0, 0, 0);
-      d = nextWorkMoment(d, userId, groupResources, holidays, weekendConfig);
+      d.setHours(startHr, 0, 0, 0);
+      d = nextWorkMoment(d, userId, groupResources, holidays, weekendConfig, workHoursConfig);
     }
   }
   return d;
 }
 
-export function defaultFirstStart(userId, groupResources = {}, holidays = [], weekendConfig = {}) {
+export function defaultFirstStart(
+  userId,
+  groupResources = {},
+  holidays = [],
+  weekendConfig = {},
+  workHoursConfig = {},
+) {
+  const { startHr, endHr } = resolveHours(workHoursConfig);
   const now = new Date();
   const hr = now.getHours() + now.getMinutes() / 60;
   let baseDate;
 
-  if (hr < WORK_START_HR) {
+  if (hr < startHr) {
     baseDate = new Date(
       now.getFullYear(), now.getMonth(), now.getDate(),
-      WORK_START_HR, 0, 0, 0,
+      startHr, 0, 0, 0,
     );
-  } else if (hr > WORK_END_HR) {
+  } else if (hr >= endHr) {
     baseDate = new Date(
       now.getFullYear(), now.getMonth(), now.getDate() + 1,
-      WORK_START_HR, 0, 0, 0,
+      startHr, 0, 0, 0,
     );
   } else {
     const minutes = now.getMinutes();
@@ -121,13 +143,13 @@ export function defaultFirstStart(userId, groupResources = {}, holidays = [], we
       now.getFullYear(), now.getMonth(), now.getDate(),
       now.getHours(), roundedMinutes, 0, 0,
     );
-    if (baseDate.getHours() >= WORK_END_HR) {
+    if (baseDate.getHours() >= endHr) {
       baseDate = new Date(
         now.getFullYear(), now.getMonth(), now.getDate() + 1,
-        WORK_START_HR, 0, 0, 0,
+        startHr, 0, 0, 0,
       );
     }
   }
 
-  return nextWorkMoment(baseDate, userId, groupResources, holidays, weekendConfig);
+  return nextWorkMoment(baseDate, userId, groupResources, holidays, weekendConfig, workHoursConfig);
 }

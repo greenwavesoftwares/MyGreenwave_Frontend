@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useTheme } from "../useTheme";
-import { WORK_START_HR, WORK_END_HR } from "../helpers/constants";
 import { makeTimeSelect } from "../helpers/styles";
 
 /**
@@ -14,6 +13,8 @@ export default function TimePickerSection({
   setHour,
   minute,
   setMinute,
+  startHr = 10,
+  endHr = 18,
 }) {
   const { t } = useTheme();
 
@@ -28,19 +29,17 @@ export default function TimePickerSection({
   const nowHour = today.getHours();
   const nowMinute = today.getMinutes();
 
-  const minHour = isSelectedToday
-    ? Math.max(WORK_START_HR, nowHour)
-    : WORK_START_HR;
+  const minHour = isSelectedToday ? Math.max(startHr, nowHour) : startHr;
 
   const hourOptions = Array.from(
-    { length: WORK_END_HR - WORK_START_HR + 1 },
-    (_, i) => WORK_START_HR + i,
+    { length: endHr - startHr + 1 },
+    (_, i) => startHr + i,
   ).filter((h) => h >= minHour);
 
   const minuteOptions = [
     0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59,
   ].filter((m) => {
-    if (hour === WORK_END_HR) return m === 0;
+    if (hour === endHr) return m === 0;
     if (isSelectedToday && hour === nowHour) return m > nowMinute;
     return true;
   });
@@ -57,20 +56,20 @@ export default function TimePickerSection({
       newMinute = 0;
     }
 
-    if (newHour === WORK_END_HR && newMinute > 0) {
+    if (newHour === endHr && newMinute > 0) {
       newMinute = 0;
     }
 
     if (newHour === nowHour && newMinute <= nowMinute) {
       const nextValid = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59].find(
         (m) => {
-          if (newHour === WORK_END_HR) return m === 0 && m > nowMinute;
+          if (newHour === endHr) return m === 0 && m > nowMinute;
           return m > nowMinute;
         },
       );
       if (nextValid !== undefined) {
         newMinute = nextValid;
-      } else if (newHour + 1 <= WORK_END_HR) {
+      } else if (newHour + 1 <= endHr) {
         newHour = newHour + 1;
         newMinute = 0;
       }
@@ -130,7 +129,8 @@ export default function TimePickerSection({
       </select>
 
       <span style={{ fontSize: 10, color: t.textFaint, marginLeft: 4 }}>
-        (Work: {WORK_START_HR}:00–{WORK_END_HR}:00)
+        (Work: {String(startHr).padStart(2, "0")}:00–
+        {String(endHr).padStart(2, "0")}:00)
       </span>
     </div>
   );

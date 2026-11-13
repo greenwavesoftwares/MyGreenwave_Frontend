@@ -18,12 +18,14 @@ export default function WorkingDatePicker({
   groupResources,
   holidays = [],
   weekendConfig = {},
+  workHoursConfig = {},
   onClose,
   anchorRef,
 }) {
   const { t } = useTheme();
   const { isMobile } = useResponsive();
-
+  const startHr = workHoursConfig?.start ?? WORK_START_HR;
+  const endHr = workHoursConfig?.end ?? WORK_END_HR;
   const initial = value
     ? parseISODateTime(value)
     : new Date(2026, 4, 4, WORK_START_HR, 0);
@@ -150,8 +152,8 @@ export default function WorkingDatePicker({
       alert("Cannot select a date/time in the past.");
       return;
     }
-    if (hour > WORK_END_HR || (hour === WORK_END_HR && minute > 0)) {
-      alert("Cannot select time after 18:00.");
+    if (hour > endHr || (hour === endHr && minute > 0)) {
+      alert(`Cannot select time after ${String(endHr).padStart(2, "0")}:00.`);
       return;
     }
     onChange(isoDateTime(final));
@@ -576,6 +578,8 @@ export default function WorkingDatePicker({
         setHour={setHour}
         minute={minute}
         setMinute={setMinute}
+        startHr={startHr}
+        endHr={endHr}
       />
     </>
   );
