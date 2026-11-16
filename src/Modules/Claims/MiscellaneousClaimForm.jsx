@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 //import { InputText } from "primereact/inputtext";
 import { CustomeFileUpload } from "../../components/FileUpload/CustomeFileUpload";
 //import { Button } from "primereact/button";
-import CameraCapture from "./CameraCapture";
 import { Toast } from "primereact/toast";
 import Dropdown from "../../components/Claim/Dropdown";
 import { ApplyOtherClaim } from "./claimServices";
@@ -26,7 +25,7 @@ import { Chip, Grid, Typography } from "@mui/material";
 
 const MiscellaneousClaimForm = () => {
   const [fileUploaded, setFileUploaded] = useState(false);
-  const [cameraVisible, setCameraVisible] = useState(false);
+  const cameraInputRef = useRef(null);
   const toastRef = useRef(null);
   const fileUploadRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -47,7 +46,7 @@ const MiscellaneousClaimForm = () => {
 
   const placeholder = "Select Claim Type";
 
-  // Used by both the file picker and the camera (photo -> JPEG, 2+ -> ZIP)
+  // Used by both the file picker and the phone camera input
   const onUpload = async (event) => {
     if (event.files && event.files.length > 0) {
       const selected = event.files[0];
@@ -227,7 +226,20 @@ const MiscellaneousClaimForm = () => {
                               className="p-button-sm p-button-outlined"
                               tooltip="Capture using camera"
                               tooltipOptions={{ position: "top" }}
-                              onClick={() => setCameraVisible(true)}
+                              onClick={() => cameraInputRef.current?.click()}
+                            />
+                            {/* Opens the phone's own camera app (file picker on desktop) */}
+                            <input
+                              ref={cameraInputRef}
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const photo = e.target.files?.[0];
+                                e.target.value = ""; // allow taking another photo later
+                                if (photo) onUpload({ files: [photo] });
+                              }}
                             />
                           </div>
                         ) : (
@@ -266,13 +278,6 @@ const MiscellaneousClaimForm = () => {
         </Grid>
       </div>
 
-      <CameraCapture
-        visible={cameraVisible}
-        onHide={() => setCameraVisible(false)}
-        fileNamePrefix={`misc_claim_${userDetails?.employeeId || "emp"}`}
-        onCapture={(capturedFile) => onUpload({ files: [capturedFile] })}
-        onReject={(msg) => showWarningMessage(toastRef, "warn", msg)}
-      />
     </div>
   );
 };
