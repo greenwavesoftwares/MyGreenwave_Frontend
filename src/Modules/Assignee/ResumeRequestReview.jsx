@@ -25,7 +25,7 @@ import { getUserData } from "../Login/Encrypt";
 
    Props
      open, project, changeRequest, onClose     required
-     onSuccess("approve" | "reject")           optional — after the API call
+     onSuccess(action, { approvedChanges, remark })  optional — after the API call
      onError("approve" | "reject", err)        optional — dialog stays open
      workCfg  { workStart, workEnd, weekEnd }  optional
      dryRun   boolean — log instead of calling approve / reject (testing)
@@ -210,12 +210,14 @@ const ResumeRequestReview = ({
     };
   }, [open, activityLookupMap]);
 
-  const run = async (action, fn) => {
+  // `info` = what was decided ({ approvedChanges, remark }); handed to
+  // onSuccess so the caller can show the LATEST data (final dates, remark).
+  const run = async (action, fn, info) => {
     setLoading(true);
     try {
       if (dryRun) console.log(`[ResumeReview dry run] ${action}`);
       else await fn();
-      if (onSuccess) onSuccess(action);
+      if (onSuccess) onSuccess(action, info);
       else onClose?.();
     } catch (err) {
       console.log("Error:", err, err?.response?.data);
@@ -233,6 +235,7 @@ const ResumeRequestReview = ({
         approvedChanges,
         remark,
       }),
+      { approvedChanges, remark },
     );
   };
 
@@ -240,6 +243,7 @@ const ResumeRequestReview = ({
     if (!remark?.trim()) return; // remark is compulsory to cancel a request
     return run("reject", () =>
       reviewApi.reject({ requestId: req?.requestId, remark }),
+      { remark: remark.trim() },
     );
   };
 

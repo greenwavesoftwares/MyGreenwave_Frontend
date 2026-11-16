@@ -13,6 +13,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import FastForwardIcon from "@mui/icons-material/FastForward";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
+import EastRoundedIcon from "@mui/icons-material/EastRounded";
 import dayjs from "dayjs";
 import "./assignee-theme.css";
 import "./ResumeDialog.css";
@@ -47,10 +49,10 @@ import {
    then applied the same way: it is added as working time, so the new
    dates skip weekends, leave and non-working hours too.
 
-   The assignee only ticks the activities to move. The calculated dates and
-   the pause duration are NOT shown to the assignee and cannot be edited —
-   they are calculated and sent to the API; only the assigner sees them (in
-   review mode).
+   The assignee sees how long the activity was paused (elapsed time + working
+   time) and ticks the activities to move. The calculated new dates cannot be
+   edited and are NOT shown to the assignee — they are calculated and sent to
+   the API; only the assigner sees them (in review mode).
 
    Requesting is OPTIONAL: leave step 1 unticked (or tick it but pick no
    activities) and the button just resumes. "Select all" ticks / clears
@@ -232,10 +234,9 @@ const ResumeDialog = ({
   hasPendingRequest = false,
 }) => {
   const isReview = mode === "review";
-  // The pause-duration / date calculation is shown to the assigner (review
-  // mode) only. The assignee (request mode) still gets it calculated and
-  // sent to the API (see handleConfirm) — it just isn't displayed.
-  const showCalc = isReview;
+  // The calculated NEW dates are shown to the assigner (review mode) only.
+  // The assignee (request mode) gets them calculated and sent to the API
+  // (see handleConfirm) — only the pause duration is displayed to them.
   const [requestChange, setRequestChange] = useState(false); // step 1
   const [selected, setSelected] = useState(() => new Set()); // step 2
   // "Now" as of opening — drives the on-screen preview only; the request is
@@ -312,6 +313,11 @@ const ResumeDialog = ({
   // excluded). Used for the calculation only — never displayed to the assignee.
   const previewWorkingHrs = pauseValid
     ? calculateWorkingHours(pauseStart, openedAt, leaves, workCfg)
+    : 0;
+
+  // Wall-clock time since the pause (request mode, shown to the assignee).
+  const pauseElapsedMs = pauseValid
+    ? Math.max(0, openedAt - dayjs(pauseStart).valueOf())
     : 0;
 
   // Move a planned date later by `hrs` working hours, using the leave
@@ -530,7 +536,6 @@ const ResumeDialog = ({
   } else if (rows.length === 0) {
     hint = "There are no dependent activities to reschedule.";
   } else {
-    // Assignee: no duration / calculation text.
     hint =
       "Ask for planned start & stop of other activities to be moved to account for the pause. Optional.";
   }
@@ -600,6 +605,36 @@ const ResumeDialog = ({
                 {changeRequest.reason}
               </Typography>
             )}
+          </Box>
+        )}
+
+        {/* Request mode: how long this activity has been paused. */}
+        {!isReview && (pauseLoading || pauseValid) && (
+          <Box className="rsd-pause" role="status" aria-live="polite">
+            <Box className="rsd-pause-icon">
+              {pauseLoading ? (
+                <CircularProgress size={18} />
+              ) : (
+                <PauseCircleOutlineRoundedIcon sx={{ fontSize: 22 }} />
+              )}
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+              <span className="rsd-pause-label">Paused for</span>
+              {pauseLoading ? (
+                <span className="rsd-pause-sub">Calculating pause duration…</span>
+              ) : (
+                <>
+                  <span className="rsd-pause-value">
+                    {formatDuration(pauseElapsedMs)}
+                  </span>
+                  <span className="rsd-pause-sub">
+                    Since {fmtView(pauseStart)} ·{" "}
+                    {formatWorkingHours(previewWorkingHrs, workCfg)} working
+                    time
+                  </span>
+                </>
+              )}
+            </Box>
           </Box>
         )}
 
@@ -703,6 +738,11 @@ const ResumeDialog = ({
                     : null);
                 const m = manual[r.id];
                 const asRequested = r.isRequested && !(checked && m?.on);
+                // Review mode: before → after comparison of the dates.
+                const showChange = isReview && Boolean(shown?.start);
+                const shiftMs = showChange
+                  ? dayjs(shown.start).diff(dayjs(r.plannedStart))
+                  : 0;
                 return (
                   <Box
                     key={r.id}
@@ -754,19 +794,48 @@ const ResumeDialog = ({
                               {r.resourceName || r.resource}
                             </span>
                           )}
-                          <span className="rsd-meta-item">
-                            Planned: {fmtView(r.plannedStart)} →{" "}
-                            {fmtView(r.plannedStop)}
-                          </span>
+                          {!showChange && (
+                            <span className="rsd-meta-item">
+                              Planned: {fmtView(r.plannedStart)} →{" "}
+                              {fmtView(r.plannedStop)}
+                            </span>
+                          )}
                         </Box>
-                        {showCalc && shown?.start && (
+                        {showChange && (
                           <Box
-                            className={`rsd-new ${
-                              isReview && !checked ? "rsd-new--off" : ""
+                            className={`rsd-change ${
+                              !checked ? "rsd-change--off" : ""
                             }`}
                           >
-                            {asRequested ? "Requested" : "New"}:{" "}
-                            {fmtView(shown.start)} → {fmtView(shown.stop)}
+                            <Box className="rsd-change-row rsd-change-row--old">
+                              <span className="rsd-change-label">Current</span>
+                              <span className="rsd-change-dates">
+                                {fmtView(r.plannedStart)}
+                                <EastRoundedIcon className="rsd-change-arrow" />
+                                {fmtView(r.plannedStop)}
+                              </span>
+                            </Box>
+                            <Box className="rsd-change-row rsd-change-row--new">
+                              <span className="rsd-change-label">
+                                {asRequested ? "Requested" : "New"}
+                              </span>
+                              <span className="rsd-change-dates">
+                                {fmtView(shown.start)}
+                                <EastRoundedIcon className="rsd-change-arrow" />
+                                {fmtView(shown.stop)}
+                              </span>
+                              <span
+                                className={`rsd-change-shift ${
+                                  shiftMs === 0 ? "rsd-change-shift--none" : ""
+                                }`}
+                              >
+                                {shiftMs === 0
+                                  ? "No shift"
+                                  : `${shiftMs > 0 ? "+" : "−"}${formatDuration(
+                                      Math.abs(shiftMs),
+                                    )}`}
+                              </span>
+                            </Box>
                           </Box>
                         )}
                       </Box>
@@ -782,12 +851,10 @@ const ResumeDialog = ({
                         onClick={(ev) => ev.stopPropagation()}
                       >
                         <Box className="rsd-manual-head">
-                          <span className="rsd-manual-badge">
-                            {r.isRequested
-                              ? "Dates requested by the assignee"
-                              : "Not requested — choose new dates"}
+                          <span className="rsd-manual-title">
+                            {r.isRequested ? "New start" : "Choose new start"}
                           </span>
-                          {r.isRequested && (
+                          {r.isRequested ? (
                             <div
                               className="rsd-seg"
                               role="radiogroup"
@@ -813,6 +880,10 @@ const ResumeDialog = ({
                                 );
                               })}
                             </div>
+                          ) : (
+                            <span className="rsd-manual-badge">
+                              Not requested by the assignee
+                            </span>
                           )}
                         </Box>
 
@@ -827,44 +898,41 @@ const ResumeDialog = ({
                               disabled={loading}
                             />
                             <Box className="rsd-manual-side">
-                              <Box className="rsd-result">
-                                <span className="rsd-result-title">New schedule</span>
-                                <dl className="rsd-result-grid">
-                                  <dt>Start</dt>
-                                  <dd>{fmtView(d.start)}</dd>
-                                  <dt>Stop</dt>
-                                  <dd>{fmtView(d.stop)}</dd>
-                                  <dt>Duration</dt>
-                                  <dd>
-                                    {formatWorkingHours(
-                                      calculateWorkingHours(
-                                        r.plannedStart,
-                                        r.plannedStop,
-                                        leavesFor(r),
-                                        workCfg,
-                                      ),
+                              <dl className="rsd-result-grid">
+                                <dt>Duration</dt>
+                                <dd>
+                                  {formatWorkingHours(
+                                    calculateWorkingHours(
+                                      r.plannedStart,
+                                      r.plannedStop,
+                                      leavesFor(r),
                                       workCfg,
-                                    )}{" "}
-                                    working time
-                                  </dd>
-                                </dl>
-                                <span
-                                  className={`rsd-result-note ${
-                                    d.invalid ? "rsd-result-note--error" : ""
-                                  }`}
-                                >
-                                  {d.invalid
-                                    ? "Pick a date & time from now onwards."
-                                    : d.adjusted
-                                      ? "Start moved to the next working time."
-                                      : "Stop keeps the planned working duration."}
-                                </span>
-                              </Box>
+                                    ),
+                                    workCfg,
+                                  )}{" "}
+                                  working
+                                </dd>
+                              </dl>
+                              <span
+                                className={`rsd-result-note ${
+                                  d.invalid ? "rsd-result-note--error" : ""
+                                }`}
+                              >
+                                {d.invalid
+                                  ? "Pick a date & time from now onwards."
+                                  : d.adjusted
+                                    ? "Start moved to the next working time."
+                                    : "Stop keeps the planned working duration."}
+                              </span>
                               {r.isRequested && (
-                                <Box className="rsd-manual-auto">
-                                  <span>As requested instead</span>
-                                  {fmtView(r.newStart)} → {fmtView(r.newStop)}
-                                </Box>
+                                <button
+                                  type="button"
+                                  className="rsd-manual-revert"
+                                  disabled={loading}
+                                  onClick={() => setManualMode(r, false)}
+                                >
+                                  Use requested dates instead
+                                </button>
                               )}
                             </Box>
                           </Box>

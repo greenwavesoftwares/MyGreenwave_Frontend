@@ -24,6 +24,7 @@ import {
 import { formatDuration } from "./ResumeDialog";
 import { getPortalContainer } from "./portalContainer";
 import activityTrackerApi from "../../Services/activityTrackerApi";
+import { getUserData } from "../Login/Encrypt";
 import { showToast } from "./toastService";
 import "./ResumeDialog.css";
 
@@ -195,9 +196,71 @@ const ResumeReviewDialog = ({
     [history, histFilter],
   );
 
+  // The request as it is after the decision: status, remark, reviewer and —
+  // when approved — the FINAL dates the assigner confirmed (not the dates
+  // originally asked for), so History shows the latest data straight away.
+  const buildDecided = (req, action, info) => {
+    const user = getUserData()?.userDetails;
+    const decided = {
+      ...req,
+      status: action === "approve" ? "APPROVED" : "REJECTED",
+      remark: info?.remark || req.remark,
+      reviewedByName: user?.userName || user?.name || user?.userId,
+      reviewedAt: new Date().toISOString(),
+    };
+    if (action !== "approve") return decided;
+
+    const approved = new Map(
+      (info?.approvedChanges || []).map((c) => [c.activityId, c]),
+    );
+    const asked = reqChanges(req).map((c) => {
+      const a = approved.get(c.activityId);
+      return a
+        ? {
+            ...c,
+            originalRequestedStart: c.requestedStart,
+            originalRequestedStop: c.requestedStop,
+            requestedStart: a.requestedStart,
+            requestedStop: a.requestedStop,
+            isApproved: true,
+          }
+        : { ...c, isApproved: false };
+    });
+    const askedIds = new Set(asked.map((c) => c.activityId));
+    // activities the assigner added on top of what was requested
+    const added = (info?.approvedChanges || [])
+      .filter((a) => !askedIds.has(a.activityId))
+      .map((a) => ({ ...a, isApproved: true, addedByAssigner: true }));
+    decided.changes = [...asked, ...added];
+    return decided;
+  };
+
+  // Server copy of the decided request wins; fall back to what we just built
+  // for anything the response lacks.
+  const mergeDecided = (local, server) => {
+    const serverChanges = reqChanges(server);
+    const serverHasFlags = serverChanges.some(
+      (c) => c.isApproved !== null && c.isApproved !== undefined,
+    );
+    return {
+      ...local,
+      ...server,
+      projectId,
+      remark: server.remark ?? server.assignerRemark ?? local.remark,
+      reviewedByName: server.reviewedByName ?? local.reviewedByName,
+      reviewedAt: server.reviewedAt ?? local.reviewedAt,
+      changes:
+        normStatus(server) === "approved" && !serverHasFlags
+          ? local.changes
+          : serverChanges.length
+            ? serverChanges
+            : local.changes,
+    };
+  };
+
   // After approve / reject: drop the handled request, go back to the list,
   // or close when it was the last one.
-  const finishReview = (action) => {
+  const finishReview = (action, info) => {
     showToast(
       "success",
       action === "approve" ? "Request approved" : "Request rejected",
@@ -209,15 +272,31 @@ const ResumeReviewDialog = ({
     );
     onDone?.(action);
 
-    const remaining = requests.filter((r) => reqId(r) !== reqId(selected));
-    // The handled request moves from Pending to History straight away.
-    const decided = {
-      ...selected,
-      status: action === "approve" ? "APPROVED" : "REJECTED",
-      reviewedAt: new Date().toISOString(),
-    };
+    const handled = selected;
+    const remaining = requests.filter((r) => reqId(r) !== reqId(handled));
+    // The handled request moves from Pending to History straight away,
+    // already carrying the decision (final dates, remark, reviewer).
+    const decided = buildDecided(handled, action, info);
     const nextHistory = [decided, ...history];
     setHistory(nextHistory);
+
+    // Then refresh from the server so History shows the saved data.
+    if (!previewRequest && !dryRun) {
+      fetchAllRequests(projectId)
+        .then((all) => {
+          const serverCopy = splitByStatus(all).decided.find(
+            (r) => reqId(r) === reqId(handled),
+          );
+          if (!serverCopy) return;
+          setHistory((cur) =>
+            cur.map((r) =>
+              reqId(r) === reqId(handled) ? mergeDecided(r, serverCopy) : r,
+            ),
+          );
+        })
+        .catch((e) => console.log("Error:", e));
+    }
+
     if (!remaining.length) {
       // Nothing left to review — show the history if there is any, else close.
       setRequests([]);
@@ -228,6 +307,7 @@ const ResumeReviewDialog = ({
     }
     setRequests(remaining);
     setSelected(null);
+    setTab("pending");
     // approved dates change the activities — reload so the next review is current
     if (action === "approve" && !dryRun) {
       loadProject().then(setProject).catch((e) => console.log("Error:", e));

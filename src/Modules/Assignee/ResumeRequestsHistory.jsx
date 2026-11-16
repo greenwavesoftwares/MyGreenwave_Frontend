@@ -162,7 +162,7 @@ export const RequestCard = ({ r, view = "mine" }) => {
         </Typography>
       )}
 
-      {status !== "pending" && (remark || reviewedBy) && (
+      {status !== "pending" && (remark || reviewedBy || reviewedAt) && (
         <Box className={`rsd-hist-decision rsd-hist-decision--${status}`}>
           <span className="rsd-hist-decision-title">
             {STATUS_LABEL[status]}
@@ -198,6 +198,11 @@ export const RequestCard = ({ r, view = "mine" }) => {
                 <li key={c.activityId} className="rsd-hist-change">
                   <span className="rsd-hist-change-name">
                     {c.activityName}
+                    {c.addedByAssigner && (
+                      <span className="rsd-tag rsd-tag--next rsd-hist-change-tag">
+                        Added by assigner
+                      </span>
+                    )}
                     {status === "approved" && c.isApproved === false && (
                       <span className="rsd-tag rsd-tag--rejected rsd-hist-change-tag">
                         Not approved
@@ -208,8 +213,22 @@ export const RequestCard = ({ r, view = "mine" }) => {
                     {fmtDate(c.currentStart)} → {fmtDate(c.currentStop)}
                   </span>
                   <span className="rsd-hist-change-new">
+                    <span className="rsd-hist-change-label">
+                      {status === "approved" && c.isApproved !== false
+                        ? "Approved"
+                        : "Requested"}
+                    </span>
                     {fmtDate(c.requestedStart)} → {fmtDate(c.requestedStop)}
                   </span>
+                  {c.originalRequestedStart &&
+                    (!dayjs(c.originalRequestedStart).isSame(c.requestedStart) ||
+                      !dayjs(c.originalRequestedStop).isSame(c.requestedStop)) && (
+                      <span className="rsd-hist-change-asked">
+                        <span className="rsd-hist-change-label">Asked</span>
+                        {fmtDate(c.originalRequestedStart)} →{" "}
+                        {fmtDate(c.originalRequestedStop)}
+                      </span>
+                    )}
                 </li>
               ))}
             </ul>
