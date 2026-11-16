@@ -33,6 +33,7 @@ import {
   Package,
   CheckCircle2,
   Bell,
+  CalendarSync,
 } from "lucide-react";
 
 import { useTheme } from "../useTheme";
@@ -1203,7 +1204,17 @@ export default function DraftProjectsList({
                   (r) => r.parentId,
                 ).length;
                 const status = d.status || "draft";
-
+                // ── Task progress (parent tasks only) ──
+                const parentRows = (d.rows || []).filter((r) => !r.parentId);
+                const totalParentTasks = parentRows.length;
+                const completedTasks = parentRows.filter((r) => {
+                  const s = (r.status || "").toLowerCase().trim();
+                  return s === "finished" || s === "completed";
+                }).length;
+                const progressPct =
+                  totalParentTasks > 0
+                    ? Math.round((completedTasks / totalParentTasks) * 100)
+                    : 0;
                 const isSharedProject =
                   d.createdBy &&
                   currentUserId &&
@@ -1352,7 +1363,7 @@ export default function DraftProjectsList({
                         }}
                       >
                         {/* ── Pending Requests Button ── */}
-                        {d.requestCount > 0 && (
+                        {d.requestCount >= 0 && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1375,29 +1386,31 @@ export default function DraftProjectsList({
                               position: "relative",
                             }}
                           >
-                            <Bell size={14} />
-                            <span
-                              style={{
-                                position: "absolute",
-                                top: -6,
-                                right: -6,
-                                minWidth: 16,
-                                height: 16,
-                                borderRadius: 999,
-                                background: t.danger,
-                                color: "#fff",
-                                fontSize: 9,
-                                fontWeight: 700,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: "0 4px",
-                                lineHeight: 1,
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                              }}
-                            >
-                              {d.requestCount}
-                            </span>
+                            <CalendarSync size={14} />
+                            {d.requestCount > 0 && (
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  top: -6,
+                                  right: -6,
+                                  minWidth: 16,
+                                  height: 16,
+                                  borderRadius: 999,
+                                  background: t.danger,
+                                  color: "#fff",
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: "0 4px",
+                                  lineHeight: 1,
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                }}
+                              >
+                                {d.requestCount}
+                              </span>
+                            )}
                           </button>
                         )}
                         <span
@@ -1683,6 +1696,78 @@ export default function DraftProjectsList({
                         marginTop: "auto",
                       }}
                     >
+                      {/* ── Task Progress Donut Gauge ── */}
+                      {totalParentTasks > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 5,
+                            padding: "3px 8px 3px 3px",
+                            borderRadius: 6,
+                            background: t.bgSubtle,
+                            border: `1px solid ${t.border}`,
+                          }}
+                          title={`${completedTasks} of ${totalParentTasks} tasks completed (${progressPct}%)`}
+                        >
+                          <svg width={32} height={32} viewBox="0 0 36 36">
+                            {/* Background track */}
+                            <circle
+                              cx={18}
+                              cy={18}
+                              r={15.9155}
+                              fill="none"
+                              stroke={t.bgMuted}
+                              strokeWidth={3.5}
+                            />
+                            {/* Progress arc */}
+                            {progressPct > 0 && (
+                              <circle
+                                cx={18}
+                                cy={18}
+                                r={15.9155}
+                                fill="none"
+                                stroke={
+                                  progressPct === 100 ? t.success : t.primary
+                                }
+                                strokeWidth={3.5}
+                                strokeDasharray={`${progressPct} ${100 - progressPct}`}
+                                strokeDashoffset={25}
+                                strokeLinecap="round"
+                                style={{
+                                  transition: "stroke-dasharray 0.4s ease",
+                                }}
+                              />
+                            )}
+                            {/* Center fraction */}
+                            <text
+                              x={18}
+                              y={17}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize={8.5}
+                              fontWeight={700}
+                              fill={t.textPrimary}
+                              fontFamily="Sora,sans-serif"
+                            >
+                              {completedTasks}/{totalParentTasks}
+                            </text>
+                          </svg>
+                          <span
+                            style={{
+                              fontSize: 9.5,
+                              fontWeight: 600,
+                              color:
+                                progressPct === 100
+                                  ? t.success
+                                  : t.textSecondary,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {progressPct}%
+                          </span>
+                        </div>
+                      )}
                       <span style={statChip(t.infoBg, t.info, t.infoBorder)}>
                         <Package size={11} /> {moduleCount}{" "}
                         {moduleCount === 1 ? "module" : "modules"}
@@ -2116,7 +2201,10 @@ export default function DraftProjectsList({
       <ResumeReviewDialog
         projectId={reviewDialogId}
         open={!!reviewDialogId}
-        onClose={() => setReviewDialogId(null)}
+        onClose={() => {
+          setReviewDialogId(null);
+          onRefresh();
+        }}
       />
     </div>
   );
