@@ -47,7 +47,6 @@ import {
  
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import LinearProgressMUI from "../../components/LinearProgressMUI";
-import CameraCapture from "./CameraCapture";
  
 const DraftForm = ({
   draftData,
@@ -302,7 +301,6 @@ const DraftForm = ({
     const [togglefileUpload, settogglefileUpload] = useState(
       rowData.filename ? false : true,
     );
-    const [cameraVisible, setCameraVisible] = useState(false);
     const handleDownloadFile = async (claim_id) => {
       try {
         let d = await downloadTourClaimSupportingDocument(claim_id);
@@ -412,19 +410,26 @@ const DraftForm = ({
               icon="pi pi-camera"
               className="p-button-sm p-button-outlined"
               tooltip="Capture using camera"
-              onClick={() => setCameraVisible(true)}
+              onClick={() =>
+                document.getElementById(`claim_camera_${rowData.claim_id}`)?.click()
+              }
+            />
+            {/* Opens the phone's own camera app (file picker on desktop) */}
+            <input
+              id={`claim_camera_${rowData.claim_id}`}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const photo = e.target.files?.[0];
+                e.target.value = ""; // allow taking another photo later
+                if (photo) onFileSelect({ files: [photo] });
+              }}
             />
           </div>
         ) : null}
 
-        <CameraCapture
-          visible={cameraVisible}
-          onHide={() => setCameraVisible(false)}
-          fileNamePrefix={`claim_${rowData.claim_id}`}
-          onCapture={(file) => onFileSelect({ files: [file] })}
-          onReject={(msg) => showWarningMessage(toastRef, "warn", msg)}
-        />
- 
         {fileUploaded && (
           <div>
             <CustomButton
