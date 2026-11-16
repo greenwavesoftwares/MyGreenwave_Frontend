@@ -43,6 +43,140 @@ const initialFormState = {
   Remarks: "",
 };
 
+// ---------------------------------------------------------------------------
+// Excel template download
+// Builds a sheet holding only the expense table: the column headings, one
+// blank row per date in the claim period, and a Total row. No amounts are
+// filled in. onFileSelect() finds the heading row by itself, so the filled-in
+// template can be uploaded back with "Upload Excel".
+// ---------------------------------------------------------------------------
+const EXPORT_MAX_DAYS = 366;
+const HEADER_ROW = 1; // Excel row of the column headings
+
+// The Airfare heading has no space after the comma: that is the spelling
+// onFileSelect() looks for.
+const TEMPLATE_HEADERS = [
+  "Date",
+  "Lodging",
+  "Breakfast",
+  "Lunch",
+  "Snacks",
+  "Dinner",
+  "Tea & Water",
+  "Airfare, Bus, Train,Taxi Rental",
+  "Auto, Cab",
+  "Parking, Toll, Fuel",
+  "Incidentals",
+  "Other Business Expenses",
+  "Total",
+  "Remarks",
+];
+const TEMPLATE_COL_WIDTHS = [
+  15, 12, 12, 11, 11, 11, 13, 18, 12, 15, 13, 17, 13, 32,
+];
+
+const buildTourClaimTemplate = (ExcelJS, start, end, fromText, toText) => {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Travel Expense Claim", {
+    views: [{ state: "frozen", ySplit: HEADER_ROW }],
+    pageSetup: {
+      orientation: "landscape",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+    },
+  });
+  ws.columns = TEMPLATE_COL_WIDTHS.map((width) => ({ width }));
+
+  const LAST_COL = TEMPLATE_HEADERS.length; // 14 -> column N
+  const thin = { style: "thin", color: { argb: "FF000000" } };
+  const box = { top: thin, left: thin, bottom: thin, right: thin };
+  const MONEY = "#,##0.00";
+
+  const styleCell = (cell, { bold, size, align, fill, border, wrap } = {}) => {
+    cell.font = { name: "Arial", size: size || 10, bold: !!bold };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: align || "left",
+      wrapText: !!wrap,
+    };
+    if (fill) {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: fill },
+      };
+    }
+    if (border !== false) cell.border = box;
+  };
+
+  // ---- Expense table ----
+  const headerRow = ws.getRow(HEADER_ROW);
+  headerRow.height = 34;
+  TEMPLATE_HEADERS.forEach((h, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = h;
+    styleCell(cell, { bold: true, align: "center", wrap: true });
+  });
+
+  const firstRow = HEADER_ROW + 1;
+  let r = firstRow;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    // UTC midnight so Excel stores the exact calendar day
+    const dateValue = new Date(
+      Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()),
+    );
+    const row = ws.getRow(r);
+    row.height = 20;
+    for (let c = 1; c <= LAST_COL; c++) {
+      const cell = row.getCell(c);
+      if (c === 1) {
+        cell.value = dateValue;
+        cell.numFmt = "yyyy-mm-dd";
+        styleCell(cell, { align: "center" });
+      } else if (c === LAST_COL - 1) {
+        // Total = sum of the amount columns; blank until something is entered
+        cell.value = {
+          formula: `IF(COUNT(B${r}:L${r})=0,"",SUM(B${r}:L${r}))`,
+          result: "",
+        };
+        cell.numFmt = MONEY;
+        styleCell(cell, { align: "center" });
+      } else if (c === LAST_COL) {
+        styleCell(cell, { align: "left", wrap: true });
+      } else {
+        cell.numFmt = MONEY;
+        styleCell(cell, { align: "center" });
+      }
+    }
+    r++;
+  }
+  const lastRow = r - 1;
+
+  // Totals row
+  const totalRow = lastRow + 1;
+  ws.getRow(totalRow).height = 24;
+  for (let c = 1; c <= LAST_COL; c++) {
+    const cell = ws.getCell(totalRow, c);
+    if (c === 1) {
+      cell.value = "Total";
+      styleCell(cell, { align: "center" });
+    } else if (c < LAST_COL) {
+      const col = ws.getColumn(c).letter;
+      cell.value = {
+        formula: `SUM(${col}${firstRow}:${col}${lastRow})`,
+        result: 0,
+      };
+      cell.numFmt = MONEY;
+      styleCell(cell, { align: "center" });
+    } else {
+      styleCell(cell);
+    }
+  }
+
+  return wb;
+};
+
 const TourClaimTable = ({
   editableMode,
   seteditableMode,
@@ -164,6 +298,34 @@ const TourClaimTable = ({
   //   setEditingIndex(null);
   // };
 
+  // True when the table already has a row for every date from Claim From
+  // Date to Claim To Date (inclusive). Used to disable "Add Row".
+  const allRangeDatesPresent = (() => {
+    const { claimFromDate, claimToDate } = tourclaimformData || {};
+    if (!claimFromDate || !claimToDate) return false;
+
+    const start = new Date(claimFromDate);
+    const end = new Date(claimToDate);
+    if (isNaN(start) || isNaN(end)) return false;
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    if (start > end) return false;
+
+    const present = new Set(
+      (tourClaimTableData || [])
+        .filter((r) => r.Date)
+        .map((r) => formateDate(r.Date)),
+    );
+
+    // Same day cap as the row sync in TourClaim.jsx
+    let checked = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (++checked > 366) return false;
+      if (!present.has(formateDate(d))) return false;
+    }
+    return true;
+  })();
+
   const handleAddRow = () => {
     // Check if upper form has errors
     // const requiredFields = ["purpose", "projectName", "city", "localityArea", "typeOfTravel", "fromDate", "tentativeToDate"];
@@ -188,6 +350,14 @@ const TourClaimTable = ({
       );
       return;
     }
+    if (allRangeDatesPresent) {
+      showWarningMessage(
+        toastRef,
+        "All dates in the claim period already have a row.",
+      );
+      return;
+    }
+
     const isIncomplete = tourClaimTableData.some((row) => !row.Date);
 
     if (isIncomplete) {
@@ -214,12 +384,17 @@ const TourClaimTable = ({
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-      const headerRowIndex = 15;
-      //const headerRowIndex = 0;
-      const headers = XLSX.utils.sheet_to_json(worksheet, {
-        range: headerRowIndex,
+      // Find the heading row (the row whose first cell is "Date"). Works for
+      // the downloaded template (row 1) and for the older layout (row 16).
+      const allRows = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
-      })[0];
+        blankrows: true,
+      });
+      let headerRowIndex = allRows.findIndex(
+        (r) => String(r?.[0] ?? "").trim().toLowerCase() === "date",
+      );
+      if (headerRowIndex < 0) headerRowIndex = 15; // previous default
+      const headers = allRows[headerRowIndex];
 
       // settourclaimFormLabeData({
       //   destination: worksheet["C12"]?.v || "",
@@ -231,8 +406,7 @@ const TourClaimTable = ({
       // });
 
       const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-        range: 15,
-        // range: 0,
+        range: headerRowIndex,
         header: headers,
         defval: "",
       });
@@ -323,6 +497,88 @@ const TourClaimTable = ({
     };
 
     reader.readAsBinaryString(file);
+  };
+
+  // Download the blank claim template: one row per date from Claim From Date
+  // to Claim To Date (inclusive). No amounts are filled in.
+  const handleExportExcel = async () => {
+    const { claimFromDate, claimToDate } = tourclaimformData || {};
+
+    if (!claimFromDate || !claimToDate) {
+      showWarningMessage(
+        toastRef,
+        "Select both Claim From and Claim To dates before downloading the template.",
+      );
+      return;
+    }
+
+    const start = new Date(claimFromDate);
+    const end = new Date(claimToDate);
+    if (isNaN(start) || isNaN(end)) {
+      showWarningMessage(toastRef, "Invalid claim date. Please pick again.");
+      return;
+    }
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    if (start > end) {
+      showWarningMessage(
+        toastRef,
+        "Claim From date cannot be after Claim To date.",
+      );
+      return;
+    }
+
+    const days = Math.round((end - start) / 86400000) + 1;
+    if (days > EXPORT_MAX_DAYS) {
+      showWarningMessage(
+        toastRef,
+        `The claim period is ${days} days. The template supports at most ${EXPORT_MAX_DAYS} days.`,
+      );
+      return;
+    }
+
+    try {
+      // Loaded on demand so exceljs is not part of the main bundle
+      const mod = await import("exceljs");
+      const ExcelJS = mod.default || mod;
+
+      const fromText = formateDate(start);
+      const toText = formateDate(end);
+      const workbook = buildTourClaimTemplate(
+        ExcelJS,
+        start,
+        end,
+        fromText,
+        toText,
+      );
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `TourClaim_Template_${fromText}_to_${toText}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      showSuccessMessage(
+        toastRef,
+        "success",
+        `Template downloaded with ${days} date(s) (${fromText} to ${toText}).`,
+      );
+    } catch (error) {
+      console.error("Error creating Excel template:", error);
+      showErrorMessage(
+        toastRef,
+        "error",
+        "Could not create the Excel template.",
+      );
+    }
   };
 
   const handleSaveToDraft = async () => {
@@ -529,6 +785,10 @@ const TourClaimTable = ({
     let _tourClaimTableData = [...tourClaimTableData];
     let { newData, index } = e;
 
+    // A row that already had a date keeps it, whatever the editor sent back
+    const savedDate = _tourClaimTableData[index]?.Date;
+    if (savedDate) newData = { ...newData, Date: savedDate };
+
      const formattedDate = formateDate(newData.Date);
 
   if (!formattedDate) {
@@ -610,7 +870,22 @@ const TourClaimTable = ({
     // saved row in the table, not the row being edited, so a blank row
     // doesn't lock itself the moment a date is picked.
     const savedRow = tourClaimTableData[options.rowIndex];
-    options.value=toLocalDate(savedRow.Date)
+
+    // Existing date -> read-only. Never calls editorCallback, so the value
+    // can't change.
+    if (savedRow?.Date) {
+      return (
+        <InputText
+          value={formateDate(savedRow.Date)}
+          disabled
+          readOnly
+          className="p-inputtext-sm w-full inputFieldStyle"
+        />
+      );
+    }
+
+    // Blank date (row added with "+") -> pick one inside the claim period
+    options.value = options.value ? toLocalDate(options.value) : null;
     return (
       <CustomeCalender
         value={options.value}
@@ -703,17 +978,15 @@ const TourClaimTable = ({
           style={{width:"1rem",height:"2.1rem"}}
           
         /> */}
-        {/* <CustomButton
+        <Button
+          label="Download Template"
           icon="pi pi-file-export"
-          className="p-button-sm"
-          onClick={() => {
-            handleDownloadFile();
-          }}
-          tooltip="Export Excel"
-          rounded={"true"}
-          severity={"success"}
-          style={{width:"1rem",height:"2.1rem"}}
-        /> */}
+          className="p-button-sm p-button-success"
+          onClick={handleExportExcel}
+          tooltip="Download a blank Excel template with one row for each date in the claim period"
+          tooltipOptions={{ position: "top" }}
+          type="button"
+        />
       </div>
 
       <div>
@@ -962,7 +1235,12 @@ const TourClaimTable = ({
           className="p-button-sm mr-4"
           severity="success"
           onClick={handleAddRow}
-          tooltip="Add Row"
+          disabled={allRangeDatesPresent}
+          tooltip={
+            allRangeDatesPresent
+              ? "All dates in the claim period already have a row"
+              : "Add Row"
+          }
           rounded={"true"}
           size="small"
           style={{ width: "1rem", height: "2.1rem" }}
