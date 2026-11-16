@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { CustomeFileUpload } from "../../components/FileUpload/CustomeFileUpload";
 //import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
+import ClaimFileInput from "./ClaimFileInput";
 import Dropdown from "../../components/Claim/Dropdown";
 import { ApplyOtherClaim } from "./claimServices";
 import { getUserData } from "../Login/Encrypt";
@@ -25,7 +26,6 @@ import { Chip, Grid, Typography } from "@mui/material";
 
 const MiscellaneousClaimForm = () => {
   const [fileUploaded, setFileUploaded] = useState(false);
-  const cameraInputRef = useRef(null);
   const toastRef = useRef(null);
   const fileUploadRef = useRef(null);
   const [file, setFile] = useState(null);
@@ -208,40 +208,15 @@ const MiscellaneousClaimForm = () => {
               </label> */}
               <div >
                  {!fileUploaded ? (
-                          <div className="flex items-center gap-2">
-                            <FileUpload
-                              ref={fileUploadRef}
-                              mode="basic"
-                              name="file"
-                              accept="*/*"
-                              customUpload
-                              auto
-                              uploadHandler={onUpload}
-                              maxFileSize={1000000000}
-                              chooseLabel="Upload Document"
-                              className="selectButtonStyle"
-                            />
-                            <CustomButton
-                              icon="pi pi-camera"
-                              className="p-button-sm p-button-outlined"
-                              tooltip="Capture using camera"
-                              tooltipOptions={{ position: "top" }}
-                              onClick={() => cameraInputRef.current?.click()}
-                            />
-                            {/* Opens the phone's own camera app (file picker on desktop) */}
-                            <input
-                              ref={cameraInputRef}
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              style={{ display: "none" }}
-                              onChange={(e) => {
-                                const photo = e.target.files?.[0];
-                                e.target.value = ""; // allow taking another photo later
-                                if (photo) onUpload({ files: [photo] });
-                              }}
-                            />
-                          </div>
+                          <ClaimFileInput
+                            prefix={`misc_claim_${userDetails?.employeeId || "emp"}`}
+                            chooseLabel="Upload Document"
+                            className="selectButtonStyle"
+                            onSelect={(f) => onUpload({ files: [f] })}
+                            onReject={(msg) =>
+                              showWarningMessage(toastRef, "warn", msg)
+                            }
+                          />
                         ) : (
                           <div className="flex align-items-center gap-2 mt-2">
                             <span className="text-green-600 font-medium">

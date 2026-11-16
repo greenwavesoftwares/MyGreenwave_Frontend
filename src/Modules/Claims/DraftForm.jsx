@@ -47,7 +47,158 @@ import {
  
 import { getTravelDetailsFromTravelId2 } from "../TravelDesk/TravelDeskAPI";
 import LinearProgressMUI from "../../components/LinearProgressMUI";
+import ClaimFileInput from "./ClaimFileInput";
  
+const SupportingDocumentCell = ({
+  rowData,
+  uploadProgress,
+  setUploadProgress,
+  toastRef,
+  setDraftData,
+}) => {
+    //const isLoading = loadingRows[rowData.claim_id];
+    const [fileUploaded, setFileUploaded] = useState(
+      rowData.filename ? true : false,
+    );
+    const [togglefileUpload, settogglefileUpload] = useState(
+      rowData.filename ? false : true,
+    );
+    const handleDownloadFile = async (claim_id) => {
+      try {
+        let d = await downloadTourClaimSupportingDocument(claim_id);
+      } catch (error) {
+        showErrorMessage(toastRef, "error", "Something Wrong.");
+      }
+    };
+    const onFileSelect = async (event) => {
+      const file = event.files[0]; // Get the uploaded file
+      if (!file) return;
+      // Videos are not allowed
+      if (file.type?.startsWith("video/")) {
+        showWarningMessage(toastRef, "warn", "Videos are not allowed.");
+        return;
+      }
+      setFileUploaded(true);
+      settogglefileUpload(false);
+ 
+      // //test
+      // setUploadProgress(10); // start
+      // // fake progress simulation
+      // const interval = setInterval(() => {
+      //   setUploadProgress((prev) => {
+      //     if (prev >= 90) return prev;
+      //     return prev + 10;
+      //   });
+      // }, 300);
+      // // test
+ 
+      // Start progress
+      setUploadProgress((prev) => ({
+        ...prev,
+        [rowData.claim_id]: 10,
+      }));
+ 
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          const current = prev[rowData.claim_id] || 0;
+          if (current >= 90) return prev;
+          return {
+            ...prev,
+            [rowData.claim_id]: current + 10,
+          };
+        });
+      }, 300);
+ 
+      const formData = new FormData();
+      formData.append("file", file); // Append file to formData
+ 
+      try {
+        const response = await uploadSupportingDocuments(
+          file,
+          rowData.claim_id,
+        ); // Adjust this call accordingly
+ 
+        //test
+        clearInterval(interval);
+ 
+        setUploadProgress((prev) => ({
+          ...prev,
+          [rowData.claim_id]: 100,
+        }));
+ 
+        //test
+ 
+        if (response == "File uploaded successfully") {
+          showSuccessMessage(toastRef, "success", "File Uploaded");
+          // Update only this row - no list re-fetch, so the page does not refresh
+          setDraftData((prev) =>
+            Array.isArray(prev)
+              ? prev.map((r) =>
+                  r.claim_id === rowData.claim_id
+                    ? { ...r, filename: file.name }
+                    : r,
+                )
+              : prev,
+          );
+        }
+      } catch (error) {
+        //test
+        clearInterval(interval);
+ 
+        setUploadProgress((prev) => ({
+          ...prev,
+          [rowData.claim_id]: 0,
+        }));
+        //test
+        showErrorMessage(toastRef, "error", "Upload failed");
+ 
+        console.log(error);
+        setFileUploaded(false);
+        settogglefileUpload(true);
+      }
+    };
+ 
+    const progress = uploadProgress[rowData.claim_id] || 0;
+ 
+    return (
+      <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
+        {progress > 0 && progress < 100 && (
+          <LinearProgressMUI value={progress} />
+        )}
+        {togglefileUpload ? (
+          <ClaimFileInput
+            prefix={`claim_${rowData.claim_id}`}
+            onSelect={(file) => onFileSelect({ files: [file] })}
+            onReject={(msg) => showWarningMessage(toastRef, "warn", msg)}
+            maxFileSize={5000000000}
+          />
+        ) : null}
+
+        {fileUploaded && (
+          <div>
+            <CustomButton
+              icon="pi pi-download"
+              className="p-button-sm p-button-text p-button-success"
+              onClick={() => {
+                handleDownloadFile(rowData.claim_id);
+              }}
+              tooltip={`${rowData.filename}`}
+            />
+            <CustomButton
+              icon="pi pi-times"
+              className="p-button-sm p-button-text p-button-danger"
+              onClick={() => {
+                setFileUploaded(false);
+                settogglefileUpload(true);
+              }}
+              tooltip="Cancel"
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
 const DraftForm = ({
   draftData,
   setDraftData,
@@ -293,167 +444,16 @@ const DraftForm = ({
     // You can add logic to add a new blank row if needed
   };
  
-  const supportingDocumentBody = (rowData) => {
-    //const isLoading = loadingRows[rowData.claim_id];
-    const [fileUploaded, setFileUploaded] = useState(
-      rowData.filename ? true : false,
-    );
-    const [togglefileUpload, settogglefileUpload] = useState(
-      rowData.filename ? false : true,
-    );
-    const handleDownloadFile = async (claim_id) => {
-      try {
-        let d = await downloadTourClaimSupportingDocument(claim_id);
-      } catch (error) {
-        showErrorMessage(toastRef, "error", "Something Wrong.");
-      }
-    };
-    const onFileSelect = async (event) => {
-      const file = event.files[0]; // Get the uploaded file
-      if (!file) return;
-      // Videos are not allowed
-      if (file.type?.startsWith("video/")) {
-        showWarningMessage(toastRef, "warn", "Videos are not allowed.");
-        return;
-      }
-      setFileUploaded(true);
-      settogglefileUpload(false);
- 
-      // //test
-      // setUploadProgress(10); // start
-      // // fake progress simulation
-      // const interval = setInterval(() => {
-      //   setUploadProgress((prev) => {
-      //     if (prev >= 90) return prev;
-      //     return prev + 10;
-      //   });
-      // }, 300);
-      // // test
- 
-      // Start progress
-      setUploadProgress((prev) => ({
-        ...prev,
-        [rowData.claim_id]: 10,
-      }));
- 
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          const current = prev[rowData.claim_id] || 0;
-          if (current >= 90) return prev;
-          return {
-            ...prev,
-            [rowData.claim_id]: current + 10,
-          };
-        });
-      }, 300);
- 
-      const formData = new FormData();
-      formData.append("file", file); // Append file to formData
- 
-      try {
-        const response = await uploadSupportingDocuments(
-          file,
-          rowData.claim_id,
-        ); // Adjust this call accordingly
- 
-        //test
-        clearInterval(interval);
- 
-        setUploadProgress((prev) => ({
-          ...prev,
-          [rowData.claim_id]: 100,
-        }));
- 
-        //test
- 
-        if (response == "File uploaded successfully") {
-          showSuccessMessage(toastRef, "success", "File Uploaded");
-          await refreshDraftData();
-        }
-      } catch (error) {
-        //test
-        clearInterval(interval);
- 
-        setUploadProgress((prev) => ({
-          ...prev,
-          [rowData.claim_id]: 0,
-        }));
-        //test
-        showErrorMessage(toastRef, "error", "Upload failed");
- 
-        console.log(error);
-        setFileUploaded(false);
-        settogglefileUpload(true);
-      }
-    };
- 
-    const progress = uploadProgress[rowData.claim_id] || 0;
- 
-    return (
-      <div className="flex flex-col justify-center mb-2 gap-x-2 gap-y-2">
-        {progress > 0 && progress < 100 && (
-          <LinearProgressMUI value={progress} />
-        )}
-        {togglefileUpload ? (
-          <div className="flex items-center gap-2">
-            <FileUpload
-              mode="basic"
-              name="file"
-              accept="*/*"
-              auto
-              customUpload
-              uploadHandler={onFileSelect}
-              maxFileSize={5000000000}
-              chooseLabel="Upload"
-            />
-            <CustomButton
-              icon="pi pi-camera"
-              className="p-button-sm p-button-outlined"
-              tooltip="Capture using camera"
-              onClick={() =>
-                document.getElementById(`claim_camera_${rowData.claim_id}`)?.click()
-              }
-            />
-            {/* Opens the phone's own camera app (file picker on desktop) */}
-            <input
-              id={`claim_camera_${rowData.claim_id}`}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const photo = e.target.files?.[0];
-                e.target.value = ""; // allow taking another photo later
-                if (photo) onFileSelect({ files: [photo] });
-              }}
-            />
-          </div>
-        ) : null}
-
-        {fileUploaded && (
-          <div>
-            <CustomButton
-              icon="pi pi-download"
-              className="p-button-sm p-button-text p-button-success"
-              onClick={() => {
-                handleDownloadFile(rowData.claim_id);
-              }}
-              tooltip={`${rowData.filename}`}
-            />
-            <CustomButton
-              icon="pi pi-times"
-              className="p-button-sm p-button-text p-button-danger"
-              onClick={() => {
-                setFileUploaded(false);
-                settogglefileUpload(true);
-              }}
-              tooltip="Cancel"
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
+  // Hooks must live in a real component (not in a column body callback)
+  const supportingDocumentBody = (rowData) => (
+    <SupportingDocumentCell
+      rowData={rowData}
+      uploadProgress={uploadProgress}
+      setUploadProgress={setUploadProgress}
+      toastRef={toastRef}
+      setDraftData={setDraftData}
+    />
+  );
  
   const downloadExpense = (rowData) => {
     const handleDownloadFile = async (claim_id) => {
