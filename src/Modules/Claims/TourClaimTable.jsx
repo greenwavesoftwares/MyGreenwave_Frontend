@@ -238,99 +238,87 @@ const TourClaimTable = ({
       });
       console.log(" Raw Excel JSON:", jsonData);
 
-      const validatedData = [];
-      const existingDates = new Set(tourClaimTableData.map((r) => r["Date"]));
+      // Index the rows already in the table by date (YYYY-MM-DD)
+      const updatedRows = [...tourClaimTableData];
+      const rowIndexByDate = new Map();
+      updatedRows.forEach((r, i) => {
+        const key = formateDate(r["Date"]);
+        if (key) rowIndexByDate.set(key, i);
+      });
+
+      let filledCount = 0;
       let skippedRows = 0;
+      const extraDates = [];
 
       jsonData.forEach((row) => {
-        const formattedRow = { ...initialFormState };
-        let isValid = true;
-        console.log("➡ Raw Row:", row);
+        // Rows without a readable date (blank / footer / totals rows) are skipped
+        const parsedDate = formateDate(row["Date"]);
+        if (!parsedDate) {
+          skippedRows++;
+          return;
+        }
 
-        // for (const key of Object.keys(initialFormState)) {
-        //   const value = row[key];
-        //   if (key === "Date") {
-        //     const parsedDate = formateDate(value);
-        //     if (!parsedDate || existingDates.has(parsedDate)) {
-        //       isValid = false;
-        //       break;
-        //     }
-        //     formattedRow[key] = parsedDate;
-        //     existingDates.add(parsedDate);
-        //   } else {
-        //     const num = parseFloat(value);
-        //     formattedRow[key] = !isNaN(num) ? num : 0;
-        //   }
-        // }
+        const importedRow = { ...initialFormState, Date: parsedDate };
+
         for (const key of Object.keys(initialFormState)) {
-          let excelKey = key;
+          if (key === "Date") continue;
 
+          let excelKey = key;
           // Fix mismatch header coming from Excel
           if (key === "Airfare, Bus, Train, Taxi Rental") {
             excelKey = "Airfare, Bus, Train,Taxi Rental";
           }
 
-          const value = row[excelKey];
-
-          if (key === "Date") {
-            const parsedDate = formateDate(value);
-            const dateObj = new Date(parsedDate);
-            dateObj.setHours(0, 0, 0, 0);
-            const minDate = new Date(tourclaimformData.claimFromDate);
-            minDate.setHours(0, 0, 0, 0);
-            const maxDate = new Date(tourclaimformData.claimToDate);
-            maxDate.setHours(0, 0, 0, 0);
-            // const parsedDate = formateDate(value);
-            // const dateObj = new Date(parsedDate);
-            // const minDate = new Date(tourclaimformData.claimFromDate);
-            // const maxDate = new Date(tourclaimformData.claimToDate);
-
-            // console.log(
-            //   "dateObj --",
-            //   value,
-            //   "minDate --",
-            //   minDate,
-            //   "maxDate--",
-            //   maxDate,
-            // );
-
-            // Reject if date is missing, invalid, duplicate, or out of range
-            if (
-              !parsedDate ||
-              existingDates.has(parsedDate) ||
-              isNaN(dateObj) ||
-              dateObj < minDate ||
-              dateObj > maxDate
-            ) {
-              isValid = false;
-              break;
-            }
-
-            formattedRow[key] = parsedDate;
-            existingDates.add(parsedDate);
+          if (key === "Remarks") {
+            importedRow[key] = row[excelKey] ?? "";
           } else {
-            const num = parseFloat(value);
-            formattedRow[key] = !isNaN(num) ? num : 0;
+            const num = parseFloat(row[excelKey]);
+            importedRow[key] = !isNaN(num) ? num : 0;
           }
         }
+        importedRow["Total"] = calculateTotal(importedRow);
 
-        if (isValid) {
-          formattedRow["Total"] = calculateTotal(formattedRow);
-          validatedData.push(formattedRow);
+        if (rowIndexByDate.has(parsedDate)) {
+          // Date already present in the table -> fill that row
+          const idx = rowIndexByDate.get(parsedDate);
+          updatedRows[idx] = { ...updatedRows[idx], ...importedRow };
+          filledCount++;
         } else {
-          skippedRows++;
+          // Date outside the claim period -> not added, reported below
+          extraDates.push(parsedDate);
         }
       });
 
-      //  console.log("validatedData", validatedData);
+      // Excel has dates outside the claim period -> block the whole import
+      if (extraDates.length > 0) {
+        const sorted = [...extraDates].sort();
+        showWarningMessage(
+          toastRef,
+          `Import blocked: Excel has ${extraDates.length} date(s) outside the claim period ` +
+            `(${sorted[0]} to ${sorted[sorted.length - 1]}). ` +
+            `Please match Claim From Date and Claim To Date with the date range in the Excel and upload again.`,
+        );
+        setFileUploaded(false);
+        return;
+      }
 
-      settourClaimTableData((prev) => [...prev, ...validatedData]);
+      if (filledCount === 0) {
+        showWarningMessage(
+          toastRef,
+          "No rows with a valid date were found in the Excel file.",
+        );
+        setFileUploaded(false);
+        return;
+      }
+
+      settourClaimTableData(updatedRows);
       setFileUploaded(true);
 
       showSuccessMessage(
         toastRef,
         "success",
-        `${validatedData.length} row(s) imported.`,
+        `${filledCount} row(s) filled` +
+          (skippedRows ? `, ${skippedRows} row(s) skipped (no valid date).` : "."),
       );
     };
 
@@ -679,7 +667,9 @@ const TourClaimTable = ({
             auto
             uploadHandler={(e) => {
               onFileSelect(e);
-              setFileUploaded(true);
+              // Reset the uploader so the same file can be chosen again
+              // (e.g. after the claim dates are corrected)
+              e.options?.clear?.();
             }}
             maxFileSize={50000000}
             chooseLabel="Upload Excel"
