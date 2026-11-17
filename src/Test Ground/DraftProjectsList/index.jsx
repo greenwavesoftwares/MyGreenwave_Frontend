@@ -25,11 +25,6 @@ import {
   Trash2,
   AlertTriangle,
   AlertOctagon,
-  ShieldAlert,
-  ShieldX,
-  SearchX,
-  ServerCrash,
-  WifiOff,
   Package,
   CheckCircle2,
   Bell,
@@ -42,9 +37,7 @@ import { makeBtnStyle } from "../helpers/styles";
 import { useResponsive } from "../useResponsive";
 import BottomSheet from "../shared/BottomSheet";
 import { loadSavedDateRange, saveDateRange } from "../helpers/dateRangeStorage";
-import GreenWaveLoader, {
-  GreenWaveLoaderOverlay,
-} from "../loader/GreenWaveLoader";
+import GreenWaveLoader from "../loader/GreenWaveLoader";
 import ResumeReviewDialog from "../../Modules/Assignee/ResumeReviewDialog";
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
@@ -84,7 +77,7 @@ export default function DraftProjectsList({
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [reviewDialogId, setReviewDialogId] = useState(null);
-  // Date range state
+
   // Date range state — restore from localStorage
   const [dateMode, setDateMode] = useState(
     () => loadSavedDateRange()?.mode || "currentMonth",
@@ -185,7 +178,6 @@ export default function DraftProjectsList({
       clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
     };
-    // eslint-disable-next-line
   }, [customOpen, lastAppliedCustom]);
 
   const formatDateShort = (dateStr) => {
@@ -216,29 +208,22 @@ export default function DraftProjectsList({
     (d) => {
       if (!currentUserId) return false;
       const uid = currentUserId.toLowerCase();
-
-      // Not the creator
       if (d.createdBy?.toLowerCase() === uid) return false;
-
-      // Not a co-assigner
       const isCoAssigner = (d.coAssigners || []).some(
         (ca) => ca.userId?.toLowerCase() === uid,
       );
       if (isCoAssigner) return false;
-
-      // API only returns projects you have access to
-      // → if not creator and not co-assigner, must be updates-shared
       return true;
     },
     [currentUserId],
   );
-  // Helper: determines the SINGLE role for a project (priority: own > co-assigned > shared)
+
   const getProjectRole = useCallback(
     (d) => {
       if (isMineProject(d)) return "own";
       if (isCoAssignedProject(d)) return "coAssigned";
       if (isUpdatesSharedProject(d)) return "sharedWithMe";
-      return "unrelated"; // shouldn't happen if API returns only accessible projects
+      return "unrelated";
     },
     [isMineProject, isCoAssignedProject, isUpdatesSharedProject],
   );
@@ -312,6 +297,7 @@ export default function DraftProjectsList({
     }
     return result;
   }, [drafts, statusFilter, search, getProjectRole]);
+
   const fmtDate = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -328,9 +314,7 @@ export default function DraftProjectsList({
     <div
       style={{ padding: "16px 20px 32px", maxWidth: 1600, margin: "0 auto" }}
     >
-      {/* ══════════════════════════════════════════════════════ */}
-      {/*   DESKTOP / TABLET: Status filter tabs                 */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* ── DESKTOP / TABLET: Status filter tabs ── */}
       {!isMobile && !loading && !error && drafts.length > 0 && (
         <div
           style={{
@@ -431,9 +415,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/*   MOBILE: Status filter tabs (horizontal scroll)       */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* ── MOBILE: Status filter tabs ── */}
       {isMobile && !loading && !error && drafts.length > 0 && (
         <div
           style={{
@@ -443,7 +425,6 @@ export default function DraftProjectsList({
             overflowX: "auto",
             WebkitOverflowScrolling: "touch",
             paddingBottom: 4,
-            // Hide scrollbar
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}
@@ -535,9 +516,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/*   DESKTOP / TABLET: Full header row                    */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* ── DESKTOP / TABLET: Header row ── */}
       {!isMobile && (
         <div
           style={{
@@ -584,7 +563,7 @@ export default function DraftProjectsList({
             </div>
           </div>
 
-          {/* ── Desktop Date range tabs ── */}
+          {/* Date range tabs */}
           <div
             style={{
               display: "flex",
@@ -852,9 +831,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/*   MOBILE: Compact header row                           */}
-      {/* ══════════════════════════════════════════════════════ */}
+      {/* ── MOBILE: Header row ── */}
       {isMobile && (
         <div
           style={{
@@ -864,7 +841,6 @@ export default function DraftProjectsList({
             marginBottom: 12,
           }}
         >
-          {/* Search (flex-1) */}
           <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
             <Search
               size={14}
@@ -896,7 +872,6 @@ export default function DraftProjectsList({
             />
           </div>
 
-          {/* Filter button (opens bottom sheet) */}
           <button
             onClick={() => setMobileFiltersOpen(true)}
             style={{
@@ -916,7 +891,6 @@ export default function DraftProjectsList({
             <Filter size={18} />
           </button>
 
-          {/* Refresh button */}
           <button
             onClick={onRefresh}
             disabled={loading}
@@ -947,7 +921,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* Mobile: date range display */}
+      {/* Mobile date range display */}
       {isMobile && (
         <div
           onClick={() => setMobileFiltersOpen(true)}
@@ -979,6 +953,7 @@ export default function DraftProjectsList({
           </span>
         </div>
       )}
+
       {/* Loading */}
       {loading && (
         <div
@@ -1001,7 +976,6 @@ export default function DraftProjectsList({
             }}
           >
             <GreenWaveLoader mode="draw" size={90} />
-            {/* <GreenWaveLoaderOverlay mode="draw-spin" show={true} size={110} /> */}
           </div>
           Loading projects from server...
         </div>
@@ -1078,7 +1052,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* Empty */}
+      {/* Grid List */}
       {!loading && !error && (
         <>
           {filtered.length === 0 ? (
@@ -1183,7 +1157,7 @@ export default function DraftProjectsList({
               style={{
                 display: "grid",
                 gridTemplateColumns: isMobile
-                  ? "1fr" // single column on mobile
+                  ? "1fr"
                   : "repeat(auto-fill, minmax(320px, 1fr))",
                 gap: isMobile ? 10 : 14,
               }}
@@ -1204,7 +1178,8 @@ export default function DraftProjectsList({
                   (r) => r.parentId,
                 ).length;
                 const status = d.status || "draft";
-                // ── Task progress (parent tasks only) ──
+
+                // Task completion calculation (parent tasks only)
                 const parentRows = (d.rows || []).filter((r) => !r.parentId);
                 const totalParentTasks = parentRows.length;
                 const completedTasks = parentRows.filter((r) => {
@@ -1215,6 +1190,9 @@ export default function DraftProjectsList({
                   totalParentTasks > 0
                     ? Math.round((completedTasks / totalParentTasks) * 100)
                     : 0;
+
+                const reqCount = d.requestCount || 0;
+
                 const isSharedProject =
                   d.createdBy &&
                   currentUserId &&
@@ -1345,7 +1323,7 @@ export default function DraftProjectsList({
                       </div>
                     )}
 
-                    {/* Status + delete */}
+                    {/* Status badges + delete */}
                     <div
                       style={{
                         display: "flex",
@@ -1362,57 +1340,6 @@ export default function DraftProjectsList({
                           alignItems: "center",
                         }}
                       >
-                        {/* ── Pending Requests Button ── */}
-                        {d.requestCount >= 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReviewDialogId(d.id);
-                            }}
-                            title={`${d.requestCount} pending request${d.requestCount !== 1 ? "s" : ""}`}
-                            style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 6,
-                              border: `1px solid ${t.warningBorder}`,
-                              background: t.warningBg,
-                              color: t.warning,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: 0,
-                              flexShrink: 0,
-                              position: "relative",
-                            }}
-                          >
-                            <CalendarSync size={14} />
-                            {d.requestCount > 0 && (
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  top: -6,
-                                  right: -6,
-                                  minWidth: 16,
-                                  height: 16,
-                                  borderRadius: 999,
-                                  background: t.danger,
-                                  color: "#fff",
-                                  fontSize: 9,
-                                  fontWeight: 700,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  padding: "0 4px",
-                                  lineHeight: 1,
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                                }}
-                              >
-                                {d.requestCount}
-                              </span>
-                            )}
-                          </button>
-                        )}
                         <span
                           style={{
                             display: "inline-flex",
@@ -1661,113 +1588,14 @@ export default function DraftProjectsList({
                       </div>
                     )}
 
-                    {/* Co-assigner count */}
-                    {cardVariant === "own" &&
-                      (d.coAssigners || []).length > 0 && (
-                        <div
-                          style={{
-                            padding: "5px 10px",
-                            background: t.successBgSubtle,
-                            border: `1px solid ${t.successBorder}`,
-                            borderRadius: 6,
-                            fontSize: 10.5,
-                            color: t.success,
-                            fontWeight: 600,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <Handshake size={11} />
-                          <span>
-                            Shared with {(d.coAssigners || []).length}{" "}
-                            co-assigner
-                            {(d.coAssigners || []).length !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      )}
-
-                    {/* Stats */}
+                    {/* Stats chips */}
                     <div
                       style={{
                         display: "flex",
                         gap: 6,
                         flexWrap: "wrap",
-                        marginTop: "auto",
                       }}
                     >
-                      {/* ── Task Progress Donut Gauge ── */}
-                      {totalParentTasks > 0 && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 5,
-                            padding: "3px 8px 3px 3px",
-                            borderRadius: 6,
-                            background: t.bgSubtle,
-                            border: `1px solid ${t.border}`,
-                          }}
-                          title={`${completedTasks} of ${totalParentTasks} tasks completed (${progressPct}%)`}
-                        >
-                          <svg width={32} height={32} viewBox="0 0 36 36">
-                            {/* Background track */}
-                            <circle
-                              cx={18}
-                              cy={18}
-                              r={15.9155}
-                              fill="none"
-                              stroke={t.bgMuted}
-                              strokeWidth={3.5}
-                            />
-                            {/* Progress arc */}
-                            {progressPct > 0 && (
-                              <circle
-                                cx={18}
-                                cy={18}
-                                r={15.9155}
-                                fill="none"
-                                stroke={
-                                  progressPct === 100 ? t.success : t.primary
-                                }
-                                strokeWidth={3.5}
-                                strokeDasharray={`${progressPct} ${100 - progressPct}`}
-                                strokeDashoffset={25}
-                                strokeLinecap="round"
-                                style={{
-                                  transition: "stroke-dasharray 0.4s ease",
-                                }}
-                              />
-                            )}
-                            {/* Center fraction */}
-                            <text
-                              x={18}
-                              y={17}
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              fontSize={8.5}
-                              fontWeight={700}
-                              fill={t.textPrimary}
-                              fontFamily="Sora,sans-serif"
-                            >
-                              {completedTasks}/{totalParentTasks}
-                            </text>
-                          </svg>
-                          <span
-                            style={{
-                              fontSize: 9.5,
-                              fontWeight: 600,
-                              color:
-                                progressPct === 100
-                                  ? t.success
-                                  : t.textSecondary,
-                              lineHeight: 1.2,
-                            }}
-                          >
-                            {progressPct}%
-                          </span>
-                        </div>
-                      )}
                       <span style={statChip(t.infoBg, t.info, t.infoBorder)}>
                         <Package size={11} /> {moduleCount}{" "}
                         {moduleCount === 1 ? "module" : "modules"}
@@ -1820,6 +1648,202 @@ export default function DraftProjectsList({
                       </div>
                     )}
 
+                    {/* ── METRIC BOXES: Side by Side (50/50 flex layout) ── */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        width: "100%",
+                        marginTop: "auto",
+                      }}
+                    >
+                      {/* Left: Reschedule Requests (Clickable) */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReviewDialogId(d.id);
+                        }}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "10px 8px",
+                          borderRadius: 8,
+                          background: t.warningBg,
+                          border: `1px solid ${t.warningBorder}`,
+                          cursor: "pointer",
+                          transition: "all .15s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = t.warning;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = t.warningBorder;
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 8,
+                            background: "rgba(245,158,11,0.15)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            position: "relative",
+                          }}
+                        >
+                          <CalendarSync size={19} color={t.warning} />
+                          {/* Request Count Badge attached to Bell Icon */}
+                          {reqCount > 0 && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: -5,
+                                right: -5,
+                                minWidth: 18,
+                                height: 18,
+                                borderRadius: 999,
+                                background:
+                                  reqCount > 0 ? t.danger : t.textMuted,
+                                color: "#fff",
+                                fontSize: 9.5,
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "0 4px",
+                                lineHeight: 1,
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                              }}
+                            >
+                              {reqCount}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {/* <div
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 800,
+                              color: t.warning,
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            {reqCount}
+                          </div> */}
+                          {/* Full text displayed without ellipsis */}
+                          <div
+                            style={{
+                              fontSize: 8.5,
+                              fontWeight: 700,
+                              color: t.textMuted,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.2px",
+                              marginTop: 2,
+                              lineHeight: 1.2,
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            Reschedule Requests
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Task Progress Donut Gauge */}
+                      <div
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "10px 8px",
+                          borderRadius: 8,
+                          background:
+                            progressPct === 100 ? t.successBg : t.bgSubtle,
+                          border: `1px solid ${
+                            progressPct === 100 ? t.successBorder : t.border
+                          }`,
+                        }}
+                      >
+                        <div style={{ width: 40, height: 40, flexShrink: 0 }}>
+                          <svg width={40} height={40} viewBox="0 0 36 36">
+                            <circle
+                              cx={18}
+                              cy={18}
+                              r={15.9155}
+                              fill="none"
+                              stroke={t.bgMuted}
+                              strokeWidth={3}
+                            />
+                            {progressPct > 0 && (
+                              <circle
+                                cx={18}
+                                cy={18}
+                                r={15.9155}
+                                fill="none"
+                                stroke={
+                                  progressPct === 100 ? t.success : t.primary
+                                }
+                                strokeWidth={3}
+                                strokeDasharray={`${progressPct} ${100 - progressPct}`}
+                                strokeDashoffset={25}
+                                strokeLinecap="round"
+                                style={{
+                                  transition: "stroke-dasharray 0.4s ease",
+                                }}
+                              />
+                            )}
+                            <text
+                              x={18}
+                              y={17.5}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize={8}
+                              fontWeight={700}
+                              fill={
+                                progressPct === 100 ? t.success : t.textPrimary
+                              }
+                              fontFamily="Sora,sans-serif"
+                            >
+                              {completedTasks}/{totalParentTasks}
+                            </text>
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 800,
+                              color:
+                                progressPct === 100 ? t.success : t.textPrimary,
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            {progressPct}%
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 8.5,
+                              fontWeight: 700,
+                              color: t.textMuted,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.2px",
+                              marginTop: 2,
+                              lineHeight: 1.2,
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            Tasks Done
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Footer */}
                     <div
                       style={{
@@ -1857,6 +1881,7 @@ export default function DraftProjectsList({
           )}
         </>
       )}
+
       {/* ── Mobile FAB: New Project ── */}
       {isMobile && (
         <button
@@ -1864,7 +1889,7 @@ export default function DraftProjectsList({
           title="Create new project"
           style={{
             position: "fixed",
-            bottom: "calc(76px + env(safe-area-inset-bottom, 0))", // above bottom tab bar
+            bottom: "calc(76px + env(safe-area-inset-bottom, 0))",
             right: 16,
             width: 56,
             height: 56,
@@ -1886,7 +1911,8 @@ export default function DraftProjectsList({
           <Plus size={26} />
         </button>
       )}
-      {/* Delete confirmation */}
+
+      {/* Delete confirmation modal */}
       {confirmDelete && (
         <div
           onClick={(e) => {
@@ -1987,6 +2013,7 @@ export default function DraftProjectsList({
           </div>
         </div>
       )}
+
       {/* ── Mobile Filters Bottom Sheet ── */}
       {isMobile && (
         <BottomSheet
@@ -2003,7 +2030,6 @@ export default function DraftProjectsList({
               gap: 20,
             }}
           >
-            {/* Date Range Section */}
             <div>
               <div
                 style={{
@@ -2066,7 +2092,6 @@ export default function DraftProjectsList({
                 })}
               </div>
 
-              {/* Custom range */}
               <div
                 style={{
                   marginTop: 10,
@@ -2197,14 +2222,15 @@ export default function DraftProjectsList({
           </div>
         </BottomSheet>
       )}
-      {/* ── Resume Review Dialog (single shared instance) ── */}
+
+      {/* ── Single shared Resume Review Dialog ── */}
       <ResumeReviewDialog
         projectId={reviewDialogId}
         open={!!reviewDialogId}
-        onClose={() => {
-          setReviewDialogId(null);
-          onRefresh();
-        }}
+        onClose={() => setReviewDialogId(null)}
+        onDone={() => {}}
+        previewRequest={null}
+        dryRun={false}
       />
     </div>
   );
