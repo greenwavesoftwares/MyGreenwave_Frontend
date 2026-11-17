@@ -1503,6 +1503,21 @@ const activityTrackerApi = {
   },
 
   /**
+   * GET /activityTracker/getActivityTreesByMonthAndDateCreatedByUser/month/{months}/year/{year}
+   * Retrieves project trees filtered by comma-separated months and a specific year.
+   * @param {string} months - Comma-separated months (e.g., "1,2,3")
+   * @param {number|string} year - The year (e.g., 2026)
+   * @returns Array of ProjectTreeDTO
+   */
+  getActivityTreesByMonthAndDateCreatedByUser: async (months, year) => {
+    const response = await axios.get(
+      `${apiEndPoint}/getActivityTreesByMonthAndDateCreatedByUser/month/${months}/year/${year}`,
+      { headers: getHeaders() },
+    );
+    return response.data;
+  },
+
+  /**
    * GET /activityTracker/getActivityTreeByUser
    * Returns all ProjectTreeDTOs applicable to the logged-in user.
    * @returns Array of ProjectTreeDTO
