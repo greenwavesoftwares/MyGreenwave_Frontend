@@ -334,7 +334,6 @@
 }
 .rsd-new--off {
   color: var(--pj-text-faint, #94a3b8);
-  text-decoration: line-through;
 }
 .rsd-reject-btn {
   border-color: var(--pj-danger-border, #fca5a5) !important;
@@ -1091,12 +1090,20 @@
   margin-left: 8px;
 }
 .rsd-hist-change-old {
-  color: var(--pj-text-faint, #94a3b8);
-  text-decoration: line-through;
+  color: var(--pj-text-muted, #64748b);
 }
 .rsd-hist-change-new {
   font-weight: 700;
   color: var(--pj-success, #15803d);
+}
+/* Rejected / not approved: the current dates still stand, the
+   requested ones are simply informational - no strike, no green. */
+.rsd-hist-change--kept .rsd-hist-change-old {
+  color: var(--pj-text-primary, #0f172a);
+}
+.rsd-hist-change--kept .rsd-hist-change-new {
+  font-weight: 500;
+  color: var(--pj-text-muted, #64748b);
 }
 
 /* ── Empty / error state ── */
@@ -1197,11 +1204,15 @@
   border-radius: 10px;
   background: var(--pj-surface-2, #f8fafc);
 }
-.rsd-change--off {
-  opacity: 0.55;
+/* Unticked (not approved): the current dates stay in effect, so keep
+   them at full contrast and just quiet the requested ones. */
+.rsd-change--off .rsd-change-row--old .rsd-change-dates {
+  color: var(--pj-text-primary, #0f172a);
 }
+.rsd-change--off .rsd-change-row--new .rsd-change-label,
 .rsd-change--off .rsd-change-row--new .rsd-change-dates {
-  text-decoration: line-through;
+  color: var(--pj-text-muted, #64748b);
+  font-weight: 500;
 }
 .rsd-change-row {
   display: flex;
@@ -1229,8 +1240,7 @@
   opacity: 0.7;
 }
 .rsd-change-row--old .rsd-change-dates {
-  color: var(--pj-text-faint, #94a3b8);
-  text-decoration: line-through;
+  color: var(--pj-text-muted, #64748b);
 }
 .rsd-change-row--new .rsd-change-label,
 .rsd-change-row--new .rsd-change-dates {

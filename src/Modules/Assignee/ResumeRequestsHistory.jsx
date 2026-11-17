@@ -194,8 +194,20 @@ export const RequestCard = ({ r, view = "mine" }) => {
           </button>
           {open && (
             <ul className="rsd-hist-changes">
-              {changes.map((c) => (
-                <li key={c.activityId} className="rsd-hist-change">
+              {changes.map((c) => {
+                // The requested dates were not applied (whole request
+                // rejected, or this activity left out of an approval):
+                // the current dates stay in effect.
+                const kept =
+                  status === "rejected" ||
+                  (status === "approved" && c.isApproved === false);
+                return (
+                <li
+                  key={c.activityId}
+                  className={`rsd-hist-change ${
+                    kept ? "rsd-hist-change--kept" : ""
+                  }`}
+                >
                   <span className="rsd-hist-change-name">
                     {c.activityName}
                     {c.addedByAssigner && (
@@ -210,6 +222,9 @@ export const RequestCard = ({ r, view = "mine" }) => {
                     )}
                   </span>
                   <span className="rsd-hist-change-old">
+                    <span className="rsd-hist-change-label">
+                      {kept ? "Still planned" : "Previous"}
+                    </span>
                     {fmtDate(c.currentStart)} → {fmtDate(c.currentStop)}
                   </span>
                   <span className="rsd-hist-change-new">
@@ -230,7 +245,8 @@ export const RequestCard = ({ r, view = "mine" }) => {
                       </span>
                     )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </>
