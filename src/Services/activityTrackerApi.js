@@ -1514,6 +1514,7 @@ const activityTrackerApi = {
       `${apiEndPoint}/getActivityTreesByMonthAndDateByUserDepartment/month/${months}/year/${year}`,
       { headers: getHeaders() },
     );
+    console.log("getActivityTreesByMonthAndDateByUserDepartment response: ", response.data);
     return response.data;
   },
 

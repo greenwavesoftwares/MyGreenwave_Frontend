@@ -735,7 +735,7 @@ export default function ActivityTrackerCharts() {
   // as soon as it resolves — no request waits for another.
   const requests = [
     activityTrackerApi
-      .getActivityTreesByMonthAndDate(monthsParam, year)
+      .getActivityTreesByMonthAndDateByUserDepartment(monthsParam, year)
       .then((r) => setApiResponse(r ?? { data: [] })),
 
     activityTrackerApi
