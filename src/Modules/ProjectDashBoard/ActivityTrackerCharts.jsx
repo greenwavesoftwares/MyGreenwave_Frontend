@@ -801,17 +801,18 @@ export default function ActivityTrackerCharts() {
     if (Array.isArray(apiResponse?.data)) return apiResponse.data;
     return [];
   }, [apiResponse]);
-
+  
   const flatRows = useMemo(() => {
-    const a = [];
+    const a = [];console.log('ProjectsData : ',projectsData)
     projectsData.forEach((p) => {
       (p.rows || []).forEach((r) => {
-        a.push({ project: p.project, po: p.po, site: p.site, id: p.id, ...r });
+        a.push({ project: p.project, po: p.po, site: p.site, id: p.id,includeSaturday:p.includeSaturday,includeSunday:p.includeSunday, ...r });
       });
     });
     return a;
   }, [projectsData]);
-
+  
+  console.log('flatrows: ',flatRows)
   const availableYears = useMemo(() => {
     const s = new Set();
     flatRows.forEach((r) => {

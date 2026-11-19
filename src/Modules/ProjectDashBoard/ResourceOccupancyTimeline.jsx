@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const DESKTOP_LAYOUT = {
@@ -131,6 +130,24 @@ const initialsFor = (name) => {
 };
 
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
+
+const isTruthyFlag = (v) =>
+{
+  console.log('v value  : ',v)
+  return v===true;
+}
+  
+
+/** Weekdays always count. Sat/Sun count only if the task opts in. */
+const isWorkingDayForTask = (date, task) => 
+  {
+    console.log('Task : ',task)
+  const day = date.getDay();
+  if (day === 6) return isTruthyFlag(task?.includeSaturday);
+  if (day === 0) return isTruthyFlag(task?.includeSunday);
+  return true;
+};
+
 const localDateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
     date.getDate(),
@@ -220,18 +237,17 @@ const maxDate = (...dates) => {
   return valid.length ? new Date(Math.max(...valid.map((date) => date.getTime()))) : null;
 };
 
-const eachDayInRange = (start, stop, skipWeekends) => {
+const eachDayInRange = (start, stop, isIncluded = () => true) => {
   if (!start) return [];
   const end = !stop || stop < start ? start : stop;
   const days = [];
   const cursor = new Date(start);
   let guard = 0;
   while (cursor <= end && guard < MAX_SPAN_DAYS) {
-    if (!skipWeekends || !isWeekend(cursor)) days.push(new Date(cursor));
+    if (isIncluded(cursor)) days.push(new Date(cursor));
     cursor.setDate(cursor.getDate() + 1);
     guard += 1;
   }
-  if (!days.length) days.push(new Date(start));
   return days;
 };
 
@@ -289,7 +305,7 @@ const distributeHours = (totalHours, spanDays, spreadMode, capacityHrs) => {
   return spanDays.map(() => capacityHrs);
 };
 
-const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
+const buildTaskDayMap = (tasks, { spreadMode, capacityHrs }) => {
   const byDay = {};
   tasks.forEach((task) => {
     if (!task || typeof task !== "object") return;
@@ -312,7 +328,9 @@ const buildTaskDayMap = (tasks, { spreadMode, skipWeekends, capacityHrs }) => {
     const start = minDate(plannedStart, actualStart);
     const stop = maxDate(plannedStop, actualStop);
     if (!start) return;
-    const spanDays = eachDayInRange(start, stop, skipWeekends);
+    // Weekends are included only when the task has includeSaturday / includeSunday set to true
+    const spanDays = eachDayInRange(start, stop, (day) => isWorkingDayForTask(day, task));
+    if (!spanDays.length) return;
     const perDayHours = distributeHours(readTaskHours(task), spanDays, spreadMode, capacityHrs);
     spanDays.forEach((day, index) => {
       const key = day.toDateString();
@@ -339,7 +357,6 @@ function ResourceOccupancyTimeline({
   occupancyByResourceDate = {},
   taskOccupancyByResourceDate = {},
   spreadMode = "fill",
-  skipWeekends = false,
   resourceColorMap = {},
   capacityHrs = DEFAULT_CAPACITY,
   expandedResources,
@@ -351,6 +368,7 @@ function ResourceOccupancyTimeline({
   t: customTheme = {},
   isDark = false,
 }) {
+  console.log('taskOccupancyByResourceDate :',taskOccupancyByResourceDate)
   const t = useMemo(() => ({ ...defaultTheme, ...customTheme }), [customTheme]);
   const isMobile = useMobileLayout();
   const layout = isMobile ? MOBILE_LAYOUT : DESKTOP_LAYOUT;
@@ -574,7 +592,6 @@ function ResourceOccupancyTimeline({
       taskMapsByResource[name] = tasks.length
         ? buildTaskDayMap(tasks, {
             spreadMode,
-            skipWeekends,
             capacityHrs: dailyCapacity,
           })
         : null;
@@ -604,7 +621,6 @@ function ResourceOccupancyTimeline({
     occupancyByResourceDate,
     taskOccupancyByResourceDate,
     spreadMode,
-    skipWeekends,
     dailyCapacity,
   ]);
 
@@ -1256,6 +1272,9 @@ function ResourceOccupancyTimeline({
                             free: dailyCapacity,
                             tasks: [],
                           };
+                    // A weekend is inactive only when no task is scheduled on it
+                    const inactiveWeekend =
+                      weekend && !(data.occupied > 0 || (data.tasks && data.tasks.length > 0));
                     const key = `${row.id}-${dateKey}`;
                     const hover = hoveredKey === key;
                     const today = dateKey === todayKey;
@@ -1269,7 +1288,7 @@ function ResourceOccupancyTimeline({
                         : t.occCellBg;
                     const background =
                       week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
-                    const fill = weekend
+                    const fill = inactiveWeekend
                       ? 0
                       : Math.min((data.occupied / dailyCapacity) * 100, 100);
                     const dateLabel = date.toLocaleDateString("en-US", {
@@ -1285,37 +1304,41 @@ function ResourceOccupancyTimeline({
                     return (
                       <div
                         key={dayIndex}
-                        role={weekend ? undefined : "button"}
-                        tabIndex={weekend ? undefined : 0}
-                        aria-label={weekend ? undefined : `${row.name}, ${dateLabel}: ${statusLabel}`}
-                        onPointerEnter={(event) => {
-                          if (!weekend && event.pointerType !== "touch")
-                            activate(event, row, date, data, key);
-                        }}
-                        onPointerLeave={(event) => {
-                          if (!weekend && event.pointerType !== "touch") clearHover();
-                        }}
-                        onFocus={(event) => {
-                          if (!weekend) activate(event, row, date, data, key);
-                        }}
-                        onBlur={() => {
-                          if (!weekend) clearHover();
-                        }}
+                        role={inactiveWeekend ? undefined : "button"}
+                        tabIndex={inactiveWeekend ? undefined : 0}
+                        aria-label={
+                          inactiveWeekend
+                            ? undefined
+                            : `${row.name}, ${dateLabel}: ${statusLabel}`
+                        }
+                        // onPointerEnter={(event) => {
+                        //   if (!inactiveWeekend && event.pointerType !== "touch")
+                        //     activate(event, row, date, data, key);
+                        // }}
+                        // onPointerLeave={(event) => {
+                        //   if (!inactiveWeekend && event.pointerType !== "touch") clearHover();
+                        // }}
+                        // onFocus={(event) => {
+                        //   if (!inactiveWeekend) activate(event, row, date, data, key);
+                        // }}
+                        // onBlur={() => {
+                        //   if (!inactiveWeekend) clearHover();
+                        // }}
                         onClick={(event) => {
-                          if (weekend) return;
+                          if (inactiveWeekend) return;
                           event.stopPropagation();
                           activate(event, row, date, data, key);
                         }}
-                        onKeyDown={(event) => {
-                          if (weekend) return;
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            activate(event, row, date, data, key);
-                          } else if (event.key === "Escape") {
-                            clearHover();
-                            event.currentTarget.blur();
-                          }
-                        }}
+                        // onKeyDown={(event) => {
+                        //   if (inactiveWeekend) return;
+                        //   if (event.key === "Enter" || event.key === " ") {
+                        //     event.preventDefault();
+                        //     activate(event, row, date, data, key);
+                        //   } else if (event.key === "Escape") {
+                        //     clearHover();
+                        //     event.currentTarget.blur();
+                        //   }
+                        // }}
                         style={{
                           width: layout.cell,
                           flexShrink: 0,
@@ -1336,7 +1359,7 @@ function ResourceOccupancyTimeline({
                           boxShadow: today
                             ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}`
                             : "none",
-                          cursor: weekend ? "default" : "pointer",
+                          cursor: inactiveWeekend ? "default" : "pointer",
                           outline: hover ? `2px solid ${t.btnPrimary}` : "none",
                           outlineOffset: -2,
                           WebkitTapHighlightColor: "transparent",
@@ -1347,7 +1370,7 @@ function ResourceOccupancyTimeline({
                             width: "100%",
                             height: layout.barHeight,
                             background:
-                              !weekend && data.isOnLeave
+                              !inactiveWeekend && data.isOnLeave
                                 ? isDark
                                   ? "#475569"
                                   : "#cbd5e1"
@@ -1384,7 +1407,7 @@ function ResourceOccupancyTimeline({
                                 : t.occFreeLabel,
                             }}
                           >
-                            {weekend
+                            {inactiveWeekend
                               ? ""
                               : data.isOnLeave
                                 ? "Leave"
