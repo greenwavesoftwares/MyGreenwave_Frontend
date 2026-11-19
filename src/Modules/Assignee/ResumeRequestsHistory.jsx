@@ -268,6 +268,7 @@ const ResumeRequestsHistory = ({
   const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
+    console.log("ProjectId",projectId)
     if (projectId == null) return;
     setLoading(true);
     setError(false);

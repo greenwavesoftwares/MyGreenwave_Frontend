@@ -136,12 +136,20 @@ export default function ProjectActivityInfo({
     });
   const WORK_START = 10;
   const WORK_END = 18;
-  const WEEK_END = [0, 6];
-  const WORK_CFG = {
-    workStart: WORK_START,
-    workEnd: WORK_END,
-    weekEnd: WEEK_END,
-  };
+   const WORK_CFG = 
+  useMemo(() => ({
+  workStart: WORK_START,
+  workEnd: WORK_END,
+  weekEnd: [
+    ...(activityInfo?.includeSunday===false||activityInfo?.includeSunday===null||activityInfo?.includeSunday===undefined ? [0] : []),
+    ...(activityInfo?.includeSaturday===false||activityInfo?.includeSaturday===null||activityInfo?.includeSaturday===undefined  ? [6] : []),
+  ],
+}), [activityInfo]);
+  //  {
+  //   workStart: WORK_START,
+  //   workEnd: WORK_END,
+  //   weekEnd: WEEK_END,
+  // };
 
   /* ── tree helpers ── */
   const addDuration = (startTime, durationHrs) =>
@@ -476,7 +484,7 @@ export default function ProjectActivityInfo({
     let totalWorkingHours = calculateWorkingHours(
       activity.actualStart,
       actualTime,
-      leaves,
+      leaves
     );
 
     console.log("After calculating hours");
@@ -1624,6 +1632,7 @@ export default function ProjectActivityInfo({
         projectName={activityInfo?.projectName}
       />
       <ResumeReviewDialog
+        WORK_CFG={WORK_CFG}
         projectId={activityInfo?.projectId}
         open={openReview}
         onClose={() => setOpenReview(false)}

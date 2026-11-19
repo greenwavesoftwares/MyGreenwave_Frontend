@@ -36,6 +36,7 @@ const isWorkingDay = (d, leaveSet, cfg) =>
 
 /* Working hours (decimal) between `start` and `end`. */
 export function calculateWorkingHours(start, end, leaves = [], cfg = DEFAULT_WORK_CFG) {
+  console.log("CLG inside calculate working hours:",cfg)
   const s = dayjs(start);
   const e = dayjs(end);
   if (!s.isValid() || !e.isValid() || !e.isAfter(s)) return 0;
