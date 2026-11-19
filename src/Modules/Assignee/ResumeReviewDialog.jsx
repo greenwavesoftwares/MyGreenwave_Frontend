@@ -50,8 +50,6 @@ import "./ResumeDialog.css";
    with status PENDING fill the Pending tab, APPROVED / REJECTED the History tab.
    ────────────────────────────────────────────────────────── */
 
-const WORK_CFG = { workStart: 9, workEnd: 18, weekEnd: [0, 6] }; // keep in sync with ProjectActivityInfo
-
 const asArray = (res) => (Array.isArray(res) ? res : res ? [res] : []);
 
 // ONE call returns every request of the project (any status) for the assigner;
@@ -87,6 +85,7 @@ const initials = (name = "") =>
 // previewRequest (used by ResumeRequestsList) skips the fetch and reviews the
 // request(s) passed in; dryRun logs approve/reject instead of calling the API.
 const ResumeReviewDialog = ({
+  WORK_CFG,
   projectId,
   open,
   onClose,
