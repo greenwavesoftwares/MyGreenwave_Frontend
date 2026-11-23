@@ -1,4 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const DESKTOP_LAYOUT = {
   cell: 46,
@@ -27,6 +34,10 @@ const MOBILE_LAYOUT = {
 const MOBILE_BREAKPOINT = 720;
 const DEFAULT_CAPACITY = 8;
 const MAX_SPAN_DAYS = 1096;
+
+// Stable references so memoized children don't re-render needlessly
+const EMPTY = {};
+const noop = () => {};
 
 const defaultTheme = {
   emptyText: "#64748b",
@@ -131,17 +142,10 @@ const initialsFor = (name) => {
 
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 
-const isTruthyFlag = (v) =>
-{
-  console.log('v value  : ',v)
-  return v===true;
-}
-  
+const isTruthyFlag = (v) => v === true;
 
 /** Weekdays always count. Sat/Sun count only if the task opts in. */
-const isWorkingDayForTask = (date, task) => 
-  {
-    console.log('Task : ',task)
+const isWorkingDayForTask = (date, task) => {
   const day = date.getDay();
   if (day === 6) return isTruthyFlag(task?.includeSaturday);
   if (day === 0) return isTruthyFlag(task?.includeSunday);
@@ -348,6 +352,394 @@ const buildTaskDayMap = (tasks, { spreadMode, capacityHrs }) => {
   return byDay;
 };
 
+// ================================================================
+// Memoized row. Only re-renders when its own props change, so a
+// click/hover on one cell no longer re-renders the whole grid.
+// ================================================================
+const TimelineRow = React.memo(function TimelineRow({
+  row,
+  index,
+  metric,
+  daily,
+  hoveredDateKey,
+  dayMeta,
+  layout,
+  leftWidth,
+  chartWidth,
+  dailyCapacity,
+  isMobile,
+  isDark,
+  t,
+  avatarColor,
+  chip,
+  weekOverlay,
+  onActivate,
+}) {
+  const rowBg = index % 2 ? t.occRowOdd : t.occRowEven;
+  const completed = metric?.totalCompletedTasks ?? 0;
+  const assigned = metric?.totalAssignedTasks ?? 0;
+  const completion = completionPercentage(completed, assigned);
+  const leaveSet = useMemo(() => new Set(metric?.leaveDates || []), [metric]);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        background: rowBg,
+        borderBottom: `1px solid ${t.gridLine}`,
+        height: layout.rowHeight,
+        // Browser skips layout/paint for rows that are off-screen
+        contentVisibility: "auto",
+        containIntrinsicSize: `auto ${layout.rowHeight}px`,
+      }}
+    >
+      <div
+        style={{
+          width: leftWidth,
+          height: layout.rowHeight,
+          display: "flex",
+          flexShrink: 0,
+          position: "sticky",
+          left: 0,
+          zIndex: 10,
+          background: rowBg,
+          borderRight: `1px solid ${t.gridLineMd}`,
+        }}
+      >
+        <div
+          style={{
+            width: layout.name,
+            boxSizing: "border-box",
+            padding: isMobile ? "6px 7px" : "6px 10px",
+            display: "flex",
+            alignItems: "center",
+            gap: isMobile ? 6 : 8,
+          }}
+        >
+          <div
+            style={{
+              width: isMobile ? 22 : 20,
+              height: isMobile ? 22 : 20,
+              flex: "0 0 auto",
+              borderRadius: "50%",
+              background: avatarColor,
+              color: "#fff",
+              display: "grid",
+              placeItems: "center",
+              fontSize: 9,
+              fontWeight: 700,
+            }}
+          >
+            {initialsFor(row.name)}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div
+              title={row.name}
+              style={{
+                fontSize: isMobile ? 11.5 : 12.5,
+                fontWeight: 600,
+                color: t.resNameColor,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {row.name}
+            </div>
+
+            {row.isUnallocated ? (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 3,
+                  marginTop: 3,
+                  padding: "1.5px 5px",
+                  borderRadius: 999,
+                  fontSize: 8.5,
+                  fontWeight: 700,
+                  color: chip.text,
+                  background: chip.bg,
+                  border: `1px solid ${chip.border}`,
+                  maxWidth: "100%",
+                }}
+              >
+                <i
+                  aria-hidden="true"
+                  style={{
+                    width: 4.5,
+                    height: 4.5,
+                    flex: "0 0 auto",
+                    borderRadius: "50%",
+                    background: chip.dot,
+                  }}
+                />
+                Unallocated
+              </span>
+            ) : (
+              isMobile && (
+                <div
+                  title={`Monthly utilization: ${percentageText(
+                    metric?.resourceMonthUtilization,
+                  )}. Completed: ${completed}/${assigned}. On time: ${
+                    metric?.onTimeTasks ?? 0
+                  }. Delayed: ${metric?.delayedTasks ?? 0}.`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    minWidth: 0,
+                    marginTop: 4,
+                    color: t.textMuted,
+                    fontSize: 8.5,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: percentageColor(metric?.resourceMonthUtilization, t.textMuted),
+                    }}
+                  >
+                    {percentageText(metric?.resourceMonthUtilization)} utilization
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {completed}/{assigned} done
+                  </span>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+
+        {!isMobile && (
+          <>
+            <div
+              title={
+                row.isUnallocated
+                  ? "Monthly Utilization is unavailable for unallocated resources"
+                  : `Monthly Utilization: ${percentageText(metric?.resourceMonthUtilization)}`
+              }
+              style={{
+                width: layout.monthProgress,
+                display: "grid",
+                placeItems: "center",
+                borderLeft: `1px solid ${t.gridLineMd}`,
+                color: row.isUnallocated
+                  ? t.textMuted
+                  : percentageColor(metric?.resourceMonthUtilization, t.textMuted),
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              {row.isUnallocated ? "—" : percentageText(metric?.resourceMonthUtilization)}
+            </div>
+
+            <div
+              title={
+                row.isUnallocated
+                  ? "Task completion is unavailable for unallocated resources"
+                  : `On time: ${metric?.onTimeTasks ?? 0} | Delayed: ${
+                      metric?.delayedTasks ?? 0
+                    } | Completed: ${completed}/${assigned} (${completion ?? "—"}%)`
+              }
+              style={{
+                width: layout.taskCompletion,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 2,
+                borderLeft: `1px solid ${t.gridLineMd}`,
+                fontSize: 10,
+                fontWeight: 700,
+                lineHeight: 1,
+              }}
+            >
+              {row.isUnallocated ? (
+                <span style={{ color: t.textMuted, fontSize: 12 }}>—</span>
+              ) : (
+                <>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      whiteSpace: "nowrap",
+                      fontSize: 9,
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 2,
+                        color: "#15803d",
+                      }}
+                    >
+                      <span style={{ fontSize: 11 }}>✓</span>On time {metric?.onTimeTasks ?? 0}
+                    </span>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 2,
+                        color: "#c2410c",
+                      }}
+                    >
+                      <span style={{ fontSize: 11 }}>◷</span>Delayed {metric?.delayedTasks ?? 0}
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      color: completion == null ? t.textMuted : t.textPrimary,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                      padding: "1.5px 6px",
+                      borderRadius: 999,
+                      background: isDark ? "rgba(255,255,255,0.08)" : t.occFreeBar,
+                      border: `1px solid ${t.occFreeBarBorder}`,
+                    }}
+                  >
+                    Completed-{completed}/{assigned} · {completion ?? "—"}%
+                  </span>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div style={{ width: chartWidth, display: "flex", height: layout.rowHeight }}>
+        {dayMeta.map((meta, dayIndex) => {
+          const { date, key: dateKey, isoKey, weekend, week, last, today } = meta;
+          const isOnLeave = !row.isUnallocated && leaveSet.has(isoKey);
+          const data = isOnLeave
+            ? { occupied: 0, free: 0, tasks: [], isOnLeave: true }
+            : row.isUnallocated
+              ? { occupied: 0, free: dailyCapacity, tasks: [] }
+              : daily[dateKey] || { occupied: 0, free: dailyCapacity, tasks: [] };
+
+          // A weekend is inactive only when no task is scheduled on it
+          const inactiveWeekend =
+            weekend && !(data.occupied > 0 || (data.tasks && data.tasks.length > 0));
+          const hover = hoveredDateKey === dateKey;
+          const base = today ? t.occCellToday : weekend ? t.occCellWeekend : t.occCellBg;
+          const background =
+            week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
+          const fill = inactiveWeekend
+            ? 0
+            : Math.min((data.occupied / dailyCapacity) * 100, 100);
+          const dateLabel = date.toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          });
+          const statusLabel = data.isOnLeave
+            ? "on leave"
+            : `${duration(data.occupied)} occupied, ${duration(data.free)} free`;
+
+          return (
+            <div
+              key={dayIndex}
+              role={inactiveWeekend ? undefined : "button"}
+              tabIndex={inactiveWeekend ? undefined : 0}
+              aria-label={
+                inactiveWeekend ? undefined : `${row.name}, ${dateLabel}: ${statusLabel}`
+              }
+              onClick={(event) => {
+                if (inactiveWeekend) return;
+                event.stopPropagation();
+                onActivate(event, row, date, data, dateKey);
+              }}
+              style={{
+                width: layout.cell,
+                flexShrink: 0,
+                padding: isMobile ? 4 : 3,
+                boxSizing: "border-box",
+                display: "flex",
+                alignItems: "center",
+                borderRight: last
+                  ? `2px solid ${t.cardBorder}`
+                  : dayIndex < dayMeta.length - 1
+                    ? `1px solid ${t.gridLineMd}`
+                    : "none",
+                background: hover ? (isDark ? "rgba(59,130,246,.2)" : "#e0f2fe") : background,
+                boxShadow: today
+                  ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}`
+                  : "none",
+                cursor: inactiveWeekend ? "default" : "pointer",
+                outline: `2px solid ${hover ? t.btnPrimary : "transparent"}`,
+                outlineOffset: -2,
+                transition: "background-color 140ms ease, outline-color 140ms ease",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: layout.barHeight,
+                  background:
+                    !inactiveWeekend && data.isOnLeave
+                      ? isDark
+                        ? "#475569"
+                        : "#cbd5e1"
+                      : t.occFreeBar,
+                  border: hover
+                    ? `1.5px solid ${t.btnPrimary}`
+                    : `1px solid ${t.occFreeBarBorder}`,
+                  borderRadius: 6,
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: t.occFreeBarShadow,
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: "0 auto 0 0",
+                    width: `${fill}%`,
+                    background: occupancyColor(data.occupied),
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: isMobile ? 8.5 : 8,
+                    fontWeight: 700,
+                    color: data.occupied
+                      ? isDark
+                        ? "#ffffff"
+                        : "#1e293b"
+                      : t.occFreeLabel,
+                  }}
+                >
+                  {inactiveWeekend
+                    ? ""
+                    : data.isOnLeave
+                      ? "Leave"
+                      : duration(data.occupied || data.free)}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
 function ResourceOccupancyTimeline({
   weeks = [],
   resources = [],
@@ -361,15 +753,18 @@ function ResourceOccupancyTimeline({
   capacityHrs = DEFAULT_CAPACITY,
   expandedResources,
   onToggleExpand,
-  showHover = () => {},
-  hideHover = () => {},
+  showHover = noop,
+  hideHover = noop,
   filteredRows,
   resourceMetrics = [],
   t: customTheme = {},
   isDark = false,
 }) {
-  console.log('taskOccupancyByResourceDate :',taskOccupancyByResourceDate)
-  const t = useMemo(() => ({ ...defaultTheme, ...customTheme }), [customTheme]);
+  // Content-keyed so an inline `t={{...}}` from the parent doesn't bust the memo every render
+  const themeKey = JSON.stringify(customTheme);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const t = useMemo(() => ({ ...defaultTheme, ...customTheme }), [themeKey]);
+
   const isMobile = useMobileLayout();
   const layout = isMobile ? MOBILE_LAYOUT : DESKTOP_LAYOUT;
   const leftWidth = layout.name + layout.monthProgress + layout.taskCompletion;
@@ -378,12 +773,14 @@ function ResourceOccupancyTimeline({
       ? Number(capacityHrs)
       : DEFAULT_CAPACITY;
 
-  const [hoveredKey, setHoveredKey] = useState(null);
+  // Only the hovered/clicked cell is tracked, as { rowId, dateKey }
+  const [hoveredCell, setHoveredCell] = useState(null);
   const [loadedUnallocatedUsers, setLoadedUnallocatedUsers] = useState([]);
   const [loadingUnallocated, setLoadingUnallocated] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const todayKey = new Date().toDateString();
   const timelineScrollRef = useRef(null);
+  const didInitialScroll = useRef("");
 
   // Accept unallocated resources passed via either prop name
   const explicitUnallocated = suppliedUnallocatedResources ?? suppliedUnallocatedUsers;
@@ -439,6 +836,28 @@ function ResourceOccupancyTimeline({
     });
     return { days: flat, weekBoundaries: boundaries };
   }, [weeks]);
+
+  // Per-day values computed once instead of rows x days times
+  const dayMeta = useMemo(() => {
+    const weekIndexFor = (index) => {
+      for (let i = 0; i < weekBoundaries.length; i += 1)
+        if (index < weekBoundaries[i]) return i;
+      return Math.max(weekBoundaries.length - 1, 0);
+    };
+    return days.map((date, i) => {
+      const week = weekIndexFor(i);
+      const key = date.toDateString();
+      return {
+        date,
+        key,
+        isoKey: localDateKey(date),
+        weekend: isWeekend(date),
+        week,
+        last: weekBoundaries[week] - 1 === i && i < days.length - 1,
+        today: key === todayKey,
+      };
+    });
+  }, [days, weekBoundaries, todayKey]);
 
   const currentTimelineMonth = useMemo(() => {
     const date = days.find(Boolean);
@@ -624,76 +1043,98 @@ function ResourceOccupancyTimeline({
     dailyCapacity,
   ]);
 
-  const weekIndexForDay = (index) => {
-    for (let i = 0; i < weekBoundaries.length; i += 1)
-      if (index < weekBoundaries[i]) return i;
-    return Math.max(weekBoundaries.length - 1, 0);
-  };
-
   const chartWidth = Math.max(days.length, 1) * layout.cell;
   const weekOverlay = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
-  const chipBg = isDark ? "rgba(239,68,68,0.18)" : "#fef2f2";
-  const chipBorder = isDark ? "rgba(239,68,68,0.45)" : "#fecaca";
-  const chipText = isDark ? "#fca5a5" : "#b91c1c";
-  const chipDot = isDark ? "#f87171" : "#ef4444";
 
-  const activate = (event, row, date, data, key) => {
-    setHoveredKey(key);
-    const rect = event.currentTarget.getBoundingClientRect();
-    const side = window.innerWidth - rect.right < 320 ? "left" : "right";
-    showHover({
-      x: side === "left" ? rect.left : rect.right,
-      y: rect.top + rect.height / 2,
-      side,
-      kind: "occupancy",
-      entry: {
-        resourceName: row.name,
-        resource: row.resource,
-        userId: row.userId,
-        date,
-        hours: data.occupied,
-        capacityHrs: dailyCapacity,
-        tasks: data.tasks,
-        free: data.free,
-        isOnLeave: data.isOnLeave,
-        isUnallocated: row.isUnallocated,
-      },
-    });
-  };
+  const chip = useMemo(
+    () => ({
+      bg: isDark ? "rgba(239,68,68,0.18)" : "#fef2f2",
+      border: isDark ? "rgba(239,68,68,0.45)" : "#fecaca",
+      text: isDark ? "#fca5a5" : "#b91c1c",
+      dot: isDark ? "#f87171" : "#ef4444",
+    }),
+    [isDark],
+  );
 
-  const clearHover = () => {
-    setHoveredKey(null);
+  // Stable callback so memoized rows don't re-render because of a new function identity
+  const activeCellRef = useRef(null);
+
+  const activate = useCallback(
+    (event, row, date, data, dateKey) => {
+      // Re-clicking the open cell must not restart the tooltip (that is what flashes the loader)
+      const cellId = `${row.id}|${dateKey}`;
+      if (activeCellRef.current === cellId) return;
+      activeCellRef.current = cellId;
+
+      // 1) Urgent: the cell highlight responds instantly
+      setHoveredCell({ rowId: row.id, dateKey });
+
+      // Measure now, while the event target is still valid
+      const rect = event.currentTarget.getBoundingClientRect();
+      const side = window.innerWidth - rect.right < 320 ? "left" : "right";
+
+      // 2) Non-urgent: opening / moving the tooltip happens after the highlight has painted,
+      //    so a heavy parent re-render can't block the click feedback
+      startTransition(() => {
+        showHover({
+        x: side === "left" ? rect.left : rect.right,
+        y: rect.top + rect.height / 2,
+        side,
+        kind: "occupancy",
+        entry: {
+          resourceName: row.name,
+          resource: row.resource,
+          userId: row.userId,
+          date,
+          hours: data.occupied,
+          capacityHrs: dailyCapacity,
+          tasks: data.tasks,
+          free: data.free,
+          isOnLeave: data.isOnLeave,
+          isUnallocated: row.isUnallocated,
+        },
+        });
+      });
+    },
+    [showHover, dailyCapacity],
+  );
+
+  // Kept for parity with the original API (hover handlers are currently commented out)
+  // eslint-disable-next-line no-unused-vars
+  const clearHover = useCallback(() => {
+    activeCellRef.current = null;
+    setHoveredCell(null);
     hideHover();
-  };
+  }, [hideHover]);
+
+  // ================================================================
+  // Scroll to "today" once per date range, never while the user is scrolling
+  // ================================================================
+  const rangeKey = days.length
+    ? `${days[0].getTime()}-${days[days.length - 1].getTime()}`
+    : "";
 
   useEffect(() => {
-    if (!timelineScrollRef.current || !days.length) return;
+    const el = timelineScrollRef.current;
+    if (!el || !days.length || didInitialScroll.current === rangeKey) return;
+    didInitialScroll.current = rangeKey;
 
-    const scrollContainer = timelineScrollRef.current;
-    let targetIndex = days.findIndex((date) => date.toDateString() === todayKey);
-
+    let targetIndex = days.findIndex((d) => d.toDateString() === todayKey);
     if (targetIndex === -1) {
-      const now = new Date();
-      targetIndex = days.reduce((closestIndex, date, index) => {
-        const closestDistance = Math.abs(days[closestIndex] - now);
-        const currentDistance = Math.abs(date - now);
-        return currentDistance < closestDistance ? index : closestIndex;
-      }, 0);
+      const now = Date.now();
+      targetIndex = days.reduce(
+        (best, d, i) => (Math.abs(d - now) < Math.abs(days[best] - now) ? i : best),
+        0,
+      );
     }
 
-    const targetPosition =
-      leftWidth +
-      targetIndex * layout.cell -
-      (scrollContainer.clientWidth - leftWidth) / 2 +
-      layout.cell / 2;
-
-    const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-
-    scrollContainer.scrollTo({
-      left: Math.max(0, Math.min(targetPosition, maxScrollLeft)),
-      behavior: "smooth",
-    });
-  }, [days, leftWidth, layout.cell, todayKey]);
+    // Left columns are sticky, so they don't offset the scroll position
+    const target =
+      targetIndex * layout.cell - (el.clientWidth - leftWidth) / 2 + layout.cell / 2;
+    const max = el.scrollWidth - el.clientWidth;
+    el.scrollTo({ left: Math.max(0, Math.min(target, max)), behavior: "auto" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeKey]);
 
   const headerStyle = {
     fontSize: 10,
@@ -742,8 +1183,7 @@ function ResourceOccupancyTimeline({
                 borderRadius: 999,
                 padding: "3px 7px",
                 background: t.cardBg,
-                color:
-                  sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textSecondary,
+                color: sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textSecondary,
                 font: "inherit",
                 fontSize: 9,
                 fontWeight: 700,
@@ -770,7 +1210,7 @@ function ResourceOccupancyTimeline({
           position: "relative",
           WebkitOverflowScrolling: "touch",
           overscrollBehavior: "contain",
-          touchAction: "pan-x pan-y",
+          willChange: "scroll-position",
           scrollbarGutter: "stable",
         }}
         ref={timelineScrollRef}
@@ -919,8 +1359,7 @@ function ResourceOccupancyTimeline({
                     </span>
                     <span
                       style={{
-                        color:
-                          sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textMuted,
+                        color: sortConfig.key === "monthlyUtilization" ? t.btnPrimary : t.textMuted,
                         fontSize: 9,
                       }}
                     >
@@ -945,16 +1384,14 @@ function ResourceOccupancyTimeline({
             </div>
 
             <div style={{ display: "flex", width: chartWidth }}>
-              {days.map((date, index) => {
-                const today = date.toDateString() === todayKey;
-                const week = weekIndexForDay(index);
-                const last = weekBoundaries[week] - 1 === index && index < days.length - 1;
+              {dayMeta.map((meta, index) => {
+                const { date, today, week, last } = meta;
                 const base = today ? t.occHeaderToday : t.occHeaderBg;
                 const background =
                   week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
                 return (
                   <div
-                    key={`${date.toDateString()}-${index}`}
+                    key={`${meta.key}-${index}`}
                     style={{
                       width: layout.cell,
                       flexShrink: 0,
@@ -962,7 +1399,7 @@ function ResourceOccupancyTimeline({
                       padding: "4px 1px",
                       borderRight: last
                         ? `2px solid ${t.cardBorder}`
-                        : index < days.length - 1
+                        : index < dayMeta.length - 1
                           ? `1px solid ${t.gridLineMd}`
                           : "none",
                       background,
@@ -977,7 +1414,7 @@ function ResourceOccupancyTimeline({
                         fontWeight: 600,
                         color: today
                           ? t.todayText
-                          : isWeekend(date)
+                          : meta.weekend
                             ? t.textMuted
                             : t.textSecondary,
                       }}
@@ -1000,427 +1437,32 @@ function ResourceOccupancyTimeline({
           </div>
 
           {/* Resource rows */}
-          {sortedTimelineRows.map((row, index) => {
-            const rowBg = index % 2 ? t.occRowOdd : t.occRowEven;
-            const metric = row.isUnallocated
-              ? null
-              : metricsByName[row.name.trim().toLowerCase()] || null;
-            const daily = row.isUnallocated ? {} : resourceData[row.name] || {};
-            const completed = metric?.totalCompletedTasks ?? 0;
-            const assigned = metric?.totalAssignedTasks ?? 0;
-            const completion = completionPercentage(completed, assigned);
-
-            return (
-              <div
-                key={row.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: rowBg,
-                  borderBottom: `1px solid ${t.gridLine}`,
-                }}
-              >
-                <div
-                  style={{
-                    width: leftWidth,
-                    height: layout.rowHeight,
-                    display: "flex",
-                    flexShrink: 0,
-                    position: "sticky",
-                    left: 0,
-                    zIndex: 10,
-                    background: rowBg,
-                    borderRight: `1px solid ${t.gridLineMd}`,
-                    boxShadow: isMobile ? `3px 0 7px rgba(15,23,42,0.08)` : "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: layout.name,
-                      boxSizing: "border-box",
-                      padding: isMobile ? "6px 7px" : "6px 10px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: isMobile ? 6 : 8,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: isMobile ? 22 : 20,
-                        height: isMobile ? 22 : 20,
-                        flex: "0 0 auto",
-                        borderRadius: "50%",
-                        background: row.isUnallocated
-                          ? "#94a3b8"
-                          : resourceColorMap[row.name]?.actual || "#64748b",
-                        color: "#fff",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 9,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {initialsFor(row.name)}
-                    </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        title={row.name}
-                        style={{
-                          fontSize: isMobile ? 11.5 : 12.5,
-                          fontWeight: 600,
-                          color: t.resNameColor,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {row.name}
-                      </div>
-
-                      {row.isUnallocated ? (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 3,
-                            marginTop: 3,
-                            padding: "1.5px 5px",
-                            borderRadius: 999,
-                            fontSize: 8.5,
-                            fontWeight: 700,
-                            color: chipText,
-                            background: chipBg,
-                            border: `1px solid ${chipBorder}`,
-                            maxWidth: "100%",
-                          }}
-                        >
-                          <i
-                            aria-hidden="true"
-                            style={{
-                              width: 4.5,
-                              height: 4.5,
-                              flex: "0 0 auto",
-                              borderRadius: "50%",
-                              background: chipDot,
-                            }}
-                          />
-                          Unallocated
-                        </span>
-                      ) : (
-                        isMobile && (
-                          <div
-                            title={`Monthly utilization: ${percentageText(
-                              metric?.resourceMonthUtilization,
-                            )}. Completed: ${completed}/${assigned}. On time: ${
-                              metric?.onTimeTasks ?? 0
-                            }. Delayed: ${metric?.delayedTasks ?? 0}.`}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 4,
-                              minWidth: 0,
-                              marginTop: 4,
-                              color: t.textMuted,
-                              fontSize: 8.5,
-                              fontWeight: 700,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <span
-                              style={{
-                                color: percentageColor(
-                                  metric?.resourceMonthUtilization,
-                                  t.textMuted,
-                                ),
-                              }}
-                            >
-                              {percentageText(metric?.resourceMonthUtilization)} utilization
-                            </span>
-                            <span aria-hidden="true">·</span>
-                            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {completed}/{assigned} done
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  {!isMobile && (
-                    <>
-                      <div
-                        title={
-                          row.isUnallocated
-                            ? "Monthly Utilization is unavailable for unallocated resources"
-                            : `Monthly Utilization: ${percentageText(
-                                metric?.resourceMonthUtilization,
-                              )}`
-                        }
-                        style={{
-                          width: layout.monthProgress,
-                          display: "grid",
-                          placeItems: "center",
-                          borderLeft: `1px solid ${t.gridLineMd}`,
-                          color: row.isUnallocated
-                            ? t.textMuted
-                            : percentageColor(metric?.resourceMonthUtilization, t.textMuted),
-                          fontSize: 12,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {row.isUnallocated
-                          ? "—"
-                          : percentageText(metric?.resourceMonthUtilization)}
-                      </div>
-
-                      <div
-                        title={
-                          row.isUnallocated
-                            ? "Task completion is unavailable for unallocated resources"
-                            : `On time: ${metric?.onTimeTasks ?? 0} | Delayed: ${
-                                metric?.delayedTasks ?? 0
-                              } | Completed: ${completed}/${assigned} (${completion ?? "—"}%)`
-                        }
-                        style={{
-                          width: layout.taskCompletion,
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 2,
-                          borderLeft: `1px solid ${t.gridLineMd}`,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          lineHeight: 1,
-                        }}
-                      >
-                        {row.isUnallocated ? (
-                          <span style={{ color: t.textMuted, fontSize: 12 }}>—</span>
-                        ) : (
-                          <>
-                            <span
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 6,
-                                whiteSpace: "nowrap",
-                                fontSize: 9,
-                              }}
-                            >
-                              <span
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 2,
-                                  color: "#15803d",
-                                }}
-                              >
-                                <span style={{ fontSize: 11 }}>✓</span>On time{" "}
-                                {metric?.onTimeTasks ?? 0}
-                              </span>
-                              <span
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 2,
-                                  color: "#c2410c",
-                                }}
-                              >
-                                <span style={{ fontSize: 11 }}>◷</span>Delayed{" "}
-                                {metric?.delayedTasks ?? 0}
-                              </span>
-                            </span>
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                color: completion == null ? t.textMuted : t.textPrimary,
-                                fontSize: 9,
-                                fontWeight: 700,
-                                whiteSpace: "nowrap",
-                                padding: "1.5px 6px",
-                                borderRadius: 999,
-                                background: isDark ? "rgba(255,255,255,0.08)" : t.occFreeBar,
-                                border: `1px solid ${t.occFreeBarBorder}`,
-                              }}
-                            >
-                              Completed-{completed}/{assigned} · {completion ?? "—"}%
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div style={{ width: chartWidth, display: "flex", height: layout.rowHeight }}>
-                  {days.map((date, dayIndex) => {
-                    const dateKey = date.toDateString();
-                    const weekend = isWeekend(date);
-                    const isOnLeave =
-                      !row.isUnallocated &&
-                      Array.isArray(metric?.leaveDates) &&
-                      metric.leaveDates.includes(localDateKey(date));
-                    const data = isOnLeave
-                      ? { occupied: 0, free: 0, tasks: [], isOnLeave: true }
-                      : row.isUnallocated
-                        ? { occupied: 0, free: dailyCapacity, tasks: [] }
-                        : daily[dateKey] || {
-                            occupied: 0,
-                            free: dailyCapacity,
-                            tasks: [],
-                          };
-                    // A weekend is inactive only when no task is scheduled on it
-                    const inactiveWeekend =
-                      weekend && !(data.occupied > 0 || (data.tasks && data.tasks.length > 0));
-                    const key = `${row.id}-${dateKey}`;
-                    const hover = hoveredKey === key;
-                    const today = dateKey === todayKey;
-                    const week = weekIndexForDay(dayIndex);
-                    const last =
-                      weekBoundaries[week] - 1 === dayIndex && dayIndex < days.length - 1;
-                    const base = today
-                      ? t.occCellToday
-                      : weekend
-                        ? t.occCellWeekend
-                        : t.occCellBg;
-                    const background =
-                      week % 2 ? `linear-gradient(${weekOverlay},${weekOverlay}),${base}` : base;
-                    const fill = inactiveWeekend
-                      ? 0
-                      : Math.min((data.occupied / dailyCapacity) * 100, 100);
-                    const dateLabel = date.toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    });
-                    const statusLabel = data.isOnLeave
-                      ? "on leave"
-                      : `${duration(data.occupied)} occupied, ${duration(data.free)} free`;
-
-                    return (
-                      <div
-                        key={dayIndex}
-                        role={inactiveWeekend ? undefined : "button"}
-                        tabIndex={inactiveWeekend ? undefined : 0}
-                        aria-label={
-                          inactiveWeekend
-                            ? undefined
-                            : `${row.name}, ${dateLabel}: ${statusLabel}`
-                        }
-                        // onPointerEnter={(event) => {
-                        //   if (!inactiveWeekend && event.pointerType !== "touch")
-                        //     activate(event, row, date, data, key);
-                        // }}
-                        // onPointerLeave={(event) => {
-                        //   if (!inactiveWeekend && event.pointerType !== "touch") clearHover();
-                        // }}
-                        // onFocus={(event) => {
-                        //   if (!inactiveWeekend) activate(event, row, date, data, key);
-                        // }}
-                        // onBlur={() => {
-                        //   if (!inactiveWeekend) clearHover();
-                        // }}
-                        onClick={(event) => {
-                          if (inactiveWeekend) return;
-                          event.stopPropagation();
-                          activate(event, row, date, data, key);
-                        }}
-                        // onKeyDown={(event) => {
-                        //   if (inactiveWeekend) return;
-                        //   if (event.key === "Enter" || event.key === " ") {
-                        //     event.preventDefault();
-                        //     activate(event, row, date, data, key);
-                        //   } else if (event.key === "Escape") {
-                        //     clearHover();
-                        //     event.currentTarget.blur();
-                        //   }
-                        // }}
-                        style={{
-                          width: layout.cell,
-                          flexShrink: 0,
-                          padding: isMobile ? 4 : 3,
-                          boxSizing: "border-box",
-                          display: "flex",
-                          alignItems: "center",
-                          borderRight: last
-                            ? `2px solid ${t.cardBorder}`
-                            : dayIndex < days.length - 1
-                              ? `1px solid ${t.gridLineMd}`
-                              : "none",
-                          background: hover
-                            ? isDark
-                              ? "rgba(59,130,246,.2)"
-                              : "#e0f2fe"
-                            : background,
-                          boxShadow: today
-                            ? `inset 2px 0 0 ${t.earlyColor}, inset -2px 0 0 ${t.earlyColor}`
-                            : "none",
-                          cursor: inactiveWeekend ? "default" : "pointer",
-                          outline: hover ? `2px solid ${t.btnPrimary}` : "none",
-                          outlineOffset: -2,
-                          WebkitTapHighlightColor: "transparent",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "100%",
-                            height: layout.barHeight,
-                            background:
-                              !inactiveWeekend && data.isOnLeave
-                                ? isDark
-                                  ? "#475569"
-                                  : "#cbd5e1"
-                                : t.occFreeBar,
-                            border: hover
-                              ? `1.5px solid ${t.btnPrimary}`
-                              : `1px solid ${t.occFreeBarBorder}`,
-                            borderRadius: 6,
-                            position: "relative",
-                            overflow: "hidden",
-                            boxShadow: t.occFreeBarShadow,
-                          }}
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: "0 auto 0 0",
-                              width: `${fill}%`,
-                              background: occupancyColor(data.occupied),
-                            }}
-                          />
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              display: "grid",
-                              placeItems: "center",
-                              fontSize: isMobile ? 8.5 : 8,
-                              fontWeight: 700,
-                              color: data.occupied
-                                ? isDark
-                                  ? "#ffffff"
-                                  : "#1e293b"
-                                : t.occFreeLabel,
-                            }}
-                          >
-                            {inactiveWeekend
-                              ? ""
-                              : data.isOnLeave
-                                ? "Leave"
-                                : duration(data.occupied || data.free)}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+          {sortedTimelineRows.map((row, index) => (
+            <TimelineRow
+              key={row.id}
+              row={row}
+              index={index}
+              metric={
+                row.isUnallocated ? null : metricsByName[row.name.trim().toLowerCase()] || null
+              }
+              daily={row.isUnallocated ? EMPTY : resourceData[row.name] || EMPTY}
+              hoveredDateKey={hoveredCell?.rowId === row.id ? hoveredCell.dateKey : null}
+              dayMeta={dayMeta}
+              layout={layout}
+              leftWidth={leftWidth}
+              chartWidth={chartWidth}
+              dailyCapacity={dailyCapacity}
+              isMobile={isMobile}
+              isDark={isDark}
+              t={t}
+              avatarColor={
+                row.isUnallocated ? "#94a3b8" : resourceColorMap[row.name]?.actual || "#64748b"
+              }
+              chip={chip}
+              weekOverlay={weekOverlay}
+              onActivate={activate}
+            />
+          ))}
         </div>
       </div>
 
@@ -1465,7 +1507,7 @@ function ResourceOccupancyTimeline({
         <span style={{ display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
           <i
             aria-hidden="true"
-            style={{ width: 8, height: 8, background: chipDot, borderRadius: "50%" }}
+            style={{ width: 8, height: 8, background: chip.dot, borderRadius: "50%" }}
           />
           Unallocated
         </span>
