@@ -212,8 +212,8 @@ export default function ProjectEditor({
   const [autoChainPreview, setAutoChainPreview] = useState(null);
   const [autoChainOnSave, setAutoChainOnSave] = useState(true);
   const [weekendConfig, setWeekendConfig] = useState({
-    includeSaturday: false,
-    includeSunday: false,
+    includeSaturday: draft?.includeSaturday ?? false,
+    includeSunday: draft?.includeSunday ?? false,
   });
   const [workHoursConfig, setWorkHoursConfig] = useState({
     start: 10,
@@ -447,6 +447,12 @@ export default function ProjectEditor({
   // ═══════════════════════════════════════════════════════
   // Effects
   // ═══════════════════════════════════════════════════════
+  useEffect(() => {
+    setWeekendConfig({
+      includeSaturday: draft?.includeSaturday ?? false,
+      includeSunday: draft?.includeSunday ?? false,
+    });
+  }, [draft?.id, draft?.includeSaturday, draft?.includeSunday]);
   useEffect(() => {
     if (groups.length > 0) fetchResourcesForGroups(groups);
   }, [groups, fetchResourcesForGroups]);
@@ -743,10 +749,22 @@ export default function ProjectEditor({
         rows: formattedRows,
         moduleRegistry,
         customColumns,
+        includeSaturday: !!weekendConfig.includeSaturday,
+        includeSunday: !!weekendConfig.includeSunday,
         status: draft.status === "published" ? "published" : "draft",
       };
     },
-    [draft, project, po, site, groups, rows, moduleRegistry, customColumns],
+    [
+      draft,
+      project,
+      po,
+      site,
+      groups,
+      rows,
+      moduleRegistry,
+      customColumns,
+      weekendConfig,
+    ],
   );
 
   // ═══════════════════════════════════════════════════════
@@ -852,6 +870,7 @@ export default function ProjectEditor({
       groups,
       groupResources,
       draft.status,
+      weekendConfig,
     );
     setValidationResults(results);
     setValidationWarnings(warnings);
@@ -3351,7 +3370,7 @@ export default function ProjectEditor({
                           </div>
                         )}
                         {/* ── Weekend Config Dropdown ── */}
-                        {false && (
+                        {true && (
                           <div style={{ position: "relative" }}>
                             <button
                               type="button"

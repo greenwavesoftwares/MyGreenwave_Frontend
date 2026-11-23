@@ -28,7 +28,9 @@ import {
   Package,
   CheckCircle2,
   Bell,
-  CalendarSync,
+  PieChart as PieChartIcon,
+  Activity,
+  UserCheck,
 } from "lucide-react";
 
 import { useTheme } from "../useTheme";
@@ -39,6 +41,137 @@ import BottomSheet from "../shared/BottomSheet";
 import { loadSavedDateRange, saveDateRange } from "../helpers/dateRangeStorage";
 import GreenWaveLoader from "../loader/GreenWaveLoader";
 import ResumeReviewDialog from "../../Modules/Assignee/ResumeReviewDialog";
+
+/* ═══════════════════════════════════════════════════════
+   Status Display & Color Helpers
+   ═══════════════════════════════════════════════════════ */
+const parseISODateTime = (str) => {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+export function getDisplayStatus(row) {
+  const rawStatus = String(row?.status || "Pending").trim();
+  const normalized = rawStatus.toLowerCase();
+  const now = new Date();
+
+  // Pending logic
+  if (normalized === "pending") {
+    if (!row?.plannedStart) return "Pending";
+    const plannedStart = parseISODateTime(row.plannedStart);
+    if (!plannedStart || isNaN(plannedStart.getTime())) return "Pending";
+
+    if (plannedStart.getTime() > now.getTime()) return "Yet to Start";
+    return "Start Due";
+  }
+
+  // Running logic
+  if (normalized === "running") {
+    if (!row?.plannedStop) return "Running";
+    const plannedStop = parseISODateTime(row.plannedStop);
+    if (!plannedStop || isNaN(plannedStop.getTime())) return "Running";
+
+    if (plannedStop.getTime() <= now.getTime()) return "Running Late";
+    return "Running";
+  }
+
+  return rawStatus;
+}
+
+export function makeStatusColors(t) {
+  return {
+    pending: {
+      bg: t.bgMuted,
+      color: t.textMuted,
+      border: t.borderStrong,
+      bar: "#94A3B8",
+    },
+    "yet to start": {
+      bg: "#FED7AA",
+      color: "#C2410C",
+      border: "#FDBA74",
+      bar: "#F97316",
+    },
+    "start due": {
+      bg: "#FEE2E2",
+      color: "#DC2626",
+      border: "#FCA5A5",
+      bar: "#EF4444",
+    },
+    "not ready": {
+      bg: t.warningBg,
+      color: t.warning,
+      border: t.warningBorder,
+      bar: "#F59E0B",
+    },
+    rejected: {
+      bg: t.dangerBg,
+      color: t.danger,
+      border: t.dangerBorder,
+      bar: "#EF4444",
+    },
+    paused: {
+      bg: "#FFEDD5",
+      color: "#C2410C",
+      border: "#FDBA74",
+      bar: "#F97316",
+    },
+    running: {
+      bg: t.primaryBg,
+      color: t.primary,
+      border: t.primaryBorder,
+      bar: "#3B82F6",
+    },
+    "running late": {
+      bg: "#FEE2E2",
+      color: "#DC2626",
+      border: "#FCA5A5",
+      bar: "#DC2626",
+    },
+    completed: {
+      bg: t.successBg,
+      color: t.success,
+      border: t.successBorder,
+      bar: "#22C55E",
+    },
+    finished: {
+      bg: t.violetBg,
+      color: t.violet,
+      border: t.violetBorder,
+      bar: "#8B5CF6",
+    },
+    closed: {
+      bg: t.closedBg,
+      color: t.closedText,
+      border: t.closedBorder,
+      bar: "#64748B",
+    },
+  };
+}
+
+export function getStatusColor(status, t) {
+  const STATUS_COLORS = makeStatusColors(t);
+  const key = String(status || "pending")
+    .toLowerCase()
+    .trim();
+  return STATUS_COLORS[key] || STATUS_COLORS.pending;
+}
+
+// Resource palette for resource breakdown pie chart
+const RESOURCE_PALETTE = [
+  "#3B82F6",
+  "#10B981",
+  "#F59E0B",
+  "#8B5CF6",
+  "#EC4899",
+  "#06B6D4",
+  "#F97316",
+  "#6366F1",
+  "#14B8A6",
+  "#E11D48",
+];
+
 const statChip = (bg, color, border) => ({
   display: "inline-flex",
   alignItems: "center",
@@ -52,6 +185,740 @@ const statChip = (bg, color, border) => ({
   border: `1px solid ${border}`,
 });
 
+/* ═══════════════════════════════════════════════════════
+   Pure SVG Donut / Pie Chart Component
+   ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   Pure SVG Donut / Pie Chart Component with Hover Support
+   ═══════════════════════════════════════════════════════ */
+function PureDonutChart({
+  data = [],
+  size = 140,
+  centerLabel = "",
+  centerSub = "",
+  t,
+  hoveredIndex = null,
+  onHoverIndex = () => {},
+}) {
+  const total = useMemo(
+    () => data.reduce((sum, d) => sum + d.value, 0),
+    [data],
+  );
+
+  const slices = useMemo(() => {
+    if (total === 0) return [];
+    let accPct = 0;
+    return data.map((d, index) => {
+      const pct = (d.value / total) * 100;
+      const offset = 25 - accPct; // Rotates 0deg to 12 o'clock
+      accPct += pct;
+      return {
+        ...d,
+        index,
+        pct: Math.round(pct),
+        exactPct: pct,
+        dashArray: `${pct} ${100 - pct}`,
+        dashOffset: offset,
+      };
+    });
+  }, [data, total]);
+
+  if (total === 0) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          background: t.bgSubtle,
+          border: `2px dashed ${t.border}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 11,
+          color: t.textMuted,
+        }}
+      >
+        No tasks
+      </div>
+    );
+  }
+
+  const activeSlice = hoveredIndex !== null ? slices[hoveredIndex] : null;
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: size,
+        height: size,
+        flexShrink: 0,
+      }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 36 36"
+        style={{ overflow: "visible" }}
+      >
+        {/* Background track */}
+        <circle
+          cx={18}
+          cy={18}
+          r={15.9155}
+          fill="none"
+          stroke={t.bgMuted}
+          strokeWidth={4.5}
+        />
+
+        {/* Slices */}
+        {slices.map((slice, i) => {
+          const isHovered = hoveredIndex === i;
+          const isAnyHovered = hoveredIndex !== null;
+
+          return (
+            <circle
+              key={i}
+              cx={18}
+              cy={18}
+              r={15.9155}
+              fill="none"
+              stroke={slice.color}
+              strokeWidth={isHovered ? 5.8 : 4.5}
+              strokeDasharray={slice.dashArray}
+              strokeDashoffset={slice.dashOffset}
+              style={{
+                cursor: "pointer",
+                transition: "stroke-width 0.2s ease, opacity 0.2s ease",
+                opacity: isAnyHovered ? (isHovered ? 1 : 0.35) : 1,
+              }}
+              onMouseEnter={() => onHoverIndex(i)}
+              onMouseLeave={() => onHoverIndex(null)}
+            >
+              <title>{`${slice.label}: ${slice.value} tasks (${slice.pct}%)`}</title>
+            </circle>
+          );
+        })}
+      </svg>
+
+      {/* Center dynamic text */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+          padding: "0 10px",
+          textAlign: "center",
+        }}
+      >
+        {activeSlice ? (
+          <>
+            <span
+              style={{
+                fontSize: 15,
+                fontWeight: 800,
+                color: activeSlice.color,
+                lineHeight: 1.1,
+              }}
+            >
+              {activeSlice.value}
+              <span style={{ fontSize: 10, fontWeight: 700, marginLeft: 3 }}>
+                ({activeSlice.pct}%)
+              </span>
+            </span>
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                color: t.textPrimary,
+                marginTop: 2,
+                maxWidth: size - 36,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={activeSlice.label}
+            >
+              {activeSlice.label}
+            </span>
+          </>
+        ) : (
+          <>
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: t.textPrimary,
+                lineHeight: 1,
+              }}
+            >
+              {centerLabel || total}
+            </span>
+            {centerSub && (
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  color: t.textMuted,
+                  marginTop: 2,
+                  textTransform: "uppercase",
+                }}
+              >
+                {centerSub}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Project Analytics Modal (Status & Resource Pie Charts)
+   ═══════════════════════════════════════════════════════ */
+function ProjectAnalyticsModal({ open, project, onClose, t, isMobile }) {
+  const [hoveredStatusIndex, setHoveredStatusIndex] = useState(null);
+  const [hoveredResourceIndex, setHoveredResourceIndex] = useState(null);
+
+  if (!open || !project) return null;
+
+  // Filter parent tasks only
+  const parentTasks = (project.rows || []).filter((r) => !r.parentId);
+  const totalTasks = parentTasks.length;
+
+  // 1. Status breakdown
+  const statusCounts = {};
+  parentTasks.forEach((r) => {
+    const disp = getDisplayStatus(r);
+    statusCounts[disp] = (statusCounts[disp] || 0) + 1;
+  });
+
+  const statusData = Object.entries(statusCounts).map(([status, count]) => {
+    const colorObj = getStatusColor(status, t);
+    return {
+      label: status,
+      value: count,
+      color: colorObj.bar || t.primary,
+      bg: colorObj.bg,
+      textColor: colorObj.color,
+      border: colorObj.border,
+    };
+  });
+
+  // 2. Resource breakdown
+  const resourceCounts = {};
+  parentTasks.forEach((r) => {
+    const name = r.resourceName || r.resource || "Unassigned";
+    resourceCounts[name] = (resourceCounts[name] || 0) + 1;
+  });
+
+  const resourceData = Object.entries(resourceCounts).map(
+    ([resource, count], idx) => ({
+      label: resource,
+      value: count,
+      color: RESOURCE_PALETTE[idx % RESOURCE_PALETTE.length],
+    }),
+  );
+
+  const completedCount = parentTasks.filter((r) => {
+    const s = (r.status || "").toLowerCase().trim();
+    return s === "finished" || s === "completed";
+  }).length;
+
+  const progressPct =
+    totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+
+  return (
+    <div
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: t.bgOverlay,
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        backdropFilter: "blur(2px)",
+      }}
+    >
+      <div
+        style={{
+          background: t.bgCard,
+          borderRadius: 14,
+          border: `1px solid ${t.borderStrong}`,
+          width: "100%",
+          maxWidth: 740,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          fontFamily: "Sora,sans-serif",
+          color: t.textPrimary,
+          boxShadow: t.shadowXl,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: `1px solid ${t.borderSubtle}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              minWidth: 0,
+            }}
+          >
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 8,
+                background: t.primaryBg,
+                color: t.primary,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <PieChartIcon size={20} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: t.textPrimary,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {project.project || "Untitled Project"}
+              </div>
+              <div style={{ fontSize: 11, color: t.textMuted, marginTop: 1 }}>
+                PO: {project.po || "—"} • {project.site || "No site"} •{" "}
+                <strong style={{ color: t.primary }}>
+                  {totalTasks} Parent Tasks
+                </strong>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: `1px solid ${t.border}`,
+              background: t.bgSubtle,
+              color: t.textSecondary,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div
+          style={{
+            padding: "18px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          {/* Quick Summary Banner */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "10px 14px",
+              background: progressPct === 100 ? t.successBgSubtle : t.bgSubtle,
+              border: `1px solid ${progressPct === 100 ? t.successBorder : t.border}`,
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+          >
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontWeight: 600,
+              }}
+            >
+              <Activity
+                size={14}
+                color={progressPct === 100 ? t.success : t.primary}
+              />
+              Overall Completion
+            </span>
+            <span
+              style={{
+                fontWeight: 800,
+                color: progressPct === 100 ? t.success : t.textPrimary,
+              }}
+            >
+              {completedCount} / {totalTasks} Tasks ({progressPct}%)
+            </span>
+          </div>
+
+          {/* Charts Container */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gap: 14,
+            }}
+          >
+            {/* Chart 1: Status Distribution */}
+            <div
+              style={{
+                background: t.bgCard,
+                border: `1px solid ${t.border}`,
+                borderRadius: 10,
+                padding: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: t.textPrimary,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Activity size={14} color={t.primary} />
+                Status Distribution
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "6px 0",
+                }}
+              >
+                <PureDonutChart
+                  data={statusData}
+                  size={135}
+                  centerLabel={`${totalTasks}`}
+                  centerSub="Tasks"
+                  t={t}
+                  hoveredIndex={hoveredStatusIndex}
+                  onHoverIndex={setHoveredStatusIndex}
+                />
+              </div>
+
+              {/* Status Interactive Legend Bars */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  maxHeight: 190,
+                  overflowY: "auto",
+                }}
+              >
+                {statusData.map((item, idx) => {
+                  const pct =
+                    totalTasks > 0
+                      ? Math.round((item.value / totalTasks) * 100)
+                      : 0;
+                  const isHovered = hoveredStatusIndex === idx;
+
+                  return (
+                    <div
+                      key={item.label}
+                      title={`${item.label}: ${item.value} tasks (${pct}%)`}
+                      onMouseEnter={() => setHoveredStatusIndex(idx)}
+                      onMouseLeave={() => setHoveredStatusIndex(null)}
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: 11,
+                        padding: "6px 10px",
+                        borderRadius: 6,
+                        background: isHovered ? t.bgMuted : t.bgSubtle,
+                        border: `1px solid ${isHovered ? item.color : t.borderSubtle}`,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {/* Background horizontal progress track fill */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: `${pct}%`,
+                          background: item.color,
+                          opacity: isHovered ? 0.22 : 0.09,
+                          pointerEvents: "none",
+                          transition: "opacity 0.15s ease",
+                        }}
+                      />
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 7,
+                          minWidth: 0,
+                          zIndex: 1,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: item.color,
+                            flexShrink: 0,
+                            boxShadow: isHovered
+                              ? `0 0 6px ${item.color}`
+                              : "none",
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontWeight: isHovered ? 700 : 600,
+                            color: t.textPrimary,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          color: isHovered ? item.color : t.textSecondary,
+                          flexShrink: 0,
+                          zIndex: 1,
+                        }}
+                      >
+                        {item.value} ({pct}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Chart 2: Resource Allocation */}
+            <div
+              style={{
+                background: t.bgCard,
+                border: `1px solid ${t.border}`,
+                borderRadius: 10,
+                padding: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: t.textPrimary,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <UserCheck size={14} color={t.violet} />
+                Resource Allocation
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "6px 0",
+                }}
+              >
+                <PureDonutChart
+                  data={resourceData}
+                  size={135}
+                  centerLabel={`${resourceData.length}`}
+                  centerSub="Resources"
+                  t={t}
+                  hoveredIndex={hoveredResourceIndex}
+                  onHoverIndex={setHoveredResourceIndex}
+                />
+              </div>
+
+              {/* Resource Interactive Legend Bars */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  maxHeight: 190,
+                  overflowY: "auto",
+                }}
+              >
+                {resourceData.map((item, idx) => {
+                  const pct =
+                    totalTasks > 0
+                      ? Math.round((item.value / totalTasks) * 100)
+                      : 0;
+                  const isHovered = hoveredResourceIndex === idx;
+
+                  return (
+                    <div
+                      key={item.label}
+                      title={`${item.label}: ${item.value} tasks (${pct}%)`}
+                      onMouseEnter={() => setHoveredResourceIndex(idx)}
+                      onMouseLeave={() => setHoveredResourceIndex(null)}
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: 11,
+                        padding: "6px 10px",
+                        borderRadius: 6,
+                        background: isHovered ? t.bgMuted : t.bgSubtle,
+                        border: `1px solid ${isHovered ? item.color : t.borderSubtle}`,
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      {/* Background horizontal progress track fill */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: `${pct}%`,
+                          background: item.color,
+                          opacity: isHovered ? 0.22 : 0.09,
+                          pointerEvents: "none",
+                          transition: "opacity 0.15s ease",
+                        }}
+                      />
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 7,
+                          minWidth: 0,
+                          zIndex: 1,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: item.color,
+                            flexShrink: 0,
+                            boxShadow: isHovered
+                              ? `0 0 6px ${item.color}`
+                              : "none",
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontWeight: isHovered ? 700 : 600,
+                            color: t.textPrimary,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          color: isHovered ? item.color : t.textSecondary,
+                          flexShrink: 0,
+                          zIndex: 1,
+                        }}
+                      >
+                        {item.value} ({pct}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: `1px solid ${t.borderSubtle}`,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              ...makeBtnStyle(t),
+              height: 34,
+              padding: "0 18px",
+              background: t.primary,
+              color: t.textInverse,
+              borderColor: t.primary,
+              fontWeight: 600,
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Main DraftProjectsList Component
+   ═══════════════════════════════════════════════════════ */
 export default function DraftProjectsList({
   drafts,
   loading,
@@ -77,8 +944,9 @@ export default function DraftProjectsList({
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [reviewDialogId, setReviewDialogId] = useState(null);
+  const [statsModalProject, setStatsModalProject] = useState(null);
 
-  // Date range state — restore from localStorage
+  // Date range state
   const [dateMode, setDateMode] = useState(
     () => loadSavedDateRange()?.mode || "currentMonth",
   );
@@ -314,7 +1182,7 @@ export default function DraftProjectsList({
     <div
       style={{ padding: "16px 20px 32px", maxWidth: 1600, margin: "0 auto" }}
     >
-      {/* ── DESKTOP / TABLET: Status filter tabs ── */}
+      {/* ── Status filter tabs (Desktop) ── */}
       {!isMobile && !loading && !error && drafts.length > 0 && (
         <div
           style={{
@@ -415,7 +1283,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* ── MOBILE: Status filter tabs ── */}
+      {/* ── Status filter tabs (Mobile) ── */}
       {isMobile && !loading && !error && drafts.length > 0 && (
         <div
           style={{
@@ -516,7 +1384,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* ── DESKTOP / TABLET: Header row ── */}
+      {/* ── Header row (Desktop) ── */}
       {!isMobile && (
         <div
           style={{
@@ -563,7 +1431,7 @@ export default function DraftProjectsList({
             </div>
           </div>
 
-          {/* Date range tabs */}
+          {/* Date range picker tabs */}
           <div
             style={{
               display: "flex",
@@ -831,7 +1699,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* ── MOBILE: Header row ── */}
+      {/* ── Header row (Mobile) ── */}
       {isMobile && (
         <div
           style={{
@@ -954,7 +1822,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading state */}
       {loading && (
         <div
           style={{
@@ -981,7 +1849,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* Error */}
+      {/* Error state */}
       {error && !loading && (
         <div
           style={{
@@ -1052,7 +1920,7 @@ export default function DraftProjectsList({
         </div>
       )}
 
-      {/* Grid List */}
+      {/* Grid of Projects */}
       {!loading && !error && (
         <>
           {filtered.length === 0 ? (
@@ -1678,9 +2546,11 @@ export default function DraftProjectsList({
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = t.warning;
+                          e.currentTarget.style.transform = "translateY(-1px)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.borderColor = t.warningBorder;
+                          e.currentTarget.style.transform = "translateY(0)";
                         }}
                       >
                         <div
@@ -1696,8 +2566,7 @@ export default function DraftProjectsList({
                             position: "relative",
                           }}
                         >
-                          <CalendarSync size={19} color={t.warning} />
-                          {/* Request Count Badge attached to Bell Icon */}
+                          <Bell size={19} color={t.warning} />
                           {reqCount > 0 && (
                             <span
                               style={{
@@ -1735,7 +2604,6 @@ export default function DraftProjectsList({
                           >
                             {reqCount}
                           </div> */}
-                          {/* Full text displayed without ellipsis */}
                           <div
                             style={{
                               fontSize: 8.5,
@@ -1753,8 +2621,13 @@ export default function DraftProjectsList({
                         </div>
                       </div>
 
-                      {/* Right: Task Progress Donut Gauge */}
+                      {/* Right: Task Progress Donut Gauge (Clickable -> Opens Analytics Modal) */}
                       <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatsModalProject(d);
+                        }}
+                        title="Click to view task & resource analytics"
                         style={{
                           flex: 1,
                           minWidth: 0,
@@ -1768,6 +2641,18 @@ export default function DraftProjectsList({
                           border: `1px solid ${
                             progressPct === 100 ? t.successBorder : t.border
                           }`,
+                          cursor: "pointer",
+                          transition: "all .15s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor =
+                            progressPct === 100 ? t.success : t.primary;
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor =
+                            progressPct === 100 ? t.successBorder : t.border;
+                          e.currentTarget.style.transform = "translateY(0)";
                         }}
                       >
                         <div style={{ width: 40, height: 40, flexShrink: 0 }}>
@@ -1882,7 +2767,7 @@ export default function DraftProjectsList({
         </>
       )}
 
-      {/* ── Mobile FAB: New Project ── */}
+      {/* ── Mobile FAB ── */}
       {isMobile && (
         <button
           onClick={onNew}
@@ -2231,6 +3116,15 @@ export default function DraftProjectsList({
         onDone={() => {}}
         previewRequest={null}
         dryRun={false}
+      />
+
+      {/* ── Project Analytics Modal (Status & Resource Pie Charts) ── */}
+      <ProjectAnalyticsModal
+        open={!!statsModalProject}
+        project={statsModalProject}
+        onClose={() => setStatsModalProject(null)}
+        t={t}
+        isMobile={isMobile}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   findAllSchedulingConflicts,
   formatCyclePath,
 } from "./dependencies";
+
 export function runValidations(
   rows,
   project,
@@ -18,6 +19,7 @@ export function runValidations(
   groups,
   groupResources,
   projectStatus = "draft",
+  weekendConfig = { includeSaturday: false, includeSunday: false },
 ) {
   const results = [];
   const warnings = [];
@@ -151,27 +153,43 @@ export function runValidations(
     });
   }
 
-  // 5. Weekend stop check
-  let badTime = false;
+  // 5. Weekend / non-working day stop check
+  const badStops = [];
   rows.forEach((r) => {
     if (r.plannedStop) {
       const d = parseISODateTime(r.plannedStop);
-      if (d && (d.getDay() === 0 || d.getDay() === 6)) badTime = true;
+      if (d) {
+        const day = d.getDay();
+        const isInvalidSat = day === 6 && !weekendConfig?.includeSaturday;
+        const isInvalidSun = day === 0 && !weekendConfig?.includeSunday;
+        if (isInvalidSat || isInvalidSun) {
+          badStops.push({
+            task: r.task || r.module || `Row #${r.id}`,
+            stop: fmtDisplay(d),
+            dayName: day === 6 ? "Saturday" : "Sunday",
+          });
+        }
+      }
     }
   });
+
+  const badTime = badStops.length > 0;
   results.push({
     ok: !badTime,
     title: !badTime
       ? "All stops within working calendar"
-      : "Stop falls on weekend",
+      : `${badStops.length} stop${badStops.length !== 1 ? "s fall" : " falls"} on non-working weekend`,
     detail: !badTime
-      ? "Stops skip weekends and leaves."
-      : "A computed stop date is on a non-working day.",
+      ? "Stops skip non-working days and leaves."
+      : `These tasks have stop dates on non-working weekend days:\n${badStops
+          .slice(0, 5)
+          .map((b) => `• "${b.task}" — ${b.stop} (${b.dayName})`)
+          .join("\n")}${badStops.length > 5 ? `\n…and ${badStops.length - 5} more` : ""}`,
   });
 
   // 6. Sub-task overflow
-  const overflowSubs = [];
   const tolerance = 60 * 1000;
+  const overflowSubs = [];
 
   rows.forEach((r) => {
     if (!r.parentId) return;

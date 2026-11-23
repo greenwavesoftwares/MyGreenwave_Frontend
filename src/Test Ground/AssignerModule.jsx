@@ -160,6 +160,7 @@ export default function AssignerModule() {
 
   const fetchProjects = useCallback(
     async (fromDate, toDate) => {
+      console.log("Refresh call");
       setDraftsLoading(true);
       setDraftsError(null);
       try {
