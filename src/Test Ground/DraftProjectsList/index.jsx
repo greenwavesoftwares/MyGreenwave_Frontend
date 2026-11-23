@@ -2531,6 +2531,7 @@ export default function DraftProjectsList({
                           e.stopPropagation();
                           setReviewDialogId(d.id);
                         }}
+                        title="Click to view Reschedule Requests"
                         style={{
                           flex: 1,
                           minWidth: 0,
