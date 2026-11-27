@@ -449,7 +449,9 @@ export default function TreeRows({
             <div className="pai-mobile-module">{moduleHeader}</div>
           ) : (
             <TableRow className="module-row">
-              <TableCell colSpan={14}>{moduleHeader}</TableCell>
+              <TableCell colSpan={10 + (customColumns?.length ?? 0) + 1}>
+                {moduleHeader}
+              </TableCell>
             </TableRow>
           )}
 

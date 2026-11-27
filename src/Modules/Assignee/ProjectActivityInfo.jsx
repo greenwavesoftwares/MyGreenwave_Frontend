@@ -1537,7 +1537,7 @@ export default function ProjectActivityInfo({
                   {filteredModules.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={11}
+                        colSpan={10 + (activityInfo?.customColumns?.length ?? 0) + 1}
                         align="center"
                         style={{
                           padding: "32px 0",
